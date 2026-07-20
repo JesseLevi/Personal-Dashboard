@@ -39,6 +39,14 @@ create policy profiles_update_own on public.profiles
 create policy profiles_delete_own on public.profiles
   for delete using (id = (select auth.uid()));
 
+-- Table-level grants: this project's Supabase config does not auto-expose new
+-- public tables to the API roles (config.toml api.auto_expose_new_tables is
+-- unset). RLS policies are the real security boundary — anon gets SELECT
+-- because the select-own policy already reduces it to zero rows for a role
+-- with no auth.uid(), it just needs to be able to run the query at all.
+grant select, insert, update, delete on public.profiles to authenticated;
+grant select on public.profiles to anon;
+
 -- Auto-create a profile on signup.
 create function public.handle_new_user()
 returns trigger

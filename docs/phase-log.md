@@ -50,6 +50,7 @@ No code exists for these beyond what's listed above. The worker skeleton and RLS
 ## Conventions locked in by this foundation (tickets must follow)
 
 - New table ⇒ same PR contains: migration + `supabase/tests/rls-<table>.sql` (copy `rls-profiles.sql` pattern) — CI hard-fails otherwise.
+- New table ⇒ migration must also `grant select, insert, update, delete on public.<table> to authenticated;` and `grant select on public.<table> to anon;` (RLS policies are the real boundary; without these grants every query 42501s with "permission denied for table", since `api.auto_expose_new_tables` is unset/off — discovered 2026-07-20 when CI's first real run failed on `rls-profiles.sql`). Copy the grants block in `20260720000001_profiles.sql`.
 - New component ⇒ same PR contains: `design/figma-map.json` entry + `// figma: node-id=...` header + Ladle story.
 - Token change ⇒ edit `design/tokens.json`, run `pnpm sync:tokens`, commit both (CI fails on drift).
 - User-facing string ⇒ `messages/nl.json` **and** `messages/en.json` in the same PR.
