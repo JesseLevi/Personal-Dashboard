@@ -31,7 +31,7 @@ Authoritative completion record against the phasing in `Architecture.md` §10 / 
 ### ⬜ Phase 0 remainder — needs tickets (all server-side/GitHub-side; could not be done from this dev machine)
 
 1. ~~**GitHub repo + first push**~~ ✅ done 2026-07-20: private repo `JesseLevi/Personal-Dashboard`, `main` pushed, `gh` installed + authenticated, tickets/milestones created, Project kanban board live. **Still open: confirm CI goes green** — first runs hit a GitHub Actions platform outage (`startup_failure`, githubstatus.com incident); rerun when the outage is over (expect possible quirks in the db job).
-2. **Mac mini: staging + prod Supabase stacks** — two Docker compose projects, **every published port bound to 127.0.0.1** (run `scripts/check-localhost-binding.sh` afterwards), staging stopped by default (RAM, §8).
+2. **Mac mini: staging + prod Supabase stacks** — two Docker compose projects, **every published port bound to 127.0.0.1** (run `scripts/check-localhost-binding.sh` afterwards), staging stopped by default (RAM, §8). **GoTrue: `GOTRUE_DISABLE_SIGNUP=true`** — no self-signup; accounts are provisioned via admin API/Studio (matches `shouldCreateUser: false` in the app and `enable_signup = false` in local config).
 3. **Mac mini: Cloudflare Tunnel** — `cloudflared` with `dash.<domain>` → prod, `staging.<domain>` → staging; staging behind Cloudflare Access; rate-limit rule on `/auth/*`. (ADR-0003; consider Access on prod too — §7 recommendation.)
 4. **Mac mini: Ollama** — native install, `OLLAMA_HOST=127.0.0.1`, pull `bge-m3` + chat model sized to RAM (ADR-0006).
 5. **Backups** — nightly `pg_dump` + Storage rsync via restic to an S3-compatible bucket, **pgsodium/Vault root key backed up separately**, Healthchecks.io pings, monthly restore drill onto staging (§7).
@@ -50,6 +50,7 @@ No code exists for these beyond what's listed above. The worker skeleton and RLS
 ## Conventions locked in by this foundation (tickets must follow)
 
 - New table ⇒ same PR contains: migration + `supabase/tests/rls-<table>.sql` (copy `rls-profiles.sql` pattern) — CI hard-fails otherwise.
+- New table ⇒ migration must also `grant select, insert, update, delete on public.<table> to authenticated;` and `grant select on public.<table> to anon;` (RLS policies are the real boundary; without these grants every query 42501s with "permission denied for table", since `api.auto_expose_new_tables` is unset/off — discovered 2026-07-20 when CI's first real run failed on `rls-profiles.sql`). Copy the grants block in `20260720000001_profiles.sql`.
 - New component ⇒ same PR contains: `design/figma-map.json` entry + `// figma: node-id=...` header + Ladle story.
 - Token change ⇒ edit `design/tokens.json`, run `pnpm sync:tokens`, commit both (CI fails on drift).
 - User-facing string ⇒ `messages/nl.json` **and** `messages/en.json` in the same PR.
