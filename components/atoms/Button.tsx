@@ -55,6 +55,23 @@ import { Icon, type IconName } from "./Icon";
  * not a deliberate selected-only padding change, since Filled/Default and
  * Filled/Hover both use the standard padding.
  *
+ * Content alignment (fixed for ticket #43): re-fetching this node's own
+ * layout data shows every sampled Button/Default variant is a
+ * `sizing.horizontal: hug` row with no `justifyContent` override — Figma's
+ * default packed/MIN alignment (i.e. flex-start). The root class below used
+ * to read `justify-center`, which is a no-op on a hug-sized standalone button
+ * (there is no spare main-axis space to redistribute) but renders visibly
+ * wrong, centred content the instant a caller stretches the button to fill a
+ * wider row — exactly what `Atom/Dropdown`'s option-list slot does (the
+ * fetched Dropdown node, 3705:4446, overrides its nested Button/Default
+ * instances to `sizing.horizontal: fill` while still specifying no
+ * `justifyContent`, i.e. still packed/left). The misalignment ticket #43
+ * reported therefore lived here, in Button.tsx, not in Dropdown.tsx.
+ * `justify-start` matches Figma's real default and is visually identical to
+ * the old `justify-center` for every existing hug-sized story
+ * (Button.stories.tsx) since hug sizing never has spare space to
+ * redistribute in the first place.
+ *
  * The hover fill and hover stroke use the dedicated `surface-hover` and
  * `border-hover` semantic tokens (added to design/tokens.json 2026-07-20).
  * They resolve to the same stone-300/stone-500 primitives Figma uses, but are
@@ -74,7 +91,7 @@ import { Icon, type IconName } from "./Icon";
  * element; add real Disabled styling once Figma defines it).
  */
 const buttonVariants = cva(
-  "inline-flex h-10 items-center justify-center rounded-lg pl-2 pr-1 text-base font-semibold transition-colors",
+  "inline-flex h-10 items-center justify-start rounded-lg pl-2 pr-1 text-base font-semibold transition-colors",
   {
     variants: {
       variant: {
