@@ -16,7 +16,7 @@ The workflow position: Fable produced Architecture.md + ADRs and built Phase 0. 
 
 ## Gotchas a fresh session must know
 
-- **This dev machine has no Docker, no `gh`, no standalone supabase CLI** — supabase runs via `npx supabase` (devDependency); db-dependent commands are CI/server-only for now.
+- **This dev machine has no Docker and no standalone supabase CLI** — supabase runs via `npx supabase` (devDependency); db-dependent commands are CI/server-only for now. `gh` IS installed (since 2026-07-20, authenticated as JesseLevi incl. `project` scope); remote `origin` = github.com/JesseLevi/Personal-Dashboard.
 - **No `NEXT_PUBLIC_SUPABASE*` env vars, ever** — the browser never talks to Supabase (ADR-0003); `scripts/check-server-only.sh` greps for violations and CI fails on them.
 - **New table ⇒ migration + `supabase/tests/rls-<table>.sql` in the same PR** (copy `rls-profiles.sql`), or the coverage gate fails CI.
 - **Token edits**: change `design/tokens.json`, run `pnpm sync:tokens`, commit both — never touch `app/theme.css` directly.

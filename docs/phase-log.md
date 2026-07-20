@@ -30,7 +30,7 @@ Authoritative completion record against the phasing in `Architecture.md` §10 / 
 
 ### ⬜ Phase 0 remainder — needs tickets (all server-side/GitHub-side; could not be done from this dev machine)
 
-1. **GitHub repo + first push** — `gh` not installed here. Create private repo, push `main`, confirm CI goes green (first real CI run may surface environment quirks, esp. the db job).
+1. ~~**GitHub repo + first push**~~ ✅ done 2026-07-20: private repo `JesseLevi/Personal-Dashboard`, `main` pushed, `gh` installed + authenticated, tickets/milestones created, Project kanban board live. **Still open: confirm CI goes green** — first runs hit a GitHub Actions platform outage (`startup_failure`, githubstatus.com incident); rerun when the outage is over (expect possible quirks in the db job).
 2. **Mac mini: staging + prod Supabase stacks** — two Docker compose projects, **every published port bound to 127.0.0.1** (run `scripts/check-localhost-binding.sh` afterwards), staging stopped by default (RAM, §8).
 3. **Mac mini: Cloudflare Tunnel** — `cloudflared` with `dash.<domain>` → prod, `staging.<domain>` → staging; staging behind Cloudflare Access; rate-limit rule on `/auth/*`. (ADR-0003; consider Access on prod too — §7 recommendation.)
 4. **Mac mini: Ollama** — native install, `OLLAMA_HOST=127.0.0.1`, pull `bge-m3` + chat model sized to RAM (ADR-0006).
