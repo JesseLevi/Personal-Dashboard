@@ -86,21 +86,47 @@ which is `priority-urgent` throughout.
 - **Removed** (no consumer left once Selected became text-only): `surface-selected`,
   `surface-raised-selected`, `border-selected`, `border-hover-strong`,
   `priority-urgent-bg-selected`.
-- **Provisional, delete on reconciliation**: `border-input-hover` (stone-500) and
-  `border-input-focus` (stone-400), scoped to `Atom/Input-field` — see below.
 
 ## Open questions (recorded, not resolved by guessing)
 
-1. **`Atom/Input-field` was not re-authored along with `Atom/Button`.** Re-fetched
-   for #56 (node 3705:4402) and confirmed unchanged: still three states, strokes
-   stone-300 / stone-500 / stone-400. Note the ordering — its **Hover is darker
-   than its Active**, the reverse of Button/Outline (stone-400 → stone-700). That
-   inversion is the strongest signal yet that this node was simply never re-bound
-   to the reworked variables. Until someone confirms, the two components keep
-   their own fetched values and Input-field's live behind names that announce
-   themselves as temporary. **Action for the design side:** re-bind Input-field's
-   strokes, then delete `border-input-hover` / `border-input-focus` and point the
-   component at `border-hover` / `border-active`.
+1. **RESOLVED (ticket #58, 2026-07-20): `Atom/Input-field` keeps its own
+   border-hover/border-active pair — it does not share Button's.** Ticket #56
+   left this open because Input-field's node still carried a stale three-state
+   scale with Hover *darker* than Active, backwards from Button/Outline. #58
+   re-fetched the node (3705:4402) expecting Figma to have re-bound it onto the
+   shared scale now that it carries a fourth state (Selected). It hadn't: Default
+   matches Button's Default (stone-300, so it still reads the shared `border`
+   token), but Hover (stone-300 → stone-500) and Active (→ a new value, added
+   this ticket as primitive `stone-600`) are pixel-different from Button/Outline's
+   Hover (stone-400) and Active (stone-700) — confirmed by fetching both nodes
+   side by side. What *did* get fixed: the ordering bug is gone. Hover (stone-500)
+   is correctly lighter than Active (stone-600) now, the same direction as
+   Button, so this reads as a deliberate, distinct border ramp rather than an
+   unbound leftover. The tokens are therefore staying, permanently, under their
+   own names — `border-input-hover` (stone-500), `border-input-active` (stone-600)
+   and `border-input-selected` (stone-400) — not "provisional," since no further
+   reconciliation is expected.
+
+   **All four states are modelled**, using the same state→CSS-hook semantics
+   Button established in #56, which is presumably the point of the states having
+   been renamed to match: Hover → `:hover`, Active → `:active` (Figma's Active
+   means "being pressed"), Selected → `:focus-within`. Selected is the state whose
+   sample shows a *typed* value (stone-950) rather than the placeholder, i.e. the
+   field has been engaged — which is what `:focus-within` expresses. Note this
+   moved: in the #53 fetch that typed-content tell sat on **Active**, which is why
+   #53/#56 read Active as the focus state; this re-fetch moved it to Selected, so
+   the focus mapping moved with it. Figma labels states, not CSS hooks, so this is
+   still an interpretation and stays flagged for design confirmation.
+
+   **Still open on the design side:** the user's intent was for Input-field to use
+   *the same colours* as Button. It now has the same four state *names*, but every
+   value except Default is one stop lighter than Button's (Hover stone-500 vs
+   stone-400, Active stone-600 vs stone-700, Selected stone-400 vs "no change").
+   Either that is deliberate — input borders and button borders being genuinely
+   different roles — or the variables were bound one step off. Until that is
+   answered the two ramps stay separate, since collapsing them would silently
+   change rendered pixels away from what the design shows.
+
 2. **Figma MCP returns resolved hex only, never variable names.** Every semantic
    token name in `design/tokens.json` is derived by matching a pixel value back to
    a role, not read from Figma's own variables. The names may need aligning with

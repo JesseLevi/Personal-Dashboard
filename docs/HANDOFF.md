@@ -33,9 +33,17 @@ Figma added an **Active** state to `Button/Default` and redistributed the colour
 - **Selected composes with hover/active by construction** (a stated product requirement). It works because Selected touches only `color` while Hover/Active touch only `background-color`/`border-color`. Verified against the compiled stylesheet, not assumed. **Never add an `aria-pressed:bg-*` or `aria-pressed:border-*` override** — that silently kills hover feedback on selected items.
 - Button's Ladle stories went 10 → 2 (`StateMatrix`, args-driven `Playground`). Workbench total is 35.
 
-**`Atom/Input-field` was NOT re-authored** (re-fetched to check). It still carries the pre-rework three-state scale, and its Hover stroke is *darker* than its Active one — the reverse of Button/Outline's new ordering. That inversion is the strongest evidence yet that the node was never re-bound to the reworked variables. It now reads two **provisional** tokens, `border-input-hover` / `border-input-focus`, rather than either component being normalised by guesswork. **Once Figma is reconciled: delete those two tokens** and point the component at `border-hover` / `border-active`.
+**`Atom/Input-field` was NOT re-authored** (re-fetched to check). It still carries the pre-rework three-state scale, and its Hover stroke is *darker* than its Active one — the reverse of Button/Outline's new ordering. That inversion is the strongest evidence yet that the node was never re-bound to the reworked variables. It now reads two **provisional** tokens, `border-input-hover` / `border-input-focus`, rather than either component being normalised by guesswork. **Once Figma is reconciled: delete those two tokens** and point the component at `border-hover` / `border-active`. **Update (#58, same day): re-fetched again — see the section below.** It's no longer provisional.
 
 Still open from this round: Transparent buttons have no hover/active fill in Figma, so they have no pointer affordance at all — flagged, not invented.
+
+## Input-field's own border scale confirmed, not merged into Button's — #58 (2026-07-20)
+
+Re-fetched `Atom/Input-field` (3705:4402) expecting the #56 provisional tokens above to finally collapse onto Button's shared `border-hover`/`border-active`, since the node grew a fourth state (`Selected`) matching Button's shape. **It did not collapse.** Default matches Button's Default (stone-300, shared `border` token), but Hover (stone-500) and Active (a new value, added this ticket as primitive `stone-600`) are still pixel-different from Button/Outline's Hover (stone-400) / Active (stone-700) — confirmed by fetching both nodes side by side. The #56-era ordering bug (Hover darker than Active) **is** fixed — Hover is now correctly lighter than Active, same direction as Button — so this reads as a deliberate, stable, component-specific ramp, not a stale/unbound node. `border-input-focus` is renamed `border-input-active`; `border-input-hover` is unchanged; neither is "provisional" anymore (`docs/design-tokens.md` open question 1 resolved).
+
+Also found: the new `Selected` state changes both border (stone-400) and content text (stone-950, "typed" look) — but that "typed" tell used to be on `Active` (#53's reasoning for the `:focus-within` mapping). It has moved. `:focus-within` still reads `Active` per the ticket's own fallback rule (no state is literally named "Focus"), but the qualitative signal behind that reading has shifted — flagged again, not silently carried forward. `Selected` itself isn't modelled: no interaction affordance on a plain `<input>` is analogous to `aria-pressed`.
+
+Input-field stories cut 4 → 5 per the ticket's fixed list: `States`, `WithLeadingIcon`, `WithTrailingIcon`, `WithBothIcons`, `WithoutIcons` (`Playground`, `WithIconlessButton`, `WithAndWithoutIcon` deleted).
 
 ## Per-state semantic colours — #52 + #53 merged (2026-07-20)
 
@@ -43,11 +51,11 @@ Figma's semantic **variables** were reworked upstream: every colour role now car
 
 - **`docs/design-tokens.md` is the new convention doc** — read it before styling any component. Rule: a role is `role` / `role-hover` / `role-selected`; a component reads state colour from the state token, never from a `dark:` prefix, a hex, or a one-off.
 - **`Atom/Input-field` finally has a real focus state.** The `focus-within:ring-2` from #44 was invented (Figma had no focus state *then*); it now does — `State=Active`, a stone-400 stroke. The ring is gone, replaced by `focus-within:border-border-selected`.
-- **Stories: 10 → 4** for Input-field (`States`, `Playground` with Ladle `args` toggles, `WithIconlessButton`, `WithAndWithoutIcon`). `Playground` is the pattern to copy — boolean permutations belong in Ladle controls, not in one story each.
+- **Stories: 10 → 4** for Input-field (`States`, `Playground` with Ladle `args` toggles, `WithIconlessButton`, `WithAndWithoutIcon`). Superseded by #58 (4 → 5, see below) — the user wanted a fixed list of icon-combo stories instead of one args-driven `Playground`.
 
 **Three things needing the user, all recorded in `docs/design-tokens.md`:**
 
-1. ~~**`border-hover` diverged.**~~ Superseded by #56 — see the section above. Still unresolved on the Figma side, now handled via provisional `border-input-*` tokens.
+1. ~~**`border-hover` diverged.**~~ Superseded by #56, then #58 — see the sections above. Resolved as a deliberate, permanent divergence (`border-input-hover`/`border-input-active`), not a Figma-side gap waiting to close.
 2. **Token names are hex-derived, not Figma-derived.** The Figma MCP returns resolved hex only, never variable names. Every semantic name in `tokens.json` is us matching a pixel value back to a role. Ask the user for the real variable names before the vocabulary calcifies further.
 3. ~~**`surface-hover` (stone-300) now has no consumer.**~~ Resolved by #56: it was re-valued to stone-50 and now backs `Button/White`'s Hover.
 
