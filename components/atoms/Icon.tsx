@@ -7,6 +7,7 @@ import {
   Lightbulb,
   Clock,
   Loader,
+  Broccoli,
   Cake,
   Infinity as InfinityIcon,
   Croissant,
@@ -20,7 +21,7 @@ import {
   Sandwich,
   Columns2,
   ChevronDown,
-  Trash2,
+  Trash,
   Ellipsis,
   Calendar,
   X,
@@ -31,49 +32,32 @@ import {
 } from "lucide-react";
 
 /**
- * Figma "Icons" frame (node-id 3760:6187, 27 icons) has no matching lucide
- * export for the broccoli glyph — verified against the full export list of
- * the installed lucide-react@0.525.0 (no "Broccoli" and no close vegetable
- * equivalent). Drawn by hand at 24x24 with a 2px round-cap/round-join stroke
- * to match the visual weight of the surrounding lucide icons.
- */
-function BroccoliIcon({ size = 24, strokeWidth = 2, ...props }: LucideProps) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M12 13v8" />
-      <path d="M9 21h6" />
-      <circle cx="7.5" cy="7.5" r="3.5" />
-      <circle cx="16.5" cy="7.5" r="3.5" />
-      <circle cx="12" cy="5.5" r="3.5" />
-    </svg>
-  );
-}
-
-/**
  * Stable, dashboard-facing icon vocabulary — one entry per icon in the Figma
- * "Icons" frame, spelling corrected (e.g. `Calandar` -> `Calendar`). This is
- * intentionally decoupled from lucide's own naming (see the map below): the
- * app always speaks `IconName`, and only this file knows which lucide export
- * (or custom SVG) currently backs each one.
+ * "Icons" frame (node-id 3760:6187). As of 2026-07-20 the Figma layer names
+ * were updated to match lucide-react's export names directly (e.g. `Loading`
+ * -> `Loader`, `Sort` -> `Arrow-up-down`, `Dots` -> `Ellipsis`, `Trashcan` ->
+ * `Trash`, `Basket` -> `Shopping-basket`) — for those, `IconName` is a literal
+ * PascalCase of the Figma name and resolves to the identically-named lucide
+ * export, so adding a future icon is a direct lookup, no judgment call.
+ *
+ * Four names remain an intentional exception (verified against the actual
+ * rendered SVG paths, not guessed from the name):
+ * - `CloseSidebar`/`OpenSidebar`: no single-word lucide match exists; Figma
+ *   kept the descriptive name. Backed by `PanelLeftClose`/`PanelLeftOpen`
+ *   (verified: same 3-path structure — rounded rect + divider + chevron).
+ * - `Cross`: a false friend. lucide's literal `Cross` export is a medical/
+ *   plus-sign glyph (single closed path) — visually nothing like Figma's
+ *   2-vector diagonal "X" composition. The verified match is lucide's `X`.
+ * - `Calendar`: Figma's layer is still misspelled `Calandar` (not renamed);
+ *   kept as the established spelling-correction (Architecture §3.1).
  */
 export type IconName =
   | "CloseSidebar"
   | "OpenSidebar"
-  | "Basket"
+  | "ShoppingBasket"
   | "Lightbulb"
   | "Clock"
-  | "Loading"
+  | "Loader"
   | "Broccoli"
   | "Cake"
   | "Infinity"
@@ -84,27 +68,29 @@ export type IconName =
   | "Folder"
   | "Shirt"
   | "ArrowLeft"
-  | "Sort"
+  | "ArrowUpDown"
   | "Sandwich"
   | "Columns"
   | "ChevronDown"
-  | "Trashcan"
-  | "Dots"
+  | "Trash"
+  | "Ellipsis"
   | "Calendar"
   | "Cross"
   | "Notebook"
   | "Star"
   | "Check";
 
-// Figma name -> lucide-react component (custom SVG for the one gap, above).
+// Figma name -> lucide-react component. Verified against lucide-react@1.25.0
+// exports (and, for Cross/Trash/sidebar/basket, against actual rendered SVG
+// path structure — see the exceptions note above).
 const ICONS: Record<IconName, ComponentType<LucideProps>> = {
   CloseSidebar: PanelLeftClose,
   OpenSidebar: PanelLeftOpen,
-  Basket: ShoppingBasket,
+  ShoppingBasket: ShoppingBasket,
   Lightbulb: Lightbulb,
   Clock: Clock,
-  Loading: Loader,
-  Broccoli: BroccoliIcon,
+  Loader: Loader,
+  Broccoli: Broccoli,
   Cake: Cake,
   Infinity: InfinityIcon,
   Croissant: Croissant,
@@ -114,14 +100,14 @@ const ICONS: Record<IconName, ComponentType<LucideProps>> = {
   Folder: Folder,
   Shirt: Shirt,
   ArrowLeft: ArrowLeft,
-  Sort: ArrowUpDown,
+  ArrowUpDown: ArrowUpDown,
   Sandwich: Sandwich,
-  Columns: Columns2,
+  Columns: Columns2, // Columns is a deprecated alias of Columns2 (identical shape) — import the canonical name.
   ChevronDown: ChevronDown,
-  Trashcan: Trash2,
-  Dots: Ellipsis,
+  Trash: Trash,
+  Ellipsis: Ellipsis,
   Calendar: Calendar,
-  Cross: X,
+  Cross: X, // false friend — see exceptions note above.
   Notebook: Notebook,
   Star: Star,
   Check: Check,

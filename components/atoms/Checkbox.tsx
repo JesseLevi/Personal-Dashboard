@@ -1,7 +1,7 @@
 // figma: node-id=3727:4084
 import clsx from "clsx";
-import { Check } from "lucide-react";
 import type { HTMLAttributes } from "react";
+import { Icon } from "./Icon";
 
 export interface CheckboxProps
   extends Omit<HTMLAttributes<HTMLDivElement>, "children"> {
@@ -29,10 +29,7 @@ export function Checkbox({ checked, className, ...props }: CheckboxProps) {
       )}
       {...props}
     >
-      {checked && (
-        // TODO(#12): route the checkmark through the Icon atom once it lands
-        <Check size={20} className="text-accent" aria-hidden="true" />
-      )}
+      {checked && <Icon name="Check" size={20} className="text-accent" />}
     </div>
   );
 }
