@@ -59,7 +59,7 @@ messages/               # i18n message catalogs: nl.json, en.json (ADR-0007)
 
 ### 3.1 Figma → code naming map
 
-Figma contains spelling variants; code uses corrected English. This table is the human-readable view; the canonical machine-readable version lives in **`design/figma-map.json`** (component name ↔ file path ↔ Figma node-id), and **every component file carries its Figma node-id in a header comment** (`// figma: node-id=3670:3261`) so re-syncing a component is mechanical (ADR-0010). Opus must include the relevant mapping in every UI ticket:
+Figma contains spelling variants; code uses corrected English. **`design/figma-map.json` is canonical** (component name ↔ file path ↔ node-id, plus the recorded design discrepancies); this table is only a human-readable summary and may lag it. **Every component file carries its Figma node-id in a header comment** (`// figma: node-id=3670:3261`) so re-syncing is mechanical (ADR-0010). Opus must include the relevant mapping in every UI ticket:
 
 | Figma name | Code |
 |---|---|
@@ -70,7 +70,7 @@ Figma contains spelling variants; code uses corrected English. This table is the
 | `Checkbox` | `components/atoms/Checkbox.tsx` |
 | `Dropdown` | `components/atoms/Dropdown.tsx` |
 | `Button/Toggle` | `components/atoms/ButtonToggle.tsx` |
-| `Icon/*` (27 icons; `Icon/Calandar` → Calendar) | `components/atoms/icons/*` — prefer `lucide-react` equivalents, custom SVG only when no match |
+| `Icon/*` (27 icons) | `components/atoms/Icon.tsx` — one wrapper; Figma layer names are kept identical to `lucide-react` export names |
 | `Card-content/Recipi` | `components/molecules/CardContentRecipe.tsx` |
 | `Card-content/Ingredient` | `components/molecules/CardContentIngredient.tsx` |
 | `Card-content/Ticket` | `components/molecules/CardContentTicket.tsx` |
