@@ -68,6 +68,8 @@ Figma contains spelling variants; code uses corrected English. This table is the
 | `Atom/Tag`, `Tag` | `components/atoms/Tag.tsx` |
 | `Input-field`, `Atom/Input-field` | `components/atoms/InputField.tsx` |
 | `Checkbox` | `components/atoms/Checkbox.tsx` |
+| `Dropdown` | `components/atoms/Dropdown.tsx` |
+| `Button/Toggle` | `components/atoms/ButtonToggle.tsx` |
 | `Icon/*` (27 icons; `Icon/Calandar` → Calendar) | `components/atoms/icons/*` — prefer `lucide-react` equivalents, custom SVG only when no match |
 | `Card-content/Recipi` | `components/molecules/CardContentRecipe.tsx` |
 | `Card-content/Ingredient` | `components/molecules/CardContentIngredient.tsx` |

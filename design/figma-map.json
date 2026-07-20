@@ -9,7 +9,9 @@
     "Atom/Tag": { "path": "components/atoms/Tag.tsx", "nodeId": null },
     "Atom/Input-field": { "path": "components/atoms/InputField.tsx", "nodeId": null },
     "Checkbox": { "path": "components/atoms/Checkbox.tsx", "nodeId": null, "notes": "states: default/checked/unchecked/delete" },
-    "Icon/*": { "path": "components/atoms/Icon.tsx", "nodeId": null, "notes": "single wrapper around lucide-react; Figma 'Calandar' -> Calendar" }
+    "Icon/*": { "path": "components/atoms/Icon.tsx", "nodeId": null, "notes": "single wrapper around lucide-react; Figma 'Calandar' -> Calendar" },
+    "Dropdown": { "path": "components/atoms/Dropdown.tsx", "nodeId": "3705:4446", "notes": "added 2026-07-20 (was missing from initial map); props: Field, Title, Step, Leading-icon, Trekking-icon (= trailing)" },
+    "Button/Toggle": { "path": "components/atoms/ButtonToggle.tsx", "nodeId": "3623:4345", "notes": "added 2026-07-20 (was missing from initial map); props: Text, With text, With icon" }
   },
   "molecules": {
     "Card": { "path": "components/molecules/Card.tsx", "nodeId": null },

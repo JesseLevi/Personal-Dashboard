@@ -8,6 +8,14 @@ Prompts get refined with Claude (chat) + Figma MCP → Fable 5 analyzes `Vision.
 
 Implication: you are not the architecture layer. If a ticket seems to conflict with an existing ADR or with the Figma design system, flag it — don't silently redesign. Architectural decisions belong in `docs/decisions/`, not improvised mid-ticket.
 
+## Ticket workflow: GitHub Project kanban board
+
+Tickets live as issues on `JesseLevi/Personal-Dashboard` (one milestone per phase) and are tracked on the user's GitHub Project kanban board. Rules for Claude Code:
+
+- Work tickets in phase/milestone order and honor the dependencies stated in each ticket body.
+- **When you finish a ticket** (implementation done, checks pass, PR opened/pushed), **move its card to the "In review" column** — via `gh project item-edit`, or flag it for the user if the `project` token scope is missing. Leave the issue open; the user reviews and moves it to Done/closes it.
+- Don't move other cards, reorder the board, or close issues on your own.
+
 ## Tech stack
 
 See `Architecture.md` (authoritative, incl. library choices per ADR) and `Vision.md` §2.5 (rationale). Code-level rules: **Tailwind v4 utility classes only** — no inline styles, no ad-hoc hex values. **All data access goes through Next.js server code** (server components/actions) — the browser never talks to Supabase directly, and `service_role` never leaves server/worker modules (ADR-0002/0003).
