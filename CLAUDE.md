@@ -39,6 +39,17 @@ Rules:
 - **Variants via CVA**: Figma variant properties (Style, Type) become CVA props; **State (Hover/Active) becomes CSS pseudo-classes, never props**; Figma booleans (`With icon`) become optional props; Figma SLOT nodes become `children`/named slots. Icons go through the `Icon` atom (lucide-react).
 - **Component update loop** (ADR-0010): node-id from `design/figma-map.json` → fetch via MCP → update CVA classes/structure → Ladle screenshot diff → PR. Details in `Architecture.md` §3.3.
 
+### Component code conventions (house style — locked in by the Phase 2 atoms)
+
+These exist because the first parallel component work diverged on each of the points below. Follow them so components read as one hand:
+
+- **Server Component by default.** A presentational atom/molecule (no event handlers, no hooks) must NOT carry `"use client"`. Interactivity is wired by the composing molecule/organism, not baked into the leaf atom. Add `"use client"` only when the component itself owns state/handlers.
+- **`className` merging is not ad-hoc.** Variant components use `cva()` and pass caller `className` through its `class`/`className` arg. Non-variant components merge with **`clsx`** (already a dependency). Never concatenate class strings by hand, and never drop a caller's `className` on the floor.
+- **Icons go through the `Icon` atom only.** `Icon` is the single module that imports `lucide-react`; every other component renders icons as `<Icon name="…" />`. The `IconName` union is the Figma vocabulary (spelling-corrected, e.g. `Calendar` not `Calandar`), deliberately decoupled from lucide's export names — a lucide rename touches only `Icon.tsx`. Decorative icons get `aria-hidden`; an icon that IS the control's label gets its accessible name on the wrapping control.
+- **Accessibility is part of the atom.** Form-shaped presentational atoms expose semantics: e.g. `Checkbox` renders `role="checkbox"` + `aria-checked` rather than a bare styled `<div>` or a misleading `readOnly` native input. Decide input-vs-role deliberately and note it in the PR.
+- **Ladle stories use Tailwind utility classes, never inline `style={{…}}`** — even though stories are dev-only, they showcase the design system and must model correct usage (token classes, not raw px/hex). Delete the placeholder `Welcome.stories.tsx` once a real story exists (done).
+- **Don't invent Figma states that aren't in the fetched node.** If `design/figma-map.json` notes a variant/state the dev-ready node doesn't actually contain (e.g. Checkbox's "delete"), build only what Figma exposes and leave the gap flagged in the map note for triage — never freelance the missing state (reinforces the "never build what isn't in Figma" rule above).
+
 ## Design tokens: primitive → semantic → Tailwind v4 (ADR-0010)
 
 Pipeline: Figma variables → `design/tokens.json` (synced via `pnpm sync:tokens`) → generated `app/theme.css` (Tailwind v4 `@theme`) → utility classes. Never hand-edit generated theme files; never use a raw value where a semantic token exists.

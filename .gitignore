@@ -22,3 +22,6 @@ test-results/
 
 # os
 .DS_Store
+
+# claude code worktrees (transient agent isolation)
+.claude/worktrees/
