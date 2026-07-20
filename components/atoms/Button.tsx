@@ -34,30 +34,40 @@ import { Icon, type IconName } from "./Icon";
  * Per-state fills/text, read from the fetched node and resolved to primitives
  * via design/tokens.json (exact Figma hex values live in design/figma-map.json,
  * never in component source — check-server-only.sh enforces that). Re-fetched
- * 2026-07-20 for ticket #52 (Figma reworked every colour role to carry a
- * per-state Default/Hover/Selected variation instead of Default + one ad-hoc
- * hover) — the state matrix below is what that re-fetch actually returned,
- * confirming the ticket's own table verbatim:
- * - Filled: bg stone-200 (surface-raised), text stone-500 (text-muted);
- *   hover bg stone-400 (surface-raised-hover — changed from stone-300 this
- *   ticket), text unchanged; selected bg stone-300 (surface-raised-selected —
- *   changed from "unchanged" this ticket), text stone-950 (text).
- * - White: bg white (surface), text text-muted; hover identical to default
- *   (Figma's Hover node resolves to the same fill/text as Default — no
- *   override needed); selected bg stone-50 (surface-selected — changed from
- *   "unchanged" this ticket), text -> text (stone-950).
- * - Transparent: no fill (bg-transparent), text-muted; hover identical to
- *   default; selected text -> text (no fill change, matches Figma).
- * - Outline: bg-transparent, 1px border-border (stone-300), text-muted;
- *   hover border -> stone-700 (border-hover-strong — changed from stone-500
- *   this ticket); selected border -> stone-400 (border-selected — changed
- *   from "reverts to border-border" this ticket), text -> text.
- * - Destructive ("Distructive" in Figma): bg red-50 (priority-urgent-bg),
- *   text red-400 (priority-urgent) for Default; hover bg -> red-200
- *   (priority-urgent-bg-hover) and selected bg -> red-100
- *   (priority-urgent-bg-selected) — both new this ticket, previously this
- *   style had no state-specific override at all; text stays priority-urgent
- *   in every state (Figma's Distructive text colour never changes).
+ * 2026-07-20 for ticket #56, which supersedes #52's matrix: Figma added a
+ * FOURTH state (Active) and redistributed the values. What #52 modelled as
+ * Hover is now Active; Hover took a milder new value; and Selected no longer
+ * changes the background at all — it only darkens the text.
+ * - Filled: bg surface-raised, text text-muted; hover bg surface-raised-hover;
+ *   active bg surface-raised-active; selected keeps the default bg and only
+ *   moves text -> text.
+ * - White: bg surface, text text-muted; hover bg surface-hover; active bg
+ *   surface-active; selected keeps the default bg, text -> text.
+ * - Transparent: no fill, text-muted; selected text -> text. Figma defines no
+ *   fill change for its Hover or Active nodes, so none is invented — meaning a
+ *   transparent button has no pointer affordance at all. Flagged in
+ *   design/figma-map.json rather than papered over with a made-up tint.
+ * - Outline: bg-transparent, 1px border-border, text-muted; hover border ->
+ *   border-hover; active border -> border-active; selected keeps the default
+ *   border, text -> text.
+ * - Destructive ("Distructive" in Figma): bg priority-urgent-bg, text
+ *   priority-urgent; hover bg -> priority-urgent-bg-hover; active bg ->
+ *   priority-urgent-bg-active; Selected is identical to Default (Figma changes
+ *   neither fill nor text), so this style gets no aria-pressed override.
+ *
+ * Selected composes with Hover and Active by construction, which is a stated
+ * product requirement (a selected button must still react to the pointer).
+ * That works because the two concerns touch disjoint CSS properties: Selected
+ * only sets `color`, Hover/Active only set `background-color`/`border-color`.
+ * So no `aria-pressed:bg-*` or `aria-pressed:border-*` override may be added
+ * here — doing so would re-introduce the conflict.
+ *
+ * `active:` is the right hook for Figma's new Active state: CSS `:active`
+ * means "currently being pressed", which is exactly what that state depicts.
+ * Ticket #42 removed `active:` from this component, but for a different
+ * reason that still stands — it was being misused there for the *persistent*
+ * Selected state, which is `aria-pressed`, not `:active`. Both hooks now
+ * coexist deliberately; don't "fix" one back into the other.
  *
  * One fetched instance ("Style=Filled, State=Selected") shows uniform 8px/8px
  * root padding instead of the 4px/8px asymmetric padding every other sampled
@@ -82,33 +92,30 @@ import { Icon, type IconName } from "./Icon";
  * (Button.stories.tsx) since hug sizing never has spare space to
  * redistribute in the first place.
  *
- * State colours read from dedicated per-role state tokens (ticket #52 —
- * see docs/design-tokens.md for the role/-hover/-selected convention every
- * future component should follow): `surface-raised-hover` /
- * `surface-raised-selected` (Filled), `surface-selected` (White),
- * `border-hover-strong` / `border-selected` (Outline), and
- * `priority-urgent-bg-hover` / `priority-urgent-bg-selected` (Destructive).
- * `surface-hover` and `border-hover` (the single ad-hoc hover pair #42 added)
- * are no longer read here: `surface-hover` lost its only consumer when
- * Filled's hover diverged from stone-300 to stone-400, and `border-hover`
- * stays reserved for `Atom/Input-field`'s Hover stroke (still stone-500),
- * which has now diverged in value from Outline's Hover stroke (stone-700) —
- * hence the separate `border-hover-strong` rather than changing
- * `border-hover` itself. Open question recorded in docs/design-tokens.md:
- * did one of the two Figma nodes simply not get re-bound to the shared
- * variable, or is the divergence intentional?
+ * State colours read from dedicated per-role state tokens — see
+ * docs/design-tokens.md for the `role` / `role-hover` / `role-active`
+ * convention every future component should follow. The `*-selected` colour
+ * tokens #52 added were removed in #56: Selected no longer has a background
+ * of its own, so those names had no consumer left.
  *
- * Dark mode (ticket #42, extended #52): these are semantic-token classes
+ * `border-hover` (stone-400) is this component's Outline hover.
+ * `Atom/Input-field` reads its own provisional `border-input-hover` /
+ * `border-input-focus` pair instead, because its Figma node still carries the
+ * pre-rework three-state scale — and notably its Hover stroke is *darker*
+ * than its Active one, the reverse of the ordering here, which is the
+ * strongest evidence that node was never re-bound to the reworked variables.
+ * Open question recorded in docs/design-tokens.md; once Figma is reconciled
+ * both components collapse onto one border scale.
+ *
+ * Dark mode (ticket #42, extended #52/#56): these are semantic-token classes
  * only (no `dark:` utility prefixes anywhere below) — light/dark is a
- * token-layer concern. Every token this component reads (`surface-raised`,
- * `surface-raised-hover`, `surface-raised-selected`, `surface-selected`,
- * `surface`, `border`, `border-hover-strong`, `border-selected`, `text`,
- * `text-muted`, `priority-urgent-bg`, `priority-urgent-bg-hover`,
- * `priority-urgent-bg-selected`) carries a dark override in
- * design/tokens.json, emitted by `pnpm sync:tokens` into a
+ * token-layer concern. Every token this component reads carries a dark
+ * override in design/tokens.json, emitted by `pnpm sync:tokens` into a
  * `[data-theme="dark"]` block in app/theme.css. No Figma dark-mode frames
- * exist for this component, so the dark shades are this component's own
- * pick, kept inside Tailwind's stock stone/red scale (never a one-off hex).
+ * exist for this component, so the dark shades are this codebase's own pick,
+ * kept inside Tailwind's stock stone/red scale (never a one-off hex). Known
+ * gap: the destructive hover/active pair both resolve to red-950 in dark
+ * mode, so those states are invisible there.
  *
  * No "Disabled" state exists in the fetched component set, so none is
  * invented here (native `disabled` attribute still works via the `button`
@@ -120,13 +127,14 @@ const buttonVariants = cva(
     variants: {
       variant: {
         filled:
-          "bg-surface-raised text-text-muted hover:bg-surface-raised-hover aria-pressed:bg-surface-raised-selected aria-pressed:text-text",
+          "bg-surface-raised text-text-muted hover:bg-surface-raised-hover active:bg-surface-raised-active aria-pressed:text-text",
         outline:
-          "border border-border bg-transparent text-text-muted hover:border-border-hover-strong aria-pressed:border-border-selected aria-pressed:text-text",
-        white: "bg-surface text-text-muted aria-pressed:bg-surface-selected aria-pressed:text-text",
+          "border border-border bg-transparent text-text-muted hover:border-border-hover active:border-border-active aria-pressed:text-text",
+        white:
+          "bg-surface text-text-muted hover:bg-surface-hover active:bg-surface-active aria-pressed:text-text",
         transparent: "bg-transparent text-text-muted aria-pressed:text-text",
         destructive:
-          "bg-priority-urgent-bg text-priority-urgent hover:bg-priority-urgent-bg-hover aria-pressed:bg-priority-urgent-bg-selected",
+          "bg-priority-urgent-bg text-priority-urgent hover:bg-priority-urgent-bg-hover active:bg-priority-urgent-bg-active",
       },
     },
     defaultVariants: {

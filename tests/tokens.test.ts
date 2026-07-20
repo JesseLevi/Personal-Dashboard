@@ -59,25 +59,43 @@ describe("token → theme pipeline (ADR-0010)", () => {
     expect(darkBlock).not.toContain("--color-surface-muted:");
   });
 
-  it("emits the per-state Button token tier added for ticket #52 (Default/Hover/Selected)", () => {
+  it("emits the four-state Button token tier (ticket #56: Default/Hover/Active, Selected is text-only)", () => {
     const css = generateTheme(tokens);
     // Light values, resolved from the re-fetched node 3623:4346.
-    expect(css).toContain("--color-surface-selected: var(--color-stone-50);");
-    expect(css).toContain("--color-surface-raised-hover: var(--color-stone-400);");
-    expect(css).toContain("--color-surface-raised-selected: var(--color-stone-300);");
-    expect(css).toContain("--color-border-hover-strong: var(--color-stone-700);");
-    expect(css).toContain("--color-border-selected: var(--color-stone-400);");
-    expect(css).toContain("--color-priority-urgent-bg-hover: var(--color-red-200);");
-    expect(css).toContain("--color-priority-urgent-bg-selected: var(--color-red-100);");
+    expect(css).toContain("--color-surface-hover: var(--color-stone-50);");
+    expect(css).toContain("--color-surface-active: var(--color-stone-100);");
+    expect(css).toContain("--color-surface-raised-hover: var(--color-stone-300);");
+    expect(css).toContain("--color-surface-raised-active: var(--color-stone-400);");
+    expect(css).toContain("--color-border-hover: var(--color-stone-400);");
+    expect(css).toContain("--color-border-active: var(--color-stone-700);");
+    expect(css).toContain("--color-priority-urgent-bg-hover: var(--color-red-100);");
+    expect(css).toContain("--color-priority-urgent-bg-active: var(--color-red-200);");
   });
 
-  it("keeps border-hover at stone-500 for Atom/Input-field even though Atom/Button's Outline hover diverged to stone-700 (border-hover-strong)", () => {
+  it("drops the *-selected colour tokens: Selected reuses the default background and only darkens the text", () => {
     const css = generateTheme(tokens);
-    expect(css).toContain("--color-border-hover: var(--color-stone-500);");
+    for (const dead of [
+      "--color-surface-selected:",
+      "--color-surface-raised-selected:",
+      "--color-border-selected:",
+      "--color-priority-urgent-bg-selected:",
+    ]) {
+      expect(css).not.toContain(dead);
+    }
   });
 
-  it("retains surface-hover in the theme even though ticket #52 removed its only consumer (Atom/Button moved to surface-raised-hover)", () => {
+  it("keeps Atom/Input-field's provisional border tokens separate from Atom/Button's shared scale", () => {
     const css = generateTheme(tokens);
-    expect(css).toContain("--color-surface-hover: var(--color-stone-300);");
+    // Input-field's node still carries the pre-rework scale, where Hover is
+    // DARKER than Active — the reverse of Button/Outline. Kept as fetched
+    // under component-scoped names until Figma is reconciled (see
+    // docs/design-tokens.md); if these two ever equal the shared scale, the
+    // tokens should be deleted rather than left as aliases.
+    const light = css.slice(0, css.indexOf('[data-theme="dark"]'));
+    expect(light).toContain("--color-border-input-hover: var(--color-stone-500);");
+    expect(light).toContain("--color-border-input-focus: var(--color-stone-400);");
+    // Not collapsed onto Button's Outline hover (stone-400) — the divergence
+    // is real and deliberate until Figma is reconciled.
+    expect(light).not.toContain("--color-border-input-hover: var(--color-stone-400);");
   });
 });
