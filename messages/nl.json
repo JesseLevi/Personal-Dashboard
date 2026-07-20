@@ -1,5 +1,23 @@
 {
   "home": {
-    "title": "Personal Dashboard"
+    "title": "Personal Dashboard",
+    "loggedInAs": "Ingelogd als {email}"
+  },
+  "auth": {
+    "title": "Inloggen",
+    "emailLabel": "E-mailadres",
+    "passwordLabel": "Wachtwoord",
+    "signIn": "Inloggen",
+    "magicLinkLabel": "Of log in met een magic link",
+    "sendMagicLink": "Stuur magic link",
+    "magicLinkSent": "Check je e-mail voor de inloglink.",
+    "signOut": "Uitloggen",
+    "errors": {
+      "invalid-input": "Vul een geldig e-mailadres en wachtwoord in.",
+      "invalid-credentials": "E-mailadres of wachtwoord klopt niet.",
+      "magic-link-failed": "De magic link kon niet worden verstuurd. Probeer het later opnieuw.",
+      "magic-link-invalid": "Deze inloglink is ongeldig of verlopen. Vraag een nieuwe aan.",
+      "generic": "Er ging iets mis. Probeer het opnieuw."
+    }
   }
 }
