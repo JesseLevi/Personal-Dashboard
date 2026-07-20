@@ -10,25 +10,18 @@ Read on demand, not by default: `docs/phase-log.md` (what infrastructure exists)
 - `main` has Phase 0 (foundation) + Phase 1 login/logout + **all Phase 2 atoms and the Card molecule**. CI is **green** on both jobs, including the db job (supabase + pgTAP + RLS coverage).
 - Merged today: PR #37 (Icon, Tag, Checkbox, Button, InputField, Step), then #38 Card (#17), #39 Dropdown (#34), #40 ButtonToggle (#35) — all squash-merged, CI green on each.
 - Built so far: `components/atoms/` Button, ButtonToggle, Checkbox, Dropdown, Icon, InputField, Tag · `components/molecules/` Card, Step.
-- Board: 10 tickets **In review** (#7 login, #12–#18 components, #34, #35), 19 in Backlog, #26 Done. Issues stay open until the user closes them.
+- Board: #41–#45 auto-moved to **Done** (see process note below); #7, #12–#18, #34, #35 sit in **In review** awaiting the user; the rest is Backlog. Issues normally stay open until the user closes them.
 
-## In flight right now (2026-07-20, design-review round)
+## Design-review round #41–#45 — all merged (2026-07-20)
 
-The user design-reviewed the merged Phase 2 components in Ladle and filed five fix tickets. **Five Sonnet agents were spawned in worktrees off `main` @ f97df7f**, one per ticket, each pushing a branch but deliberately opening no PR:
+All five fix tickets are on `main` (PRs #46–#48, #50, #51), each CI-green. What the round actually uncovered, beyond the reported symptoms:
 
-| Ticket | Branch | Scope |
-|---|---|---|
-| #41 | `fix/41-ladle-chrome` | Ladle chrome → surface/primary bg, color/secondary text+icons |
-| #42 | `fix/42-button-dark-selected` | dark-mode tokens don't apply; Figma renamed `Active` → `Selected` |
-| #43 | `fix/43-dropdown` | option content not left-aligned; no open/close interaction |
-| #44 | `fix/44-inputfield` | spacing wrong throughout; input smaller than frame → broken focus ring |
-| #45 | `fix/45-checkbox` | check icon renders purple (should be `color/stroke/secondary`); no on-click toggle |
+- **`accent` is a phantom token.** Its purple entered the codebase from a *Figma canvas artifact* — the dashed stroke marking a selected component set — not from any design intent. Checkbox used it (#45, removed) and InputField nearly adopted it during this round (#44, caught in review). `accent` is still defined in `design/tokens.json` and still points at `purple-figma`. **Nothing uses it now. Decide whether to delete it** before something reaches for it again.
+- **The dark-mode pipeline did not exist.** #42 built it: `design/tokens.json` gained `{ light, dark }` semantic entries, `scripts/tokens-lib.mjs` gained a dark emission path, and `app/theme.css` now carries an unlayered `[data-theme="dark"]` block. Only the tokens Button uses have dark values — the rest is a flagged gap for a future token-sync pass. Nothing in the Next.js app sets `data-theme` yet; only Ladle does. An app-level theme switch is an open architectural decision.
+- **`Dropdown` is the first `"use client"` atom** (#43), a deliberate exception to the Server-Component default because a disclosure owns its own open state. `Checkbox` (#45) went the other way — stayed a Server Component, gained interactivity by switching its host element to `<button role="checkbox">`, keeping state composer-owned. Those two precedents together are the house pattern now: *own state only when the behaviour is identical for every caller.*
+- **Ladle chrome theming works in the dev server but silently no-ops in `ladle:build`** (`appendToHead` emits an absolute `/@fs/` path). Filed as **#49** — it blocks/relates to #6, whose screenshot baselines run against the built output.
 
-**#42 owns token changes this round** — the other four were told not to edit `design/tokens.json` / `app/theme.css` and to flag gaps instead. #45 may add `color/stroke/secondary` if it is genuinely missing.
-
-Three of these (#43 Dropdown, #45 Checkbox, and possibly #44) force a **deliberate client/server decision**: CLAUDE.md keeps presentational atoms as Server Components with interactivity wired by the composer, but a disclosure and a toggle arguably own their own state. Each agent was told to choose explicitly and justify it — **review those decisions for consistency across the three before merging**, since they set the house precedent.
-
-To resume: check which branches exist (`git ls-remote --heads origin | grep fix/4`), review, open PRs, merge, then move the cards to **In review**. Expect the usual `design/figma-map.json` conflict on whichever merges last.
+**Process note:** the PR bodies used `Fixes #NN`, which auto-closed the issues and moved their cards straight to **Done**, skipping the "In review" step CLAUDE.md reserves for the user. Reopen any of #41–#45 you still want to review.
 
 ## Next actions
 
@@ -50,7 +43,8 @@ These are **Figma-authoring gaps**: the ticket/property list promises something 
 - Worktrees created for subagents branch off **`main`, not the branch you have checked out**. If a delegated ticket needs work that only exists on a feature branch, the agent's worktree will not have it — verify before spawning, or the agent will (correctly) stop and report.
 - `git config user.name/email` is auto-guessed on this machine (`Jesse@mbp-van-jesse.home`); check before attributing commits.
 - Figma spelling variants still live in the file: `Recipi`, `Distructive`, `Trekking-icon` (= trailing). Icon layer names were fixed and now match lucide exports exactly — see `design/figma-map.json`.
-- **Parallel agents all edit `design/figma-map.json`** (and often `messages/*.json`), so the last branch to merge always conflicts there. It resolves line-by-line — keep each agent's own "Built #NN" note, discard the stale placeholder for the components it didn't touch — but expect it and re-run the checks after resolving.
+- **Parallel agents all edit `design/figma-map.json`** (and often `messages/*.json`), so the last branch to merge always conflicts there. Resolve line-by-line, and when two branches both edited the *same* entry (e.g. #42 and #43 both touched `Atom/Button`), **combine the notes — don't pick a side**, or you silently drop one fix's record.
+- **Never rewrite `design/figma-map.json` with `json.dump(indent=2)`.** The file uses compact one-line entries; reformatting it turns a two-line conflict into a whole-file one. Edit notes as text.
 - **`pnpm ladle` is `ladle serve`** — `pnpm ladle build` hangs as a dev server. Use **`pnpm ladle:build`** for a non-interactive build; three separate agents hit this trap.
 
 ## Environment still to set up (outside this repo)
