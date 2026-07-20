@@ -10,7 +10,8 @@ Read on demand, not by default: `docs/phase-log.md` (what infrastructure exists)
 - `main` has Phase 0 (foundation) + Phase 1 login/logout + **all Phase 2 atoms and the Card molecule**. CI is **green** on both jobs, including the db job (supabase + pgTAP + RLS coverage).
 - Merged today: PR #37 (Icon, Tag, Checkbox, Button, InputField, Step), then #38 Card (#17), #39 Dropdown (#34), #40 ButtonToggle (#35) — all squash-merged, CI green on each.
 - Built so far: `components/atoms/` Button, ButtonToggle, Checkbox, Dropdown, Icon, InputField, Tag · `components/molecules/` Card, Step.
-- Board: #41–#45 auto-moved to **Done** (see process note below); #7, #12–#18, #34, #35 sit in **In review** awaiting the user; the rest is Backlog. Issues normally stay open until the user closes them.
+- Board: #41–#45 auto-moved to **Done** (see process note below); #7, #12–#18, #34, #35, **#52, #53** sit in **In review** awaiting the user; the rest is Backlog. Issues normally stay open until the user closes them.
+- `feat/phase2-atoms` is **stale** — its 9 commits all reached `main` via squash merges, so `git log main..feat/phase2-atoms` still lists them. Work on `main`; the branch can be deleted.
 
 ## Design-review round #41–#45 — all merged (2026-07-20)
 
@@ -22,6 +23,26 @@ All five fix tickets are on `main` (PRs #46–#48, #50, #51), each CI-green. Wha
 - **Ladle chrome theming works in the dev server but silently no-ops in `ladle:build`** (`appendToHead` emits an absolute `/@fs/` path). Filed as **#49** — it blocks/relates to #6, whose screenshot baselines run against the built output.
 
 **Process note:** the PR bodies used `Fixes #NN`, which auto-closed the issues and moved their cards straight to **Done**, skipping the "In review" step CLAUDE.md reserves for the user. Reopen any of #41–#45 you still want to review.
+
+## Per-state semantic colours — #52 + #53 merged (2026-07-20)
+
+Figma's semantic **variables** were reworked upstream: every colour role now carries a Default/Hover/Selected variation. Our token layer only had Default plus one ad-hoc `-hover` for two roles, so `Atom/Button` was rendering three wrong colours (Filled hover/selected, White selected, Outline hover/selected, and Destructive had no hover or selected at all).
+
+- **`docs/design-tokens.md` is the new convention doc** — read it before styling any component. Rule: a role is `role` / `role-hover` / `role-selected`; a component reads state colour from the state token, never from a `dark:` prefix, a hex, or a one-off.
+- **`Atom/Input-field` finally has a real focus state.** The `focus-within:ring-2` from #44 was invented (Figma had no focus state *then*); it now does — `State=Active`, a stone-400 stroke. The ring is gone, replaced by `focus-within:border-border-selected`.
+- **Stories: 10 → 4** for Input-field (`States`, `Playground` with Ladle `args` toggles, `WithIconlessButton`, `WithAndWithoutIcon`). `Playground` is the pattern to copy — boolean permutations belong in Ladle controls, not in one story each.
+
+**Three things needing the user, all recorded in `docs/design-tokens.md`:**
+
+1. **`border-hover` diverged.** `Input-field` Hover stroke is stone-500, `Button/Outline` Hover is now stone-700. Two roles that shared one token pulled apart — probably one node wasn't re-bound to the updated variable. Both kept as fetched; `border-hover-strong` was added rather than normalising one to the other.
+2. **Token names are hex-derived, not Figma-derived.** The Figma MCP returns resolved hex only, never variable names. Every semantic name in `tokens.json` is us matching a pixel value back to a role. Ask the user for the real variable names before the vocabulary calcifies further.
+3. **`surface-hover` (stone-300) now has no consumer.** Not deleted — the user decides. Same open question as the phantom `accent` token above.
+
+Smaller, non-blocking:
+
+- `hover:` and `focus-within:` now both write `border-color` on the Input-field container. Tailwind orders `focus-within` *before* `hover`, so hovering an already-focused field shows the hover colour, not the focus colour. Figma says nothing about that combination.
+- Several new dark values collide with their own default (`surface-raised-selected` = `surface-raised` = stone-800; both destructive states = red-950), so those states are invisible in dark mode. All dark values are still placeholders — no Figma dark frames exist — and dark mode isn't wired into the app yet.
+- A 1px border-colour change is a weak keyboard-focus affordance. Figma offers nothing stronger; flagged rather than compensated for with an invented ring.
 
 ## Next actions
 
