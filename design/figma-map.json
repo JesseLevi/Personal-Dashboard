@@ -5,25 +5,83 @@
     "status": "pre-Phase-2: paths reserved, nodeId filled in when each component is built"
   },
   "atoms": {
-    "Atom/Button": { "path": "components/atoms/Button.tsx", "nodeId": "3623:4346", "notes": "CVA variant=filled|outline|white|transparent|destructive (Figma 'Distructive'); Hover/Active are CSS states. 'With icon'/'With text' modelled as presence of the `icon`/`children` props; icon-only requires aria-label (type-enforced). Figma's Filled/Active instance has drifted padding (uniform 8px vs 4px/8px elsewhere) — treated as auto-layout drift, not modelled. Hover fill/stroke use the dedicated surface-hover / border-hover semantic tokens (added 2026-07-20; same stone-300/stone-500 primitives, named for their role)." },
-    "Atom/Tag": { "path": "components/atoms/Tag.tsx", "nodeId": "3626:4515", "notes": "Figma 'Color' axis → semantic CVA variant: Grey→neutral, Red→urgent, Yellow→medium, Blue→mid, Green→low (matches card priority enum)" },
-    "Atom/Input-field": { "path": "components/atoms/InputField.tsx", "nodeId": "3705:4402", "notes": "Figma 'Trekking-icon' is a misnomer for the TRAILING icon → code prop `trailingIcon`. 'Field'+'Title' → `label` (requires `id`, type-enforced, since an RSC cannot useId); 'Content' → native placeholder/value; 'Button' SLOT → `button` named slot (not a hardcoded Button instance, per CLAUDE.md). Only Hover differs from Default on the container (border stone-300→stone-500); the fetched 'Active' instance's container is identical to Default, its only diff being the content text fill (stone-300 placeholder → stone-950 typed) — already reproduced by the input's existing text-text + placeholder:text-placeholder classes, no new CSS needed. Placeholder and hover border use the dedicated text-placeholder / border-hover semantic tokens (added 2026-07-20; border-hover is shared with Atom/Button). FIXED 2026-07-20 (#44): re-verified every padding/gap against the dev-ready node — all Tailwind values (p-1/gap-3 container, gap-3 content, pl-2/pt-2/gap-2 leading+text, py-2/pr-2 trailing-icon, gap-2 root) were already numerically correct; the reported 'wrong spacing' was the container's `items-center`, which centers the shorter 32px leading+text column inside the row's real 40px height (set by the trailing icon), adding a phantom ~4px offset absent from Figma's implicit top alignment — corrected to `items-start`, restoring the uniform 12px inset Figma's numbers imply on all four sides. Also fixed: the native per-input focus ring (tiny, offset inside the pill, looked broken) is now suppressed (`focus:outline-none` on the `<input>`) in favor of a focus-within ring on the whole container. TOKEN GAP FLAGGED: the Input-field component set (Default/Hover/Active) has no Focus state to source a color from, so the ring reuses the existing `accent` token by analogy to Checkbox's checked state (same 'accent = active affordance' precedent) rather than inventing a new token or hex — needs design review/an explicit Figma Focus state to confirm or replace." },
-    "Checkbox": { "path": "components/atoms/Checkbox.tsx", "nodeId": "3727:4084", "notes": "Checked=No/Yes prop; fetched node has no 'delete' state — needs triage before a future ticket adds it (#16)" },
-    "Icon/*": { "path": "components/atoms/Icon.tsx", "nodeId": "3760:6187", "notes": "single wrapper around lucide-react@1.25.0+ (upgraded 2026-07-20 for the Broccoli icon, added upstream between v1.14–1.15). Figma layer names are kept in sync with lucide export names (renamed 2026-07-20, refined same day: Clock→Alarm-clock-check, Cake→Cake-slice, List→Scroll, Folder→Folder-closed, Columns→Columns-3, Cross→X, Calandar typo fixed to Calendar) so IconName is a direct PascalCase lookup — every entry verified against rendered SVG structure, not name alone (caught 3 real bugs this way: Columns was previously mismapped to Columns2 — a 2-column/1-divider icon — when Figma's vector has 2 dividers = 3 columns; Cross was mapped by literal name to lucide's medical-cross glyph instead of X; the sidebar-panel icons (nodes 3629:126 / 3687:4453) went through an open/close label swap then a left/right correction — the app's sidebar sits on the left, so they're now 'Panel-left-close'/'Panel-left-open', matching the verified divider-at-x=9 geometry — both fixed 2026-07-20 by the user). No open discrepancies remain." },
-    "Dropdown": { "path": "components/atoms/Dropdown.tsx", "nodeId": "3705:4446", "notes": "Built #34. Single COMPONENT (no State/variant axis, unlike Input-field's component set). 'Field'+'Title' → `label` (requires `id`, type-enforced, same idiom as InputField); SLOT 'Slot' (always present, not gated by a bool) → required `children`. `Step`/`Leading-icon`/`Trekking-icon` were dangling propertyDefinitions (unbound to any layer) flagged at build time and removed from the Figma component 2026-07-20 after triage — code already matched, nothing to update. No hover/active override added (no State property exists on this component). role=\"group\" + aria-labelledby chosen over role=\"listbox\" since slot children are caller-supplied and not guaranteed role=\"option\". Colours reuse existing tokens with no gap: white→surface, stone-300→border, stone-500→text-muted." },
-    "Button/Toggle": { "path": "components/atoms/ButtonToggle.tsx", "nodeId": "3623:4345", "notes": "Built #35 2026-07-20. No State/Active variant axis in the fetched node — propertyDefinitions are only Text (default 'Categorie ', trailing space is a Figma authoring artifact, dropped), With text, With icon; the pressed look in the fetched demo is a plain rectangle (white, rounded 6, inset 4px) layered behind one nested Atom/Button instance, not a component property — implemented as aria-pressed + CSS pseudo-class (group-aria-pressed:), confirming the ticket's default assumption over a props-driven variant. Fetched node's actual content is a fixed demo of 5 icon-only Atom/Button instances (Infinity/Croissant/Sandwich/Broccoli/Cake-slice) sharing one grey track (root fill stone-200/surface-raised) with one pressed — that grouped-track composition is NOT modelled by this atom (out of scope for #35; flagged for a future toggle-group molecule/organism ticket). This atom instead models one segment: outer root always bg-surface-raised (rounded-lg, 4px padding all sides, 40px tall, matches the fetched root exactly), inner span is the highlight capsule (32x32, rounded-md) that fills bg-surface only when aria-pressed. Icon/text colour does not change between pressed/unpressed in the fetched node (unlike Atom/Button's Filled→Active), so no text-colour pseudo-class was added, only background. No Hover instance is sampled for Button/Toggle itself — none invented; flag before adding one. The nested Atom/Button instance's own override padding ('0 12' inside a fixed 32px width) doesn't reconcile with a 24px icon — treated as the same kind of auto-layout drift Atom/Button already documents for its Filled/Active instance; icon/text spacing instead reuses Atom/Button's verified recipe (icon-only 8/8, text-only 12/12, both 8 left/12 right). Figma exposes no icon-swap property at the Button/Toggle level (only Text/With text/With icon) — `icon` is added as a normal optional prop (mirrors Atom/Button's `icon`) so the atom is usable beyond the one hardcoded demo icon. Figma's Text default is user-facing but is NOT hardcoded in the component (children is always caller-supplied, matching Atom/Button's own no-baked-default precedent) — reproduced only in messages/en.json + messages/nl.json (`components.buttonToggle.defaultLabel`) and the Ladle story, so a translated default never has to be fetched with a server-only i18n call inside a leaf atom that a Client Component composer needs to import directly for onClick/aria-pressed wiring." }
+    "Atom/Button": {
+      "path": "components/atoms/Button.tsx",
+      "nodeId": "3623:4346",
+      "notes": "CVA variant=filled|outline|white|transparent|destructive (Figma 'Distructive'); Hover/Active are CSS states. 'With icon'/'With text' modelled as presence of the `icon`/`children` props; icon-only requires aria-label (type-enforced). Figma's Filled/Active instance has drifted padding (uniform 8px vs 4px/8px elsewhere) — treated as auto-layout drift, not modelled. Hover fill/stroke use the dedicated surface-hover / border-hover semantic tokens (added 2026-07-20; same stone-300/stone-500 primitives, named for their role)."
+    },
+    "Atom/Tag": {
+      "path": "components/atoms/Tag.tsx",
+      "nodeId": "3626:4515",
+      "notes": "Figma 'Color' axis → semantic CVA variant: Grey→neutral, Red→urgent, Yellow→medium, Blue→mid, Green→low (matches card priority enum)"
+    },
+    "Atom/Input-field": {
+      "path": "components/atoms/InputField.tsx",
+      "nodeId": "3705:4402",
+      "notes": "Figma 'Trekking-icon' is a misnomer for the TRAILING icon → code prop `trailingIcon`. 'Field'+'Title' → `label` (requires `id`, type-enforced, since an RSC cannot useId); 'Content' → native placeholder/value; 'Button' SLOT → `button` named slot (not a hardcoded Button instance, per CLAUDE.md). Only Hover differs from Default on the container (border stone-300→stone-500); the fetched 'Active' instance's container is identical to Default, its only diff being the content text fill (stone-300 placeholder → stone-950 typed) — already reproduced by the input's existing text-text + placeholder:text-placeholder classes, no new CSS needed. Placeholder and hover border use the dedicated text-placeholder / border-hover semantic tokens (added 2026-07-20; border-hover is shared with Atom/Button). FIXED 2026-07-20 (#44): re-verified every padding/gap against the dev-ready node — all Tailwind values (p-1/gap-3 container, gap-3 content, pl-2/pt-2/gap-2 leading+text, py-2/pr-2 trailing-icon, gap-2 root) were already numerically correct; the reported 'wrong spacing' was the container's `items-center`, which centers the shorter 32px leading+text column inside the row's real 40px height (set by the trailing icon), adding a phantom ~4px offset absent from Figma's implicit top alignment — corrected to `items-start`, restoring the uniform 12px inset Figma's numbers imply on all four sides. Also fixed: the native per-input focus ring (tiny, offset inside the pill, looked broken) is now suppressed (`focus:outline-none` on the `<input>`) in favor of a focus-within ring on the whole container. TOKEN GAP FLAGGED: the Input-field component set (Default/Hover/Active) has no Focus state to source a colour from, so the ring reuses `border-hover` — the same design-sourced token the container already uses for Hover, making focus read as a stronger form of the same affordance. Deliberately NOT `accent`: #45 established that accent's purple entered the codebase from a Figma canvas artifact (the dashed stroke marking a selected component set), never from design intent, and removed it from Checkbox — reusing it here would have re-introduced the wrong colour. An explicit Figma Focus state would still be better than borrowing Hover's token."
+    },
+    "Checkbox": {
+      "path": "components/atoms/Checkbox.tsx",
+      "nodeId": "3727:4084",
+      "notes": "Checked=No/Yes prop; fetched node has no 'delete' state — needs triage before a future ticket adds it (#16)"
+    },
+    "Icon/*": {
+      "path": "components/atoms/Icon.tsx",
+      "nodeId": "3760:6187",
+      "notes": "single wrapper around lucide-react@1.25.0+ (upgraded 2026-07-20 for the Broccoli icon, added upstream between v1.14–1.15). Figma layer names are kept in sync with lucide export names (renamed 2026-07-20, refined same day: Clock→Alarm-clock-check, Cake→Cake-slice, List→Scroll, Folder→Folder-closed, Columns→Columns-3, Cross→X, Calandar typo fixed to Calendar) so IconName is a direct PascalCase lookup — every entry verified against rendered SVG structure, not name alone (caught 3 real bugs this way: Columns was previously mismapped to Columns2 — a 2-column/1-divider icon — when Figma's vector has 2 dividers = 3 columns; Cross was mapped by literal name to lucide's medical-cross glyph instead of X; the sidebar-panel icons (nodes 3629:126 / 3687:4453) went through an open/close label swap then a left/right correction — the app's sidebar sits on the left, so they're now 'Panel-left-close'/'Panel-left-open', matching the verified divider-at-x=9 geometry — both fixed 2026-07-20 by the user). No open discrepancies remain."
+    },
+    "Dropdown": {
+      "path": "components/atoms/Dropdown.tsx",
+      "nodeId": "3705:4446",
+      "notes": "Built #34. Single COMPONENT (no State/variant axis, unlike Input-field's component set). 'Field'+'Title' → `label` (requires `id`, type-enforced, same idiom as InputField); SLOT 'Slot' (always present, not gated by a bool) → required `children`. `Step`/`Leading-icon`/`Trekking-icon` were dangling propertyDefinitions (unbound to any layer) flagged at build time and removed from the Figma component 2026-07-20 after triage — code already matched, nothing to update. No hover/active override added (no State property exists on this component). role=\"group\" + aria-labelledby chosen over role=\"listbox\" since slot children are caller-supplied and not guaranteed role=\"option\". Colours reuse existing tokens with no gap: white→surface, stone-300→border, stone-500→text-muted."
+    },
+    "Button/Toggle": {
+      "path": "components/atoms/ButtonToggle.tsx",
+      "nodeId": "3623:4345",
+      "notes": "Built #35 2026-07-20. No State/Active variant axis in the fetched node — propertyDefinitions are only Text (default 'Categorie ', trailing space is a Figma authoring artifact, dropped), With text, With icon; the pressed look in the fetched demo is a plain rectangle (white, rounded 6, inset 4px) layered behind one nested Atom/Button instance, not a component property — implemented as aria-pressed + CSS pseudo-class (group-aria-pressed:), confirming the ticket's default assumption over a props-driven variant. Fetched node's actual content is a fixed demo of 5 icon-only Atom/Button instances (Infinity/Croissant/Sandwich/Broccoli/Cake-slice) sharing one grey track (root fill stone-200/surface-raised) with one pressed — that grouped-track composition is NOT modelled by this atom (out of scope for #35; flagged for a future toggle-group molecule/organism ticket). This atom instead models one segment: outer root always bg-surface-raised (rounded-lg, 4px padding all sides, 40px tall, matches the fetched root exactly), inner span is the highlight capsule (32x32, rounded-md) that fills bg-surface only when aria-pressed. Icon/text colour does not change between pressed/unpressed in the fetched node (unlike Atom/Button's Filled→Active), so no text-colour pseudo-class was added, only background. No Hover instance is sampled for Button/Toggle itself — none invented; flag before adding one. The nested Atom/Button instance's own override padding ('0 12' inside a fixed 32px width) doesn't reconcile with a 24px icon — treated as the same kind of auto-layout drift Atom/Button already documents for its Filled/Active instance; icon/text spacing instead reuses Atom/Button's verified recipe (icon-only 8/8, text-only 12/12, both 8 left/12 right). Figma exposes no icon-swap property at the Button/Toggle level (only Text/With text/With icon) — `icon` is added as a normal optional prop (mirrors Atom/Button's `icon`) so the atom is usable beyond the one hardcoded demo icon. Figma's Text default is user-facing but is NOT hardcoded in the component (children is always caller-supplied, matching Atom/Button's own no-baked-default precedent) — reproduced only in messages/en.json + messages/nl.json (`components.buttonToggle.defaultLabel`) and the Ladle story, so a translated default never has to be fetched with a server-only i18n call inside a leaf atom that a Client Component composer needs to import directly for onClick/aria-pressed wiring."
+    }
   },
   "molecules": {
-    "Card": { "path": "components/molecules/Card.tsx", "nodeId": "3624:4448", "notes": "Props Title (bool)+Text (text) -> `title?: string`; Step (bool) -> `step?: ReactNode` composed via the existing Step molecule instance (Figma nests a real Step instance here); SLOT 'Type' -> required `children`. No variant/state axis on the node (booleans + text only) so no CVA — clsx merges className, same as Step. No token gaps: heading #0C0A09->text, slot fill #FFFFFF->surface, slot stroke #D6D3D1->border, all existing tokens. The 'Stap + Card' frame's own 12px corner radius has no fill/stroke so it's a no-op and is not modelled." },
-    "Step": { "path": "components/molecules/Step.tsx", "nodeId": "3727:3208", "notes": "32x32 circular badge (radius 99px → rounded-full), bg stone-200 (surface-raised), text-sm/semibold stone-500 (text-muted). Figma files it under the Atoms 'Steps' frame, but this map is canonical (ADR-0010) so it lives in molecules/. Fetched node is a single COMPONENT with no variant/state axis — no CVA added, content via children." },
-    "Card-content/Recipi": { "path": "components/molecules/CardContentRecipe.tsx", "nodeId": null, "notes": "Figma spelling 'Recipi'" },
-    "Card-content/Ingredient": { "path": "components/molecules/CardContentIngredient.tsx", "nodeId": null },
-    "Card-content/Ticket": { "path": "components/molecules/CardContentTicket.tsx", "nodeId": null },
-    "Card-content/Step": { "path": "components/molecules/CardContentStep.tsx", "nodeId": null }
+    "Card": {
+      "path": "components/molecules/Card.tsx",
+      "nodeId": "3624:4448",
+      "notes": "Props Title (bool)+Text (text) -> `title?: string`; Step (bool) -> `step?: ReactNode` composed via the existing Step molecule instance (Figma nests a real Step instance here); SLOT 'Type' -> required `children`. No variant/state axis on the node (booleans + text only) so no CVA — clsx merges className, same as Step. No token gaps: heading #0C0A09->text, slot fill #FFFFFF->surface, slot stroke #D6D3D1->border, all existing tokens. The 'Stap + Card' frame's own 12px corner radius has no fill/stroke so it's a no-op and is not modelled."
+    },
+    "Step": {
+      "path": "components/molecules/Step.tsx",
+      "nodeId": "3727:3208",
+      "notes": "32x32 circular badge (radius 99px → rounded-full), bg stone-200 (surface-raised), text-sm/semibold stone-500 (text-muted). Figma files it under the Atoms 'Steps' frame, but this map is canonical (ADR-0010) so it lives in molecules/. Fetched node is a single COMPONENT with no variant/state axis — no CVA added, content via children."
+    },
+    "Card-content/Recipi": {
+      "path": "components/molecules/CardContentRecipe.tsx",
+      "nodeId": null,
+      "notes": "Figma spelling 'Recipi'"
+    },
+    "Card-content/Ingredient": {
+      "path": "components/molecules/CardContentIngredient.tsx",
+      "nodeId": null
+    },
+    "Card-content/Ticket": {
+      "path": "components/molecules/CardContentTicket.tsx",
+      "nodeId": null
+    },
+    "Card-content/Step": {
+      "path": "components/molecules/CardContentStep.tsx",
+      "nodeId": null
+    }
   },
   "organisms": {
-    "Card-container": { "path": "components/organisms/CardContainer.tsx", "nodeId": null },
-    "Carousel": { "path": "components/organisms/Carousel.tsx", "nodeId": null },
-    "Sidebar": { "path": "components/organisms/Sidebar.tsx", "nodeId": null }
+    "Card-container": {
+      "path": "components/organisms/CardContainer.tsx",
+      "nodeId": null
+    },
+    "Carousel": {
+      "path": "components/organisms/Carousel.tsx",
+      "nodeId": null
+    },
+    "Sidebar": {
+      "path": "components/organisms/Sidebar.tsx",
+      "nodeId": null
+    }
   }
 }

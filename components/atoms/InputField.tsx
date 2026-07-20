@@ -44,12 +44,17 @@ import { Icon, type IconName } from "./Icon";
  * rectangle floating inside the rounded pill, not aligned to its corners
  * (issue #44). Fixed by suppressing the native ring (`focus:outline-none` on
  * the `<input>`) and drawing the focus indicator on the whole container
- * instead (`focus-within:ring-2 focus-within:ring-inset ring-accent`), sized
- * to the container's real 12px corner radius. No Figma focus state exists to
- * source a color from, so this borrows the `accent` token by analogy to
- * `Checkbox`'s checked state (the codebase's existing precedent for "accent =
- * active interactive affordance") — flagged in `design/figma-map.json` for
- * design review rather than left without any visible focus indicator.
+ * instead (`focus-within:ring-2 focus-within:ring-inset ring-border-hover`),
+ * sized to the container's real 12px corner radius. No Figma focus state
+ * exists to source a colour from, so the ring reuses `border-hover` — the
+ * same design-sourced token this container already uses for Hover, so focus
+ * reads as a stronger version of the same affordance.
+ *
+ * Deliberately NOT the `accent` token: #45 established that `accent`'s purple
+ * entered the codebase from a Figma canvas artifact (the dashed stroke marking
+ * a selected component set), not from any design intent, and removed it from
+ * `Checkbox`. Reusing it here would have re-introduced the same wrong colour.
+ * The lack of a real Figma focus state is flagged in `design/figma-map.json`.
  *
  * Figma's `Text` boolean can hide the entire input row, leaving just the button
  * slot. Not modelled: an "input field" without its input is not a meaningful
@@ -115,7 +120,7 @@ export function InputField({
         </label>
       ) : null}
 
-      <div className="flex flex-row items-start justify-center gap-3 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-hover focus-within:ring-2 focus-within:ring-inset focus-within:ring-accent">
+      <div className="flex flex-row items-start justify-center gap-3 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-hover focus-within:ring-2 focus-within:ring-inset focus-within:ring-border-hover">
         <div className="flex flex-1 flex-col gap-3">
           <div className="flex flex-row items-center gap-2 self-stretch pl-2 pt-2">
             {leadingIcon ? (
