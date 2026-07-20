@@ -1,117 +1,253 @@
+"use client";
+
 // figma: node-id=3623:4345
 import clsx from "clsx";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
-import { Icon, type IconName } from "./Icon";
+import { useState, type KeyboardEvent } from "react";
+import { Button } from "./Button";
+import type { IconName } from "./Icon";
 
 /**
  * Atom/Button-toggle — Figma component `Button/Toggle` (node-id 3623:4345).
+ * Re-fetched for ticket #60 (also re-fetched `Atom/Button`, node-id 3623:4346,
+ * since the segments are `Atom/Button` instances).
  *
- * Figma properties: `Text` (text, default "Categorie "), `With text` (bool,
- * default true), `With icon` (bool, default true). No `State`/`Active`
- * variant axis exists on this component — the fetched node shows the
- * pressed/selected look purely as an extra layer (a white, rounded-md
- * rectangle inset 4px, positioned absolutely behind one button instance in
- * the demo), not a component property. Per CLAUDE.md/ticket #35 this is
- * implemented as `aria-pressed` + a CSS pseudo-class (`group-aria-pressed:`),
- * never a React prop — a real toggle button pattern (native `<button>` +
- * `aria-pressed`), not a variant.
+ * ## Component-boundary correction (ticket #60)
  *
- * Structure mirrors the fetched node's two layers, unlike Button.tsx's flat
- * single-element states:
- * - Outer `<button>`: the root frame (fills the stone-200 primitive ->
- *   `surface-raised`, rounded-lg, 4px padding on every side, 40px tall) —
- *   always present, regardless of pressed state.
- * - Inner `<span>`: the "Active" highlight capsule (32x32, rounded-md, fills
- *   white -> `surface`) — transparent by default, filled only when
- *   `aria-pressed="true"` via `group-aria-pressed:bg-surface` on the parent
- *   button. Icon/text sit inside this inner layer.
+ * Ticket #35 built this file as a single segment (root track + one capsule),
+ * flagging the grouped composition as out of scope. The re-fetch confirms
+ * the ticket's premise: `Button/Toggle` (3623:4345) is not one segment, it
+ * **is the whole track** — a single root frame (row, 4px padding, 4px gap,
+ * fill stone-200 -> `surface-raised`, radius 8) containing:
+ * - one "Active" rectangle (32x32, fill white -> `surface`, radius 6, inset
+ *   4px from the top-left) — the moving indicator, listed (and therefore
+ *   painted) *before* the buttons, i.e. behind them;
+ * - five "Atom/Button" instances (Infinity/Croissant/Sandwich/Broccoli/
+ *   Cake-slice), each a fixed 32-wide, transparent (`fills: []`), icon-only
+ *   segment.
  *
- * Icon/text color does not change between pressed and unpressed in the
- * fetched node (every sampled icon, including the one behind the white
- * highlight, renders in the same muted stroke) — so unlike Button.tsx's
- * Filled variant (whose Selected state, renamed from "Active" in Figma
- * 2026-07-20 per ticket #42, darkens the text), no text-color pseudo-class
- * is added here; only the background changes.
+ * Per CLAUDE.md ("mirror Figma's own nesting"), this file is now the track:
+ * a `role="radiogroup"` composing real `Button` instances as segments, not a
+ * one-segment atom callers were expected to array themselves (the approach
+ * the old `CategoryFilterRow` story approximated, and which could never
+ * produce one indicator sliding between icons — it only ever animated
+ * independent per-segment capsules).
  *
- * `With icon` / `With text` -> optional props, same idiom as Button.tsx:
- * presence of `icon` is the icon boolean. `children` presence is the text
- * boolean; omitting it requires `aria-label` (see `ButtonToggleProps`) so an
- * icon-only toggle still has an accessible name. Figma's `Text` property
- * carries a default string value ("Categorie "), but — matching Button.tsx's
- * own precedent of never baking demo copy into the component — that default
- * is NOT hardcoded here: `children` is always caller-supplied. Baking a
- * translated fallback into the atom itself would also need a server-only
- * i18n call (`next-intl/server`), which would break the component the
- * moment a composing Client Component (the expected home for the
- * onClick/aria-pressed wiring per CLAUDE.md's "interactivity is wired by the
- * composing molecule" rule) imports it directly. The Figma default is
- * instead reproduced in the Ladle story via the message catalog
- * (`messages/en.json` / `messages/nl.json` -> `buttonToggle.defaultLabel`),
- * never as a literal string in source.
+ * ## Segment size
  *
- * Figma exposes no icon-swap property on `Button/Toggle` itself (only
- * Text/With text/With icon) — the demo's 5 different icons are separate
- * nested instance overrides, not a component property. `icon` is still
- * exposed as a normal optional prop (mirrors Button.tsx's `icon`) so the
- * atom is usable for more than the one hardcoded demo icon.
+ * The fetched node resizes its nested `Atom/Button` instances to 32x32 (an
+ * instance override — Button's own component set has no Size property). That
+ * footprint cannot be reproduced from here with a `className`: `h-8` and
+ * `h-10` are the same property at the same specificity, so the winner is
+ * decided by Tailwind's utility ordering, not by the caller. So `Button`
+ * gained a `size="compact"` variant carrying exactly Figma's numbers
+ * (4px inset + 24px icon + 4px inset = 32), and the segments use it. Track
+ * height therefore lands on Figma's 40px (4px padding + 32px segment + 4px)
+ * and the five-segment demo on its 184px hug width, both matching the
+ * fetched node.
  *
- * Gaps flagged, not invented:
- * - No Hover state is sampled for `Button/Toggle` itself in the fetched
- *   node (unlike Button.tsx's own component set, which does sample Hover) —
- *   no hover class is added; triage before inventing one.
- * - The nested "Atom/Button" instance in the fetched node overrides padding
- *   to "0 12" inside a fixed 32px width, which doesn't reconcile with a
- *   24px icon (same kind of auto-layout drift Button.tsx already documents
- *   for its own Filled/Selected instance) — not followed. Spacing instead
- *   mirrors Button.tsx's own verified icon/text padding recipe (icon-only
- *   8px/8px, text-only 12px/12px, both 8px left/12px right) for consistency
- *   between the two sibling atoms.
+ * ## Movement
+ *
+ * The indicator is one absolutely-positioned `span` (32x32, matching the
+ * segment footprint; inset by the track's own 4px padding via `top-1
+ * left-1`), translated on the x-axis by `index * (segment width + gap)` =
+ * `index * 36px`. Segments are given `relative` (and the indicator
+ * left un-z-indexed) so normal DOM/paint order — indicator first, segments
+ * after — puts the segments visually on top, reproducing the fetched node's
+ * own layer order; a plain `absolute` indicator among `static` siblings would
+ * otherwise always paint on top regardless of source order, since positioned
+ * elements stack above the normal flow irrespective of DOM order.
+ *
+ * The fetched node is a single static frame — it shows no transition/timing
+ * property at all (Figma has no way to encode one). The *fact* that the
+ * indicator should move is the ticket's own explicit, deliberate
+ * requirement, not a code-side invention; the concrete duration/easing is
+ * not Figma-sourced and reuses Tailwind's stock scale, the same honestly-
+ * flagged non-Figma choice `Dropdown`'s open/close animation already made
+ * (see its doc comment) — no project motion token exists yet either.
+ * `motion-reduce:transition-none` follows the same precedent.
+ *
+ * Because Tailwind needs a literal class string per possible offset (no
+ * inline `style`, per this ticket and CLAUDE.md), `INDICATOR_OFFSETS` is a
+ * static, capped lookup table rather than a computed value. The cap (8
+ * entries) is a pragmatic implementation bound tied to that constraint, not
+ * a Figma limit — the fetched demo only needs 5. An `items` list longer than
+ * the table clamps to the last defined offset; extend the table before a
+ * design ever needs more than 8 segments.
+ *
+ * ## Colour
+ *
+ * No per-segment colour/state variation is present in the fetched node —
+ * the same finding ticket #35 already recorded for this exact node: the
+ * icon behind the white capsule renders in the same muted stroke as the
+ * others. So no `aria-checked:text-*` override is added; icon colour stays
+ * `text-text-muted` (via `Button`'s own `transparent` variant) regardless of
+ * selection, matching the node exactly rather than inventing a selected-icon
+ * colour.
+ *
+ * ## Accessibility pattern
+ *
+ * `Button.tsx`'s own "Selected" state, and the old single-segment version of
+ * this file, both use `aria-pressed` — the right idiom for an independent
+ * toggle button. This control is different: exactly one segment is ever
+ * selected, the same "exactly one of N" shape as a native radio group. WAI-
+ * ARIA's Radio Group pattern (https://www.w3.org/WAI/ARIA/apg/patterns/radio/)
+ * is built for precisely this — `role="radiogroup"` + `role="radio"` /
+ * `aria-checked`, roving `tabindex` (only the selected segment is in the tab
+ * order), and Left/Right (Up/Down as an alias) + Home/End arrow-key
+ * selection — where `aria-pressed`'s contract has no such group/roving-focus
+ * model. The pattern is layered onto unmodified `Button` instances purely
+ * via props it already spreads onto its native `<button>`
+ * (`role`/`aria-checked`/`tabIndex`/`onClick`/`onKeyDown` are all standard
+ * `ButtonHTMLAttributes`/`AriaAttributes`) — zero changes to `Button.tsx`.
+ * Click/Space/Enter activate a segment for free (native `<button>`).
+ *
+ * `Button.tsx` isn't `forwardRef`, so roving focus after an arrow key can't
+ * use a component ref; `handleKeyDown` instead walks the DOM from the
+ * keyboard event's own `currentTarget` (`closest('[role="radiogroup"]')` +
+ * `querySelectorAll('[role="radio"]')`) to focus the next segment — a
+ * standard technique for roving tabindex when the underlying control isn't
+ * ref-forwarding.
+ *
+ * ## "use client" and state
+ *
+ * Which segment is selected is the group's own behaviour, identical for
+ * every caller — the same reasoning `Dropdown` (#43) used for owning its
+ * open/closed state internally, contrasted with `Checkbox` (#45), whose
+ * `checked` stays composer-owned because it varies meaningfully per call
+ * site. This group always starts with exactly one segment active (the
+ * fetched node never samples an "all unselected" state), so `defaultValue`
+ * is required, not optional.
  */
-type ButtonToggleBaseProps = Omit<
-  ButtonHTMLAttributes<HTMLButtonElement>,
-  "children"
-> & {
-  /** Figma "With icon" boolean — pass an IconName to render the icon; omit to hide it. */
-  icon?: IconName;
+export interface ButtonToggleItem {
+  /** Stable identifier for this segment, returned by `onValueChange`. */
+  value: string;
+  /** Figma "With icon" — every fetched segment is icon-only. */
+  icon: IconName;
+  /** Accessible name for this segment (icon-only, so always required). */
+  label: string;
+}
+
+type ButtonToggleBaseProps = {
+  /** Ordered segments. Figma exposes no icon-swap property at the track level (only Text/With text/With icon on the nested `Atom/Button`) — the fetched 5-icon set is a fixed demo, not a component property, so the real list is caller-supplied. */
+  items: readonly ButtonToggleItem[];
+  /** Initially-selected segment's `value`. Required: the fetched node never shows an unselected track. */
+  defaultValue: string;
+  /** Fires whenever the selection changes (click or arrow-key navigation). */
+  onValueChange?: (value: string) => void;
+  className?: string;
 };
 
-/**
- * Figma "With text" is expressed by the presence of `children` (same idiom
- * as Button.tsx). An icon-only toggle has no visible label, so TypeScript
- * requires an explicit `aria-label` in that case — otherwise the control
- * would be unnamed for assistive tech (CLAUDE.md: accessibility is part of
- * the atom).
- */
+/** The radiogroup needs an accessible name; same required-one-of idiom as this codebase's other labelled atoms. */
 export type ButtonToggleProps =
-  | (ButtonToggleBaseProps & { children: ReactNode })
-  | (ButtonToggleBaseProps & { children?: never; "aria-label": string });
+  | (ButtonToggleBaseProps & {
+      "aria-label": string;
+      "aria-labelledby"?: never;
+    })
+  | (ButtonToggleBaseProps & {
+      "aria-label"?: never;
+      "aria-labelledby": string;
+    });
+
+// Segment footprint (32px, matching the fetched node's instance override —
+// Button's `size="compact"`) + 4px gap = 36px per step. Tailwind needs
+// literal class names, so the offsets are a static table; capped at 8
+// segments — see the "Movement" doc above.
+const INDICATOR_OFFSETS = [
+  "translate-x-[0px]",
+  "translate-x-[36px]",
+  "translate-x-[72px]",
+  "translate-x-[108px]",
+  "translate-x-[144px]",
+  "translate-x-[180px]",
+  "translate-x-[216px]",
+  "translate-x-[252px]",
+] as const;
 
 export function ButtonToggle({
-  icon,
-  children,
+  items,
+  defaultValue,
+  onValueChange,
   className,
-  type = "button",
-  "aria-pressed": ariaPressed = false,
-  ...props
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledby,
 }: ButtonToggleProps) {
+  const [value, setValue] = useState(defaultValue);
+  const selectedIndex = Math.max(
+    0,
+    items.findIndex((item) => item.value === value),
+  );
+  const offsetIndex = Math.min(selectedIndex, INDICATOR_OFFSETS.length - 1);
+
+  function select(next: string) {
+    setValue(next);
+    onValueChange?.(next);
+  }
+
+  function handleKeyDown(
+    event: KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) {
+    let nextIndex: number;
+    switch (event.key) {
+      case "ArrowRight":
+      case "ArrowDown":
+        nextIndex = (index + 1) % items.length;
+        break;
+      case "ArrowLeft":
+      case "ArrowUp":
+        nextIndex = (index - 1 + items.length) % items.length;
+        break;
+      case "Home":
+        nextIndex = 0;
+        break;
+      case "End":
+        nextIndex = items.length - 1;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    select(items[nextIndex].value);
+    const group = event.currentTarget.closest('[role="radiogroup"]');
+    const radios = group?.querySelectorAll<HTMLButtonElement>(
+      '[role="radio"]',
+    );
+    radios?.[nextIndex]?.focus();
+  }
+
   return (
-    <button
-      type={type}
-      aria-pressed={ariaPressed}
+    <div
+      role="radiogroup"
+      aria-label={ariaLabel}
+      aria-labelledby={ariaLabelledby}
       className={clsx(
-        "group inline-flex h-10 items-center justify-center rounded-lg bg-surface-raised p-1 text-base font-semibold text-text-muted",
+        "relative inline-flex items-stretch gap-1 rounded-lg bg-surface-raised p-1",
         className,
       )}
-      {...props}
     >
-      <span className="inline-flex h-8 items-center justify-center rounded-md pl-2 pr-1 transition-colors group-aria-pressed:bg-surface">
-        {icon && (
-          <span className="pr-1">
-            <Icon name={icon} />
-          </span>
+      <span
+        aria-hidden="true"
+        className={clsx(
+          "pointer-events-none absolute left-1 top-1 h-8 w-8 rounded-md bg-surface transition-transform duration-200 ease-out motion-reduce:transition-none",
+          INDICATOR_OFFSETS[offsetIndex],
         )}
-        {children && <span className="pl-1 pr-2">{children}</span>}
-      </span>
-    </button>
+      />
+      {items.map((item, index) => (
+        <Button
+          key={item.value}
+          type="button"
+          variant="transparent"
+          size="compact"
+          icon={item.icon}
+          aria-label={item.label}
+          role="radio"
+          aria-checked={item.value === value}
+          tabIndex={item.value === value ? 0 : -1}
+          onClick={() => select(item.value)}
+          onKeyDown={(event) => handleKeyDown(event, index)}
+          className="relative shrink-0"
+        />
+      ))}
+    </div>
   );
 }

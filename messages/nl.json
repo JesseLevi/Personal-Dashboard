@@ -22,7 +22,14 @@
   },
   "components": {
     "buttonToggle": {
-      "defaultLabel": "Categorie"
+      "groupLabel": "Categoriefilter",
+      "categories": {
+        "all": "Alles",
+        "breakfast": "Ontbijt",
+        "lunch": "Lunch",
+        "vegetable": "Groente",
+        "dessert": "Toetje"
+      }
     }
   }
 }
