@@ -1,92 +1,131 @@
 // figma: node-id=3705:4402
+import type { Story } from "@ladle/react";
 import { Button } from "./Button";
 import { InputField } from "./InputField";
 
 // Dev-only demo copy — not user-facing (real labels/placeholders come from
 // next-intl catalogs at the call site).
-export const Plain = () => <InputField placeholder="Example" />;
 
-export const WithLabel = () => (
-  <InputField id="demo-label" label="Field" placeholder="Example" />
-);
-
-export const WithLeadingIcon = () => (
-  <InputField leadingIcon="Calendar" placeholder="Example" />
-);
-
-export const WithTrailingIcon = () => (
-  <InputField trailingIcon="ChevronDown" placeholder="Example" />
-);
-
-export const WithButtonSlot = () => (
-  <InputField
-    id="demo-button"
-    label="Field"
-    placeholder="Example"
-    trailingIcon="ChevronDown"
-    button={
-      <Button variant="filled" icon="Plus">
-        Categorie
-      </Button>
-    }
-  />
-);
-
-// The Figma default configuration: Title + Trekking-icon on, Leading-icon off.
-export const FigmaDefault = () => (
-  <InputField
-    id="demo-figma-default"
-    label="Field"
-    placeholder="Example"
-    trailingIcon="ChevronDown"
-  />
-);
-
-export const AllVariants = () => (
+// Reproduces the three-row Figma reference (Default / Hover / Active) as
+// closely as static markup allows — hover the second row to compare against
+// the fetched node's Hover state; the third row shows the typed-text look and
+// doubles as this atom's read of Figma's "Active" as the `:focus-within`
+// state (see the doc comment in InputField.tsx and design/figma-map.json for
+// why that mapping is an assumption, not a labelled Figma state).
+export const States = () => (
   <div className="flex w-72 flex-col gap-6">
-    <InputField placeholder="Example" />
-    <InputField id="all-label" label="Field" placeholder="Example" />
     <InputField
-      leadingIcon="Calendar"
-      trailingIcon="ChevronDown"
+      id="states-default"
+      label="Field"
       placeholder="Example"
+      trailingIcon="ChevronDown"
+    />
+    <InputField
+      id="states-hover"
+      label="Field"
+      placeholder="Example"
+      trailingIcon="ChevronDown"
+    />
+    <InputField
+      id="states-active"
+      label="Field"
+      trailingIcon="ChevronDown"
+      defaultValue="Example"
     />
   </div>
 );
 
-// Figma's "Active" instance is a filled row with a typed (not placeholder)
-// value — the input's own text-text / placeholder:text-placeholder classes
-// already reproduce the darker, "typed" copy for free; no separate CSS state.
-export const TypedValue = () => (
-  <InputField
-    id="demo-typed-value"
-    label="Field"
-    trailingIcon="ChevronDown"
-    defaultValue="Example"
-  />
-);
+type PlaygroundProps = {
+  title: boolean;
+  text: string;
+  leadingIcon: boolean;
+  trailingIcon: boolean;
+  button: boolean;
+  buttonText: boolean;
+  value: string;
+};
 
-// #44: the container now draws its own focus-within ring instead of relying
-// on the native per-input outline (which was much smaller than the pill and
-// looked broken). autoFocus renders this story already focused so the ring
-// is visible without needing a real click/tab in the workbench.
-export const Focused = () => (
+export const Playground: Story<PlaygroundProps> = ({
+  title,
+  text,
+  leadingIcon,
+  trailingIcon,
+  button,
+  buttonText,
+  value,
+}) => {
+  const shared = {
+    placeholder: "Example",
+    defaultValue: value || undefined,
+    ...(leadingIcon ? { leadingIcon: "Calendar" as const } : {}),
+    ...(trailingIcon ? { trailingIcon: "ChevronDown" as const } : {}),
+    ...(button
+      ? {
+          button: (
+            <Button variant="filled" icon="Plus" aria-label="Categorie">
+              {buttonText ? "Categorie" : undefined}
+            </Button>
+          ),
+        }
+      : {}),
+  };
+
+  return title ? (
+    <InputField id="playground" label={text} {...shared} />
+  ) : (
+    <InputField id="playground" {...shared} />
+  );
+};
+
+Playground.args = {
+  title: true,
+  text: "Field",
+  leadingIcon: false,
+  trailingIcon: true,
+  button: false,
+  buttonText: true,
+  value: "",
+};
+
+Playground.argTypes = {
+  title: { control: { type: "boolean" } },
+  text: { control: { type: "text" } },
+  leadingIcon: { control: { type: "boolean" } },
+  trailingIcon: { control: { type: "boolean" } },
+  button: { control: { type: "boolean" } },
+  buttonText: { control: { type: "boolean" } },
+  value: { control: { type: "text" } },
+};
+
+// Figma `Button/Default` "With text: false" — the slot button rendered
+// icon-only, called out by the user specifically.
+export const WithIconlessButton = () => (
   <InputField
-    id="demo-focused"
+    id="iconless-button"
     label="Field"
     placeholder="Example"
     trailingIcon="ChevronDown"
-    autoFocus
+    button={
+      <Button variant="filled" icon="Plus" aria-label="Categorie" />
+    }
   />
 );
 
-// Reproduces the three-row Figma reference (Default / Hover / Active) as
-// closely as static markup allows — hover the second row to compare against
-// the fetched node's Hover state; the third row shows the typed-text look.
-export const FigmaThreeRows = () => (
-  <div className="flex w-72 flex-col gap-6">
-    <InputField id="rows-default" label="Field" placeholder="Example" trailingIcon="ChevronDown" />
-    <InputField id="rows-hover" label="Field" placeholder="Example" trailingIcon="ChevronDown" />
-    <InputField id="rows-active" label="Field" trailingIcon="ChevronDown" defaultValue="Example" />
+// Two fields side by side: one with the leading icon, one without.
+export const WithAndWithoutIcon = () => (
+  <div className="flex gap-6">
+    <InputField
+      id="with-icon"
+      label="Field"
+      leadingIcon="Calendar"
+      placeholder="Example"
+      trailingIcon="ChevronDown"
+    />
+    <InputField
+      id="without-icon"
+      label="Field"
+      placeholder="Example"
+      trailingIcon="ChevronDown"
+    />
   </div>
 );
