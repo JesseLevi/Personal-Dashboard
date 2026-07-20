@@ -1,5 +1,24 @@
+# secrets & local config
 .mcp.json
-node_modules/
 .env
-.env.local
+.env.*
+!.env.example
+
+# dependencies & build output
+node_modules/
 .next/
+build/
+dist/
+
+# supabase local
+supabase/.temp/
+supabase/.branches/
+
+# tooling output
+.ladle/
+coverage/
+*.tsbuildinfo
+test-results/
+
+# os
+.DS_Store

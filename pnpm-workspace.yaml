@@ -1,0 +1,10 @@
+# pnpm settings (pnpm 11 reads these from here, not package.json).
+# Supply-chain policy: dependency build scripts are blocked by default;
+# only these explicitly reviewed packages may run postinstall builds.
+allowBuilds:
+  "@parcel/watcher": true
+  "@swc/core": true
+  esbuild: true
+  msw: false
+  sharp: true
+  unrs-resolver: true

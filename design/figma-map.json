@@ -1,0 +1,27 @@
+{
+  "$meta": {
+    "figmaFile": "PE9Tc5r8ybDZWVrJrQPqXi",
+    "comment": "Canonical Figma <-> code mapping (ADR-0010). Human-readable view: Architecture.md §3.1. Every entry's code file must carry `// figma: node-id=<nodeId>` in its header. Components are added here in the same PR that creates them (Phase 2+); nodeId values are looked up in Figma dev mode or via MCP at build time.",
+    "status": "pre-Phase-2: paths reserved, nodeId filled in when each component is built"
+  },
+  "atoms": {
+    "Atom/Button": { "path": "components/atoms/Button.tsx", "nodeId": null, "notes": "CVA variant=filled|outline|white|transparent|destructive (Figma 'Distructive'); Hover/Active are CSS states" },
+    "Atom/Tag": { "path": "components/atoms/Tag.tsx", "nodeId": null },
+    "Atom/Input-field": { "path": "components/atoms/InputField.tsx", "nodeId": null },
+    "Checkbox": { "path": "components/atoms/Checkbox.tsx", "nodeId": null, "notes": "states: default/checked/unchecked/delete" },
+    "Icon/*": { "path": "components/atoms/Icon.tsx", "nodeId": null, "notes": "single wrapper around lucide-react; Figma 'Calandar' -> Calendar" }
+  },
+  "molecules": {
+    "Card": { "path": "components/molecules/Card.tsx", "nodeId": null },
+    "Step": { "path": "components/molecules/Step.tsx", "nodeId": null },
+    "Card-content/Recipi": { "path": "components/molecules/CardContentRecipe.tsx", "nodeId": null, "notes": "Figma spelling 'Recipi'" },
+    "Card-content/Ingredient": { "path": "components/molecules/CardContentIngredient.tsx", "nodeId": null },
+    "Card-content/Ticket": { "path": "components/molecules/CardContentTicket.tsx", "nodeId": null },
+    "Card-content/Step": { "path": "components/molecules/CardContentStep.tsx", "nodeId": null }
+  },
+  "organisms": {
+    "Card-container": { "path": "components/organisms/CardContainer.tsx", "nodeId": null },
+    "Carousel": { "path": "components/organisms/Carousel.tsx", "nodeId": null },
+    "Sidebar": { "path": "components/organisms/Sidebar.tsx", "nodeId": null }
+  }
+}

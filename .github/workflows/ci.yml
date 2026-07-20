@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Tokens in sync (generated theme matches tokens.json)
+        run: |
+          pnpm sync:tokens
+          git diff --exit-code app/theme.css
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: Security greps (ADR-0002/0003/0010)
+        run: pnpm check:server-only
+      - run: pnpm build
+
+  db:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start local Supabase (applies migrations)
+        run: supabase start
+      - name: RLS test suite (pgTAP)
+        run: supabase test db
+      - name: RLS coverage gate (ADR-0009)
+        run: bash scripts/check-rls-coverage.sh
+      - run: supabase stop
+        if: always()

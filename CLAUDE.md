@@ -60,7 +60,18 @@ When a ticket forces a trade-off, resolve it in this order:
 3. Clean migration path to cloud hosting later (Supabase Cloud, hosted inference)
 4. Multi-language from the ground up (never hardcode strings)
 5. LLM-readable by design (predictable structure, canonical text columns, semantic tokens)
+6. Make your code easily readable for humans and structure files neatily with a clear folder structure
+
+## Build status
+
+`docs/phase-log.md` is the authoritative record of what is already built per phase — check it before creating or executing tickets, and update it when a phase item lands.
 
 ## Commands
 
-_To be filled in once the project is scaffolded (no `package.json` yet). Add dev/build/lint/test commands here as soon as they exist — this section should never go stale._
+- `pnpm dev` / `pnpm build` / `pnpm start` — Next.js
+- `pnpm lint` / `pnpm typecheck` / `pnpm test` — ESLint, tsc, Vitest
+- `pnpm sync:tokens` — regenerate `app/theme.css` from `design/tokens.json` (run after every token edit; CI fails on drift)
+- `pnpm ladle` — design-system workbench
+- `pnpm worker` — job queue consumer (needs `.env` with service_role)
+- `pnpm db:reset` / `pnpm test:rls` / `pnpm db:types` — Supabase (needs Docker: CI or the server, not this dev machine)
+- `pnpm check:rls-coverage` / `pnpm check:server-only` — CI gates, also runnable locally
