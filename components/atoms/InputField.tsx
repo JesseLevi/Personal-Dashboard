@@ -68,11 +68,21 @@ import { Icon, type IconName } from "./Icon";
  * state for this atom. Flagged in `design/figma-map.json` for triage rather
  * than silently supported.
  *
- * The placeholder colour and hover/focus border use the dedicated
- * `text-placeholder`, `border-hover`, and `border-selected` semantic tokens.
- * `border-hover` (stone-500) is shared with `Button`; `border-selected`
- * (stone-400) is new for this ticket (#53), added to design/tokens.json for
- * this Active/focus stroke specifically.
+ * The placeholder colour uses `text-placeholder`. The hover and focus strokes
+ * read `border-input-hover` (stone-500) and `border-input-focus` (stone-400),
+ * two PROVISIONAL, component-scoped tokens introduced in #56.
+ *
+ * Why component-scoped: `Atom/Button` was re-authored in Figma with a four-
+ * state scale (Default/Hover/Active/Selected) whose Outline strokes are
+ * stone-300 / stone-400 / stone-700 — each state darker than the last. This
+ * node was re-fetched in the same ticket and still carries the older three-
+ * state scale, stone-300 / stone-500 / stone-400, where Hover is *darker*
+ * than Active. That inversion is almost certainly an authoring leftover: this
+ * node was never re-bound to the reworked variables. Rather than normalise
+ * one component to the other by guessing, both keep their fetched values and
+ * this component's live behind names that announce themselves as temporary.
+ * When Figma is reconciled, delete these two tokens and read the shared
+ * `border-hover` / `border-active` scale instead.
  *
  * Every padding/gap below is re-derived from the fetched dev-ready node (root
  * gap 8; container padding 4, gap 12; content gap 12; leading+text padding
@@ -128,7 +138,7 @@ export function InputField({
         </label>
       ) : null}
 
-      <div className="flex flex-row items-start justify-center gap-3 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-hover focus-within:border-border-selected">
+      <div className="flex flex-row items-start justify-center gap-3 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-input-hover focus-within:border-border-input-focus">
         <div className="flex flex-1 flex-col gap-3">
           <div className="flex flex-row items-center gap-2 self-stretch pl-2 pt-2">
             {leadingIcon ? (
