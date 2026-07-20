@@ -14,7 +14,7 @@
     "Button/Toggle": { "path": "components/atoms/ButtonToggle.tsx", "nodeId": "3623:4345", "notes": "added 2026-07-20 (was missing from initial map); props: Text, With text, With icon" }
   },
   "molecules": {
-    "Card": { "path": "components/molecules/Card.tsx", "nodeId": null },
+    "Card": { "path": "components/molecules/Card.tsx", "nodeId": "3624:4448", "notes": "Props Title (bool)+Text (text) -> `title?: string`; Step (bool) -> `step?: ReactNode` composed via the existing Step molecule instance (Figma nests a real Step instance here); SLOT 'Type' -> required `children`. No variant/state axis on the node (booleans + text only) so no CVA — clsx merges className, same as Step. No token gaps: heading #0C0A09->text, slot fill #FFFFFF->surface, slot stroke #D6D3D1->border, all existing tokens. The 'Stap + Card' frame's own 12px corner radius has no fill/stroke so it's a no-op and is not modelled." },
     "Step": { "path": "components/molecules/Step.tsx", "nodeId": "3727:3208", "notes": "32x32 circular badge (radius 99px → rounded-full), bg stone-200 (surface-raised), text-sm/semibold stone-500 (text-muted). Figma files it under the Atoms 'Steps' frame, but this map is canonical (ADR-0010) so it lives in molecules/. Fetched node is a single COMPONENT with no variant/state axis — no CVA added, content via children." },
     "Card-content/Recipi": { "path": "components/molecules/CardContentRecipe.tsx", "nodeId": null, "notes": "Figma spelling 'Recipi'" },
     "Card-content/Ingredient": { "path": "components/molecules/CardContentIngredient.tsx", "nodeId": null },
