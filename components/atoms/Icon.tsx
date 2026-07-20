@@ -43,24 +43,25 @@ import {
  * count + path bounding boxes), not assumed from the name — same-named lucide
  * exports can still be the wrong glyph (see the `Cross`/`X` history below).
  *
- * One unresolved discrepancy (flagged, not silently resolved — needs a Figma-
- * side decision):
- * - `CloseSidebar`/`OpenSidebar`: Figma's layers are currently named
- *   `Panel-right-open`/`Panel-right-close`, but the actual vector geometry
- *   (divider at x=9, i.e. left third of the box) is unchanged from before and
- *   verified to match lucide's `PanelLeftClose`/`PanelLeftOpen` — not
- *   `PanelRightOpen`/`PanelRightClose` (which have their divider at x=15).
- *   The open/close pairing also looks swapped: the node named "...open" has
- *   a chevron pointing left (the `PanelLeftClose` shape), and the node named
- *   "...close" has a chevron pointing right (the `PanelLeftOpen` shape).
- *   Both the side (left/right) and the direction (open/close) contradict the
- *   name, which points at a mixup on the Figma side rather than an intentional
- *   rename — kept as `CloseSidebar`/`OpenSidebar`, backed by the
- *   geometry-verified `PanelLeftClose`/`PanelLeftOpen`, pending confirmation.
+ * One partially-resolved discrepancy (open/close fixed by the user 2026-07-20;
+ * left/right still flagged, not silently resolved):
+ * - `PanelRightClose`/`PanelRightOpen`: Figma originally had these two nodes'
+ *   open/close labels swapped relative to their chevron direction — fixed.
+ *   The open/close pairing now agrees with the shape (verified: the
+ *   "...close" node's chevron points left, matching `PanelLeftClose`; the
+ *   "...open" node's chevron points right, matching `PanelLeftOpen`).
+ *   Still unresolved: both nodes' divider sits at x=9 (left third of the box),
+ *   which is `PanelLeft*` geometry — lucide's actual `PanelRightOpen`/
+ *   `PanelRightClose` have their divider at x=15. So the code still renders
+ *   the verified-matching `PanelLeftClose`/`PanelLeftOpen` glyphs under
+ *   Figma's "right" names. If this sidebar genuinely sits on the right, the
+ *   Figma vector (not just the label) needs the divider moved to x=15;
+ *   otherwise the label should read "Panel-left-*". Flagging rather than
+ *   guessing which is intended.
  */
 export type IconName =
-  | "CloseSidebar"
-  | "OpenSidebar"
+  | "PanelRightClose"
+  | "PanelRightOpen"
   | "ShoppingBasket"
   | "Lightbulb"
   | "AlarmClockCheck"
@@ -91,8 +92,8 @@ export type IconName =
 // exports and against actual rendered SVG path/element structure (see the
 // class doc comment above for the one unresolved discrepancy).
 const ICONS: Record<IconName, ComponentType<LucideProps>> = {
-  CloseSidebar: PanelLeftClose,
-  OpenSidebar: PanelLeftOpen,
+  PanelRightClose: PanelLeftClose, // see left/right note above — shape-verified, name-mismatched
+  PanelRightOpen: PanelLeftOpen, // see left/right note above — shape-verified, name-mismatched
   ShoppingBasket: ShoppingBasket,
   Lightbulb: Lightbulb,
   AlarmClockCheck: AlarmClockCheck,
