@@ -2,6 +2,7 @@
 
 import clsx from "clsx";
 import {
+  Children,
   useRef,
   useState,
   type HTMLAttributes,
@@ -12,14 +13,33 @@ import {
 /**
  * Atom/Dropdown — Figma component "Dropdown" (node-id 3705:4446).
  *
- * Figma structure, mirrored 1:1 (re-fetched via MCP for ticket #43, single
- * COMPONENT — no variant/state axis, unlike Input-field's component set):
+ * Figma structure, mirrored 1:1 (re-fetched via MCP for ticket #61, single
+ * COMPONENT — no variant/state axis, unlike Input-field's component set; the
+ * component's only `propertyDefinitions` are `Field` (text) and `Title`
+ * (bool) — Figma models no open/closed *state* at all):
  *   root (column, gap 8px)
  *   ├─ label TEXT      — Figma `Title` bool + `Field` text
  *   └─ SLOT "Slot" (column, p-1, gap 4px, rounded-xl, 1px border, white fill)
  *      — always present in the tree (not gated by a bool), holds arbitrary
  *        content; the fetched example fills it with three Button/Default
- *        instances demonstrating a selectable option list.
+ *        instances (first "Style=Filled" i.e. selected, the other two
+ *        "Style=White") demonstrating a selectable option list.
+ *
+ * Ticket #61 finding — the fetched node does not resolve what "closed" looks
+ * like. There is no State/variant axis on this component, so the single
+ * frame Figma returns is one static composition (all three options stacked),
+ * not a distinct "closed" example — the fetched node neither confirms nor
+ * contradicts the ticket's reference screenshot pixel-for-pixel, it simply
+ * has nothing to say about a collapsed state at all (a screenshot description
+ * cannot itself be re-verified against a node that models no such state).
+ * Given that, and since the previous behaviour (collapsing the whole bordered
+ * region to zero height, leaving only the label) is clearly wrong product
+ * behaviour for a disclosure whose job is picking one option, the fix below
+ * keeps the fetched node's own ordering — first child stays visible as the
+ * "current selection", the remaining children are what the disclosure
+ * toggles. This is the least invented interpretation available: it reuses
+ * exactly the composition Figma already provides, just splits *which part*
+ * animates instead of drawing new UI.
  *
  * Figma property → code:
  * - `Field` (text) + `Title` (bool) → `label` (omit it to hide the label).
@@ -68,15 +88,16 @@ import {
  * to disclose *to*:
  * - When `label` is supplied, the label becomes the real trigger: a native
  *   `<button>` (so Enter/Space "for free" — no keydown handling needed to
- *   open) carrying `aria-expanded` + `aria-controls` pointing at the panel's
- *   id. The previous `role="group"` on the panel is dropped in this case —
- *   the ticket is right that it stops being the correct semantics once the
- *   container actually opens and closes: the WAI-ARIA disclosure pattern
- *   needs no role on the content region itself, only the trigger's
- *   aria-expanded/aria-controls pair, so an unnecessary role isn't invented
- *   to replace it. Escape closes the panel and returns focus to the trigger
- *   (handled on the root, so it fires no matter which slotted child has
- *   focus).
+ *   open) carrying `aria-expanded` + `aria-controls` pointing at the id of
+ *   the collapsible region (see below — ticket #61 narrowed exactly what
+ *   that region is). The previous `role="group"` on the panel is dropped in
+ *   this case — the ticket is right that it stops being the correct
+ *   semantics once the container actually opens and closes: the WAI-ARIA
+ *   disclosure pattern needs no role on the content region itself, only the
+ *   trigger's aria-expanded/aria-controls pair, so an unnecessary role isn't
+ *   invented to replace it. Escape closes the panel and returns focus to the
+ *   trigger (handled on the root, so it fires no matter which slotted child
+ *   has focus).
  * - When no `label` is supplied there is no header at all in Figma to turn
  *   into a trigger, and inventing one (e.g. a generic unlabelled toggle
  *   button) would be new UI not in the fetched node. That configuration
@@ -90,6 +111,21 @@ import {
  *   samples no such affordance (no State axis, no icon layer next to the
  *   label), and adding one would be inventing UI beyond what Figma shows.
  *   Flagged as a possible follow-up design question rather than freelanced.
+ *
+ * Ticket #61 — closed state fix: the bordered panel itself (border/bg/
+ * padding) is now *always* rendered, and only its first child (the current
+ * selection, per the fetched node's own ordering) is guaranteed visible.
+ * The remaining children are what the disclosure actually toggles: the
+ * CSS-grid `0fr`/`1fr` trick from ticket #43 still drives their reveal, it
+ * just now wraps only the "rest of the options" sub-list instead of the
+ * whole bordered region. Before #61: closing hid the entire panel (border
+ * included), so a closed Dropdown showed nothing but its label — not what
+ * either the reference screenshot or a sane collapsed-select control should
+ * do. After #61: closing hides everything *except* the first child, so a
+ * closed Dropdown always shows the label plus one bordered option. This is
+ * a `Dropdown.tsx` behavioural change, not just a story change, per the
+ * ticket. Only applies when `label` is present — the labelless mode has no
+ * trigger at all (see above) and keeps rendering every child unconditionally.
  *
  * Animation: the panel height is driven by the CSS-grid `0fr`/`1fr` row
  * trick (`grid-rows-[0fr]` / `grid-rows-[1fr]` + `overflow-hidden` on the
@@ -120,7 +156,7 @@ export type DropdownProps =
   | (DropdownBaseProps & {
       label: string;
       id: string;
-      /** Initial open state of the disclosure. Defaults to `true`, matching the fetched Figma node (which samples only the fully-open state). */
+      /** Initial open state of the disclosure. Defaults to `true`, matching the fetched Figma node (which samples only the fully-open state). When `false`, the first child stays visible (ticket #61) — only the remaining children are hidden. */
       defaultOpen?: boolean;
     })
   | (DropdownBaseProps & { label?: never; defaultOpen?: never });
@@ -136,6 +172,14 @@ export function Dropdown({
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelId = label ? `${id}-panel` : undefined;
+
+  // Ticket #61: the first child is the "current selection" and stays visible
+  // whether the disclosure is open or closed (matches the fetched node's own
+  // ordering — a Filled/selected Button first, White options after). Only
+  // the remaining children are what open/close actually toggles. Without a
+  // `label` there is no disclosure at all (see the doc comment above), so
+  // every child renders unconditionally in that mode.
+  const [selectedChild, ...restChildren] = Children.toArray(children);
 
   function handleRootKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (label && isOpen && event.key === "Escape") {
@@ -165,28 +209,41 @@ export function Dropdown({
       ) : null}
 
       <div
-        id={panelId}
-        className={clsx(
-          "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
-          !label || isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
-        )}
+        role={label ? undefined : "group"}
+        className="flex w-full flex-col gap-1 rounded-xl border border-border bg-surface p-1"
+        {...rest}
       >
-        <div className="overflow-hidden">
-          <div
-            role={label ? undefined : "group"}
-            aria-hidden={label ? !isOpen : undefined}
-            // `inert` (not just `aria-hidden`) keeps slotted children from
-            // being Tab-focusable while the panel is visually collapsed to
-            // zero height — `aria-hidden` alone hides content from
-            // assistive tech but does not remove focusable descendants from
-            // the tab order.
-            inert={label ? !isOpen : undefined}
-            className="flex w-full flex-col gap-1 rounded-xl border border-border bg-surface p-1"
-            {...rest}
-          >
-            {children}
-          </div>
-        </div>
+        {label ? (
+          <>
+            {selectedChild}
+            <div
+              id={panelId}
+              className={clsx(
+                "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+                isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+              )}
+            >
+              <div className="overflow-hidden">
+                <div
+                  aria-hidden={!isOpen}
+                  // `inert` (not just `aria-hidden`) keeps the remaining
+                  // options from being Tab-focusable while this sub-list is
+                  // visually collapsed to zero height — `aria-hidden` alone
+                  // hides content from assistive tech but does not remove
+                  // focusable descendants from the tab order. The first/
+                  // selected child sits outside this wrapper and is never
+                  // hidden or made inert (ticket #61).
+                  inert={!isOpen}
+                  className="flex flex-col gap-1 pt-1"
+                >
+                  {restChildren}
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          children
+        )}
       </div>
     </div>
   );
