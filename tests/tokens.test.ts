@@ -25,9 +25,37 @@ describe("token → theme pipeline (ADR-0010)", () => {
     expect(css).toContain("--color-accent: #8A38F5;");
   });
 
-  it("every semantic token resolves (closed scale)", () => {
-    for (const ref of Object.values<string>(tokens.semantic.color)) {
-      expect(() => resolveRef(tokens, ref)).not.toThrow();
+  it("every semantic token resolves (closed scale), light and dark refs alike", () => {
+    for (const def of Object.values<unknown>(tokens.semantic.color)) {
+      if (typeof def === "string") {
+        expect(() => resolveRef(tokens, def)).not.toThrow();
+        continue;
+      }
+      const { light, dark } = def as { light: string; dark?: string };
+      expect(() => resolveRef(tokens, light)).not.toThrow();
+      if (dark) expect(() => resolveRef(tokens, dark)).not.toThrow();
     }
+  });
+
+  it("emits a [data-theme=dark] override block for tokens with a dark value", () => {
+    const css = generateTheme(tokens);
+    expect(css).toContain('[data-theme="dark"] {');
+    // surface-raised is used by Atom/Button (Filled style) and has a dark override.
+    expect(css).toContain("--color-surface-raised: var(--color-stone-800);");
+  });
+
+  it("places the dark override block outside (after) the @theme block, unlayered — it must win over @layer theme's :root vars per the CSS Cascade Layers spec, independent of specificity/order", () => {
+    const css = generateTheme(tokens);
+    const themeCloseIndex = css.indexOf("}");
+    const darkBlockIndex = css.indexOf('[data-theme="dark"]');
+    expect(darkBlockIndex).toBeGreaterThan(themeCloseIndex);
+    expect(css.slice(0, darkBlockIndex)).not.toContain("@layer");
+  });
+
+  it("omits tokens without a dark override from the dark block", () => {
+    const css = generateTheme(tokens);
+    const darkBlock = css.slice(css.indexOf('[data-theme="dark"]'));
+    // surface-muted is light-only (plain string ref, no dark variant defined yet).
+    expect(darkBlock).not.toContain("--color-surface-muted:");
   });
 });

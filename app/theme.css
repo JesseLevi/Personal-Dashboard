@@ -21,3 +21,20 @@
   --color-priority-low: var(--color-green-500);
   --color-priority-low-bg: var(--color-green-50);
 }
+
+/* Dark-mode overrides: [data-theme="dark"] is set by @ladle/react's Light/Dark
+   toggle (and would be the hook for a future app-level theme switch). Left
+   OUTSIDE any @layer on purpose: Tailwind's @theme output above compiles into
+   @layer theme, and per the CSS Cascade Layers spec an unlayered rule always
+   overrides a layered one, regardless of specificity or source order — no
+   dark: utility classes needed in components. */
+[data-theme="dark"] {
+  --color-surface: var(--color-stone-900);
+  --color-surface-raised: var(--color-stone-800);
+  --color-surface-hover: var(--color-stone-700);
+  --color-border: var(--color-stone-700);
+  --color-border-hover: var(--color-stone-400);
+  --color-text: #FFFFFF;
+  --color-text-muted: var(--color-stone-400);
+  --color-priority-urgent-bg: var(--color-red-950);
+}
