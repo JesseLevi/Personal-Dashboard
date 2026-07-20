@@ -10,7 +10,7 @@ Read on demand, not by default: `docs/phase-log.md` (what infrastructure exists)
 - `main` has Phase 0 (foundation) + Phase 1 login/logout + **all Phase 2 atoms and the Card molecule**. CI is **green** on both jobs, including the db job (supabase + pgTAP + RLS coverage).
 - Merged today: PR #37 (Icon, Tag, Checkbox, Button, InputField, Step), then #38 Card (#17), #39 Dropdown (#34), #40 ButtonToggle (#35) — all squash-merged, CI green on each.
 - Built so far: `components/atoms/` Button, ButtonToggle, Checkbox, Dropdown, Icon, InputField, Tag · `components/molecules/` Card, Step.
-- Board: #41–#45 auto-moved to **Done** (see process note below); #7, #12–#18, #34, #35, **#52, #53** sit in **In review** awaiting the user; the rest is Backlog. Issues normally stay open until the user closes them.
+- Board: #41–#45 auto-moved to **Done** (see process note below); #7, #12–#18, #34, #35, **#52, #53, #56** sit in **In review** awaiting the user; the rest is Backlog. Issues normally stay open until the user closes them.
 - `feat/phase2-atoms` is **stale** — its 9 commits all reached `main` via squash merges, so `git log main..feat/phase2-atoms` still lists them. Work on `main`; the branch can be deleted.
 
 ## Design-review round #41–#45 — all merged (2026-07-20)
@@ -24,6 +24,19 @@ All five fix tickets are on `main` (PRs #46–#48, #50, #51), each CI-green. Wha
 
 **Process note:** the PR bodies used `Fixes #NN`, which auto-closed the issues and moved their cards straight to **Done**, skipping the "In review" step CLAUDE.md reserves for the user. Reopen any of #41–#45 you still want to review.
 
+## Button's fourth state — #56 merged (2026-07-20), supersedes #52's matrix
+
+Figma added an **Active** state to `Button/Default` and redistributed the colours. What #52 recorded as Hover is now Active (pressed); Hover took a milder new value; **Selected no longer changes fill or stroke at all** — only the text.
+
+- **Token scale is now `role` / `role-hover` / `role-active`.** The `*-selected` colour tokens #52 added were *removed*, not left as dead names — Selected has no background of its own. `docs/design-tokens.md` is rewritten to match; read it, not #52's version.
+- **`active:` is legitimate again.** #42 removed it because it was misused for the *persistent* Selected state. CSS `:active` means "currently being pressed", which is exactly Figma's new state. Both hooks now coexist deliberately — don't "fix" one back into the other.
+- **Selected composes with hover/active by construction** (a stated product requirement). It works because Selected touches only `color` while Hover/Active touch only `background-color`/`border-color`. Verified against the compiled stylesheet, not assumed. **Never add an `aria-pressed:bg-*` or `aria-pressed:border-*` override** — that silently kills hover feedback on selected items.
+- Button's Ladle stories went 10 → 2 (`StateMatrix`, args-driven `Playground`). Workbench total is 35.
+
+**`Atom/Input-field` was NOT re-authored** (re-fetched to check). It still carries the pre-rework three-state scale, and its Hover stroke is *darker* than its Active one — the reverse of Button/Outline's new ordering. That inversion is the strongest evidence yet that the node was never re-bound to the reworked variables. It now reads two **provisional** tokens, `border-input-hover` / `border-input-focus`, rather than either component being normalised by guesswork. **Once Figma is reconciled: delete those two tokens** and point the component at `border-hover` / `border-active`.
+
+Still open from this round: Transparent buttons have no hover/active fill in Figma, so they have no pointer affordance at all — flagged, not invented.
+
 ## Per-state semantic colours — #52 + #53 merged (2026-07-20)
 
 Figma's semantic **variables** were reworked upstream: every colour role now carries a Default/Hover/Selected variation. Our token layer only had Default plus one ad-hoc `-hover` for two roles, so `Atom/Button` was rendering three wrong colours (Filled hover/selected, White selected, Outline hover/selected, and Destructive had no hover or selected at all).
@@ -34,13 +47,13 @@ Figma's semantic **variables** were reworked upstream: every colour role now car
 
 **Three things needing the user, all recorded in `docs/design-tokens.md`:**
 
-1. **`border-hover` diverged.** `Input-field` Hover stroke is stone-500, `Button/Outline` Hover is now stone-700. Two roles that shared one token pulled apart — probably one node wasn't re-bound to the updated variable. Both kept as fetched; `border-hover-strong` was added rather than normalising one to the other.
+1. ~~**`border-hover` diverged.**~~ Superseded by #56 — see the section above. Still unresolved on the Figma side, now handled via provisional `border-input-*` tokens.
 2. **Token names are hex-derived, not Figma-derived.** The Figma MCP returns resolved hex only, never variable names. Every semantic name in `tokens.json` is us matching a pixel value back to a role. Ask the user for the real variable names before the vocabulary calcifies further.
-3. **`surface-hover` (stone-300) now has no consumer.** Not deleted — the user decides. Same open question as the phantom `accent` token above.
+3. ~~**`surface-hover` (stone-300) now has no consumer.**~~ Resolved by #56: it was re-valued to stone-50 and now backs `Button/White`'s Hover.
 
 Smaller, non-blocking:
 
-- `hover:` and `focus-within:` now both write `border-color` on the Input-field container. Tailwind orders `focus-within` *before* `hover`, so hovering an already-focused field shows the hover colour, not the focus colour. Figma says nothing about that combination.
+- `hover:` and `focus-within:` both write `border-color` on the Input-field container. Tailwind orders `focus-within` *before* `hover`, so hovering an already-focused field shows the hover colour, not the focus colour. Figma says nothing about that combination. (Contrast `Atom/Button`, where Selected deliberately uses a *different* property so it composes — see #56 above.)
 - Several new dark values collide with their own default (`surface-raised-selected` = `surface-raised` = stone-800; both destructive states = red-950), so those states are invisible in dark mode. All dark values are still placeholders — no Figma dark frames exist — and dark mode isn't wired into the app yet.
 - A 1px border-colour change is a weak keyboard-focus affordance. Figma offers nothing stronger; flagged rather than compensated for with an invented ring.
 
