@@ -1,18 +1,18 @@
 import { Tag } from "./Tag";
 
 // Dev-only demo copy — not user-facing (component text always comes from `children` at call sites).
-export const AllColors = () => (
+export const AllVariants = () => (
   <div className="flex flex-wrap gap-3">
-    <Tag color="grey">Grey</Tag>
-    <Tag color="red">Red</Tag>
-    <Tag color="yellow">Yellow</Tag>
-    <Tag color="green">Green</Tag>
-    <Tag color="blue">Blue</Tag>
+    <Tag variant="neutral">Neutral</Tag>
+    <Tag variant="urgent">Urgent</Tag>
+    <Tag variant="medium">Medium</Tag>
+    <Tag variant="mid">Mid</Tag>
+    <Tag variant="low">Low</Tag>
   </div>
 );
 
-export const Grey = () => <Tag color="grey">Tag</Tag>;
-export const Red = () => <Tag color="red">Tag</Tag>;
-export const Yellow = () => <Tag color="yellow">Tag</Tag>;
-export const Green = () => <Tag color="green">Tag</Tag>;
-export const Blue = () => <Tag color="blue">Tag</Tag>;
+export const Neutral = () => <Tag variant="neutral">Tag</Tag>;
+export const Urgent = () => <Tag variant="urgent">Tag</Tag>;
+export const Medium = () => <Tag variant="medium">Tag</Tag>;
+export const Mid = () => <Tag variant="mid">Tag</Tag>;
+export const Low = () => <Tag variant="low">Tag</Tag>;

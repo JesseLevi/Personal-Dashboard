@@ -6,7 +6,7 @@
   },
   "atoms": {
     "Atom/Button": { "path": "components/atoms/Button.tsx", "nodeId": null, "notes": "CVA variant=filled|outline|white|transparent|destructive (Figma 'Distructive'); Hover/Active are CSS states" },
-    "Atom/Tag": { "path": "components/atoms/Tag.tsx", "nodeId": "3626:4515", "notes": "CVA color=grey|red|yellow|green|blue → priority semantic tokens (grey=surface-muted)" },
+    "Atom/Tag": { "path": "components/atoms/Tag.tsx", "nodeId": "3626:4515", "notes": "Figma 'Color' axis → semantic CVA variant: Grey→neutral, Red→urgent, Yellow→medium, Blue→mid, Green→low (matches card priority enum)" },
     "Atom/Input-field": { "path": "components/atoms/InputField.tsx", "nodeId": null },
     "Checkbox": { "path": "components/atoms/Checkbox.tsx", "nodeId": "3727:4084", "notes": "Checked=No/Yes prop; fetched node has no 'delete' state — needs triage before a future ticket adds it (#16)" },
     "Icon/*": { "path": "components/atoms/Icon.tsx", "nodeId": "3760:6187", "notes": "single wrapper around lucide-react; IconName vocab is Figma names (Calandar→Calendar), decoupled from lucide export names; Broccoli is a custom SVG (no lucide match)" },
