@@ -15,7 +15,9 @@ supabase/.temp/
 supabase/.branches/
 
 # tooling output
-.ladle/
+# .ladle/ itself holds committed config (stories glob + global CSS import);
+# only Ladle's build output is generated.
+.ladle/build/
 coverage/
 *.tsbuildinfo
 test-results/

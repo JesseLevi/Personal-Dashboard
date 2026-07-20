@@ -23,7 +23,6 @@ Read on demand, not by default: `docs/phase-log.md` (what infrastructure exists)
 These are **Figma-authoring gaps**: the ticket/property list promises something the dev-ready node doesn't actually contain. Each needs a design-side fix (bind the property to a real layer) before a follow-up ticket can model it — no one should build them from guesswork.
 
 - **Checkbox "delete" state**: `design/figma-map.json` notes it, the Figma node doesn't contain it.
-- **Dropdown `Step`, `Leading-icon`, `Trekking-icon`**: all three exist in the node's `propertyDefinitions` but are bound to no layer, so nothing renders for them. Not implemented in #34 — deliberately.
 - **`Button/Toggle` has no Hover state** sampled on the component itself (unlike `Atom/Button`, which does). No hover styling was invented in #35.
 - **Figma `Input-field` "Text" boolean** can hide the entire input row; not modelled (an input without its input isn't a meaningful state).
 - **Toggle-group / shared track**: the `Button/Toggle` node's demo shows 5 chips sharing one grey track. #35 builds one segment only; the grouped composition needs its own molecule/organism ticket if the design calls for it.

@@ -24,19 +24,10 @@ import type { HTMLAttributes, ReactNode } from "react";
  *   instance". The composing organism is responsible for what it puts in the
  *   slot (e.g. real `Button` instances for a category picker).
  *
- * NOT MODELLED — flagged for design-side triage, not freelanced:
- * `Step`, `Leading-icon`, and `Trekking-icon` (= trailing icon) all exist as
- * boolean entries in Figma's `propertyDefinitions` for this component, but
- * the fetched node tree has no layer bound to any of them (verified at fetch
- * depth 15, and confirmed visually via `download_figma_images`: the rendered
- * default instance shows only the label + bordered Slot — no icon or step
- * affordance anywhere on the Dropdown root itself). They are dangling
- * component properties, the same category of gap as InputField's unmodelled
- * `Text` bool and Checkbox's unmodelled "delete" state. No `leadingIcon` /
- * `trailingIcon` / `step` props are added here — inventing layout for them
- * would be freelancing a state Figma doesn't actually expose. Someone needs
- * to wire these properties to real layers in Figma before a future ticket
- * models them (recorded in `design/figma-map.json`).
+ * `Step`, `Leading-icon`, and `Trekking-icon` briefly existed as dangling
+ * `propertyDefinitions` (bound to no layer) and were removed from the Figma
+ * component on 2026-07-20 after triage — no longer part of the node, so
+ * nothing to model here.
  *
  * States: this component has no `State` property in Figma (unlike
  * Input-field's Default/Hover component set), so no hover/active override is
