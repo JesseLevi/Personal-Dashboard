@@ -16,6 +16,7 @@ Tickets live as issues on `JesseLevi/Personal-Dashboard` (one milestone per phas
 - **When you start working on a ticket, move its card to the "In progress" column first** (same `gh project item-edit` mechanism as below).
 - **When you finish a ticket** (implementation done, checks pass, PR opened/pushed), **move its card to the "In review" column** — via `gh project item-edit`, or flag it for the user if the `project` token scope is missing. Leave the issue open; the user reviews and moves it to Done/closes it.
 - Don't move other cards, reorder the board, or close issues on your own.
+- Before starting a new ticket, check if any ticket is in-progress collumn. If so check the code of the ticket and finish ticket. If no work on new ticket
 
 ## Tech stack
 
