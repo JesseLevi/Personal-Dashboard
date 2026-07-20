@@ -15,8 +15,15 @@ export async function createSupabaseServerClient() {
       cookies: {
         getAll: () => cookieStore.getAll(),
         setAll: (cookiesToSet) => {
-          for (const { name, value, options } of cookiesToSet) {
-            cookieStore.set(name, value, options);
+          try {
+            for (const { name, value, options } of cookiesToSet) {
+              cookieStore.set(name, value, options);
+            }
+          } catch {
+            // Next.js forbids cookie writes during Server Component render, so
+            // a token refresh triggered from an RSC lands here. The refreshed
+            // session still applies to this request; persisting it is the job
+            // of the session-refresh middleware (Phase 1 follow-up ticket).
           }
         },
       },

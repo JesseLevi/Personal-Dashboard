@@ -27,7 +27,9 @@ export async function sendMagicLink(formData: FormData) {
   const origin = (await headers()).get("origin");
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
-    options: { emailRedirectTo: `${origin}/auth/confirm` },
+    // shouldCreateUser defaults to true — without this flag a magic-link
+    // request self-provisions an account, and there is no self-signup flow.
+    options: { emailRedirectTo: `${origin}/auth/confirm`, shouldCreateUser: false },
   });
   if (error) redirect("/login?error=magic-link-failed");
 
