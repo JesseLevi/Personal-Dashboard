@@ -28,6 +28,7 @@ import {
   Notebook,
   Star,
   Check,
+  Timer,
   type LucideProps,
 } from "lucide-react";
 
@@ -53,6 +54,13 @@ import {
  *   x=9, i.e. the left third of the box) and the chevron direction.
  * - `Cross` was a false friend: lucide's literal `Cross` export is a medical/
  *   plus glyph, not an X — the Figma layer is now named `X` directly.
+ *
+ * `Timer` added for ticket #19 (Card-content/Recipi, node-id 3628:67): the
+ * node's "Icon" child is an IMAGE-SVG with no layer name beyond "Icon", so it
+ * was verified by rendered path structure, not name — the fetched vector
+ * (two short lines at 10,2->14,2 and 12,14->15,11 plus a circle at cx=12
+ * cy=14 r=8) matches lucide's `Timer` export exactly (a plain stopwatch, no
+ * checkmark) and does NOT match `AlarmClockCheck`, which was ruled out.
  */
 export type IconName =
   | "PanelLeftClose"
@@ -81,7 +89,8 @@ export type IconName =
   | "X"
   | "Notebook"
   | "Star"
-  | "Check";
+  | "Check"
+  | "Timer";
 
 // Figma name -> lucide-react component. Verified against lucide-react@1.25.0
 // exports and against actual rendered SVG path/element structure (see the
@@ -114,6 +123,7 @@ const ICONS: Record<IconName, ComponentType<LucideProps>> = {
   Notebook: Notebook,
   Star: Star,
   Check: Check,
+  Timer: Timer,
 };
 
 export interface IconProps {
