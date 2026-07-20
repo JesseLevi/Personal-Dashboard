@@ -65,6 +65,7 @@ Pipeline: Figma variables → `design/tokens.json` (synced via `pnpm sync:tokens
 - Figma fills map to named tokens in `design/tokens.json` — if a fill isn't a token yet, add it via the token sync, never hardcode hex in a component.
 - If a value in Figma has no Tailwind-scale equivalent, check with the user before inventing a one-off — the token scale stays closed.
 - Component↔Figma mapping lives in `design/figma-map.json`; every component file carries `// figma: node-id=...` in its header. When adding a component: add its map entry, header annotation, and Ladle story in the same PR.
+- **Per-state colour convention (ticket #52):** `docs/design-tokens.md` is the authoritative spec for state colours — every colour role gets `role` / `role-hover` / `role-selected` tokens, never one token reused across states, and a component reads its Hover/Selected colours from those tokens, never from a `dark:` prefix, raw hex, or one-off value. Read it before adding state styling to any component.
 
 ## Product & data rules
 
