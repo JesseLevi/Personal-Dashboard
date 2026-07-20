@@ -122,9 +122,25 @@ import { Icon, type IconName } from "./Icon";
  * element; add real Disabled styling once Figma defines it).
  */
 const buttonVariants = cva(
-  "inline-flex h-10 items-center justify-start rounded-lg pl-2 pr-1 text-base font-semibold transition-colors",
+  "inline-flex items-center justify-start rounded-lg text-base font-semibold transition-colors",
   {
     variants: {
+      /**
+       * Figma's Button set has no Size property — but `Button/Toggle`
+       * (3623:4345) resizes its nested Button instances to 32x32 via an
+       * instance override, which is a real, design-sourced footprint that a
+       * caller cannot reproduce with a `className`: `h-8` and `h-10` are the
+       * same property at the same specificity, so which one wins depends on
+       * Tailwind's own utility ordering, not on the order the caller wrote
+       * them. Hence a variant. The pixels are Figma's; only the API shape is
+       * ours. `compact` is verified for the icon-only case only (4px inset +
+       * 24px icon + 4px inset = 32), which is all Figma samples — pairing it
+       * with `children` is untested against any node.
+       */
+      size: {
+        default: "h-10 pl-2 pr-1",
+        compact: "h-8 pl-1 pr-0",
+      },
       variant: {
         filled:
           "bg-surface-raised text-text-muted hover:bg-surface-raised-hover active:bg-surface-raised-active aria-pressed:text-text",
@@ -139,6 +155,7 @@ const buttonVariants = cva(
     },
     defaultVariants: {
       variant: "filled",
+      size: "default",
     },
   },
 );
@@ -165,6 +182,7 @@ export type ButtonProps =
 
 export function Button({
   variant,
+  size,
   icon,
   children,
   className,
@@ -174,7 +192,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={buttonVariants({ variant, className })}
+      className={buttonVariants({ variant, size, className })}
       {...props}
     >
       {icon && (

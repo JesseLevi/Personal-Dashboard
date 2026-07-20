@@ -32,33 +32,25 @@ import type { IconName } from "./Icon";
  * produce one indicator sliding between icons — it only ever animated
  * independent per-segment capsules).
  *
- * ## Flagged gap: segment size
+ * ## Segment size
  *
- * Figma overrides each nested "Atom/Button" instance to a fixed 32x32
- * footprint (32 wide, and 32 tall — the 40px track minus 4px padding on top
- * and bottom). But the fetched `Atom/Button` component set (3623:4346) has
- * **no Size property** — only Style/State/`With icon`/`With text` — so
- * `Button.tsx` cannot render at 32x32; its icon-only recipe is a fixed 40x40
- * (documented there as "icon-only: 8px/8px" around a 24px icon, `h-10`
- * root). `Button.tsx` is explicitly out of scope for this ticket (owned by a
- * parallel ticket), and forcing a smaller size via a conflicting className
- * (`h-8`/`w-8` fighting the component's own `h-10`) would depend on
- * Tailwind's utility-generation order rather than the caller's class order —
- * exactly the ad-hoc className fighting CLAUDE.md's house style forbids.
- * So: **this track composes real, unmodified `Button` instances at their
- * native 40x40 icon-only size**, and the track (whose own Figma sizing is
- * `contextual`/hug on both axes, i.e. it grows to fit its children already)
- * grows to match — 48px tall (4+40+4) instead of the fetched node's 40px.
- * Flagged in `design/figma-map.json` for future triage: adding a compact
- * size variant to `Atom/Button` would let a future pass close this gap
- * exactly instead of approximating it here.
+ * The fetched node resizes its nested `Atom/Button` instances to 32x32 (an
+ * instance override — Button's own component set has no Size property). That
+ * footprint cannot be reproduced from here with a `className`: `h-8` and
+ * `h-10` are the same property at the same specificity, so the winner is
+ * decided by Tailwind's utility ordering, not by the caller. So `Button`
+ * gained a `size="compact"` variant carrying exactly Figma's numbers
+ * (4px inset + 24px icon + 4px inset = 32), and the segments use it. Track
+ * height therefore lands on Figma's 40px (4px padding + 32px segment + 4px)
+ * and the five-segment demo on its 184px hug width, both matching the
+ * fetched node.
  *
  * ## Movement
  *
- * The indicator is one absolutely-positioned `span` (40x40, matching the
- * actual segment footprint above; inset by the track's own 4px padding via
- * `top-1 left-1`), translated on the x-axis by `index * (segment width +
- * gap)` = `index * 44px`. Segments are given `relative` (and the indicator
+ * The indicator is one absolutely-positioned `span` (32x32, matching the
+ * segment footprint; inset by the track's own 4px padding via `top-1
+ * left-1`), translated on the x-axis by `index * (segment width + gap)` =
+ * `index * 36px`. Segments are given `relative` (and the indicator
  * left un-z-indexed) so normal DOM/paint order — indicator first, segments
  * after — puts the segments visually on top, reproducing the fetched node's
  * own layer order; a plain `absolute` indicator among `static` siblings would
@@ -156,17 +148,19 @@ export type ButtonToggleProps =
       "aria-labelledby": string;
     });
 
-// Segment footprint (40px, see the "Flagged gap" doc above) + 4px gap = 44px
-// per step. Capped at 8 possible segments — see the "Movement" doc above.
+// Segment footprint (32px, matching the fetched node's instance override —
+// Button's `size="compact"`) + 4px gap = 36px per step. Tailwind needs
+// literal class names, so the offsets are a static table; capped at 8
+// segments — see the "Movement" doc above.
 const INDICATOR_OFFSETS = [
   "translate-x-[0px]",
-  "translate-x-[44px]",
-  "translate-x-[88px]",
-  "translate-x-[132px]",
-  "translate-x-[176px]",
-  "translate-x-[220px]",
-  "translate-x-[264px]",
-  "translate-x-[308px]",
+  "translate-x-[36px]",
+  "translate-x-[72px]",
+  "translate-x-[108px]",
+  "translate-x-[144px]",
+  "translate-x-[180px]",
+  "translate-x-[216px]",
+  "translate-x-[252px]",
 ] as const;
 
 export function ButtonToggle({
@@ -234,7 +228,7 @@ export function ButtonToggle({
       <span
         aria-hidden="true"
         className={clsx(
-          "pointer-events-none absolute left-1 top-1 h-10 w-10 rounded-md bg-surface transition-transform duration-200 ease-out motion-reduce:transition-none",
+          "pointer-events-none absolute left-1 top-1 h-8 w-8 rounded-md bg-surface transition-transform duration-200 ease-out motion-reduce:transition-none",
           INDICATOR_OFFSETS[offsetIndex],
         )}
       />
@@ -243,6 +237,7 @@ export function ButtonToggle({
           key={item.value}
           type="button"
           variant="transparent"
+          size="compact"
           icon={item.icon}
           aria-label={item.label}
           role="radio"
