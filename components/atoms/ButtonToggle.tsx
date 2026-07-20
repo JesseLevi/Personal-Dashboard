@@ -29,8 +29,9 @@ import { Icon, type IconName } from "./Icon";
  * Icon/text color does not change between pressed and unpressed in the
  * fetched node (every sampled icon, including the one behind the white
  * highlight, renders in the same muted stroke) — so unlike Button.tsx's
- * Filled variant (whose Active state darkens the text), no text-color
- * pseudo-class is added here; only the background changes.
+ * Filled variant (whose Selected state, renamed from "Active" in Figma
+ * 2026-07-20 per ticket #42, darkens the text), no text-color pseudo-class
+ * is added here; only the background changes.
  *
  * `With icon` / `With text` -> optional props, same idiom as Button.tsx:
  * presence of `icon` is the icon boolean. `children` presence is the text
@@ -61,7 +62,7 @@ import { Icon, type IconName } from "./Icon";
  * - The nested "Atom/Button" instance in the fetched node overrides padding
  *   to "0 12" inside a fixed 32px width, which doesn't reconcile with a
  *   24px icon (same kind of auto-layout drift Button.tsx already documents
- *   for its own Filled/Active instance) — not followed. Spacing instead
+ *   for its own Filled/Selected instance) — not followed. Spacing instead
  *   mirrors Button.tsx's own verified icon/text padding recipe (icon-only
  *   8px/8px, text-only 12px/12px, both 8px left/12px right) for consistency
  *   between the two sibling atoms.
