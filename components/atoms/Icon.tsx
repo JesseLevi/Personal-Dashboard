@@ -5,21 +5,21 @@ import {
   PanelLeftOpen,
   ShoppingBasket,
   Lightbulb,
-  Clock,
+  AlarmClockCheck,
   Loader,
   Broccoli,
-  Cake,
+  CakeSlice,
   Infinity as InfinityIcon,
   Croissant,
-  List,
+  Scroll,
   Plus,
   Pencil,
-  Folder,
+  FolderClosed,
   Shirt,
   ArrowLeft,
   ArrowUpDown,
   Sandwich,
-  Columns2,
+  Columns3,
   ChevronDown,
   Trash,
   Ellipsis,
@@ -33,81 +33,88 @@ import {
 
 /**
  * Stable, dashboard-facing icon vocabulary — one entry per icon in the Figma
- * "Icons" frame (node-id 3760:6187). As of 2026-07-20 the Figma layer names
- * were updated to match lucide-react's export names directly (e.g. `Loading`
- * -> `Loader`, `Sort` -> `Arrow-up-down`, `Dots` -> `Ellipsis`, `Trashcan` ->
- * `Trash`, `Basket` -> `Shopping-basket`) — for those, `IconName` is a literal
- * PascalCase of the Figma name and resolves to the identically-named lucide
- * export, so adding a future icon is a direct lookup, no judgment call.
+ * "Icons" frame (node-id 3760:6187). Figma layer names are kept in sync with
+ * lucide-react's export names directly (renamed 2026-07-20, refined again
+ * 2026-07-20: `Clock`->`Alarm-clock-check`, `Cake`->`Cake-slice`, `List`->
+ * `Scroll`, `Folder`->`Folder-closed`, `Columns`->`Columns-3`), so `IconName`
+ * is a literal PascalCase of the Figma name resolving to the identically-named
+ * lucide export — adding a future icon is a direct lookup, no judgment call.
+ * Every mapping below is verified against the actual rendered SVG (element
+ * count + path bounding boxes), not assumed from the name — same-named lucide
+ * exports can still be the wrong glyph (see the `Cross`/`X` history below).
  *
- * Four names remain an intentional exception (verified against the actual
- * rendered SVG paths, not guessed from the name):
- * - `CloseSidebar`/`OpenSidebar`: no single-word lucide match exists; Figma
- *   kept the descriptive name. Backed by `PanelLeftClose`/`PanelLeftOpen`
- *   (verified: same 3-path structure — rounded rect + divider + chevron).
- * - `Cross`: a false friend. lucide's literal `Cross` export is a medical/
- *   plus-sign glyph (single closed path) — visually nothing like Figma's
- *   2-vector diagonal "X" composition. The verified match is lucide's `X`.
- * - `Calendar`: Figma's layer is still misspelled `Calandar` (not renamed);
- *   kept as the established spelling-correction (Architecture §3.1).
+ * One unresolved discrepancy (flagged, not silently resolved — needs a Figma-
+ * side decision):
+ * - `CloseSidebar`/`OpenSidebar`: Figma's layers are currently named
+ *   `Panel-right-open`/`Panel-right-close`, but the actual vector geometry
+ *   (divider at x=9, i.e. left third of the box) is unchanged from before and
+ *   verified to match lucide's `PanelLeftClose`/`PanelLeftOpen` — not
+ *   `PanelRightOpen`/`PanelRightClose` (which have their divider at x=15).
+ *   The open/close pairing also looks swapped: the node named "...open" has
+ *   a chevron pointing left (the `PanelLeftClose` shape), and the node named
+ *   "...close" has a chevron pointing right (the `PanelLeftOpen` shape).
+ *   Both the side (left/right) and the direction (open/close) contradict the
+ *   name, which points at a mixup on the Figma side rather than an intentional
+ *   rename — kept as `CloseSidebar`/`OpenSidebar`, backed by the
+ *   geometry-verified `PanelLeftClose`/`PanelLeftOpen`, pending confirmation.
  */
 export type IconName =
   | "CloseSidebar"
   | "OpenSidebar"
   | "ShoppingBasket"
   | "Lightbulb"
-  | "Clock"
+  | "AlarmClockCheck"
   | "Loader"
   | "Broccoli"
-  | "Cake"
+  | "CakeSlice"
   | "Infinity"
   | "Croissant"
-  | "List"
+  | "Scroll"
   | "Plus"
   | "Pencil"
-  | "Folder"
+  | "FolderClosed"
   | "Shirt"
   | "ArrowLeft"
   | "ArrowUpDown"
   | "Sandwich"
-  | "Columns"
+  | "Columns3"
   | "ChevronDown"
   | "Trash"
   | "Ellipsis"
   | "Calendar"
-  | "Cross"
+  | "X"
   | "Notebook"
   | "Star"
   | "Check";
 
 // Figma name -> lucide-react component. Verified against lucide-react@1.25.0
-// exports (and, for Cross/Trash/sidebar/basket, against actual rendered SVG
-// path structure — see the exceptions note above).
+// exports and against actual rendered SVG path/element structure (see the
+// class doc comment above for the one unresolved discrepancy).
 const ICONS: Record<IconName, ComponentType<LucideProps>> = {
   CloseSidebar: PanelLeftClose,
   OpenSidebar: PanelLeftOpen,
   ShoppingBasket: ShoppingBasket,
   Lightbulb: Lightbulb,
-  Clock: Clock,
+  AlarmClockCheck: AlarmClockCheck,
   Loader: Loader,
   Broccoli: Broccoli,
-  Cake: Cake,
+  CakeSlice: CakeSlice,
   Infinity: InfinityIcon,
   Croissant: Croissant,
-  List: List,
+  Scroll: Scroll,
   Plus: Plus,
   Pencil: Pencil,
-  Folder: Folder,
+  FolderClosed: FolderClosed,
   Shirt: Shirt,
   ArrowLeft: ArrowLeft,
   ArrowUpDown: ArrowUpDown,
   Sandwich: Sandwich,
-  Columns: Columns2, // Columns is a deprecated alias of Columns2 (identical shape) — import the canonical name.
+  Columns3: Columns3,
   ChevronDown: ChevronDown,
   Trash: Trash,
   Ellipsis: Ellipsis,
   Calendar: Calendar,
-  Cross: X, // false friend — see exceptions note above.
+  X: X,
   Notebook: Notebook,
   Star: Star,
   Check: Check,
