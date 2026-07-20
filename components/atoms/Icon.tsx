@@ -43,25 +43,20 @@ import {
  * count + path bounding boxes), not assumed from the name — same-named lucide
  * exports can still be the wrong glyph (see the `Cross`/`X` history below).
  *
- * One partially-resolved discrepancy (open/close fixed by the user 2026-07-20;
- * left/right still flagged, not silently resolved):
- * - `PanelRightClose`/`PanelRightOpen`: Figma originally had these two nodes'
- *   open/close labels swapped relative to their chevron direction — fixed.
- *   The open/close pairing now agrees with the shape (verified: the
- *   "...close" node's chevron points left, matching `PanelLeftClose`; the
- *   "...open" node's chevron points right, matching `PanelLeftOpen`).
- *   Still unresolved: both nodes' divider sits at x=9 (left third of the box),
- *   which is `PanelLeft*` geometry — lucide's actual `PanelRightOpen`/
- *   `PanelRightClose` have their divider at x=15. So the code still renders
- *   the verified-matching `PanelLeftClose`/`PanelLeftOpen` glyphs under
- *   Figma's "right" names. If this sidebar genuinely sits on the right, the
- *   Figma vector (not just the label) needs the divider moved to x=15;
- *   otherwise the label should read "Panel-left-*". Flagging rather than
- *   guessing which is intended.
+ * Two discrepancies surfaced and resolved during Phase 2 (kept as history —
+ * this is exactly why every mapping is verified against rendered SVG, not
+ * assumed from the name):
+ * - The sidebar-panel icons went through two rounds: an open/close label swap
+ *   (fixed 2026-07-20), then a left/right correction — the app's sidebar sits
+ *   on the left, so the nodes are now named `Panel-left-close`/
+ *   `Panel-left-open`, matching the verified vector geometry (divider at
+ *   x=9, i.e. the left third of the box) and the chevron direction.
+ * - `Cross` was a false friend: lucide's literal `Cross` export is a medical/
+ *   plus glyph, not an X — the Figma layer is now named `X` directly.
  */
 export type IconName =
-  | "PanelRightClose"
-  | "PanelRightOpen"
+  | "PanelLeftClose"
+  | "PanelLeftOpen"
   | "ShoppingBasket"
   | "Lightbulb"
   | "AlarmClockCheck"
@@ -90,10 +85,10 @@ export type IconName =
 
 // Figma name -> lucide-react component. Verified against lucide-react@1.25.0
 // exports and against actual rendered SVG path/element structure (see the
-// class doc comment above for the one unresolved discrepancy).
+// class doc comment above for the discrepancies this caught).
 const ICONS: Record<IconName, ComponentType<LucideProps>> = {
-  PanelRightClose: PanelLeftClose, // see left/right note above — shape-verified, name-mismatched
-  PanelRightOpen: PanelLeftOpen, // see left/right note above — shape-verified, name-mismatched
+  PanelLeftClose: PanelLeftClose,
+  PanelLeftOpen: PanelLeftOpen,
   ShoppingBasket: ShoppingBasket,
   Lightbulb: Lightbulb,
   AlarmClockCheck: AlarmClockCheck,

@@ -3,8 +3,8 @@ import { Icon, type IconName } from "./Icon";
 
 // Dev-only demo labels for the Ladle workbench — not user-facing (no i18n needed).
 const ICON_NAMES: IconName[] = [
-  "PanelRightClose",
-  "PanelRightOpen",
+  "PanelLeftClose",
+  "PanelLeftOpen",
   "ShoppingBasket",
   "Lightbulb",
   "AlarmClockCheck",

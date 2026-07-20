@@ -37,12 +37,10 @@ import { Icon, type IconName } from "./Icon";
  * state for this atom. Flagged in `design/figma-map.json` for triage rather
  * than silently supported.
  *
- * TOKEN GAP (flagged, not hardcoded): the placeholder fill is stone-300 and the
- * hover border is stone-500 — the values of the `border` and `text-muted`
- * tokens, reused here for a text colour and a stroke respectively.
- * Pixels match Figma exactly, but no dedicated `text-placeholder` /
- * `border-hover` semantic token exists yet. Same gap as `Button`; needs one
- * token-sync decision for both (CLAUDE.md keeps the token scale closed).
+ * The placeholder colour and hover border use the dedicated `text-placeholder`
+ * and `border-hover` semantic tokens (added to design/tokens.json 2026-07-20).
+ * They resolve to the same stone-300/stone-500 primitives Figma uses, but are
+ * named for their role — `border-hover` is shared with `Button`.
  */
 type InputFieldBaseProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -86,7 +84,7 @@ export function InputField({
         </label>
       ) : null}
 
-      <div className="flex flex-row items-center justify-center gap-3 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-text-muted">
+      <div className="flex flex-row items-center justify-center gap-3 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-hover">
         <div className="flex flex-1 flex-col gap-3">
           <div className="flex flex-row items-center gap-2 self-stretch pl-2 pt-2">
             {leadingIcon ? (
@@ -94,7 +92,7 @@ export function InputField({
             ) : null}
             <input
               {...props}
-              className="w-full border-0 bg-transparent p-0 text-base font-semibold text-text placeholder:text-border"
+              className="w-full border-0 bg-transparent p-0 text-base font-semibold text-text placeholder:text-placeholder"
             />
           </div>
           {button ? <div className="flex flex-row gap-2">{button}</div> : null}

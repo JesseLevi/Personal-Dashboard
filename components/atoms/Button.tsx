@@ -25,17 +25,16 @@ import { Icon, type IconName } from "./Icon";
  * via design/tokens.json (exact Figma hex values live in design/figma-map.json,
  * never in component source — check-server-only.sh enforces that):
  * - Filled: bg stone-200 (surface-raised), text stone-500 (text-muted);
- *   hover bg stone-300 (reuses the `border` token's value via `bg-border`,
- *   text unchanged); active bg unchanged, text stone-950 (text).
+ *   hover bg stone-300 (surface-hover), text unchanged; active bg unchanged,
+ *   text stone-950 (text).
  * - White: bg white (surface), text text-muted; hover identical to default
  *   (Figma's Hover node resolves to the same fill/text as Default — no
  *   override needed); active text -> text (stone-950).
  * - Transparent: no fill (bg-transparent), text-muted; hover identical to
  *   default; active text -> text.
  * - Outline: bg-transparent, 1px border-border (stone-300), text-muted;
- *   hover border -> stone-500 (reuses the `text-muted` token's value via
- *   `border-text-muted`, since Figma's hover stroke is that same primitive);
- *   active border reverts to border-border, text -> text.
+ *   hover border -> stone-500 (border-hover); active border reverts to
+ *   border-border, text -> text.
  * - Destructive ("Distructive" in Figma): priority-urgent-bg / priority-urgent
  *   for Default, Hover, and Active alike — Figma defines no state-specific
  *   override for this style.
@@ -46,14 +45,10 @@ import { Icon, type IconName } from "./Icon";
  * not a deliberate active-only padding change, since Filled/Default and
  * Filled/Hover both use the standard padding.
  *
- * TOKEN GAP (flagged, not hardcoded): `hover:bg-border` and
- * `hover:border-text-muted` reuse the *values* of the `border` (stone-300) and
- * `text-muted` (stone-500) tokens for a fill and a stroke respectively. The
- * pixels match Figma exactly, but there is no dedicated semantic token for
- * "hover surface" / "hover border" yet. Per CLAUDE.md the token scale is
- * closed, so this borrows an existing token rather than inventing a hex —
- * needs a token-sync decision (add `surface-hover`/`border-strong`?) before
- * more components repeat the pattern.
+ * The hover fill and hover stroke use the dedicated `surface-hover` and
+ * `border-hover` semantic tokens (added to design/tokens.json 2026-07-20).
+ * They resolve to the same stone-300/stone-500 primitives Figma uses, but are
+ * named for their role so a future hover-colour change is one token edit.
  *
  * No "Disabled" state exists in the fetched component set, so none is
  * invented here (native `disabled` attribute still works via the `button`
@@ -65,9 +60,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         filled:
-          "bg-surface-raised text-text-muted hover:bg-border active:bg-surface-raised active:text-text",
+          "bg-surface-raised text-text-muted hover:bg-surface-hover active:bg-surface-raised active:text-text",
         outline:
-          "border border-border bg-transparent text-text-muted hover:border-text-muted active:border-border active:text-text",
+          "border border-border bg-transparent text-text-muted hover:border-border-hover active:border-border active:text-text",
         white: "bg-surface text-text-muted active:text-text",
         transparent: "bg-transparent text-text-muted active:text-text",
         destructive: "bg-priority-urgent-bg text-priority-urgent",
