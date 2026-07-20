@@ -22,7 +22,14 @@
   },
   "components": {
     "buttonToggle": {
-      "defaultLabel": "Category"
+      "groupLabel": "Category filter",
+      "categories": {
+        "all": "All",
+        "breakfast": "Breakfast",
+        "lunch": "Lunch",
+        "vegetable": "Vegetable",
+        "dessert": "Dessert"
+      }
     }
   }
 }

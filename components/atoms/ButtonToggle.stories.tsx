@@ -1,66 +1,39 @@
 // figma: node-id=3623:4345
-import { useState } from "react";
-import { ButtonToggle } from "./ButtonToggle";
+import { ButtonToggle, type ButtonToggleItem } from "./ButtonToggle";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
 
-// The Figma "Text" property defaults to "Categorie " — reproduced here from
-// the message catalog (not hardcoded) since this specific default is
-// user-facing (see the doc comment in ButtonToggle.tsx and messages/*.json).
-const defaultLabelEn = en.components.buttonToggle.defaultLabel;
-const defaultLabelNl = nl.components.buttonToggle.defaultLabel;
+// One story: the working toggle group exactly as the fetched node draws it
+// (5 icon-only segments sharing one track, one white capsule that slides to
+// whichever segment is active) — per ticket #60, no other ButtonToggle
+// stories. Labels come from the message catalog, not hardcoded strings.
+const categories: readonly ButtonToggleItem[] = [
+  { value: "all", icon: "Infinity", label: en.components.buttonToggle.categories.all },
+  { value: "breakfast", icon: "Croissant", label: en.components.buttonToggle.categories.breakfast },
+  { value: "lunch", icon: "Sandwich", label: en.components.buttonToggle.categories.lunch },
+  { value: "vegetable", icon: "Broccoli", label: en.components.buttonToggle.categories.vegetable },
+  { value: "dessert", icon: "CakeSlice", label: en.components.buttonToggle.categories.dessert },
+];
 
-export const Default = () => (
-  <ButtonToggle icon="Infinity">{defaultLabelEn}</ButtonToggle>
+const categoriesNl: readonly ButtonToggleItem[] = [
+  { value: "all", icon: "Infinity", label: nl.components.buttonToggle.categories.all },
+  { value: "breakfast", icon: "Croissant", label: nl.components.buttonToggle.categories.breakfast },
+  { value: "lunch", icon: "Sandwich", label: nl.components.buttonToggle.categories.lunch },
+  { value: "vegetable", icon: "Broccoli", label: nl.components.buttonToggle.categories.vegetable },
+  { value: "dessert", icon: "CakeSlice", label: nl.components.buttonToggle.categories.dessert },
+];
+
+export const CategoryFilter = () => (
+  <div className="flex flex-col gap-4">
+    <ButtonToggle
+      items={categories}
+      defaultValue="all"
+      aria-label={en.components.buttonToggle.groupLabel}
+    />
+    <ButtonToggle
+      items={categoriesNl}
+      defaultValue="all"
+      aria-label={nl.components.buttonToggle.groupLabel}
+    />
+  </div>
 );
-
-export const DefaultLabelNl = () => (
-  <ButtonToggle icon="Infinity">{defaultLabelNl}</ButtonToggle>
-);
-
-export const Pressed = () => (
-  <ButtonToggle icon="Infinity" aria-pressed>
-    {defaultLabelEn}
-  </ButtonToggle>
-);
-
-export const IconOnly = () => (
-  <ButtonToggle icon="Croissant" aria-label="Croissant" />
-);
-
-export const TextOnly = () => (
-  <ButtonToggle>{defaultLabelEn}</ButtonToggle>
-);
-
-// Approximates the fetched node's demo (5 category icons, one pressed) using
-// independent ButtonToggle instances. Figma's own demo merges all 5 into one
-// shared grey track (a single outer fill behind transparent buttons) — that
-// grouped-track composition belongs to a future toggle-group molecule/
-// organism, out of scope for this atom (CLAUDE.md: compose exactly as Figma
-// nests, but don't invent a group component this ticket doesn't ask for).
-// Each chip below keeps its own resting background, so the row reads as
-// separate pills rather than one continuous track.
-export const CategoryFilterRow = () => {
-  const [active, setActive] = useState("all");
-  const categories = [
-    { key: "all", icon: "Infinity", label: "All" },
-    { key: "breakfast", icon: "Croissant", label: "Breakfast" },
-    { key: "lunch", icon: "Sandwich", label: "Lunch" },
-    { key: "vegetable", icon: "Broccoli", label: "Vegetable" },
-    { key: "dessert", icon: "CakeSlice", label: "Dessert" },
-  ] as const;
-
-  return (
-    <div className="inline-flex gap-2">
-      {categories.map((c) => (
-        <ButtonToggle
-          key={c.key}
-          icon={c.icon}
-          aria-label={c.label}
-          aria-pressed={active === c.key}
-          onClick={() => setActive(c.key)}
-        />
-      ))}
-    </div>
-  );
-};
