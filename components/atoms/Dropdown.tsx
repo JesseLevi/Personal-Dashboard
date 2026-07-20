@@ -210,7 +210,18 @@ export function Dropdown({
 
       <div
         role={label ? undefined : "group"}
-        className="flex w-full flex-col gap-1 rounded-xl border border-border bg-surface p-1"
+        // `gap-1` only in the labelless mode, where every child is a direct
+        // flex item. With a label, the collapsible sub-list supplies its own
+        // `pt-1` instead: a parent gap would survive the `0fr` collapse (a
+        // gap is drawn between flex items regardless of their height), so a
+        // closed Dropdown would sit on 4px of dead space below the selected
+        // option — an asymmetric inset against the panel's 4px padding — and
+        // an open one would show 8px above the second option but 4px between
+        // the rest. Ticket #61 follow-up.
+        className={clsx(
+          "flex w-full flex-col rounded-xl border border-border bg-surface p-1",
+          !label && "gap-1",
+        )}
         {...rest}
       >
         {label ? (
