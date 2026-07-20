@@ -27,44 +27,52 @@ import { Icon, type IconName } from "./Icon";
  *   so callers pass their own `<Button>` rather than this atom importing a
  *   sibling atom.
  *
- * States: only Hover differs from Default on the container (border stone-300
- * → stone-500). Figma's "Active" instance keeps the same container styling as
- * Default; its only difference is the content text's fill going from
- * `text-placeholder` (stone-300, placeholder copy) to `text` (stone-950,
- * "typed" copy) — i.e. it demonstrates placeholder-vs-value contrast, not a
- * distinct interaction state. That's already what happens for free: the
- * `<input>` uses `text-text` with a `placeholder:text-placeholder` override,
- * so real typed text renders dark and the placeholder renders muted. No
- * `active:` CSS override is added because there is nothing left to add.
+ * States, re-read from the fetched node for #53 (the semantic variables were
+ * reworked since #44, and the set now carries three genuinely distinct
+ * container strokes):
+ * - Default: border stone-300, content stone-300 (placeholder copy).
+ * - Hover:   border stone-500, content stone-300 (placeholder copy).
+ * - Active:  border stone-400, content stone-950 ("typed" copy).
  *
- * Figma's set (Default/Hover/Active, per above) has no distinct Focus state.
- * #15 left the browser's native input focus ring as the only affordance, but
- * that ring outlines just the `<input>` box — which is much smaller than the
- * component frame (no padding/border of its own) — so it rendered as a small
- * rectangle floating inside the rounded pill, not aligned to its corners
- * (issue #44). Fixed by suppressing the native ring (`focus:outline-none` on
- * the `<input>`) and drawing the focus indicator on the whole container
- * instead (`focus-within:ring-2 focus-within:ring-inset ring-border-hover`),
- * sized to the container's real 12px corner radius. No Figma focus state
- * exists to source a colour from, so the ring reuses `border-hover` — the
- * same design-sourced token this container already uses for Hover, so focus
- * reads as a stronger version of the same affordance.
+ * Figma names the third state "Active", not "Focus" — this atom reads it as
+ * the keyboard/pointer focus state (`:focus-within`) because it is the only
+ * interaction state left in the set and its sample shows a typed value, which
+ * only makes sense once the field has been engaged. That is our reading of
+ * intent, not a labelled Figma state; flagged in `design/figma-map.json` for
+ * confirmation rather than assumed silently.
+ *
+ * The container therefore draws its own state per fetched stroke:
+ * `border-border` (stone-300) at rest, `hover:border-border-hover`
+ * (stone-500), `focus-within:border-border-selected` (stone-400, new token —
+ * see design/tokens.json). No ring/outline is added: Figma's Active instance
+ * only changes the 1px border colour, so a ring would be inventing an
+ * affordance the design doesn't show. The typed-vs-placeholder text contrast
+ * already happens for free via the `<input>`'s `text-text` +
+ * `placeholder:text-placeholder` classes, so no extra class is needed for it.
+ *
+ * Flagged honestly (both recorded in design/figma-map.json too): (1) the
+ * Active→Focus mapping above is this atom's interpretation, not a Figma
+ * label — worth confirming with design; (2) a 1px border-colour change is a
+ * weak focus affordance for keyboard users (no ring, no outline, low
+ * contrast against the stone-300 default), and Figma offers nothing
+ * stronger in this node — flagged as a design question rather than
+ * compensated for with an invented ring/outline.
  *
  * Deliberately NOT the `accent` token: #45 established that `accent`'s purple
  * entered the codebase from a Figma canvas artifact (the dashed stroke marking
  * a selected component set), not from any design intent, and removed it from
  * `Checkbox`. Reusing it here would have re-introduced the same wrong colour.
- * The lack of a real Figma focus state is flagged in `design/figma-map.json`.
  *
  * Figma's `Text` boolean can hide the entire input row, leaving just the button
  * slot. Not modelled: an "input field" without its input is not a meaningful
  * state for this atom. Flagged in `design/figma-map.json` for triage rather
  * than silently supported.
  *
- * The placeholder colour and hover border use the dedicated `text-placeholder`
- * and `border-hover` semantic tokens (added to design/tokens.json 2026-07-20).
- * They resolve to the same stone-300/stone-500 primitives Figma uses, but are
- * named for their role — `border-hover` is shared with `Button`.
+ * The placeholder colour and hover/focus border use the dedicated
+ * `text-placeholder`, `border-hover`, and `border-selected` semantic tokens.
+ * `border-hover` (stone-500) is shared with `Button`; `border-selected`
+ * (stone-400) is new for this ticket (#53), added to design/tokens.json for
+ * this Active/focus stroke specifically.
  *
  * Every padding/gap below is re-derived from the fetched dev-ready node (root
  * gap 8; container padding 4, gap 12; content gap 12; leading+text padding
@@ -120,7 +128,7 @@ export function InputField({
         </label>
       ) : null}
 
-      <div className="flex flex-row items-start justify-center gap-3 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-hover focus-within:ring-2 focus-within:ring-inset focus-within:ring-border-hover">
+      <div className="flex flex-row items-start justify-center gap-3 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-hover focus-within:border-border-selected">
         <div className="flex flex-1 flex-col gap-3">
           <div className="flex flex-row items-center gap-2 self-stretch pl-2 pt-2">
             {leadingIcon ? (
