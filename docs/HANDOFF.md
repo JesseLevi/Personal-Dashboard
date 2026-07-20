@@ -12,6 +12,24 @@ Read on demand, not by default: `docs/phase-log.md` (what infrastructure exists)
 - Built so far: `components/atoms/` Button, ButtonToggle, Checkbox, Dropdown, Icon, InputField, Tag · `components/molecules/` Card, Step.
 - Board: 10 tickets **In review** (#7 login, #12–#18 components, #34, #35), 19 in Backlog, #26 Done. Issues stay open until the user closes them.
 
+## In flight right now (2026-07-20, design-review round)
+
+The user design-reviewed the merged Phase 2 components in Ladle and filed five fix tickets. **Five Sonnet agents were spawned in worktrees off `main` @ f97df7f**, one per ticket, each pushing a branch but deliberately opening no PR:
+
+| Ticket | Branch | Scope |
+|---|---|---|
+| #41 | `fix/41-ladle-chrome` | Ladle chrome → surface/primary bg, color/secondary text+icons |
+| #42 | `fix/42-button-dark-selected` | dark-mode tokens don't apply; Figma renamed `Active` → `Selected` |
+| #43 | `fix/43-dropdown` | option content not left-aligned; no open/close interaction |
+| #44 | `fix/44-inputfield` | spacing wrong throughout; input smaller than frame → broken focus ring |
+| #45 | `fix/45-checkbox` | check icon renders purple (should be `color/stroke/secondary`); no on-click toggle |
+
+**#42 owns token changes this round** — the other four were told not to edit `design/tokens.json` / `app/theme.css` and to flag gaps instead. #45 may add `color/stroke/secondary` if it is genuinely missing.
+
+Three of these (#43 Dropdown, #45 Checkbox, and possibly #44) force a **deliberate client/server decision**: CLAUDE.md keeps presentational atoms as Server Components with interactivity wired by the composer, but a disclosure and a toggle arguably own their own state. Each agent was told to choose explicitly and justify it — **review those decisions for consistency across the three before merging**, since they set the house precedent.
+
+To resume: check which branches exist (`git ls-remote --heads origin | grep fix/4`), review, open PRs, merge, then move the cards to **In review**. Expect the usual `design/figma-map.json` conflict on whichever merges last.
+
 ## Next actions
 
 1. **Phase 2 remainder** — #19–#22 Card-content/\* (now unblocked: Card exists and takes them in its `children` slot), then #23 CardContainer, #24 Carousel, #25 Sidebar. Work in issue order; each ticket carries its Figma node-id.
