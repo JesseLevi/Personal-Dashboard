@@ -1,0 +1,36 @@
+/*
+ * Ladle's own chrome (sidebar, addons toolbar, buttons, preview backdrop) is styled
+ * by its bundled ladle.css through a small, documented set of CSS custom properties
+ * (see @ladle/react/lib/app/ladle.css, `:root` and `[data-theme="dark"]`). That file
+ * is not part of this repo, so we don't fight it with deep selectors — we override
+ * the variables it already exposes, through Ladle's own `appendToHead` config hook
+ * (.ladle/config.mjs), which injects this stylesheet into the *outer* chrome
+ * document's <head> (the story preview renders in its own iframe document via
+ * .ladle/components.tsx + app/globals.css, which never reaches this outer chrome).
+ *
+ * Token mapping (issue #41):
+ * - "surface/primary" (preview background)      -> --color-surface
+ * - "color/secondary" (chrome text + icons)      -> --color-text-muted
+ *   (icons are inline SVGs using stroke/fill="currentColor", so recoloring the text
+ *   color that governs .ladle-aside / .ladle-markdown / .ladle-error-content also
+ *   recolors the icons that inherit it.)
+ *
+ * Token gap: design/tokens.json has no literal `color-secondary` semantic token.
+ * `--color-text-muted` is the nearest existing "secondary" text/icon color and is
+ * reused here rather than inventing a new token or hardcoding a hex value.
+ *
+ * Token gap: the design system has only one (light) palette today — no dark-mode
+ * semantic tokens exist yet. Ladle's light/dark toggle keeps working (it still
+ * flips `[data-theme]` and Ladle's own accent/secondary/hover vars), but the two
+ * variables we override below intentionally resolve to the same values in both
+ * modes, since there is no dark counterpart to fall back to. Revisit once dark
+ * tokens land.
+ */
+@import "tailwindcss";
+@import "../app/theme.css";
+
+:root,
+[data-theme="dark"] {
+  --ladle-bg-color-primary: var(--color-surface);
+  --ladle-color-primary: var(--color-text-muted);
+}
