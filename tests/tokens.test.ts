@@ -96,6 +96,7 @@ describe("token → theme pipeline (ADR-0010)", () => {
     const light = css.slice(0, css.indexOf('[data-theme="dark"]'));
     expect(light).toContain("--color-border-input-hover: var(--color-stone-500);");
     expect(light).toContain("--color-border-input-active: var(--color-stone-600);");
+    expect(light).toContain("--color-border-input-selected: var(--color-stone-400);");
     // Not collapsed onto Button's Outline hover/active (stone-400/stone-700).
     expect(light).not.toContain("--color-border-input-hover: var(--color-stone-400);");
     expect(light).not.toContain("--color-border-input-active: var(--color-stone-700);");

@@ -14,6 +14,7 @@
   --color-border-active: var(--color-stone-700);
   --color-border-input-hover: var(--color-stone-500);
   --color-border-input-active: var(--color-stone-600);
+  --color-border-input-selected: var(--color-stone-400);
   --color-text: var(--color-stone-950);
   --color-text-muted: var(--color-stone-500);
   --color-text-placeholder: var(--color-stone-300);
@@ -48,6 +49,7 @@
   --color-border-active: var(--color-stone-300);
   --color-border-input-hover: var(--color-stone-400);
   --color-border-input-active: var(--color-stone-300);
+  --color-border-input-selected: var(--color-stone-500);
   --color-text: #FFFFFF;
   --color-text-muted: var(--color-stone-400);
   --color-priority-urgent-bg: var(--color-red-950);

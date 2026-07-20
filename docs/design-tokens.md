@@ -103,19 +103,30 @@ which is `priority-urgent` throughout.
    is correctly lighter than Active (stone-600) now, the same direction as
    Button, so this reads as a deliberate, distinct border ramp rather than an
    unbound leftover. The tokens are therefore staying, permanently, under their
-   own names — `border-input-hover` (unchanged, stone-500) and `border-input-active`
-   (renamed from `border-input-focus`, now stone-600) — not "provisional," since
-   there is no further reconciliation expected. One more finding worth flagging:
-   the fetched node's new Selected state changes its border (stone-400) and its
-   sample content text (stone-950, a "typed" look) — that "typed" tell used to
-   sit on the Active instance (#53's reading) and has now moved to Selected,
-   while Active's content text is plain placeholder-grey like Default/Hover.
-   Per the ticket's own fallback rule, Input-field keeps reading `:focus-within`
-   off Active (there is still no state literally named "Focus"), but the
-   qualitative signal that justified that reading has shifted — worth a design
-   confirmation. Selected itself is not modelled in code: there's no interaction
-   affordance on a plain `<input>` analogous to `aria-pressed`, so nothing was
-   invented; flagged in `design/figma-map.json` for triage.
+   own names — `border-input-hover` (stone-500), `border-input-active` (stone-600)
+   and `border-input-selected` (stone-400) — not "provisional," since no further
+   reconciliation is expected.
+
+   **All four states are modelled**, using the same state→CSS-hook semantics
+   Button established in #56, which is presumably the point of the states having
+   been renamed to match: Hover → `:hover`, Active → `:active` (Figma's Active
+   means "being pressed"), Selected → `:focus-within`. Selected is the state whose
+   sample shows a *typed* value (stone-950) rather than the placeholder, i.e. the
+   field has been engaged — which is what `:focus-within` expresses. Note this
+   moved: in the #53 fetch that typed-content tell sat on **Active**, which is why
+   #53/#56 read Active as the focus state; this re-fetch moved it to Selected, so
+   the focus mapping moved with it. Figma labels states, not CSS hooks, so this is
+   still an interpretation and stays flagged for design confirmation.
+
+   **Still open on the design side:** the user's intent was for Input-field to use
+   *the same colours* as Button. It now has the same four state *names*, but every
+   value except Default is one stop lighter than Button's (Hover stone-500 vs
+   stone-400, Active stone-600 vs stone-700, Selected stone-400 vs "no change").
+   Either that is deliberate — input borders and button borders being genuinely
+   different roles — or the variables were bound one step off. Until that is
+   answered the two ramps stay separate, since collapsing them would silently
+   change rendered pixels away from what the design shows.
+
 2. **Figma MCP returns resolved hex only, never variable names.** Every semantic
    token name in `design/tokens.json` is derived by matching a pixel value back to
    a role, not read from Figma's own variables. The names may need aligning with

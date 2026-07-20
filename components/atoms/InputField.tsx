@@ -33,30 +33,27 @@ import { Icon, type IconName } from "./Icon";
  * - Default:  border stone-300, content stone-300 (placeholder copy).
  * - Hover:    border stone-500, content stone-300 (placeholder copy).
  * - Active:   border stone-600, content stone-300 (placeholder copy).
- * - Selected: border stone-400, content stone-950 ("typed" copy). Not
- *   modelled — see below.
+ * - Selected: border stone-400, content stone-950 ("typed" copy).
  *
- * Figma names the third state "Active", not "Focus" — this atom reads it as
- * the keyboard/pointer focus state (`:focus-within`) because it is the only
- * interaction state left in the set with no dedicated trigger of its own
- * (Hover has `:hover`; Selected, see below, has no input-shaped trigger
- * either, so Active is the remaining candidate for "the user is engaged with
- * this field"). That is our reading of intent, not a labelled Figma state;
- * flagged in `design/figma-map.json` for confirmation rather than assumed
- * silently. Worth noting for whoever confirms it: in the #53 fetch, Active's
- * sample showed typed (stone-950) content text, which was this reading's main
- * evidence. In this re-fetch that "typed" sample moved onto the new Selected
- * state instead — Active's content text is now plain placeholder-grey, same
- * as Default/Hover. The `:focus-within` mapping is kept per the ticket's own
- * fallback rule (no state is literally named "Focus"), but the qualitative
- * signal behind it has shifted, so it's flagged again rather than silently
- * carried forward as settled.
+ * All four are modelled. Figma labels states, not CSS hooks, so the mapping
+ * below is this atom's reading — but it is the same reading `Atom/Button`
+ * uses (see docs/design-tokens.md), which is what the states being renamed to
+ * match Button's is presumably for:
+ * - Hover    -> `:hover`.
+ * - Active   -> `:active`. Figma's Active means "being pressed", which is
+ *   exactly what CSS `:active` means; Button makes the same mapping.
+ * - Selected -> `:focus-within`. This is the state whose sample shows a typed
+ *   value instead of the placeholder, i.e. the field has been engaged — which
+ *   is what `:focus-within` expresses. Note this moved: in the #53 fetch the
+ *   typed-content sample sat on *Active*, which is why #53/#56 read Active as
+ *   the focus state. This re-fetch moved it onto Selected, so the focus
+ *   mapping moved with it.
  *
- * The container therefore draws its own state per fetched stroke:
- * `border-border` (stone-300) at rest, `hover:border-border-input-hover`
- * (stone-500), `focus-within:border-border-input-active` (stone-600). No
- * ring/outline is added: Figma's Active instance only changes the 1px border
- * colour, so a ring would be inventing an affordance the design doesn't show.
+ * Flagged in `design/figma-map.json` for confirmation rather than treated as
+ * settled. No ring/outline is added anywhere: Figma changes only the 1px
+ * border colour per state, so a ring would invent an affordance the design
+ * does not show — a weak keyboard-focus affordance is a real accessibility
+ * concern, but it is a design question, not something to paper over here.
  *
  * Not shared with `Atom/Button`: Button's Outline style reads `border-hover`
  * (stone-400) / `border-active` (stone-700) for the same two interactions,
@@ -74,26 +71,6 @@ import { Icon, type IconName } from "./Icon";
  * pixel this ticket relabels stone-600) are no longer described as
  * provisional — see docs/design-tokens.md open question 1 for the full
  * history.
- *
- * Figma's new Selected state (border stone-400, content stone-950) is not
- * modelled here: there is no interaction affordance on a plain `<input>`
- * analogous to Button's `aria-pressed`, so building one would be inventing
- * behaviour Figma doesn't specify how to trigger. Flagged in
- * `design/figma-map.json` for design/triage rather than guessed at.
- *
- * Flagged honestly (both recorded in design/figma-map.json too): (1) the
- * Active→Focus mapping above is this atom's interpretation, not a Figma
- * label, and the signal behind it shifted between fetches — worth
- * confirming with design; (2) a 1px border-colour change is a weak focus
- * affordance for keyboard users (no ring, no outline, low contrast against
- * the stone-300 default), and Figma offers nothing stronger in this node —
- * flagged as a design question rather than compensated for with an invented
- * ring/outline.
- *
- * Deliberately NOT the `accent` token: #45 established that `accent`'s purple
- * entered the codebase from a Figma canvas artifact (the dashed stroke marking
- * a selected component set), not from any design intent, and removed it from
- * `Checkbox`. Reusing it here would have re-introduced the same wrong colour.
  *
  * Figma's `Text` boolean can hide the entire input row, leaving just the button
  * slot. Not modelled: an "input field" without its input is not a meaningful
@@ -157,7 +134,7 @@ export function InputField({
         </label>
       ) : null}
 
-      <div className="flex flex-row items-start justify-center gap-3 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-input-hover focus-within:border-border-input-active">
+      <div className="flex flex-row items-start justify-center gap-3 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-input-hover active:border-border-input-active focus-within:border-border-input-selected">
         <div className="flex flex-1 flex-col gap-3">
           <div className="flex flex-row items-center gap-2 self-stretch pl-2 pt-2">
             {leadingIcon ? (
