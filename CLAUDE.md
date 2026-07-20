@@ -38,7 +38,7 @@ Rules:
 - **Before building or changing a UI component, fetch it from Figma via MCP first** (`get_figma_data` with the relevant node-id). Don't guess spacing, color, or type scale from memory or from a screenshot — pull it from the dev-ready node. Note the node-id you used in the PR/commit description.
   - **The agent that writes the component does the fetch itself** — first tool call of the build. A second-hand summary pasted into the prompt is not a substitute: it drops fidelity (only the fields someone chose to copy) and defeats the point of a live dev-ready pull. When delegating a component ticket to a subagent, tell it to call MCP for its node; do not pre-digest the node into the prompt and skip the fetch.
   - **Pixel-parity is verified, not assumed.** Components must match the Figma dev-ready node. Fetch the visual with `download_figma_images`, render the Ladle story, and compare — the ADR-0010 Ladle/Playwright screenshot baseline is the enforcement mechanism (ticket #6). Until #6 lands, eyeball the rendered story against the Figma image and record the check (and any intentional deviation) in the PR.
-  - **Icons: name the Figma layer after the exact lucide export it should use** (e.g. `Icon/Ellipsis`, not `Icon/Dots`) — this is the convention as of 2026-07-20 (`design/figma-map.json` → `Icon/*`). Done this way, the Icon atom's mapping is a direct lookup, not a judgment call, and the result genuinely is the same open-source vector Figma shows (real pixel parity, not an approximation). **Never trust the name alone** — a same-named lucide export can still be the wrong glyph (a "false friend"): e.g. lucide's literal `Cross` is a medical/plus-sign icon, not an X, even though a Figma layer might reasonably be called "Cross" for a dismiss button. Verify by rendering the candidate export (`renderToStaticMarkup` or the Ladle story) and comparing its actual paths/shape against the Figma node — matching the name is not sufficient. If no lucide export matches at all (rare now), that's an Architecture-level call (custom SVG vs. exporting Figma's own vector via `download_figma_images`) — flag it, don't improvise a hand-drawn approximation in a component ticket.
+  - **Icons: Figma layer names are the exact lucide export names** (`Icon/Ellipsis`, not `Icon/Dots`), so the `Icon` atom's mapping is a direct lookup and the rendered glyph really is the vector Figma shows. **Never trust the name alone** — verify by rendering the candidate export (`renderToStaticMarkup` or the Ladle story) and comparing its paths against the Figma node. Same-named exports can be "false friends" (lucide's `Cross` is a medical/plus glyph, not an X), and shape-verification has already caught three real mismappings. If no lucide export matches, that's an Architecture-level call (custom SVG vs. exporting Figma's vector) — flag it, never hand-draw an approximation in a component ticket.
 - **Never build a component that doesn't exist in Figma yet.** If a ticket needs UI that isn't designed, stop and flag it rather than inventing a layout — send it back through the Fable/Figma loop instead of freelancing.
 - **Compose exactly as Figma nests.** If Figma builds `Card-container` out of `Card` instances which wrap `Card-content/*` in a slot, the React tree mirrors that composition — don't flatten it into one big component. Dependencies flow one way only: atoms ← molecules ← organisms ← `app/`; an atom never imports a molecule.
 - **Variants via CVA**: Figma variant properties (Style, Type) become CVA props; **State (Hover/Active) becomes CSS pseudo-classes, never props**; Figma booleans (`With icon`) become optional props; Figma SLOT nodes become `children`/named slots. Icons go through the `Icon` atom (lucide-react).
@@ -70,7 +70,8 @@ Pipeline: Figma variables → `design/tokens.json` (synced via `pnpm sync:tokens
 
 Fundamentals (multi-user + RLS, NL/EN i18n, security-by-design) are decided in `Vision.md` §2 — don't relitigate them. Applied in code:
 
-- Every table gets a `user_id` foreign key and a Row Level Security policy, **plus an RLS test in `supabase/tests` in the same PR** — CI fails on untested tables (ADR-0009). Schema changes only via `supabase/migrations`.
+- Every table gets a `user_id` foreign key and a Row Level Security policy, **plus an RLS test in `supabase/tests` in the same PR** (copy `rls-profiles.sql`) — CI fails on untested tables (ADR-0009). Schema changes only via `supabase/migrations`.
+- **A new table's migration must also grant table access**: `grant select, insert, update, delete on public.<table> to authenticated;` and `grant select on public.<table> to anon;`. RLS policies are the real boundary, but without the grants every query fails with `42501 permission denied` — this project's Supabase does not auto-expose new tables. Copy the grants block in `20260720000001_profiles.sql`.
 - Ownership is user_id-only per ADR-0001 — no household/sharing structures, not even "convenient" ones.
 - Per-account secrets (AI keys, calendar credentials) go through the Vault pattern of ADR-0002 — never plaintext, never logged, decrypted only server-side.
 - No hardcoded user-facing strings — everything through next-intl catalogs (`messages/nl.json` + `messages/en.json`, both filled in the same PR — ADR-0007).
@@ -88,9 +89,17 @@ When a ticket forces a trade-off, resolve it in this order:
 5. LLM-readable by design (predictable structure, canonical text columns, semantic tokens)
 6. Make your code easily readable for humans and structure files neatily with a clear folder structure
 
-## Build status
+## Build status & session start
 
-`docs/phase-log.md` is the authoritative record of what is already built per phase — check it before creating or executing tickets, and update it when a phase item lands.
+- **`docs/HANDOFF.md`** — where the project stands right now and what to do next. Read it first in a new session; keep it accurate when you finish work.
+- **`docs/phase-log.md`** — what infrastructure exists per phase and why. Read on demand; update when a phase item lands.
+- Per-ticket status lives on the **board**, not in these files.
+
+## This dev machine
+
+- **No Docker and no standalone supabase CLI** — `supabase` runs via `npx` (devDependency), so `pnpm db:reset` / `pnpm test:rls` are CI/server-only. Don't treat their absence as a failure.
+- `gh` is installed and authenticated (incl. `project` scope), so board and PR commands work.
+- `.mcp.json` (Figma key) and `.env` are git-ignored on purpose; `.env.example` documents the needed vars.
 
 ## Commands
 

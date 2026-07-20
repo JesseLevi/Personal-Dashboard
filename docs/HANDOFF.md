@@ -1,37 +1,36 @@
 # Handoff — start here in a new Claude Code session
 
-**Read order for context**: `CLAUDE.md` (auto-loaded — build rules incl. the project-board workflow) → `docs/phase-log.md` (what exists, what doesn't — authoritative) → `Architecture.md` + `docs/decisions/` ADR-0001…0010 (why). `Vision.md` is product scope. ADRs win on conflict.
+`CLAUDE.md` is auto-loaded (build rules, conventions, board workflow) — you do not need to be asked to read it.
+Read on demand, not by default: `docs/phase-log.md` (what infrastructure exists), `Architecture.md` + `docs/decisions/` (why — read the section for the phase you're working), `Vision.md` (product scope).
 
-## Where the project stands (2026-07-20, end of day)
+**The GitHub Project board is the source of truth for ticket status**, not this file: `gh project item-list 1 --owner JesseLevi`.
 
-- **Phase 0 (foundation) is built and on `main`**, verified locally: `pnpm lint`, `pnpm typecheck`, `pnpm test` (5/5), `pnpm build`, `pnpm check:server-only` all pass. Still **never verified**: everything requiring Docker (`pnpm db:reset`, `pnpm test:rls` — no Docker on this dev machine; runs in CI/on the server).
-- **Repo is on GitHub**: `JesseLevi/Personal-Dashboard` (private), remote `origin`, `main` pushed.
-- **CI has never run green — through no fault of ours**: the first pushes hit a GitHub Actions platform outage (instant `startup_failure`, 0 jobs; confirmed incident on githubstatus.com). Workflow YAML, permissions and registration were all verified fine.
-- **The full ticket backlog exists** (written by Fable 2026-07-20, deviating from the CLAUDE.md Opus-role with the user's explicit consent): 10 milestones (Phase 0 remainder … Phase 9), 35 issues. Phase 2 component tickets carry verified Figma node-ids + the standard PR checklist. Issue #26 (triage) is resolved/closed: Dropdown (#34) and ButtonToggle (#35) are **in scope** and in `design/figma-map.json` + Architecture §3.1.
-- **GitHub Project kanban board is live**: project 1, owner `JesseLevi`, columns `Backlog → Ready → In progress → In review → Done`, auto-add enabled (all 35 issues on it). Workflow rules are in `CLAUDE.md` ("Ticket workflow"): move your card to **In review** when a ticket is finished; never close issues yourself.
+## State (2026-07-20)
 
-## Immediate next actions (in order)
+- `main` has Phase 0 (foundation) + Phase 1 login/logout. CI is **green** on both jobs, including the db job (supabase + pgTAP + RLS coverage).
+- Branch `feat/phase2-atoms` → **PR #37**, open and mergeable, CI green. Contains six Phase 2 components: Icon, Tag, Checkbox, Button, InputField, Step.
+- Board: 7 tickets **In review** (#7 login, #12 #13 #14 #15 #16 #18 components), 22 in Backlog, #26 Done.
 
-1. **Verify CI once the GitHub Actions outage is over**: `gh run list` → if still `startup_failure`, check githubstatus.com; when recovered, `gh run rerun <id>` (or push) and watch the **db job** (supabase start + pgTAP + coverage gate — never executed; environment quirks expected there, not in the app job).
-2. **Start issue #12: Atom Icon** (`components/atoms/Icon.tsx`) — everything else in Phase 2 depends on it (Button #13, InputField #15, Sidebar #25 embed icons). Then the rest of Phase 2 in issue order. Per ticket: fetch the node via Figma MCP first, CVA per CLAUDE.md, Ladle story (first real story replaces `components/Welcome.stories.tsx`), semantic token classes only, board card → In review when done.
-3. **Phase 0 remainder / Phase 1 tickets** (#1–#11) are server-side or need user accounts — coordinate with the user, don't start them unprompted.
+## Next actions
 
-## Gotchas a fresh session must know
+1. **PR #37 awaits the user's review/merge.** Don't merge it yourself.
+2. **Phase 2 remainder** — molecules/organisms: #17 Card, #19–#22 Card-content/\*, #23 CardContainer, #24 Carousel, #25 Sidebar. Work in issue order; each ticket carries its Figma node-id.
+3. **#6 Playwright + screenshot baselines** is the highest-value non-component ticket: it turns "I compared the Figma values by hand" into an automated pixel diff, which is the enforcement mechanism CLAUDE.md's pixel-parity rule currently lacks.
+4. **#1–#5, #8–#11** are server-side or need user accounts — coordinate with the user, don't start unprompted.
 
-- **This dev machine has no Docker and no standalone supabase CLI** — supabase runs via `npx supabase` (devDependency); db-dependent commands are CI/server-only for now. `gh` IS installed (authenticated as JesseLevi incl. `project` scope).
-- **Git identity on this machine is auto-guessed** (`Jesse@mbp-van-jesse.home`) — user was advised to set `git config --global user.name/email`; check before attributing commits.
-- **No `NEXT_PUBLIC_SUPABASE*` env vars, ever** — the browser never talks to Supabase (ADR-0003); `scripts/check-server-only.sh` greps for violations and CI fails on them.
-- **New table ⇒ migration + `supabase/tests/rls-<table>.sql` in the same PR** (copy `rls-profiles.sql`), or the coverage gate fails CI.
-- **Token edits**: change `design/tokens.json`, run `pnpm sync:tokens`, commit both — never touch `app/theme.css` directly.
-- `.mcp.json` (Figma key) and `.env` are git-ignored on purpose; `.env.example` documents the needed vars.
-- The worker (`worker/index.ts`) references a `claim_next_job()` SQL function that does not exist yet — it ships with the Phase 7 jobs-table migration (issue #31). The worker is a skeleton by design; don't "fix" it earlier.
-- Figma spelling variants ("Recipi", "Distructive", "Calandar", "Trekking-icon") are translated in code per the map in `Architecture.md` §3.1 / `design/figma-map.json`.
-- Figma "Notion - V2" (`PE9Tc5r8ybDZWVrJrQPqXi`), Development canvas: Atoms `3760:6190`, Molecules `3761:5193`, Organisms `3761:5462`; per-component node-ids are in the Phase 2 issues and `design/figma-map.json`.
+## Open questions for the user
 
-## Environment/tooling still to set up (outside this repo)
+- **Checkbox "delete" state**: `design/figma-map.json` notes it, the Figma node doesn't contain it. Needs triage before anyone builds it.
+- **Figma `Input-field` "Text" boolean** can hide the entire input row; not modelled (an input without its input isn't a meaningful state).
 
-**Dev machine (optional):** Docker Desktop/OrbStack so `pnpm db:reset` + `pnpm test:rls` run locally instead of CI-only.
+## Session gotchas not covered by CLAUDE.md
 
-**Mac mini (server — ticketed as issues #1–#5):** Docker + two Supabase stacks (ports bound to 127.0.0.1 — verify with `scripts/check-localhost-binding.sh`), `cloudflared` tunnel + Cloudflare Access on staging, Ollama (`OLLAMA_HOST=127.0.0.1`, pull `bge-m3` + chat model sized to RAM), GitHub Actions self-hosted runner (hardened, deploy-only), restic backups + separate Vault-root-key backup.
+- Worktrees created for subagents branch off **`main`, not the branch you have checked out**. If a delegated ticket needs work that only exists on a feature branch, the agent's worktree will not have it — verify before spawning, or the agent will (correctly) stop and report.
+- `git config user.name/email` is auto-guessed on this machine (`Jesse@mbp-van-jesse.home`); check before attributing commits.
+- Figma spelling variants still live in the file: `Recipi`, `Distructive`, `Trekking-icon` (= trailing). Icon layer names were fixed and now match lucide exports exactly — see `design/figma-map.json`.
 
-**Accounts to create (all have free tiers):** Cloudflare (domain + tunnel + Access), an SMTP provider (e.g. Resend — magic links don't work without it, §7), Healthchecks.io (dead-man's-switch), an S3-compatible bucket for off-site backups (e.g. Backblaze B2).
+## Environment still to set up (outside this repo)
+
+**Mac mini (issues #1–#5):** Docker + two Supabase stacks (ports on 127.0.0.1, verify with `scripts/check-localhost-binding.sh`), `cloudflared` + Cloudflare Access, Ollama (`OLLAMA_HOST=127.0.0.1`, `bge-m3` + chat model sized to RAM), hardened self-hosted runner, restic backups + separate Vault-root-key backup.
+
+**Accounts (all free tier):** Cloudflare, an SMTP provider (Resend — magic links don't work without it), Healthchecks.io, an S3-compatible bucket (e.g. Backblaze B2).
