@@ -5,9 +5,13 @@
   --color-surface-muted: var(--color-stone-100);
   --color-surface-raised: var(--color-stone-200);
   --color-surface-hover: var(--color-stone-300);
+  --color-surface-selected: var(--color-stone-50);
+  --color-surface-raised-hover: var(--color-stone-400);
+  --color-surface-raised-selected: var(--color-stone-300);
   --color-border: var(--color-stone-300);
   --color-border-muted: var(--color-stone-200);
   --color-border-hover: var(--color-stone-500);
+  --color-border-hover-strong: var(--color-stone-700);
   --color-border-selected: var(--color-stone-400);
   --color-text: var(--color-stone-950);
   --color-text-muted: var(--color-stone-500);
@@ -15,6 +19,8 @@
   --color-accent: #8A38F5;
   --color-priority-urgent: var(--color-red-400);
   --color-priority-urgent-bg: var(--color-red-50);
+  --color-priority-urgent-bg-hover: var(--color-red-200);
+  --color-priority-urgent-bg-selected: var(--color-red-100);
   --color-priority-medium: var(--color-orange-400);
   --color-priority-medium-bg: var(--color-orange-50);
   --color-priority-mid: var(--color-blue-400);
@@ -33,10 +39,16 @@
   --color-surface: var(--color-stone-900);
   --color-surface-raised: var(--color-stone-800);
   --color-surface-hover: var(--color-stone-700);
+  --color-surface-selected: var(--color-stone-950);
+  --color-surface-raised-hover: var(--color-stone-700);
+  --color-surface-raised-selected: var(--color-stone-800);
   --color-border: var(--color-stone-700);
   --color-border-hover: var(--color-stone-400);
+  --color-border-hover-strong: var(--color-stone-300);
   --color-border-selected: var(--color-stone-500);
   --color-text: #FFFFFF;
   --color-text-muted: var(--color-stone-400);
   --color-priority-urgent-bg: var(--color-red-950);
+  --color-priority-urgent-bg-hover: var(--color-red-950);
+  --color-priority-urgent-bg-selected: var(--color-red-950);
 }

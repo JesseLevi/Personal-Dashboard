@@ -58,4 +58,26 @@ describe("token → theme pipeline (ADR-0010)", () => {
     // surface-muted is light-only (plain string ref, no dark variant defined yet).
     expect(darkBlock).not.toContain("--color-surface-muted:");
   });
+
+  it("emits the per-state Button token tier added for ticket #52 (Default/Hover/Selected)", () => {
+    const css = generateTheme(tokens);
+    // Light values, resolved from the re-fetched node 3623:4346.
+    expect(css).toContain("--color-surface-selected: var(--color-stone-50);");
+    expect(css).toContain("--color-surface-raised-hover: var(--color-stone-400);");
+    expect(css).toContain("--color-surface-raised-selected: var(--color-stone-300);");
+    expect(css).toContain("--color-border-hover-strong: var(--color-stone-700);");
+    expect(css).toContain("--color-border-selected: var(--color-stone-400);");
+    expect(css).toContain("--color-priority-urgent-bg-hover: var(--color-red-200);");
+    expect(css).toContain("--color-priority-urgent-bg-selected: var(--color-red-100);");
+  });
+
+  it("keeps border-hover at stone-500 for Atom/Input-field even though Atom/Button's Outline hover diverged to stone-700 (border-hover-strong)", () => {
+    const css = generateTheme(tokens);
+    expect(css).toContain("--color-border-hover: var(--color-stone-500);");
+  });
+
+  it("retains surface-hover in the theme even though ticket #52 removed its only consumer (Atom/Button moved to surface-raised-hover)", () => {
+    const css = generateTheme(tokens);
+    expect(css).toContain("--color-surface-hover: var(--color-stone-300);");
+  });
 });

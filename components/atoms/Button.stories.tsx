@@ -1,4 +1,6 @@
 // figma: node-id=3623:4346
+import { Fragment } from "react";
+import type { ButtonProps } from "./Button";
 import { Button } from "./Button";
 
 // Dev-only demo copy — not user-facing (component text always comes from
@@ -61,5 +63,43 @@ export const Selected = () => (
     <Button variant="destructive" aria-pressed="true">
       Destructive
     </Button>
+  </div>
+);
+
+// Full Style x State matrix (ticket #52 — Figma reworked every colour role
+// to carry a per-state Default/Hover/Selected variation). Default and
+// Selected render statically (Selected via `aria-pressed`, per the note
+// above); Hover can only be demonstrated by actually hovering the pointer
+// over a button, so that column is labelled rather than faked with a class.
+const STATE_MATRIX_VARIANTS: { variant: NonNullable<ButtonProps["variant"]>; label: string }[] = [
+  { variant: "filled", label: "Filled" },
+  { variant: "white", label: "White" },
+  { variant: "transparent", label: "Transparent" },
+  { variant: "outline", label: "Outline" },
+  { variant: "destructive", label: "Distructive" },
+];
+
+export const StateMatrix = () => (
+  <div className="flex flex-col gap-4">
+    <div className="grid grid-cols-[96px_repeat(3,auto)] items-center gap-x-6 gap-y-3">
+      <span />
+      <span className="text-sm font-semibold text-text-muted">Default</span>
+      <span className="text-sm font-semibold text-text-muted">
+        Hover (hover the button below to see it)
+      </span>
+      <span className="text-sm font-semibold text-text-muted">
+        Selected (aria-pressed)
+      </span>
+      {STATE_MATRIX_VARIANTS.map(({ variant, label }) => (
+        <Fragment key={variant}>
+          <span className="text-sm font-semibold text-text">{label}</span>
+          <Button variant={variant}>Categorie</Button>
+          <Button variant={variant}>Categorie</Button>
+          <Button variant={variant} aria-pressed="true">
+            Categorie
+          </Button>
+        </Fragment>
+      ))}
+    </div>
   </div>
 );
