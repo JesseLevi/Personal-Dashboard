@@ -2,11 +2,9 @@
 import { useState } from "react";
 import { Checkbox } from "./Checkbox";
 
-export const Unchecked = () => <Checkbox checked={false} />;
-
-export const Checked = () => <Checkbox checked />;
-
-export const Both = () => (
+// Checked=No/Yes side by side — the full variant axis from the Figma
+// component set, both rendered statically.
+export const States = () => (
   <div className="flex gap-4">
     <Checkbox checked={false} />
     <Checkbox checked />
