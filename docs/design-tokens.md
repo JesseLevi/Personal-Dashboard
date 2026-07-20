@@ -86,21 +86,36 @@ which is `priority-urgent` throughout.
 - **Removed** (no consumer left once Selected became text-only): `surface-selected`,
   `surface-raised-selected`, `border-selected`, `border-hover-strong`,
   `priority-urgent-bg-selected`.
-- **Provisional, delete on reconciliation**: `border-input-hover` (stone-500) and
-  `border-input-focus` (stone-400), scoped to `Atom/Input-field` — see below.
 
 ## Open questions (recorded, not resolved by guessing)
 
-1. **`Atom/Input-field` was not re-authored along with `Atom/Button`.** Re-fetched
-   for #56 (node 3705:4402) and confirmed unchanged: still three states, strokes
-   stone-300 / stone-500 / stone-400. Note the ordering — its **Hover is darker
-   than its Active**, the reverse of Button/Outline (stone-400 → stone-700). That
-   inversion is the strongest signal yet that this node was simply never re-bound
-   to the reworked variables. Until someone confirms, the two components keep
-   their own fetched values and Input-field's live behind names that announce
-   themselves as temporary. **Action for the design side:** re-bind Input-field's
-   strokes, then delete `border-input-hover` / `border-input-focus` and point the
-   component at `border-hover` / `border-active`.
+1. **RESOLVED (ticket #58, 2026-07-20): `Atom/Input-field` keeps its own
+   border-hover/border-active pair — it does not share Button's.** Ticket #56
+   left this open because Input-field's node still carried a stale three-state
+   scale with Hover *darker* than Active, backwards from Button/Outline. #58
+   re-fetched the node (3705:4402) expecting Figma to have re-bound it onto the
+   shared scale now that it carries a fourth state (Selected). It hadn't: Default
+   matches Button's Default (stone-300, so it still reads the shared `border`
+   token), but Hover (stone-300 → stone-500) and Active (→ a new value, added
+   this ticket as primitive `stone-600`) are pixel-different from Button/Outline's
+   Hover (stone-400) and Active (stone-700) — confirmed by fetching both nodes
+   side by side. What *did* get fixed: the ordering bug is gone. Hover (stone-500)
+   is correctly lighter than Active (stone-600) now, the same direction as
+   Button, so this reads as a deliberate, distinct border ramp rather than an
+   unbound leftover. The tokens are therefore staying, permanently, under their
+   own names — `border-input-hover` (unchanged, stone-500) and `border-input-active`
+   (renamed from `border-input-focus`, now stone-600) — not "provisional," since
+   there is no further reconciliation expected. One more finding worth flagging:
+   the fetched node's new Selected state changes its border (stone-400) and its
+   sample content text (stone-950, a "typed" look) — that "typed" tell used to
+   sit on the Active instance (#53's reading) and has now moved to Selected,
+   while Active's content text is plain placeholder-grey like Default/Hover.
+   Per the ticket's own fallback rule, Input-field keeps reading `:focus-within`
+   off Active (there is still no state literally named "Focus"), but the
+   qualitative signal that justified that reading has shifted — worth a design
+   confirmation. Selected itself is not modelled in code: there's no interaction
+   affordance on a plain `<input>` analogous to `aria-pressed`, so nothing was
+   invented; flagged in `design/figma-map.json` for triage.
 2. **Figma MCP returns resolved hex only, never variable names.** Every semantic
    token name in `design/tokens.json` is derived by matching a pixel value back to
    a role, not read from Figma's own variables. The names may need aligning with

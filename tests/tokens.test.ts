@@ -84,18 +84,20 @@ describe("token → theme pipeline (ADR-0010)", () => {
     }
   });
 
-  it("keeps Atom/Input-field's provisional border tokens separate from Atom/Button's shared scale", () => {
+  it("keeps Atom/Input-field's own border-hover/border-active tokens distinct from Atom/Button's shared scale (ticket #58)", () => {
     const css = generateTheme(tokens);
-    // Input-field's node still carries the pre-rework scale, where Hover is
-    // DARKER than Active — the reverse of Button/Outline. Kept as fetched
-    // under component-scoped names until Figma is reconciled (see
-    // docs/design-tokens.md); if these two ever equal the shared scale, the
-    // tokens should be deleted rather than left as aliases.
+    // Re-fetching Input-field's node for #58 confirmed it still does NOT
+    // share Button/Outline's Hover (stone-400) / Active (stone-700) pixels —
+    // it has its own stone-500 / stone-600 pair. That's a deliberate,
+    // confirmed divergence now (the #56-era ordering bug is fixed: Hover is
+    // correctly lighter than Active), not a stale/unbound node, so these
+    // tokens are not provisional and are not expected to collapse onto
+    // Button's scale. See docs/design-tokens.md and design/figma-map.json.
     const light = css.slice(0, css.indexOf('[data-theme="dark"]'));
     expect(light).toContain("--color-border-input-hover: var(--color-stone-500);");
-    expect(light).toContain("--color-border-input-focus: var(--color-stone-400);");
-    // Not collapsed onto Button's Outline hover (stone-400) — the divergence
-    // is real and deliberate until Figma is reconciled.
+    expect(light).toContain("--color-border-input-active: var(--color-stone-600);");
+    // Not collapsed onto Button's Outline hover/active (stone-400/stone-700).
     expect(light).not.toContain("--color-border-input-hover: var(--color-stone-400);");
+    expect(light).not.toContain("--color-border-input-active: var(--color-stone-700);");
   });
 });
