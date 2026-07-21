@@ -55,22 +55,24 @@ import { Icon, type IconName } from "./Icon";
  * does not show — a weak keyboard-focus affordance is a real accessibility
  * concern, but it is a design question, not something to paper over here.
  *
- * Not shared with `Atom/Button`: Button's Outline style reads `border-hover`
- * (stone-400) / `border-active` (stone-700) for the same two interactions,
- * but this node's Hover/Active pixels are different (stone-500/stone-600).
- * Ticket #56 assumed that divergence was a stale, unbound Figma node and left
- * it behind two PROVISIONAL tokens pending reconciliation. Ticket #58
- * re-fetched expecting that reconciliation to have landed (the node did grow
- * a fourth state, matching Button's shape) — it re-fetched the same
- * conclusion instead: Default lines up with Button's Default (stone-300, so
- * it reads the shared `border` token), but Hover/Active do not line up with
- * Button's Hover/Active, and the old three-state ordering bug (Hover darker
- * than Active) is fixed, which reads as a deliberate, stable ramp rather than
- * an authoring leftover. So `border-input-hover` / `border-input-active`
- * (renamed from `border-input-focus`, its old name for the same fetched
- * pixel this ticket relabels stone-600) are no longer described as
- * provisional — see docs/design-tokens.md open question 1 for the full
- * history.
+ * TICKET #68 (2026-07-20): re-fetched this node (3705:4402) alongside
+ * `Atom/Button` (3623:4346) again, since the user re-authored Button/Outline's
+ * borders. Three of the four states now line up pixel-for-pixel: Default
+ * already shared `border` (stone-300); Hover is now stone-500 on both
+ * (Button's Hover moved from stone-400 to match this atom's existing value);
+ * Selected is now stone-400 on both (Button's Outline gained a Selected
+ * border for the first time). So `border-input-hover` and
+ * `border-input-selected` are deleted and this atom now reads the shared
+ * `border-hover` / `border-selected` tokens directly — no more
+ * component-scoped duplicates for those two states.
+ *
+ * Active is the one state that still does NOT line up: this node's Active is
+ * stone-600, Button/Outline's moved to stone-800 (from stone-700) — still a
+ * real, confirmed pixel difference, not a stale/unbound node (re-fetched and
+ * compared side by side, not assumed). `border-input-active` is kept,
+ * unrenamed, as the single remaining, deliberately-flagged divergence — see
+ * docs/design-tokens.md open question 1, rewritten this ticket to describe
+ * just this one state instead of all three.
  *
  * Figma's `Text` boolean can hide the entire input row, leaving just the button
  * slot. Not modelled: an "input field" without its input is not a meaningful
@@ -134,7 +136,7 @@ export function InputField({
         </label>
       ) : null}
 
-      <div className="flex flex-row items-start justify-center gap-3 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-input-hover active:border-border-input-active focus-within:border-border-input-selected">
+      <div className="flex flex-row items-start justify-center gap-3 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-hover active:border-border-input-active focus-within:border-border-selected">
         <div className="flex flex-1 flex-col gap-3">
           <div className="flex flex-row items-center gap-2 self-stretch pl-2 pt-2">
             {leadingIcon ? (
