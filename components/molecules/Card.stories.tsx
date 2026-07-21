@@ -2,6 +2,9 @@
 import { Card } from "./Card";
 import { CardContentRecipe } from "./CardContentRecipe";
 import { CardContentIngredient } from "./CardContentIngredient";
+import { CardContentTicket } from "./CardContentTicket";
+import { CardContentStep } from "./CardContentStep";
+import { Tag } from "../atoms/Tag";
 import en from "../../messages/en.json";
 
 const placeholderContent = (
@@ -33,10 +36,9 @@ const deleteLabel = en.components.cardContentIngredient.deleteLabel;
 
 // One `Card` per built `Card-content/*` molecule (design/figma-map.json),
 // each showing its own variant axis, so every kind of card content can be
-// compared side by side in one place. `Card-content/Ticket` (#21) and
-// `Card-content/Step` (#22) are still Backlog (docs/HANDOFF.md "Next
-// actions") — add their Card here in the same PR that builds them, per
-// CLAUDE.md's "never build a component that doesn't exist in Figma yet".
+// compared side by side in one place. Complete as of #21/#22: all four
+// `Card-content/*` molecules Figma defines are represented. Add the next one
+// here in the same PR that builds it.
 export const AllContentTypes = () => (
   <div className="flex w-96 flex-col gap-4">
     <Card title="Recipe">
@@ -66,6 +68,24 @@ export const AllContentTypes = () => (
           deleteLabel={deleteLabel}
         />
       </div>
+    </Card>
+    <Card title="Ticket">
+      <CardContentTicket title="HBO Wachtwoord updaten">
+        <Tag variant="medium">Medium</Tag>
+        <Tag variant="neutral">S</Tag>
+      </CardContentTicket>
+    </Card>
+    {/*
+      Card-content/Step is the one content type that pairs with Card's own
+      `step` prop rather than standing alone — the step *number* badge lives
+      on the Card (composing the Step atom), the instruction text and its
+      ingredient tags live in the content. See CardContentStep's doc comment.
+    */}
+    <Card title="Step" step={1}>
+      <CardContentStep text="Mash the banana in a mixing bowl, then add the rest of the wet ingredients & mix well.">
+        <Tag variant="neutral">Banana</Tag>
+        <Tag variant="neutral">Wet ingredients</Tag>
+      </CardContentStep>
     </Card>
   </div>
 );
