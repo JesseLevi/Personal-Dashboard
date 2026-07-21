@@ -36,36 +36,54 @@ export const States = () => (
   </div>
 );
 
-export const WithLeadingIcon = () => (
-  <InputField
-    id="with-leading-icon"
-    label="Field"
-    leadingIcon="Calendar"
-    placeholder="Example"
-  />
-);
-
-// Figma's "Trekking-icon" — a misnomer for the trailing icon (see
-// InputField.tsx's doc comment).
-export const WithTrailingIcon = () => (
-  <InputField
-    id="with-trailing-icon"
-    label="Field"
-    placeholder="Example"
-    trailingIcon="ChevronDown"
-  />
-);
-
-export const WithBothIcons = () => (
-  <InputField
-    id="with-both-icons"
-    label="Field"
-    leadingIcon="Calendar"
-    placeholder="Example"
-    trailingIcon="ChevronDown"
-  />
-);
-
-export const WithoutIcons = () => (
-  <InputField id="without-icons" label="Field" placeholder="Example" />
+// Merged for #78 (was 4 separate Ladle entries: WithLeadingIcon /
+// WithTrailingIcon / WithBothIcons / WithoutIcons — same consolidation #56
+// did for Button's icon/text booleans). Figma's "Trekking-icon" is a
+// misnomer for the trailing icon (see InputField.tsx's doc comment). Every
+// row must render the same container height — that equal-height guarantee
+// (regardless of which icon(s) are present) is exactly the bug #78 fixed, so
+// stacking all four here also doubles as the visual regression check for it.
+export const IconCombinations = () => (
+  <div className="flex w-72 flex-col gap-6">
+    <div className="flex flex-col gap-2">
+      <span className="text-sm font-semibold text-text-muted">
+        Leading icon only
+      </span>
+      <InputField
+        id="with-leading-icon"
+        label="Field"
+        leadingIcon="Calendar"
+        placeholder="Example"
+      />
+    </div>
+    <div className="flex flex-col gap-2">
+      <span className="text-sm font-semibold text-text-muted">
+        Trailing icon only
+      </span>
+      <InputField
+        id="with-trailing-icon"
+        label="Field"
+        placeholder="Example"
+        trailingIcon="ChevronDown"
+      />
+    </div>
+    <div className="flex flex-col gap-2">
+      <span className="text-sm font-semibold text-text-muted">
+        Both icons
+      </span>
+      <InputField
+        id="with-both-icons"
+        label="Field"
+        leadingIcon="Calendar"
+        placeholder="Example"
+        trailingIcon="ChevronDown"
+      />
+    </div>
+    <div className="flex flex-col gap-2">
+      <span className="text-sm font-semibold text-text-muted">
+        No icons
+      </span>
+      <InputField id="without-icons" label="Field" placeholder="Example" />
+    </div>
+  </div>
 );
