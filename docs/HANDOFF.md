@@ -10,7 +10,7 @@ Read on demand, not by default: `docs/phase-log.md` (what infrastructure exists)
 - `main` has Phase 0 (foundation) + Phase 1 login/logout + **all Phase 2 atoms and the Card molecule**. CI is **green** on both jobs, including the db job (supabase + pgTAP + RLS coverage).
 - Merged today: PR #37 (Icon, Tag, Checkbox, Button, InputField, Step), then #38 Card (#17), #39 Dropdown (#34), #40 ButtonToggle (#35) — all squash-merged, CI green on each.
 - Built so far: `components/atoms/` Button, ButtonToggle, Checkbox, Dropdown, Icon, InputField, Tag · `components/molecules/` Card, Step.
-- Board: #41–#45 auto-moved to **Done** (see process note below); #7, #12–#18, #34, #35, **#52, #53, #56** sit in **In review** awaiting the user; the rest is Backlog. Issues normally stay open until the user closes them.
+- Board: #41–#45 auto-moved to **Done** (see process note below); #7, #12–#18, #34, #35, **#52, #53, #56, #58–#61, #68, #69** sit in **In review** awaiting the user; the rest is Backlog. Issues normally stay open until the user closes them.
 - `feat/phase2-atoms` is **stale** — its 9 commits all reached `main` via squash merges, so `git log main..feat/phase2-atoms` still lists them. Work on `main`; the branch can be deleted.
 
 ## Design-review round #41–#45 — all merged (2026-07-20)
@@ -23,6 +23,16 @@ All five fix tickets are on `main` (PRs #46–#48, #50, #51), each CI-green. Wha
 - **Ladle chrome theming works in the dev server but silently no-ops in `ladle:build`** (`appendToHead` emits an absolute `/@fs/` path). Filed as **#49** — it blocks/relates to #6, whose screenshot baselines run against the built output.
 
 **Process note:** the PR bodies used `Fixes #NN`, which auto-closed the issues and moved their cards straight to **Done**, skipping the "In review" step CLAUDE.md reserves for the user. Reopen any of #41–#45 you still want to review.
+
+## Border scale unified — #68 + #69 merged (2026-07-21)
+
+- **`Atom/Button` and `Atom/Input-field` now share their border ramp for 3 of 4 states.** Figma re-authored Outline's borders (Hover stone-400→500, Active stone-700→800, Selected gained a border at stone-400). `border-input-hover` / `border-input-selected` are gone; both components read `border-hover` / `border-selected`. **`border-input-active` (stone-600 vs Button's stone-800) is the one remaining divergence** — one Figma edit away from deleting the last component-scoped border token.
+- **`border-selected` is back after #56 removed it.** Legitimate: #56 removed it because Selected carried no colour at all; Outline/Selected has a border again. Not a regression of that decision.
+- **Selected now competes with Hover/Active on `border-color`.** The standing requirement is that a selected button still reacts to the pointer. Solved with compound `aria-pressed:hover:` / `aria-pressed:active:` variants — **not** by trusting Tailwind's emission order — and verified in the compiled stylesheet (higher specificity *and* later position). Don't "simplify" those away.
+- **The toggle's square is now stated, not emergent.** `compact` was `h-8 pl-1 pr-0`, whose 32px width only *totalled* correctly from icon size + wrapper padding; it is now `size-8 justify-center`, the indicator reuses the same utility, and the 36px step is documented as tied to both. The track asserts its own hug (`w-fit self-start`) so a `flex flex-col` parent can't stretch it — which is exactly what the story was doing.
+- **`size="compact"` + `children` is now a type error**, not a comment: a fixed 32px box clips a label.
+
+Process note: both tickets' Sonnet agents hit the session limit mid-run. Their work was reviewed, verified, and finished by the orchestrator; the type guard in #69 was added during that review.
 
 ## Button's fourth state — #56 merged (2026-07-20), supersedes #52's matrix
 
