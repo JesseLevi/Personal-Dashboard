@@ -51,6 +51,23 @@ import { Icon } from "./Icon";
  *    accessibility gain over a `button[role=checkbox]`, which is a
  *    recognised custom-checkbox pattern (the same technique several
  *    production component libraries use).
+ *
+ * 3. Flex-shrink defence (ticket #80). Measured in a real browser
+ *    (Playwright against `pnpm ladle`): inside `CardContentIngredient`'s
+ *    width-constrained row, this atom's stated `h-8 w-8` (32x32) rendered
+ *    as narrow as 27.5x32 — a flex item defaults to `flex-shrink: 1`, and
+ *    nothing here opted out, so the browser was free to compress the width
+ *    while `h-8` held the height fixed. Same failure class #69/#75 already
+ *    named for padding-derived footprints, here via flex-shrink instead.
+ *    `shrink-0` is added to this atom's own base classes (not left to each
+ *    call site) because a fixed-square control has no layout where
+ *    shrinking below its stated size is ever correct — this codebase
+ *    already had exactly one call site (`ButtonToggle`'s segments) defend
+ *    itself with a local `shrink-0` while two others (this component's own
+ *    two call sites inside `CardContentIngredient`) did not, which was the
+ *    actual bug: one layer of defence, applied inconsistently. See
+ *    `Button.tsx`'s matching doc comment for the same reasoning applied to
+ *    that atom's icon-only sizes.
  */
 export interface CheckboxProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
@@ -70,7 +87,7 @@ export function Checkbox({
       role="checkbox"
       aria-checked={checked}
       className={clsx(
-        "flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-surface",
+        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface",
         className,
       )}
       {...props}

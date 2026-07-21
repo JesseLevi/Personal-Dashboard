@@ -145,9 +145,31 @@ import { Icon, type IconName } from "./Icon";
  * No "Disabled" state exists in the fetched component set, so none is
  * invented here (native `disabled` attribute still works via the `button`
  * element; add real Disabled styling once Figma defines it).
+ *
+ * Flex-shrink defence (ticket #80): `shrink-0` lives on the shared base
+ * class string, not per-size, so it applies to every size/variant
+ * combination unconditionally. Measured in a real browser (Playwright
+ * against `pnpm ladle`, no headless-markup workaround): `CardContentIngredient`'s
+ * destructive icon-only Trash `Button` (stated `size-10`, 40x40) rendered at
+ * 35.1x40 inside that molecule's width-constrained row, because a flex item
+ * defaults to `flex-shrink: 1` and nothing on this atom opted out. This is
+ * the same failure class #69/#75 already named for padding-derived
+ * footprints, arriving here through flex-shrink instead: a size stated by
+ * the component is not the size the browser renders once a composer's
+ * layout has less room than the row wants. `shrink-0` is placed on the atom
+ * itself, not left to each call site, because a fixed-footprint control
+ * (icon-only `compact`/`iconOnlyDefault`, and arguably the labelled
+ * `default` size too — Figma never shows any Button variant compressing)
+ * has no layout in which shrinking below its stated size is ever correct;
+ * requiring every composer to remember a `className="shrink-0"` is exactly
+ * the kind of per-call-site duty that already went missing twice in this
+ * codebase (`CardContentIngredient`'s Checkbox and Trash Button both lacked
+ * it) before `ButtonToggle` was found to be the only defended call site.
+ * `ButtonToggle.tsx`'s own segments no longer need a local `shrink-0` for
+ * this reason — it would be redundant now that the atom asserts it.
  */
 const buttonVariants = cva(
-  "inline-flex items-center rounded-lg text-base font-semibold transition-colors",
+  "inline-flex shrink-0 items-center rounded-lg text-base font-semibold transition-colors",
   {
     variants: {
       /**
