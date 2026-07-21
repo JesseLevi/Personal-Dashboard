@@ -71,11 +71,12 @@ Figma contains spelling variants; code uses corrected English. **`design/figma-m
 | `Dropdown` | `components/atoms/Dropdown.tsx` |
 | `Button/Toggle` | `components/atoms/ButtonToggle.tsx` |
 | `Icon/*` (27 icons) | `components/atoms/Icon.tsx` — one wrapper; Figma layer names are kept identical to `lucide-react` export names |
+| `Step` | `components/atoms/Step.tsx` |
 | `Card-content/Recipi` | `components/molecules/CardContentRecipe.tsx` |
 | `Card-content/Ingredient` | `components/molecules/CardContentIngredient.tsx` |
 | `Card-content/Ticket` | `components/molecules/CardContentTicket.tsx` |
 | `Card-content/Step` | `components/molecules/CardContentStep.tsx` |
-| `Card`, `Step` | `components/molecules/Card.tsx`, `Step.tsx` |
+| `Card` | `components/molecules/Card.tsx` |
 | `Card-container` | `components/organisms/CardContainer.tsx` |
 | `Carousel` | `components/organisms/Carousel.tsx` |
 | `Sidebar` | `components/organisms/Sidebar.tsx` |
