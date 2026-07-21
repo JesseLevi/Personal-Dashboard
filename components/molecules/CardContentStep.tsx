@@ -10,13 +10,14 @@ import type { ReactNode } from "react";
  * Slots into the `Card` molecule's SLOT "Type" (a `Card-content/*` variant
  * is the card's content), the same composition CardContentRecipe/Ingredient
  * use. The step *number* badge is NOT rendered here: `Card`'s own `step`
- * prop already composes a `Molecule/Step` instance at the Card level (see
+ * prop already composes an `Atom/Step` instance at the Card level (see
  * `design/figma-map.json`'s "Card" entry — "Step (bool) -> step?: ReactNode
- * composed via the existing Step molecule instance"), so a Card showing a
+ * composed via the existing Step atom instance"), so a Card showing a
  * numbered step composes `Step` and `Card-content/Step` side by side, not
  * one nested inside the other. This ticket's brief ("uses the Step molecule
  * + Tag atom") describes that pairing at the Card level, not this leaf
- * node's own contents.
+ * node's own contents — and `Step` has since moved to `components/atoms/`
+ * (main `6327b8c`), so the brief's "molecule" wording is stale twice over.
  *
  * Figma structure, mirrored 1:1 (the fetched node has exactly two children,
  * both fetched directly — no nesting was assumed):

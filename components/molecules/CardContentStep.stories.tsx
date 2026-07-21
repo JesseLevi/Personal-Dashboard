@@ -1,7 +1,7 @@
 // figma: node-id=3695:3941
 import { CardContentStep } from "./CardContentStep";
 import { Card } from "./Card";
-import { Step } from "./Step";
+import { Step } from "../atoms/Step";
 import { Tag } from "../atoms/Tag";
 
 // Dev-only demo copy (the fetched node's own sample text) — not user-facing
@@ -37,7 +37,7 @@ export const WithIngredientTags = () => (
 
 // Composed inside the Card molecule the way it slots in production (Card's
 // SLOT "Type"), paired with a Step badge via Card's own `step` prop — this
-// is the "Step molecule + Tag atom" pairing described in the component's
+// is the "Step + Tag" pairing described in the component's
 // doc comment, happening at the Card level rather than inside
 // CardContentStep itself.
 export const InCard = () => (
