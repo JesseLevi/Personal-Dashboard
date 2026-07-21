@@ -1,5 +1,4 @@
 // figma: node-id=3695:3941
-import type { Story } from "@ladle/react";
 import { CardContentStep } from "./CardContentStep";
 import { Card } from "./Card";
 import { Step } from "./Step";
@@ -48,29 +47,3 @@ export const InCard = () => (
     </CardContentStep>
   </Card>
 );
-
-type PlaygroundProps = {
-  text: string;
-  withIngredientTags: boolean;
-};
-
-export const Playground: Story<PlaygroundProps> = ({
-  text,
-  withIngredientTags,
-}) => (
-  <div className="w-96">
-    <CardContentStep text={text} withIngredientTags={withIngredientTags}>
-      <IngredientTags />
-    </CardContentStep>
-  </div>
-);
-
-Playground.args = {
-  text: STEP_TEXT,
-  withIngredientTags: true,
-};
-
-Playground.argTypes = {
-  text: { control: { type: "text" } },
-  withIngredientTags: { control: { type: "boolean" } },
-};
