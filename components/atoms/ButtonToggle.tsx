@@ -32,18 +32,50 @@ import type { IconName } from "./Icon";
  * produce one indicator sliding between icons — it only ever animated
  * independent per-segment capsules).
  *
- * ## Segment size
+ * ## Segment size (ticket #69: made structural, not emergent)
  *
  * The fetched node resizes its nested `Atom/Button` instances to 32x32 (an
  * instance override — Button's own component set has no Size property). That
  * footprint cannot be reproduced from here with a `className`: `h-8` and
  * `h-10` are the same property at the same specificity, so the winner is
  * decided by Tailwind's utility ordering, not by the caller. So `Button`
- * gained a `size="compact"` variant carrying exactly Figma's numbers
- * (4px inset + 24px icon + 4px inset = 32), and the segments use it. Track
- * height therefore lands on Figma's 40px (4px padding + 32px segment + 4px)
- * and the five-segment demo on its 184px hug width, both matching the
- * fetched node.
+ * gained a `size="compact"` variant.
+ *
+ * Ticket #60 first landed `compact` as `h-8 pl-1 pr-0`, which only *totals*
+ * to a 32px width (4px inset + 24px icon + 4px icon-trailing-padding) rather
+ * than stating 32 directly — any future change to the icon's default size or
+ * the icon wrapper's padding would silently de-square it without touching
+ * this file at all. Ticket #69 measured the actual rendered markup (no
+ * headless browser here — rendered both `Button` and `ButtonToggle` via
+ * `react-dom/server`'s `renderToStaticMarkup` and read the resolved class
+ * list + the icon `<svg>`'s literal `width`/`height` attributes) and
+ * confirmed the arithmetic *did* land on 32x32 today, but only by three
+ * independent numbers summing correctly. `compact` is now `size-8
+ * justify-center` — one Tailwind utility asserting width equal to height,
+ * with the icon centred by flex alignment instead of by padding math — so
+ * the square is guaranteed by the classes themselves. See `Button.tsx`'s own
+ * size-variant doc for the full before/after.
+ *
+ * Track height and hug width are unchanged by this: 4px padding + 32px
+ * segment + 4px padding = 40px tall; five 32px segments + four 4px gaps +
+ * 8px total padding = 184px wide for the five-segment demo — both re-verified
+ * against the fetched node's own numbers (root: 4px padding, 4px gap; "Active"
+ * rectangle: 32x32).
+ *
+ * ## Track must always hug (ticket #69)
+ *
+ * The fetched node is `hug` on both axes — it should only ever be as wide as
+ * its segments. `inline-flex` already hugs on its own, but that default is
+ * not the same as *asserting* hug: this root is a flex item wherever a
+ * caller places it, and a parent that sets `align-items: stretch` on its own
+ * cross axis (e.g. a plain `flex flex-col` wrapper — column layouts default
+ * to `stretch`) will stretch this div's width to fill the parent regardless
+ * of `inline-flex`, because stretch overrides an auto cross-size before the
+ * child's own display type is consulted. `self-start` (opts this item out of
+ * a flex/grid parent's stretch) and `w-fit` (states the hug width directly,
+ * covering contexts like CSS Grid's `justify-items: stretch`) together make
+ * the hug a property of this component, not of how a caller happens to lay
+ * out its container — a caller cannot accidentally stretch this track.
  *
  * ## Movement
  *
@@ -148,10 +180,14 @@ export type ButtonToggleProps =
       "aria-labelledby": string;
     });
 
-// Segment footprint (32px, matching the fetched node's instance override —
-// Button's `size="compact"`) + 4px gap = 36px per step. Tailwind needs
-// literal class names, so the offsets are a static table; capped at 8
-// segments — see the "Movement" doc above.
+// Segment footprint (32px, `size-8` — Button's `size="compact"`, structurally
+// square per ticket #69, not derived from padding) + 4px track gap (`gap-1`)
+// = 36px per step. The indicator span below is sized with that same `size-8`
+// utility, so segment size and indicator size can never drift apart — a
+// future change to either number must change both, and the offset table here
+// alongside it. Tailwind needs literal class names (no inline `style`), so
+// the offsets are a static table; capped at 8 segments — see the "Movement"
+// doc above.
 const INDICATOR_OFFSETS = [
   "translate-x-[0px]",
   "translate-x-[36px]",
@@ -221,14 +257,14 @@ export function ButtonToggle({
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledby}
       className={clsx(
-        "relative inline-flex items-stretch gap-1 rounded-lg bg-surface-raised p-1",
+        "relative inline-flex w-fit items-stretch gap-1 self-start rounded-lg bg-surface-raised p-1",
         className,
       )}
     >
       <span
         aria-hidden="true"
         className={clsx(
-          "pointer-events-none absolute left-1 top-1 h-8 w-8 rounded-md bg-surface transition-transform duration-200 ease-out motion-reduce:transition-none",
+          "pointer-events-none absolute left-1 top-1 size-8 rounded-md bg-surface transition-transform duration-200 ease-out motion-reduce:transition-none",
           INDICATOR_OFFSETS[offsetIndex],
         )}
       />

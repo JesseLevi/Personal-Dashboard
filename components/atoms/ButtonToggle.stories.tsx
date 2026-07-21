@@ -23,8 +23,15 @@ const categoriesNl: readonly ButtonToggleItem[] = [
   { value: "dessert", icon: "CakeSlice", label: nl.components.buttonToggle.categories.dessert },
 ];
 
+// `items-start` is deliberate, not decorative: a flex column defaults its
+// children's cross axis (here, width) to `stretch`, which would force each
+// `inline-flex` track to the container's full width instead of letting it
+// hug its five segments (ticket #69). `ButtonToggle` now guards itself
+// against this (`self-start w-fit` on its own root), but the story still
+// states the true layout explicitly so the workbench never silently relies
+// on that guard to look correct.
 export const CategoryFilter = () => (
-  <div className="flex flex-col gap-4">
+  <div className="flex flex-col items-start gap-4">
     <ButtonToggle
       items={categories}
       defaultValue="all"
