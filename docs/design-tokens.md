@@ -141,3 +141,14 @@ which is `priority-urgent` throughout.
    `priority-urgent-bg-hover` and `-active` both resolve to red-950, so the
    destructive states are invisible in dark mode. Nothing in the Next.js app sets
    `data-theme` yet — only Ladle does.
+5. **`Molecule/Card-content/Ingredient` (node `3727:4021`) defines no Hover
+   state at all — only `Default | Active | Delete`.** Fixed in #67: `Active`
+   now maps to `:active` (not `:hover`/`:focus-within`, which #20 had wrongly
+   used), consistent with the `Active` = "currently being pressed" reading
+   tickets #56 (`Atom/Button`) and #58 (`Atom/Input-field`) already
+   established for this exact state name. But that still leaves an ingredient
+   row with **no pointer (mouse-over) affordance** — hovering does nothing,
+   only pressing does. This is the same class of gap already recorded above
+   for `Atom/Button`'s Transparent style (open question 3), which
+   `Atom/Button-toggle`'s segments inherit since they render as
+   `Button variant="transparent"`. Needs a design answer, not a code guess.
