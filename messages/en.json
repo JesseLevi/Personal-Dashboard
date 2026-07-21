@@ -30,6 +30,9 @@
         "vegetable": "Vegetable",
         "dessert": "Dessert"
       }
+    },
+    "cardContentIngredient": {
+      "deleteLabel": "Delete ingredient"
     }
   }
 }

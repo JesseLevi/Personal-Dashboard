@@ -30,6 +30,9 @@
         "vegetable": "Groente",
         "dessert": "Toetje"
       }
+    },
+    "cardContentIngredient": {
+      "deleteLabel": "Ingrediënt verwijderen"
     }
   }
 }
