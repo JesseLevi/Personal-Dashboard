@@ -72,26 +72,20 @@ import { Button } from "../atoms/Button";
  *
  * The two Edit buttons reuse `Atom/Button` exactly as fetched
  * (`variant="filled"`, icon-only, default size) rather than being
- * re-implemented here. FLAGGED GAP (found on review, verified against the
- * actual rendered DOM via `getBoundingClientRect` — not recomputed on
- * paper): the fetched instance is a square 40x40, but `Button.tsx`'s
- * icon-only default size measures **36x40** in the browser (`pl-2` (8px
- * root padding) + the `Icon` atom's 24px + `pr-1` (4px root padding) = 36;
- * the icon wrapper's own `pr-1` is conditional on `children` per ticket #69
- * and never applies here, so it contributes nothing to the width). That is
- * 4px short of Figma's 40px on the width axis only (height already matches
- * at `h-10` = 40). This is the same class of bug ticket #69 already fixed
- * for `size="compact"` (an emergent-from-padding footprint instead of a
- * structural one) — `size="default"` icon-only never got the same
- * treatment. Deliberately NOT patched in this molecule: `Button.tsx` is a
- * shared atom (also used by `CardContentIngredient`'s Trash button, which
- * likely has the identical gap), so fixing it here would mean either
- * editing the atom out-of-scope for this ticket or fighting it with a
- * `className` override the house style forbids (CLAUDE.md: no ad-hoc
- * className-fighting). Left as-is, tracked as an atom-level follow-up
- * (`Atom/Button` needs a real `size="default"` icon-only footprint, the
- * same kind of `size-10`-style fix #69 gave `size="compact"`'s `size-8`).
- * Filed as ticket #75 — remove this note once that lands.
+ * re-implemented here. RE-VERIFIED for ticket #75 against re-fetched node
+ * 3650:1297: the two Edit instances there resolve to a standalone Figma
+ * component `Atom/Button/Icon/Default/No` (3623:4352, not itself a variant
+ * of the `Button/Default` set `Atom/Button` composes) — but it's a fixed
+ * 40x40 box with centred content and the same fill as `variant="filled"`,
+ * so it's a numeric match for `Button.tsx`'s icon-only `size="default"`,
+ * not a distinct design. Previously flagged here: `Button.tsx`'s icon-only
+ * `size="default"` measured 36x40 (`pl-2` (8) + Icon's 24px + `pr-1` (4),
+ * verified by rendering to static markup and reading the resolved utility
+ * classes — no headless browser in this repo), 4px short of this 40x40 on
+ * the width axis. Fixed in `Button.tsx` (ticket #75): icon-only
+ * `size="default"` now resolves to a structural `size-10 justify-center`
+ * internally, matching this node's 40x40 exactly. This molecule needed no
+ * change — the gap was entirely in the shared atom.
  */
 export interface CardContainerProps {
   /** Figma `Name` prop (default "Ontbijt") — column title. */

@@ -62,10 +62,22 @@ import { Tag } from "../atoms/Tag";
  *   guess.
  *
  * - The Trash delete Button reuses `Atom/Button` exactly as fetched
- *   (`variant="destructive" icon="Trash"`, no text) — its instance padding
- *   in the fetched node (`0px 4px 0px 8px`) matches Button.tsx's own
- *   documented icon-only recipe (`pl-2 pr-1` root + icon wrapper `pr-1`)
- *   pixel-for-pixel, so no override was needed.
+ *   (`variant="destructive" icon="Trash"`, no text). RE-VERIFIED for ticket
+ *   #75 against re-fetched node 3727:4378: the earlier claim here (root
+ *   padding `0px 4px 0px 8px` "matches pixel-for-pixel, no override needed")
+ *   was suspect and is now confirmed WRONG for the reason it gave — it only
+ *   compared root padding, not the whole footprint. The fetched instance's
+ *   real total is root `pl` (8) + icon frame (`24` icon + its own `pr` 4 =
+ *   28) + root `pr` (4) = **40x40 square** (icon frame padding is
+ *   unconditional in Figma, not gated by whether text follows), while
+ *   `Button.tsx`'s icon-only `size="default"` measured 36x40 pre-fix
+ *   (`pl-2` (8) + Icon's 24px + `pr-1` (4), the icon wrapper's own `pr-1`
+ *   stripped for icon-only per ticket #69) — the same 4px shortfall
+ *   `Card-container` had. No override was ever added here, so this
+ *   component silently inherited the atom's bug. Fixed at the atom (ticket
+ *   #75): icon-only `size="default"` now resolves to a structural
+ *   `size-10 justify-center` internally, which now genuinely matches this
+ *   node's 40x40 — this molecule needed no change of its own.
  *
  * - Structure mirrors Figma exactly rather than trading DOM parity for code
  *   simplicity: the Default/Active case renders a single row (the row *is*

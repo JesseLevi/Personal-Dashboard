@@ -25,11 +25,14 @@ import { Icon, type IconName } from "./Icon";
  *   than literal flags: passing `icon` (an `IconName`) renders the leading
  *   icon, passing `children` renders the label. Presence of each prop *is*
  *   the boolean, so callers can't pass a mismatched `withIcon={true}` with no
- *   icon. Root/inner padding below mirrors Figma's nested Icon/Text frames
- *   exactly (root pl-2 pr-1, icon wrapper pr-1, text wrapper pl-1 pr-2) so
- *   icon-only, text-only, and icon+text combinations all reproduce the exact
- *   Figma spacing (icon-only: 8px/8px; text-only: 12px/12px; both: 8px
- *   left / 12px right) without needing a separate CVA prop per combination.
+ *   icon. Labelled buttons (icon+text or text-only) reproduce Figma's nested
+ *   Icon/Text frame padding exactly (root pl-2 pr-1, icon wrapper pr-1, text
+ *   wrapper pl-1 pr-2 — text-only: 12px/12px, both: 8px left / 12px right).
+ *   Icon-only `size="default"` is NOT built from that same padding sum
+ *   (fixed for ticket #75 — see the `size` variant's doc comment): it's a
+ *   structural `size-10` square with the icon centred by `justify-center`,
+ *   matching Figma's fetched 40x40 icon-only instances, rather than an
+ *   emergent total that happened to land on the right number.
  *
  * Per-state fills/text, read from the fetched node and resolved to primitives
  * via design/tokens.json (exact Figma hex values live in design/figma-map.json,
@@ -177,10 +180,38 @@ const buttonVariants = cva(
        * the icon-only case only (all Figma samples). Pairing it with
        * `children` is not merely untested — a fixed 32x32 box clips a label —
        * so the props union below makes that combination unrepresentable.
+       *
+       * `iconOnlyDefault` (ticket #75): the same bug class #69 already fixed
+       * for `compact`, now fixed for `default`. Measured by rendering to
+       * static markup and reading the resolved utility classes (no headless
+       * browser in this repo, same method #69 used): `default`'s old classes
+       * (`h-10 justify-start pl-2 pr-1`) plus an icon span carrying no
+       * padding when icon-only (see the wrapper comment below) summed to
+       * `pl-2` (8) + Icon's default 24px + `pr-1` (4) = 36px, against a fixed
+       * `h-10` = 40px — 4px short of Figma's fetched 40x40 square (component
+       * set 3623:4346, e.g. the Distructive/Default instance with `With
+       * text` overridden false, and 40x40 samples throughout
+       * `Card-container`/3650:1297 and `Card-content/Ingredient`/3727:4378).
+       * This key is not exposed on the public `size` prop (see `ButtonProps`
+       * below) — the component resolves to it internally whenever `size` is
+       * `default` (or omitted) and there is no label, mirroring `compact`'s
+       * own icon-only-only footprint. `size-10` states width equal to height
+       * directly, the same structural move `compact` made: a future change
+       * to the Icon's default size or to the icon wrapper's padding can no
+       * longer silently de-square this box, because its width no longer
+       * comes from summing them — it's a fixed 40x40 with `justify-center`
+       * centring the icon, not padding arithmetic landing on 40 by
+       * coincidence.
+       *
+       * `default` (labelled case) is unchanged: a labelled button must keep
+       * hugging its text with the current asymmetric `pl-2 pr-1` padding
+       * (Figma's own root padding on every sampled Button/Default instance),
+       * so only the icon-only branch gets the structural treatment.
        */
       size: {
         default: "h-10 justify-start pl-2 pr-1",
         compact: "size-8 justify-center",
+        iconOnlyDefault: "size-10 justify-center",
       },
       variant: {
         filled:
@@ -205,9 +236,16 @@ type ButtonBaseProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
   "children"
 > &
-  VariantProps<typeof buttonVariants> & {
+  /**
+   * `size` is re-typed here rather than taken as-is from `VariantProps`:
+   * `iconOnlyDefault` (see the `size` variant's doc comment above) is an
+   * internal-only cva key the component resolves to itself — callers only
+   * ever choose between the two real Figma-facing sizes.
+   */
+  Omit<VariantProps<typeof buttonVariants>, "size"> & {
     /** Figma "With icon" boolean — pass an IconName to render the leading icon; omit to hide it. */
     icon?: IconName;
+    size?: "default" | "compact";
   };
 
 /**
@@ -237,18 +275,30 @@ export function Button({
   type = "button",
   ...props
 }: ButtonProps) {
+  /**
+   * `compact` is untouched (icon-only-only per its own type narrowing above,
+   * so it's already square). `default` is where ticket #75 lives: the
+   * labelled branch's type only ever allows `size` to be `"default"` or
+   * omitted, so `children` truthy implies plain `default`; icon-only
+   * (`children` falsy) with `size` `"default"` or omitted resolves to the
+   * internal `iconOnlyDefault` key instead, giving it the structural 40x40
+   * footprint rather than the labelled branch's hug-with-asymmetric-padding
+   * one. See the `size` variant's doc comment for the measurement.
+   */
+  const resolvedSize =
+    !children && size !== "compact" ? "iconOnlyDefault" : (size ?? "default");
   return (
     <button
       type={type}
-      className={buttonVariants({ variant, size, className })}
+      className={buttonVariants({ variant, size: resolvedSize, className })}
       {...props}
     >
       {/*
         The icon wrapper's trailing `pr-1` only exists to open a gap before a
         label that follows it — with no `children`, keeping it would push the
-        icon 4px off-centre inside a `size="compact"` segment's `size-8`
-        centred box (ticket #69), so it is applied only when there is a
-        label to separate from.
+        icon off-centre inside a centred icon-only box (`size="compact"`'s
+        `size-8` or `size="default"`'s icon-only `size-10`, ticket #69/#75),
+        so it is applied only when there is a label to separate from.
       */}
       {icon && (
         <span className={children ? "pr-1" : undefined}>
