@@ -35,7 +35,8 @@ components/
   atoms/                # mirrors Figma "Atoms" section
   molecules/            # mirrors Figma "Molecules" section
   organisms/            # mirrors Figma "Organisms" section
-lib/                    # supabase clients, i18n, zod schemas, utils
+lib/                    # supabase clients, zod schemas, utils
+i18n/                   # next-intl request config (request.ts)
 worker/                 # job consumer (embeddings, agent, calendar sync) — run with tsx
 supabase/
   migrations/           # every schema change, via Supabase CLI (ADR-0009)
@@ -147,7 +148,7 @@ Deliberately simple: no streaming, no agent frameworks, no LangChain. A queue ta
 - **Strict localhost binding**: Supabase's Docker compose publishes ports on `0.0.0.0` by default — every published port (Kong, Postgres, Studio, Analytics) must be explicitly bound to `127.0.0.1`, and Ollama runs with `OLLAMA_HOST=127.0.0.1`. "On the LAN" is not trusted; any IoT device on the home Wi-Fi would otherwise reach the database. Phase 0 includes a check script for this.
 - **Email delivery**: magic-link auth requires SMTP for self-hosted GoTrue — configure a transactional provider (e.g. Resend/Postmark free tier) in Phase 1; without it, half the login story silently doesn't work.
 - **Secrets**: `.env` files live outside git (repo ships `.env.example`); CI secrets in GitHub Actions; `service_role` key exists only in server/worker env, never in client bundles (`import "server-only"` + CI grep, ADR-0002). Per-user AI API keys and calendar credentials in Supabase Vault via server-side functions (ADR-0002).
-- **Content rendering**: TipTap documents render exclusively through TipTap's React renderer with a fixed extension whitelist — never `dangerouslySetInnerHTML` on stored content. Agent output renders as plain text (§5.5).
+- **Content rendering**: TipTap documents render exclusively through TipTap's React renderer with a fixed extension whitelist — never `dangerouslySetInnerHTML` on stored content. Agent output renders as plain text (§5, item 5).
 - **Uploads**: clothing/recipe images are content-type- and size-validated server-side, **EXIF-stripped on upload** (clothing photos are taken at home — GPS metadata is a real leak), stored in private buckets, served via short-lived signed URLs.
 - **RLS everywhere**, verified by CI (ADR-0009).
 - **Supply chain / CI runner**: the self-hosted runner executes generated code on the machine that holds all data. Mitigations: runner under a dedicated non-admin macOS user; workflows run only from this repo's protected branches (no fork PRs); `pnpm install --frozen-lockfile` everywhere; Renovate/Dependabot with manual merge; `pnpm audit` in CI.
@@ -158,7 +159,7 @@ Deliberately simple: no streaming, no agent frameworks, no LangChain. A queue ta
 
 - **Local dev**: `supabase start` (CLI), local Ollama, `next dev`.
 - **Staging + prod**: two Supabase Docker stacks + two app instances on the Mac mini, separate tunnel hostnames. **Capacity note**: prod Supabase + Ollama (a 14B q4 model ≈ 9 GB) already stress a 16 GB machine — staging runs **on-demand** (started for deploy verification/restore drills, stopped otherwise), and model size follows available RAM, not ambition.
-- **CI (GitHub Actions)**: lint → typecheck → unit tests (`--frozen-lockfile`) → `supabase db reset` + RLS suite (ADR-0009) → Ladle screenshot diff (ADR-0010) → build. **CD**: self-hosted runner on the Mac mini (hardened per §7); deploy = migrate then restart app/worker; staging on merge to `main`, prod on tag.
+- **CI (GitHub Actions)**: lint → typecheck → unit tests (`--frozen-lockfile`) → token-drift check → `supabase db reset` + RLS suite (ADR-0009) → build. The **Ladle/Playwright screenshot diff (ADR-0010) is planned, not yet wired in** — it ships with ticket #6; until then visual parity is verified by eyeballing the Ladle story against the Figma image. **CD**: self-hosted runner on the Mac mini (hardened per §7); deploy = migrate then restart app/worker; staging on merge to `main`, prod on tag.
 
 ## 9. Testing
 
