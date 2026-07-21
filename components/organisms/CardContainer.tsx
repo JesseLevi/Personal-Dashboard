@@ -71,11 +71,26 @@ import { Button } from "../atoms/Button";
  * typography map in design/tokens.json.
  *
  * The two Edit buttons reuse `Atom/Button` exactly as fetched
- * (`variant="filled"`, icon-only, default size) — the fetched instance is
- * 40x40 with 0px/12px padding centered, which is pixel-identical to
- * Button.tsx's own documented icon-only default recipe (`pl-2 pr-1` root +
- * icon wrapper with no extra padding when there is no label = 8+24+4 = 40),
- * so no override/new size variant was needed.
+ * (`variant="filled"`, icon-only, default size) rather than being
+ * re-implemented here. FLAGGED GAP (found on review, verified against the
+ * actual rendered DOM via `getBoundingClientRect` — not recomputed on
+ * paper): the fetched instance is a square 40x40, but `Button.tsx`'s
+ * icon-only default size measures **36x40** in the browser (`pl-2` (8px
+ * root padding) + the `Icon` atom's 24px + `pr-1` (4px root padding) = 36;
+ * the icon wrapper's own `pr-1` is conditional on `children` per ticket #69
+ * and never applies here, so it contributes nothing to the width). That is
+ * 4px short of Figma's 40px on the width axis only (height already matches
+ * at `h-10` = 40). This is the same class of bug ticket #69 already fixed
+ * for `size="compact"` (an emergent-from-padding footprint instead of a
+ * structural one) — `size="default"` icon-only never got the same
+ * treatment. Deliberately NOT patched in this molecule: `Button.tsx` is a
+ * shared atom (also used by `CardContentIngredient`'s Trash button, which
+ * likely has the identical gap), so fixing it here would mean either
+ * editing the atom out-of-scope for this ticket or fighting it with a
+ * `className` override the house style forbids (CLAUDE.md: no ad-hoc
+ * className-fighting). Left as-is, tracked as an atom-level follow-up
+ * (`Atom/Button` needs a real `size="default"` icon-only footprint, the
+ * same kind of `size-10`-style fix #69 gave `size="compact"`'s `size-8`).
  */
 export interface CardContainerProps {
   /** Figma `Name` prop (default "Ontbijt") — column title. */

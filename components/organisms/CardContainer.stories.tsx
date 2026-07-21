@@ -1,5 +1,4 @@
 // figma: node-id=3650:1297
-import type { Story } from "@ladle/react";
 import { CardContainer } from "./CardContainer";
 import { Card } from "../molecules/Card";
 import { CardContentRecipe } from "../molecules/CardContentRecipe";
@@ -65,37 +64,3 @@ export const LabelsNl = () => (
     </CardContainer>
   </div>
 );
-
-type PlaygroundProps = {
-  name: string;
-  count: string;
-};
-
-export const Playground: Story<PlaygroundProps> = ({ name, count }) => (
-  <div className="w-96">
-    <CardContainer
-      name={name}
-      count={count}
-      addLabel={addLabelEn}
-      editLabel={editLabelEn}
-    >
-      <Card>
-        <CardContentRecipe
-          imageUrl={PLACEHOLDER_IMAGE}
-          name="Amandel Pasta"
-          duration="20 min"
-        />
-      </Card>
-    </CardContainer>
-  </div>
-);
-
-Playground.args = {
-  name: "Ontbijt",
-  count: "4",
-};
-
-Playground.argTypes = {
-  name: { control: { type: "text" } },
-  count: { control: { type: "text" } },
-};
