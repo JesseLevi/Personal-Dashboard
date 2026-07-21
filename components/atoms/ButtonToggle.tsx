@@ -106,6 +106,28 @@ import type { IconName } from "./Icon";
  * the table clamps to the last defined offset; extend the table before a
  * design ever needs more than 8 segments.
  *
+ * ## Segment footprint re-verified, unchanged (ticket #80)
+ *
+ * The 32x32/36px-step numbers above had already flip-flopped once (#60
+ * shipped 40x40, corrected to 32x32 in the same ticket's review), so this
+ * ticket re-fetched 3623:4345 fresh rather than trusting the recorded
+ * history: root row, 4px padding, 4px gap, hug/hug sizing with a
+ * `designedHeight` of 40px; the "Active" rectangle is `{width: 32, height:
+ * 32}` at `{x: 4, y: 4}`; each nested `Atom/Button` instance is fixed-width
+ * 32 with `sizing.vertical: fill` (i.e. it fills the 32px content height
+ * left after the track's own 4px+4px padding). All three numbers match this
+ * file's existing `size-8` segments/`size-8` indicator/`gap-1` track
+ * unchanged — confirmed pixel-for-pixel in a real browser too (Playwright
+ * against `pnpm ladle`, `getBoundingClientRect` on the rendered
+ * `CategoryFilter` story): track 184x40, indicator 32x32 at (4, 4), all five
+ * segments 32x32 with their 24x24 icons centred. A downloaded render of the
+ * fetched node (`download_figma_images`, 368x80 at 2x scale = 184x40 at 1x)
+ * is visually identical to the rendered story. The user's "40x40" reading
+ * was very likely the track's own 40px height (the fetched node's
+ * `designedHeight`) being attributed to the segments/indicator it contains,
+ * not a discrepancy in this file — no code change was needed here for that
+ * defect.
+ *
  * ## Colour
  *
  * No per-segment colour/state variation is present in the fetched node —
@@ -269,6 +291,15 @@ export function ButtonToggle({
         )}
       />
       {items.map((item, index) => (
+        // `relative` only: stacks this segment above the absolutely-
+        // positioned indicator (see the "Movement" doc above). `shrink-0`
+        // used to be set here too, but ticket #80 moved it onto `Button`
+        // itself (every size/variant, base class) once the same missing
+        // defence was found squashing two other call sites
+        // (CardContentIngredient's Checkbox/Trash Button) — this was the
+        // one call site that had already worked around the bug locally, so
+        // keeping a local copy here would be redundant now that the atom
+        // defends its own footprint.
         <Button
           key={item.value}
           type="button"
@@ -281,7 +312,7 @@ export function ButtonToggle({
           tabIndex={item.value === value ? 0 : -1}
           onClick={() => select(item.value)}
           onKeyDown={(event) => handleKeyDown(event, index)}
-          className="relative shrink-0"
+          className="relative"
         />
       ))}
     </div>
