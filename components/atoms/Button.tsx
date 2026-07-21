@@ -48,8 +48,10 @@ import { Icon, type IconName } from "./Icon";
  *   transparent button has no pointer affordance at all. Flagged in
  *   design/figma-map.json rather than papered over with a made-up tint.
  * - Outline: bg-transparent, 1px border-border, text-muted; hover border ->
- *   border-hover; active border -> border-active; selected keeps the default
- *   border, text -> text.
+ *   border-hover; active border -> border-active; selected border ->
+ *   border-selected (re-fetched for ticket #68 — Outline's Selected state
+ *   gained a border change for the first time since #56, previously "border
+ *   unchanged, text -> text"), text -> text.
  * - Destructive ("Distructive" in Figma): bg priority-urgent-bg, text
  *   priority-urgent; hover bg -> priority-urgent-bg-hover; active bg ->
  *   priority-urgent-bg-active; Selected is identical to Default (Figma changes
@@ -57,10 +59,31 @@ import { Icon, type IconName } from "./Icon";
  *
  * Selected composes with Hover and Active by construction, which is a stated
  * product requirement (a selected button must still react to the pointer).
- * That works because the two concerns touch disjoint CSS properties: Selected
- * only sets `color`, Hover/Active only set `background-color`/`border-color`.
- * So no `aria-pressed:bg-*` or `aria-pressed:border-*` override may be added
- * here — doing so would re-introduce the conflict.
+ * For every style except Outline this still works because the two concerns
+ * touch disjoint CSS properties: Selected only sets `color`, Hover/Active only
+ * set `background-color`. So no `aria-pressed:bg-*` override may be added to
+ * Filled/White/Transparent/Destructive — doing so would re-introduce that
+ * conflict, per docs/design-tokens.md.
+ *
+ * Outline is the exception (ticket #68): its Selected state now sets
+ * `border-color`, the same property Hover/Active already use, so the three
+ * genuinely compete for the first time. A plain `aria-pressed:border-*`
+ * override is NOT safe on its own here — verified against the compiled
+ * `pnpm ladle:build` stylesheet, not assumed: Tailwind emits
+ * `.aria-pressed\:border-border-selected[aria-pressed=true]` *after*
+ * `.hover\:border-border-hover:hover` and `.active\:border-border-active:active`
+ * in the generated CSS, and all three have equal specificity (one class +
+ * one pseudo-class/attribute selector each), so per the cascade the later
+ * rule — aria-pressed — would win on a selected button that's also being
+ * hovered/pressed, silently killing its hover/active feedback. Fixed with
+ * compound variants (`aria-pressed:hover:border-border-hover`,
+ * `aria-pressed:active:border-border-active`) that match only when Selected
+ * combines with Hover/Active: each compiles to a selector with one extra
+ * pseudo-class/attribute term than the plain rules (three total vs two), so
+ * it has strictly higher specificity and wins regardless of the stylesheet's
+ * emission order — a property of CSS specificity, not an assumption about
+ * Tailwind's internal variant ordering. See the PR for the grepped compiled
+ * rules.
  *
  * `active:` is the right hook for Figma's new Active state: CSS `:active`
  * means "currently being pressed", which is exactly what that state depicts.
@@ -98,14 +121,13 @@ import { Icon, type IconName } from "./Icon";
  * tokens #52 added were removed in #56: Selected no longer has a background
  * of its own, so those names had no consumer left.
  *
- * `border-hover` (stone-400) is this component's Outline hover.
- * `Atom/Input-field` reads its own provisional `border-input-hover` /
- * `border-input-focus` pair instead, because its Figma node still carries the
- * pre-rework three-state scale — and notably its Hover stroke is *darker*
- * than its Active one, the reverse of the ordering here, which is the
- * strongest evidence that node was never re-bound to the reworked variables.
- * Open question recorded in docs/design-tokens.md; once Figma is reconciled
- * both components collapse onto one border scale.
+ * `border-hover` (stone-500) and `border-selected` (stone-400) are this
+ * component's Outline Hover/Selected, and (ticket #68) are now shared with
+ * `Atom/Input-field`, whose re-fetched node carries the identical pixels for
+ * both states. `border-active` (stone-800) stays Button-only: Input-field's
+ * Active is stone-600, a real, confirmed pixel difference, not a stale node —
+ * it keeps its own `border-input-active` token. This is the one remaining
+ * divergence; see docs/design-tokens.md open question 1.
  *
  * Dark mode (ticket #42, extended #52/#56): these are semantic-token classes
  * only (no `dark:` utility prefixes anywhere below) — light/dark is a
@@ -145,7 +167,7 @@ const buttonVariants = cva(
         filled:
           "bg-surface-raised text-text-muted hover:bg-surface-raised-hover active:bg-surface-raised-active aria-pressed:text-text",
         outline:
-          "border border-border bg-transparent text-text-muted hover:border-border-hover active:border-border-active aria-pressed:text-text",
+          "border border-border bg-transparent text-text-muted hover:border-border-hover active:border-border-active aria-pressed:border-border-selected aria-pressed:hover:border-border-hover aria-pressed:active:border-border-active aria-pressed:text-text",
         white:
           "bg-surface text-text-muted hover:bg-surface-hover active:bg-surface-active aria-pressed:text-text",
         transparent: "bg-transparent text-text-muted aria-pressed:text-text",

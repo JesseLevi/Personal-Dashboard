@@ -45,6 +45,12 @@ Also found: the new `Selected` state changes both border (stone-400) and content
 
 Input-field stories cut 4 → 5 per the ticket's fixed list: `States`, `WithLeadingIcon`, `WithTrailingIcon`, `WithBothIcons`, `WithoutIcons` (`Playground`, `WithIconlessButton`, `WithAndWithoutIcon` deleted).
 
+## Button/Outline and Input-field borders unified, mostly — #68 (2026-07-20)
+
+The user re-authored `Button/Outline`'s borders since #58. Re-fetching both nodes confirmed 3 of the 4 states now match pixel-for-pixel: **Hover** (`border-hover`, stone-500) and **Selected** (new `border-selected`, stone-400 — Outline's Selected gained a border for the first time since #56) are now shared tokens between `Atom/Button` and `Atom/Input-field`; `border-input-hover`/`border-input-selected` are deleted. **Active is the one state that still doesn't line up** (Input-field stone-600 vs Button's new stone-800) — `border-input-active` stays, flagged as the single remaining divergence in `docs/design-tokens.md` open question 1.
+
+Giving Outline's Selected a border for the first time put it in direct competition with Hover/Active on `border-color` — previously impossible, since Selected only ever touched `text`. Verified against the compiled `pnpm ladle:build` stylesheet, not assumed: a naive `aria-pressed:border-*` override is emitted *after* the `hover:`/`active:` border rules at equal specificity, so it would win and silently kill hover/active feedback on a selected button. Fixed with compound variants (`aria-pressed:hover:border-border-hover`, `aria-pressed:active:border-border-active`) that have strictly higher specificity and therefore win regardless of stylesheet order — see `docs/design-tokens.md`'s "Selected must compose with Hover and Active" section for the grepped compiled rules.
+
 ## Per-state semantic colours — #52 + #53 merged (2026-07-20)
 
 Figma's semantic **variables** were reworked upstream: every colour role now carries a Default/Hover/Selected variation. Our token layer only had Default plus one ad-hoc `-hover` for two roles, so `Atom/Button` was rendering three wrong colours (Filled hover/selected, White selected, Outline hover/selected, and Destructive had no hover or selected at all).
@@ -55,7 +61,7 @@ Figma's semantic **variables** were reworked upstream: every colour role now car
 
 **Three things needing the user, all recorded in `docs/design-tokens.md`:**
 
-1. ~~**`border-hover` diverged.**~~ Superseded by #56, then #58 — see the sections above. Resolved as a deliberate, permanent divergence (`border-input-hover`/`border-input-active`), not a Figma-side gap waiting to close.
+1. ~~**`border-hover` diverged.**~~ Superseded by #56, then #58, then **#68** (see the sections above) — Hover and Selected are now shared tokens between Button/Outline and Input-field; only `border-input-active` remains a deliberate, permanent divergence.
 2. **Token names are hex-derived, not Figma-derived.** The Figma MCP returns resolved hex only, never variable names. Every semantic name in `tokens.json` is us matching a pixel value back to a role. Ask the user for the real variable names before the vocabulary calcifies further.
 3. ~~**`surface-hover` (stone-300) now has no consumer.**~~ Resolved by #56: it was re-valued to stone-50 and now backs `Button/White`'s Hover.
 

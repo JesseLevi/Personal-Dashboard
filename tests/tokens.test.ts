@@ -59,46 +59,53 @@ describe("token → theme pipeline (ADR-0010)", () => {
     expect(darkBlock).not.toContain("--color-surface-muted:");
   });
 
-  it("emits the four-state Button token tier (ticket #56: Default/Hover/Active, Selected is text-only)", () => {
+  it("emits the four-state Button token tier (ticket #68: Outline's Hover/Active/Selected re-authored)", () => {
     const css = generateTheme(tokens);
     // Light values, resolved from the re-fetched node 3623:4346.
     expect(css).toContain("--color-surface-hover: var(--color-stone-50);");
     expect(css).toContain("--color-surface-active: var(--color-stone-100);");
     expect(css).toContain("--color-surface-raised-hover: var(--color-stone-300);");
     expect(css).toContain("--color-surface-raised-active: var(--color-stone-400);");
-    expect(css).toContain("--color-border-hover: var(--color-stone-400);");
-    expect(css).toContain("--color-border-active: var(--color-stone-700);");
+    // Outline: Hover stone-400 -> stone-500, Active stone-700 -> stone-800
+    // (ticket #68 — re-fetched, the user re-authored these borders).
+    expect(css).toContain("--color-border-hover: var(--color-stone-500);");
+    expect(css).toContain("--color-border-active: var(--color-stone-800);");
     expect(css).toContain("--color-priority-urgent-bg-hover: var(--color-red-100);");
     expect(css).toContain("--color-priority-urgent-bg-active: var(--color-red-200);");
   });
 
-  it("drops the *-selected colour tokens: Selected reuses the default background and only darkens the text", () => {
+  it("drops surface/priority *-selected colour tokens: those styles' Selected reuses the default background and only darkens the text", () => {
     const css = generateTheme(tokens);
     for (const dead of [
       "--color-surface-selected:",
       "--color-surface-raised-selected:",
-      "--color-border-selected:",
       "--color-priority-urgent-bg-selected:",
     ]) {
       expect(css).not.toContain(dead);
     }
   });
 
-  it("keeps Atom/Input-field's own border-hover/border-active tokens distinct from Atom/Button's shared scale (ticket #58)", () => {
+  it("re-adds border-selected (ticket #68): Outline's Selected gained a real border for the first time since #56", () => {
     const css = generateTheme(tokens);
-    // Re-fetching Input-field's node for #58 confirmed it still does NOT
-    // share Button/Outline's Hover (stone-400) / Active (stone-700) pixels —
-    // it has its own stone-500 / stone-600 pair. That's a deliberate,
-    // confirmed divergence now (the #56-era ordering bug is fixed: Hover is
-    // correctly lighter than Active), not a stale/unbound node, so these
-    // tokens are not provisional and are not expected to collapse onto
-    // Button's scale. See docs/design-tokens.md and design/figma-map.json.
+    // stone-400 — confirmed by re-fetching 3623:4346; shared with Atom/Input-field's
+    // existing Selected value (see the border-sharing test below). This is a fresh,
+    // independently-fetched fact, not a resurrection of #56's dead `border-selected`
+    // (which had no consumer since Selected was text-only everywhere at the time).
+    expect(css).toContain("--color-border-selected: var(--color-stone-400);");
+  });
+
+  it("shares border-hover/border-selected between Atom/Button/Outline and Atom/Input-field, keeps border-input-active as the one remaining divergence (ticket #68)", () => {
+    const css = generateTheme(tokens);
+    // Re-fetching both nodes side by side for #68 confirmed Hover and Selected
+    // now land on identical pixels (stone-500 / stone-400) — border-input-hover
+    // and border-input-selected are deleted, Input-field reads the shared tokens
+    // directly. Active is still a real, confirmed divergence (stone-600 vs
+    // Button's stone-800), so border-input-active is kept under its own name.
     const light = css.slice(0, css.indexOf('[data-theme="dark"]'));
-    expect(light).toContain("--color-border-input-hover: var(--color-stone-500);");
     expect(light).toContain("--color-border-input-active: var(--color-stone-600);");
-    expect(light).toContain("--color-border-input-selected: var(--color-stone-400);");
-    // Not collapsed onto Button's Outline hover/active (stone-400/stone-700).
-    expect(light).not.toContain("--color-border-input-hover: var(--color-stone-400);");
-    expect(light).not.toContain("--color-border-input-active: var(--color-stone-700);");
+    expect(light).not.toContain("--color-border-input-hover:");
+    expect(light).not.toContain("--color-border-input-selected:");
+    // Not collapsed onto Button/Outline's Active (stone-800) — deliberately kept apart.
+    expect(light).not.toContain("--color-border-input-active: var(--color-stone-800);");
   });
 });
