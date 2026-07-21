@@ -144,7 +144,7 @@ import { Icon, type IconName } from "./Icon";
  * element; add real Disabled styling once Figma defines it).
  */
 const buttonVariants = cva(
-  "inline-flex items-center justify-start rounded-lg text-base font-semibold transition-colors",
+  "inline-flex items-center rounded-lg text-base font-semibold transition-colors",
   {
     variants: {
       /**
@@ -155,13 +155,32 @@ const buttonVariants = cva(
        * same property at the same specificity, so which one wins depends on
        * Tailwind's own utility ordering, not on the order the caller wrote
        * them. Hence a variant. The pixels are Figma's; only the API shape is
-       * ours. `compact` is verified for the icon-only case only (4px inset +
-       * 24px icon + 4px inset = 32), which is all Figma samples — pairing it
-       * with `children` is untested against any node.
+       * ours.
+       *
+       * `justify-start`/`justify-center` live here, per size, instead of on
+       * the shared base above — `size` is a single CVA slot (exactly one of
+       * its strings is ever emitted), so putting a conflicting utility per
+       * slot can never put two rules for the same CSS property on the same
+       * element. Doing it via a plain conditional class instead would
+       * reproduce the exact `h-8`/`h-10` hazard this doc already warns about:
+       * which of two same-specificity utilities wins would depend on
+       * Tailwind's generation order, not on which one the caller means.
+       *
+       * `compact` (ticket #69): originally `h-8 pl-1 pr-0`, a 32px width that
+       * only *totalled* correctly (4px inset + Icon's default 24px + 4px
+       * inset) rather than being stated — any future change to the icon's
+       * default size or the wrapper padding below would silently de-square
+       * it. Now `size-8` states width equal to height directly (one utility,
+       * verified against the actual rendered markup — see `ButtonToggle.tsx`'s
+       * doc for how), and `justify-center` centres the icon instead of
+       * relying on padding either side to land symmetrically. Verified for
+       * the icon-only case only (all Figma samples). Pairing it with
+       * `children` is not merely untested — a fixed 32x32 box clips a label —
+       * so the props union below makes that combination unrepresentable.
        */
       size: {
-        default: "h-10 pl-2 pr-1",
-        compact: "h-8 pl-1 pr-0",
+        default: "h-10 justify-start pl-2 pr-1",
+        compact: "size-8 justify-center",
       },
       variant: {
         filled:
@@ -199,7 +218,14 @@ type ButtonBaseProps = Omit<
  * part of the atom).
  */
 export type ButtonProps =
-  | (ButtonBaseProps & { children: ReactNode })
+  /**
+   * `size` is narrowed to `"default"` on the branch that carries a label:
+   * `compact` is a fixed 32x32 box (`size-8`), so a label would be clipped by
+   * it rather than merely looking cramped. Figma only ever samples `compact`
+   * icon-only, so this makes the unsupported combination unrepresentable
+   * instead of leaving it as a comment nobody reads at the call site.
+   */
+  | (ButtonBaseProps & { children: ReactNode; size?: "default" })
   | (ButtonBaseProps & { children?: never; "aria-label": string });
 
 export function Button({
@@ -217,8 +243,15 @@ export function Button({
       className={buttonVariants({ variant, size, className })}
       {...props}
     >
+      {/*
+        The icon wrapper's trailing `pr-1` only exists to open a gap before a
+        label that follows it — with no `children`, keeping it would push the
+        icon 4px off-centre inside a `size="compact"` segment's `size-8`
+        centred box (ticket #69), so it is applied only when there is a
+        label to separate from.
+      */}
       {icon && (
-        <span className="pr-1">
+        <span className={children ? "pr-1" : undefined}>
           <Icon name={icon} />
         </span>
       )}
