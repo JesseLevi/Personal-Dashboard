@@ -91,6 +91,7 @@ import { Button } from "../atoms/Button";
  * className-fighting). Left as-is, tracked as an atom-level follow-up
  * (`Atom/Button` needs a real `size="default"` icon-only footprint, the
  * same kind of `size-10`-style fix #69 gave `size="compact"`'s `size-8`).
+ * Filed as ticket #75 — remove this note once that lands.
  */
 export interface CardContainerProps {
   /** Figma `Name` prop (default "Ontbijt") — column title. */
