@@ -76,13 +76,16 @@ import { Tag } from "../atoms/Tag";
  *   collapsing them into one shared wrapper would have re-introduced the
  *   hover-only bug this ticket fixes.
  *
- * - Padding uses explicit longhand (`px-3 py-3` for the axis pair, never the
- *   all-sides `p-3` shorthand) so the `:active` variant's `pr-4` override
- *   targets `padding-right` unambiguously. `Atom/Button`'s own doc comment
- *   flags the general version of this fragility (`h-8`/`h-10` on the same
- *   property, same specificity — the winner is decided by Tailwind's own
- *   utility emission order, not by source order); splitting the shorthand
- *   here is the same defensive move applied to padding. `transition-colors`
+ * - Padding uses explicit longhand (`pl-3 pr-3 py-3`, never the `px-3`
+ *   shorthand) because `px-*` emits `padding-inline`, a different longhand
+ *   from `pr-*`'s `padding-right` — both affect the right side in LTR, but
+ *   as two distinct declarations the winner would be decided by Tailwind's
+ *   utility emission order, not by one overriding the other. Using `pr-3`
+ *   in the base means the `:active` variant's `pr-4` overrides the
+ *   identical longhand property. `Atom/Button`'s own doc comment flags the
+ *   general version of this fragility (`h-8`/`h-10` on the same property,
+ *   same specificity); splitting the shorthand here is the same defensive
+ *   move applied to padding. `transition-colors`
  *   only animates colour, not padding/spacing, so the row visibly shifts
  *   4px the instant `:active` fires rather than easing — that shift is in
  *   the fetched node (the padding literally changes), so it is kept
@@ -177,7 +180,7 @@ export function CardContentIngredient({
           className,
         )}
       >
-        <div className="flex w-full items-center gap-5 rounded-3xl py-3 pl-3 pr-4">
+        <div className="flex w-full items-center gap-5 rounded-3xl bg-surface-raised py-3 pl-3 pr-4">
           {content}
           {checkbox}
         </div>
@@ -196,7 +199,7 @@ export function CardContentIngredient({
   return (
     <div
       className={clsx(
-        "flex w-full items-center gap-5 rounded-3xl px-3 py-3 transition-colors active:bg-surface-raised active:pr-4",
+        "flex w-full items-center gap-5 rounded-3xl pl-3 pr-3 py-3 transition-colors active:bg-surface-raised active:pr-4",
         className,
       )}
     >
