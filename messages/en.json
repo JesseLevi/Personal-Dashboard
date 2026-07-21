@@ -33,6 +33,10 @@
     },
     "cardContentIngredient": {
       "deleteLabel": "Delete ingredient"
+    },
+    "cardContainer": {
+      "addLabel": "Add",
+      "editLabel": "Edit"
     }
   }
 }
