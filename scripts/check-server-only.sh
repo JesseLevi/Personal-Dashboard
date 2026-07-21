@@ -19,7 +19,7 @@ if grep -rn "dangerouslySetInnerHTML" app/ components/ 2>/dev/null; then
   echo "FAIL: dangerouslySetInnerHTML is forbidden on this codebase (Architecture §7)." >&2; fail=1
 fi
 
-if grep -rnE '#[0-9a-fA-F]{3,8}\b' components/ --include="*.tsx" 2>/dev/null; then
+if grep -rnE '(#|%23)[0-9a-fA-F]{3,8}\b' components/ --include="*.tsx" 2>/dev/null; then
   echo "FAIL: raw hex color in components — use semantic tokens (ADR-0010)." >&2; fail=1
 fi
 

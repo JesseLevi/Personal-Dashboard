@@ -48,11 +48,17 @@ import { Icon } from "../atoms/Icon";
  * -> `text-text`; duration fill + icon stroke (stone-500) -> `text-text-muted`.
  * `text-base/semibold` / `text-sm/semibold` textStyles -> their matching
  * Tailwind class pairs per `design/tokens.json`.
+ *
+ * Thumbnail `alt` defaults to `""` (decorative), not `name`: the recipe name
+ * is already rendered as adjacent visible text, so defaulting `alt` to it
+ * would make a screen reader announce the name twice. `imageAlt` remains an
+ * explicit override for a call site that needs a real accessible name on the
+ * image itself (e.g. the photo conveys information the name text does not).
  */
 export interface CardContentRecipeProps {
   /** Figma "Thumbnail" IMAGE fill — recipe photo URL. */
   imageUrl: string;
-  /** Accessible name for the thumbnail. Defaults to `name` when omitted. */
+  /** Accessible name for the thumbnail. Decorative (`""`) by default since the recipe name is already rendered as adjacent text; pass an explicit value to override. */
   imageAlt?: string;
   /** Figma TEXT "Amandel Pasta" — recipe name. */
   name: string;
@@ -72,7 +78,7 @@ export function CardContentRecipe({
     <div className={clsx("flex w-full gap-4", className)}>
       <img
         src={imageUrl}
-        alt={imageAlt ?? name}
+        alt={imageAlt ?? ""}
         className="h-24 w-24 shrink-0 rounded object-cover"
       />
       <div className="flex flex-1 flex-col justify-center gap-2">
