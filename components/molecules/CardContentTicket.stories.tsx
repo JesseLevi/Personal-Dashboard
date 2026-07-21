@@ -1,5 +1,4 @@
 // figma: node-id=3670:1696
-import type { Story } from "@ladle/react";
 import { CardContentTicket } from "./CardContentTicket";
 import { Tag } from "../atoms/Tag";
 import { Card } from "./Card";
@@ -41,34 +40,3 @@ export const ManyLabels = () => (
     </CardContentTicket>
   </div>
 );
-
-type PlaygroundProps = {
-  title: string;
-  priorityLabel: string;
-  sizeLabel: string;
-};
-
-export const Playground: Story<PlaygroundProps> = ({
-  title,
-  priorityLabel,
-  sizeLabel,
-}) => (
-  <div className="w-96">
-    <CardContentTicket title={title}>
-      <Tag variant="medium">{priorityLabel}</Tag>
-      <Tag variant="neutral">{sizeLabel}</Tag>
-    </CardContentTicket>
-  </div>
-);
-
-Playground.args = {
-  title: "HBO Wachtwoord updaten",
-  priorityLabel: "Medium",
-  sizeLabel: "S",
-};
-
-Playground.argTypes = {
-  title: { control: { type: "text" } },
-  priorityLabel: { control: { type: "text" } },
-  sizeLabel: { control: { type: "text" } },
-};
