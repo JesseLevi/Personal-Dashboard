@@ -8,18 +8,15 @@ Read on demand, not by default: `docs/phase-log.md` (what infrastructure exists)
 
 ## State (2026-07-21)
 
-- `main` is at `ae28e67`. It has Phase 0 (foundation) + Phase 1 login/logout + **all Phase 2 atoms**, the `Card` and `Step` molecules, and the token/border rework through #68/#69. CI is green on both jobs, including the db job (supabase + pgTAP + RLS coverage).
-- Built: `components/atoms/` Button, ButtonToggle, Checkbox, Dropdown, Icon, InputField, Tag · `components/molecules/` Card, Step.
-- **Two PRs are open, both CI-green and mergeable**: **#66** (ticket #19, `CardContentRecipe`) and **#67** (ticket #20, `CardContentIngredient`). Both are reviewed and finished — they await the user's merge. See the merge note below.
-- Board: `#7`, `#12`–`#20`, `#34`, `#35`, `#52`, `#53`, `#56`, `#58`–`#61`, `#68`, `#69` sit in **In review** awaiting the user; `#41`–`#45` are in **Done** (auto-closed by a `Fixes #NN` in their PR bodies — reopen any you still wanted to review); the rest is Backlog. Issues stay open until the user closes them.
+- `main` is at `343719a`. It has Phase 0 (foundation) + Phase 1 login/logout + **all Phase 2 atoms**, the `Card`, `Step`, `CardContentRecipe` and `CardContentIngredient` molecules, and the token/border rework through #68/#69. Lint/typecheck/test/`check:server-only` all green locally after the merge; the db job still needs CI (no Docker on this dev machine).
+- Built: `components/atoms/` Button, ButtonToggle, Checkbox, Dropdown, Icon, InputField, Tag · `components/molecules/` Card, Step, CardContentRecipe, CardContentIngredient.
+- **#66** (ticket #19, `CardContentRecipe`) and **#67** (ticket #20, `CardContentIngredient`) are **merged** (2026-07-21) — see the note below for how the known `figma-map.json` conflict was resolved. `Card.stories.tsx` gained an `AllContentTypes` story composing one `Card` per built `Card-content/*` molecule, so all card content types can be compared side by side in Ladle.
+- Board: `#7`, `#12`–`#20`, `#34`, `#35`, `#52`, `#53`, `#56`, `#58`–`#61`, `#68`, `#69` sit in **In review** awaiting the user (now including #19/#20, whose PRs just merged); `#41`–`#45` are in **Done** (auto-closed by a `Fixes #NN` in their PR bodies — reopen any you still wanted to review); the rest is Backlog. Issues stay open until the user closes them.
 - `feat/phase2-atoms` is **stale** — its 9 commits all reached `main` via squash merges. Work on `main`; the branch can be deleted.
 
-### Merging #66 and #67
+### #66 and #67 merge (2026-07-21)
 
-Both branches were rebased onto `6d2be6e` before `#68`/`#69` landed, so they sit two commits behind `main`. GitHub reports both `MERGEABLE / CLEAN` — verified, because neither touched the regions `#68` rewrote. Two things to know:
-
-- Both add an entry to `design/figma-map.json` on **adjacent lines 19/20**, so whichever merges **second** conflicts there. Resolution: keep the `"nodeId"`-populated line from each side, discard both `"nodeId": null` stubs. No note-combining needed — different keys.
-- `#67` also appends **open question 5** to `docs/design-tokens.md` while carrying the pre-`#68` text of question 1. The merge resolves correctly (it never edited question 1, so `main`'s newer wording wins), but verify after merging rather than assuming.
+Both branches were rebased onto `6d2be6e` before `#68`/`#69` landed. `#66` merged clean. `#67` then conflicted on `design/figma-map.json` exactly as predicted (adjacent lines 19/20) — resolved by keeping the `"nodeId"`-populated line from each side and discarding both `"nodeId": null` stubs. `docs/design-tokens.md` auto-merged correctly (open question 5 appended, question 1 kept `main`'s newer wording). `messages/en.json`/`nl.json` key sets verified identical post-merge.
 
 ## Card-content molecules + a CI gate hole — #19, #20 (2026-07-21)
 
