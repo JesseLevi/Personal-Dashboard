@@ -74,40 +74,27 @@ import type { ReactNode } from "react";
  * question in `design/notes/Carousel.md` pending a real
  * answer (native scrollbar vs. custom nav controls vs. something else).
  *
- * COLUMN HEIGHT — FLAGGED, resolved one way deliberately: a flex row's
- * default `align-items: stretch` was already making each `w-70 shrink-0`
- * wrapper match the tallest sibling's height, but `CardContainer` itself
- * never filled that stretched wrapper (its own root has no height rule,
- * `contextual`/`contextual` sizing, so it hugs its own card count) —
- * columns with fewer cards left dead transparent space below their grey
- * background, an internally inconsistent half-stretched/half-hugged state
- * (the exact "emergent instead of declared" smell #69/#75 already fought,
- * this time at the layout level rather than padding arithmetic). Resolved
- * to EQUAL-HEIGHT columns: the wrapper now also forces its child to fill
- * the stretched height (`[&>*]:h-full`), so every column's grey background
- * extends the full row height regardless of card count, and
- * `CardContainer`'s own Content SLOT — already built with Figma sizing
- * `fill`/`fill` + `justifyContent: center` (see CardContainer.tsx / its
- * fetched node 3650:1297) — absorbs the extra height by centring its cards
- * in it, exactly the layout that slot was already built to do. No change
- * to `CardContainer.tsx` itself; the fill behaviour is imposed purely by
- * this wrapper class, same as the column-width fix above.
- *
- * The underlying design question this doesn't fully settle: *should
- * carousel columns always be equal-height regardless of card count, or
- * hug their own content?* Evidence for equal-height: the fetched node's
- * three `Card-container` instances all carry `vertical: fixed, height:
- * 532` (a real, explicit sizing choice, not a default), and
- * `CardContainer`'s Content SLOT was already built fill/fill +
- * center-justified, i.e. built to receive and centre extra vertical space.
- * Evidence against treating that as conclusive: all three fetched
- * instances also hold identical content (4 Cards each), so the equal
- * height is equally explainable as equal content — Figma never shows a
- * ragged case, so it never actually exercises what should happen when
- * columns hold different card counts, which a real kanban board will do
- * constantly. Recorded in `design/notes/Carousel.md` for a
- * real design answer; equal-height was picked here as the reading with
- * direct, explicit support in the fetched node's own properties.
+ * COLUMN HEIGHT — ANSWERED by the user 2026-07-22 (see
+ * `design/notes/Carousel.md`): columns HUG their own card count, they do
+ * NOT share a row-wide equal height. A flex row's default
+ * `align-items: stretch` was making each `w-70 shrink-0` wrapper match the
+ * tallest sibling's height, and an earlier revision then forced
+ * `CardContainer` to fill that stretched wrapper (`[&>*]:h-full`) so its
+ * Content SLOT's `justifyContent: center` would absorb the extra space —
+ * that produced exactly the symptom the user flagged: with a ragged card
+ * count per column (the real, everyday case a kanban board has, unlike the
+ * fetched node's uniform 4-card sample), the shorter columns showed a tall
+ * grey background with the lone card floating in dead centre instead of
+ * top-aligned. Fixed by removing both the forced fill (`[&>*]:h-full`) and
+ * the row's stretch (`items-start` on the row instead of the flex default),
+ * so each `w-70 shrink-0` wrapper — and the grey `CardContainer` background
+ * inside it — now sizes to its own child's natural (hug) height and stops
+ * right under its own last card, cards top-aligned, no dead whitespace.
+ * `CardContainer.tsx` itself is unchanged: its Content SLOT still carries
+ * `flex-1 justify-center` from Figma's fill/fill + `justifyContent: center`
+ * (node 3650:1297), but with no ancestor now forcing extra height into the
+ * column, `flex-1` has nothing to grow into and `justify-center` is inert —
+ * harmless, not a conflict, so no change to that component was needed.
  *
  * No `componentPropertyDefinitions` and no fill on this node, so no
  * variant/state axis and no colour to model — no CVA, `clsx` merges the
@@ -121,9 +108,14 @@ export interface CarouselProps {
 
 export function Carousel({ children, className }: CarouselProps) {
   return (
-    <div className={clsx("flex w-full gap-4 overflow-x-auto", className)}>
+    <div
+      className={clsx(
+        "flex w-full items-start gap-4 overflow-x-auto",
+        className,
+      )}
+    >
       {Children.map(children, (child, index) => (
-        <div key={index} className="w-70 shrink-0 [&>*]:h-full">
+        <div key={index} className="w-70 shrink-0">
           {child}
         </div>
       ))}
