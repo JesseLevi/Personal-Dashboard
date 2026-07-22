@@ -46,17 +46,30 @@ import type { IconName } from "../atoms/Icon";
  * Sizing (measured against the downloaded node PNGs, not assumed —
  * `sidebar-collapsed-no.png` / `sidebar-collapsed-yes.png`, both @2x):
  * - Collapsed=No: Figma states `sizing.horizontal: fixed`, 198px; the PNG
- *   (396×1378 @2x) confirms 198px @1x. Rendered `w-[198px]` — a literal
- *   measured pixel, not a rounding shortcut: Tailwind's default width scale
- *   has no step at 198, and this codebase has no spacing/sizing token layer
- *   yet (only colours are tokenized per ADR-0010), so there is no semantic
- *   name to reuse here the way colour gaps get one.
+ *   (396×1378 @2x) confirms 198px @1x. Rendered via the `SIDEBAR_EXPANDED_WIDTH`
+ *   constant (`w-[198px]`) — a literal measured pixel, not a rounding
+ *   shortcut: Tailwind's default width scale has no step at 198, and this
+ *   codebase has no spacing/sizing token layer yet (only colours and, as of
+ *   #86, motion are tokenized per ADR-0010), so there is no semantic name to
+ *   reuse here the way colour gaps get one.
  * - Collapsed=Yes: Figma states `sizing.horizontal: hug` — genuinely
- *   different from No's `fixed`, not a copy/paste artifact. Rendered
- *   `w-fit`, which lands on the measured 72px (`sidebar-collapsed-yes.png`,
- *   144×1378 @2x → 72px @1x = 16px pad + `Atom/Button`'s own 40px icon-only
- *   footprint + 16px pad) without this file stating that number anywhere —
- *   it falls out of composing unchanged atoms.
+ *   different from No's `fixed`, not a copy/paste artifact. Originally
+ *   rendered `w-fit`, which the doc comment estimated at 72px (16px pad +
+ *   `Atom/Button`'s own 40px icon-only footprint + 16px pad) without
+ *   measuring the real box. Ticket #86 needed an explicit length (CSS cannot
+ *   transition `width` to/from the intrinsic-sizing keyword `fit-content`
+ *   `w-fit` compiles to — only between two literal lengths), so the estimate
+ *   was checked against the real rendered DOM instead of trusted: Playwright
+ *   against `pnpm ladle`'s dev server, reading `getBoundingClientRect()` /
+ *   `getComputedStyle().width` on the collapsed `<nav>`. The measured value is
+ *   **73px, not 72** — Tailwind's Preflight sets `box-sizing: border-box`
+ *   project-wide, so the browser's `fit-content` resolution folds this
+ *   element's own `border-r border-border` (1px) into the box it reports,
+ *   which the padding-plus-icon arithmetic alone didn't account for
+ *   (`clientWidth` — content minus border — is exactly 72, confirming the
+ *   extra pixel is the border, not a measurement error). Rendered via the
+ *   `SIDEBAR_COLLAPSED_WIDTH` constant (`w-[73px]`) — the measured DOM value
+ *   wins over the arithmetic estimate.
  * - Height: both variants report Figma `sizing.vertical: fixed`, 689px —
  *   NOT modelled literally. 689 is far taller than the fetched content
  *   needs (16 pad + 40 toggle + 48 gap + [6×40 items + 5×12 gaps] + 16 pad
@@ -123,6 +136,32 @@ import type { IconName } from "../atoms/Icon";
  * `addLabel`/`editLabel` already established. Catalog keys live under
  * `components.sidebar.*` in `messages/{nl,en}.json`.
  *
+ * Motion (ticket #86): the collapse toggle previously snapped instantly
+ * between widths because `w-fit` (an intrinsic-sizing keyword) cannot be
+ * animated — CSS only transitions `width` between two explicit lengths, never
+ * to/from `fit-content`/`auto`/`max-content`. Re-fetching the user-supplied
+ * animation reference frame (node `3859:6647`, "SidebarAnimation") confirmed
+ * there is still no machine-readable timing anywhere: the MCP payload carries
+ * no prototype `reactions`/`transitionNodeID`/`transitionDuration`/easing
+ * fields, only the same static `Collapsed=No` instance already fetched for
+ * this component. So the *fact* that it should slide is this ticket's own
+ * explicit requirement, same as `Atom/Button-toggle`'s indicator motion;
+ * `duration-base`/`ease-base` (200ms, standard ease-out — see
+ * `design/tokens.json`'s `semantic.duration`/`semantic.easing` `$comment`s)
+ * are this codebase's own default, not Figma-sourced, flagged at
+ * `docs/open-questions.md#sidebar-motion-timing-unsourced`. Unlike
+ * `Dropdown`/`Button-toggle`, which each reach for Tailwind's raw
+ * `duration-200 ease-out` directly (their own doc comments flag the same
+ * "no project motion token" gap this ticket closes), this is the first
+ * consumer of the new *named* semantic tokens — a class-swap CSS transition
+ * on the `transition-[width]` property, no JS measuring required now that
+ * both endpoints (`SIDEBAR_EXPANDED_WIDTH`/`SIDEBAR_COLLAPSED_WIDTH` below)
+ * are explicit pixel lengths, so this stays a plain server-rendered class
+ * toggle — no `"use client"` needed for the animation itself (see the Server
+ * Component note below for `collapsed` itself). `motion-reduce:transition-none`
+ * disables it for `prefers-reduced-motion` users, the same precedent
+ * `Dropdown`/`Button-toggle` already set.
+ *
  * Server Component (no `"use client"`): `collapsed` is a plain prop, not
  * component-owned state, because — unlike `Atom/Dropdown`'s disclosure,
  * which is identical ephemeral UI state for every caller and so stays
@@ -130,7 +169,8 @@ import type { IconName } from "../atoms/Icon";
  * caller (a cookie for SSR-stable layout, `localStorage`, URL state, etc.),
  * so the composing layout, not this leaf, must own it. Same reasoning
  * `Atom/Checkbox` already gives for staying a Server Component with a
- * composer-owned `checked`.
+ * composer-owned `checked`. The #86 width transition doesn't change this: a
+ * CSS class swap on a still-server-rendered prop needs no client JS.
  */
 export type SidebarItemId =
   | "todo"
@@ -148,6 +188,16 @@ const NAV_ITEMS: ReadonlyArray<{ id: SidebarItemId; icon: IconName }> = [
   { id: "clothes", icon: "Shirt" },
   { id: "assistant", icon: "Astroid" },
 ];
+
+// Both Collapsed endpoints as named, explicit-pixel constants (ticket #86) —
+// hoisted so the value exists in exactly one place, rather than the literal
+// Tailwind arbitrary-value class being written out at each of the two call
+// sites below. See this file's own doc comment ("Sizing" / "Motion") for how
+// each number was measured. `SIDEBAR_COLLAPSED_WIDTH` replaces the former
+// `w-fit`: CSS cannot transition `width` to/from an intrinsic-sizing keyword,
+// only between two literal lengths, which these two constants now are.
+const SIDEBAR_EXPANDED_WIDTH = "w-[198px]";
+const SIDEBAR_COLLAPSED_WIDTH = "w-[73px]";
 
 export interface SidebarProps {
   /** Figma `Collapsed` variant axis (No/Yes). Defaults to expanded (`No`). */
@@ -181,8 +231,8 @@ export function Sidebar({
     <nav
       aria-label={navLabel}
       className={clsx(
-        "flex h-full flex-col items-end gap-12 border-r border-border p-4",
-        collapsed ? "w-fit" : "w-[198px]",
+        "flex h-full flex-col items-end gap-12 border-r border-border p-4 transition-[width] duration-base ease-base motion-reduce:transition-none",
+        collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH,
         className,
       )}
     >

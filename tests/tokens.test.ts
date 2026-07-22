@@ -108,4 +108,32 @@ describe("token → theme pipeline (ADR-0010)", () => {
     // Not collapsed onto Button/Outline's Active (stone-800) — deliberately kept apart.
     expect(light).not.toContain("--color-border-input-active: var(--color-stone-800);");
   });
+
+  it("emits the motion token layer (ticket #86): duration-base/ease-base, no Figma source, no dark split", () => {
+    const css = generateTheme(tokens);
+    const light = css.slice(0, css.indexOf('[data-theme="dark"]'));
+    expect(light).toContain("--duration-base: 200ms;");
+    expect(light).toContain("--ease-base: cubic-bezier(0, 0, 0.2, 1);");
+    // Motion has no light/dark split (see semantic.duration/$comment) — it
+    // must never leak into the dark override block.
+    const darkBlock = css.slice(css.indexOf('[data-theme="dark"]'));
+    expect(darkBlock).not.toContain("--duration-base");
+    expect(darkBlock).not.toContain("--ease-base");
+  });
+
+  it("skips the semantic.duration/semantic.easing $comment doc field — it is documentation, not a token", () => {
+    const css = generateTheme(tokens);
+    expect(css).not.toContain("--$comment");
+  });
+
+  it("every semantic duration/easing ref resolves (closed scale, same discipline as colour)", () => {
+    for (const [name, ref] of Object.entries<unknown>(tokens.semantic.duration)) {
+      if (name.startsWith("$")) continue;
+      expect(() => resolveRef(tokens, ref as string)).not.toThrow();
+    }
+    for (const [name, ref] of Object.entries<unknown>(tokens.semantic.easing)) {
+      if (name.startsWith("$")) continue;
+      expect(() => resolveRef(tokens, ref as string)).not.toThrow();
+    }
+  });
 });

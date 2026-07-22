@@ -37,9 +37,13 @@ export const Variants = () => (
 // Component with `collapsed` as a plain prop (see the component's own doc
 // comment); the `useState` here is the *story's* concern, standing in for
 // whatever a real caller persists the flag in (cookie/localStorage/URL).
-// Note this proves the toggle wires up, not that it animates — clicking
-// still snaps rather than sliding; see the collapse-animation investigation
-// filed as a follow-up issue on #25.
+// Ticket #86: clicking now slides between the two measured widths
+// (`duration-base`/`ease-base`, see the component's own "Motion" doc
+// comment) instead of snapping — this story is what demonstrates that, live,
+// in Ladle. The slide itself is disabled for `prefers-reduced-motion` users
+// (`motion-reduce:transition-none` on the component), which isn't something a
+// static story can toggle — it depends on the OS/browser setting, not a
+// story control, same as `Dropdown`'s equivalent animation.
 export const Animated = () => {
   const [collapsed, setCollapsed] = useState(false);
   return (

@@ -19,3 +19,7 @@ The Figma file is deliberately built atomic with primitive → semantic tokens o
 - Small fixed overhead per component (map entry, story, baseline) — the price of drift being visible instead of silent.
 - Tailwind v4 is thereby fixed as the Tailwind major; its CSS-first `@theme` is what makes the generated-theme approach native instead of config-file templating.
 - If Figma variable naming changes structurally, `sync:tokens` breaks loudly in CI rather than silently diverging — intended behavior.
+
+## Note (2026-07-22, ticket #86): the token layer now also carries motion
+
+`design/tokens.json`/`app/theme.css` gained a `duration`/`easing` primitive+semantic tier alongside `color` (Sidebar's collapse-slide transition), synced through the exact same `pnpm sync:tokens` pipeline this ADR already describes generically ("tokens", not "colours"). Unlike colour, motion has **no Figma source at all** to sync from (see `docs/open-questions.md#sidebar-motion-timing-unsourced`) — the values are this codebase's own picks, which is a meaningfully different provenance than everything else this ADR covers. This note records that the mechanism absorbed it without a code change to the pipeline's shape; it does **not** decide whether motion deserves its own ADR versus living as a footnote here — that call is left to the user/architecture layer, not made unilaterally by the ticket that needed it.

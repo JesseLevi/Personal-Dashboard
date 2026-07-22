@@ -28,6 +28,8 @@
   --color-priority-mid-bg: var(--color-blue-50);
   --color-priority-low: var(--color-green-500);
   --color-priority-low-bg: var(--color-green-50);
+  --duration-base: 200ms;
+  --ease-base: cubic-bezier(0, 0, 0.2, 1);
 }
 
 /* Dark-mode overrides: [data-theme="dark"] is set by @ladle/react's Light/Dark
