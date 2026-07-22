@@ -153,7 +153,16 @@ import type { IconName } from "../atoms/Icon";
  * `Dropdown`/`Button-toggle`, which each reach for Tailwind's raw
  * `duration-200 ease-out` directly (their own doc comments flag the same
  * "no project motion token" gap this ticket closes), this is the first
- * consumer of the new *named* semantic tokens — a class-swap CSS transition
+ * consumer of the new *named* semantic tokens. Note the asymmetry in how the
+ * two are referenced: `--ease-*` IS a Tailwind v4 theme namespace, so
+ * `ease-base` is a real generated utility, but `--duration-*` is NOT one —
+ * writing `duration-base` compiles to nothing at all and silently falls back
+ * to `--default-transition-duration` (150ms), so the duration token must be
+ * reached through an arbitrary value, `duration-[var(--duration-base)]`.
+ * Verified by compiling both forms against this repo's Tailwind before
+ * committing. That arbitrary-value reference is also what makes the compiler
+ * emit `--duration-base` into the built stylesheet at all — a class-swap
+ * CSS transition
  * on the `transition-[width]` property, no JS measuring required now that
  * both endpoints (`SIDEBAR_EXPANDED_WIDTH`/`SIDEBAR_COLLAPSED_WIDTH` below)
  * are explicit pixel lengths, so this stays a plain server-rendered class
@@ -231,7 +240,7 @@ export function Sidebar({
     <nav
       aria-label={navLabel}
       className={clsx(
-        "flex h-full flex-col items-end gap-12 border-r border-border p-4 transition-[width] duration-base ease-base motion-reduce:transition-none",
+        "flex h-full flex-col items-end gap-12 border-r border-border p-4 transition-[width] duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
         collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH,
         className,
       )}

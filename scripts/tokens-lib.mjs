@@ -73,8 +73,10 @@ export function generateTheme(tokens) {
   // semantic.easing $comments), so there's no cssValueForRef/lightRef/darkRef
   // indirection to reuse — each semantic name resolves straight to its
   // primitive's literal value and gets its own explicit CSS var, landing in
-  // Tailwind v4's `--duration-*` / `--ease-*` theme namespaces (any name is
-  // valid in those namespaces per Tailwind's docs, not just numbers).
+  // Tailwind v4's theme block. Only `--ease-*` is a real Tailwind namespace
+  // (so `ease-base` is a generated utility); `--duration-*` is not, so
+  // `--duration-base` is consumed via `duration-[var(--duration-base)]` —
+  // see design/tokens.json's semantic.duration $comment.
   for (const [name, ref] of Object.entries(tokens.semantic.duration ?? {})) {
     if (name.startsWith("$")) continue; // skip the "$comment" doc field, not a token
     lightLines.push(`  --duration-${name}: ${resolveRef(tokens, ref).value};`);

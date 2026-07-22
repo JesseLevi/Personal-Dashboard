@@ -121,6 +121,20 @@ describe("token → theme pipeline (ADR-0010)", () => {
     expect(darkBlock).not.toContain("--ease-base");
   });
 
+  it("Sidebar consumes the duration token via the arbitrary-value form, not a bare `duration-base` (ticket #86)", () => {
+    // `--ease-*` IS a Tailwind v4 theme namespace, so `ease-base` is a real
+    // generated utility. `--duration-*` is NOT one: a bare `duration-base`
+    // compiles to no rule at all and silently falls back to
+    // `--default-transition-duration` (150ms), so the 200ms token would have
+    // had no effect at all while still looking correct in the source. The
+    // only thing that catches that is asserting the consuming class here —
+    // a static visual baseline can't see it, because both forms are
+    // pixel-identical at rest and only differ mid-transition.
+    const src = readFileSync("components/organisms/Sidebar.tsx", "utf8");
+    expect(src).toContain("duration-[var(--duration-base)]");
+    expect(src).not.toMatch(/["'\s]duration-base[\s"']/);
+  });
+
   it("skips the semantic.duration/semantic.easing $comment doc field — it is documentation, not a token", () => {
     const css = generateTheme(tokens);
     expect(css).not.toContain("--$comment");
