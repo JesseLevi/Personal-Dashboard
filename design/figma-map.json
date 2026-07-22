@@ -2,7 +2,7 @@
   "$meta": {
     "figmaFile": "PE9Tc5r8ybDZWVrJrQPqXi",
     "comment": "Canonical Figma <-> code mapping (ADR-0010): component name -> code path -> Figma node-id, lookup only. Human-readable view: Architecture.md §3.1. Every entry's code file must carry `// figma: node-id=<nodeId>` in its header. Components are added here in the same PR that creates them (Phase 2+); nodeId values are looked up in Figma dev mode or via MCP at build time. Per-component design notes (discrepancies, token gaps, ticket history) live one file per component in design/notes/<ComponentFile>.md — see design/notes/README.md.",
-    "status": "pre-Phase-2: paths reserved, nodeId filled in when each component is built"
+    "status": "Phase 2 complete: every entry has a real nodeId and a built component"
   },
   "atoms": {
     "Atom/Button": { "path": "components/atoms/Button.tsx", "nodeId": "3623:4346" },

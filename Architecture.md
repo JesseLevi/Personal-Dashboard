@@ -60,7 +60,7 @@ messages/               # i18n message catalogs: nl.json, en.json (ADR-0007)
 
 ### 3.1 Figma → code naming map
 
-Figma contains spelling variants; code uses corrected English. **`design/figma-map.json` is the canonical map** (component name ↔ file path ↔ node-id, plus the recorded design discrepancies) — per ADR-0010, it is the single source of truth, not this document. **Every component file carries its Figma node-id in a header comment** (`// figma: node-id=3670:3261`) so re-syncing is mechanical. **Opus must include the relevant `figma-map.json` mapping (Figma name, code path, node-id) in every UI ticket** rather than have the executing agent re-derive it.
+Figma contains spelling variants; code uses corrected English. **`design/figma-map.json` is the canonical map** (component name ↔ file path ↔ node-id) — per ADR-0010, it is the single source of truth, not this document. Per-component design notes (recorded discrepancies, token gaps, ticket history) live one file per component in `design/notes/<Component>.md`. **Every component file carries its Figma node-id in a header comment** (`// figma: node-id=3670:3261`) so re-syncing is mechanical. **Opus must include the relevant `figma-map.json` mapping (Figma name, code path, node-id) in every UI ticket** rather than have the executing agent re-derive it.
 
 ### 3.2 Design tokens: `tokens.json` as the single source (ADR-0010)
 
