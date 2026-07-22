@@ -27,6 +27,44 @@ jobs:
         run: pnpm check:server-only
       - run: pnpm build
 
+  # Playwright + Ladle screenshot baselines (issue #6, ADR-0010).
+  #
+  # Runs inside the official Playwright Docker image, pinned to the exact
+  # @playwright/test version in package.json, rather than plain
+  # `ubuntu-latest` + `playwright install`: Playwright's own docs say
+  # screenshot comparisons are only valid when captured in the SAME
+  # browser+OS+font-rasterizer environment as the baseline, and recommend
+  # running visual jobs in a container for exactly that reason. Bump the
+  # image tag in lockstep whenever @playwright/test is upgraded.
+  #
+  # KNOWN GAP 1 (tolerance): none — `threshold` and `maxDiffPixels` are both
+  # 0 in playwright.config.ts. See that file for why the Playwright default
+  # (`threshold: 0.2`) silently blinds this gate to grey-on-grey token
+  # regressions, which is this project's most common visual defect.
+  #
+  # KNOWN GAP 2 (platform, see ticket #6 report): the baselines committed in
+  # tests/visual/**/*-darwin.png were captured on the (Docker-less) macOS dev
+  # machine, not in this container, so this job's Linux run has no matching
+  # `-linux.png` baselines yet and is expected to fail until those are
+  # generated inside this same container image. `continue-on-error: true`
+  # keeps that failure visible without blocking unrelated PRs in the
+  # meantime — remove it once real Linux baselines are committed.
+  visual:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Ladle story screenshot baselines
+        run: pnpm test:visual
+        continue-on-error: true
+
   db:
     runs-on: ubuntu-latest
     steps:

@@ -13,6 +13,8 @@
     "sync:tokens": "node scripts/generate-theme.mjs",
     "ladle": "ladle serve",
     "ladle:build": "ladle build",
+    "test:visual": "playwright test",
+    "test:visual:update": "playwright test --update-snapshots",
     "worker": "tsx worker/index.ts",
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > lib/database.types.ts",
@@ -36,6 +38,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.0",
     "@ladle/react": "^5.0.0",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.1.0",
     "@types/node": "^24.0.0",
     "@types/react": "^19.1.0",

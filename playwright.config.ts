@@ -1,0 +1,72 @@
+import { defineConfig, devices } from "@playwright/test";
+
+/**
+ * Screenshot-baseline gate over the Ladle stories (issue #6, ADR-0010).
+ * See tests/visual/ladle.visual.spec.ts for how stories are discovered and
+ * screenshotted, and the ticket #6 report for the cross-platform-baseline
+ * question this raises for CI.
+ */
+const PORT = 4310;
+
+export default defineConfig({
+  testDir: "./tests/visual",
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 1 : 0,
+  // Single worker: story pages mount into a shared Ladle SPA shell, and
+  // running many story navigations at full concurrency against one preview
+  // server buys nothing on a component workbench this small while adding
+  // scheduling noise to screenshot timing.
+  workers: 1,
+  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
+
+  use: {
+    baseURL: `http://localhost:${PORT}`,
+    trace: "retain-on-failure",
+  },
+
+  expect: {
+    toHaveScreenshot: {
+      // BOTH knobs must be zero. They are not redundant, and getting this
+      // wrong produces a gate that reports green while seeing nothing:
+      //
+      // `threshold` is a PER-PIXEL colour distance (YIQ, default 0.2). Any
+      // pixel closer than it is counted as identical, so `maxDiffPixels` is
+      // never even reached. At the default, swapping the Sidebar's active nav
+      // item from stone-300 to stone-200 — the exact regression PR #84
+      // shipped past all four other gates — produced a diff count of 0 and
+      // PASSED. At `threshold: 0` the same swap reports 7248 differing pixels
+      // and fails. Grey-on-grey token mistakes are this project's most common
+      // visual defect and they live well inside the default threshold.
+      //
+      // `maxDiffPixels` is the absolute count of differing pixels, NOT a
+      // ratio: every story is cropped from the same 1280px-wide Provider
+      // wrapper, so a narrow component like a single Tag badge is mostly
+      // incidental white padding and a ratio dilutes a real whole-badge
+      // regression below any sane threshold (`maxDiffPixelRatio: 0.01` let a
+      // full red->green Tag swap pass silently).
+      //
+      // Zero tolerance is only viable because baselines are compared within
+      // one browser build + OS; verified stable across repeated full runs.
+      // Cross-OS rasterization differences are far larger and must be solved
+      // by matching environments, never by widening these — see the CI job's
+      // comment in .github/workflows/ci.yml.
+      threshold: 0,
+      maxDiffPixels: 0,
+    },
+  },
+
+  // `pnpm ladle:build` produces the static app and its story manifest
+  // (build/meta.json, read by tests/visual/ladle.visual.spec.ts) and
+  // `ladle preview` serves it — chained so the spec file's story list is
+  // always read from the build it's actually testing against, never a stale
+  // one.
+  webServer: {
+    command: `pnpm ladle:build && pnpm exec ladle preview --port ${PORT}`,
+    url: `http://localhost:${PORT}`,
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+  },
+
+  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+});
