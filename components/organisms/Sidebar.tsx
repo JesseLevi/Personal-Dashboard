@@ -77,29 +77,51 @@ import type { IconName } from "../atoms/Icon";
  * unchanged (`variant="filled"`/`variant="transparent"`), which already
  * reads its own tokens.
  *
- * FLAGGED GAP — the active-item sample: the fetched node's one instance
- * that differs from its five siblings (Recepten, in Collapsed=No) resolves
- * to Button's component `Type=Default, Style=Filled, State=Hover` (fill
- * stone-300, i.e. `surface-raised-hover`), not `Style=Filled, State=Default`
- * (stone-200, `surface-raised`) the way every other item's own Default
- * instance renders. Read as the file having been captured mid-hover on that
- * one row — a snapshot artifact, not a deliberate "the active module link
- * is hover-tinted" rule — for two reasons: (1) docs/design-tokens.md's
- * per-state convention explicitly forbids reusing one role's Hover token for
- * a different, persistent state ("never one token reused across states"),
- * which is exactly what treating stone-300 as this item's resting colour
- * would do; (2) this codebase has precedent for exactly this class of
- * fetched noise (`Atom/Checkbox`'s ticket #45 traced a reported colour back
- * to the component SET's own selection-boundary stroke, not a real design
- * property). So the active item below is modelled as plain
- * `variant="filled"` (idle stone-200) — still a real, distinguishable
- * highlight against the five `variant="transparent"` siblings, just one
- * shade lighter than this one sample. If stone-300 turns out to be
- * intentional, it needs its own dedicated token rather than borrowing
- * `surface-raised-hover` for a persistent state (that reuse is itself the
- * kind of gap this file's house rules exist to prevent) — flagged here for
- * design confirmation, not guessed at further. Recorded in
- * `design/figma-map.json` alongside this note.
+ * FLAGGED GAP — the active item's fill has no dedicated token (open
+ * question in docs/design-tokens.md, search "Sidebar"): the fetched node's
+ * one instance that differs from its five siblings (Recepten) resolves to
+ * Button's component `Type=Default, Style=Filled, State=Hover` (fill
+ * stone-300, `surface-raised-hover`), not `Style=Filled, State=Default`
+ * (stone-200, `surface-raised`) every other item's own Default instance
+ * uses. An earlier revision of this file read that as a hover-capture
+ * artifact (drawing on `Atom/Checkbox`'s ticket #45, which really did trace
+ * a reported colour to canvas noise) and shipped stone-200 instead — that
+ * reasoning does not survive independent pixel-sampling of the fetched
+ * component SET: the toggle button stays stone-200 and the active pill
+ * stays stone-300 in *both* separately-rendered `Collapsed=No`/`Collapsed=
+ * Yes` variants alike. A single stray hover pointer cannot tint the same
+ * item inside two independent variant components at once, so unlike
+ * Checkbox's case, this is real, deliberate, stable design — not noise —
+ * and stone-200 was silently normalising the design to the wrong colour,
+ * exactly what CLAUDE.md's token-gap rule forbids.
+ *
+ * Corrected: the active item's resting fill is stone-300, rendered by
+ * composing `Atom/Button` with `variant="filled"` plus a `!`-forced
+ * `bg-surface-raised-hover` override (Tailwind's trailing-`!` important
+ * modifier — the deterministic way to win a same-specificity, same-property
+ * conflict against the variant's own `bg-surface-raised`, rather than
+ * gambling on utility generation order the way an unmarked override class
+ * would). This deliberately **reuses** the existing `surface-raised-hover`
+ * token for a persistent (non-hover) state, per CLAUDE.md's explicit
+ * instruction for this exact situation ("reuse the existing token for the
+ * correct pixels and record the gap") — it is not a new token and not a
+ * hardcoded hex.
+ *
+ * The gap this creates: `docs/design-tokens.md` currently states there is
+ * deliberately no `role-selected` token, because Selected only ever darkens
+ * text — and records `surface-raised-selected` as removed for lack of any
+ * consumer. This component *is* that missing consumer: a persistent
+ * selected/active state that carries a real fill, which the documented
+ * assumption says shouldn't exist. Borrowing `surface-raised-hover` is a
+ * stopgap that produces the right pixels today, not a permanent answer — a
+ * real fix needs a dedicated selected-fill token (see the new open question
+ * in docs/design-tokens.md). One direct consequence, noted rather than
+ * solved: since the active item's resting colour now equals Button/Filled's
+ * own Hover colour, hovering an active nav item produces no visible change
+ * — the same missing-hover-affordance family docs/design-tokens.md's open
+ * questions 3 and 5 already record for Button/Transparent and Ingredient
+ * rows, cross-referenced there rather than inventing a hover treatment
+ * Figma doesn't show.
  *
  * Icons: `Panel-left-close`/`Panel-left-open` and the five listed module
  * icons were already shape-verified by earlier tickets (see `Icon.tsx`'s own
@@ -203,12 +225,19 @@ export function Sidebar({
           const variant = isActive ? "filled" : "transparent";
           const label = labels[id];
           const handleClick = onNavigate ? () => onNavigate(id) : undefined;
+          // See the class doc comment ("FLAGGED GAP") for why the active
+          // item forces `surface-raised-hover` (stone-300) rather than
+          // resting at Filled's own default `surface-raised` (stone-200).
+          const activeFillOverride = isActive
+            ? "bg-surface-raised-hover!"
+            : undefined;
 
           return collapsed ? (
             <Button
               key={id}
               variant={variant}
               icon={icon}
+              className={activeFillOverride}
               aria-label={label}
               aria-current={isActive ? "page" : undefined}
               onClick={handleClick}
@@ -218,6 +247,7 @@ export function Sidebar({
               key={id}
               variant={variant}
               icon={icon}
+              className={activeFillOverride}
               aria-current={isActive ? "page" : undefined}
               onClick={handleClick}
             >

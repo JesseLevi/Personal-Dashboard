@@ -217,3 +217,28 @@ Hover and Active" above for the full mechanism and the compiled-CSS evidence.
    for `Atom/Button`'s Transparent style (open question 3), which
    `Atom/Button-toggle`'s segments inherit since they render as
    `Button variant="transparent"`. Needs a design answer, not a code guess.
+6. **Sidebar (node `3674:5664`, ticket #25) invalidates this doc's own
+   "no `role-selected`" assumption above.** The convention section states
+   Selected deliberately gets no colour token because it only ever darkens
+   text, and the change log for #56 records `surface-raised-selected` as
+   *removed for lack of any consumer*. `Organism/Sidebar`'s active nav item
+   is exactly that missing consumer: independently pixel-sampling the fetched
+   component SET (not a single instance) shows the active item's fill sits
+   at stone-300 (`surface-raised-hover`) while the sibling toggle button
+   stays at stone-200 (`surface-raised`) — identically, in *both* the
+   `Collapsed=No` and `Collapsed=Yes` variant components. Two independently-
+   rendered variants agreeing rules out a stray hover-pointer capture (a
+   theory this file's first draft floated and had to retract); it is real,
+   deliberate design, and it carries a persistent **fill**, not just a text
+   colour. `Sidebar.tsx` currently ships this by reusing
+   `surface-raised-hover` for that persistent state (`Atom/Button` +
+   Tailwind's `!` important modifier, since composing an unmodified atom
+   still needs *some* way to win the specificity tie against the variant's
+   own default fill) — a stopgap that produces the right pixels, not a
+   permanent answer, since it means "resting" and "hovering" render
+   identically for that one item (see open questions 3/5 above for the same
+   missing-hover-affordance family). The real fix is a dedicated
+   selected-fill token (e.g. something in a `role-selected` family this doc
+   currently says shouldn't exist) — needs a design decision on whether
+   Selected-with-fill is a one-off for nav-style components or means the
+   "no `role-selected`" rule above needs qualifying, not a code-side guess.
