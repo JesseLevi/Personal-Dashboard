@@ -27,19 +27,31 @@ export default defineConfig({
 
   expect: {
     toHaveScreenshot: {
-      // Absolute pixel count, NOT a ratio: every story is cropped from the
-      // same full-viewport-width (1280px) Provider wrapper (see the spec
-      // file), so a narrow component like a single Tag badge is mostly
-      // incidental white padding. A ratio-based tolerance dilutes a real,
-      // whole-badge color regression below its threshold on exactly those
-      // narrow stories — confirmed by deliberately breaking Tag's "urgent"
-      // variant color while building this harness: maxDiffPixelRatio: 0.01
-      // let a full red->green badge swap pass silently. maxDiffPixels: 100
-      // covers only the handful of anti-aliased edge pixels Playwright's own
-      // docs acknowledge can jitter between two runs on the SAME browser+OS
-      // (not an attempt to paper over cross-OS font-rasterization
-      // differences, which are far larger and must be solved by matching
-      // environments — see the ticket #6 report).
+      // BOTH knobs must be zero. They are not redundant, and getting this
+      // wrong produces a gate that reports green while seeing nothing:
+      //
+      // `threshold` is a PER-PIXEL colour distance (YIQ, default 0.2). Any
+      // pixel closer than it is counted as identical, so `maxDiffPixels` is
+      // never even reached. At the default, swapping the Sidebar's active nav
+      // item from stone-300 to stone-200 — the exact regression PR #84
+      // shipped past all four other gates — produced a diff count of 0 and
+      // PASSED. At `threshold: 0` the same swap reports 7248 differing pixels
+      // and fails. Grey-on-grey token mistakes are this project's most common
+      // visual defect and they live well inside the default threshold.
+      //
+      // `maxDiffPixels` is the absolute count of differing pixels, NOT a
+      // ratio: every story is cropped from the same 1280px-wide Provider
+      // wrapper, so a narrow component like a single Tag badge is mostly
+      // incidental white padding and a ratio dilutes a real whole-badge
+      // regression below any sane threshold (`maxDiffPixelRatio: 0.01` let a
+      // full red->green Tag swap pass silently).
+      //
+      // Zero tolerance is only viable because baselines are compared within
+      // one browser build + OS; verified stable across repeated full runs.
+      // Cross-OS rasterization differences are far larger and must be solved
+      // by matching environments, never by widening these — see the CI job's
+      // comment in .github/workflows/ci.yml.
+      threshold: 0,
       maxDiffPixels: 0,
     },
   },

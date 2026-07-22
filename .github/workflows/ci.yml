@@ -37,7 +37,12 @@ jobs:
   # running visual jobs in a container for exactly that reason. Bump the
   # image tag in lockstep whenever @playwright/test is upgraded.
   #
-  # KNOWN GAP (see ticket #6 report): the baselines currently committed in
+  # KNOWN GAP 1 (tolerance): none — `threshold` and `maxDiffPixels` are both
+  # 0 in playwright.config.ts. See that file for why the Playwright default
+  # (`threshold: 0.2`) silently blinds this gate to grey-on-grey token
+  # regressions, which is this project's most common visual defect.
+  #
+  # KNOWN GAP 2 (platform, see ticket #6 report): the baselines committed in
   # tests/visual/**/*-darwin.png were captured on the (Docker-less) macOS dev
   # machine, not in this container, so this job's Linux run has no matching
   # `-linux.png` baselines yet and is expected to fail until those are
