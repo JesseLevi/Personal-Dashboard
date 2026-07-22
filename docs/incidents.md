@@ -2,6 +2,31 @@
 
 Append-only archive of per-ticket incident write-ups: defects that shipped past every CI gate, the merge-conflict resolutions for specific PRs, and the reasoning behind non-obvious fixes. These are moved here verbatim, not summarised, because the detail is the evidence base for why this project doesn't fully trust its CI gates. Nothing here is current status — entries are never updated once written. Read on demand when investigating a specific ticket, a recurring failure mode, or a past merge — never as part of session start.
 
+## 2026-07-22 — The screenshot gate shipped blind (#6)
+
+The first implementation of the Playwright baseline gate passed its own
+author's verification and would have been merged as working. It could not see
+the defect class it was built for.
+
+- **`maxDiffPixels: 0` does nothing on its own.** Playwright's `threshold`
+  (per-pixel colour distance, YIQ, **default 0.2**) is applied first: any pixel
+  closer than it is counted as identical, so the diff count never rises and the
+  pixel budget is never reached. Both knobs must be zero.
+- **How it was caught.** Re-injecting the real shipped defect #5 (Sidebar's
+  active nav item, stone-300 -> stone-200) into the branch: all three sidebar
+  tests passed. The built bundle contained the defect, the served page rendered
+  `oklch(0.923)` instead of `oklch(0.869)`, and a baseline written from scratch
+  showed RGB (231,229,228) against the committed (214,211,209) — so the capture
+  was correct and only the *comparison* was blind. With `threshold: 0` the same
+  defect reports 7248 differing pixels and fails.
+- **Why the author's own probe gave false confidence.** It broke `Tag`'s
+  "urgent" variant red -> green. That colour distance happens to exceed 0.2, so
+  it failed as expected. Grey-on-grey token mistakes — this project's most
+  common visual defect, and the reason #6 exists — sit well inside the default.
+- **Lesson for any future gate: verify it with the defect you actually ship,
+  not a dramatic one.** A verification probe that is easier to detect than the
+  real failure mode proves nothing.
+
 ## 2026-07-22 — Carousel + Sidebar (#24, #25)
 
 Last two Phase 2 organisms, one Sonnet agent each, reviewed by putting the fetched node next to the rendered code. **Both shipped a defect that every CI gate passed.** Both were caught only by measuring the rendered DOM in a browser against the node's own numbers — the fourth and fifth such catch. This is now the rule, not the exception: `lint`/`typecheck`/`test`/`check:server-only` cannot see a wrong colour or a wrong width.

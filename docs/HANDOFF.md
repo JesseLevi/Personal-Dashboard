@@ -20,7 +20,7 @@ Read on demand, not by default: `docs/phase-log.md` (infrastructure by phase), `
 
 ## Next actions
 
-1. **#6 Playwright + screenshot baselines — the single highest-value ticket, and overdue.** Five defects have now shipped past all four gates, each caught only by hand (full list in `docs/incidents.md`) — no gate here sees a wrong colour or width. Playwright works against `pnpm ladle`; what's missing is a **committed baseline gate in CI**. `#49` may need solving first (baselines run against `ladle:build`; see `docs/guides/ui-components.md`).
+1. **#6 Playwright + screenshot baselines — merged, but only half-armed.** 46 committed baselines, `pnpm test:visual`, gated at `threshold: 0` / `maxDiffPixels: 0`; verified to catch the real shipped defect #5. **What remains: the CI job is `continue-on-error` because the committed baselines are `-darwin.png` from this Docker-less Mac and CI runs Linux.** Close it by generating `-linux.png` baselines inside the pinned `mcr.microsoft.com/playwright` container (a `workflow_dispatch` job whose output a human commits), then remove `continue-on-error`. Until then the gate protects local runs only. #49 turned out not to block this — `?story=…&mode=preview` renders no Ladle chrome.
 2. **Phase 2 component work is complete** — #19–#25 merged. What remains is non-component: `#49` (Ladle chrome theming), `#59` (preview canvas + trim story sets), `#78` (Input-field height + merge icon stories).
 3. **`#1`–`#5`, `#8`–`#11`** are server-side or need user accounts — coordinate, don't start unprompted.
 
