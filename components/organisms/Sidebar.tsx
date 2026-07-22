@@ -77,76 +77,23 @@ import type { IconName } from "../atoms/Icon";
  * unchanged (`variant="filled"`/`variant="transparent"`), which already
  * reads its own tokens.
  *
- * FLAGGED GAP — the active item's fill has no dedicated token (open
- * question in docs/design-tokens.md, search "Sidebar"): the fetched node's
- * one instance that differs from its five siblings (Recepten) resolves to
- * Button's component `Type=Default, Style=Filled, State=Hover` (fill
- * stone-300, `surface-raised-hover`), not `Style=Filled, State=Default`
- * (stone-200, `surface-raised`) every other item's own Default instance
- * uses. An earlier revision of this file read that as a hover-capture
- * artifact (drawing on `Atom/Checkbox`'s ticket #45, which really did trace
- * a reported colour to canvas noise) and shipped stone-200 instead — that
- * reasoning does not survive independent pixel-sampling of the fetched
- * component SET: the toggle button stays stone-200 and the active pill
- * stays stone-300 in *both* separately-rendered `Collapsed=No`/`Collapsed=
- * Yes` variants alike. A single stray hover pointer cannot tint the same
- * item inside two independent variant components at once, so unlike
- * Checkbox's case, this is real, deliberate, stable design — not noise —
- * and stone-200 was silently normalising the design to the wrong colour,
- * exactly what CLAUDE.md's token-gap rule forbids.
- *
- * Corrected: the active item's resting fill is stone-300, rendered by
- * composing `Atom/Button` with `variant="filled"` plus a `!`-forced
- * `bg-surface-raised-hover` override (Tailwind's trailing-`!` important
- * modifier — the deterministic way to win a same-specificity, same-property
- * conflict against the variant's own `bg-surface-raised`, rather than
- * gambling on utility generation order the way an unmarked override class
- * would). This deliberately **reuses** the existing `surface-raised-hover`
- * token for a persistent (non-hover) state, per CLAUDE.md's explicit
- * instruction for this exact situation ("reuse the existing token for the
- * correct pixels and record the gap") — it is not a new token and not a
- * hardcoded hex.
- *
- * REGRESSION, FOUND AND FIXED IN REVIEW: a bare `bg-surface-raised-hover!`
- * outranks *every* non-important rule on that property regardless of
- * specificity — including Button's own `active:bg-surface-raised-active`,
- * so the very first shipped version of this override left a pressed active
- * item visually dead (measured in a real browser: resting/hovered/pressed
- * all read the identical stone-300, against a plain `variant="filled"`
- * control button that did visibly darken on press). That is exactly the
- * failure docs/design-tokens.md's own convention warns about — "a selected
- * button must still react to the pointer" — so a lone resting override is
- * not a complete fix, only half of one. The companion below,
- * `active:bg-surface-raised-active!`, is an equally-important rule scoped to
- * `:active` so it wins the same tie *only* while pressed, restoring the
- * atom's intended pressed feedback (`surface-raised-active`/stone-400 is
- * already exactly what `variant="filled"` uses for its own Active state, so
- * this invents no new value) — the same compound-override shape
- * `Atom/Button`'s Outline/Selected already uses to keep Selected composing
- * with Active rather than suppressing it.
- *
- * The gap this creates: `docs/design-tokens.md` currently states there is
- * deliberately no `role-selected` token, because Selected only ever darkens
- * text — and records `surface-raised-selected` as removed for lack of any
- * consumer. This component *is* that missing consumer: a persistent
- * selected/active state that carries a real fill, which the documented
- * assumption says shouldn't exist. Borrowing `surface-raised-hover` is a
- * stopgap that produces the right pixels today, not a permanent answer — a
- * real fix needs a dedicated selected-fill token (see
- * docs/open-questions.md#selected-needs-a-fill-token).
- *
- * This composition problem is only PARTLY solved, not fully — be precise
- * about which half: pressing an active item now works correctly (verified
- * in a real browser after the fix — see the regression note above), but
- * hovering one still shows no visible change, and that residual flatness is
- * NOT a bug the `!` override introduced or could fix. It is inherent to
- * Figma's own chosen value: the active item's resting colour (stone-300) IS
- * `variant="filled"`'s Hover colour, so there is no third, lighter shade
- * left for `:hover` to move to even with a correct override in place. Same
- * missing-hover-affordance family that
- * docs/open-questions.md#no-pointer-affordance already records for
- * Button/Transparent and Ingredient rows — cross-referenced there rather
- * than inventing a hover treatment Figma doesn't show.
+ * Active item, corrected 2026-07-22: the fetched node's active instance
+ * (Recepten) was originally authored on Button's `State=Hover` component by
+ * mistake (stone-300 fill) — a genuine Figma authoring error, not deliberate
+ * design as an earlier revision of this file concluded from cross-variant
+ * pixel-sampling. The user fixed the Figma instance to the real `Style=
+ * Filled, State=Selected` component (componentId 3822:6637, re-verified via
+ * MCP) and the fill is back to `surface-raised` — identical to every
+ * sibling's Default fill and to the toggle button's own fill — with only the
+ * text darkened to `text` (stone-950 in the fetched node). That is
+ * exactly `Atom/Button`'s existing Selected state (`aria-pressed:text-text`,
+ * see `docs/design-tokens.md` §Selected), so no override or new token is
+ * needed: the active item sets `variant="filled"` plus `aria-pressed`
+ * alongside its existing `aria-current="page"`, and Selected composes with
+ * Hover/Active by construction (disjoint CSS properties — see Button.tsx's
+ * own doc comment). See `docs/incidents.md` for the short correction entry
+ * and `design/notes/Sidebar.md` for the retired FLAGGED GAP writeup this
+ * replaces.
  *
  * Icons: `Panel-left-close`/`Panel-left-open` and the five listed module
  * icons were already shape-verified by earlier tickets (see `Icon.tsx`'s own
@@ -251,26 +198,15 @@ export function Sidebar({
           const variant = isActive ? "filled" : "transparent";
           const label = labels[id];
           const handleClick = onNavigate ? () => onNavigate(id) : undefined;
-          // See the class doc comment ("FLAGGED GAP" / "REGRESSION, FOUND
-          // AND FIXED IN REVIEW") for why the active item forces
-          // `surface-raised-hover` (stone-300) at rest rather than Filled's
-          // own default `surface-raised` (stone-200) — and why the
-          // `active:` companion below is required, not optional: a bare
-          // resting `!` override outranks Button's own non-important
-          // `active:bg-surface-raised-active`, which would otherwise leave
-          // a pressed active item visually dead.
-          const activeFillOverride = isActive
-            ? "bg-surface-raised-hover! active:bg-surface-raised-active!"
-            : undefined;
 
           return collapsed ? (
             <Button
               key={id}
               variant={variant}
               icon={icon}
-              className={activeFillOverride}
               aria-label={label}
               aria-current={isActive ? "page" : undefined}
+              aria-pressed={isActive || undefined}
               onClick={handleClick}
             />
           ) : (
@@ -278,8 +214,8 @@ export function Sidebar({
               key={id}
               variant={variant}
               icon={icon}
-              className={activeFillOverride}
               aria-current={isActive ? "page" : undefined}
+              aria-pressed={isActive || undefined}
               onClick={handleClick}
             >
               {label}

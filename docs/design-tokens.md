@@ -125,10 +125,16 @@ styling task.
 
 ## Open questions
 
-The canonical list is `docs/open-questions.md`. Several bear directly on this
-doc's rules — notably
-[`selected-needs-a-fill-token`](open-questions.md#selected-needs-a-fill-token),
-which is a live counter-example to the "no `role-selected`" rule above, and
+The canonical list is `docs/open-questions.md`. One bears directly on this
+doc's rules —
 [`button-vs-input-active-border`](open-questions.md#button-vs-input-active-border),
 which is why `border-input-active` still exists as a component-scoped token.
-Reference them by slug, never by number.
+Reference it by slug, never by number.
+
+(`selected-needs-a-fill-token` used to be listed here too: `Organism/Sidebar`'s
+active nav item was believed to be a deliberate persistent fill on top of
+Selected, requiring a token the "no `role-selected`" rule above doesn't allow.
+Re-fetching the node 2026-07-22 showed the active instance had been authored
+on Button's Hover state by mistake; corrected in Figma, it resolves to
+Button's ordinary Selected state — text-only, no fill — so the question is
+resolved and removed. See `docs/incidents.md`.)

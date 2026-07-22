@@ -28,7 +28,7 @@ test-results/
 # playwright MCP session artifacts (screenshots, console logs, page snapshots)
 .playwright-mcp/
 tmp/
-/verify-icons.png
+/*.png
 
 # claude code worktrees (transient agent isolation)
 .claude/worktrees/

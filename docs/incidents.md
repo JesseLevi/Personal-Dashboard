@@ -51,6 +51,25 @@ plus two compound-variant overrides (`aria-pressed:hover:border-border-hover`,
 `aria-pressed:active:border-border-active`) so Selected's new border doesn't
 silently suppress Hover/Active feedback — see "Selected must compose with Hover and Active" in `docs/design-tokens.md` for the full mechanism and the compiled-CSS evidence.
 
+## 2026-07-22 — Sidebar's active-item fill was a Figma authoring mistake, not deliberate design (#25 follow-up)
+
+The #25 write-up (below, "Carousel + Sidebar") concluded the active nav item's
+stone-300 fill (Button's Hover component instead of every sibling's Default)
+was real, deliberate design, because it read the same across both
+independently-rendered `Collapsed=No`/`Collapsed=Yes` variants — and shipped a
+`bg-surface-raised-hover!`/`active:bg-surface-raised-active!` stopgap plus
+`docs/open-questions.md#selected-needs-a-fill-token`. The user reports it was
+simply authored wrong in Figma (Hover picked instead of Selected) in both
+places at once, and has now corrected it. Re-fetching node `3674:5664`
+confirms the active item resolves to `Style=Filled, State=Selected`
+(componentId `3822:6637`): fill back to `surface-raised`, text darkened to
+`text` — Button's existing Selected state, no override needed.
+`Sidebar.tsx`/`design/notes/Sidebar.md` updated to drop the `!` overrides in
+favour of `aria-pressed`; the open question is resolved and removed.
+**Lesson:** "two variants agree" rules out a stray pointer capture, but not a
+copy/paste authoring mistake made consistently in both places — cross-variant
+agreement is necessary evidence, not sufficient, for "deliberate design."
+
 ## 2026-07-22 — The screenshot gate shipped blind (#6)
 
 The first implementation of the Playwright baseline gate passed its own

@@ -1,6 +1,6 @@
 // figma: node-id=3674:5664
-import type { Story } from "@ladle/react";
-import { Sidebar, type SidebarItemId } from "./Sidebar";
+import { useState } from "react";
+import { Sidebar } from "./Sidebar";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
 
@@ -10,45 +10,9 @@ import nl from "../../messages/nl.json";
 const enLabels = en.components.sidebar;
 const nlLabels = nl.components.sidebar;
 
-type PlaygroundProps = {
-  collapsed: boolean;
-  activeItem: SidebarItemId | "none";
-};
-
-export const Playground: Story<PlaygroundProps> = ({
-  collapsed,
-  activeItem,
-}) => (
-  <div className="flex h-[600px]">
-    <Sidebar
-      collapsed={collapsed}
-      navLabel={enLabels.navLabel}
-      toggleLabel={collapsed ? enLabels.expandLabel : enLabels.collapseLabel}
-      activeItem={activeItem === "none" ? undefined : activeItem}
-      labels={enLabels.items}
-      onNavigate={() => {}}
-      onToggle={() => {}}
-    />
-  </div>
-);
-
-Playground.args = {
-  collapsed: false,
-  activeItem: "recipes",
-};
-
-Playground.argTypes = {
-  collapsed: { control: { type: "boolean" } },
-  activeItem: {
-    control: { type: "select" },
-    options: ["none", "todo", "notes", "recipes", "shopping", "clothes", "assistant"],
-  },
-};
-
 // The two fetched Collapsed variants side by side, "Recepten" active in
-// both — matches the one fetched instance in the node that differs from its
-// siblings (see the component's own doc comment for how the active state is
-// modelled, and the flagged pixel gap against that one sample).
+// both (see the component's own doc comment for how the active/Selected
+// state is modelled).
 export const Variants = () => (
   <div className="flex h-[600px] gap-8">
     <Sidebar
@@ -67,14 +31,29 @@ export const Variants = () => (
   </div>
 );
 
-// NL catalog check for the nav/toggle labels.
-export const LabelsNl = () => (
-  <div className="flex h-[600px]">
-    <Sidebar
-      navLabel={nlLabels.navLabel}
-      toggleLabel={nlLabels.collapseLabel}
-      activeItem="recipes"
-      labels={nlLabels.items}
-    />
-  </div>
-);
+// Exercises the collapse toggle end to end (renamed from `LabelsNl`, which
+// this still doubles as — the NL catalog check for the nav/toggle labels is
+// preserved by keeping it on the NL data). `Sidebar` itself stays a Server
+// Component with `collapsed` as a plain prop (see the component's own doc
+// comment); the `useState` here is the *story's* concern, standing in for
+// whatever a real caller persists the flag in (cookie/localStorage/URL).
+// Note this proves the toggle wires up, not that it animates — clicking
+// still snaps rather than sliding; see the collapse-animation investigation
+// filed as a follow-up issue on #25.
+export const Animated = () => {
+  const [collapsed, setCollapsed] = useState(false);
+  return (
+    <div className="flex h-[600px]">
+      <Sidebar
+        collapsed={collapsed}
+        navLabel={nlLabels.navLabel}
+        toggleLabel={
+          collapsed ? nlLabels.expandLabel : nlLabels.collapseLabel
+        }
+        activeItem="recipes"
+        labels={nlLabels.items}
+        onToggle={() => setCollapsed((prev) => !prev)}
+      />
+    </div>
+  );
+};

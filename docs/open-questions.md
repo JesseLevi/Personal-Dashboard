@@ -18,18 +18,6 @@ Reference one as `docs/open-questions.md#<slug>`.
 
 Needs a design answer, not a code guess.
 
-## selected-needs-a-fill-token
-
-**A persistent "selected" state needs a real fill token (#25).** `docs/design-tokens.md` states Selected deliberately gets no colour token because it only ever darkens text, and its change log records `surface-raised-selected` as *removed for lack of any consumer*.
-
-`Organism/Sidebar`'s active nav item is exactly that missing consumer. Independently pixel-sampling the fetched component SET (not a single instance) shows the active item's fill at stone-300 (`surface-raised-hover`) while the sibling toggle button stays at stone-200 (`surface-raised`) — identically, in *both* the `Collapsed=No` and `Collapsed=Yes` variant components. Two independently-rendered variants agreeing rules out a stray hover-pointer capture (a theory an earlier draft floated and had to retract); it is real, deliberate design, and it carries a persistent **fill**, not just a text colour.
-
-`Sidebar.tsx` ships this by reusing `surface-raised-hover` for that persistent state (`Atom/Button` `variant="filled"` + Tailwind's `!` important modifier) — a stopgap that produces the right pixels, not a permanent answer, and one that violates the doc's own "never reuse one role's token across states" rule as a permanent solution.
-
-This is not a free move: a first pass used a bare resting-only `bg-surface-raised-hover!`, which outranks *every* non-important rule on that property regardless of specificity — including Button's own `active:bg-surface-raised-active` — so it silently killed the pressed-state feedback the convention requires ("a selected button still reacts to the pointer"), verified in a real browser (resting/hovered/pressed all read the same stone-300 against a plain `variant="filled"` control that did darken on press). Fixed with a second, equally-important, `:active`-scoped companion (`active:bg-surface-raised-active!`) — the same compound-override shape `Atom/Button`'s Outline/Selected uses. Pressed feedback is restored; **hover is still flat, but that residual gap is not the same problem** — it is [no-pointer-affordance](#no-pointer-affordance) (the resting colour *is* Filled's own Hover colour, so there is nothing left for `:hover` to move to), not something the `!` override broke or could fix.
-
-**Decide:** a dedicated selected-fill token, or accept the borrow. Is Selected-with-fill a one-off for nav-style components, or does the "no `role-selected`" rule need qualifying?
-
 ## button-vs-input-active-border
 
 **Only Active still diverges between `Atom/Button`/Outline and `Atom/Input-field`.** Tickets #56 and #58 left three states open pending Figma reconciliation. #68 re-fetched both nodes (3623:4346, 3705:4402) and confirmed directly rather than assuming: Hover now matches (both stone-500) and Selected now matches (both stone-400, Outline's Selected having gained a border for the first time) — `border-input-hover` and `border-input-selected` are deleted, and `InputField.tsx` reads the shared `border-hover` / `border-selected` tokens.
