@@ -1,0 +1,14 @@
+# Guide: data, schema & product rules
+
+Read this before touching `supabase/`, server components/actions, or any user-facing string. Referenced from `CLAUDE.md`.
+
+Fundamentals (multi-user + RLS, NL/EN i18n, security-by-design) are decided in `Vision.md` §2 — don't relitigate them. Applied in code:
+
+- **All data access goes through Next.js server code** (server components/actions) — the browser never talks to Supabase directly, and `service_role` never leaves server/worker modules (ADR-0002/0003).
+- Every table gets a `user_id` foreign key and a Row Level Security policy, **plus an RLS test in `supabase/tests` in the same PR** (copy `rls-profiles.sql`) — CI fails on untested tables (ADR-0009). Schema changes only via `supabase/migrations`.
+- **A new table's migration must also grant table access**: `grant select, insert, update, delete on public.<table> to authenticated;` and `grant select on public.<table> to anon;`. RLS policies are the real boundary, but without the grants every query fails with `42501 permission denied` — this project's Supabase does not auto-expose new tables. Copy the grants block in `20260720000001_profiles.sql`.
+- Ownership is user_id-only per ADR-0001 — no household/sharing structures, not even "convenient" ones.
+- Per-account secrets (AI keys, calendar credentials) go through the Vault pattern of ADR-0002 — never plaintext, never logged, decrypted only server-side.
+- No hardcoded user-facing strings — everything through next-intl catalogs (`messages/nl.json` + `messages/en.json`, both filled in the same PR — ADR-0007).
+- Render stored rich text only through TipTap's React renderer (fixed extension whitelist); render AI-agent output as plain text. Never `dangerouslySetInnerHTML` on user or model content.
+- `Vision.md` lists explicit "buiten scope" items per module — treat those as real boundaries, not backlog.

@@ -36,7 +36,7 @@ Built and in review:
 
 Remaining: #24 Carousel, #25 Sidebar (both still `nodeId: null` in `figma-map.json` — not yet built).
 
-Conventions these six locked in are in `CLAUDE.md` → "Component code conventions" — they exist because parallel agent work diverged on each point.
+Conventions these six locked in are in `docs/guides/ui-components.md` → "Component code conventions" — they exist because parallel agent work diverged on each point.
 
 ## Phases 3–9: ⬜ not started
 
