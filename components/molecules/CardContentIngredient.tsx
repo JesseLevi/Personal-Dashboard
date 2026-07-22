@@ -108,7 +108,7 @@ import { Tag } from "../atoms/Tag";
  * Quantity is rendered via `Atom/Tag` `variant="neutral"` — the fetched
  * nested Tag instance's fill/text primitives are an exact match for Tag's
  * existing `neutral` variant (`surface-muted`/`text-muted`), no token gap.
- * The fetched hex values are recorded in `design/figma-map.json` only.
+ * The fetched hex values are recorded in `design/notes/CardContentIngredient.md` only.
  *
  * `onDelete` requires `deleteLabel` (a caller-supplied, already-translated
  * string) because the delete Button is icon-only — same discriminated-union

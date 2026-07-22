@@ -107,7 +107,7 @@ import {
  *   ticket). This is a deliberate, flagged gap — a labelless Dropdown cannot
  *   be a real disclosure without either a design update (add a header/trigger
  *   to the Figma node) or a caller passing its own trigger via a future named
- *   slot; recorded in design/figma-map.json for triage.
+ *   slot; recorded in `design/notes/Dropdown.md` for triage.
  * - No chevron/indicator icon was added to the trigger. The fetched node
  *   samples no such affordance (no State axis, no icon layer next to the
  *   label), and adding one would be inventing UI beyond what Figma shows.

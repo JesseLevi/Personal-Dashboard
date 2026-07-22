@@ -91,7 +91,7 @@ export const Default = () => <Carousel>{exampleColumns()}</Carousel>;
 // frame, ~2.3 columns visible — actually reproduces here. Scrolls via the
 // browser's native horizontal scrollbar (`overflow-x-auto`); see the
 // component doc comment for why that, and not arrow/dot controls, was
-// chosen, and design/figma-map.json for the still-open question of
+// chosen, and `design/notes/Carousel.md` for the still-open question of
 // whether a native scrollbar is the intended final affordance.
 export const ConstrainedToDesignedWidth = () => (
   <div className="w-161">

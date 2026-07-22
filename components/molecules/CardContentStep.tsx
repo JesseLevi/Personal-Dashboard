@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
  * is the card's content), the same composition CardContentRecipe/Ingredient
  * use. The step *number* badge is NOT rendered here: `Card`'s own `step`
  * prop already composes an `Atom/Step` instance at the Card level (see
- * `design/figma-map.json`'s "Card" entry — "Step (bool) -> step?: ReactNode
+ * `design/notes/Card.md` — "Step (bool) -> step?: ReactNode
  * composed via the existing Step atom instance"), so a Card showing a
  * numbered step composes `Step` and `Card-content/Step` side by side, not
  * one nested inside the other. This ticket's brief ("uses the Step molecule

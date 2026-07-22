@@ -35,7 +35,7 @@ import type { ReactNode } from "react";
  * scope per the ticket; this stays a presentational organism only.
  *
  * COLUMN WIDTH (corrected after the first pass shipped equal-fill columns
- * — see figma-map.json's Carousel entry for the fuller account): all three
+ * — see `design/notes/Carousel.md` for the fuller account): all three
  * `Card-container` instances nested in the fetched node share template
  * EL-d47874b2, whose sizing is `{ horizontal: fixed, vertical: fixed }`
  * at `{ width: 280, height: 532 }` — a *fixed* 280px column, not one that
@@ -71,7 +71,7 @@ import type { ReactNode } from "react";
  * affordance rather than inventing arrow buttons or dot indicators that
  * appear nowhere in the node — but it is this component's own addition,
  * not something read off Figma, and is recorded as an open design
- * question in `design/figma-map.json`'s Carousel entry pending a real
+ * question in `design/notes/Carousel.md` pending a real
  * answer (native scrollbar vs. custom nav controls vs. something else).
  *
  * COLUMN HEIGHT — FLAGGED, resolved one way deliberately: a flex row's
@@ -105,7 +105,7 @@ import type { ReactNode } from "react";
  * height is equally explainable as equal content — Figma never shows a
  * ragged case, so it never actually exercises what should happen when
  * columns hold different card counts, which a real kanban board will do
- * constantly. Recorded in `design/figma-map.json`'s Carousel entry for a
+ * constantly. Recorded in `design/notes/Carousel.md` for a
  * real design answer; equal-height was picked here as the reading with
  * direct, explicit support in the fetched node's own properties.
  *

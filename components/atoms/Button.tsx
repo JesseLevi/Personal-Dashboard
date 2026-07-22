@@ -35,7 +35,7 @@ import { Icon, type IconName } from "./Icon";
  *   emergent total that happened to land on the right number.
  *
  * Per-state fills/text, read from the fetched node and resolved to primitives
- * via design/tokens.json (exact Figma hex values live in design/figma-map.json,
+ * via design/tokens.json (exact Figma hex values live in `design/notes/Button.md`,
  * never in component source — check-server-only.sh enforces that). Re-fetched
  * 2026-07-20 for ticket #56, which supersedes #52's matrix: Figma added a
  * FOURTH state (Active) and redistributed the values. What #52 modelled as
@@ -49,7 +49,7 @@ import { Icon, type IconName } from "./Icon";
  * - Transparent: no fill, text-muted; selected text -> text. Figma defines no
  *   fill change for its Hover or Active nodes, so none is invented — meaning a
  *   transparent button has no pointer affordance at all. Flagged in
- *   design/figma-map.json rather than papered over with a made-up tint.
+ *   `design/notes/Button.md` rather than papered over with a made-up tint.
  * - Outline: bg-transparent, 1px border-border, text-muted; hover border ->
  *   border-hover; active border -> border-active; selected border ->
  *   border-selected (re-fetched for ticket #68 — Outline's Selected state

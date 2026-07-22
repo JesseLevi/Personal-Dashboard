@@ -8,11 +8,11 @@ import { InputField } from "./InputField";
 // static markup allows — hover the second row to compare against the fetched
 // node's Hover state; the third row shows the typed-text look and doubles as
 // this atom's read of Figma's "Active" as the `:focus-within` state (see the
-// doc comment in InputField.tsx and design/figma-map.json for why that
+// doc comment in InputField.tsx and `design/notes/InputField.md` for why that
 // mapping is an assumption, not a labelled Figma state). The fetched node
 // also carries a fourth state, Selected — its border/text change without any
 // interaction affordance a plain `<input>` has, so it isn't modelled and
-// isn't faked here either (flagged in design/figma-map.json).
+// isn't faked here either (flagged in `design/notes/InputField.md`).
 export const States = () => (
   <div className="flex w-72 flex-col gap-6">
     <InputField

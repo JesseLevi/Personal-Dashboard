@@ -25,7 +25,7 @@ import { Icon } from "./Icon";
  *    adding a new one for the same pixels — no `design/tokens.json` /
  *    `app/theme.css` edit was needed for this ticket. The Figma-side role
  *    name (`color/stroke/secondary`) not yet having its own semantic entry
- *    is the flagged gap, recorded in `design/figma-map.json`.
+ *    is the flagged gap, recorded in `design/notes/Checkbox.md`.
  *
  * 2. Interactivity. #16 shipped a purely presentational `<div role="checkbox">`
  *    with no click/keyboard handling. CLAUDE.md's default is that a leaf atom

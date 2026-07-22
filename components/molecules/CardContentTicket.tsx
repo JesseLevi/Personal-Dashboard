@@ -36,7 +36,7 @@ import type { ReactNode } from "react";
  * `Color=Grey` is an exact match for its existing `neutral` variant
  * (`surface-muted`/`text-muted`, stone-100/stone-500) — both confirmed by
  * comparing the fetched fills against design/tokens.json's primitive values
- * (recorded in design/figma-map.json, not here — see CLAUDE.md's no-raw-hex
+ * (recorded in `design/notes/CardContentTicket.md`, not here — see CLAUDE.md's no-raw-hex
  * rule). Both variants already existed before this ticket, so this molecule
  * adds no new colour and flags no token gap.
  *

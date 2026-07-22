@@ -21,7 +21,7 @@ import { Icon, type IconName } from "./Icon";
  * - `Leading-icon` (bool)           → `leadingIcon?: IconName`.
  * - `Trekking-icon` (bool)          → `trailingIcon?: IconName`. "Trekking" is
  *   a Figma-side misnomer; the node sits after the content, so it is the
- *   TRAILING icon (translation recorded in `design/figma-map.json`).
+ *   TRAILING icon (translation recorded in `design/notes/InputField.md`).
  * - `Button` (bool) + SLOT node     → `button?: ReactNode` named slot, per
  *   CLAUDE.md (Figma SLOT ⇒ children/named slot, never a hardcoded instance) —
  *   so callers pass their own `<Button>` rather than this atom importing a
@@ -49,7 +49,7 @@ import { Icon, type IconName } from "./Icon";
  *   the focus state. This re-fetch moved it onto Selected, so the focus
  *   mapping moved with it.
  *
- * Flagged in `design/figma-map.json` for confirmation rather than treated as
+ * Flagged in `design/notes/InputField.md` for confirmation rather than treated as
  * settled. No ring/outline is added anywhere: Figma changes only the 1px
  * border colour per state, so a ring would invent an affordance the design
  * does not show — a weak keyboard-focus affordance is a real accessibility
@@ -76,7 +76,7 @@ import { Icon, type IconName } from "./Icon";
  *
  * Figma's `Text` boolean can hide the entire input row, leaving just the button
  * slot. Not modelled: an "input field" without its input is not a meaningful
- * state for this atom. Flagged in `design/figma-map.json` for triage rather
+ * state for this atom. Flagged in `design/notes/InputField.md` for triage rather
  * than silently supported.
  *
  * The placeholder colour uses `text-placeholder`; the container's border
@@ -120,7 +120,7 @@ import { Icon, type IconName } from "./Icon";
  * 48px) for all four icon combinations — none / leading-only / trailing-only
  * / both — with no dependency on which sibling is present. This is a
  * deliberate, flagged deviation from the literal per-state fetched padding
- * value on this one row (see `design/figma-map.json`), justified because the
+ * value on this one row (see `design/notes/InputField.md`), justified because the
  * fetched node structurally cannot demonstrate the no-trailing-icon case and
  * the ticket's own premise ("in Figma the container height does not depend on
  * the trailing icon being present") requires the two columns to agree on
