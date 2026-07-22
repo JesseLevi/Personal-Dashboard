@@ -60,27 +60,7 @@ messages/               # i18n message catalogs: nl.json, en.json (ADR-0007)
 
 ### 3.1 Figma → code naming map
 
-Figma contains spelling variants; code uses corrected English. **`design/figma-map.json` is canonical** (component name ↔ file path ↔ node-id, plus the recorded design discrepancies); this table is only a human-readable summary and may lag it. **Every component file carries its Figma node-id in a header comment** (`// figma: node-id=3670:3261`) so re-syncing is mechanical (ADR-0010). Opus must include the relevant mapping in every UI ticket:
-
-| Figma name | Code |
-|---|---|
-| `Atom/Button`, `Button/Default` | `components/atoms/Button.tsx` |
-| Button `Style=Distructive` | `variant="destructive"` |
-| `Atom/Tag`, `Tag` | `components/atoms/Tag.tsx` |
-| `Input-field`, `Atom/Input-field` | `components/atoms/InputField.tsx` |
-| `Checkbox` | `components/atoms/Checkbox.tsx` |
-| `Dropdown` | `components/atoms/Dropdown.tsx` |
-| `Button/Toggle` | `components/atoms/ButtonToggle.tsx` |
-| `Icon/*` (27 icons) | `components/atoms/Icon.tsx` — one wrapper; Figma layer names are kept identical to `lucide-react` export names |
-| `Step` | `components/atoms/Step.tsx` |
-| `Card-content/Recipi` | `components/molecules/CardContentRecipe.tsx` |
-| `Card-content/Ingredient` | `components/molecules/CardContentIngredient.tsx` |
-| `Card-content/Ticket` | `components/molecules/CardContentTicket.tsx` |
-| `Card-content/Step` | `components/molecules/CardContentStep.tsx` |
-| `Card` | `components/molecules/Card.tsx` |
-| `Card-container` | `components/organisms/CardContainer.tsx` |
-| `Carousel` | `components/organisms/Carousel.tsx` |
-| `Sidebar` | `components/organisms/Sidebar.tsx` |
+Figma contains spelling variants; code uses corrected English. **`design/figma-map.json` is the canonical map** (component name ↔ file path ↔ node-id, plus the recorded design discrepancies) — per ADR-0010, it is the single source of truth, not this document. **Every component file carries its Figma node-id in a header comment** (`// figma: node-id=3670:3261`) so re-syncing is mechanical. **Opus must include the relevant `figma-map.json` mapping (Figma name, code path, node-id) in every UI ticket** rather than have the executing agent re-derive it.
 
 ### 3.2 Design tokens: `tokens.json` as the single source (ADR-0010)
 

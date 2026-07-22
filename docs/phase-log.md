@@ -2,7 +2,7 @@
 
 Completion record against the phasing in `Architecture.md` §10 / ADR-0004. Update it whenever a phase item lands.
 
-**Scope of this file**: infrastructure and decisions that are *not* obvious from reading the code. Per-ticket status lives on the GitHub Project board (`gh project item-list 1 --owner JesseLevi`), not here — don't duplicate it.
+**Scope of this file**: infrastructure and decisions that are *not* obvious from reading the code. Per-ticket status lives on the GitHub Project board (`gh project item-list 1 --owner JesseLevi`), not here — don't duplicate it. The built-component inventory (which atoms/molecules/organisms exist, their Figma node-ids) belongs to `design/figma-map.json` (ADR-0010), not here — don't duplicate that either.
 
 ## Phase 0 — Foundation: ✅ complete in-repo (server-side remainder is ticketed)
 
@@ -11,7 +11,7 @@ Standard scaffold (Next.js 15 App Router, TS strict, Tailwind v4 via PostCSS, pn
 | Thing | Where | Why it matters |
 |---|---|---|
 | Token pipeline | `design/tokens.json` → `scripts/generate-theme.mjs` → `app/theme.css` | `pnpm sync:tokens` after every token edit; CI fails on drift. Never hand-edit `theme.css`. Unit-tested in `tests/tokens.test.ts` |
-| Figma↔code map | `design/figma-map.json` | Canonical per ADR-0010 (Architecture §3.1 is only a human-readable summary). Records node-ids, Figma→code name translations, and every flagged design discrepancy |
+| Figma↔code map | `design/figma-map.json` | Canonical per ADR-0010 — the component inventory, not `Architecture.md` §3.1 or this file. Records node-ids, Figma→code name translations, and every flagged design discrepancy |
 | RLS harness | `supabase/tests/000-rls-enabled.sql`, `rls-profiles.sql` | pgTAP; `rls-profiles.sql` is the copy-me template for new tables |
 | CI gates | `scripts/check-rls-coverage.sh`, `check-server-only.sh` | Coverage gate fails on a table without an RLS test; greps block service_role misplacement, `NEXT_PUBLIC_SUPABASE*`, `dangerouslySetInnerHTML`, and raw hex in `components/` (comments included) |
 | Localhost-binding check | `scripts/check-localhost-binding.sh` | Run **on the server**, not here; wire into the deploy workflow |
@@ -27,16 +27,16 @@ Mac mini Supabase stacks (#1, incl. `GOTRUE_DISABLE_SIGNUP=true` — no self-sig
 
 `profiles` schema + RLS + signup trigger, Supabase server client, login/logout UI with magic link (#7). Self-signup is disabled end to end. Remaining as separate tickets: session middleware/refresh (#8), profile settings (#9), SMTP provider (#10), wire `i18n/request.ts` to `profiles.locale` (#11).
 
-## Phase 2 — Design system core: 🔶 in progress
+## Phase 2 — Design system core: 🔶 in progress (all atoms/molecules/organisms built; milestone has non-component work open)
 
-Built and in review:
-- **Atoms**: **Icon** (single `lucide-react` wrapper; Figma layer names are kept identical to lucide export names so the mapping is a direct lookup), **Tag**, **Checkbox**, **Button**, **InputField**, **Step**, **Dropdown**, **ButtonToggle**.
-- **Molecules**: **Card**, **CardContentRecipe**, **CardContentIngredient**, **CardContentTicket**, **CardContentStep**.
-- **Organisms**: **CardContainer**.
+Every atom, molecule, and organism in the Phase 2 milestone has a merged implementation, a filled-in `nodeId` in `design/figma-map.json`, and a Ladle story — see that file for the current inventory, not this section. The milestone's tickets stay open until the user reviews and closes them (per the board workflow in `CLAUDE.md`), so `gh issue list --milestone "Phase 2 — Design system core" --state open` still lists them; that is a review-queue state, not unbuilt work.
 
-Remaining: #24 Carousel, #25 Sidebar (both still `nodeId: null` in `figma-map.json` — not yet built).
+Genuinely open (non-component) work in the Phase 2 milestone:
+- **#49** — Ladle chrome theming (`appendToHead`) emits a dev-only `/@fs/` path that 404s in `pnpm ladle:build`; not started.
+- **#59** — Ladle preview-canvas token colour + Button/Checkbox story trims; code merged (PR #63), issue open pending review.
+- **#78** — InputField container height collapses without a trailing icon; code merged (PR #79), issue open pending review.
 
-Conventions these six locked in are in `docs/guides/ui-components.md` → "Component code conventions" — they exist because parallel agent work diverged on each point.
+Conventions the design-system components locked in are in `docs/guides/ui-components.md` → "Component code conventions" — they exist because parallel agent work diverged on each point.
 
 ## Phases 3–9: ⬜ not started
 
