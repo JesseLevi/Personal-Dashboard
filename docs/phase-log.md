@@ -27,11 +27,14 @@ Mac mini Supabase stacks (#1, incl. `GOTRUE_DISABLE_SIGNUP=true` — no self-sig
 
 `profiles` schema + RLS + signup trigger, Supabase server client, login/logout UI with magic link (#7). Self-signup is disabled end to end. Remaining as separate tickets: session middleware/refresh (#8), profile settings (#9), SMTP provider (#10), wire `i18n/request.ts` to `profiles.locale` (#11).
 
-## Phase 2 — Design system core: 🔶 in progress (PR #37)
+## Phase 2 — Design system core: 🔶 in progress
 
-Built and in review: **Icon** (single `lucide-react` wrapper; Figma layer names are kept identical to lucide export names so the mapping is a direct lookup), **Tag**, **Checkbox**, **Button**, **InputField**, **Step**.
+Built and in review:
+- **Atoms**: **Icon** (single `lucide-react` wrapper; Figma layer names are kept identical to lucide export names so the mapping is a direct lookup), **Tag**, **Checkbox**, **Button**, **InputField**, **Step**, **Dropdown**, **ButtonToggle**.
+- **Molecules**: **Card**, **CardContentRecipe**, **CardContentIngredient**, **CardContentTicket**, **CardContentStep**.
+- **Organisms**: **CardContainer**.
 
-Remaining: #17 Card, #19–#22 Card-content/\*, #23 CardContainer, #24 Carousel, #25 Sidebar.
+Remaining: #24 Carousel, #25 Sidebar (both still `nodeId: null` in `figma-map.json` — not yet built).
 
 Conventions these six locked in are in `CLAUDE.md` → "Component code conventions" — they exist because parallel agent work diverged on each point.
 

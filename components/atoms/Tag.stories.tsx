@@ -1,3 +1,4 @@
+// figma: node-id=3626:4515
 import { Tag } from "./Tag";
 
 // Dev-only demo copy — not user-facing (component text always comes from `children` at call sites).
