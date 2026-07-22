@@ -1,0 +1,14 @@
+/*
+ * Injected into the page (via toHaveScreenshot's `stylePath`) right before every
+ * visual baseline screenshot — never shipped to the app.
+ *
+ * .ladle/components.tsx wraps each story in a `min-h-screen` div so the normal
+ * Ladle workbench preview always fills the viewport. That's correct for the
+ * workbench, but it means an un-overridden screenshot of that wrapper is always
+ * exactly viewport-tall (mostly blank) instead of cropped to the actual story
+ * content — see tests/visual/ladle.visual.spec.ts for how the locator + this
+ * override combine to produce a content-sized baseline.
+ */
+#ladle-root > div {
+  min-height: 0 !important;
+}
