@@ -151,9 +151,10 @@ import type { IconName } from "../atoms/Icon";
  * Icons: `Panel-left-close`/`Panel-left-open` and the five listed module
  * icons were already shape-verified by earlier tickets (see `Icon.tsx`'s own
  * header). One new mapping was needed for this ticket — `Icon/Astroid` (node
- * 3726:2493, the Assistant item) is a false-friend name; the downloaded
- * vector is lucide's `Sparkle`, not an asteroid. Full verification detail
- * lives in `Icon.tsx`'s header comment (search "ticket #25").
+ * 3726:2493, the Assistant item) maps directly to lucide's own `Astroid`
+ * export, confirmed by rendering both side by side (an earlier pass had
+ * wrongly matched it to `Sparkle` by numeric coincidence — see `Icon.tsx`'s
+ * header for the full correction, search "ticket #25").
  *
  * Accessibility: the whole component is a `<nav>` landmark with a
  * composer-supplied accessible name (`navLabel`) — a "region" is exactly
@@ -198,7 +199,7 @@ const NAV_ITEMS: ReadonlyArray<{ id: SidebarItemId; icon: IconName }> = [
   { id: "recipes", icon: "FolderClosed" },
   { id: "shopping", icon: "ShoppingBasket" },
   { id: "clothes", icon: "Shirt" },
-  { id: "assistant", icon: "Sparkle" },
+  { id: "assistant", icon: "Astroid" },
 ];
 
 export interface SidebarProps {

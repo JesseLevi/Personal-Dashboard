@@ -31,6 +31,7 @@ const ICON_NAMES: IconName[] = [
   "Star",
   "Check",
   "Timer",
+  "Astroid",
 ];
 
 export const AllIcons = () => (
