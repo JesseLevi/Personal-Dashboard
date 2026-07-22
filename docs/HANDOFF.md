@@ -9,7 +9,7 @@ Read on demand, not by default: `docs/phase-log.md` (infrastructure by phase), `
 ## State (2026-07-22)
 
 - **Every Phase 2 component ticket is now merged.** `main` has Phase 0 (foundation), Phase 1 login/logout, **all Phase 2 atoms** (incl. `Step`), **all four `Card-content/*` molecules + `Card`**, and **all three organisms** — `CardContainer` (#23), `Carousel` (#24, PR #83), `Sidebar` (#25, PR #84) — plus the token/border rework through #68/#69. Lint/typecheck/test/`check:server-only` all green; the db job still needs CI (no Docker here).
-- **`design/figma-map.json` now has zero `nodeId: null` entries** — the component↔node map is complete for Phase 2. Still 29 lines; edit as text.
+- **`design/figma-map.json` now has zero `nodeId: null` entries** — the component↔node map is complete for Phase 2. The map is now lookup-only (name → path → node-id); the per-component design notes live in `design/notes/<Component>.md`.
 - Built: `components/atoms/` Button, ButtonToggle, Checkbox, Dropdown, Icon, InputField, Step, Tag · `components/molecules/` Card, CardContentRecipe, CardContentIngredient, CardContentTicket, CardContentStep · `components/organisms/` CardContainer, Carousel, Sidebar.
 - **`Step` moved from `components/molecules/` to `components/atoms/` (2026-07-21, user-reported)**: Figma files it under "Atoms"/"Steps"; the old placement note misread ADR-0010 as justifying molecules — the ADR only makes `figma-map.json` canonical for the node-id record, not for overriding Figma's own section. `Card` now imports it from `../atoms/Step` (molecule importing atom, as CLAUDE.md expects). `figma-map.json` and `Architecture.md` §3.1 updated to match.
 - **#66** (ticket #19, `CardContentRecipe`) and **#67** (ticket #20, `CardContentIngredient`) are **merged** (2026-07-21) — see `docs/incidents.md` for the merge-conflict resolution and the CI-gate-hole write-up. `Card.stories.tsx` gained an `AllContentTypes` story composing one `Card` per built `Card-content/*` molecule.
@@ -29,11 +29,11 @@ Read on demand, not by default: `docs/phase-log.md` (infrastructure by phase), `
 **Figma-authoring gaps** — the ticket/property list promises something the dev-ready node doesn't contain. Each needs a design-side fix before a follow-up ticket can model it; don't build from guesswork.
 
 - **No Hover state anywhere in the pointer-affordance family**: `Atom/Button`'s Transparent style, `Button/Toggle`'s segments, and `Card-content/Ingredient` rows all have *no* mouse-over feedback. One decision covers all three — details in `docs/design-tokens.md` questions 3 and 5.
-- **Checkbox "delete" state**: `design/figma-map.json` notes it, the Figma node doesn't contain it.
+- **Checkbox "delete" state**: `design/notes/Checkbox.md` notes it, the Figma node doesn't contain it.
 - **Figma `Input-field` "Text" boolean** can hide the entire input row; not modelled (an input without its input isn't meaningful).
 - **Toggle-group / shared track**: the `Button/Toggle` node's demo shows 5 chips sharing one grey track. #69 rebuilt the track; whether a *grouped* composition needs its own ticket is open.
 - **Token names are hex-derived, not Figma-derived.** The Figma MCP returns resolved hex only, never variable names, so every semantic name in `tokens.json` is a pixel matched back to a role by us. Worth aligning with real Figma names before the vocabulary calcifies.
-- **A persistent "selected" state now needs a real fill token (new, #25).** `docs/design-tokens.md` deliberately has **no `role-selected`** (removed for lack of a consumer). `Sidebar`'s active nav item is that missing consumer — a persistent fill (stone-300) currently **borrowing `surface-raised-hover`**, against the doc's own "never reuse a token across states" rule. Open question 6 there.
+- **A persistent "selected" state now needs a real fill token (new, #25).** `docs/design-tokens.md` deliberately has **no `role-selected`**, and its log records `surface-raised-selected` as removed for lack of a consumer. `Sidebar`'s active nav item is that missing consumer — a persistent fill (stone-300) currently **borrowing `surface-raised-hover`**, against the doc's own "never reuse a token across states" rule. Open question 6 there.
 - **English nav labels overflow the Sidebar's fixed 198px rail (new, #25).** Dutch rows are pixel-perfect at 40px; English isn't — "Shopping basket" wraps and spills outside its button. Figma only shows Dutch labels, so it offers no guidance. Needs a content/design call.
 
 ## Environment still to set up (outside this repo)
