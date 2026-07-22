@@ -37,6 +37,19 @@
     "cardContainer": {
       "addLabel": "Add",
       "editLabel": "Edit"
+    },
+    "sidebar": {
+      "navLabel": "Main navigation",
+      "expandLabel": "Expand sidebar",
+      "collapseLabel": "Collapse sidebar",
+      "items": {
+        "todo": "To do",
+        "notes": "Notes",
+        "recipes": "Recipes",
+        "shopping": "Shopping basket",
+        "clothes": "Clothes",
+        "assistant": "Assistant"
+      }
     }
   }
 }
