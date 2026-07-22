@@ -230,15 +230,29 @@ Hover and Active" above for the full mechanism and the compiled-CSS evidence.
    rendered variants agreeing rules out a stray hover-pointer capture (a
    theory this file's first draft floated and had to retract); it is real,
    deliberate design, and it carries a persistent **fill**, not just a text
-   colour. `Sidebar.tsx` currently ships this by reusing
-   `surface-raised-hover` for that persistent state (`Atom/Button` +
-   Tailwind's `!` important modifier, since composing an unmodified atom
-   still needs *some* way to win the specificity tie against the variant's
-   own default fill) — a stopgap that produces the right pixels, not a
-   permanent answer, since it means "resting" and "hovering" render
-   identically for that one item (see open questions 3/5 above for the same
-   missing-hover-affordance family). The real fix is a dedicated
-   selected-fill token (e.g. something in a `role-selected` family this doc
-   currently says shouldn't exist) — needs a design decision on whether
-   Selected-with-fill is a one-off for nav-style components or means the
-   "no `role-selected`" rule above needs qualifying, not a code-side guess.
+   colour. `Sidebar.tsx` ships this by reusing `surface-raised-hover` for
+   that persistent state (`Atom/Button` `variant="filled"` + Tailwind's `!`
+   important modifier) — a stopgap that produces the right pixels, not a
+   permanent answer. This is not a free move: a first pass used a bare
+   resting-only `bg-surface-raised-hover!`, which outranks *every*
+   non-important rule on that property regardless of specificity —
+   including Button's own `active:bg-surface-raised-active` — so it
+   silently killed the pressed-state feedback the convention above
+   requires ("a selected button still reacts to the pointer"), verified in
+   a real browser (resting/hovered/pressed all read the same stone-300
+   against a plain `variant="filled"` control that did darken on press).
+   Fixed with a second, equally-important, `:active`-scoped companion
+   (`active:bg-surface-raised-active!`) — the same compound-override shape
+   `Atom/Button`'s Outline/Selected already uses (see "Selected must
+   compose with Hover and Active" above) to keep a persistent state from
+   suppressing Active. Pressed feedback is restored; **hover is still
+   flat, but that residual gap is not the same problem** — it's the
+   inherent one this open question exists to describe (the resting colour
+   *is* Filled's own Hover colour, so there's nothing left for `:hover` to
+   move to), not something the `!` override broke or could fix. Same
+   missing-hover-affordance family as open questions 3/5. The real fix for
+   the underlying gap is still a dedicated selected-fill token (e.g.
+   something in a `role-selected` family this doc currently says shouldn't
+   exist) — needs a design decision on whether Selected-with-fill is a
+   one-off for nav-style components or means the "no `role-selected`" rule
+   above needs qualifying, not a code-side guess.

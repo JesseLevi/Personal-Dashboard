@@ -107,6 +107,24 @@ import type { IconName } from "../atoms/Icon";
  * correct pixels and record the gap") — it is not a new token and not a
  * hardcoded hex.
  *
+ * REGRESSION, FOUND AND FIXED IN REVIEW: a bare `bg-surface-raised-hover!`
+ * outranks *every* non-important rule on that property regardless of
+ * specificity — including Button's own `active:bg-surface-raised-active`,
+ * so the very first shipped version of this override left a pressed active
+ * item visually dead (measured in a real browser: resting/hovered/pressed
+ * all read the identical stone-300, against a plain `variant="filled"`
+ * control button that did visibly darken on press). That is exactly the
+ * failure docs/design-tokens.md's own convention warns about — "a selected
+ * button must still react to the pointer" — so a lone resting override is
+ * not a complete fix, only half of one. The companion below,
+ * `active:bg-surface-raised-active!`, is an equally-important rule scoped to
+ * `:active` so it wins the same tie *only* while pressed, restoring the
+ * atom's intended pressed feedback (`surface-raised-active`/stone-400 is
+ * already exactly what `variant="filled"` uses for its own Active state, so
+ * this invents no new value) — the same compound-override shape
+ * `Atom/Button`'s Outline/Selected already uses to keep Selected composing
+ * with Active rather than suppressing it.
+ *
  * The gap this creates: `docs/design-tokens.md` currently states there is
  * deliberately no `role-selected` token, because Selected only ever darkens
  * text — and records `surface-raised-selected` as removed for lack of any
@@ -115,13 +133,20 @@ import type { IconName } from "../atoms/Icon";
  * assumption says shouldn't exist. Borrowing `surface-raised-hover` is a
  * stopgap that produces the right pixels today, not a permanent answer — a
  * real fix needs a dedicated selected-fill token (see the new open question
- * in docs/design-tokens.md). One direct consequence, noted rather than
- * solved: since the active item's resting colour now equals Button/Filled's
- * own Hover colour, hovering an active nav item produces no visible change
- * — the same missing-hover-affordance family docs/design-tokens.md's open
- * questions 3 and 5 already record for Button/Transparent and Ingredient
- * rows, cross-referenced there rather than inventing a hover treatment
- * Figma doesn't show.
+ * in docs/design-tokens.md).
+ *
+ * This composition problem is only PARTLY solved, not fully — be precise
+ * about which half: pressing an active item now works correctly (verified
+ * in a real browser after the fix — see the regression note above), but
+ * hovering one still shows no visible change, and that residual flatness is
+ * NOT a bug the `!` override introduced or could fix. It is inherent to
+ * Figma's own chosen value: the active item's resting colour (stone-300) IS
+ * `variant="filled"`'s Hover colour, so there is no third, lighter shade
+ * left for `:hover` to move to even with a correct override in place. Same
+ * missing-hover-affordance family docs/design-tokens.md's open questions 3
+ * and 5 already record for Button/Transparent and Ingredient rows —
+ * cross-referenced there rather than inventing a hover treatment Figma
+ * doesn't show.
  *
  * Icons: `Panel-left-close`/`Panel-left-open` and the five listed module
  * icons were already shape-verified by earlier tickets (see `Icon.tsx`'s own
@@ -225,11 +250,16 @@ export function Sidebar({
           const variant = isActive ? "filled" : "transparent";
           const label = labels[id];
           const handleClick = onNavigate ? () => onNavigate(id) : undefined;
-          // See the class doc comment ("FLAGGED GAP") for why the active
-          // item forces `surface-raised-hover` (stone-300) rather than
-          // resting at Filled's own default `surface-raised` (stone-200).
+          // See the class doc comment ("FLAGGED GAP" / "REGRESSION, FOUND
+          // AND FIXED IN REVIEW") for why the active item forces
+          // `surface-raised-hover` (stone-300) at rest rather than Filled's
+          // own default `surface-raised` (stone-200) — and why the
+          // `active:` companion below is required, not optional: a bare
+          // resting `!` override outranks Button's own non-important
+          // `active:bg-surface-raised-active`, which would otherwise leave
+          // a pressed active item visually dead.
           const activeFillOverride = isActive
-            ? "bg-surface-raised-hover!"
+            ? "bg-surface-raised-hover! active:bg-surface-raised-active!"
             : undefined;
 
           return collapsed ? (
