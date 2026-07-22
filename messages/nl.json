@@ -37,6 +37,19 @@
     "cardContainer": {
       "addLabel": "Toevoegen",
       "editLabel": "Bewerken"
+    },
+    "sidebar": {
+      "navLabel": "Hoofdnavigatie",
+      "expandLabel": "Zijbalk uitklappen",
+      "collapseLabel": "Zijbalk inklappen",
+      "items": {
+        "todo": "Te doen",
+        "notes": "Notities",
+        "recipes": "Recepten",
+        "shopping": "Winkelmand",
+        "clothes": "Kleren",
+        "assistant": "Assistent"
+      }
     }
   }
 }

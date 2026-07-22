@@ -29,6 +29,7 @@ import {
   Star,
   Check,
   Timer,
+  Sparkle,
   type LucideProps,
 } from "lucide-react";
 
@@ -61,6 +62,18 @@ import {
  * (two short lines at 10,2->14,2 and 12,14->15,11 plus a circle at cx=12
  * cy=14 r=8) matches lucide's `Timer` export exactly (a plain stopwatch, no
  * checkmark) and does NOT match `AlarmClockCheck`, which was ruled out.
+ *
+ * `Sparkle` added for ticket #25 (Organism/Sidebar, node-id 3674:5664, the
+ * Assistant/AI-agent nav item's icon, Figma layer "Icon/Astroid"): another
+ * false-friend name, same class as `Cross`/`X` above — the downloaded vector
+ * (a single closed four-point "twinkle" path, `M12.6389 21.7716C12.8184
+ * 21.6225…`) is not an asteroid shape at all. Matched by numeric fingerprint
+ * against lucide's exports, not by name: normalising Figma's absolute-cubic
+ * curve against lucide's relative-arc `Sparkle` path
+ * (`M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558…`) shows the same control
+ * points (11.017, 2.814/2.81395, 1.966, 5.558) recurring in both, an exact
+ * match; `Asterisk`, `Bot`, and `Orbit` were considered and ruled out by
+ * shape (none of them are a single four-point star).
  */
 export type IconName =
   | "PanelLeftClose"
@@ -90,7 +103,8 @@ export type IconName =
   | "Notebook"
   | "Star"
   | "Check"
-  | "Timer";
+  | "Timer"
+  | "Sparkle";
 
 // Figma name -> lucide-react component. Verified against lucide-react@1.25.0
 // exports and against actual rendered SVG path/element structure (see the
@@ -124,6 +138,7 @@ const ICONS: Record<IconName, ComponentType<LucideProps>> = {
   Star: Star,
   Check: Check,
   Timer: Timer,
+  Sparkle: Sparkle,
 };
 
 export interface IconProps {
