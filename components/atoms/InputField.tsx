@@ -71,7 +71,7 @@ import { Icon, type IconName } from "./Icon";
  * real, confirmed pixel difference, not a stale/unbound node (re-fetched and
  * compared side by side, not assumed). `border-input-active` is kept,
  * unrenamed, as the single remaining, deliberately-flagged divergence — see
- * docs/design-tokens.md open question 1, rewritten this ticket to describe
+ * docs/open-questions.md#button-vs-input-active-border, rewritten to describe
  * just this one state instead of all three.
  *
  * Figma's `Text` boolean can hide the entire input row, leaving just the button

@@ -132,8 +132,8 @@ import type { IconName } from "../atoms/Icon";
  * selected/active state that carries a real fill, which the documented
  * assumption says shouldn't exist. Borrowing `surface-raised-hover` is a
  * stopgap that produces the right pixels today, not a permanent answer — a
- * real fix needs a dedicated selected-fill token (see the new open question
- * in docs/design-tokens.md).
+ * real fix needs a dedicated selected-fill token (see
+ * docs/open-questions.md#selected-needs-a-fill-token).
  *
  * This composition problem is only PARTLY solved, not fully — be precise
  * about which half: pressing an active item now works correctly (verified
@@ -143,10 +143,10 @@ import type { IconName } from "../atoms/Icon";
  * Figma's own chosen value: the active item's resting colour (stone-300) IS
  * `variant="filled"`'s Hover colour, so there is no third, lighter shade
  * left for `:hover` to move to even with a correct override in place. Same
- * missing-hover-affordance family docs/design-tokens.md's open questions 3
- * and 5 already record for Button/Transparent and Ingredient rows —
- * cross-referenced there rather than inventing a hover treatment Figma
- * doesn't show.
+ * missing-hover-affordance family that
+ * docs/open-questions.md#no-pointer-affordance already records for
+ * Button/Transparent and Ingredient rows — cross-referenced there rather
+ * than inventing a hover treatment Figma doesn't show.
  *
  * Icons: `Panel-left-close`/`Panel-left-open` and the five listed module
  * icons were already shape-verified by earlier tickets (see `Icon.tsx`'s own

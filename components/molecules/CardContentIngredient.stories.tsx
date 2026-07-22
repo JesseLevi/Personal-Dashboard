@@ -68,7 +68,7 @@ Playground.argTypes = {
 // Checked (dimmed), and the delete affordance. Click-and-hold (":active") the
 // Unchecked row to compare the pill highlight against the fetched "Active"
 // frame — there is no Hover state to compare (see the class doc comment /
-// docs/design-tokens.md open question 5). The Delete row's pill is
+// docs/open-questions.md#no-pointer-affordance). The Delete row's pill is
 // unconditional (matching the fetched "Delete" frame), not a pointer state.
 export const AllVariants = () => (
   <div className="flex w-96 flex-col gap-2">

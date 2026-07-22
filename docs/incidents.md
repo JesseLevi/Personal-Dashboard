@@ -2,6 +2,55 @@
 
 Append-only archive of per-ticket incident write-ups: defects that shipped past every CI gate, the merge-conflict resolutions for specific PRs, and the reasoning behind non-obvious fixes. These are moved here verbatim, not summarised, because the detail is the evidence base for why this project doesn't fully trust its CI gates. Nothing here is current status — entries are never updated once written. Read on demand when investigating a specific ticket, a recurring failure mode, or a past merge — never as part of session start.
 
+## Token changes — #56 and #68 (`design/tokens.json`)
+
+### #56 — per-state colour scale
+
+- `surface-hover`: stone-300 → **stone-50**. It had no consumer after #52; it now
+  backs White's Hover.
+- `surface-active` (stone-100): **new**. Shares its primitive with `surface-muted`
+  but kept as a separate name — it is a state colour, a different role.
+- `surface-raised-hover`: stone-400 → **stone-300** (that value is now Active).
+- `surface-raised-active` (stone-400): **new**.
+- `border-hover`: stone-500 → **stone-400** (Button/Outline's Hover). See the open
+  question below for why Input-field no longer shares this token.
+- `border-active` (stone-700): **new**, replacing `border-hover-strong`.
+- `priority-urgent-bg-hover`: red-200 → **red-100**;
+  `priority-urgent-bg-active` (red-200): **new**.
+- **Removed** (no consumer left once Selected became text-only): `surface-selected`,
+  `surface-raised-selected`, `border-selected`, `border-hover-strong`,
+  `priority-urgent-bg-selected`.
+
+### #68 — Button/Outline and Input-field border unification
+
+The user re-authored `Atom/Button`'s Outline borders; re-fetching both nodes
+(3623:4346, 3705:4402) confirmed three of the four states now match between
+Button/Outline and Input-field, pixel-for-pixel:
+
+- `border-hover`: stone-400 → **stone-500** (Button/Outline's Hover moved to
+  meet Input-field's existing value). `border-input-hover` **deleted** —
+  `InputField.tsx` now reads the shared `border-hover`.
+- `border-selected`: **new**, stone-400. Outline's Selected gained a border
+  for the first time since #56 (previously "border unchanged, text only") —
+  and it lands on exactly the value Input-field's Selected already used.
+  `border-input-selected` **deleted** — `InputField.tsx` now reads the shared
+  `border-selected`. This is **not** the same removal #56 did to the old
+  `border-selected` name (that one had no consumer once Selected went
+  text-only everywhere); this is a fresh, independently-fetched Figma fact
+  that happens to reuse the retired name because Outline's Selected border is
+  back, for real, in the current node.
+- `border-active`: stone-700 → **stone-800** (Button/Outline only). Its dark
+  counterpart moves stone-300 → **stone-200** — this codebase's own pick (no
+  Figma dark frames exist), shifted one stone step in the opposite direction
+  from the light value's shift, consistent with how `border`/`border-hover`
+  already pair light/dark shades in this file.
+- `border-input-active` (stone-600): **unchanged, kept** — see `docs/open-questions.md#button-vs-input-active-border`.
+
+Button.tsx's Outline variant also gains `aria-pressed:border-border-selected`
+plus two compound-variant overrides (`aria-pressed:hover:border-border-hover`,
+`aria-pressed:active:border-border-active`) so Selected's new border doesn't
+silently suppress Hover/Active feedback — see "Selected must compose with Hover and Active" in `docs/design-tokens.md` for the full mechanism and the compiled-CSS evidence.
+
 ## 2026-07-22 — The screenshot gate shipped blind (#6)
 
 The first implementation of the Playwright baseline gate passed its own
@@ -41,7 +90,7 @@ Last two Phase 2 organisms, one Sonnet agent each, reviewed by putting the fetch
 
 First two `Card-content/*` molecules, each built by its own Sonnet agent from a live MCP fetch, then reviewed.
 
-- **`Card-content/Ingredient`'s `State` axis is `Default | Active | Delete` — there is no Hover.** `Active` is mapped to CSS `:active` per `docs/design-tokens.md`, consistent with #56/#58 under the same state name. The consequence is deliberate and **needs a design answer**: an ingredient row has *no pointer affordance at all* — hovering does nothing, only pressing does. Recorded as open question 5 in `docs/design-tokens.md`. This is the same gap as `Atom/Button`'s Transparent style (question 3), which **`Atom/Button-toggle`'s segments inherit**, since they render as `Button variant="transparent"`. One design decision, three components.
+- **`Card-content/Ingredient`'s `State` axis is `Default | Active | Delete` — there is no Hover.** `Active` is mapped to CSS `:active` per `docs/design-tokens.md`, consistent with #56/#58 under the same state name. The consequence is deliberate and **needs a design answer**: an ingredient row has *no pointer affordance at all* — hovering does nothing, only pressing does. Recorded as `docs/open-questions.md#no-pointer-affordance`, together with the same gap in `Atom/Button`'s Transparent style, which **`Atom/Button-toggle`'s segments inherit**, since they render as `Button variant="transparent"`. One design decision, three components.
 - **`State=Delete` is structural, not a pointer state.** Its pill (fill/radius/padding) is unconditional and the Trash button is a *sibling outside* it. The first implementation painted the pill only on `hover:`/`focus-within:` — which also meant focusing the delete button never triggered it. Don't collapse the delete and non-delete branches back into one wrapper: their fill semantics genuinely differ.
 - **`check:server-only`'s hex gate had a hole: percent-encoded hex.** A story's placeholder data-URI carried `fill='%23A8A29E'` and passed CI, because the gate grepped `#[0-9a-fA-F]{3,8}` only. Now `(#|%23)[0-9a-fA-F]{3,8}` — fixed in #66 and verified by probe (clean → fails on an inserted `%23AABBCC` → clean again). Any future encoded colour is caught.
 - **Icons: `Timer`, verified by path-diff, not by name.** The node's time glyph was an *unnamed* IMAGE-SVG. Candidate lucide exports were rendered and their paths compared against the Figma vector (`AlarmClockCheck` ruled out: six elements vs three). This is the fourth time shape-verification mattered — keep doing it.

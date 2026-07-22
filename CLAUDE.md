@@ -13,7 +13,8 @@ Load only the guide your task touches. Each is authoritative for its area; don't
 | Starting / finishing / delegating a ticket, the kanban board | `docs/guides/ticket-workflow.md` |
 | Colour states on a component | `docs/design-tokens.md` |
 | One specific component (its node-id, recorded gaps, ticket history) | `design/notes/<Component>.md` — never the whole map |
-| Why a past ticket went wrong | `docs/incidents.md` — on demand only |
+| Figma is missing something the ticket assumes | `docs/open-questions.md` — reference by slug, never by number |
+| Why a past ticket went wrong, or why a token has its value | `docs/incidents.md` — on demand only |
 
 Session start: read **`docs/HANDOFF.md`** (where the project stands, what's next) and keep it accurate when you finish work. `docs/phase-log.md` = what infrastructure exists per phase; read on demand, update when a phase item lands. Per-ticket status lives on the **board**, not in these files.
 

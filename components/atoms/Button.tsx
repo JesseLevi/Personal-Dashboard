@@ -130,7 +130,7 @@ import { Icon, type IconName } from "./Icon";
  * both states. `border-active` (stone-800) stays Button-only: Input-field's
  * Active is stone-600, a real, confirmed pixel difference, not a stale node —
  * it keeps its own `border-input-active` token. This is the one remaining
- * divergence; see docs/design-tokens.md open question 1.
+ * divergence; see docs/open-questions.md#button-vs-input-active-border.
  *
  * Dark mode (ticket #42, extended #52/#56): these are semantic-token classes
  * only (no `dark:` utility prefixes anywhere below) — light/dark is a
