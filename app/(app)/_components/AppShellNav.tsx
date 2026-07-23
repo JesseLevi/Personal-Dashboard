@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/atoms/Button";
 import { Sidebar, type SidebarItemId } from "@/components/organisms/Sidebar";
 
 // Only the routes this ticket (#88) actually builds; ids without an entry
@@ -21,8 +20,10 @@ function activeItemForPath(pathname: string): SidebarItemId | undefined {
 
 // Client wrapper: owns the collapse toggle (client-side, expanded by default
 // — the fetched desktop frames disagree on Collapsed, see design/notes/
-// Sidebar.md) and derives the active item from the route. Sidebar itself
-// stays a Server Component; only this composer needs "use client".
+// Sidebar.md) and derives the active item from the route. Sidebar has no
+// directive of its own, so importing it here pulls it into the client
+// bundle — the boundary stops at this file, which is why the layout above
+// stays a Server Component and does the Supabase call.
 export function AppShellNav({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
@@ -56,19 +57,12 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
         />
       </div>
       <main className="flex flex-1 flex-col gap-6 pt-4 pb-20 pl-4 md:pt-20 md:pb-20 md:pl-32">
-        {/* Figma's mobile frame (3680:1435) shows this toggle standalone
-            above the Header, not inside a rail — Sidebar itself is
-            desktop-only here. Shares `collapsed`/`toggleLabel` for
-            consistency, but toggling it has no visible effect yet since
-            Sidebar is hidden below `md`; #89 (SidePanel) is expected to give
-            it a real mobile drawer to open. */}
-        <div className="md:hidden">
-          <Button
-            icon={collapsed ? "PanelLeftOpen" : "PanelLeftClose"}
-            aria-label={toggleLabel}
-            onClick={() => setCollapsed((prev) => !prev)}
-          />
-        </div>
+        {/* Figma's mobile frame (3680:1435) puts a standalone nav toggle
+            here, above the Header. It is deliberately NOT rendered yet:
+            below `md` the Sidebar is hidden, so the button would announce
+            itself to a screen reader and then do nothing when activated —
+            worse than absent. #89 (SidePanel) supplies the mobile drawer it
+            is meant to open; it gets built with that. */}
         {children}
       </main>
     </div>
