@@ -23,6 +23,15 @@
       "generic": "Er ging iets mis. Probeer het opnieuw."
     }
   },
+  "boards": {
+    "errors": {
+      "invalid-input": "Controleer de ingevoerde gegevens.",
+      "unauthenticated": "Log opnieuw in om door te gaan.",
+      "not-found": "Dit onderdeel bestaat niet (meer) of is niet van jou.",
+      "column-mismatch": "Deze kolom hoort niet bij dit bord.",
+      "generic": "Er ging iets mis. Probeer het opnieuw."
+    }
+  },
   "components": {
     "buttonToggle": {
       "groupLabel": "Categoriefilter",
