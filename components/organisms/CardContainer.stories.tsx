@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { CardContainer } from "./CardContainer";
 import { Card } from "../molecules/Card";
 import { CardContentRecipe } from "../molecules/CardContentRecipe";
+import { Button } from "../atoms/Button";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
 
@@ -27,6 +28,7 @@ const ThumbnailBackdrop = ({ children }: { children: ReactNode }) => (
 // Chrome text — sourced from the message catalog, not typed here directly.
 const addLabelEn = en.components.cardContainer.addLabel;
 const editLabelEn = en.components.cardContainer.editLabel;
+const addItemLabelEn = en.components.cardContainer.addItemLabel;
 
 // Matches the fetched node's "Ontbijt" sample (Name="Ontbijt", Hoeveelheid="4").
 export const Default = () => (
@@ -56,6 +58,49 @@ export const Default = () => (
         </ThumbnailBackdrop>
       </Card>
     </CardContainer>
+  </div>
+);
+
+// #87: `icon` prop, page-instance override (Te-Doen "Ideeën" uses
+// Lightbulb — see design/notes/CardContainer.md's icon-inconsistency note).
+export const CustomIcon = () => (
+  <div className="w-96">
+    <CardContainer
+      name="Ideeën"
+      count="2"
+      icon="Lightbulb"
+      addLabel={addLabelEn}
+      editLabel={editLabelEn}
+    >
+      <Card>
+        <ThumbnailBackdrop>
+          <CardContentRecipe
+            imageUrl={PLACEHOLDER_IMAGE}
+            name="Amandel Pasta"
+            duration="20 min"
+          />
+        </ThumbnailBackdrop>
+      </Card>
+    </CardContainer>
+  </div>
+);
+
+// #87: `emptyState` slot, Figma "EmptyState" frame (node 3878:10175) —
+// centered `Button` (variant="white", icon="Plus") replaces `children`.
+export const Empty = () => (
+  <div className="w-96">
+    <CardContainer
+      name="Ideeën"
+      count="0"
+      icon="Lightbulb"
+      addLabel={addLabelEn}
+      editLabel={editLabelEn}
+      emptyState={
+        <Button variant="white" icon="Plus">
+          {addItemLabelEn}
+        </Button>
+      }
+    />
   </div>
 );
 

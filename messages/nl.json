@@ -36,7 +36,8 @@
     },
     "cardContainer": {
       "addLabel": "Toevoegen",
-      "editLabel": "Bewerken"
+      "editLabel": "Bewerken",
+      "addItemLabel": "Voeg item toe"
     },
     "sidebar": {
       "navLabel": "Hoofdnavigatie",
