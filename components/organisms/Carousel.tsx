@@ -11,10 +11,16 @@ import type { ReactNode } from "react";
 export interface CarouselProps {
   /** Figma SLOT "Slot" — the row's content, typically `CardContainer` instances. */
   children: ReactNode;
+  /** Column width class(es) — differs per composing screen (#90: Recipe fixed 280px vs Te-Doen board's responsive 296/320). Defaults to the originally fetched Recipe width. See design/notes/Carousel.md. */
+  columnWidthClassName?: string;
   className?: string;
 }
 
-export function Carousel({ children, className }: CarouselProps) {
+export function Carousel({
+  children,
+  columnWidthClassName = "w-70",
+  className,
+}: CarouselProps) {
   return (
     <div
       className={clsx(
@@ -25,9 +31,7 @@ export function Carousel({ children, className }: CarouselProps) {
       )}
     >
       {Children.map(children, (child, index) => (
-        // 280px fixed width lives HERE (Carousel), not on CardContainer —
-        // see design/notes/Carousel.md.
-        <div key={index} className="w-70 shrink-0">
+        <div key={index} className={clsx(columnWidthClassName, "shrink-0")}>
           {child}
         </div>
       ))}
