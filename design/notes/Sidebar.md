@@ -21,3 +21,22 @@ Filed as BLOCKED (see `docs/incidents.md`'s prior write-up, still accurate as hi
 - **Stays a Server Component.** The transition is a plain CSS class swap between two explicit-length Tailwind classes (`transition-[width] duration-[var(--duration-base)] ease-base motion-reduce:transition-none` — the duration must use the arbitrary-value form because `--duration-*`, unlike `--ease-*`, is not a Tailwind v4 theme namespace, so a bare `duration-base` compiles to nothing and falls back to the 150ms default) — no measuring, no `ResizeObserver`, so no client JS was needed for the animation itself. `collapsed` remains a composer-supplied prop exactly as before.
 - **`prefers-reduced-motion` respected** via `motion-reduce:transition-none`, same precedent `Dropdown`/`Button-toggle` already set.
 - **Ladle**: `Sidebar.stories.tsx`'s `Animated` story (unchanged otherwise) now demonstrates a real slide instead of a snap — its doc comment updated to say so; no new story added since this one already exercises the toggle end to end.
+
+## App shell's default collapse state (#88, 2026-07-23)
+
+The three page frames fetched for #88 (Recepten desktop `3672:1577`, Te-Doen
+desktop `3680:1442`/`3680:1435`) are **inconsistent about `Collapsed`**: the
+Te-Doen desktop frames instance Sidebar as `Collapsed=Yes` (componentId
+`3632:460`, `hug`-width ~73px rail), while Recepten desktop and every EmptyState
+frame instance it as `Collapsed=No` (`3674:5665`, fixed 198px). Nothing in
+either design distinguishes "collapsed is the real Te-Doen default" from
+"whoever last touched that frame happened to leave it collapsed" — there's no
+prototype connection, annotation, or naming convention pointing either way.
+
+Per the ticket: guessed at neither. `AppShellNav` (`app/(app)/_components/
+AppShellNav.tsx`) hardcodes `useState(false)` — **expanded by default** —
+and the collapse toggle is purely client-side from there, unpersisted. If a
+future ticket needs the collapsed state to survive a reload (cookie/
+localStorage/URL, the same three options `Sidebar.tsx`'s own doc comment
+already names), that's a product decision to make explicitly, not something
+to infer from which page frame happened to be collapsed when it was drawn.
