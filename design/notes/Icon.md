@@ -7,4 +7,6 @@ single wrapper around lucide-react@1.25.0+ (upgraded 2026-07-20 for the Broccoli
 
 `Timer` was added for ticket #19 (Card-content/Recipi, node-id 3628:67): the node's "Icon" child is an IMAGE-SVG with no layer name beyond "Icon", so it was verified by rendered path structure, not name — the fetched vector (two short lines at 10,2→14,2 and 12,14→15,11, plus a circle at cx=12 cy=14 r=8) matches lucide's `Timer` export exactly (a plain stopwatch, no checkmark) and does NOT match `AlarmClockCheck`, which was ruled out.
 
+`CircleCheck` (node 3878:10477) and `StarPlus` (node 3878:8976) were added for ticket #98 (Phase 3 blocker: the seed migration writes `board_columns.icon = 'CircleCheck'`, which was not yet a valid `IconName`). Verified by rendering the real lucide-react@1.25.0 exports (`renderToStaticMarkup`) into a live page and reading each path/circle's `getBBox()` in-browser, compared coordinate-for-coordinate against the Figma sub-vectors' `x/y/width/height`: `CircleCheck`'s circle is 2,2/20×20 and its check path is 9,10/6×4 in both; `StarPlus`'s star is 2,2/20×19.07 and its plus strokes are 15,18/6×0 and 18,15/0×6 in both — an exact match on every sub-vector, not just a name match. No false friend found for either.
+
 No open discrepancies remain.
