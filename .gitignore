@@ -30,5 +30,8 @@ test-results/
 tmp/
 /*.png
 
+# firecrawl CLI local cache
+.firecrawl/
+
 # claude code worktrees (transient agent isolation)
 .claude/worktrees/
