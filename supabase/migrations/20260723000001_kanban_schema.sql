@@ -77,9 +77,13 @@ create table public.board_columns (
   user_id uuid not null references auth.users (id) on delete cascade,
   board_id uuid not null references public.boards (id) on delete cascade,
   name text not null,
-  -- Lucide icon name (e.g. 'Lightbulb'). No UI to choose this yet: the four
-  -- seeded columns own the only icons in use until custom columns ship
-  -- (issue #91 / Figma annotation on the Status field, node 3779:4853).
+  -- Must be a value of the IconName union in components/atoms/Icon.tsx —
+  -- PascalCase (e.g. 'AlarmClockCheck'), NOT the hyphenated Figma layer name
+  -- ('Alarm-clock-check'). Icon.tsx looks the value up directly in its ICONS
+  -- record, so the hyphenated form resolves to undefined and renders nothing.
+  -- No UI to choose this yet: the four seeded columns own the only icons in
+  -- use until custom columns ship (issue #91 / Figma annotation on the Status
+  -- field, node 3779:4853).
   icon text not null,
   -- Same fractional-positioning scheme as boards.position: numeric, unbounded
   -- precision, new value = midpoint of its neighbors on reorder. Chosen over
@@ -284,9 +288,9 @@ begin
   insert into public.board_columns (user_id, board_id, name, icon, position)
   values
     (new.id, new_board_id, 'Ideeën', 'Lightbulb', 1000),
-    (new.id, new_board_id, 'Klaar', 'Alarm-clock-check', 2000),
+    (new.id, new_board_id, 'Klaar', 'AlarmClockCheck', 2000),
     (new.id, new_board_id, 'Bezig', 'Loader', 3000),
-    (new.id, new_board_id, 'Afgerond', 'Circle-check', 4000);
+    (new.id, new_board_id, 'Afgerond', 'CircleCheck', 4000);
 
   return new;
 end;
