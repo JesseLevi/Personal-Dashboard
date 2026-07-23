@@ -8,13 +8,9 @@ export interface StepProps extends HTMLAttributes<HTMLSpanElement> {
 }
 
 /**
- * Atom/Step — presentational step badge (Server Component, no "use client").
- *
- * Figma models this as a single fixed component (no variant/state axis on the
- * dev-ready node) — a 32x32 circular badge, centered content. Filed under
- * Figma's "Atoms"/"Steps" section; moved here from `components/molecules/`
- * 2026-07-21 to match (see `design/notes/Step.md`). `Card` composes it as a
- * nested instance (molecule importing atom — CLAUDE.md's allowed direction).
+ * Atom/Step — presentational step badge (Server Component). Figma
+ * "Atoms/Steps" (node-id 3727:3208), single fixed component, no variant/
+ * state axis — a 32x32 circular badge, centered content. History: `design/notes/Step.md`.
  */
 export function Step({ children, className, ...props }: StepProps) {
   return (

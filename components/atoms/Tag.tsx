@@ -5,13 +5,9 @@ import type { ReactNode } from "react";
 /**
  * Atom/Tag — small pill/label. Figma component set "Tag" (node-id 3626:4515).
  *
- * The Figma variant axis is named "Color" (Grey/Red/Yellow/Green/Blue), but the
- * code API is deliberately *semantic*, not color-named: the prop is `variant`
- * with values matching the card `priority` enum (urgent|medium|mid|low, plus
- * `neutral` for the grey/quantity case). Rationale: call sites express intent
- * (`variant="urgent"`) and stay stable if the design re-colors a priority, and
- * the API lines up 1:1 with the domain enum this Tag renders. Figma "Color" →
- * code `variant`: Grey→neutral, Red→urgent, Yellow→medium, Blue→mid, Green→low.
+ * Figma's "Color" variant axis (Grey/Red/Yellow/Green/Blue) maps to a
+ * semantic `variant` prop matching the card `priority` enum instead of
+ * color names: Grey→neutral, Red→urgent, Yellow→medium, Blue→mid, Green→low.
  */
 const tagVariants = cva(
   "inline-flex items-center gap-2 px-3 h-10 rounded-lg text-base font-semibold",

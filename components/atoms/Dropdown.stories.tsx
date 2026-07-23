@@ -6,14 +6,12 @@ import { Dropdown } from "./Dropdown";
 // next-intl catalogs at the call site).
 
 // The fetched Figma example: a label plus three stacked options, the first
-// shown "selected" via the Button atom's own filled variant (a choice made
-// by the composing content, not by the Dropdown atom itself). Left-aligned
-// icon + label per the fetched node.
+// shown "selected" via Button's own filled variant (a choice made by the
+// composing content, not by Dropdown itself).
 
-// Closed (ticket #61): matches the reference screenshot — the `Field` label,
-// then the bordered container showing only the first/selected option (the
-// filled `+ Categorie` button). The other two options are collapsed, not
-// removed: click the label (or focus it and press Enter/Space) to open them.
+// Closed: the `Field` label plus the bordered container showing only the
+// first/selected option. The other two are collapsed, not removed: click
+// the label (or focus + Enter/Space) to open them.
 export const Closed = () => (
   <Dropdown id="demo-closed" label="Field" defaultOpen={false}>
     <Button variant="filled" icon="Plus">

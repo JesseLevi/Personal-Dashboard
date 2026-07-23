@@ -4,11 +4,7 @@ import { CardContentIngredient } from "./CardContentIngredient";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
 
-// Dev-only demo copy ("Banana", "300 gr") — not user-facing UI chrome, same
-// convention as the other molecule stories (e.g. Card.stories.tsx's
-// "Card content" placeholder). The delete button's aria-label IS user-facing
-// chrome text, so it comes from the message catalog rather than being typed
-// here directly.
+// deleteLabel IS user-facing chrome text, so it comes from the message catalog, not a literal.
 const deleteLabelEn = en.components.cardContentIngredient.deleteLabel;
 
 type PlaygroundProps = {
@@ -64,12 +60,8 @@ Playground.argTypes = {
   deletable: { control: { type: "boolean" } },
 };
 
-// The full fetched variant axis side by side: Checkbox=None, Unchecked,
-// Checked (dimmed), and the delete affordance. Click-and-hold (":active") the
-// Unchecked row to compare the pill highlight against the fetched "Active"
-// frame — there is no Hover state to compare (see the class doc comment /
-// docs/open-questions.md#no-pointer-affordance). The Delete row's pill is
-// unconditional (matching the fetched "Delete" frame), not a pointer state.
+// Full variant axis side by side. Click-and-hold (:active) the Unchecked row
+// for the Active pill — see design/notes/CardContentIngredient.md (no Hover state).
 export const AllVariants = () => (
   <div className="flex w-96 flex-col gap-2">
     <CardContentIngredient name="Banana" quantity="300 gr" />

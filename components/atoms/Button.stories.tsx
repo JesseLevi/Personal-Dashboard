@@ -16,24 +16,12 @@ const VARIANTS: { variant: Variant; label: string }[] = [
   { variant: "destructive", label: "Distructive" },
 ];
 
-// Full Style x State matrix for the four-state Figma set (ticket #56:
-// Default / Hover / Active / Selected). Default and Selected render
-// statically — Selected via the standard `aria-pressed` attribute, never a
-// prop. Hover and Active only exist while the pointer is over / holding the
-// button, so those columns are labelled rather than faked with a class: the
-// point of this story is to prove the real CSS works, and a class that forces
-// the look would prove nothing.
-//
-// The last column is the load-bearing one: a *selected* button must still
-// show its hover and active effect. For Filled/White/Transparent/Distructive
-// this composes because Selected only changes `color` while Hover/Active only
-// change `background-color`. Outline is the exception (ticket #68): Selected
-// now sets `border-color` too, the same property Hover/Active use, so it
-// relies instead on higher-specificity compound variants
-// (`aria-pressed:hover:`/`aria-pressed:active:`) to guarantee Hover/Active
-// still win — verified against the compiled `pnpm ladle:build` stylesheet,
-// see docs/design-tokens.md. Hover and hold the Outline row in this column to
-// check it visually.
+// Full Style x State matrix (Default / Hover / Active / Selected). Hover and
+// Active are labelled columns, not faked with a class, since the point is to
+// prove the real CSS works. Last column is load-bearing: a selected button
+// must still react to hover/active — hover and hold the Outline row to check
+// it (see docs/design-tokens.md and design/notes/Button.md for why Outline
+// needs the aria-pressed compound variants).
 export const StateMatrix = () => (
   <div className="grid grid-cols-[112px_repeat(3,auto)] items-center gap-x-6 gap-y-3">
     <span />

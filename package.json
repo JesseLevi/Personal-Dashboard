@@ -20,7 +20,8 @@
     "db:types": "supabase gen types typescript --local > lib/database.types.ts",
     "test:rls": "supabase test db",
     "check:rls-coverage": "bash scripts/check-rls-coverage.sh",
-    "check:server-only": "bash scripts/check-server-only.sh"
+    "check:server-only": "bash scripts/check-server-only.sh",
+    "check:comment-budget": "bash scripts/check-comment-budget.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

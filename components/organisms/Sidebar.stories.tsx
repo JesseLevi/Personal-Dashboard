@@ -4,15 +4,11 @@ import { Sidebar } from "./Sidebar";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
 
-// The nav/toggle labels ARE user-facing chrome text, so they come from the
-// message catalog rather than being typed here directly — same convention
-// CardContainer.stories.tsx uses for its own add/edit labels.
+// Chrome text — sourced from the message catalog, not typed here directly.
 const enLabels = en.components.sidebar;
 const nlLabels = nl.components.sidebar;
 
-// The two fetched Collapsed variants side by side, "Recepten" active in
-// both (see the component's own doc comment for how the active/Selected
-// state is modelled).
+// The two fetched Collapsed variants side by side, "Recepten" active in both.
 export const Variants = () => (
   <div className="flex h-[600px] gap-8">
     <Sidebar
@@ -31,19 +27,10 @@ export const Variants = () => (
   </div>
 );
 
-// Exercises the collapse toggle end to end (renamed from `LabelsNl`, which
-// this still doubles as — the NL catalog check for the nav/toggle labels is
-// preserved by keeping it on the NL data). `Sidebar` itself stays a Server
-// Component with `collapsed` as a plain prop (see the component's own doc
-// comment); the `useState` here is the *story's* concern, standing in for
-// whatever a real caller persists the flag in (cookie/localStorage/URL).
-// Ticket #86: clicking now slides between the two measured widths
-// (`duration-[var(--duration-base)]`/`ease-base`, see the component's own "Motion" doc
-// comment) instead of snapping — this story is what demonstrates that, live,
-// in Ladle. The slide itself is disabled for `prefers-reduced-motion` users
-// (`motion-reduce:transition-none` on the component), which isn't something a
-// static story can toggle — it depends on the OS/browser setting, not a
-// story control, same as `Dropdown`'s equivalent animation.
+// Exercises the collapse toggle live; `collapsed` here is the story's own
+// state, standing in for whatever a real caller persists it in. Reduced
+// motion is OS/browser-driven, not something a static story can toggle —
+// see design/notes/Sidebar.md.
 export const Animated = () => {
   const [collapsed, setCollapsed] = useState(false);
   return (

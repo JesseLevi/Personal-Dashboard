@@ -25,6 +25,7 @@ Session start: read **`docs/HANDOFF.md`** (where the project stands, what's next
 - **Tailwind v4 utility classes + semantic tokens only** — no inline styles, no raw hex anywhere in `components/` (also not in comments; `check:server-only` greps the file). A missing token is flagged, never hardcoded.
 - **All data access goes through Next.js server code.** The browser never talks to Supabase directly; `service_role` never leaves server/worker modules (ADR-0002/0003).
 - **Every table**: `user_id` FK + RLS policy + an RLS test in `supabase/tests` in the same PR (ADR-0009). Schema changes only via `supabase/migrations`.
+- **One home per fact.** Ticket history, measurements and the design record live in `design/notes/<Component>.md` — a component file carries a short header and pointers, never a second copy of the story. Budgeted by `check:comment-budget`.
 - **No hardcoded user-facing strings** — next-intl catalogs, `messages/nl.json` *and* `messages/en.json` in the same PR (ADR-0007).
 - **Move the ticket card to "In progress" before writing code**, and to "In review" when it's done. Check the In-progress column before starting anything new.
 
@@ -53,4 +54,4 @@ When a ticket forces a trade-off, resolve it in this order:
 - `pnpm ladle` — design-system workbench
 - `pnpm worker` — job queue consumer (needs `.env` with service_role)
 - `pnpm db:reset` / `pnpm test:rls` / `pnpm db:types` — Supabase (needs Docker: CI or the server, not this dev machine)
-- `pnpm check:rls-coverage` / `pnpm check:server-only` — CI gates, also runnable locally
+- `pnpm check:rls-coverage` / `pnpm check:server-only` / `pnpm check:comment-budget` — CI gates, also runnable locally

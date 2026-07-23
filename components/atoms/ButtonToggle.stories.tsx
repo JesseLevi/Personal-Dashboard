@@ -3,10 +3,9 @@ import { ButtonToggle, type ButtonToggleItem } from "./ButtonToggle";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
 
-// One story: the working toggle group exactly as the fetched node draws it
-// (5 icon-only segments sharing one track, one white capsule that slides to
-// whichever segment is active) — per ticket #60, no other ButtonToggle
-// stories. Labels come from the message catalog, not hardcoded strings.
+// The toggle group as the fetched node draws it: 5 icon-only segments
+// sharing one track, one capsule sliding to whichever is active. Labels
+// come from the message catalog, not hardcoded strings.
 const categories: readonly ButtonToggleItem[] = [
   { value: "all", icon: "Infinity", label: en.components.buttonToggle.categories.all },
   { value: "breakfast", icon: "Croissant", label: en.components.buttonToggle.categories.breakfast },
@@ -23,13 +22,9 @@ const categoriesNl: readonly ButtonToggleItem[] = [
   { value: "dessert", icon: "CakeSlice", label: nl.components.buttonToggle.categories.dessert },
 ];
 
-// `items-start` is deliberate, not decorative: a flex column defaults its
-// children's cross axis (here, width) to `stretch`, which would force each
-// `inline-flex` track to the container's full width instead of letting it
-// hug its five segments (ticket #69). `ButtonToggle` now guards itself
-// against this (`self-start w-fit` on its own root), but the story still
-// states the true layout explicitly so the workbench never silently relies
-// on that guard to look correct.
+// `items-start` is deliberate: a flex column defaults children to
+// `stretch`, which would otherwise force each track full-width. `ButtonToggle`
+// guards against this itself, but the story states the layout explicitly too.
 export const CategoryFilter = () => (
   <div className="flex flex-col items-start gap-4">
     <ButtonToggle

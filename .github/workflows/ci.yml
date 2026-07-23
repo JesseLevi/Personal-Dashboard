@@ -25,6 +25,8 @@ jobs:
       - run: pnpm test
       - name: Security greps (ADR-0002/0003/0010)
         run: pnpm check:server-only
+      - name: Comment budget in components/ (one home per fact)
+        run: pnpm check:comment-budget
       - run: pnpm build
 
   # Playwright + Ladle screenshot baselines (issue #6, ADR-0010).

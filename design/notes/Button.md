@@ -28,3 +28,19 @@ icon-only size=default measured 36x40 (pl-2 8px + Icon 24px + pr-1 4px, the icon
 ## TICKET #80 (2026-07-21)
 
 flex-shrink defence added. Measured in a real browser (Playwright against `pnpm ladle`, first ticket with one available — no more static-markup workaround): CardContentIngredient's destructive icon-only Trash Button (stated size-10, 40x40) rendered 35.1x40 inside that molecule's width-constrained row, because a flex item defaults to flex-shrink:1 and this atom opted out nowhere. `shrink-0` added to the shared cva base class string (applies to every size/variant unconditionally, not per-size) so the atom defends its own stated footprint in any layout a composer drops it into, rather than requiring every call site to remember a local `shrink-0` (which is what already went missing at two of this codebase's three call sites — only Atom/Button-Toggle's segments had it, and that local copy is now removed as redundant).
+
+## TICKET #13
+
+"Distructive" (Figma's own spelling) was corrected to `destructive` in the code API — the component prop/CVA key reads `destructive`, only the Figma-facing prose still says "Distructive".
+
+## TICKET #69 (2026-07-20, size=compact origin)
+
+`Button/Toggle` (3623:4345) resizes its nested `Atom/Button` instances to 32x32 via an instance override — Button's own component set has no Size property, so that footprint can't be reproduced by a caller `className` (`h-8`/`h-10` are the same property at the same specificity; the winner would depend on Tailwind's utility-generation order, not the caller). `size="compact"` was added to cover it. First landed as `h-8 pl-1 pr-0`, a 32px width that only *totalled* correctly (4px inset + Icon's default 24px + 4px inset) rather than being stated directly — any future change to the icon's default size or the wrapper padding would have silently de-squared it. Ticket #69 verified the arithmetic did land on 32x32 today by rendering both `Button` and `ButtonToggle` via `react-dom/server`'s `renderToStaticMarkup` (no headless browser available yet) and reading the resolved class list plus the icon `<svg>`'s literal `width`/`height` attributes, then fixed the fragility structurally: `compact` is now `size-8 justify-center` — one utility stating width equal to height directly, icon centred by flex alignment instead of padding arithmetic. Verified for the icon-only case only (all Figma samples); pairing `compact` with `children` is untested and made unrepresentable by the props union (a fixed 32x32 box would clip a label).
+
+## Dropdown node context for ticket #43's `justify-start` fix
+
+The fetched `Atom/Dropdown` node (3705:4446) overrides its nested `Button/Default` instances to `sizing.horizontal: fill` while still specifying no `justifyContent` (i.e. still packed/left) — this is what made the `justify-center` bug visible: Dropdown's option-list slot stretches the button full-width, so `justify-center` (a no-op on a hug-sized standalone button) started centring content the instant a caller stretched it.
+
+## Known gap: destructive dark mode
+
+The destructive hover and active fills both resolve to `red-950` in dark mode, so those two states are visually invisible there (text stays legible, but there's no hover/press feedback). Not yet fixed; flagged for a future dark-mode pass.

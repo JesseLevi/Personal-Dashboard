@@ -5,14 +5,9 @@ import { InputField } from "./InputField";
 // next-intl catalogs at the call site).
 
 // Reproduces the Figma state rows (Default / Hover / Active) as closely as
-// static markup allows — hover the second row to compare against the fetched
-// node's Hover state; the third row shows the typed-text look and doubles as
-// this atom's read of Figma's "Active" as the `:focus-within` state (see the
-// doc comment in InputField.tsx and `design/notes/InputField.md` for why that
-// mapping is an assumption, not a labelled Figma state). The fetched node
-// also carries a fourth state, Selected — its border/text change without any
-// interaction affordance a plain `<input>` has, so it isn't modelled and
-// isn't faked here either (flagged in `design/notes/InputField.md`).
+// static markup allows — hover the second row; the third row shows the
+// typed-text look (the `:focus-within` mapping, see InputField.tsx's doc
+// comment). Selected isn't modelled/faked here — see design/notes/InputField.md.
 export const States = () => (
   <div className="flex w-72 flex-col gap-6">
     <InputField
@@ -36,13 +31,9 @@ export const States = () => (
   </div>
 );
 
-// Merged for #78 (was 4 separate Ladle entries: WithLeadingIcon /
-// WithTrailingIcon / WithBothIcons / WithoutIcons — same consolidation #56
-// did for Button's icon/text booleans). Figma's "Trekking-icon" is a
-// misnomer for the trailing icon (see InputField.tsx's doc comment). Every
-// row must render the same container height — that equal-height guarantee
-// (regardless of which icon(s) are present) is exactly the bug #78 fixed, so
-// stacking all four here also doubles as the visual regression check for it.
+// Every row must render the same container height regardless of which
+// icon(s) are present — stacking all four here doubles as the visual
+// regression check for that. See design/notes/InputField.md.
 export const IconCombinations = () => (
   <div className="flex w-72 flex-col gap-6">
     <div className="flex flex-col gap-2">
