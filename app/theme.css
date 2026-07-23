@@ -22,12 +22,12 @@
   --color-priority-urgent-bg: var(--color-red-50);
   --color-priority-urgent-bg-hover: var(--color-red-100);
   --color-priority-urgent-bg-active: var(--color-red-200);
-  --color-priority-medium: var(--color-orange-400);
-  --color-priority-medium-bg: var(--color-orange-50);
-  --color-priority-mid: var(--color-blue-400);
-  --color-priority-mid-bg: var(--color-blue-50);
+  --color-priority-medium: var(--color-blue-400);
+  --color-priority-medium-bg: var(--color-blue-50);
   --color-priority-low: var(--color-green-500);
   --color-priority-low-bg: var(--color-green-50);
+  --color-tag-highlight: var(--color-orange-400);
+  --color-tag-highlight-bg: var(--color-orange-50);
   --duration-base: 200ms;
   --ease-base: cubic-bezier(0, 0, 0.2, 1);
 }

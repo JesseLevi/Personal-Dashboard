@@ -2,6 +2,23 @@
 
 Append-only archive of per-ticket incident write-ups: defects that shipped past every CI gate, the merge-conflict resolutions for specific PRs, and the reasoning behind non-obvious fixes. These are moved here verbatim, not summarised, because the detail is the evidence base for why this project doesn't fully trust its CI gates. Nothing here is current status — entries are never updated once written. Read on demand when investigating a specific ticket, a recurring failure mode, or a past merge — never as part of session start.
 
+## Token changes — #97 (`design/tokens.json`)
+
+Card `priority` scale collapses `urgent|medium|mid|low` to
+`urgent|medium|low` (mid retired), with `medium` taking over `mid`'s blue
+colour — see `design/notes/Tag.md` for the full Figma/annotation reasoning.
+
+- `priority-medium` / `priority-medium-bg`: **orange-400/orange-50 → blue-400/blue-50**
+  (now the same pixels the deleted `priority-mid` used to hold).
+- `priority-mid` / `priority-mid-bg`: **deleted.** No consumer — `Tag.tsx`'s
+  `mid` CVA variant is removed, and nothing outside `Tag.stories.tsx` ever
+  passed `variant="mid"`.
+- `tag-highlight` / `tag-highlight-bg`: **new**, orange-400/orange-50 (the
+  pixels `priority-medium` used to hold). Backs `Tag`'s new `highlight`
+  variant — Figma's Yellow `Color` axis value, kept for full Figma-axis
+  coverage but deliberately named outside the `priority-*` family since it
+  carries no priority meaning.
+
 ## Token changes — #56 and #68 (`design/tokens.json`)
 
 ### #56 — per-state colour scale
