@@ -1,16 +1,18 @@
 // figma: node-id=3650:1297
 import clsx from "clsx";
 import type { ReactNode } from "react";
-import { Icon } from "../atoms/Icon";
+import { Icon, type IconName } from "../atoms/Icon";
 import { Button } from "../atoms/Button";
 
 /**
  * Organism/Card-container — Figma component "Card-container" (node-id
  * 3650:1297). Kanban column: header (`Name`/`Hoeveelheid` text props ->
- * `name`/`count`; fixed Croissant icon + Plus/Pencil `Button`s — not
- * props, no variant axis on this node) above SLOT "Content" -> `children`
- * (real `Card` instances, composed not re-implemented). No CVA — no
- * variant/state axis, `clsx` merges the caller's `className`.
+ * `name`/`count`; `icon` + Plus/Pencil `Button`s — icon has no variant
+ * axis on this node, real per-column icons are page-instance overrides,
+ * see design/notes/CardContainer.md) above SLOT "Content" -> `children`
+ * (real `Card` instances) or, when the column has none, `emptyState`
+ * (Figma "EmptyState" frame, node 3878:10175). No CVA — no variant/state
+ * axis, `clsx` merges the caller's `className`.
  * Full Figma structure, colours, history: design/notes/CardContainer.md.
  */
 export interface CardContainerProps {
@@ -18,6 +20,8 @@ export interface CardContainerProps {
   name: string;
   /** Figma `Hoeveelheid` prop (default "4") — count shown beside the name. */
   count: string;
+  /** Header icon (composer-supplied — which icon a real column gets is data, not this component's decision). Defaults to "Croissant", the icon baked into the originally fetched instance. */
+  icon?: IconName;
   /** Accessible label for the always-visible icon-only add button (composer-supplied, from next-intl). */
   addLabel: string;
   /** Forwarded to the add button's `onClick`. */
@@ -27,18 +31,22 @@ export interface CardContainerProps {
   /** Forwarded to the edit button's `onClick`. */
   onEdit?: () => void;
   /** Figma SLOT "Content" — the column's cards, typically `Card` instances wrapping `Card-content/*` molecules. */
-  children: ReactNode;
+  children?: ReactNode;
+  /** Replaces `children` when the column has no cards (composer decides when, e.g. `count === "0"`) — typically a centered add `Button`, as composed in the story. This component makes no assumption about what "empty" or "add" mean. */
+  emptyState?: ReactNode;
   className?: string;
 }
 
 export function CardContainer({
   name,
   count,
+  icon = "Croissant",
   addLabel,
   onAdd,
   editLabel,
   onEdit,
   children,
+  emptyState,
   className,
 }: CardContainerProps) {
   return (
@@ -50,7 +58,7 @@ export function CardContainer({
     >
       <div className="flex items-center justify-between px-2">
         <div className="flex h-12 items-center gap-4">
-          <Icon name="Croissant" className="text-text-muted" />
+          <Icon name={icon} className="text-text-muted" />
           <p className="text-base font-semibold text-text">{name}</p>
           <p className="text-base font-semibold text-text-muted">{count}</p>
         </div>
@@ -72,8 +80,16 @@ export function CardContainer({
           />
         </div>
       </div>
-      <div className="flex flex-1 flex-col justify-center gap-2">
-        {children}
+      {/* EmptyState's Content SLOT is alignItems:center (vs. the filled
+          state's stretch, node 3878:10175) — only added when emptyState
+          is in play so the card-list layout is untouched. */}
+      <div
+        className={clsx(
+          "flex flex-1 flex-col justify-center gap-2",
+          emptyState && "items-center",
+        )}
+      >
+        {emptyState ?? children}
       </div>
     </div>
   );
