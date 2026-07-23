@@ -64,6 +64,9 @@
       "recipes": {
         "addCategoryLabel": "Category"
       }
+    },
+    "sidePanel": {
+      "closeLabel": "Close panel"
     }
   }
 }
