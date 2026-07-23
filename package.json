@@ -24,6 +24,10 @@
     "check:comment-budget": "bash scripts/check-comment-budget.sh"
   },
   "dependencies": {
+    "@dnd-kit/abstract": "^0.5.0",
+    "@dnd-kit/dom": "^0.5.0",
+    "@dnd-kit/helpers": "^0.5.0",
+    "@dnd-kit/react": "^0.5.0",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.49.0",
     "class-variance-authority": "^0.7.1",

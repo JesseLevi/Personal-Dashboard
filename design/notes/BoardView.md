@@ -1,0 +1,65 @@
+# BoardView
+
+- **Code:** `components/organisms/BoardView.tsx`
+- **Node IDs (canonical in `figma-map.json`: `3680:1442`):**
+  - `3680:1442` "Te doen/Desktop/Filled" — fetched first tool-call, per ticket
+  - `3680:1435` "Te doen/Mobile/Filled"
+  - `3878:10175` "Te doen/Desktop/EmptyState"
+  - Drag Dev Mode annotations (REST API, not in the MCP payload — same gap `docs/guides/ui-components.md` documents): `I3881:13782;…;3624:4421` "Dragging with mouse", `I3881:13252;…` "When moving 40% opacity", `I3882:14853;…` "When close to new place in column show placeholder. Jira/Trello also have this effect", `I3882:14505;…` "On mobile when holding for 2s activate drag-handle". Frames `3881:13243`/`3882:14844`/`3882:14424`/`3882:14855` (DragHandle/DragNewPlace × Desktop/Mobile) all show the same construction: the normal board plus one absolutely-positioned `Card` at a second x/y — no separate handle layer, no placeholder layer drawn; both are behavioural, not geometric.
+
+Built #90. Not a new Figma leaf component — composes three already-built organisms/molecules exactly as the ticket's own tree states: `Carousel` (row) → `CardContainer` (column: icon/name/count/Plus/Pencil, `emptyState` from #87) → `Card` (per-item wrapper) → composer's `renderItem` (a `Card-content/*` molecule). This file owns only the drag mechanics and the generic column/item plumbing; **no Te-Doen or Recipe field lives here** (no `priority`, no `due_at`, no `imageUrl` parsed anywhere in this component) — those stay in each caller's own `renderItem`.
+
+## dnd-kit generation: `@dnd-kit/react` + `@dnd-kit/helpers` (the ticket's preferred pick, not the classic fallback)
+
+Installed via `pnpm add @dnd-kit/react @dnd-kit/helpers` (+ `@dnd-kit/dom` and `@dnd-kit/abstract` as direct dependencies — both are already transitive deps of the two above, but this file imports named exports from them directly — `PointerSensor`/`PointerActivationConstraints` and `CollisionPriority` respectively — so pnpm's strict `node_modules` requires them declared, not just hoisted). All four resolved at `0.5.0` against this repo's pinned `react@^19.1.0`/`react-dom@^19.1.0` with **zero peer-dependency conflicts** (`@dnd-kit/react`'s own `peerDependencies` already state `"react": "^18.0.0 || ^19.0.0"`) — the ticket's flagged fallback risk (pre-1.0 packages not installing cleanly against pinned React 19) did not materialize, so no fallback to `@dnd-kit/core`+`@dnd-kit/sortable` was needed. Confirmed pre-0.5.0 is genuinely pre-1.0 (the ticket's own caveat, repeated here rather than silently dropped).
+
+API confirmed against Context7 (`/clauderic/dnd-kit`) docs before writing any drag code, then cross-checked against the installed package's own `.d.ts` files (both agreed):
+- `useSortable({id, index, group, type: "item", accept: "item"})` per card — `group` is the column id, giving multi-column sorting natively (the ticket's own reason for preferring this generation).
+- `useDroppable({id, accept: "item", collisionPriority: CollisionPriority.Low})` per column body — makes an emptying/empty column a valid drop target on its own, not just via its cards' own `useSortable`; `CollisionPriority.Low` is dnd-kit's own documented guidance for this exact shape (item collisions should win over the column's own).
+- `DragDropProvider` + `@dnd-kit/helpers`'s `move()` on `onDragOver` for live optimistic reordering (the visual "insert placeholder" effect the Jira/Trello annotation asks for — this is dnd-kit's own default `OptimisticSortingPlugin` behaviour, not custom-built), `isSortable(source)` + `source.group`/`source.index` on `onDragEnd` to build the `onMove` payload, a `snapshot` ref to revert on `event.canceled` (Escape).
+- Keyboard: dnd-kit's `KeyboardSensor` is in the **default** sensor set — no explicit `sensors` array was needed for keyboard drag to work at all. Only `PointerSensor` is explicitly reconfigured (see long-press below); `KeyboardSensor` is left completely untouched, per the ticket's own instruction to stay on dnd-kit's default keyboard support rather than inventing bindings.
+- `ref` is the *only* thing `useSortable`/`useDroppable` need on the element in this generation — no `attributes`/`listeners` spread (that's the legacy `@dnd-kit/core`+`@dnd-kit/sortable` shape); role/tabindex/aria-* are applied automatically by dnd-kit's own Accessibility plugin.
+
+## No drag handle — verified against the annotations, not assumed
+
+Figma draws no handle layer in any of the four drag frames; the "Dragging with mouse" annotation sits on the `Card` instance itself. `SortableCard`'s `ref` is therefore on the same element `Card` wraps — the whole card is the activator, matching the ticket's explicit "don't invent a handle icon."
+
+## Mobile long-press (2s) — implemented, verification gap flagged
+
+The annotation is explicit: "On mobile when holding for 2s activate drag-handle." Modelled as a `PointerActivationConstraints.Delay({value: 2000, tolerance: 5})` applied to `PointerSensor`, but **only when `window.matchMedia("(pointer: coarse)").matches`** — desktop mice keep the library's own default (small-distance) activation, matching "direct slepen met de muis, geen apart handvat" in the same annotation set. `(pointer: coarse)` is a genuine exception to this codebase's usual "`md:`-only, never JS breakpoint detection" rule (`design/notes/SidePanel.md`): that rule is about *visual shape*, which has a CSS answer; this is about *input mechanism* (touch vs. mouse), which has no CSS/Tailwind equivalent and can only be read in JS, so it isn't the same category of shortcut that rule was written to forbid.
+
+**Gap, flagged not silently claimed:** verified by reading dnd-kit's own `PointerActivationConstraints`/`PointerSensor.configure` API (Context7 + the installed `.d.ts`), not by exercising an actual 2-second touch-emulated hold in Playwright — the ticket's own acceptance criteria only require mouse + keyboard drag verified in a real browser, and that is what was actually run (see below). A future ticket that touches mobile board fidelity should add a `page.touchscreen`-driven Playwright check for this specific constraint.
+
+## `onMove` — reporting only, confirmed by testing that nothing else writes state
+
+`BoardView` keeps a local `itemsByColumn` (`Record<columnId, TItem[]>`) purely so `@dnd-kit/helpers`'s `move()` can give live drag-over feedback — this is **not** persistence, it is re-derived from the `columns` prop on every prop change (except mid-drag, so a prop update can't yank a card from under the pointer) and thrown away on unmount. `onDragEnd` calls `onMove({itemId, toColumnId, toIndex})` once per real (non-canceled) drop and does nothing else — no fetch, no Supabase, no mutation of the `columns` prop itself. The `Default` story's own `onMove` handler is the one place that turns this into a visible change, exactly the way a real page's server-backed handler would, and that mechanism was what got exercised end-to-end in the browser checks below.
+
+## Column widths — re-measured for this ticket, `Carousel.tsx` changed
+
+Ticket-stated numbers (320 desktop / 296 mobile / 312×160 empty) reconfirmed directly against the three fetched nodes:
+- `3680:1442` (desktop filled): every `Card-container` instance (`layout.dimensions.width`) = **320**.
+- `3680:1435` (mobile filled): three of four columns = **296**; the fourth ("Afgerond") measures 320 — a Figma authoring anomaly, not a fourth intentional width (see `design/notes/Carousel.md` for the full note; not corrected here).
+- `3878:10175` (desktop empty): `layout_b7437a7a` = **312×160** on every `Card-container` instance.
+
+320/296/312 are three different numbers for what is visually "the same column," none of them `Carousel.tsx`'s existing 280px (`w-70`, sourced from the *Recipe* screens' own instance override, #24). `Carousel.tsx` gained a `columnWidthClassName` prop (default `"w-70"`, so Recipe's own call sites are unchanged) — `BoardView` passes `"w-74 md:w-80"` (296px mobile-first → 320px at `md:`, Tailwind v4's `w-<n> = n × 0.25rem` dynamic form this codebase already uses for `w-70`). The 312px empty-state width is **not** separately modelled: `CardContainer.md`'s own #87 note already flagged 312 vs. 296/320 as a real discrepancy "for a future ticket that wires the empty state into Carousel" — this is that ticket, and the empty-state `Card-container` still renders inside the same `columnWidthClassName`-controlled wrapper as a filled one (no separate width for the empty case), so the gap stays open rather than being silently resolved one way or the other.
+
+## Scroll affordance — still open, not decided here
+
+`design/notes/Carousel.md`'s open question (no arrows/dots/scrollbar/fade in the fetched node, despite the user's claim that the design accounts for it) was re-checked against all three of this ticket's own nodes and found the same: nothing. Per the ticket's explicit instruction this is **not resolved here** — `Carousel.tsx`'s existing `overflow-x-auto` stand-in is inherited unchanged.
+
+## Verification — mouse and keyboard, both in a real browser against `pnpm ladle`
+
+Playwright driven against a live `pnpm ladle` dev server (not `ladle:build`), `board-view--default` story:
+- **Mouse**: `page.mouse.move/down/move×N/up` (not `locator.dragTo()` — that emits native HTML5 drag events, which dnd-kit's `PointerSensor` does not listen for; confirmed by first trying `dragTo()` and observing the drag silently "dropped onto itself" with no reorder). A slow multi-step pointer path from one card to a card in a different column moved it across columns at the exact drop index, updating both columns' counts and the visible order.
+- **Keyboard**: focus a card (click, or real `Tab` order), `Space` to pick up (dnd-kit announces "Picked up draggable item …"), `ArrowRight`/`ArrowDown` to move — live cross-column preview confirmed via the accessibility-tree snapshot between keydowns — `Space` again to commit. Verified both a same-column reorder and a cross-column move this way.
+- **Empty column as a drop target**: dragging the sole card out of a column empties it (its `CardContainer` swaps to `emptyState`) and dropping onto the now-empty "Afgerond" column's add button area places the card there — this only worked after moving the droppable ref off a `display:contents` wrapper (see below); confirmed broken, then confirmed fixed, in the same browser session.
+
+## Bug caught by testing, not just typechecking: `display:contents` droppable has no hit-box
+
+First implementation wrapped each column's card list / empty-state button in `<div ref={dropRef} className="contents">` to keep `useDroppable`'s ref off `CardContainer`'s own layout (`display: contents` removes the wrapper from layout entirely, which was the point — CardContainer's own `flex`/`gap-2`/`items-center` classes would then apply directly to what look like its immediate children). This type-checked and rendered pixel-identically, but **dragging into an empty column silently failed** (drop landed back on the source) — a `display:contents` element has no box for `getBoundingClientRect`-based collision detection to hit-test against. Fixed by giving the droppable ref a real box instead: the non-empty wrapper now carries its own `flex flex-col gap-2` (the `gap-2` that used to come for free from `CardContainer`'s own flex container now has to be re-declared one level down, since that container now has only one child — this wrapper — instead of N cards), and the empty-state wrapper carries `flex w-full flex-1 items-center justify-center` (deliberately larger than the visible button's own footprint, so the *whole* near-empty column body is a drop target, not just the button — matches the ticket's own Jira/Trello callout without changing what's visually drawn). Re-verified both branches end-to-end after the fix (see above).
+
+## Not built here
+
+- Persistence of any move (separate ticket, per the issue text).
+- The Status field in the detail panel the ticket says accompanies drag & drop (separate ticket).
+- A drop-animation/placeholder skin beyond dnd-kit's own defaults — the "insert placeholder" effect the Jira/Trello annotation describes is dnd-kit's built-in optimistic-reorder behaviour (cards physically move as you drag over them), not a separate highlighted-slot graphic; Figma draws no such graphic either.
