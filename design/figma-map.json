@@ -24,6 +24,7 @@
   "organisms": {
     "Card-container": { "path": "components/organisms/CardContainer.tsx", "nodeId": "3650:1297" },
     "Carousel": { "path": "components/organisms/Carousel.tsx", "nodeId": "3670:1976" },
-    "Sidebar": { "path": "components/organisms/Sidebar.tsx", "nodeId": "3674:5664" }
+    "Sidebar": { "path": "components/organisms/Sidebar.tsx", "nodeId": "3674:5664" },
+    "PageHeader": { "path": "components/organisms/PageHeader.tsx", "nodeId": "3878:7959" }
   }
 }

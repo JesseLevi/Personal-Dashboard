@@ -3,6 +3,9 @@
     "title": "Personal Dashboard",
     "loggedInAs": "Ingelogd als {email}"
   },
+  "nav": {
+    "recipes": "Recepten"
+  },
   "auth": {
     "title": "Inloggen",
     "emailLabel": "E-mailadres",
@@ -50,6 +53,16 @@
         "shopping": "Winkelmand",
         "clothes": "Kleren",
         "assistant": "Assistent"
+      }
+    },
+    "pageHeader": {
+      "todo": {
+        "boardSwitcherLabel": "Bord wisselen",
+        "favoriteLabel": "Bord favoriet maken",
+        "sortLabel": "Sorteer"
+      },
+      "recipes": {
+        "addCategoryLabel": "Categorie"
       }
     }
   }

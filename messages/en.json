@@ -3,6 +3,9 @@
     "title": "Personal Dashboard",
     "loggedInAs": "Logged in as {email}"
   },
+  "nav": {
+    "recipes": "Recipes"
+  },
   "auth": {
     "title": "Sign in",
     "emailLabel": "Email address",
@@ -50,6 +53,16 @@
         "shopping": "Shopping basket",
         "clothes": "Clothes",
         "assistant": "Assistant"
+      }
+    },
+    "pageHeader": {
+      "todo": {
+        "boardSwitcherLabel": "Switch board",
+        "favoriteLabel": "Mark board as favorite",
+        "sortLabel": "Sort"
+      },
+      "recipes": {
+        "addCategoryLabel": "Category"
       }
     }
   }
