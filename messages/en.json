@@ -30,6 +30,11 @@
       "not-found": "This item no longer exists or isn't yours.",
       "column-mismatch": "This column doesn't belong to this board.",
       "generic": "Something went wrong. Please try again."
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "urgent": "Urgent"
     }
   },
   "components": {
@@ -68,7 +73,9 @@
       "todo": {
         "boardSwitcherLabel": "Switch board",
         "favoriteLabel": "Mark board as favorite",
-        "sortLabel": "Sort"
+        "sortLabel": "Sort",
+        "emptyBoardTitle": "No board",
+        "emptyBoardBody": "There is no board to show yet."
       },
       "recipes": {
         "addCategoryLabel": "Category"

@@ -34,3 +34,17 @@ export const ManyLabels = () => (
     </CardContentTicket>
   </div>
 );
+
+// The real /te-doen composition (#93, see design/notes/TeDoenBoard.md):
+// priority, size, due date — the last a static stand-in here for
+// `useFormatter().dateTime(...)`, which TeDoenBoard.tsx computes at
+// runtime from the active locale (verified separately, not in this story).
+export const WithDueDate = () => (
+  <div className="w-80">
+    <CardContentTicket title="Offertes opvragen voor het reinigen van de dakgoot">
+      <Tag variant="low">Laag</Tag>
+      <Tag variant="neutral">S</Tag>
+      <Tag variant="neutral">01-04-2026</Tag>
+    </CardContentTicket>
+  </div>
+);

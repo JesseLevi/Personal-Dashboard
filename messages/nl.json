@@ -30,6 +30,11 @@
       "not-found": "Dit onderdeel bestaat niet (meer) of is niet van jou.",
       "column-mismatch": "Deze kolom hoort niet bij dit bord.",
       "generic": "Er ging iets mis. Probeer het opnieuw."
+    },
+    "priority": {
+      "low": "Laag",
+      "medium": "Gemiddeld",
+      "urgent": "Urgent"
     }
   },
   "components": {
@@ -68,7 +73,9 @@
       "todo": {
         "boardSwitcherLabel": "Bord wisselen",
         "favoriteLabel": "Bord favoriet maken",
-        "sortLabel": "Sorteer"
+        "sortLabel": "Sorteer",
+        "emptyBoardTitle": "Geen bord",
+        "emptyBoardBody": "Er is nog geen bord om te tonen."
       },
       "recipes": {
         "addCategoryLabel": "Categorie"

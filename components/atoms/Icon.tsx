@@ -115,6 +115,15 @@ const ICONS: Record<IconName, ComponentType<LucideProps>> = {
   StarPlus: StarPlus,
 };
 
+const ICON_NAMES = new Set<string>(Object.keys(ICONS));
+
+/** Runtime guard for a DB-sourced icon string (e.g. `board_columns.icon`,
+ * free-text at the schema layer per lib/boards/schemas.ts) before it's
+ * passed to `Icon`. */
+export function isIconName(name: string): name is IconName {
+  return ICON_NAMES.has(name);
+}
+
 export interface IconProps {
   /** Corrected Figma icon name (see `IconName`), not the lucide name. */
   name: IconName;
