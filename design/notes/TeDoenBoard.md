@@ -91,8 +91,18 @@ columns created later through UI not yet built.
 
 - Board switcher, favourite toggle, sort (#95) — `PageHeader`'s slots stay
   the same inert buttons the #88 stub already had.
-- `onMove`/`onAddItem`/`onEditColumn` are all left unset on `BoardView` —
-  drag persistence is #96, column add/edit affordances have no
-  create/rename UI yet either. The empty-column "Voeg item toe" button
-  still renders (via `CardContainer`'s `emptyState`, `BoardView`'s own
-  plumbing) but is inert until `onAddItem` is wired.
+- `onMove`/`onEditColumn` are still left unset on `BoardView` — drag
+  persistence is #96, column rename has no UI yet either.
+
+## TICKET #94 — `onAddItem`/`onItemClick` wired, card-detail panel added
+
+`onAddItem` and `onItemClick` are now real: both open the same
+`CardDetailPanel` (`app/(app)/te-doen/CardDetailPanel.tsx`), owned by a
+single `{open, target}` state here. This file is also the only one that
+imports `./actions` ("use server") and calls `useRouter()` — both are
+passed into `CardDetailPanel` as props (`onCreateCard`/`onUpdateCard`/
+`onMoveCard`/`onDeleteCard`/`onMutated`), which stays framework-decoupled on
+purpose. `PRIORITIES`/`isPriority` moved out to `lib/boards/enums.ts`
+(shared with `CardDetailPanel.tsx`) instead of staying a local copy here.
+Full panel wiring, field mapping, and every flagged deviation:
+`design/notes/CardDetailPanel.md`.

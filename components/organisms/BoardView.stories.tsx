@@ -61,39 +61,54 @@ const initialTicketColumns: BoardColumn<TicketItem>[] = [
 // Drag between/within columns — verified with mouse and keyboard against a
 // real `pnpm ladle` render (see design/notes/BoardView.md). `onMove` only
 // logs here: this component persists nothing, a later ticket writes it.
+// `onItemClick` (#94) increments a visible counter + last-clicked title, the
+// harness this ticket's own click-vs-drag Playwright check drives — a real
+// drag must NOT also bump it, a plain click must.
 export const Default = () => {
   const [columns, setColumns] = useState(initialTicketColumns);
+  const [clickLog, setClickLog] = useState<{ count: number; lastTitle: string | null }>({
+    count: 0,
+    lastTitle: null,
+  });
   return (
-    <BoardView
-      columns={columns}
-      addLabel={addLabel}
-      editLabel={editLabel}
-      emptyLabel={emptyLabel}
-      renderItem={(item: TicketItem) => (
-        <CardContentTicket title={item.title}>
-          <Tag variant={item.tag.variant}>{item.tag.label}</Tag>
-        </CardContentTicket>
-      )}
-      onMove={({ itemId, toColumnId, toIndex }) => {
-        setColumns((current) => {
-          const from = current.find((c) => c.items.some((i) => i.id === itemId));
-          const item = from?.items.find((i) => i.id === itemId);
-          if (!from || !item) return current;
-          return current.map((column) => {
-            if (column.id === from.id && column.id === toColumnId) return column;
-            if (column.id === from.id) {
-              return { ...column, items: column.items.filter((i) => i.id !== itemId) };
-            }
-            if (column.id === toColumnId) {
-              const items = column.items.slice();
-              items.splice(toIndex, 0, item);
-              return { ...column, items };
-            }
-            return column;
+    <div>
+      <p data-testid="click-log" className="p-2 text-sm">
+        clicks: {clickLog.count} / last: {clickLog.lastTitle ?? "none"}
+      </p>
+      <BoardView
+        columns={columns}
+        addLabel={addLabel}
+        editLabel={editLabel}
+        emptyLabel={emptyLabel}
+        renderItem={(item: TicketItem) => (
+          <CardContentTicket title={item.title}>
+            <Tag variant={item.tag.variant}>{item.tag.label}</Tag>
+          </CardContentTicket>
+        )}
+        onItemClick={(item) =>
+          setClickLog((current) => ({ count: current.count + 1, lastTitle: item.title }))
+        }
+        onMove={({ itemId, toColumnId, toIndex }) => {
+          setColumns((current) => {
+            const from = current.find((c) => c.items.some((i) => i.id === itemId));
+            const item = from?.items.find((i) => i.id === itemId);
+            if (!from || !item) return current;
+            return current.map((column) => {
+              if (column.id === from.id && column.id === toColumnId) return column;
+              if (column.id === from.id) {
+                return { ...column, items: column.items.filter((i) => i.id !== itemId) };
+              }
+              if (column.id === toColumnId) {
+                const items = column.items.slice();
+                items.splice(toIndex, 0, item);
+                return { ...column, items };
+              }
+              return column;
+            });
           });
-        });
-      }}
-    />
+        }}
+      />
+    </div>
   );
 };
 

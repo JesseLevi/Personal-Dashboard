@@ -41,6 +41,8 @@ export interface BoardViewProps<TItem extends { id: string }> {
   renderItem: (item: TItem) => ReactNode;
   /** Fired once a drag completes with a real change. Reporting only — this component writes nothing back itself (a separate ticket persists the move). */
   onMove?: (move: { itemId: string; toColumnId: string; toIndex: number }) => void;
+  /** Fired on a genuine click (no drag) on an item's card — see the sensor tuning below for how the two are told apart. */
+  onItemClick?: (item: TItem) => void;
   /** Forwarded to every column's `CardContainer.addLabel`. */
   addLabel: string;
   /** Forwarded to every column's `CardContainer.editLabel`. */
@@ -66,16 +68,22 @@ function toItemsByColumn<TItem>(
 
 // Whole card is the drag surface — Figma draws no separate handle
 // (Dev Mode annotation: "Dragging with mouse" on the card itself, not a
-// child). 40% opacity while dragging is the same annotation's spec.
+// child). 40% opacity while dragging is the same annotation's spec. The same
+// element also carries `onClick`: dnd-kit's PointerSensor already suppresses
+// the trailing `click` once a drag activates, so no manual isDragging/onClick
+// coordination is needed — see design/notes/BoardView.md for how that was
+// verified and why the sensor tuning below is what actually matters here.
 function SortableCard({
   id,
   index,
   columnId,
+  onClick,
   children,
 }: {
   id: string;
   index: number;
   columnId: string;
+  onClick?: () => void;
   children: ReactNode;
 }) {
   const { ref, isDragging } = useSortable({
@@ -89,6 +97,7 @@ function SortableCard({
   return (
     <div
       ref={ref}
+      onClick={onClick}
       className={clsx(
         "cursor-grab transition-opacity duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
         isDragging && "opacity-40",
@@ -112,6 +121,7 @@ function BoardColumnView<TItem extends { id: string }>({
   emptyLabel,
   onAddItem,
   onEditColumn,
+  onItemClick,
 }: {
   column: BoardColumn<TItem>;
   items: TItem[];
@@ -121,6 +131,7 @@ function BoardColumnView<TItem extends { id: string }>({
   emptyLabel: string;
   onAddItem?: (columnId: string) => void;
   onEditColumn?: (columnId: string) => void;
+  onItemClick?: (item: TItem) => void;
 }) {
   const { ref: dropRef } = useDroppable({
     id: column.id,
@@ -166,6 +177,7 @@ function BoardColumnView<TItem extends { id: string }>({
               id={item.id}
               index={index}
               columnId={column.id}
+              onClick={onItemClick ? () => onItemClick(item) : undefined}
             >
               {renderItem(item)}
             </SortableCard>
@@ -185,6 +197,7 @@ export function BoardView<TItem extends { id: string }>({
   emptyLabel,
   onAddItem,
   onEditColumn,
+  onItemClick,
   className,
 }: BoardViewProps<TItem>) {
   const [itemsByColumn, setItemsByColumn] = useState(() =>
@@ -203,28 +216,37 @@ export function BoardView<TItem extends { id: string }>({
   return (
     <DragDropProvider
       // Mobile long-press (2s, coarse pointers only — Dev Mode annotation
-      // "On mobile when holding for 2s activate drag-handle"): a real
-      // drag-handle child isn't what the annotation shows, a hold-to-start
-      // constraint on the same PointerSensor is. Desktop mice are left on
-      // the library default (instant/small-distance) — "direct slepen met
-      // de muis" per the same annotation set. Keyboard uses dnd-kit's own
-      // default KeyboardSensor untouched.
+      // "On mobile when holding for 2s activate drag-handle"): a hold-to-start
+      // constraint on PointerSensor, no separate drag-handle child.
+      // Fine pointers (mouse) also get an explicit small delay+distance
+      // constraint: the library's own default for a mouse pointer targeting
+      // the drag source itself (always true here) is genuinely unconstrained
+      // — any movement activates instantly — which would swallow plain
+      // clicks. See design/notes/BoardView.md for the verification this
+      // replaced an incorrect assumption in a prior version of this comment.
       sensors={(defaults) =>
-        typeof window !== "undefined" &&
-        window.matchMedia("(pointer: coarse)").matches
-          ? defaults.map((sensor) =>
-              sensor === PointerSensor
-                ? PointerSensor.configure({
-                    activationConstraints: [
-                      new PointerActivationConstraints.Delay({
-                        value: 2000,
-                        tolerance: 5,
-                      }),
-                    ],
-                  })
-                : sensor,
-            )
-          : defaults
+        defaults.map((sensor) =>
+          sensor === PointerSensor
+            ? PointerSensor.configure({
+                activationConstraints:
+                  typeof window !== "undefined" &&
+                  window.matchMedia("(pointer: coarse)").matches
+                    ? [
+                        new PointerActivationConstraints.Delay({
+                          value: 2000,
+                          tolerance: 5,
+                        }),
+                      ]
+                    : [
+                        new PointerActivationConstraints.Delay({
+                          value: 200,
+                          tolerance: 10,
+                        }),
+                        new PointerActivationConstraints.Distance({ value: 5 }),
+                      ],
+              })
+            : sensor,
+        )
       }
       onDragStart={() => {
         dragging.current = true;
@@ -261,6 +283,7 @@ export function BoardView<TItem extends { id: string }>({
             emptyLabel={emptyLabel}
             onAddItem={onAddItem}
             onEditColumn={onEditColumn}
+            onItemClick={onItemClick}
           />
         ))}
       </Carousel>

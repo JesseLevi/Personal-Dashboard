@@ -32,6 +32,7 @@ import {
   Astroid,
   CircleCheck,
   StarPlus,
+  Save,
   type LucideProps,
 } from "lucide-react";
 
@@ -78,7 +79,8 @@ export type IconName =
   | "Timer"
   | "Astroid"
   | "CircleCheck"
-  | "StarPlus";
+  | "StarPlus"
+  | "Save";
 
 // Figma name -> lucide-react component.
 const ICONS: Record<IconName, ComponentType<LucideProps>> = {
@@ -113,6 +115,7 @@ const ICONS: Record<IconName, ComponentType<LucideProps>> = {
   Astroid: Astroid,
   CircleCheck: CircleCheck,
   StarPlus: StarPlus,
+  Save: Save,
 };
 
 const ICON_NAMES = new Set<string>(Object.keys(ICONS));

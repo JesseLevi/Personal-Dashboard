@@ -83,6 +83,27 @@
     },
     "sidePanel": {
       "closeLabel": "Close panel"
+    },
+    "cardDetailPanel": {
+      "addTitle": "Add item",
+      "editTitle": "Edit item",
+      "fields": {
+        "nameLabel": "Name",
+        "descriptionLabel": "Description",
+        "statusLabel": "Status",
+        "priorityLabel": "Priority",
+        "sizeLabel": "Size",
+        "sizePlaceholder": "No size",
+        "dateLabel": "Date",
+        "datePlaceholder": "Add date"
+      },
+      "saveLabel": "Save",
+      "savingLabel": "Saving...",
+      "deleteLabel": "Delete",
+      "deleteConfirmLabel": "Are you sure?",
+      "deleteConfirmButtonLabel": "Yes, delete",
+      "deletingLabel": "Deleting...",
+      "cancelLabel": "Cancel"
     }
   }
 }

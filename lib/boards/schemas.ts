@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseDueAtText } from "@/lib/boards/dates";
 
 // Validates every server-action input in this module (#92), same pattern as
 // lib/auth/schemas.ts. Zod is the shape/format gate; ownership (does this
@@ -10,7 +11,27 @@ const name = z.string().trim().min(1).max(200);
 const description = z.string().trim().max(5000).nullable();
 const priority = z.enum(["low", "medium", "urgent"]);
 const size = z.enum(["s", "m", "l", "xl"]).nullable();
-const dueAt = z.iso.datetime({ offset: true }).nullable();
+// #94's Datum field is plain text (no datepicker, see lib/boards/dates.ts),
+// so a non-null value now arrives as either an already-ISO datetime (kept
+// for backward compatibility — nothing else in this codebase constructs one)
+// or dd-mm-yyyy/dd/mm/yyyy text, parsed into ISO here so it's still the
+// server, not the client, doing the parse. An explicit `null` (clearing the
+// date) bypasses this transform entirely via the outer `.nullable()`; the
+// empty string is not a valid input on either branch — the panel sends
+// `null` to clear, never `""`.
+const isoDateTime = z.iso.datetime({ offset: true });
+const dueAt = z
+  .string()
+  .transform((value, ctx) => {
+    if (isoDateTime.safeParse(value).success) return value;
+    const parsed = parseDueAtText(value);
+    if (parsed === null) {
+      ctx.addIssue({ code: "custom", message: "Invalid due date" });
+      return z.NEVER;
+    }
+    return parsed;
+  })
+  .nullable();
 // board_columns.icon: free-text column, validated against the IconName union
 // at render time (components/atoms/Icon.tsx) — the data layer only rejects
 // empty input, matching the CLAUDE.md line for this column.

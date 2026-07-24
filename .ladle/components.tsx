@@ -1,5 +1,7 @@
 import "../app/globals.css";
 import type { GlobalProvider } from "@ladle/react";
+import { NextIntlClientProvider } from "next-intl";
+import nl from "../messages/nl.json";
 
 /**
  * Ladle's per-story wrapper hook (`@ladle/react`'s `Provider` named export,
@@ -28,7 +30,18 @@ import type { GlobalProvider } from "@ladle/react";
  * see #49), this is a real module import that Vite bundles and fingerprints
  * as part of the ordinary story module graph, so it survives `pnpm
  * ladle:build` the same way any other CSS import in this repo does.
+ *
+ * `NextIntlClientProvider` was added for #94 (the first story-able component
+ * to call `useTranslations`/`useFormatter` directly rather than receiving
+ * already-translated strings as props, per design/notes/CardDetailPanel.md)
+ * — `app/layout.tsx`'s own provider relies on `getLocale()`/request-scoped
+ * message resolution, neither of which exists outside a real Next.js
+ * request, so `locale`/`messages` are supplied explicitly here from the same
+ * `nl` catalog `i18n/request.ts` hardcodes today. Every pre-existing story
+ * that never calls a next-intl hook is unaffected by this addition.
  */
 export const Provider: GlobalProvider = ({ children }) => (
-  <div className="min-h-screen bg-surface p-8">{children}</div>
+  <NextIntlClientProvider locale="nl" messages={nl}>
+    <div className="min-h-screen bg-surface p-8">{children}</div>
+  </NextIntlClientProvider>
 );

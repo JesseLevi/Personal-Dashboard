@@ -5,6 +5,12 @@
 
 Figma 'Trekking-icon' is a misnomer for the TRAILING icon → code prop `trailingIcon`. 'Field'+'Title' → `label` (requires `id`, type-enforced, since an RSC cannot useId); 'Content' → native placeholder/value; 'Button' SLOT → `button` named slot (not a hardcoded Button instance, per CLAUDE.md). NOT MODELLED: Figma's 'Text' bool can hide the whole input row, leaving only the button slot — meaningless for an input atom, flagged for triage.
 
+## TICKET #94 (2026-07-24) — `multiline`
+
+The card-detail panel's Omschrijving field (`3779:4852`/`3779:4943`, 144px-tall Input-field instance) needs real multi-line editing, which a native `<input>` can't do. Added `multiline?: boolean` (discriminated union: `true` swaps in `Omit<TextareaHTMLAttributes<...>>` prop typing and renders `<textarea>`; default/`false` is the unchanged `<input>` branch) rather than growing the atom into a third element type — every existing caller is unaffected. The bordered container gets a fixed `h-36` (144px) only in multiline mode, matching Figma's own fixed-height sizing on that one sampled instance (not a token gap — 144px lands exactly on Tailwind's `h-36`).
+
+Left out of scope, still open: the 'Text' bool gap noted above (hiding the input row entirely, showing only `button`) — #94's Status/Prioriteit/Grootte fields turned out not to need it. Those three are Figma `Input-field` instances with `Text:false`, but rather than teaching this atom a second hidden-input mode (which would also have to suppress this atom's own bordered box, since Figma shows one box per field and nesting a second bordered atom — `Dropdown` — inside `button` would double it), they're built directly on the `Dropdown` atom instead, which already renders the identical field-title + bordered-box shape via its own `label` trigger. Full reasoning: `design/notes/CardDetailPanel.md`. The `Text:false` gap itself is unchanged/still real for any future field that genuinely needs "InputField's box, no native input, no Dropdown disclosure."
+
 ## FIXED 2026-07-20 (#44)
 
 every padding/gap was already numerically correct against the dev-ready node; the reported 'wrong spacing' was the container's `items-center`, which centers the shorter 32px leading+text column inside the row's real 40px height (set by the trailing icon), adding a phantom ~4px offset absent from Figma's implicit top alignment - corrected to `items-start`.

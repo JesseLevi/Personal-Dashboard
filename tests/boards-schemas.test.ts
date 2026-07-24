@@ -137,12 +137,57 @@ describe("createCardSchema", () => {
     ).toBe(false);
   });
 
-  it("rejects a non-ISO dueAt", () => {
+  it("rejects a non-ISO, non-date-text dueAt", () => {
     expect(
       createCardSchema.safeParse({
         columnId: uuid,
         title: "X",
         dueAt: "tomorrow",
+      }).success,
+    ).toBe(false);
+  });
+
+  // #94: the Datum field is plain text, dd-mm-yyyy/dd/mm/yyyy — parsed into
+  // ISO server-side (lib/boards/dates.ts) rather than requiring the client
+  // to already send ISO.
+  it("accepts a dd-mm-yyyy dueAt and parses it to ISO", () => {
+    const result = createCardSchema.safeParse({
+      columnId: uuid,
+      title: "X",
+      dueAt: "23-07-2026",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.dueAt).toBe("2026-07-23T00:00:00.000Z");
+    }
+  });
+
+  it("accepts a dd/mm/yyyy dueAt", () => {
+    expect(
+      createCardSchema.safeParse({
+        columnId: uuid,
+        title: "X",
+        dueAt: "1/4/2026",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects a calendar-invalid dd-mm-yyyy dueAt (31 February)", () => {
+    expect(
+      createCardSchema.safeParse({
+        columnId: uuid,
+        title: "X",
+        dueAt: "31-02-2026",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects an empty-string dueAt (clearing is an explicit null, not '')", () => {
+    expect(
+      createCardSchema.safeParse({
+        columnId: uuid,
+        title: "X",
+        dueAt: "",
       }).success,
     ).toBe(false);
   });

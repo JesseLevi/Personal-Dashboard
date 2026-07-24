@@ -83,6 +83,27 @@
     },
     "sidePanel": {
       "closeLabel": "Paneel sluiten"
+    },
+    "cardDetailPanel": {
+      "addTitle": "Item toevoegen",
+      "editTitle": "Item bewerken",
+      "fields": {
+        "nameLabel": "Naam",
+        "descriptionLabel": "Omschrijving",
+        "statusLabel": "Status",
+        "priorityLabel": "Prioriteit",
+        "sizeLabel": "Grootte",
+        "sizePlaceholder": "Geen grootte",
+        "dateLabel": "Datum",
+        "datePlaceholder": "Voeg datum toe"
+      },
+      "saveLabel": "Opslaan",
+      "savingLabel": "Opslaan...",
+      "deleteLabel": "Verwijderen",
+      "deleteConfirmLabel": "Weet je het zeker?",
+      "deleteConfirmButtonLabel": "Ja, verwijderen",
+      "deletingLabel": "Verwijderen...",
+      "cancelLabel": "Annuleren"
     }
   }
 }
