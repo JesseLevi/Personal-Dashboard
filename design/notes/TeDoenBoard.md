@@ -241,3 +241,132 @@ purpose. `PRIORITIES`/`isPriority` moved out to `lib/boards/enums.ts`
 (shared with `CardDetailPanel.tsx`) instead of staying a local copy here.
 Full panel wiring, field mapping, and every flagged deviation:
 `design/notes/CardDetailPanel.md`.
+
+## TICKET #96 — drag persistence: `onMove` wired to `moveCard`, optimistic update + rollback
+
+`BoardView`'s `onMove` is now real (`TeDoenBoard.tsx`'s `handleMove`), wired
+to the existing `moveCard` action (`actions.ts`, unchanged — built pre-#95).
+Inherits #95's `dragDisabled={sort !== null}` unchanged (see that section
+above); when a sort is active `BoardView` never calls `onMove` at all
+(`useSortable`/`useDroppable`'s own `disabled`), so there's nothing for this
+ticket to gate a second time.
+
+### Two layers of optimistic state, not one
+
+`BoardView` already keeps its own internal `itemsByColumn`, live-updated via
+`@dnd-kit/helpers`'s `move()` on every `onDragOver` and reverted to a
+`structuredClone`-style snapshot on `event.canceled` — that's the *visual*
+optimism during the gesture itself (`design/notes/BoardView.md`, unchanged
+by this ticket). What was missing is a second layer *above* it: `TeDoenBoard`
+used to render `columns` straight from the server `board` prop, so once
+`onDragEnd` fired (drag no longer "in progress"), any unrelated re-render
+would make `BoardView`'s own `useEffect([columns])` re-sync from that
+unchanged prop and silently cancel the just-dropped move before the
+`moveCard()` request had even returned.
+
+Fix: `TeDoenBoard` now holds `localBoard` (`useState(board)`), the same
+"render from local state, re-sync from fetched data only when nothing is
+pending" pattern Context7's `/clauderic/dnd-kit`
+`sortable-state-management.mdx` documents for exactly this shape (verified
+against current docs before writing, per the ticket's own instruction, not
+from memory) — `BoardView.tsx` already uses the one-column-of-state version
+of this same pattern internally. `columns` (the prop handed to `BoardView`)
+is derived from `localBoard`, not `board`, from here on.
+
+- **Apply:** `handleMove` calls the new pure `applyCardMove(board, move)`
+  (`lib/boards/optimistic.ts`, tests in `tests/boards-optimistic.test.ts`) —
+  removes the card from wherever it currently sits and re-inserts it into
+  the target column at the clamped index, the same "remove, then insert
+  among the remaining siblings" semantics `moveCard` itself uses server-side
+  (`actions.ts`'s `clampedIndex`/`siblings` logic), so the optimistic order
+  matches what the server will actually persist. Framework-free and unit
+  tested standalone, same shape as `lib/boards/positioning.ts`/`sort.ts`.
+- **Snapshot + revert:** `handleMove` captures `localBoard` *before* applying
+  the move as `preMoveSnapshot`, then calls `moveCard()`. On
+  `{success:false}` (any `BoardsErrorCode`) or a thrown/rejected call,
+  `localBoard` reverts to `preMoveSnapshot` and a translated message renders
+  (`boards.errors.*` — no new i18n keys: `moveCard`'s closed error-code union
+  was already fully covered in both catalogs, same keys `CardDetailPanel.tsx`
+  already reuses for the same errors). On success, `router.refresh()` — same
+  call every other mutation in this file already makes on success — pulls
+  real DB state back down through `board`, which the sync effect then adopts.
+- **No toast component exists in this design system yet** (checked before
+  building one — none of `components/`, no fetched Figma node for one
+  either), so the failure message reuses the exact inline convention
+  `CardDetailPanel.tsx`/`BoardPanel.tsx` already established:
+  `<p className="text-base font-semibold text-priority-urgent">`. A new toast
+  primitive is out of scope for a drag-persistence ticket; flagged here for
+  whoever eventually adds one.
+
+### Within-column reorder and cross-column move
+
+Both go through the same `handleMove`/`applyCardMove`/`moveCard` path — the
+ticket draws no functional line between them, and neither does `moveCard`
+(same `{cardId, columnId, targetIndex}` shape either way, `columnId` just
+happens to equal the card's current column for a reorder).
+
+### Edge cases
+
+- **Empty column as a drop target:** unaffected by this ticket —
+  `BoardView`'s own `useDroppable` on the empty-state wrapper (#90) already
+  makes it a valid target; `applyCardMove` handles inserting into a
+  previously-empty column's now-empty `cards` array the same as any other
+  (covered in `tests/boards-optimistic.test.ts`).
+- **Drop at the end of a column:** `toIndex` arrives as `source.index` from
+  dnd-kit already clamped to a real position by its own sortable manager;
+  `applyCardMove` additionally clamps defensively
+  (`Math.min(Math.max(toIndex, 0), cards.length)`), covered by a dedicated
+  test ("moves a card to the end... via a large index").
+- **Two quick successive drags:** the *visual* optimistic apply happens
+  synchronously for every drop (so the UI never feels laggy), but the actual
+  `moveCard()` network calls are serialized through a `moveQueue` ref
+  (`moveQueue.current = moveQueue.current.then(() => moveCard(...))...`) — a
+  second drop's request only fires once the first has fully settled, so it
+  always computes its sibling positions (`moveCard`'s own live DB query)
+  against state the first call already persisted, never stale. `pendingMoves`
+  is a *count*, not a boolean, specifically so the first move settling
+  doesn't flip "nothing pending" back on while a second is still queued
+  behind it (a boolean has a real, if narrow, race window here — caught while
+  writing this, not assumed away).
+  - **Known residual gap, stated plainly:** if the *first* of two queued
+    moves fails, its rollback reverts to that move's own pre-drop snapshot,
+    which can transiently discard the second move's already-shown optimistic
+    result until the second move's own `moveCard()` call (next in the queue)
+    resolves and either re-confirms it (success -> `router.refresh()`) or
+    reverts it too. The board always converges on server truth either way —
+    this is a possible brief visual flicker in a genuinely rare
+    double-failure-adjacent scenario, not a data-correctness bug, and wasn't
+    worth a full operational-transform-style merge for this ticket.
+- **Fractional precision exhaustion:** not touched by this ticket —
+  `nextPosition` (`lib/boards/positioning.ts`, unchanged) is still the only
+  thing that computes a real `position`, and it already bisects indefinitely
+  between two floats without ever reaching either bound (see that file's own
+  "keeps bisecting" test). `applyCardMove` never computes or stores a
+  `position` at all — it only reorders an in-memory list for display; the
+  server, via `nextPosition`, remains the sole source of the real value.
+  Repeated inserts between the same two neighbors will eventually run into
+  IEEE-754 double precision (not infinite), at which point `nextPosition`
+  would produce two equal or misordered floats and `moveCard` would surface
+  `InvalidNeighborOrderError` as the existing `"generic"` error code — this
+  ticket doesn't add a re-spacing pass for that; flagged as a pre-existing
+  gap in `lib/boards/positioning.ts`'s own scope, not introduced here.
+
+### Verification — what was and wasn't run
+
+Unit-tested: `applyCardMove` (8 cases: same-column reorder, end-of-column,
+cross-column, empty-column target, negative-index clamp, missing-card
+no-op, missing-column no-op, non-mutation of untouched columns/input) and
+the full existing suite (typecheck/lint/build all green). **Not run: a real
+browser + real Supabase drag-persist-across-refresh check.** This dev
+machine has no Docker/local Supabase (documented constraint, `CLAUDE.md`),
+so there is no way to sign in or fetch a real board here — the same gap
+every prior Phase 3 round hit. `BoardView.md`'s own mouse/keyboard drag
+verification (against a Ladle story with a stubbed `onMove`) still holds
+for the *mechanics* of dragging itself, unchanged by this ticket; what
+remains genuinely unverified in a live environment is specifically: (1) a
+drag survives a hard refresh, (2) a keyboard-driven move persists the same
+as a mouse one, (3) the rollback message actually appears against a real
+failed request (e.g. RLS-denied or network-down), (4) the two-quick-drags
+queueing behaves as reasoned above under real network latency instead of
+synchronous test promises. A future ticket/CI run needs to close this gap
+the same way `BoardView.md` flagged its own mobile-long-press gap.

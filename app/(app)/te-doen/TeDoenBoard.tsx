@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { BoardView, type BoardColumn } from "@/components/organisms/BoardView";
@@ -8,6 +8,7 @@ import { CardContentTicket } from "@/components/molecules/CardContentTicket";
 import { Tag } from "@/components/atoms/Tag";
 import { isIconName } from "@/components/atoms/Icon";
 import { isPriority } from "@/lib/boards/enums";
+import { applyCardMove, type CardMove } from "@/lib/boards/optimistic";
 import type { BoardWithColumns, CardWithLabels } from "@/lib/boards/types";
 import { CardDetailPanel, type CardDetailPanelTarget } from "./CardDetailPanel";
 import { createCard, deleteCard, moveCard, updateCard } from "./actions";
@@ -18,11 +19,11 @@ import { createCard, deleteCard, moveCard, updateCard } from "./actions";
 // to CardDetailPanel too: both stay props-in/callback-out, this file is the
 // only place that imports "use server" code. BoardView's `renderItem` is a
 // function prop, and functions can't cross the Server->Client boundary — so
-// `page.tsx` stays a Server Component that only fetches `BoardWithColumns`
-// (plain, serializable data) and this file is the lowest point the client
-// boundary can start. `onMove` (live drag persistence) is left unset:
-// that's #96, not this ticket. Composition/label decisions:
-// design/notes/TeDoenBoard.md; panel wiring: design/notes/CardDetailPanel.md.
+// `page.tsx`/`TeDoenPageBody.tsx` stay Server Components that only fetch
+// `BoardWithColumns` (plain, serializable data) and this file is the lowest
+// point the client boundary can start. Composition/label decisions:
+// design/notes/TeDoenBoard.md; panel wiring: design/notes/CardDetailPanel.md;
+// #96 drag persistence + optimistic update: design/notes/TeDoenBoard.md.
 export interface TeDoenBoardProps {
   board: BoardWithColumns;
   /** #95: true whenever a non-manual sort (`?sort=`) is active — see design/notes/TeDoenBoard.md for why dragging is disabled rather than persisting a move against a view the stored `position` no longer matches. */
@@ -32,10 +33,71 @@ export interface TeDoenBoardProps {
 export function TeDoenBoard({ board, dragDisabled }: TeDoenBoardProps) {
   const t = useTranslations("components.cardContainer");
   const tPriority = useTranslations("boards.priority");
+  const tErrors = useTranslations("boards.errors");
   const format = useFormatter();
   const router = useRouter();
 
-  const columns: BoardColumn<CardWithLabels>[] = board.columns.map((column) => ({
+  // Local optimistic copy of `board` (#96) — same pattern @dnd-kit's own
+  // docs describe one layer down (Context7 /clauderic/dnd-kit,
+  // sortable-state-management.mdx: render from local state, only re-sync
+  // from fetched data when nothing is pending, revert to a snapshot on
+  // failure). `board` (the server prop) is re-fetched via `router.refresh()`
+  // after every successful mutation elsewhere in this file already; this
+  // effect re-syncs `localBoard` whenever that lands, EXCEPT while a move is
+  // still in flight — otherwise a `board` prop update that races an
+  // in-flight moveCard() would yank the optimistic move back out from under
+  // it before the request even settles. A *count*, not a boolean: with two
+  // quick drags queued (see below), the first settling must not flip this
+  // back to "nothing pending" while the second is still outstanding.
+  const [localBoard, setLocalBoard] = useState(board);
+  const pendingMoves = useRef(0);
+  useEffect(() => {
+    if (pendingMoves.current === 0) setLocalBoard(board);
+  }, [board]);
+
+  // Serializes moveCard() calls one at a time — a second drag dropped before
+  // the first request settles must not compute its target position against
+  // sibling rows the first move hasn't persisted yet (moveCard fetches live
+  // sibling positions per call, server-side). The *optimistic* local reorder
+  // still applies immediately for every drop (dnd-kit's own live-drag preview
+  // already shows it instantly); only the network calls themselves queue.
+  const moveQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const [moveError, setMoveError] = useState<string | null>(null);
+
+  function handleMove(move: CardMove) {
+    setMoveError(null);
+    const preMoveSnapshot = localBoard;
+    pendingMoves.current += 1;
+    setLocalBoard((current) => applyCardMove(current, move));
+
+    moveQueue.current = moveQueue.current
+      .then(() =>
+        moveCard({ cardId: move.itemId, columnId: move.toColumnId, targetIndex: move.toIndex }),
+      )
+      .then((result) => {
+        if (!result.success) {
+          // Reverts to this specific move's own pre-drop snapshot. If a
+          // later drag already landed on top of it while this request was
+          // in flight, that later drag's own moveCard() call is queued right
+          // behind this one and — once it resolves — either re-applies (on
+          // success, via router.refresh() below) or reverts itself the same
+          // way, so the board still converges on server truth either way.
+          setLocalBoard(preMoveSnapshot);
+          setMoveError(tErrors(result.error));
+        } else {
+          router.refresh();
+        }
+      })
+      .catch(() => {
+        setLocalBoard(preMoveSnapshot);
+        setMoveError(tErrors("generic"));
+      })
+      .finally(() => {
+        pendingMoves.current -= 1;
+      });
+  }
+
+  const columns: BoardColumn<CardWithLabels>[] = localBoard.columns.map((column) => ({
     id: column.id,
     name: column.name,
     icon: isIconName(column.icon) ? column.icon : "Croissant",
@@ -56,9 +118,17 @@ export function TeDoenBoard({ board, dragDisabled }: TeDoenBoardProps) {
 
   return (
     <>
+      {/* Drag-persist failure only (create/update/delete errors surface inside
+          CardDetailPanel's own form) — same inline convention as
+          CardDetailPanel.tsx/BoardPanel.tsx (`boards.errors.*`, no toast
+          component exists in this design system yet). Cleared on the next
+          drop attempt; not auto-dismissed otherwise, so a failure stays
+          visible until the user acts again. */}
+      {moveError && <p className="text-base font-semibold text-priority-urgent">{moveError}</p>}
       <BoardView
         columns={columns}
         dragDisabled={dragDisabled}
+        onMove={handleMove}
         addLabel={t("addLabel")}
         editLabel={t("editLabel")}
         emptyLabel={t("addItemLabel")}
