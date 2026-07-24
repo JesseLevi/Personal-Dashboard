@@ -52,6 +52,8 @@ export interface BoardViewProps<TItem extends { id: string }> {
   /** Fired with a column id from that column's add button (header, or its empty-state button). */
   onAddItem?: (columnId: string) => void;
   onEditColumn?: (columnId: string) => void;
+  /** #95: disables both dragging and dropping everywhere (still renders the same DOM/DragDropProvider — only `useSortable`/`useDroppable`'s own `disabled` flips). Set by a caller whose current view is sorted rather than manual/position order, where a drop's resulting index would be meaningless against the stored `position`. See design/notes/TeDoenBoard.md for the full reasoning. */
+  dragDisabled?: boolean;
   className?: string;
 }
 
@@ -77,12 +79,14 @@ function SortableCard({
   id,
   index,
   columnId,
+  disabled,
   onClick,
   children,
 }: {
   id: string;
   index: number;
   columnId: string;
+  disabled?: boolean;
   onClick?: () => void;
   children: ReactNode;
 }) {
@@ -92,6 +96,7 @@ function SortableCard({
     group: columnId,
     type: "item",
     accept: "item",
+    disabled,
   });
 
   return (
@@ -99,7 +104,8 @@ function SortableCard({
       ref={ref}
       onClick={onClick}
       className={clsx(
-        "cursor-grab transition-opacity duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+        "transition-opacity duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+        disabled ? "cursor-default" : "cursor-grab",
         isDragging && "opacity-40",
       )}
     >
@@ -119,6 +125,7 @@ function BoardColumnView<TItem extends { id: string }>({
   addLabel,
   editLabel,
   emptyLabel,
+  dragDisabled,
   onAddItem,
   onEditColumn,
   onItemClick,
@@ -129,6 +136,7 @@ function BoardColumnView<TItem extends { id: string }>({
   addLabel: string;
   editLabel: string;
   emptyLabel: string;
+  dragDisabled?: boolean;
   onAddItem?: (columnId: string) => void;
   onEditColumn?: (columnId: string) => void;
   onItemClick?: (item: TItem) => void;
@@ -137,6 +145,7 @@ function BoardColumnView<TItem extends { id: string }>({
     id: column.id,
     accept: "item",
     collisionPriority: CollisionPriority.Low,
+    disabled: dragDisabled,
   });
   const isEmpty = items.length === 0;
   const handleAdd = onAddItem ? () => onAddItem(column.id) : undefined;
@@ -177,6 +186,7 @@ function BoardColumnView<TItem extends { id: string }>({
               id={item.id}
               index={index}
               columnId={column.id}
+              disabled={dragDisabled}
               onClick={onItemClick ? () => onItemClick(item) : undefined}
             >
               {renderItem(item)}
@@ -195,6 +205,7 @@ export function BoardView<TItem extends { id: string }>({
   addLabel,
   editLabel,
   emptyLabel,
+  dragDisabled,
   onAddItem,
   onEditColumn,
   onItemClick,
@@ -281,6 +292,7 @@ export function BoardView<TItem extends { id: string }>({
             addLabel={addLabel}
             editLabel={editLabel}
             emptyLabel={emptyLabel}
+            dragDisabled={dragDisabled}
             onAddItem={onAddItem}
             onEditColumn={onEditColumn}
             onItemClick={onItemClick}

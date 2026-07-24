@@ -25,9 +25,11 @@ import { createCard, deleteCard, moveCard, updateCard } from "./actions";
 // design/notes/TeDoenBoard.md; panel wiring: design/notes/CardDetailPanel.md.
 export interface TeDoenBoardProps {
   board: BoardWithColumns;
+  /** #95: true whenever a non-manual sort (`?sort=`) is active — see design/notes/TeDoenBoard.md for why dragging is disabled rather than persisting a move against a view the stored `position` no longer matches. */
+  dragDisabled?: boolean;
 }
 
-export function TeDoenBoard({ board }: TeDoenBoardProps) {
+export function TeDoenBoard({ board, dragDisabled }: TeDoenBoardProps) {
   const t = useTranslations("components.cardContainer");
   const tPriority = useTranslations("boards.priority");
   const format = useFormatter();
@@ -56,6 +58,7 @@ export function TeDoenBoard({ board }: TeDoenBoardProps) {
     <>
       <BoardView
         columns={columns}
+        dragDisabled={dragDisabled}
         addLabel={t("addLabel")}
         editLabel={t("editLabel")}
         emptyLabel={t("addItemLabel")}

@@ -73,9 +73,17 @@
       "todo": {
         "boardSwitcherLabel": "Switch board",
         "favoriteLabel": "Mark board as favorite",
+        "favoriteActiveLabel": "Favorite board",
+        "addBoardOptionLabel": "Add",
         "sortLabel": "Sort",
         "emptyBoardTitle": "No board",
-        "emptyBoardBody": "There is no board to show yet."
+        "emptyBoardBody": "There is no board to show yet.",
+        "sortOptions": {
+          "createdAt": "Creation date",
+          "priority": "Priority",
+          "size": "Size",
+          "alphabetical": "Alphabetical"
+        }
       },
       "recipes": {
         "addCategoryLabel": "Category"
@@ -83,6 +91,15 @@
     },
     "sidePanel": {
       "closeLabel": "Close panel"
+    },
+    "boardPanel": {
+      "addTitle": "Add board",
+      "editTitle": "Rename board",
+      "fields": {
+        "nameLabel": "Name"
+      },
+      "saveLabel": "Save",
+      "savingLabel": "Saving..."
     },
     "cardDetailPanel": {
       "addTitle": "Add item",

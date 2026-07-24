@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
 import { InvalidNeighborOrderError, nextPosition } from "@/lib/boards/positioning";
+import { DEFAULT_BOARD_COLUMNS } from "@/lib/boards/defaults";
 import {
   boardIdSchema,
   createBoardSchema,
@@ -118,6 +119,25 @@ export async function createBoard(input: unknown): Promise<ActionResult<BoardRow
     if (error) logDbError("createBoard", error);
     return { success: false, error: "generic" };
   }
+
+  // #95: a new board "opens in empty state" with the same four default
+  // columns as the schema's own per-user seed (lib/boards/defaults.ts) — that
+  // trigger only fires on account creation, not on every board, so this is
+  // its own insert. Best-effort: the board row itself already succeeded and
+  // is real/usable (just column-less) if this second insert fails, so a
+  // failure here is logged but doesn't roll back or fail the action — the
+  // user still gets a real board back, matching every other action's
+  // "return what succeeded" shape.
+  const { error: columnsError } = await supabase.from("board_columns").insert(
+    DEFAULT_BOARD_COLUMNS.map((column, index) => ({
+      user_id: auth.userId,
+      board_id: data.id,
+      name: column.name,
+      icon: column.icon,
+      position: (index + 1) * 1000,
+    })),
+  );
+  if (columnsError) logDbError("createBoard/default-columns", columnsError);
 
   revalidatePath("/te-doen");
   return { success: true, data };

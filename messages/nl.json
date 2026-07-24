@@ -73,9 +73,17 @@
       "todo": {
         "boardSwitcherLabel": "Bord wisselen",
         "favoriteLabel": "Bord favoriet maken",
+        "favoriteActiveLabel": "Favoriete bord",
+        "addBoardOptionLabel": "Toevoegen",
         "sortLabel": "Sorteer",
         "emptyBoardTitle": "Geen bord",
-        "emptyBoardBody": "Er is nog geen bord om te tonen."
+        "emptyBoardBody": "Er is nog geen bord om te tonen.",
+        "sortOptions": {
+          "createdAt": "Aanmaakdatum",
+          "priority": "Prioriteit",
+          "size": "Grootte",
+          "alphabetical": "Alfabetisch"
+        }
       },
       "recipes": {
         "addCategoryLabel": "Categorie"
@@ -83,6 +91,15 @@
     },
     "sidePanel": {
       "closeLabel": "Paneel sluiten"
+    },
+    "boardPanel": {
+      "addTitle": "Bord toevoegen",
+      "editTitle": "Bord hernoemen",
+      "fields": {
+        "nameLabel": "Naam"
+      },
+      "saveLabel": "Opslaan",
+      "savingLabel": "Opslaan..."
     },
     "cardDetailPanel": {
       "addTitle": "Item toevoegen",

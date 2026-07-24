@@ -58,6 +58,17 @@ Playwright driven against a live `pnpm ladle` dev server (not `ladle:build`), `b
 
 First implementation wrapped each column's card list / empty-state button in `<div ref={dropRef} className="contents">` to keep `useDroppable`'s ref off `CardContainer`'s own layout (`display: contents` removes the wrapper from layout entirely, which was the point — CardContainer's own `flex`/`gap-2`/`items-center` classes would then apply directly to what look like its immediate children). This type-checked and rendered pixel-identically, but **dragging into an empty column silently failed** (drop landed back on the source) — a `display:contents` element has no box for `getBoundingClientRect`-based collision detection to hit-test against. Fixed by giving the droppable ref a real box instead: the non-empty wrapper now carries its own `flex flex-col gap-2` (the `gap-2` that used to come for free from `CardContainer`'s own flex container now has to be re-declared one level down, since that container now has only one child — this wrapper — instead of N cards), and the empty-state wrapper carries `flex w-full flex-1 items-center justify-center` (deliberately larger than the visible button's own footprint, so the *whole* near-empty column body is a drop target, not just the button — matches the ticket's own Jira/Trello callout without changing what's visually drawn). Re-verified both branches end-to-end after the fix (see above).
 
+## TICKET #95 — `dragDisabled` prop
+
+New optional `dragDisabled?: boolean`, threaded into every `useSortable`'s
+and `useDroppable`'s own `disabled` option (both confirmed via Context7 to
+accept it directly) plus a `cursor-default` swap on the card wrapper.
+Defaults to `undefined`/falsy, so every existing caller (the `Default`
+Ladle story, `TeDoenBoard.tsx` when no sort is active) is unaffected. Set by
+`TeDoenPageBody.tsx` whenever a `?sort=` view is active — full reasoning
+(why disable instead of resetting sort on drag, or writing against the
+sorted view) lives in `design/notes/TeDoenBoard.md`, not duplicated here.
+
 ## Not built here
 
 - Persistence of any move (separate ticket, per the issue text).
