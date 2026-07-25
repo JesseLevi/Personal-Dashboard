@@ -24,7 +24,12 @@ const closeLabelNl = nl.components.sidePanel.closeLabel;
 // around SidePanel already has its own height), only by this harness.
 
 // Figma's fetched "AddItem" sample: Naam/Omschrijving/Status/Prioriteit
-// fields + Verwijderen(destructive)/Opslaan(filled) footer.
+// fields + Verwijderen(destructive)/Opslaan(filled) footer. #103: footer
+// buttons share a row (`flex gap-2`) with `grow basis-0` each, the same
+// full-width convention CardDetailPanel.tsx/BoardPanel.tsx use — SidePanel's
+// own footer container only stretches whatever row(s) the caller nests
+// inside it, so every multi-button footer (including this demo) must supply
+// its own row wrapper or its buttons stack one-per-line instead of sharing one.
 export const AddItem = () => (
   <div className="min-h-screen">
     <SidePanel
@@ -33,14 +38,14 @@ export const AddItem = () => (
       title="Item toevoegen"
       closeLabel={closeLabelEn}
       footer={
-        <>
-          <Button variant="destructive" icon="Trash">
+        <div className="flex gap-2">
+          <Button variant="destructive" icon="Trash" className="grow basis-0">
             Verwijderen
           </Button>
-          <Button variant="filled" icon="Plus">
+          <Button variant="filled" icon="Plus" className="grow basis-0">
             Opslaan
           </Button>
-        </>
+        </div>
       }
     >
       <InputField label="Naam" id="side-panel-demo-name" defaultValue="HBO Wachtwoord updaten" />
@@ -59,9 +64,11 @@ export const AddBoard = () => (
       title="Bord toevoegen"
       closeLabel={closeLabelNl}
       footer={
-        <Button variant="filled" icon="Plus">
-          Opslaan
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="filled" icon="Plus" className="grow basis-0">
+            Opslaan
+          </Button>
+        </div>
       }
     >
       <InputField label="Naam" id="side-panel-demo-board-name" />
@@ -85,9 +92,11 @@ export const Interactive = () => {
         title="Item toevoegen"
         closeLabel={closeLabelEn}
         footer={
-          <Button variant="filled" icon="Plus">
-            Opslaan
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="filled" icon="Plus" className="grow basis-0">
+              Opslaan
+            </Button>
+          </div>
         }
       >
         <InputField label="Naam" id="side-panel-demo-interactive-name" />
