@@ -45,3 +45,32 @@ Fixed by widening the constant into an optional prop, `columnWidthClassName`, de
 **Anomaly spotted, not fixed:** the Mobile/Filled node's own "Afgerond" column instance (`I3687:4016;3670:1765;3882:14251`) measures 320×564, not 296 wide like its three sibling columns in the same frame — looks like a Figma authoring slip (an un-adjusted duplicate of a desktop instance) rather than an intentional fourth width. Not corrected here since it's a single outlier inside the fetched data, not a pattern; flagged for whoever revisits mobile board fidelity.
 
 The scroll-affordance open question above is **still open** — #90 re-checked all six Te-Doen screen variants and found nothing (no arrows/dots/scrollbar/fade), same as this file's original finding. Not resolved by this ticket either.
+
+## Verified: horizontal scroll stays inside this component (issue 102, 2026-07-25)
+
+No code change to this file — the ticket's actual defect risk (`main`/`body`
+stretching to the board's full unscrolled width instead of `Carousel`'s own
+row scrolling) lives one level up, in `main` missing `min-w-0`
+(`AppShellNav.tsx`, see `design/notes/Sidebar.md`'s issue-101 entry for the
+sibling change in the same file). Confirmed this file's own `overflow-x-auto`
+row was never the problem: measured in a real browser (Playwright MCP, a
+throwaway 6-column/8-card-per-column harness composing the real
+`AppShellNav`/`PageHeader`/`BoardView`, deleted after use — `/te-doen` itself
+needs a live Supabase session this dev machine can't provide) at 1440px —
+
+| | `scrollWidth` | `clientWidth` |
+|---|---|---|
+| `document.body` | 1440 | 1440 |
+| `main` | 1242 | 1242 |
+| Carousel row (`.overflow-x-auto`) | 2000 | 1114 |
+
+— and at 402px:
+
+| | `scrollWidth` | `clientWidth` |
+|---|---|---|
+| `document.body` | 402 | 402 |
+| `main` | 402 | 402 |
+| Carousel row | 1856 | 386 |
+
+`body`/`main` show zero overflow at both widths (`scrollWidth ===
+clientWidth`); only the Carousel row itself overflows, exactly as designed.

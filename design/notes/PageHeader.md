@@ -85,3 +85,43 @@ duplicated here.
 `PageHeader.stories.tsx`: `TeDoen` (title adornments + sort action) and
 `Recepten` (category action only) — the two shapes the ticket asked the story
 to cover.
+
+## Sticky header (issue 102, 2026-07-25)
+
+Re-fetched via Figma MCP (`3680:1442` board frame, depth 2): `Main` is
+`Header` and `Carousel` as **siblings**, both direct children of `Main`'s own
+column — Header is `sizing: {horizontal: fill, vertical: fixed}` height 40,
+Carousel is a separate `fill`/`hug` row below it. That sibling split (Header
+never wraps Carousel, and vice versa) is the actual, verifiable Figma
+requirement; `position: sticky` itself is not something Figma nodes can
+encode (no `position`/`sticky` field exists in the payload for any node,
+same "Figma states structure, not the CSS mechanism" gap `Sidebar.md`'s
+`position: fixed` entry also hit) — applying it is this codebase's own read
+of "blijft zichtbaar bij verticaal scrollen," not a literal Figma property.
+
+**Applied to `<header>` itself, unconditionally** — `sticky top-0
+bg-surface-muted`, no new prop. This affects every caller (Te-Doen, Recepten,
+both stories) identically; no opt-out was added since the ticket's ask
+("maak de volledige header sticky") has no stated exception and a sticky
+header with nothing to scroll past (Recepten's current stub) is simply inert,
+not broken. `bg-surface-muted` matches the token `main` itself already uses
+(`AppShellNav.tsx`) — needed because cards scroll *underneath* the sticky box
+and would otherwise show through a transparent header.
+
+**No explicit `z-index`.** `position: sticky` with `z-index: auto` does not
+establish a new stacking context, so `TeDoenHeader.tsx`'s `z-[999]`
+board-switcher/sort dropdown panels (its own file, not touched here) are
+never capped by anything this component sets. The header still paints above
+the (non-positioned, `position: static`) scrolling cards below it purely
+because it's a *positioned* element (sticky counts) among unpositioned
+siblings — verified in a real browser (Playwright MCP, 1440px + 402px) by
+scrolling a populated board under the header and confirming the header
+opaquely occludes the cards with no z-index set at all, and separately that
+an open board-switcher/sort dropdown still renders above the scrolling board
+after this change. See `design/notes/TeDoenBoard.md`/`Carousel.md` for the
+horizontal-scroll-containment half of this same ticket.
+
+**Visual baseline:** both `PageHeader` stories regenerate (`bg-surface-muted`
+replaces what used to be a transparent header showing the Ladle Provider's
+own `bg-surface` through it) — `page-header--te-doen` and
+`page-header--recepten`, scoped-regenerated together, not the full suite.
