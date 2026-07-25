@@ -134,7 +134,7 @@ First two `Card-content/*` molecules, each built by its own Sonnet agent from a 
 
 **Process note:** three Sonnet agents hit the account session limit mid-run this round. Their partial work was recoverable in every case because it sat committed or staged in their worktrees — check `git -C <worktree> status` and `log` before assuming a dead agent produced nothing, and tell the resuming agent explicitly what is already done so it doesn't redo it.
 
-**Review note:** a half-applied fix passed `lint`, `typecheck`, `test` *and* `check:server-only` — the Delete pill got its radius and padding but no `bg-surface-raised`, so it rendered invisible. No gate in this project can see a missing colour. That is the third such catch found only by putting the fetched node next to the code by hand. See #6 under Next actions in `docs/HANDOFF.md`.
+**Review note:** a half-applied fix passed `lint`, `typecheck`, `test` *and* `check:server-only` — the Delete pill got its radius and padding but no `bg-surface-raised`, so it rendered invisible. No gate in this project can see a missing colour. That is the third such catch found only by putting the fetched node next to the code by hand. The screenshot gate meant to close this class is #6 — see its own entry below, and the visual-gate bullet in `docs/HANDOFF.md` for what is still unarmed.
 
 ## 2026-07-21 — #66 and #67 merge (tickets #19, #20)
 

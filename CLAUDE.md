@@ -16,7 +16,7 @@ Load only the guide your task touches. Each is authoritative for its area; don't
 | Figma is missing something the ticket assumes | `docs/open-questions.md` — reference by slug, never by number |
 | Why a past ticket went wrong, or why a token has its value | `docs/incidents.md` — on demand only |
 
-Session start: read **`docs/HANDOFF.md`** (where the project stands, what's next) and keep it accurate when you finish work. `docs/phase-log.md` = what infrastructure exists per phase; read on demand, update when a phase item lands. Per-ticket status lives on the **board**, not in these files.
+Session start: read **`docs/HANDOFF.md`** (where the project stands, what's next) and keep it accurate when you finish work — it is **state, not a changelog**: replace bullets that have become history rather than appending a new dated section, and let `git log` / `docs/incidents.md` / `design/notes/` carry the story. `docs/phase-log.md` = what infrastructure exists per phase; read on demand, update when a phase item lands. Per-ticket status lives on the **board**, not in these files.
 
 ## Non-negotiables (apply to every task)
 
@@ -51,7 +51,8 @@ When a ticket forces a trade-off, resolve it in this order:
 - `pnpm dev` / `pnpm build` / `pnpm start` — Next.js
 - `pnpm lint` / `pnpm typecheck` / `pnpm test` — ESLint, tsc, Vitest
 - `pnpm sync:tokens` — regenerate `app/theme.css` from `design/tokens.json` (run after every token edit; CI fails on drift)
-- `pnpm ladle` — design-system workbench
+- `pnpm ladle` — design-system workbench (`pnpm ladle:build` for a non-interactive build; `pnpm ladle build` hangs)
+- `pnpm test:visual` / `pnpm test:visual:update` — Playwright screenshot baselines; run before every component PR (CI's job is non-blocking until Linux baselines exist)
 - `pnpm worker` — job queue consumer (needs `.env` with service_role)
 - `pnpm db:reset` / `pnpm test:rls` / `pnpm db:types` — Supabase (needs Docker: CI or the server, not this dev machine)
 - `pnpm check:rls-coverage` / `pnpm check:server-only` / `pnpm check:comment-budget` — CI gates, also runnable locally

@@ -54,6 +54,8 @@ Both components' Selected → `:focus-within` (Input-field) / `aria-pressed` (Bu
 
 Needs a design/product answer, same as any other un-sourced value in this project: confirm (or correct) the duration/easing, and decide whether `Dropdown`/`Button-toggle` should migrate onto these same named tokens now that they exist (out of scope for #86, which only touched Sidebar).
 
+**Partially actioned since, still open**: #100 moved `Dropdown`'s new chevron-rotate transition onto `--duration-base`/`--ease-base` (`Dropdown.tsx`'s `CHEVRON_ROTATE`). But `Dropdown.tsx`'s pre-existing grid-rows open/close transition and `ButtonToggle.tsx`'s track-slide transition still hardcode the literal `duration-200 ease-out` Tailwind classes — the migration is incomplete, not resolved. Same design/product answer still needed before finishing it.
+
 ## english-nav-labels-overflow
 
 **English nav labels overflow the Sidebar's fixed 198px rail (#25).** Dutch is pixel-perfect — all six rows exactly 40px, matching Figma. English is not: "Shopping basket" wraps to two lines and spills outside its 40px button. Figma only ever shows the Dutch labels, so it offers no guidance. Needs a content or design call — shorter English label, truncation, wrapping with taller rows, or a wider rail. Deliberately not invented in code.

@@ -22,8 +22,8 @@ All three Header frames share: `row`, `justifyContent: space-between`,
 renders visually identical — its children are a `hug`-sized title and a
 40px-tall button, same as the others), sizing `fill`/`hug`. Right padding is
 the "pull the header content in from the Carousel's edge-to-edge cards"
-padding — `128px` desktop, `16px` mobile — see the shell padding measurements
-in `docs/HANDOFF.md`'s #88 entry and the PR report.
+padding — `128px` desktop, `16px` mobile — measured against the app-shell
+padding when #88 built the route group (see that PR).
 
 - **Title container** ("Onderwerp" in Te-Doen's node, unnamed in Recepten's):
   `row`, `alignItems: center`, `gap: 16px` → `flex items-center gap-4`. Holds

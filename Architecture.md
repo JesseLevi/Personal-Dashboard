@@ -139,7 +139,7 @@ Deliberately simple: no streaming, no agent frameworks, no LangChain. A queue ta
 
 - **Local dev**: `supabase start` (CLI), local Ollama, `next dev`.
 - **Staging + prod**: two Supabase Docker stacks + two app instances on the Mac mini, separate tunnel hostnames. **Capacity note**: prod Supabase + Ollama (a 14B q4 model ≈ 9 GB) already stress a 16 GB machine — staging runs **on-demand** (started for deploy verification/restore drills, stopped otherwise), and model size follows available RAM, not ambition.
-- **CI (GitHub Actions)**: lint → typecheck → unit tests (`--frozen-lockfile`) → token-drift check → `supabase db reset` + RLS suite (ADR-0009) → build. The **Ladle/Playwright screenshot diff (ADR-0010) is planned, not yet wired in** — it ships with ticket #6; until then visual parity is verified by eyeballing the Ladle story against the Figma image. **CD**: self-hosted runner on the Mac mini (hardened per §7); deploy = migrate then restart app/worker; staging on merge to `main`, prod on tag.
+- **CI (GitHub Actions)**: lint → typecheck → unit tests (`--frozen-lockfile`) → token-drift check → `supabase db reset` + RLS suite (ADR-0009) → build. The **Ladle/Playwright screenshot diff (ADR-0010) is wired in** as `pnpm test:visual` (#6); its CI job's arming status is tracked in `docs/HANDOFF.md`, not here. **CD**: self-hosted runner on the Mac mini (hardened per §7); deploy = migrate then restart app/worker; staging on merge to `main`, prod on tag.
 
 ## 9. Testing
 

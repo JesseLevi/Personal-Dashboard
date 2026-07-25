@@ -33,11 +33,13 @@ Every atom, molecule, and organism in the Phase 2 milestone has a merged impleme
 
 Genuinely open (non-component) work in the Phase 2 milestone:
 - **#49** — Ladle chrome theming (`appendToHead`) emits a dev-only `/@fs/` path that 404s in `pnpm ladle:build`; not started.
-- **#59** — Ladle preview-canvas token colour + Button/Checkbox story trims; code merged (PR #63), issue open pending review.
-- **#78** — InputField container height collapses without a trailing icon; code merged (PR #79), issue open pending review.
 
 Conventions the design-system components locked in are in `docs/guides/ui-components.md` → "Component code conventions" — they exist because parallel agent work diverged on each point.
 
-## Phases 3–9: ⬜ not started
+## Phase 3 — Te-Doen (Kanban): ✅ feature-complete, merged to `main`
 
-Ticket per `Architecture.md` §10. The token/RLS/CI infrastructure and the worker skeleton they depend on are in place.
+Schema (`boards`/`board_columns`/`cards`/`labels`/`card_labels`), server actions, `BoardView` (dnd-kit drag & drop), `SidePanel`, the app-shell route group, and the `/te-doen` + `/te-doen/[boardId]` pages are built and merged (#87–#98). No Phase 3 database path has ever run against a live Supabase — see `docs/HANDOFF.md` for the verification gaps.
+
+## Phases 4–9: ⬜ not started
+
+One tracking ticket per phase (#28–33), all still in Backlog with no implementation work. Ticket detail per `Architecture.md` §10. The token/RLS/CI infrastructure and the worker skeleton they depend on are in place.
