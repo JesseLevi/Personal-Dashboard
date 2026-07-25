@@ -8,7 +8,7 @@ import { Dropdown } from "./Dropdown";
 // The fetched Figma example: a label plus three stacked options, the first
 // shown "selected" via Button's own filled variant (a choice made by the
 // composing content, not by Dropdown itself). The first/selected Button is
-// also the disclosure trigger — it carries `trailingIcon="ChevronDown"`
+// also the disclosure trigger (#100) — it carries `trailingIcon="ChevronDown"`
 // itself; Dropdown clones aria-expanded/aria-controls/onClick onto it and
 // rotates the chevron, rather than wrapping it in a second <button>.
 
