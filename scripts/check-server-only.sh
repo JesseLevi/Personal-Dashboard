@@ -19,7 +19,17 @@ if grep -rn "dangerouslySetInnerHTML" app/ components/ 2>/dev/null; then
   echo "FAIL: dangerouslySetInnerHTML is forbidden on this codebase (Architecture §7)." >&2; fail=1
 fi
 
-if grep -rnE '(#|%23)[0-9a-fA-F]{3,8}\b' components/ --include="*.tsx" 2>/dev/null; then
+# Raw-hex guard. Candidates are `#`/`%23` + 3-8 hex digits, then filtered: a
+# real hex colour either contains an a-f letter or is exactly 6/8 digits long.
+# Without that filter every 3-digit ticket reference matches, since 0-9 are all
+# valid hex digits — `(#101)` tripped this gate while check:comment-budget
+# documents a bare `(#68)` pointer as the correct way to cite a ticket. Known
+# and accepted hole: an all-decimal 3- or 4-digit hex (`#111`) still passes.
+hex_hits=$(grep -rnoE '(#|%23)[0-9a-fA-F]{3,8}\b' components/ --include="*.tsx" 2>/dev/null \
+  | awk -F: '{ tok = $NF; sub(/^(#|%23)/, "", tok);
+               if (tok ~ /[a-fA-F]/ || length(tok) == 6 || length(tok) == 8) print }' || true)
+if [[ -n "$hex_hits" ]]; then
+  echo "$hex_hits"
   echo "FAIL: raw hex color in components — use semantic tokens (ADR-0010)." >&2; fail=1
 fi
 

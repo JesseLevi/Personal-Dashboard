@@ -128,9 +128,15 @@ neither.
 Every decimal digit (0-9) is also a valid hex digit, so *any* 3-digit ticket
 number (100-999) — not just this one — false-positives as a 3-hex-digit
 colour literal. Every prior ticket reference in `components/` was 1-2 digits
-and coincidentally immune. Worked around here by writing "issue 101"/"issue
-102" instead of "#101"/"#102" in the two `components/` files this ticket
-touches (`Sidebar.tsx`, `PageHeader.tsx`) — `app/`-tree files are outside
-that grep's scope and keep the ordinary "#101" form. Not fixed at the source
-(the script itself is out of this ticket's owned-file list); flagging here
-so the next 3-digit-ticket agent doesn't lose time rediscovering it.
+and coincidentally immune — `#99` is 2 digits and passes, `#100` onward does
+not, so the repo crossed this threshold exactly here. That put two gates in
+direct contradiction: `check:comment-budget` documents a bare `(#68)` pointer
+as the correct way to cite a ticket, while `check:server-only` rejected it.
+
+**Fixed at the source** during the #101/#102 merge review rather than worked
+around: the guard now extracts candidate matches and keeps only those that
+look like a real colour — containing an `a-f` letter, or exactly 6/8 digits
+long. Verified to still catch `#fff`, `#0af`, `#123456`, `#0C0A09` and
+`#00000000` while passing `#101`, `#999` and `#1234`. Accepted residual hole,
+recorded in the script: an all-decimal 3- or 4-digit hex such as `#111` now
+passes. Ticket references in `components/` use the ordinary `(#101)` form.

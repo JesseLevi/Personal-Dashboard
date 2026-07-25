@@ -32,7 +32,7 @@ const NAV_ITEMS: ReadonlyArray<{ id: SidebarItemId; icon: IconName }> = [
 // an intrinsic-sizing keyword, only between two literal lengths. 73px (not
 // the 72px pad+icon+pad arithmetic suggests) accounts for Preflight's
 // border-box folding in this <nav>'s 1px border; see design/notes/Sidebar.md.
-// Exported (issue 101) so `AppShellNav`'s fixed-sidebar layout spacer can reuse
+// Exported (#101) so `AppShellNav`'s fixed-sidebar layout spacer can reuse
 // the exact same widths instead of a second hardcoded pair.
 export const SIDEBAR_EXPANDED_WIDTH = "w-[198px]";
 export const SIDEBAR_COLLAPSED_WIDTH = "w-[73px]";

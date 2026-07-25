@@ -10,7 +10,7 @@ import type { ReactNode } from "react";
  * data (e.g. the active board's real name), never a translation key — see
  * design/notes/PageHeader.md.
  *
- * Sticky (issue 102): Figma can't express `position: sticky`, only that Header
+ * Sticky (#102): Figma can't express `position: sticky`, only that Header
  * is a sibling of Carousel, not a wrapper around it — the sticky behaviour
  * itself is this codebase's own call, applied to every caller. `bg-surface-
  * muted` (matching `main`'s own background) keeps scrolling cards from
