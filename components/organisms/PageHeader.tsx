@@ -9,6 +9,12 @@ import type { ReactNode } from "react";
  * the two pages fill it with different buttons. `title` is caller-supplied
  * data (e.g. the active board's real name), never a translation key — see
  * design/notes/PageHeader.md.
+ *
+ * Sticky (issue 102): Figma can't express `position: sticky`, only that Header
+ * is a sibling of Carousel, not a wrapper around it — the sticky behaviour
+ * itself is this codebase's own call, applied to every caller. `bg-surface-
+ * muted` (matching `main`'s own background) keeps scrolling cards from
+ * showing through underneath it. See design/notes/PageHeader.md.
  */
 export interface PageHeaderProps {
   title: string;
@@ -21,7 +27,12 @@ export interface PageHeaderProps {
 
 export function PageHeader({ title, titleAdornments, actions, className }: PageHeaderProps) {
   return (
-    <header className={clsx("flex items-center justify-between pr-4 md:pr-32", className)}>
+    <header
+      className={clsx(
+        "sticky top-0 flex items-center justify-between bg-surface-muted pr-4 md:pr-32",
+        className,
+      )}
+    >
       <div className="flex items-center gap-4">
         <h1 className="text-xl font-semibold text-text">{title}</h1>
         {titleAdornments}

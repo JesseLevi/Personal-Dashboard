@@ -40,3 +40,97 @@ future ticket needs the collapsed state to survive a reload (cookie/
 localStorage/URL, the same three options `Sidebar.tsx`'s own doc comment
 already names), that's a product decision to make explicitly, not something
 to infer from which page frame happened to be collapsed when it was drawn.
+
+## Desktop `fixed` sidebar + mobile drawer (issue 101, 2026-07-25)
+
+Re-fetched via Figma MCP: `Desktop/Navigation/01`/`02` (3889:17167/17551,
+expanded/collapsed), `Mobile/Navigation/01`/`02` (3889:15957/16101, drawer
+closed/open). Confirmed against the payload: the mobile closed frame places
+`Sidebar` at `x: -198` (off-canvas, `Collapsed=No`, i.e. full 198px width
+even on mobile — there is no mobile "collapsed" variant), and the open frame
+adds an `Overlay` rectangle (`rgba(12, 10, 9, 0.6)` — the exact same scrim
+`SidePanel` already uses via `bg-text/60`) plus the same `Sidebar` instance
+at `x: 0`, its own toggle showing `Icon/Panel-left-close`. The desktop frames
+confirm `Sidebar` is a `vertical: fill` instance inside a `row`/`stretch`
+root — i.e. Figma itself models it as filling the viewport height, which is
+what `position: fixed` + `inset-y-0` gives it in code; Figma cannot express
+`position: fixed` itself (same "structure yes, CSS mechanism no" gap #102
+hit for `position: sticky`).
+
+**Desktop — spacer + fixed, not a flex-row sidebar.** `Sidebar` now renders
+`position: fixed; inset-y-0; left-0` (via a wrapping `hidden md:fixed
+md:flex` div in `AppShellNav.tsx`) so it stays put while `main` scrolls
+vertically. A `fixed` element takes no space in normal flow, so a second,
+purely decorative `div` (`aria-hidden`, `shrink-0`) sits in the flex row in
+its place, transitioning `width` between the same exported
+`SIDEBAR_EXPANDED_WIDTH`/`SIDEBAR_COLLAPSED_WIDTH` constants (now `export`ed
+from `Sidebar.tsx` instead of being redeclared) on the same
+`--duration-base`/`--ease-base` as the real Sidebar's own collapse
+transition, so the two never visibly desync. `main`'s pre-existing `md:pl-32`
+is untouched — it is the separate Figma-sourced content inset from the
+sidebar's *right edge*, orthogonal to the spacer, which reserves the sidebar's
+own width. Fixed sidebar wrapper is `z-30`, below `SidePanel`'s `z-40`/`z-50`
+and the mobile drawer below (also `z-40`/`z-50`) — never overlaps either,
+confirmed by construction (desktop fixed sidebar only renders `md:` and up;
+`SidePanel`/mobile drawer are unrelated subtrees).
+
+**Mobile drawer.** Opened by a new icon-only `Button` (`PanelLeftOpen`)
+rendered inside `main`, above `children`, `md:hidden` — the button #88
+deliberately left out (its own code comment explained why: announcing a
+control that does nothing is worse than no control) now has something to
+open, so that comment is gone. Reuses the *same* `Sidebar` component
+(`collapsed` left at its default `false`, matching the fetched node's own
+always-198px mobile instance) inside a `fixed inset-y-0 left-0` wrapper that
+translates in/out (`translate-x-0` / `-translate-x-full`), over an overlay
+(`bg-text/60`, `z-40`) — pixel-for-pixel the fetched scrim, already a token
+match. Panel wrapper is `z-50`, i.e. the exact same two-layer stack
+`SidePanel.tsx` uses for its own overlay/panel.
+
+**Closing.** Per the ticket's own field: overlay-click and Escape are
+*"standaardgedrag, niet in Figma gemodelleerd"* — a codebase choice, not a
+Figma requirement, flagged here as such. Reused `SidePanel`'s exact
+overlay-click/Escape/Tab-trap/`inert`/focus-return shape, but
+**reimplemented it locally in `AppShellNav.tsx`** rather than extracting a
+shared hook: `SidePanel` is owned by a parallel ticket in this same round
+(off-limits per this ticket's scope) and the two closing mechanisms
+(`role="dialog"` bottom/side-sheet vs. a full-height nav drawer) don't share
+a title contract, so lifting the ~25-line focusable/keydown helper pair into
+its own file would be new shared surface for a single caller today — not
+worth it yet. If a third consumer needs the same pattern, that's the trigger
+to extract it, not this ticket. The in-sidebar toggle itself closes the
+drawer (`onToggle` calls `setMobileOpen(false)`, so it renders
+`Icon/Panel-left-close` per the fetched open-state node, matching Figma
+exactly) in addition to overlay-click/Escape.
+
+**Labels reused, no new i18n keys.** The open button's `aria-label` reuses
+`components.sidebar.expandLabel` ("opens the currently-hidden/collapsed
+sidebar" reads the same on mobile as on desktop); the drawer's own internal
+close toggle reuses `collapseLabel` (closing the full-screen drawer is the
+same "put the sidebar away" action `collapseLabel` already names for
+desktop, and the ticket explicitly sanctioned reusing `expandLabel` rather
+than minting a parallel key, and this follows the same reasoning
+symmetrically for the close side). Both `nl.json`/`en.json` are unchanged by
+this ticket, key sets already identical.
+
+**Two `Sidebar` instances in the DOM simultaneously.** The desktop
+fixed-position wrapper and the mobile-drawer wrapper both render `<Sidebar>`
+(hence two `<nav aria-label>` landmarks in the DOM at once), gated
+`hidden md:flex` vs. `md:hidden` respectively — exactly the same responsive
+duplication `Sidebar`'s own `hidden md:flex` wrapper already used pre-#101
+(the mobile side just used to render nothing). Only one is ever `display`ed
+at a given viewport width, so only one is ever exposed to the accessibility
+tree; verified in a real browser (Playwright MCP) at both 1440px and 402px
+that exactly one `<nav>` is visible/focusable at a time, never both, never
+neither.
+
+**A repo-infra trap hit for the first time here:**
+`scripts/check-server-only.sh`'s raw-hex grep is `(#|%23)[0-9a-fA-F]{3,8}\b`.
+Every decimal digit (0-9) is also a valid hex digit, so *any* 3-digit ticket
+number (100-999) — not just this one — false-positives as a 3-hex-digit
+colour literal. Every prior ticket reference in `components/` was 1-2 digits
+and coincidentally immune. Worked around here by writing "issue 101"/"issue
+102" instead of "#101"/"#102" in the two `components/` files this ticket
+touches (`Sidebar.tsx`, `PageHeader.tsx`) — `app/`-tree files are outside
+that grep's scope and keep the ordinary "#101" form. Not fixed at the source
+(the script itself is out of this ticket's owned-file list); flagging here
+so the next 3-digit-ticket agent doesn't lose time rediscovering it.

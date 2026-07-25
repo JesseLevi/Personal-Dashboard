@@ -1,9 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import clsx from "clsx";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Sidebar, type SidebarItemId } from "@/components/organisms/Sidebar";
+import {
+  Sidebar,
+  SIDEBAR_COLLAPSED_WIDTH,
+  SIDEBAR_EXPANDED_WIDTH,
+  type SidebarItemId,
+} from "@/components/organisms/Sidebar";
+import { Button } from "@/components/atoms/Button";
 
 // Only the routes this ticket (#88) actually builds; ids without an entry
 // (notes, shopping, clothes, assistant) have no page yet, so clicking them
@@ -18,14 +25,31 @@ function activeItemForPath(pathname: string): SidebarItemId | undefined {
   return match?.[0] as SidebarItemId | undefined;
 }
 
+// Mobile drawer focus handling (#101) — same overlay/focus-trap/inert shape
+// `SidePanel` already established (bg-text/60 scrim, focus moves in on open
+// and back to whatever triggered it on close, Tab is trapped, Escape
+// closes), reimplemented here rather than imported: SidePanel is a
+// `role="dialog"` bottom/side-sheet with its own title contract, not a
+// full-height nav drawer, and it's owned by a parallel ticket. See
+// design/notes/Sidebar.md for the full call.
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function getFocusable(root: HTMLElement | null): HTMLElement[] {
+  if (!root) return [];
+  return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+}
+
 // Client wrapper: owns the collapse toggle (client-side, expanded by default
 // — the fetched desktop frames disagree on Collapsed, see design/notes/
-// Sidebar.md) and derives the active item from the route. Sidebar has no
+// Sidebar.md), the mobile drawer's open state (#101 — the drawer #88 left
+// for later), and derives the active item from the route. Sidebar has no
 // directive of its own, so importing it here pulls it into the client
 // bundle — the boundary stops at this file, which is why the layout above
 // stays a Server Component and does the Supabase call.
 export function AppShellNav({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations("components.sidebar");
@@ -40,9 +64,64 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
   };
   const toggleLabel = collapsed ? t("expandLabel") : t("collapseLabel");
 
+  function handleNavigate(item: SidebarItemId) {
+    const href = ROUTES[item];
+    if (!href) return;
+    setMobileOpen(false);
+    router.push(href);
+  }
+
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (mobileOpen) {
+      previouslyFocused.current = document.activeElement as HTMLElement | null;
+      getFocusable(drawerRef.current)[0]?.focus();
+    } else {
+      previouslyFocused.current?.focus();
+      previouslyFocused.current = null;
+    }
+  }, [mobileOpen]);
+
+  function handleDrawerKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape") {
+      event.stopPropagation();
+      setMobileOpen(false);
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusable = getFocusable(drawerRef.current);
+    if (focusable.length === 0) {
+      event.preventDefault();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
   return (
     <div className="flex min-h-screen items-stretch bg-surface-muted">
-      <div className="hidden md:flex">
+      {/* Desktop: Sidebar itself renders `fixed` below (stays put while
+          `main` scrolls); this is a same-width flow spacer so the row still
+          reserves the right amount of horizontal space for it. Both this and
+          the fixed Sidebar transition on the same duration/easing so `main`
+          never lags behind the rail. */}
+      <div
+        aria-hidden="true"
+        className={clsx(
+          "hidden shrink-0 transition-[width] duration-[var(--duration-base)] ease-base motion-reduce:transition-none md:block",
+          collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH,
+        )}
+      />
+      <div className="hidden md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex">
         <Sidebar
           collapsed={collapsed}
           navLabel={t("navLabel")}
@@ -50,19 +129,54 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
           onToggle={() => setCollapsed((prev) => !prev)}
           activeItem={activeItemForPath(pathname)}
           labels={labels}
-          onNavigate={(item) => {
-            const href = ROUTES[item];
-            if (href) router.push(href);
-          }}
+          onNavigate={handleNavigate}
         />
       </div>
-      <main className="flex flex-1 flex-col gap-6 pt-4 pb-20 pl-4 md:pt-20 md:pb-20 md:pl-32">
-        {/* Figma's mobile frame (3680:1435) puts a standalone nav toggle
-            here, above the Header. It is deliberately NOT rendered yet:
-            below `md` the Sidebar is hidden, so the button would announce
-            itself to a screen reader and then do nothing when activated —
-            worse than absent. #89 (SidePanel) supplies the mobile drawer it
-            is meant to open; it gets built with that. */}
+
+      {/* Mobile drawer: overlay + the same full-width Sidebar sliding in
+          from the left, opened by the button inside `main` below. Stays
+          mounted (but `inert`) while closed so both directions transition;
+          z-40/z-50 match SidePanel's own overlay/panel layers. */}
+      <div
+        aria-hidden="true"
+        onClick={() => setMobileOpen(false)}
+        className={clsx(
+          "fixed inset-0 z-40 bg-text/60 transition-opacity duration-[var(--duration-base)] ease-base motion-reduce:transition-none md:hidden",
+          mobileOpen ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+      />
+      <div
+        ref={drawerRef}
+        inert={!mobileOpen}
+        aria-hidden={!mobileOpen}
+        onKeyDown={handleDrawerKeyDown}
+        className={clsx(
+          "fixed inset-y-0 left-0 z-50 transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none md:hidden",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
+        <Sidebar
+          navLabel={t("navLabel")}
+          toggleLabel={t("collapseLabel")}
+          onToggle={() => setMobileOpen(false)}
+          activeItem={activeItemForPath(pathname)}
+          labels={labels}
+          onNavigate={handleNavigate}
+        />
+      </div>
+
+      {/* `min-w-0` is load-bearing (#102): without it this `flex-1` item
+          never constrains its min-content width, so wide content (the
+          Kanban carousel) stretches `main`/`body` instead of scrolling
+          inside its own row. */}
+      <main className="flex min-w-0 flex-1 flex-col gap-6 pt-4 pb-20 pl-4 md:pt-20 md:pb-20 md:pl-32">
+        <Button
+          variant="filled"
+          icon="PanelLeftOpen"
+          aria-label={t("expandLabel")}
+          onClick={() => setMobileOpen(true)}
+          className="md:hidden"
+        />
         {children}
       </main>
     </div>
