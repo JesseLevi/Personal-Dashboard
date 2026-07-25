@@ -15,19 +15,12 @@ import { Button } from "../atoms/Button";
 /**
  * Organism/SidePanel — Figma "Te doen/Mobile/AddItem" (3779:4846) + its
  * desktop pair (3779:4938, broken layer name "y"). Same panel, two shapes
- * via `md:` only (annotations 3779:4847/3878:9048 "Slides in from bottom",
- * 3779:4939/3878:9061 "Slides in from right") — never JS breakpoint
- * detection for the *markup*. Empty shell: `children` (fields) + `footer`
- * (actions) are composer-supplied, per #89 — no field/data logic here
- * (that's #94). `title` is required (not optional, unlike the ticket's own
- * proposal) so `aria-labelledby` always resolves; full rationale + gaps:
- * design/notes/SidePanel.md.
- *
- * #103: the mobile-only drag-to-close *gesture* is real runtime behaviour
- * (not a markup shape), so it's the one deliberate exception to "no JS
- * breakpoint read" above — it checks `matchMedia` at drag-start, not on
- * every render, so it can't desync the two shapes' markup. Figma models no
- * gesture at all (design/notes/SidePanel.md).
+ * via `md:` only — never JS breakpoint detection for the *markup*. Empty
+ * shell: `children` (fields) + `footer` (actions) are composer-supplied,
+ * per #89. `title` is required so `aria-labelledby` always resolves. #103's
+ * mobile-only drag-to-close *gesture* is the one deliberate runtime-only
+ * exception (`matchMedia` at drag-start, not render) — Figma models no
+ * gesture. Full rationale + measurements: design/notes/SidePanel.md.
  */
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
