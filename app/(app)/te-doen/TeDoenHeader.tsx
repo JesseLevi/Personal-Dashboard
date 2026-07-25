@@ -6,9 +6,20 @@ import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/organisms/PageHeader";
 import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
+import type { IconName } from "@/components/atoms/Icon";
 import { SORT_OPTIONS, type SortOption } from "@/lib/boards/sort";
 import type { ActionResult, BoardRow, BoardWithColumns } from "@/lib/boards/types";
 import { BoardPanel, type BoardPanelTarget } from "./BoardPanel";
+
+// Per-option icon, matching the fetched sort-dropdown node (3877:7682) and
+// SORT_OPTIONS' own order (lib/boards/sort.ts): Aanmaakdatum/Prioriteit/
+// Grootte/Alfabetisch.
+const SORT_ICONS: Record<SortOption, IconName> = {
+  createdAt: "Calendar",
+  priority: "AlarmClockCheck",
+  size: "WeightTilde",
+  alphabetical: "AArrowDown",
+};
 
 // #95 header interactions — Figma "Te doen/Desktop/SwitchBoard" (3878:12036)
 // + "Te doen/Desktop/SortOnClick" (3877:6693). Page-level composition (same
@@ -173,7 +184,12 @@ export function TeDoenHeader({
                   {SORT_OPTIONS.map((option) => (
                     <Button
                       key={option}
+                      icon={SORT_ICONS[option]}
                       variant={option === sort ? "filled" : "white"}
+                      // "nothing active until chosen" (2026-07-25): `sort` is
+                      // null on load, so no option matches and none renders
+                      // pressed/filled — see design/notes/TeDoenBoard.md.
+                      aria-pressed={option === sort}
                       onClick={() => {
                         setSortMenuOpen(false);
                         goWithSort(option);

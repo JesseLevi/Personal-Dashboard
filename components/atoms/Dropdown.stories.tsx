@@ -7,14 +7,18 @@ import { Dropdown } from "./Dropdown";
 
 // The fetched Figma example: a label plus three stacked options, the first
 // shown "selected" via Button's own filled variant (a choice made by the
-// composing content, not by Dropdown itself).
+// composing content, not by Dropdown itself). The first/selected Button is
+// also the disclosure trigger — it carries `trailingIcon="ChevronDown"`
+// itself; Dropdown clones aria-expanded/aria-controls/onClick onto it and
+// rotates the chevron, rather than wrapping it in a second <button>.
 
-// Closed: the `Field` label plus the bordered container showing only the
-// first/selected option. The other two are collapsed, not removed: click
-// the label (or focus + Enter/Space) to open them.
+// Closed: the `Field` label (now inert text) plus the bordered container
+// showing only the first/selected option, hugging its own content width. The
+// other two are collapsed, not removed: click the selected option (or focus
+// + Enter/Space) to open them.
 export const Closed = () => (
   <Dropdown id="demo-closed" label="Field" defaultOpen={false}>
-    <Button variant="filled" icon="Plus">
+    <Button variant="filled" icon="Plus" trailingIcon="ChevronDown">
       Categorie
     </Button>
     <Button variant="white" icon="Plus">
@@ -26,12 +30,13 @@ export const Closed = () => (
   </Dropdown>
 );
 
-// Open: the expanded list — all three options visible. Click the label, or
-// focus it and press Enter/Space, to collapse back to the Closed look; then
-// Escape re-closes and returns focus to the label.
+// Open: the expanded list — all three options visible, each filling the
+// panel's width. Click the selected option, or focus it and press
+// Enter/Space, to collapse back to the Closed look; then Escape re-closes
+// and returns focus to it.
 export const Open = () => (
   <Dropdown id="demo-open" label="Field" defaultOpen>
-    <Button variant="filled" icon="Plus">
+    <Button variant="filled" icon="Plus" trailingIcon="ChevronDown">
       Categorie
     </Button>
     <Button variant="white" icon="Plus">
@@ -45,11 +50,11 @@ export const Open = () => (
 
 // Animated: starts open so the first interaction is watching the panel
 // collapse down to the single selected option (the CSS-grid `0fr`/`1fr`
-// transition, disabled under `prefers-reduced-motion`); click again to watch
-// it expand back out.
+// transition, disabled under `prefers-reduced-motion`, plus the chevron's own
+// rotation) — click again to watch it expand back out.
 export const Animated = () => (
   <Dropdown id="demo-animated" label="Field" defaultOpen>
-    <Button variant="filled" icon="Plus">
+    <Button variant="filled" icon="Plus" trailingIcon="ChevronDown">
       Categorie
     </Button>
     <Button variant="white" icon="Plus">

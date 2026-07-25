@@ -7,7 +7,7 @@ import { InputField } from "@/components/atoms/InputField";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { Tag } from "@/components/atoms/Tag";
 import { Button } from "@/components/atoms/Button";
-import type { IconName } from "@/components/atoms/Icon";
+import { Icon, type IconName } from "@/components/atoms/Icon";
 import { PRIORITIES, SIZES, isPriority, isSize } from "@/lib/boards/enums";
 import type { ActionResult, CardRow, CardWithLabels } from "@/lib/boards/types";
 
@@ -309,7 +309,7 @@ export function CardDetailPanel({
           id="card-detail-status"
           defaultOpen={false}
         >
-          <Button variant="filled" icon={selectedColumn.icon}>
+          <Button variant="filled" icon={selectedColumn.icon} trailingIcon="ChevronDown">
             {selectedColumn.name}
           </Button>
           {otherColumns.map((column) => (
@@ -330,7 +330,15 @@ export function CardDetailPanel({
         id="card-detail-priority"
         defaultOpen={false}
       >
-        <Tag variant={priority}>{tPriority(priority)}</Tag>
+        {/* Selected item doubles as the disclosure trigger (#100) — Tag has
+            no interactive semantics of its own, so this plain <button>
+            supplies the click target and the trailing chevron Dropdown
+            rotates; Dropdown clones aria-expanded/aria-controls/onClick onto
+            it rather than wrapping it in a second <button>. */}
+        <button type="button" className="inline-flex items-center gap-2 rounded-lg">
+          <Tag variant={priority}>{tPriority(priority)}</Tag>
+          <Icon name="ChevronDown" className="text-text-muted" />
+        </button>
         {otherPriorities.map((value) => (
           <button
             key={value}
@@ -348,7 +356,11 @@ export function CardDetailPanel({
         id="card-detail-size"
         defaultOpen={false}
       >
-        <Tag variant="neutral">{size ? size.toUpperCase() : t("fields.sizePlaceholder")}</Tag>
+        {/* Same trigger pattern as Prioriteit above — see that comment. */}
+        <button type="button" className="inline-flex items-center gap-2 rounded-lg">
+          <Tag variant="neutral">{size ? size.toUpperCase() : t("fields.sizePlaceholder")}</Tag>
+          <Icon name="ChevronDown" className="text-text-muted" />
+        </button>
         {otherSizes.map((value) => (
           <button
             key={value}
