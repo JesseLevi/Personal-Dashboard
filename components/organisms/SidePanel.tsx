@@ -2,7 +2,14 @@
 
 // figma: node-id=3779:4846
 import clsx from "clsx";
-import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  type KeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react";
 import { Button } from "../atoms/Button";
 
 /**
@@ -10,10 +17,17 @@ import { Button } from "../atoms/Button";
  * desktop pair (3779:4938, broken layer name "y"). Same panel, two shapes
  * via `md:` only (annotations 3779:4847/3878:9048 "Slides in from bottom",
  * 3779:4939/3878:9061 "Slides in from right") — never JS breakpoint
- * detection. Empty shell: `children` (fields) + `footer` (actions) are
- * composer-supplied, per #89 — no field/data logic here (that's #94).
- * `title` is required (not optional, unlike the ticket's own proposal) so
- * `aria-labelledby` always resolves; full rationale + gaps: design/notes/SidePanel.md.
+ * detection for the *markup*. Empty shell: `children` (fields) + `footer`
+ * (actions) are composer-supplied, per #89 — no field/data logic here
+ * (that's #94). `title` is required (not optional, unlike the ticket's own
+ * proposal) so `aria-labelledby` always resolves; full rationale + gaps:
+ * design/notes/SidePanel.md.
+ *
+ * #103: the mobile-only drag-to-close *gesture* is real runtime behaviour
+ * (not a markup shape), so it's the one deliberate exception to "no JS
+ * breakpoint read" above — it checks `matchMedia` at drag-start, not on
+ * every render, so it can't desync the two shapes' markup. Figma models no
+ * gesture at all (design/notes/SidePanel.md).
  */
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -21,6 +35,25 @@ const FOCUSABLE_SELECTOR =
 function getFocusable(root: HTMLElement | null): HTMLElement[] {
   if (!root) return [];
   return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+}
+
+// Drag-to-close tuning (#103, no Figma source — codebase decision, see
+// design/notes/SidePanel.md). SLOP ignores a tap's own jitter before
+// treating it as a real drag; DISTANCE requires a deliberate pull (not an
+// accidental few-px nudge); VELOCITY lets a fast flick close even if
+// released before crossing DISTANCE, matching the two conventional
+// bottom-sheet dismiss triggers (far enough OR fast enough).
+const DRAG_SLOP_PX = 8;
+const DRAG_CLOSE_DISTANCE_PX = 120;
+const DRAG_CLOSE_VELOCITY_PX_MS = 0.5; // 500px/s
+
+interface DragState {
+  pointerId: number;
+  startY: number;
+  lastY: number;
+  lastTime: number;
+  velocity: number;
+  dragging: boolean;
 }
 
 export interface SidePanelProps {
@@ -50,6 +83,7 @@ export function SidePanel({
 }: SidePanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  const dragRef = useRef<DragState | null>(null);
   const titleId = useId();
 
   // Move focus into the panel on open, back to whatever triggered it on close.
@@ -62,6 +96,67 @@ export function SidePanel({
       previouslyFocused.current = null;
     }
   }, [open]);
+
+  // Mobile-only (<md) drag-to-close, starting in the handle strip only —
+  // never the scrolling fields area, so it can't fight `overflow-y-auto`.
+  // Imperative (direct style writes via panelRef, no React state) so the
+  // drag stays smooth without a re-render per pointermove; the CSS
+  // transition is disabled for the duration so it can't fight the live
+  // transform, and restored on release/cancel.
+  function handleHandlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (!open) return;
+    if (window.matchMedia("(min-width: 768px)").matches) return; // desktop keeps X/Escape/overlay-click only
+    if ((event.target as HTMLElement).closest("button")) return; // never hijack the close button's own click
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startY: event.clientY,
+      lastY: event.clientY,
+      lastTime: event.timeStamp,
+      velocity: 0,
+      dragging: false,
+    };
+  }
+
+  function handleHandlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const deltaY = event.clientY - drag.startY;
+    if (!drag.dragging) {
+      if (Math.abs(deltaY) < DRAG_SLOP_PX) return;
+      if (deltaY <= 0) {
+        // Upward/sideways jitter in the handle strip isn't a close gesture.
+        dragRef.current = null;
+        return;
+      }
+      drag.dragging = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      if (panelRef.current) panelRef.current.style.transitionDuration = "0s";
+    }
+    const dt = event.timeStamp - drag.lastTime;
+    if (dt > 0) drag.velocity = (event.clientY - drag.lastY) / dt;
+    drag.lastY = event.clientY;
+    drag.lastTime = event.timeStamp;
+    if (panelRef.current) {
+      panelRef.current.style.transform = `translateY(${Math.max(0, deltaY)}px)`;
+    }
+    event.preventDefault();
+  }
+
+  // `cancelled` (pointercancel — the browser aborted the gesture, e.g. an OS
+  // interruption) always snaps back regardless of distance/velocity; a
+  // normal release (pointerup) evaluates the close thresholds.
+  function endDrag(event: ReactPointerEvent<HTMLDivElement>, cancelled: boolean) {
+    const drag = dragRef.current;
+    dragRef.current = null;
+    if (!drag?.dragging || !panelRef.current) return;
+    const deltaY = event.clientY - drag.startY;
+    const shouldClose =
+      !cancelled &&
+      (deltaY > DRAG_CLOSE_DISTANCE_PX || drag.velocity > DRAG_CLOSE_VELOCITY_PX_MS);
+    panelRef.current.style.removeProperty("transition-duration");
+    panelRef.current.style.removeProperty("transform");
+    if (shouldClose) onClose();
+  }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") {
@@ -124,8 +219,17 @@ export function SidePanel({
         <h2 id={titleId} className="sr-only">
           {title}
         </h2>
-        <div className="relative flex h-14 shrink-0 items-center justify-end px-4">
-          {/* Decorative pull-handle (Figma: no swipe-to-close modeled) — mobile only. */}
+        <div
+          className="relative flex h-14 shrink-0 touch-none items-center justify-end px-4 md:touch-auto"
+          onPointerDown={handleHandlePointerDown}
+          onPointerMove={handleHandlePointerMove}
+          onPointerUp={(event) => endDrag(event, false)}
+          onPointerCancel={(event) => endDrag(event, true)}
+        >
+          {/* Decorative-looking, but mobile (<md) it's also the drag-to-close
+              handle strip's visual affordance — the gesture itself is bound
+              to the whole strip, not just this span, so a drag starting
+              anywhere in the empty header area also works. */}
           <span
             aria-hidden="true"
             className="absolute top-3 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-border md:hidden"
@@ -136,7 +240,16 @@ export function SidePanel({
           {children}
         </div>
         {footer && (
-          <div className="flex shrink-0 items-center gap-2 border-t border-border bg-surface p-4 md:border-t-0 md:bg-transparent">
+          // Column, not row: imposes full width on whatever row(s) the
+          // composer nests inside (default align-items:stretch), so a lone
+          // button already fills 100% for free. Multiple buttons sharing a
+          // row must still opt in per-button (`grow basis-0`, see
+          // CardDetailPanel.tsx's `footer` / BoardPanel.tsx) — Button.tsx's
+          // own `shrink-0` (#80) only governs its main-axis behaviour inside
+          // THAT row, never this container's cross-axis stretch, so no
+          // Button call site outside a SidePanel footer is affected. See
+          // design/notes/SidePanel.md.
+          <div className="flex shrink-0 flex-col gap-2 border-t border-border bg-surface p-4 md:border-t-0 md:bg-transparent">
             {footer}
           </div>
         )}

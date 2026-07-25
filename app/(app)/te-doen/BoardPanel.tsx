@@ -82,15 +82,24 @@ function BoardPanelForm({
       onClose={onClose}
       title={target.mode === "create" ? t("addTitle") : t("editTitle")}
       closeLabel={tSidePanel("closeLabel")}
+      // #103: SidePanel's footer container is a column that already forces
+      // this row full-width; `grow basis-0` makes the (single) button claim
+      // all of it — same convention as CardDetailPanel.tsx's footer, kept
+      // uniform even though a lone button would stretch via the container's
+      // own cross-axis stretch regardless, so every footer call site reads
+      // the same way at a glance.
       footer={
-        <Button
-          variant="filled"
-          icon="Save"
-          onClick={handleSave}
-          disabled={isPending || name.trim() === ""}
-        >
-          {isPending ? t("savingLabel") : t("saveLabel")}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="filled"
+            icon="Save"
+            className="grow basis-0"
+            onClick={handleSave}
+            disabled={isPending || name.trim() === ""}
+          >
+            {isPending ? t("savingLabel") : t("saveLabel")}
+          </Button>
+        </div>
       }
     >
       <InputField
