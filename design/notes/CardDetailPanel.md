@@ -50,11 +50,60 @@ Figma's annotation is explicit ("For now date will be only text based") and the 
 
 Per the user's 2026-07-24 decision: clicking "Verwijderen" (destructive) swaps the *same* `SidePanel` footer to a confirm state (`t("deleteConfirmLabel")` text + `Button variant="outline"` Annuleren + `Button variant="destructive" icon="Trash"` Ja, verwijderen) — no `window.confirm`, no second dialog/chrome. "Annuleren" just flips a local `deleteConfirming` boolean back to `false`. No Figma node models this state (the ticket says so explicitly), so no new component was built for it — both buttons are existing `Button` variants already used elsewhere in this same footer.
 
-## One component, create+edit — remount-on-target-change
+## One component, create+edit — was remount-on-target-change, now reset-on-render (#103/#105)
 
-`CardDetailPanel` (outer, thin) computes a `key` from `target` (`edit-${card.id}` / `create-${columnId}`) and renders `CardDetailPanelForm` (inner, owns all state) under that key — switching targets always starts from fresh field state instead of carrying over unsaved edits from a different card. Toggling `open` alone does **not** change the key, so `SidePanel`'s own open/close CSS transition still animates normally; `TeDoenBoard.tsx`'s panel state keeps `open`/`target` independent for the same reason (closing via X/overlay/Escape only flips `open`, leaving `target` in place so the close transition has real content to animate away from).
+**Superseded by #103/#105 (2026-07-25).** The paragraphs below describe the *original* #94 design; kept for history since the trade-off it describes is exactly what #105's bug report was about and #103's animation fix had to solve at the same time. See the replacement mechanism after it.
 
-**Known, accepted trade-off**: if the panel is already open (e.g. editing card A) and a *different* card B is clicked without closing first, the `key` changes mid-visible-panel and React remounts `SidePanel` entirely — the open transition doesn't replay (the new instance mounts already-open) and focus/scroll reset to the panel's initial state. This reads as reasonable ("a fresh dialog for the new item") rather than jarring, and a non-remounting state-sync alternative was not built for a one-ticket edge case.
+~~`CardDetailPanel` (outer, thin) computes a `key` from `target` (`edit-${card.id}` / `create-${columnId}`) and renders `CardDetailPanelForm` (inner, owns all state) under that key — switching targets always starts from fresh field state instead of carrying over unsaved edits from a different card. Toggling `open` alone does **not** change the key, so `SidePanel`'s own open/close CSS transition still animates normally.~~
+
+~~**Known, accepted trade-off**: if the panel is already open (e.g. editing card A) and a *different* card B is clicked without closing first, the `key` changes mid-visible-panel and React remounts `SidePanel` entirely — the open transition doesn't replay and focus/scroll reset.~~
+
+### Why the remount had to go
+
+Two tickets landed on this mechanism from opposite directions and both were right:
+
+- **#105**: opening "create" twice in the *same* column computes the *same* key both times, so no remount happens, so the previous (abandoned) draft's field state — including `deleteConfirming` and `error` — survives into the reopened panel. Bug: stale data on open.
+- **#103**: diagnosed in a real browser (see `design/notes/SidePanel.md`'s own #103 entry for the full method) that the remount itself is *also* the root cause of the "no animation" bug — not just on the literal first click, but on every open whose target's key had never been mounted before. A fresh key mounts `SidePanel`'s dialog `<div>` as a brand-new DOM node already in the `open` position, with no previously-painted closed frame for the CSS transition to interpolate from.
+
+Making the key vary on `open` (an obvious-looking fix for #105) would have made #103 *worse* — the subtree would remount on every close too, destroying the very content `SidePanel` needs to animate away from. Neither ticket could be fixed by patching the other's symptom; the mechanism itself was wrong.
+
+### The replacement: reset during render, never remount
+
+`CardDetailPanel` is now a single component (the outer/inner split existed only to host the `key`, so it was removed along with it). A `targetKey` string (`edit-${card.id}` / `create-${columnId}`, same shape as the old React `key`) is still computed, but only ever used as **plain state for comparison**, never passed as a JSX `key`:
+
+```ts
+const [prevOpen, setPrevOpen] = useState(open);
+const [prevTargetKey, setPrevTargetKey] = useState(targetKey);
+if (prevOpen !== open || prevTargetKey !== targetKey) {
+  const shouldReset = open && (!prevOpen || targetKey !== prevTargetKey);
+  setPrevOpen(open);
+  setPrevTargetKey(targetKey);
+  if (shouldReset) { /* setTitle/setDescription/…/setDeleteConfirming(false)/setError(null) */ }
+}
+```
+
+This is React's own documented "adjust state while rendering" pattern (comparing against a snapshot of the previous render's props/state, kept in `useState` rather than a `useEffect`) — not a house invention. Chosen over `useEffect` specifically because it resets synchronously within the same render/commit: an effect-based reset would let React commit and paint one frame of *stale* field values first (since the effect runs after paint), then reset a frame later, which is exactly the "flash empty" problem the ticket warned resetting-on-*close* has, just shifted to open. Render-phase reset has no such frame.
+
+The `shouldReset` condition covers every case the old remount did, without ever destroying `SidePanel`'s DOM node:
+
+| Scenario | Old (remount) | New (render-phase reset) |
+|---|---|---|
+| Open "create" twice, same column | No remount (same key) → **stale fields leaked (#105 bug)** | `open` flips false→true both times → resets both times |
+| Edit card A, then (without closing) click card B | Remount (key changes) → fresh fields, but `SidePanel` restarts already-open, no close-side animation | `open` stays true, `targetKey` changes → resets fields in place, `SidePanel`'s own DOM node is untouched |
+| First-ever open of any never-before-seen target | Remount → **broken animation (#103 bug)**, see `SidePanel.md` | No remount, ever → animation always has a real prior frame |
+| Typing in an open panel, unrelated parent re-render | N/A (key unchanged) | `open`/`targetKey` both unchanged → condition never true, no reset, typing is safe |
+
+`deleteConfirming` and `error` are reset in the same block as the fields (the ticket's own explicit requirement — a half-confirmed delete or a stale error message must not leak into the next opening either).
+
+**Verified in a real browser** (`card-detail-panel--interactive` Ladle story, Playwright MCP, `pnpm ladle`), not assumed from reading the code:
+- Typed a draft title, closed without saving, reopened "create" on the *same* column (Ideeën) → title field empty.
+- Typed in an open "create" panel, then clicked "edit" on the sample card *without closing* → title loaded the card's real value (`"HBO Wachtwoord updaten"`), not the abandoned create draft.
+- Opened edit, clicked "Verwijderen" (entered delete-confirm), closed via X without confirming, reopened edit on the same card → back to the normal Verwijderen/Opslaan footer, not stuck on "Weet je het zeker?".
+- The open/close animation itself: see `SidePanel.md`'s #103 entry for the frame-by-frame proof (`getBoundingClientRect().y` interpolating smoothly, DOM node identity (`===`) stable across the whole sequence above).
+
+### Footer (#103)
+
+Updated to the new full-width convention `SidePanel.md` documents: the delete-confirm text moved from an inline `<span className="flex-1">` (sharing a row with the buttons) to its own `<p>` on a full-width line, with the two buttons below it in a `<div className="flex gap-2">` row, each carrying `className="grow basis-0"`. The normal (non-confirm) footer's buttons are wrapped in the same kind of row. `BoardPanel.tsx`'s single-button footer follows the identical convention for consistency, even though a lone button would already stretch via `SidePanel`'s column-container default (`align-items: stretch`) without the wrapper.
 
 ## Optimistic update vs. `revalidatePath` — chose the latter
 
