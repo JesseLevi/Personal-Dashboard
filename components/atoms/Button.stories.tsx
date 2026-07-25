@@ -63,3 +63,14 @@ export const WithAndWithoutIcon = () => (
     <Button>Categorie</Button>
   </div>
 );
+
+// Figma "Trekking icon" boolean (#99): leading+label+trailing together, and
+// trailing+label with no leading icon.
+export const TrailingIcon = () => (
+  <div className="flex items-center gap-4">
+    <Button icon="Plus" trailingIcon="ChevronDown">
+      Categorie
+    </Button>
+    <Button trailingIcon="ChevronDown">Categorie</Button>
+  </div>
+);

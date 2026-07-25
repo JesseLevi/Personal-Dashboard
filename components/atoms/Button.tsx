@@ -10,7 +10,8 @@ import { Icon, type IconName } from "./Icon";
  * Style → `variant` (filled|white|transparent|outline|destructive, Figma
  * "Distructive"). State → CSS, never a prop: `hover:`/`active:`; Selected is
  * caller-supplied `aria-pressed` (same idiom as `ButtonToggle`). `With
- * icon`/`With text` → presence of `icon`/`children`.
+ * icon`/`With text` → presence of `icon`/`children`; `Trekking icon` (Figma's
+ * misnomer for trailing) → `trailingIcon` (#99).
  */
 const buttonVariants = cva(
   "inline-flex shrink-0 items-center rounded-lg text-base font-semibold transition-colors",
@@ -20,7 +21,7 @@ const buttonVariants = cva(
       // (size-N, width=height stated directly). iconOnlyDefault is
       // internal-only; see design/notes/Button.md.
       size: {
-        default: "h-10 justify-start pl-2 pr-1",
+        default: "h-10 justify-between px-2",
         compact: "size-8 justify-center",
         iconOnlyDefault: "size-10 justify-center",
       },
@@ -61,14 +62,29 @@ type ButtonBaseProps = Omit<
 // `Icon` renders `aria-hidden`. `size="compact"` is a fixed 32x32 box
 // (`size-8`), so it's only representable on the icon-only branch — a label
 // would be clipped, and Figma never samples `compact` with text.
+//
+// `trailingIcon` only exists on the labelled branch: Figma's `Trekking icon`
+// is never sampled together with an icon-only instance (compact or
+// iconOnlyDefault), so that combination has no defined layout — flagged in
+// design/notes/Button.md (#99) rather than invented, and excluded here so
+// it's a type error, not a silent guess.
 export type ButtonProps =
-  | (ButtonBaseProps & { children: ReactNode; size?: "default" })
-  | (ButtonBaseProps & { children?: never; "aria-label": string });
+  | (ButtonBaseProps & {
+      children: ReactNode;
+      size?: "default";
+      trailingIcon?: IconName;
+    })
+  | (ButtonBaseProps & {
+      children?: never;
+      "aria-label": string;
+      trailingIcon?: never;
+    });
 
 export function Button({
   variant,
   size,
   icon,
+  trailingIcon,
   children,
   className,
   type = "button",
@@ -86,13 +102,12 @@ export function Button({
       className={buttonVariants({ variant, size: resolvedSize, className })}
       {...props}
     >
-      {/* pr-1 only opens a gap before a label; omitted icon-only or it'd off-centre the icon in the centred icon-only box. */}
-      {icon && (
-        <span className={children ? "pr-1" : undefined}>
-          <Icon name={icon} />
-        </span>
-      )}
-      {children && <span className="pl-1 pr-2">{children}</span>}
+      {/* Mirrors Figma's "Leading + Text" frame (row, gap-1) as the root's first justify-between slot. */}
+      <span className="flex items-center gap-1">
+        {icon && <Icon name={icon} />}
+        {children}
+      </span>
+      {trailingIcon && <Icon name={trailingIcon} />}
     </button>
   );
 }
