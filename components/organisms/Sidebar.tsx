@@ -6,17 +6,11 @@ import type { IconName } from "../atoms/Icon";
 /**
  * Organism/Sidebar — Figma component set "Sidebar" (node-id 3674:5664).
  * Variant axis: `Collapsed` (No/Yes) -> `collapsed` prop. Six modules ->
- * fixed `NAV_ITEMS` list (not a `children` slot — Figma hardcodes these
- * six). Active item -> Button's `Style=Filled, State=Selected`
- * (`variant="filled"` + `aria-pressed`). `bg-surface-muted` is Figma's
- * fill (#109) — same token `AppShellNav`'s wrapper already carries, so this
- * is a no-op on desktop by coincidence; it's load-bearing for the mobile
- * drawer, which has no ambient background of its own. See design/notes/
- * Sidebar.md. Nav-item Buttons render one element
- * across both states — label stays in the DOM, `overflow-hidden` +
- * `whitespace-nowrap` clip it as the rail shrinks, instead of swapping
- * icon-only/labelled Buttons (#109). Full rationale, measurements,
- * history: design/notes/Sidebar.md.
+ * fixed `NAV_ITEMS` list. Active item -> Button's `Style=Filled,
+ * State=Selected`. `bg-surface-muted` is Figma's fill; nav-item Buttons
+ * render one element across both states (`overflow-hidden` clips the
+ * label as the rail shrinks). Full rationale + measurements: design/notes/
+ * Sidebar.md.
  */
 export type SidebarItemId =
   | "todo"
@@ -35,12 +29,9 @@ const NAV_ITEMS: ReadonlyArray<{ id: SidebarItemId; icon: IconName }> = [
   { id: "assistant", icon: "Astroid" },
 ];
 
-// Explicit-px constants, not `w-fit` — CSS can't transition `width` to/from
-// an intrinsic-sizing keyword, only between two literal lengths. 73px (not
-// the 72px pad+icon+pad arithmetic suggests) accounts for Preflight's
-// border-box folding in this <nav>'s 1px border; see design/notes/Sidebar.md.
-// Exported (#101) so `AppShellNav`'s fixed-sidebar layout spacer can reuse
-// the exact same widths instead of a second hardcoded pair.
+// Explicit-px, not `w-fit` — CSS can't transition to/from an intrinsic
+// keyword. 73px (not 72) accounts for border-box folding the 1px border;
+// see design/notes/Sidebar.md. Exported so AppShellNav's spacer reuses them.
 export const SIDEBAR_EXPANDED_WIDTH = "w-[198px]";
 export const SIDEBAR_COLLAPSED_WIDTH = "w-[73px]";
 
@@ -79,12 +70,9 @@ export function Sidebar({
     <nav
       aria-label={navLabel}
       className={clsx(
-        // duration-[var(--duration-base)] MUST stay arbitrary-value form:
-        // `--duration-*` isn't a Tailwind v4 theme namespace, so a bare
-        // `duration-base` class compiles to nothing.
-        // GAP: --duration-base/--ease-base values are unsourced from Figma
-        // (no prototype spec exists) — see
-        // docs/open-questions.md#sidebar-motion-timing-unsourced.
+        // duration-[var(--duration-base)] must stay arbitrary-value form
+        // (bare `duration-base` compiles to nothing); GAP: value unsourced
+        // from Figma, see docs/open-questions.md#sidebar-motion-timing-unsourced.
         "flex h-full flex-col items-end gap-12 border-r border-border bg-surface-muted p-4 transition-[width] duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
         collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH,
         className,
@@ -103,14 +91,10 @@ export function Sidebar({
           const label = labels[id];
           const handleClick = onNavigate ? () => onNavigate(id) : undefined;
 
-          // Same Button element in both states — label stays as `children`
-          // and gets clipped by `overflow-hidden`/`whitespace-nowrap` as
-          // this flex item's stretched width shrinks with the rail, instead
-          // of swapping icon-only/labelled Buttons. `aria-label` mirrors
-          // `children` verbatim (never a different or state-dependent
-          // string) — required because Button's icon+text markup loses its
-          // content-computed accessible name in real browsers; see
-          // design/notes/Sidebar.md (#109).
+          // One Button element in both states — `overflow-hidden` clips
+          // `children` as the rail shrinks. `aria-label` mirrors `children`
+          // verbatim: Button's icon+text markup drops its content-computed
+          // accessible name in real browsers, see design/notes/Sidebar.md.
           return (
             <Button
               key={id}

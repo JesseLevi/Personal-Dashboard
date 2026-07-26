@@ -265,3 +265,23 @@ corrected 2026-07-22" entry above already caught once for its fill). Not
 acted on: this codebase's CSS-stretch rendering makes every collapsed item
 40×40 regardless, including the active one, so the artifact has no code
 consequence either way.
+
+**New, this ticket: a small honest deviation from Figma's collapsed
+icon-only look, introduced by the overflow-clip fix itself.** Figma's
+collapsed Button never has a text node at all (`"With text": false`
+literally omits it). This fix keeps `children` mounted always and clips it
+with `overflow-hidden`, so at rest a sliver of each label's first letter(s)
+is visible past the icon — measured in a real browser (collapsed `nav`,
+"Te doen" item): icon right edge at 24px + 8px left padding = 32px into the
+button; the button's own border-box (where `overflow-hidden` actually
+clips) is 40px, leaving an 8px gap that `gap-1` (4px) and the start of the
+label's glyphs bleed into before the clip boundary — visible in the
+regenerated `sidebar--variants` baseline. Not fixed further: the available
+mitigations both cross a line — shrinking the collapsed width to hide it
+would contradict the Figma-sourced 73px/40px measurement above, and forcing
+tighter padding via a conflicting utility class (`pr-0` alongside `Button`'s
+own `px-2`) is exactly the "mixing logical/physical padding utilities
+doesn't override" trap `CLAUDE.md` warns about — same specificity, unreliable
+win, not a safe fix from `className` alone. Judged an acceptable trade-off:
+a ~4-8px letter sliver against a "no text jump" fix that needs no client JS
+and touches no other file.
