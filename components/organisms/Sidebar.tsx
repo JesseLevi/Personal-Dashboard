@@ -6,10 +6,11 @@ import type { IconName } from "../atoms/Icon";
 /**
  * Organism/Sidebar — Figma component set "Sidebar" (node-id 3674:5664).
  * Variant axis: `Collapsed` (No/Yes) -> `collapsed` prop. Six modules ->
- * fixed `NAV_ITEMS` list (not a `children` slot — Figma hardcodes these
- * six). Active item -> Button's `Style=Filled, State=Selected`
- * (`variant="filled"` + `aria-pressed`). Full rationale, measurements,
- * history: design/notes/Sidebar.md.
+ * fixed `NAV_ITEMS` list. Active item -> Button's `Style=Filled,
+ * State=Selected`. `bg-surface-muted` is Figma's fill; nav-item Buttons
+ * render one element across both states (`overflow-hidden` clips the
+ * label as the rail shrinks). Full rationale + measurements: design/notes/
+ * Sidebar.md.
  */
 export type SidebarItemId =
   | "todo"
@@ -28,12 +29,9 @@ const NAV_ITEMS: ReadonlyArray<{ id: SidebarItemId; icon: IconName }> = [
   { id: "assistant", icon: "Astroid" },
 ];
 
-// Explicit-px constants, not `w-fit` — CSS can't transition `width` to/from
-// an intrinsic-sizing keyword, only between two literal lengths. 73px (not
-// the 72px pad+icon+pad arithmetic suggests) accounts for Preflight's
-// border-box folding in this <nav>'s 1px border; see design/notes/Sidebar.md.
-// Exported (#101) so `AppShellNav`'s fixed-sidebar layout spacer can reuse
-// the exact same widths instead of a second hardcoded pair.
+// Explicit-px, not `w-fit` — CSS can't transition to/from an intrinsic
+// keyword. 73px (not 72) accounts for border-box folding the 1px border;
+// see design/notes/Sidebar.md. Exported so AppShellNav's spacer reuses them.
 export const SIDEBAR_EXPANDED_WIDTH = "w-[198px]";
 export const SIDEBAR_COLLAPSED_WIDTH = "w-[73px]";
 
@@ -72,13 +70,10 @@ export function Sidebar({
     <nav
       aria-label={navLabel}
       className={clsx(
-        // duration-[var(--duration-base)] MUST stay arbitrary-value form:
-        // `--duration-*` isn't a Tailwind v4 theme namespace, so a bare
-        // `duration-base` class compiles to nothing.
-        // GAP: --duration-base/--ease-base values are unsourced from Figma
-        // (no prototype spec exists) — see
-        // docs/open-questions.md#sidebar-motion-timing-unsourced.
-        "flex h-full flex-col items-end gap-12 border-r border-border p-4 transition-[width] duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+        // duration-[var(--duration-base)] must stay arbitrary-value form
+        // (bare `duration-base` compiles to nothing); GAP: value unsourced
+        // from Figma, see docs/open-questions.md#sidebar-motion-timing-unsourced.
+        "flex h-full flex-col items-end gap-12 border-r border-border bg-surface-muted p-4 transition-[width] duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
         collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH,
         className,
       )}
@@ -96,17 +91,10 @@ export function Sidebar({
           const label = labels[id];
           const handleClick = onNavigate ? () => onNavigate(id) : undefined;
 
-          return collapsed ? (
-            <Button
-              key={id}
-              variant={variant}
-              icon={icon}
-              aria-label={label}
-              aria-current={isActive ? "page" : undefined}
-              aria-pressed={isActive || undefined}
-              onClick={handleClick}
-            />
-          ) : (
+          // One Button element in both states — `overflow-hidden` clips
+          // `children` visually but keeps it (and its accessible name) in
+          // the DOM, instead of swapping icon-only/labelled Buttons.
+          return (
             <Button
               key={id}
               variant={variant}
@@ -114,6 +102,7 @@ export function Sidebar({
               aria-current={isActive ? "page" : undefined}
               aria-pressed={isActive || undefined}
               onClick={handleClick}
+              className="overflow-hidden whitespace-nowrap"
             >
               {label}
             </Button>

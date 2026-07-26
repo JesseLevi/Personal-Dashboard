@@ -140,3 +140,157 @@ long. Verified to still catch `#fff`, `#0af`, `#123456`, `#0C0A09` and
 `#00000000` while passing `#101`, `#999` and `#1234`. Accepted residual hole,
 recorded in the script: an all-decimal 3- or 4-digit hex such as `#111` now
 passes. Ticket references in `components/` use the ordinary `(#101)` form.
+
+## Background fill + collapse text jump (issue 109, 2026-07-25)
+
+Review-feedback round 2, both points scoped to `Sidebar.tsx` only. Re-fetched
+node `3674:5664` via Figma MCP (fresh, not from this file) and its Dev Mode
+annotations via the REST API (`GET .../nodes?ids=3674:5664`) — the raw
+response contains zero `annotation` occurrences anywhere in the payload,
+confirming #86's finding still holds: no Figma-sourced collapse-timing spec
+exists for this node.
+
+**1. Background fill — verified, not assumed, which of the two possible
+cases holds.** Both `Collapsed=No` (`3674:5665`) and `Collapsed=Yes`
+(`3632:460`) components resolve to `fills=fill_aa157800` = `#F5F5F4` —
+exactly Tailwind stone-100, i.e. the existing `surface-muted` token. That is
+**the same token** `AppShellNav`'s outer wrapper (`app/(app)/_components/
+AppShellNav.tsx`, `<div className="flex min-h-screen items-stretch
+bg-surface-muted">`, read-only here) already carries. So this is genuinely
+the second of the two possible readings: **Figma's sidebar fill really does
+equal the page background** — it is not that the nav was missing a
+*different* colour Figma specifies. Desktop was not visibly broken; the
+`<nav>` was already rendering `#F5F5F4` by inheritance from that wrapper
+before this fix, coincidentally correct. The border (`border-r border-border`,
+stone-300, unchanged by this ticket) wasn't the issue either — it already
+matched the fetched node's stroke.
+
+Given that, `bg-surface-muted` added directly to `<nav>` is a **no-op on
+desktop** and real only for the **mobile drawer** (issue 101): that instance
+sits in its own `fixed` wrapper with no background of its own and is not a
+descendant of `AppShellNav`'s `bg-surface-muted` div, so inheritance does not
+reach it — before this fix the drawer's `<nav>` was fully transparent over
+the scrim. Checked in a real browser (Playwright, 402px viewport) post-fix:
+the drawer now renders opaque `#F5F5F4`, matching the fetched
+`Mobile/Navigation/02` frame; before the fix, page content bled through the
+scrim underneath the nav's item list. Still correct to add explicitly on the
+`<nav>` itself rather than continue relying on `AppShellNav`'s incidental
+match — the component shouldn't depend on a parent's class for its own
+Figma-specified fill. `AppShellNav.tsx` itself was only read, not edited, per
+this ticket's scope.
+
+**2. Collapse text jump.** Confirmed the stated cause: the old code rendered
+two different `Button` elements depending on `collapsed` (icon-only with
+`aria-label` vs. labelled with `{label}` children), so React swapped the
+element on every toggle instead of animating it, and the label
+appeared/disappeared in one frame. Fixed by rendering exactly one `Button`
+per nav item in both states — always `icon` + `children={label}` — with
+`className="overflow-hidden whitespace-nowrap"` at the Sidebar call site
+(`Button.tsx` untouched, per scope).
+
+**No `aria-label` on the nav items — `children` supplies the accessible name.**
+This entry replaces an earlier, wrong conclusion, kept here because the
+*measurement trap* behind it is the reusable lesson.
+
+An intermediate pass restored `aria-label={label}` on every nav item, on the
+finding that "any `Button` combining `icon` + `children` gets no accessible
+name at all", attributed to a pre-existing `Button.tsx` defect. **That was
+false.** The name computation works correctly through `Button.tsx`'s wrapping
+`<span>` with an `aria-hidden` sibling `<svg>`. Verified against Chromium's
+real accessibility tree via CDP (`Accessibility.getFullAXTree`) on the running
+Ladle:
+
+- `button--with-and-without-icon`: both instances, `aria-label=null`, one with
+  an svg and one without → `name="Categorie"` for both.
+- `sidebar--variants`, expanded items, `aria-label=null`, `hasSvg=true` →
+  `name="To do"`, `"Notes"`, `"Recipes"`, `"Shopping basket"`, `"Clothes"`,
+  `"Assistant"`.
+
+**The trap: Playwright's ARIA snapshot is not the browser's accessibility
+tree.** It is Playwright's own accname reimplementation, and in a
+*quirks-mode* document — which is what a `data:text/html,…` page with no
+doctype is, the natural shape for an "isolated synthetic-DOM test" — it
+returns an empty name for exactly this markup. The same markup in a document
+*with* a doctype names correctly, in both Playwright's implementation and
+Chromium's. Ladle and the real app always have a doctype, so the empty result
+never applied to them. Two tools disagreeing is a signal to find which one
+models the browser, not to pick the alarming answer.
+
+So: no `aria-label` here. `overflow-hidden` clips the label visually while
+keeping it in the accessibility tree, which is exactly what the collapsed
+state needs. A redundant `aria-label` duplicating visible text is worth
+avoiding on its own terms — it silently wins over content, so if the two ever
+drift the visible and spoken labels disagree. There is **no** `Button.tsx`
+defect and nothing for another ticket to fix.
+
+Why plain CSS suffices, no client JS: the item list div is `flex w-full
+flex-col`, so each `Button` (no explicit width, default flex cross-axis
+`stretch`) already fills the container's current width every frame as
+`<nav>` animates between the two literal `SIDEBAR_EXPANDED_WIDTH`/
+`SIDEBAR_COLLAPSED_WIDTH` values (#86's existing mechanism, unchanged).
+`overflow-hidden` on the Button additionally sets its CSS automatic minimum
+size to 0 instead of min-content (per the flexbox spec, any `overflow` value
+other than `visible` does this), letting a Button actually shrink below its
+label's natural width instead of overflowing the rail; `whitespace-nowrap`
+(inherited from the Button root onto its text) stops the label from wrapping
+instead of clipping as it's squeezed, which would be its own kind of jump.
+At rest, collapsed: content box is nav's 73px width minus the 1px border and
+two 16px paddings = 40px, exactly Figma's fixed 40×40 icon-only Button
+footprint (`layout_983ba8a6` in the fetched node) — same number the #86
+entry already derived, unchanged by this fix.
+
+**Confirmed no text-jump, frame-by-frame** (Playwright MCP against
+`pnpm ladle`'s `Sidebar--animated` story, real click on the toggle,
+`requestAnimationFrame`-sampled `getBoundingClientRect()` on the active/
+"Recepten" `Button` — not asserted, actually run): `left` stays pinned at a
+constant value for every one of 24 sampled frames (the rail's own left edge
+doesn't move, only its right edge recedes as it narrows), and `width` shrinks
+strictly monotonically, one frame to the next, no jump or reset:
+`165 → 126.7 → 105.9 → 90.5 → 76.8 → 67.2 → 58.6 → 52.1 → 47.3 → 43.8 → 41.5
+→ 40.3 → 40` px, settling exactly at the 40px derived above and holding
+there for the remaining sampled frames. A pre-#109 two-Button-swap
+implementation would show a discrete width jump (one unmount/mount frame,
+old width to new width with nothing in between); this is a continuous
+curve — direct evidence the single-element/`overflow-hidden` fix produces
+smooth clipping instead of a swap-induced jump.
+
+**Pixel-parity.** `download_figma_images` on `3674:5665`/`3632:460` vs. the
+Ladle `Variants` story: matches on fill, border, icon set, active-item
+styling, spacing. One **pre-existing, not introduced by this ticket**
+deviation confirmed: Figma's expanded nav-item Buttons are `hug`-sized per
+label (explicit widths like 106/105/140/94px, one per item), not stretched
+to the rail's full content width; this codebase's Buttons have stretched to
+fill width since before #109 (necessary, see above — it's the mechanism that
+lets the collapse transition run in pure CSS without measuring per-label
+hug widths, which would need client JS and break the Server Component
+precedent #86 set). Left as is; flagging here rather than fixing since it
+predates this ticket and both points 1/2 above are silent on it. Also
+observed, informational only: the fetched collapsed **active** item instance
+(`3674:6766`, `Recepten`'s slot) carries an explicit `width: 68` and a
+leftover `Text: "Categorie "` property, unlike its five siblings which are
+`width: 40` with no stray text override — reads as an unfixed authoring
+artifact on that one instance (same instance class the "Active item —
+corrected 2026-07-22" entry above already caught once for its fill). Not
+acted on: this codebase's CSS-stretch rendering makes every collapsed item
+40×40 regardless, including the active one, so the artifact has no code
+consequence either way.
+
+**New, this ticket: a small honest deviation from Figma's collapsed
+icon-only look, introduced by the overflow-clip fix itself.** Figma's
+collapsed Button never has a text node at all (`"With text": false`
+literally omits it). This fix keeps `children` mounted always and clips it
+with `overflow-hidden`, so at rest a sliver of each label's first letter(s)
+is visible past the icon — measured in a real browser (collapsed `nav`,
+"Te doen" item): icon right edge at 24px + 8px left padding = 32px into the
+button; the button's own border-box (where `overflow-hidden` actually
+clips) is 40px, leaving an 8px gap that `gap-1` (4px) and the start of the
+label's glyphs bleed into before the clip boundary — visible in the
+regenerated `sidebar--variants` baseline. Not fixed further: the available
+mitigations both cross a line — shrinking the collapsed width to hide it
+would contradict the Figma-sourced 73px/40px measurement above, and forcing
+tighter padding via a conflicting utility class (`pr-0` alongside `Button`'s
+own `px-2`) is exactly the "mixing logical/physical padding utilities
+doesn't override" trap `CLAUDE.md` warns about — same specificity, unreliable
+win, not a safe fix from `className` alone. Judged an acceptable trade-off:
+a ~4-8px letter sliver against a "no text jump" fix that needs no client JS
+and touches no other file.
