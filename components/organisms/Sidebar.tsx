@@ -8,7 +8,14 @@ import type { IconName } from "../atoms/Icon";
  * Variant axis: `Collapsed` (No/Yes) -> `collapsed` prop. Six modules ->
  * fixed `NAV_ITEMS` list (not a `children` slot — Figma hardcodes these
  * six). Active item -> Button's `Style=Filled, State=Selected`
- * (`variant="filled"` + `aria-pressed`). Full rationale, measurements,
+ * (`variant="filled"` + `aria-pressed`). `bg-surface-muted` is Figma's
+ * fill (#109) — same token `AppShellNav`'s wrapper already carries, so this
+ * is a no-op on desktop by coincidence; it's load-bearing for the mobile
+ * drawer, which has no ambient background of its own. See design/notes/
+ * Sidebar.md. Nav-item Buttons render one element
+ * across both states — label stays in the DOM, `overflow-hidden` +
+ * `whitespace-nowrap` clip it as the rail shrinks, instead of swapping
+ * icon-only/labelled Buttons (#109). Full rationale, measurements,
  * history: design/notes/Sidebar.md.
  */
 export type SidebarItemId =
@@ -78,7 +85,7 @@ export function Sidebar({
         // GAP: --duration-base/--ease-base values are unsourced from Figma
         // (no prototype spec exists) — see
         // docs/open-questions.md#sidebar-motion-timing-unsourced.
-        "flex h-full flex-col items-end gap-12 border-r border-border p-4 transition-[width] duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+        "flex h-full flex-col items-end gap-12 border-r border-border bg-surface-muted p-4 transition-[width] duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
         collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH,
         className,
       )}
@@ -96,7 +103,15 @@ export function Sidebar({
           const label = labels[id];
           const handleClick = onNavigate ? () => onNavigate(id) : undefined;
 
-          return collapsed ? (
+          // Same Button element in both states — label stays as `children`
+          // and gets clipped by `overflow-hidden`/`whitespace-nowrap` as
+          // this flex item's stretched width shrinks with the rail, instead
+          // of swapping icon-only/labelled Buttons. `aria-label` mirrors
+          // `children` verbatim (never a different or state-dependent
+          // string) — required because Button's icon+text markup loses its
+          // content-computed accessible name in real browsers; see
+          // design/notes/Sidebar.md (#109).
+          return (
             <Button
               key={id}
               variant={variant}
@@ -105,15 +120,7 @@ export function Sidebar({
               aria-current={isActive ? "page" : undefined}
               aria-pressed={isActive || undefined}
               onClick={handleClick}
-            />
-          ) : (
-            <Button
-              key={id}
-              variant={variant}
-              icon={icon}
-              aria-current={isActive ? "page" : undefined}
-              aria-pressed={isActive || undefined}
-              onClick={handleClick}
+              className="overflow-hidden whitespace-nowrap"
             >
               {label}
             </Button>
