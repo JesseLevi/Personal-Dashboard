@@ -90,18 +90,19 @@ history as a ban on `:active`.
   from Tailwind's stock stone/red scale and flow through the `[data-theme="dark"]`
   pipeline ticket #42 built.
 - If Figma defines no variation for a role in some state, **don't invent one**.
-  See Transparent below, which has no hover affordance at all, and Distructive,
-  whose text never changes.
+  See Distructive below, whose text never changes.
 
-## The state matrix (`Atom/Button`, node 3623:4346, re-fetched 2026-07-20, latest for #68)
+## The state matrix (`Atom/Button`, node 3623:4346, re-fetched 2026-07-26, latest for #107)
 
 | Style | Default | Hover | Active | Selected |
 |---|---|---|---|---|
 | Filled | `surface-raised` (stone-200) | `surface-raised-hover` (stone-300) | `surface-raised-active` (stone-400) | bg unchanged, text → `text` |
 | White | `surface` (white) | `surface-hover` (stone-50) | `surface-active` (stone-100) | bg unchanged, text → `text` |
-| Transparent | no fill | no fill | no fill | text → `text` |
+| Transparent | no fill | `surface-active` (stone-100, borrowed — see #107 below) | `surface-raised` (stone-200, borrowed) | no fill, text → `text` |
 | Outline | `border` (stone-300) | `border-hover` (stone-500) | `border-active` (stone-800) | border → `border-selected` (stone-400), text → `text` |
 | Distructive | `priority-urgent-bg` (red-50) | `priority-urgent-bg-hover` (red-100) | `priority-urgent-bg-active` (red-200) | identical to Default |
+
+**#107 (2026-07-26):** Transparent gained real Hover/Active fills in Figma — previously it had none at all (`docs/open-questions.md#no-pointer-affordance` predates this and is updated accordingly). The two exact pixels (stone-100, stone-200) are already named tokens for *other* roles (White's Active, Filled's Default) — per the token-gap rule above, they're reused as-is (`hover:bg-surface-active active:bg-surface-raised`) rather than given dedicated names; whether Transparent warrants its own `surface-transparent-*` pair is an open token-scale question for the user, not decided here. Full evidence: `design/notes/Button.md`.
 
 Text is `text-muted` in Default/Hover/Active for every style except Distructive,
 which is `priority-urgent` throughout.

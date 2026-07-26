@@ -132,6 +132,13 @@ export function ButtonToggle({
       />
       {items.map((item, index) => (
         // `relative` stacks this segment above the absolutely-positioned indicator — required for correct paint order.
+        // Which is also why the segment must stay fill-less in every state: any
+        // background here paints OVER the white indicator. Figma pins these to
+        // `Atom/Button/Icon/Default/No` with `fills: []` and gives Button/Toggle
+        // no state axis at all, so Transparent's Hover/Active fills (#107) don't
+        // apply to segments — suppressed with `!` because a plain
+        // `hover:bg-transparent` ties on specificity with the variant's own
+        // utility. See design/notes/ButtonToggle.md.
         <Button
           key={item.value}
           type="button"
@@ -144,7 +151,7 @@ export function ButtonToggle({
           tabIndex={item.value === value ? 0 : -1}
           onClick={() => select(item.value)}
           onKeyDown={(event) => handleKeyDown(event, index)}
-          className="relative"
+          className="relative hover:bg-transparent! active:bg-transparent!"
         />
       ))}
     </div>

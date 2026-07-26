@@ -28,3 +28,38 @@ re-fetched 3623:4345 fresh (the 32x32/40x40 number had already flip-flopped once
 - **`"use client"` contrast.** The reasoning for owning `isOpen`/selection state internally is the same `Dropdown` (#43) used, contrasted directly with `Checkbox` (#45): `Checkbox`'s `checked` stays composer-owned because it varies meaningfully per call site, whereas which segment is selected here is the group's own behaviour, identical for every caller.
 - **`defaultValue` is required, not optional**, because the fetched node never samples an "all unselected" track — this group always starts with exactly one segment active.
 - **WAI-ARIA reference:** the Radio Group pattern followed is https://www.w3.org/WAI/ARIA/apg/patterns/radio/.
+
+## Segments stay fill-less in every state (#107, 2026-07-26)
+
+`Atom/Button`'s Transparent variant gained real Hover/Active fills in Figma (#107).
+Those reached these segments by composition, because a segment *is* a
+`Button variant="transparent"`. That is a regression here, not a feature:
+each segment carries `relative` specifically to paint above the absolutely-
+positioned white "Active" indicator, so any segment background covers it.
+Measured in a real browser on the selected segment (Playwright,
+`button-toggle--category-filter`, computed `backgroundColor`):
+
+| state | before suppression | effect |
+| --- | --- | --- |
+| resting | `rgba(0,0,0,0)` | indicator visible (correct) |
+| hover | `oklch(0.97 …)` = stone-100 | white pill greyed out |
+| active | `oklch(0.923 …)` = `surface-raised` | pill gone — identical to the track |
+
+Figma supports suppressing rather than inheriting: `Button/Toggle`
+(`3623:4345`) is a single COMPONENT with **no** State axis, its five nested
+segments are instances of `Atom/Button/Icon/Default/No` with `fills: []`, and
+the indicator is a real `#FFFFFF` 32x32 rectangle node. Figma therefore
+specifies no segment hover/active at all, and does specify the indicator.
+
+Suppressed with the `!` important modifier (`hover:bg-transparent!`
+`active:bg-transparent!`) because a plain `hover:bg-transparent` from
+`className` and the cva variant's own `hover:bg-surface-active` are both
+single-class `background-color` utilities under the same variant — equal
+specificity, so which wins depends on emission order in the generated
+stylesheet, the same trap `docs/guides/ticket-workflow.md` records for
+physical vs. logical padding. Re-verified after the change: transparent in
+all three states.
+
+Whether these segments should have *any* pointer affordance is a real open
+question, tracked at `docs/open-questions.md#no-pointer-affordance` — not
+answered here, and deliberately not invented.

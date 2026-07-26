@@ -74,3 +74,31 @@ export const TrailingIcon = () => (
     <Button trailingIcon="ChevronDown">Categorie</Button>
   </div>
 );
+
+// Figma "Alignment" property (#107): root primaryAxisAlignItems is
+// SPACE_BETWEEN for Center, MIN (packed) for Left — verified against the
+// fetched node, not assumed; see design/notes/Button.md. A single child
+// (no trailingIcon) makes the two look identical since space-between
+// degenerates to flex-start with one item — shown in row 1. Row 2 makes the
+// real difference visible: Center pushes the chevron to the far edge, Left
+// keeps it 4px after the label.
+export const Alignment = () => (
+  <div className="flex flex-col gap-4">
+    <div className="flex items-center gap-4">
+      <Button align="center" className="w-40">
+        Categorie
+      </Button>
+      <Button align="left" className="w-40">
+        Categorie
+      </Button>
+    </div>
+    <div className="flex items-center gap-4">
+      <Button align="center" trailingIcon="ChevronDown" className="w-40">
+        Categorie
+      </Button>
+      <Button align="left" trailingIcon="ChevronDown" className="w-40">
+        Categorie
+      </Button>
+    </div>
+  </div>
+);
