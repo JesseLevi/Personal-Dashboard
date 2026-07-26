@@ -81,3 +81,19 @@ Added `onItemClick?: (item: TItem) => void`, threaded straight through to `Sorta
 That only works, though, if a plain click doesn't *itself* satisfy some activation constraint first. It turns out the library's own default for a **mouse** pointer whose event target is the drag handle/element itself — which, per this file's own "no drag handle" section above, is unconditionally true here (the whole card is the handle) — is `void 0`, i.e. **no constraint at all**: any pointer movement, however small, activates a drag immediately. The line 29 comment this replaced ("desktop mice are left on the library default (instant/small-distance)") was wrong about what that default actually is for this exact case — re-read directly from `@dnd-kit/dom`'s `PointerSensor` source (`defaults2.activationConstraints`) while implementing #94, not from the docs, since the docs don't spell out the mouse+handle special case. Fixed by applying the library's own *non-handle* default explicitly instead of relying on the special case: `[Delay({value:200, tolerance:10}), Distance({value:5})]`, for fine pointers only (the existing 2s coarse-pointer long-press is unchanged). A plain click (mouse down/up with negligible movement, well under both the 200ms/10px delay-tolerance and the 5px distance) now never activates a drag at all, so its `click` event fires normally; real dragging (movement past 5px, or held past 200ms with more than 10px of jitter) still activates immediately, same as before.
 
 Verified in a real browser against `pnpm ladle` (`board-view--default`, `onItemClick` wired to a visible counter in the story): repeated plain clicks on a card each fire exactly once, no drag visuals appear and no card reorders; a real mouse drag (down, move well past 5px, up over another column) still reorders/cross-column-moves correctly and does **not** also fire a click. Keyboard drag (`Space`/arrows/`Space`) is untouched by this change (`KeyboardSensor` isn't part of this constraint) and re-verified working.
+
+## Issue #110 — scroll chain fix lives entirely in `Carousel.tsx`, not here
+
+The hidden scrollbar, the clip-at-sidebar (not padding-edge) fix, and the
+new right margin — all three review-feedback points on the
+`AppShellNav → PageHeader/Carousel` scroll/padding chain this file composes
+into — landed entirely in `Carousel.tsx`'s own root `div` (the actual
+`overflow-x-auto` element `BoardView` renders via `<Carousel
+columnWidthClassName={BOARD_COLUMN_WIDTH} className={className}>`). No
+change was needed in this file: `BOARD_COLUMN_WIDTH`, the drag mechanics,
+and the column/droppable plumbing above are all unaffected. Full mechanism,
+Figma margin numbers, and the browser verification (both sidebar states,
+mobile, the collapse animation, all four scroll-input methods, and — the
+one check specific to this file's own concern, drag-and-drop hit-testing
+after a horizontal scroll on the now differently-sized/margined row) live in
+`design/notes/Carousel.md`, not duplicated here.
