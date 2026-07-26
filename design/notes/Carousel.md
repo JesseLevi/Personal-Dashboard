@@ -74,3 +74,157 @@ needs a live Supabase session this dev machine can't provide) at 1440px —
 
 `body`/`main` show zero overflow at both widths (`scrollWidth ===
 clientWidth`); only the Carousel row itself overflows, exactly as designed.
+
+## Issue #110 — hidden scrollbar, clip-at-sidebar (not padding), matching right margin
+
+Three review-feedback points, all landing on this file's own root `div`
+(the `overflow-x-auto` element) because `BoardView.tsx`/`TeDoenBoard.tsx`
+aren't in this ticket's file-ownership scope — `BoardView` does forward its
+own `className` straight to `Carousel`, but `TeDoenBoard.tsx` never passes
+one today, so a call-site opt-in isn't reachable without editing a file
+outside scope. All three fixes therefore live in this component's own
+unconditional default, same call as point 1 below.
+
+**1. Scrollbar hidden — component-level, not call-site.** `[scrollbar-
+width:none] [&::-webkit-scrollbar]:hidden` on the scroll row. Per this
+ticket's own instruction to reason about component vs. call-site (same
+question issue #24's open scroll-affordance question already raised):
+Recipes has no `Carousel` consumer yet (#28, deferred) and every fetched
+Te-Doen/Recipe node still shows zero scroll affordance (see the open
+question above), so there is no existing caller that wants a *visible*
+scrollbar to diverge against — codebase-wide is both the design-consistent
+answer and the only one reachable given the file-ownership constraint above.
+Scrolling itself is untouched (wheel/trackpad/shift-scroll/touch never
+depended on the scrollbar being visible); `tabIndex={0}` was added because a
+bare `overflow-x-auto` div isn't reliably in the tab order across browsers,
+and the ticket requires keyboard scroll to keep working — without it,
+arrow-key scrolling only worked opportunistically depending on the browser.
+
+**2 + 3. Left breakout past the caller's padding, right margin that survives
+a full scroll.** Both fixed by moving from `w-full` to `-ml-4 pl-4 pr-4
+md:-ml-32 md:pl-32 md:pr-32` on the same root `div`:
+
+- The negative margin cancels `AppShellNav.tsx`'s `main` padding
+  (`pl-4 md:pl-32`) for this element specifically, so Carousel's own box —
+  the actual clip boundary `overflow-x-auto` clips against — reaches
+  `main`'s true left edge (flush with the sidebar spacer) instead of
+  stopping 16/128px short of it. That 16/128px gap was exactly the bug:
+  columns scrolling left used to disappear at the padding edge, visibly
+  short of the sidebar itself. `w-full` (fixed 100%) had to go for this to
+  work — CSS's over-constrained rule silently reassigns `margin-right`
+  instead of growing the box when width is a fixed percentage and both
+  margins are non-auto; only an `auto`-resolved width (the default for a
+  block box, and what flex `align-items: stretch` computes toward for a
+  stretched item with no explicit width) actually widens on a negative
+  margin. Verified this matters, not just reasoned: see measurements below.
+- The `pl-*`/`pr-*` pair restores the pre-#110 visual card-start position
+  on the left (net effect of `-ml-4`+`pl-4` inside an ancestor that itself
+  has `pl-4` is a wash — see the Ladle-context note below) and, being new
+  padding *inside* the scrolling box rather than outside it, adds a real
+  margin after the last column that scrolls WITH the content — still
+  visible after scrolling all the way right, not just at initial load,
+  which is what the ticket's point 3 explicitly asked for over a plain
+  outer `pr-*` on `main` (that would only ever show at rest).
+- **No change needed in `AppShellNav.tsx` or `PageHeader.tsx`.** Both
+  points 2 and 3 are fully absorbed by this component alone; `main` keeps
+  its existing `pl-4 md:pl-32` (still correctly insets `PageHeader` and any
+  other non-Carousel content in `main`, e.g. `TeDoenPageBody.tsx`'s
+  empty-board fallback `<p>`, none of which this ticket owns or touches),
+  and `PageHeader` keeps its own unchanged `pr-4 md:pr-32`.
+- **Sidebar collapse/expand — no separate handling needed.** Carousel's box
+  is defined purely relative to `main`'s own left edge (via the margin
+  cancellation above), and `main` already tracks the sidebar's animated
+  width through the existing flow-spacer (`AppShellNav.tsx`, `#101`). Since
+  that relationship is recomputed by the browser every frame like any other
+  flex layout, Carousel's clip boundary follows the sidebar in both
+  collapsed/expanded states and through the transition with no extra code —
+  confirmed in the browser checks below rather than assumed.
+
+**Coupling flagged, not hidden:** `-ml-4 md:-ml-32`/`pl-4 md:pl-32` are
+hardcoded to match `main`'s own `pl-4 md:pl-32` exactly — correct for every
+current and only foreseeable caller (Recipes, once #28 lands, sits in the
+same `AppShellNav` shell), but a future caller nesting `Carousel` inside a
+container with *different* padding would get a wrong cancellation (either
+under- or over-shooting the ancestor's real padding). No prop was added to
+override it: nothing today would set it, and inventing an unused knob isn't
+better than a documented, flagged coupling. Revisit if a second shell shape
+ever appears.
+
+**Ladle stories bleed slightly past Ladle's own decorator padding — checked
+in a browser, not assumed away.** First measured algebraically as a "no-op"
+(reasoning the story wrapper carries no ambient padding to cancel against),
+that turned out wrong: Ladle's own preview chrome wraps every story in
+`p-8`/`p-4` (32px), not zero, so `-ml-32`'s 128px overshoots it by 96px —
+`carousel--default`'s row measured `x: -96` in a 1200px viewport (Playwright
+`boundingBox()`), not `x: 32`. This is harmless, not a bug: negative margins
+don't add to an ancestor's `scrollWidth` (confirmed `document.body.
+scrollWidth === clientWidth`, no stray page-level scrollbar), and the
+visible cards render at the *same* pixel position as before (the
+compensating `pl-32` still lands at the same spot) — screenshotted both
+stories and neither looks broken. The one real, expected effect: the row's
+own scrollable viewport is ~128px wider than pre-#110, so
+`ConstrainedToDesignedWidth` now shows slightly more of its third column
+before the deliberate overflow clips it — a genuine baseline change, not a
+regression, and exactly the same "coupled to `main`'s specific padding
+value" trade-off flagged above, just visible in Ladle's smaller ambient
+padding instead of being invisible there.
+
+**Verified in a real browser** (Playwright MCP + `page.evaluate`/CDP against
+`pnpm ladle`, `BoardView` composed inside a throwaway `AppShellNav`-shaped
+harness — real `Sidebar`/`SIDEBAR_EXPANDED_WIDTH`/`SIDEBAR_COLLAPSED_WIDTH`/
+`BoardView`, hand-built `main`/spacer markup byte-for-byte matching
+`AppShellNav.tsx`'s own classes, since `AppShellNav` itself calls
+`next/navigation` hooks that throw outside a real Next.js router and Ladle
+has no such context — deleted before commit; `/te-doen` itself needs a live
+Supabase session this machine doesn't have):
+
+- 1440px, sidebar expanded: spacer `getBoundingClientRect()` = `{left: 32,
+  right: 230, width: 198}` (the 32 is Ladle's own preview padding, not
+  `main`'s — irrelevant to the relative check). Carousel row: `left: 230`
+  (== spacer's right edge, confirming the box now starts flush at the
+  sidebar) — not `358` (`230+128`), which is where the old padding-edge
+  clip point would have been. First card's own left edge: `358` (`230+128`,
+  the restored `pl-32` visual position, byte-identical to pre-#110).
+  Scrolled to `scrollLeft = scrollWidth` (max), the gap between the row's
+  own right edge and the last card's right edge measured exactly `128`px —
+  the `pr-32` margin, still inside the scrollable box.
+- Same checks at `collapsed=true`: spacer `{left: 32, right: 105, width:
+  73}`; row `left: 105` (flush, not `233`); first card `left: 233`
+  (`105+128`); trailing gap at max scroll `128`px again.
+- 402px (mobile, `md:` sidebar spacer is `hidden` below that breakpoint so
+  there's nothing to break out of): row flush with `main` at both edges;
+  first card `left: 48` (`32+16`, the `pl-4` restored), trailing gap at max
+  scroll `16`px (the `pr-4`) — same mechanism, mobile's smaller numbers.
+- Collapse→expand transition: clicked the real toggle button, sampled
+  `spacerRect.right - rowRect.left` every 25ms for 300ms while the spacer
+  animated `198px → 73px` (intermediate widths `100.7`, `86.2`, `73.4`
+  captured mid-transition). The difference was exactly `0` at **every**
+  sample, including every intermediate frame — the row tracks the animating
+  spacer with no lag, confirming no extra sync code was needed.
+- Scrollbar hidden, `tabIndex` real, all four inputs, one session:
+  `getComputedStyle(row, '::-webkit-scrollbar').display === 'none'` and
+  `getComputedStyle(row).scrollbarWidth === 'none'` (Chromium supports both
+  properties). `row.focus()` → `document.activeElement === row` (`tabIndex=
+  {0}` actually lands it in tab order). Mouse wheel: hovering the row and
+  calling `mouse.wheel(300, 0)` fired a `wheel` listener with `deltaX: 600`
+  (Chromium's own 2x scroll-multiplier) and moved `scrollLeft` `0 → 300`.
+  Shift+vertical wheel: `scrollLeft` `0 → 200`. Keyboard: two `ArrowRight`
+  presses after focus moved `scrollLeft` `0 → 48.5`. Touch: Chromium's
+  synthetic touch only produces real scrolling in a context created with
+  `hasTouch: true` (a `browser.newContext()` isolate, not the default MCP
+  page) — a CDP `Input.dispatchTouchEvent` swipe (touchStart/15×touchMove/
+  touchEnd) there moved `scrollLeft` `0 → 963`.
+- Drag-and-drop after horizontal scroll: set `scrollLeft = 900` (bringing
+  columns 2/3 into view), then dragged "Card 2-0" onto "Card 3-0" with the
+  same technique `design/notes/BoardView.md`'s own #90 verification used
+  (`mouse.move`/`down`/15×`move`/`up`, not `locator.dragTo()` — dnd-kit's
+  `PointerSensor` doesn't listen for native HTML5 drag events). Column 2's
+  card list lost `Card 2-0`; Column 3's gained it as its new first item —
+  confirms the negative-margin/padding change on the row's own box doesn't
+  disturb `useDroppable`'s bounding-rect hit-testing on the columns/cards
+  inside it, which read real-time `getBoundingClientRect()` regardless of
+  how the row's position was produced.
+- `carousel--default`/`carousel--constrained-to-designed-width` screenshotted
+  after the change: both render correctly, no clipping/misalignment — see
+  the Ladle-decorator-padding note just above for why their pixel content
+  isn't byte-identical to the pre-#110 baseline.
