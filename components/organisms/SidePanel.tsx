@@ -5,6 +5,7 @@ import clsx from "clsx";
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   type KeyboardEvent,
   type PointerEvent as ReactPointerEvent,
@@ -88,6 +89,18 @@ export function SidePanel({
       previouslyFocused.current?.focus();
       previouslyFocused.current = null;
     }
+  }, [open]);
+
+  // A drag can be interrupted without pointerup/pointercancel ever firing
+  // (e.g. Escape mid-drag) — endDrag() then never runs, leaving an inline
+  // `transform` that composes with the class-driven `translate` utility
+  // (a separate CSS property in Tailwind v4) instead of being replaced by
+  // it, offsetting the panel from its resting position. Reset on every
+  // open/close so no route can leave that residue.
+  useLayoutEffect(() => {
+    dragRef.current = null;
+    panelRef.current?.style.removeProperty("transform");
+    panelRef.current?.style.removeProperty("transition-duration");
   }, [open]);
 
   // Mobile-only (<md) drag-to-close, starting in the handle strip only —
