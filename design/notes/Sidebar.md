@@ -188,31 +188,40 @@ per nav item in both states — always `icon` + `children={label}` — with
 `className="overflow-hidden whitespace-nowrap"` at the Sidebar call site
 (`Button.tsx` untouched, per scope).
 
-**`aria-label` kept, not dropped — verified in a real browser, not assumed.**
-First pass of this fix dropped the nav items' `aria-label`, reasoning the
-visible `children` text already supplies the accessible name. Checked that
-in Playwright against both the Sidebar story and `Button.tsx`'s own
-`WithAndWithoutIcon` story (isolated synthetic-DOM test too, same result on
-two unrelated pages): **any** `Button` combining `icon` + `children` gets
-**no** accessible name at all in the real accessibility tree — the icon+text
-markup sits inside `Button.tsx`'s own wrapping `<span class="flex
-items-center gap-1">`, and content-based name computation returns empty for
-that shape regardless of text length, word order, or the class attached to
-the span (reproduced with a bare unstyled `<span>` too). This is a
-pre-existing `Button.tsx` defect, not introduced by #109 — it already
-affected every expanded-state nav item before this ticket, just silently,
-since nothing previously exercised name-from-content on `Atom/Button`.
-Out of scope to fix at the source (`Button.tsx` is owned by a parallel
-agent), so restored `aria-label={label}` on every nav item, unconditionally,
-**identical to `children`** — same string, every render, never
-state-dependent. Confirmed `aria-label` bypasses the broken computation
-reliably (same synthetic-DOM test, with vs. without `aria-label` on the
-identical markup). This doesn't reintroduce the "double-labelling / a name
-that switches" failure mode the ticket warns about: both sources say the
-same thing, always, so there's nothing to disagree or drift out of sync —
-and it also predates #109 (pre-ticket code already carried this exact
-`aria-label`==`children` text identity across its collapsed/expanded
-branches, just via two different elements rather than one).
+**No `aria-label` on the nav items — `children` supplies the accessible name.**
+This entry replaces an earlier, wrong conclusion, kept here because the
+*measurement trap* behind it is the reusable lesson.
+
+An intermediate pass restored `aria-label={label}` on every nav item, on the
+finding that "any `Button` combining `icon` + `children` gets no accessible
+name at all", attributed to a pre-existing `Button.tsx` defect. **That was
+false.** The name computation works correctly through `Button.tsx`'s wrapping
+`<span>` with an `aria-hidden` sibling `<svg>`. Verified against Chromium's
+real accessibility tree via CDP (`Accessibility.getFullAXTree`) on the running
+Ladle:
+
+- `button--with-and-without-icon`: both instances, `aria-label=null`, one with
+  an svg and one without → `name="Categorie"` for both.
+- `sidebar--variants`, expanded items, `aria-label=null`, `hasSvg=true` →
+  `name="To do"`, `"Notes"`, `"Recipes"`, `"Shopping basket"`, `"Clothes"`,
+  `"Assistant"`.
+
+**The trap: Playwright's ARIA snapshot is not the browser's accessibility
+tree.** It is Playwright's own accname reimplementation, and in a
+*quirks-mode* document — which is what a `data:text/html,…` page with no
+doctype is, the natural shape for an "isolated synthetic-DOM test" — it
+returns an empty name for exactly this markup. The same markup in a document
+*with* a doctype names correctly, in both Playwright's implementation and
+Chromium's. Ladle and the real app always have a doctype, so the empty result
+never applied to them. Two tools disagreeing is a signal to find which one
+models the browser, not to pick the alarming answer.
+
+So: no `aria-label` here. `overflow-hidden` clips the label visually while
+keeping it in the accessibility tree, which is exactly what the collapsed
+state needs. A redundant `aria-label` duplicating visible text is worth
+avoiding on its own terms — it silently wins over content, so if the two ever
+drift the visible and spoken labels disagree. There is **no** `Button.tsx`
+defect and nothing for another ticket to fix.
 
 Why plain CSS suffices, no client JS: the item list div is `flex w-full
 flex-col`, so each `Button` (no explicit width, default flex cross-axis

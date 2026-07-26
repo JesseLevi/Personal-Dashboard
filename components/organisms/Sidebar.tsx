@@ -92,15 +92,13 @@ export function Sidebar({
           const handleClick = onNavigate ? () => onNavigate(id) : undefined;
 
           // One Button element in both states — `overflow-hidden` clips
-          // `children` as the rail shrinks. `aria-label` mirrors `children`
-          // verbatim: Button's icon+text markup drops its content-computed
-          // accessible name in real browsers, see design/notes/Sidebar.md.
+          // `children` visually but keeps it (and its accessible name) in
+          // the DOM, instead of swapping icon-only/labelled Buttons.
           return (
             <Button
               key={id}
               variant={variant}
               icon={icon}
-              aria-label={label}
               aria-current={isActive ? "page" : undefined}
               aria-pressed={isActive || undefined}
               onClick={handleClick}
