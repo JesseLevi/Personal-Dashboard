@@ -196,9 +196,16 @@ export function SidePanel({
       <div
         aria-hidden="true"
         onClick={onClose}
+        // `invisible`/`transition-discrete` (#113): opacity alone left the
+        // scrim mounted and composited at `opacity-0` — on iOS Safari this
+        // is the prime suspect for a stale-tinted status-bar strip after
+        // close (unverified on-device, see design/notes/SidePanel.md).
+        // `transition-discrete` (Tailwind's `transition-behavior:
+        // allow-discrete`) defers the `visibility` flip to hidden until the
+        // opacity transition finishes, so the fade-out still plays.
         className={clsx(
-          "fixed inset-0 z-40 bg-text/60 transition-opacity duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
-          open ? "opacity-100" : "pointer-events-none opacity-0",
+          "fixed inset-0 z-40 bg-text/60 transition-[opacity,visibility] transition-discrete duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+          open ? "visible opacity-100" : "invisible pointer-events-none opacity-0",
         )}
       />
       <div
@@ -255,7 +262,14 @@ export function SidePanel({
           // THAT row, never this container's cross-axis stretch, so no
           // Button call site outside a SidePanel footer is affected. See
           // design/notes/SidePanel.md.
-          <div className="flex shrink-0 flex-col gap-2 border-t border-border bg-surface p-4 md:border-t-0 md:bg-transparent">
+          <div
+            // `pb-[max(...)]` (#113, mobile only): the home-indicator safe
+            // area can exceed the stated 16px padding on notched devices —
+            // `max()` only ever adds space, never shrinks the existing
+            // padding on devices with no inset. Unverified on a real device;
+            // see design/notes/SidePanel.md.
+            className="flex shrink-0 flex-col gap-2 border-t border-border bg-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:border-t-0 md:bg-transparent md:pb-4"
+          >
             {footer}
           </div>
         )}
