@@ -74,6 +74,12 @@ export function Sidebar({
         // (bare `duration-base` compiles to nothing); GAP: value unsourced
         // from Figma, see docs/open-questions.md#sidebar-motion-timing-unsourced.
         "flex h-full flex-col items-end gap-12 border-r border-border bg-surface-muted p-4 transition-[width] duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+        // pt-/pb- (#113): `max()` only ever adds space over the existing 16px,
+        // so this is a no-op wherever there is no safe-area inset (desktop,
+        // most phones) — only extends the top/bottom padding on notched /
+        // home-indicator devices when this atom fills the mobile drawer
+        // edge-to-edge. Unverified on-device; see design/notes/Sidebar.md.
+        "pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]",
         collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH,
         className,
       )}
@@ -99,6 +105,7 @@ export function Sidebar({
               key={id}
               variant={variant}
               icon={icon}
+              align="left"
               aria-current={isActive ? "page" : undefined}
               aria-pressed={isActive || undefined}
               onClick={handleClick}

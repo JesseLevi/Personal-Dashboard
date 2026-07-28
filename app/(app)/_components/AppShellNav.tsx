@@ -140,9 +140,13 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
       <div
         aria-hidden="true"
         onClick={() => setMobileOpen(false)}
+        // `invisible`/`transition-discrete`: same fix as SidePanel's scrim
+        // (#113) — opacity alone left this mounted and composited at
+        // `opacity-0`, the prime suspect for a stale-tinted iOS status bar
+        // after close (unverified on-device, see design/notes/Sidebar.md).
         className={clsx(
-          "fixed inset-0 z-40 bg-text/60 transition-opacity duration-[var(--duration-base)] ease-base motion-reduce:transition-none md:hidden",
-          mobileOpen ? "opacity-100" : "pointer-events-none opacity-0",
+          "fixed inset-0 z-40 bg-text/60 transition-[opacity,visibility] transition-discrete duration-[var(--duration-base)] ease-base motion-reduce:transition-none md:hidden",
+          mobileOpen ? "visible opacity-100" : "invisible pointer-events-none opacity-0",
         )}
       />
       <div
