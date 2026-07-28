@@ -128,6 +128,7 @@ export function TeDoenHeader({
                       <Button
                         key={b.id}
                         variant={b.id === board.id ? "filled" : "white"}
+                        align="left"
                         onClick={() => {
                           setBoardMenuOpen(false);
                           goToBoard(b.id);
@@ -139,6 +140,7 @@ export function TeDoenHeader({
                     <Button
                       variant="outline"
                       icon="Plus"
+                      align="left"
                       onClick={() => {
                         setBoardMenuOpen(false);
                         setPanel({ open: true, target: { mode: "create" } });
@@ -170,6 +172,7 @@ export function TeDoenHeader({
           <div ref={sortMenuRef} className="relative">
             <Button
               icon="ArrowUpDown"
+              align="left"
               aria-expanded={sortMenuOpen}
               onClick={() => setSortMenuOpen((open) => !open)}
             >
@@ -186,6 +189,7 @@ export function TeDoenHeader({
                       key={option}
                       icon={SORT_ICONS[option]}
                       variant={option === sort ? "filled" : "white"}
+                      align="left"
                       // "nothing active until chosen" (2026-07-25): `sort` is
                       // null on load, so no option matches and none renders
                       // pressed/filled — see design/notes/TeDoenBoard.md.

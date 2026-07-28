@@ -8,23 +8,26 @@ import { Dropdown } from "./Dropdown";
 // The fetched Figma example: a label plus three stacked options, the first
 // shown "selected" via Button's own filled variant (a choice made by the
 // composing content, not by Dropdown itself). The first/selected Button is
-// also the disclosure trigger (#100) — it carries `trailingIcon="ChevronDown"`
-// itself; Dropdown clones aria-expanded/aria-controls/onClick onto it and
-// rotates the chevron, rather than wrapping it in a second <button>.
+// also the disclosure trigger (#100) — Dropdown clones aria-expanded/
+// aria-controls/onClick onto it and renders its own trailing chevron in a
+// fixed right-hand column next to it (#112), rather than the trigger
+// carrying its own `trailingIcon` or Dropdown wrapping it in a second
+// <button>.
 
 // Closed: the `Field` label (now inert text) plus the bordered container
-// showing only the first/selected option, hugging its own content width. The
-// other two are collapsed, not removed: click the selected option (or focus
-// + Enter/Space) to open them.
+// showing the first/selected option hugging its own content, with the
+// chevron pinned to the panel's far right edge. The other two are collapsed,
+// not removed: click the selected option (or focus + Enter/Space) to open
+// them.
 export const Closed = () => (
   <Dropdown id="demo-closed" label="Field" defaultOpen={false}>
-    <Button variant="filled" icon="Plus" trailingIcon="ChevronDown">
+    <Button variant="filled" icon="Plus" align="left">
       Categorie
     </Button>
-    <Button variant="white" icon="Plus">
+    <Button variant="white" icon="Plus" align="left">
       Categorie
     </Button>
-    <Button variant="white" icon="Plus">
+    <Button variant="white" icon="Plus" align="left">
       Categorie
     </Button>
   </Dropdown>
@@ -36,13 +39,13 @@ export const Closed = () => (
 // and returns focus to it.
 export const Open = () => (
   <Dropdown id="demo-open" label="Field" defaultOpen>
-    <Button variant="filled" icon="Plus" trailingIcon="ChevronDown">
+    <Button variant="filled" icon="Plus" align="left">
       Categorie
     </Button>
-    <Button variant="white" icon="Plus">
+    <Button variant="white" icon="Plus" align="left">
       Categorie
     </Button>
-    <Button variant="white" icon="Plus">
+    <Button variant="white" icon="Plus" align="left">
       Categorie
     </Button>
   </Dropdown>
@@ -54,13 +57,13 @@ export const Open = () => (
 // rotation) — click again to watch it expand back out.
 export const Animated = () => (
   <Dropdown id="demo-animated" label="Field" defaultOpen>
-    <Button variant="filled" icon="Plus" trailingIcon="ChevronDown">
+    <Button variant="filled" icon="Plus" align="left">
       Categorie
     </Button>
-    <Button variant="white" icon="Plus">
+    <Button variant="white" icon="Plus" align="left">
       Categorie
     </Button>
-    <Button variant="white" icon="Plus">
+    <Button variant="white" icon="Plus" align="left">
       Categorie
     </Button>
   </Dropdown>

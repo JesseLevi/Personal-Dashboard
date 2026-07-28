@@ -13,6 +13,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
+import { Icon } from "./Icon";
 
 /**
  * Atom/Dropdown — Figma "Dropdown" (node-id 3705:4446). Single COMPONENT, no
@@ -21,10 +22,12 @@ import {
  * `Field`+`Title` → `label` (requires `id`); SLOT `Slot` → required
  * `children`, whose first child is both the current selection AND the
  * disclosure trigger (caller-supplied — see the trigger-ownership note
- * below); the title renders as inert text. Figma has no open/closed state,
- * so "closed" is this atom's own interpretation: panel chrome always
- * renders, first child always visible, only the rest collapse. Client
- * Component: open/closed is intrinsic, identical-for-every-caller behaviour.
+ * below); the title renders as inert text. When labelled, Dropdown renders
+ * its own trailing chevron next to the trigger (#112) — the caller's trigger
+ * must NOT render its own trailing icon. Figma has no open/closed state, so
+ * "closed" is this atom's own interpretation: panel chrome always renders,
+ * first child always visible, only the rest collapse. Client Component:
+ * open/closed is intrinsic, identical-for-every-caller behaviour.
  */
 type DropdownBaseProps = Omit<
   HTMLAttributes<HTMLDivElement>,
@@ -51,18 +54,6 @@ export type DropdownProps =
       defaultOpen?: boolean;
     })
   | (DropdownBaseProps & { label?: never; defaultOpen?: never });
-
-// Rotates whatever trailing chevron `<svg>` sits as a direct child of the
-// trigger element 180° while open — targets both `Button`'s own trailing-icon
-// slot (a direct-child svg, since the leading icon lives one level deeper
-// inside its "Leading + Text" span) and a manually rendered `Icon` placed as
-// the last child of a caller's own `<button>`. Reuses the existing
-// `--duration-base`/`--ease-base` motion tokens, same precedent as this
-// file's own grid-template-rows transition below; `--duration-base` has no
-// generated Tailwind utility (see design/tokens.json), hence the arbitrary
-// `duration-[var(--duration-base)]` form.
-const CHEVRON_ROTATE =
-  "aria-expanded:[&>svg]:rotate-180 [&>svg]:transition-transform [&>svg]:duration-[var(--duration-base)] [&>svg]:ease-base motion-reduce:[&>svg]:transition-none";
 
 type TriggerProps = {
   id?: string;
@@ -115,10 +106,6 @@ export function Dropdown({
           id: triggerId,
           "aria-expanded": isOpen,
           "aria-controls": panelId,
-          className: clsx(
-            (selectedChild as ReactElement<TriggerProps>).props.className,
-            CHEVRON_ROTATE,
-          ),
           onClick: (event: MouseEvent<HTMLButtonElement>) => {
             (selectedChild as ReactElement<TriggerProps>).props.onClick?.(event);
             setIsOpen((open) => !open);
@@ -128,7 +115,15 @@ export function Dropdown({
 
   return (
     <div
-      className={clsx("flex w-full flex-col gap-2", className)}
+      // rounded-xl (#112): the inner panel below is already rounded-xl: an
+      // unrounded outer box made caller className (TeDoenHeader.tsx's
+      // `shadow-sm`) paint a square-cornered shadow behind it — confirmed in
+      // a real browser, see design/notes/Dropdown.md. In labelless mode this
+      // wrapper's box is pixel-identical to the panel's (single child, no
+      // padding), so the fix is exact there; in labelled mode the corners
+      // land on the label+panel group, invisible today since no caller
+      // currently themes that box.
+      className={clsx("flex w-full flex-col gap-2 rounded-xl", className)}
       onKeyDown={label ? handleRootKeyDown : undefined}
     >
       {label ? (
@@ -139,27 +134,42 @@ export function Dropdown({
 
       <div
         role={label ? undefined : "group"}
-        // `items-start` (labelled only) keeps the trigger hugging its own
-        // content width — Figma's closed-state slot is `horizontal: hug`.
         // `gap-1` (labelless only): with a label, the sub-list's own `pt-1`
         // replaces it — a parent gap would survive the `0fr` collapse and
         // leave dead space below the closed panel. See design/notes/Dropdown.md.
         className={clsx(
           "flex w-full flex-col rounded-xl border border-border bg-surface p-1",
-          label ? "items-start" : "gap-1",
+          !label && "gap-1",
         )}
         {...rest}
       >
         {label ? (
           <>
-            {trigger}
+            {/* Trigger row (#112): re-fetching 3779:4938 (desktop AddItem)
+                shows the Container/Content columns FILL, only the innermost
+                Slot/Button stays hug — a chevron rendered by Dropdown itself
+                in a fixed trailing column, not by the trigger, matching
+                Input-field's own trailing-icon layout. Supersedes #100's
+                `items-start` (hug) reading, which only inspected the
+                innermost Slot. See design/notes/Dropdown.md. */}
+            <div className="flex w-full items-center gap-3">
+              <div className="min-w-0 flex-1">{trigger}</div>
+              <Icon
+                name="ChevronDown"
+                className={clsx(
+                  "mr-2 shrink-0 text-text-muted transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+                  isOpen && "rotate-180",
+                )}
+              />
+            </div>
             <div
               id={panelId}
               aria-labelledby={id}
-              // `self-stretch`: the panel's own `items-start` (above) would
-              // otherwise hug this wrapper too, but the open option rows
-              // inside it are Figma `alignSelf: stretch, horizontal: fill` —
-              // they need a full-width ancestor to fill against.
+              // `self-stretch`: the panel now defaults to `items-stretch`
+              // (#112 dropped the old `items-start`), so this is a no-op
+              // today — kept explicit since the open option rows inside are
+              // Figma `alignSelf: stretch, horizontal: fill` and must not
+              // silently start hugging if the panel's default ever changes.
               className={clsx(
                 "grid self-stretch transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
                 isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
