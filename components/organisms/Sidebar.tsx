@@ -99,6 +99,7 @@ export function Sidebar({
               key={id}
               variant={variant}
               icon={icon}
+              align="left"
               aria-current={isActive ? "page" : undefined}
               aria-pressed={isActive || undefined}
               onClick={handleClick}

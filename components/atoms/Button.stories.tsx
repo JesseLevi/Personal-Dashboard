@@ -75,13 +75,14 @@ export const TrailingIcon = () => (
   </div>
 );
 
-// Figma "Alignment" property (#107): root primaryAxisAlignItems is
-// SPACE_BETWEEN for Center, MIN (packed) for Left — verified against the
-// fetched node, not assumed; see design/notes/Button.md. A single child
-// (no trailingIcon) makes the two look identical since space-between
-// degenerates to flex-start with one item — shown in row 1. Row 2 makes the
-// real difference visible: Center pushes the chevron to the far edge, Left
-// keeps it 4px after the label.
+// Figma "Alignment" property, corrected mapping (#112 supersedes #107): the
+// root frame carries no justifyContent in either sample, so Center/Left are
+// this codebase's own reading of the user's spec — Center truly centers,
+// Left packs the leading group and pushes any trailingIcon to the far edge.
+// A single child (no trailingIcon) makes the two look identical, shown in
+// row 1 (both just render the hug-sized content). Row 2 makes the real
+// difference visible: Center centers the whole group, Left keeps the label
+// at the start and pushes the chevron to the far edge.
 export const Alignment = () => (
   <div className="flex flex-col gap-4">
     <div className="flex items-center gap-4">

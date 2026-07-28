@@ -92,17 +92,19 @@ history as a ban on `:active`.
 - If Figma defines no variation for a role in some state, **don't invent one**.
   See Distructive below, whose text never changes.
 
-## The state matrix (`Atom/Button`, node 3623:4346, re-fetched 2026-07-26, latest for #107)
+## The state matrix (`Atom/Button`, node 3623:4346, re-fetched 2026-07-27/28, latest for #112)
 
 | Style | Default | Hover | Active | Selected |
 |---|---|---|---|---|
 | Filled | `surface-raised` (stone-200) | `surface-raised-hover` (stone-300) | `surface-raised-active` (stone-400) | bg unchanged, text → `text` |
-| White | `surface` (white) | `surface-hover` (stone-50) | `surface-active` (stone-100) | bg unchanged, text → `text` |
-| Transparent | no fill | `surface-active` (stone-100, borrowed — see #107 below) | `surface-raised` (stone-200, borrowed) | no fill, text → `text` |
+| White | `surface` (white) | `surface-active` (stone-100, borrowed — see #112 below) | `surface-raised` (stone-200, borrowed) | bg unchanged, text → `text` |
+| Transparent | no fill | `surface-raised` (stone-200, borrowed) | `surface-raised-hover` (stone-300, borrowed) | no fill, text → `text` |
 | Outline | `border` (stone-300) | `border-hover` (stone-500) | `border-active` (stone-800) | border → `border-selected` (stone-400), text → `text` |
 | Distructive | `priority-urgent-bg` (red-50) | `priority-urgent-bg-hover` (red-100) | `priority-urgent-bg-active` (red-200) | identical to Default |
 
-**#107 (2026-07-26):** Transparent gained real Hover/Active fills in Figma — previously it had none at all (`docs/open-questions.md#no-pointer-affordance` predates this and is updated accordingly). The two exact pixels (stone-100, stone-200) are already named tokens for *other* roles (White's Active, Filled's Default) — per the token-gap rule above, they're reused as-is (`hover:bg-surface-active active:bg-surface-raised`) rather than given dedicated names; whether Transparent warrants its own `surface-transparent-*` pair is an open token-scale question for the user, not decided here. Full evidence: `design/notes/Button.md`.
+**#107 (2026-07-26):** Transparent gained real Hover/Active fills in Figma — previously it had none at all (`docs/open-questions.md#no-pointer-affordance` predates this and is updated accordingly). At the time the two exact pixels (stone-100, stone-200) were already named tokens for *other* roles (White's Active, Filled's Default) — per the token-gap rule above, reused as-is rather than given dedicated names.
+
+**#112 (2026-07-27/28), supersedes #107's White/Transparent values only** (Filled/Outline/Distructive re-diffed against a fresh hex table and confirmed unchanged): White and Transparent both moved one step darker on Hover/Active — White Hover `stone-50→stone-100`, White Active `stone-100→stone-200`; Transparent Hover `stone-100→stone-200`, Transparent Active `stone-200→stone-300`. Same reuse rule applied again (`hover:bg-surface-active active:bg-surface-raised` for White, `hover:bg-surface-raised active:bg-surface-raised-hover` for Transparent) rather than editing `surface-hover`/`surface-active`'s own values, which also back `CardDetailPanel.tsx`'s unrelated option-row hover states. **New flagged gap**: `surface-active`'s dark value (stone-700) is now lighter than `surface-raised`'s (stone-800), so White's dark-mode Hover reads lighter than its Active — backwards from the light-mode direction. No Figma dark frames exist for this node (`docs/open-questions.md#dark-mode-is-placeholder-only`), so this is a side effect of this round's token reuse, not a Figma fact — flagged, not fixed. Whether Transparent/White warrant their own dedicated token pairs remains the open token-scale question for the user. Full evidence: `design/notes/Button.md`.
 
 Text is `text-muted` in Default/Hover/Active for every style except Distructive,
 which is `priority-urgent` throughout.

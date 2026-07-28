@@ -10,10 +10,12 @@ import { Icon, type IconName } from "./Icon";
  * Style → `variant`. State → CSS (`hover:`/`active:`/caller `aria-pressed`),
  * never a prop. `With icon`/`With text`/`Trekking icon` (Figma's misnomer for
  * trailing) → `icon`/`children`/`trailingIcon` (#99). Alignment → `align`,
- * resolved in JS so it never coexists with icon-only's own `justify-center`.
+ * resolved in JS so it never coexists with icon-only's own `justify-center`;
+ * root `gap-1` (Figma's stated 4px) is unconditional so left/center only ever
+ * differ in `justify-*`, never in spacing (#112).
  */
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center rounded-lg text-base font-semibold transition-colors",
+  "inline-flex shrink-0 items-center gap-1 rounded-lg text-base font-semibold transition-colors",
   {
     variants: {
       // No Figma Size property — compact/iconOnlyDefault are structural
@@ -24,10 +26,13 @@ const buttonVariants = cva(
         compact: "size-8 justify-center",
         iconOnlyDefault: "size-10 justify-center",
       },
-      // Only resolved for size=default (see resolvedAlign below).
+      // Only resolved for size=default (see resolvedAlign below). Figma's
+      // root frame carries no justifyContent on either axis value (#112
+      // supersedes #107's misread) — this is this codebase's own mapping of
+      // the user's spec, not a Figma-authored layout.
       align: {
-        center: "justify-between",
-        left: "justify-start gap-1",
+        center: "justify-center",
+        left: "justify-between",
       },
       variant: {
         filled:
@@ -35,11 +40,12 @@ const buttonVariants = cva(
         // Selected shares `border-color` with Hover/Active here; the aria-pressed:hover:/aria-pressed:active: compound variants are load-bearing (higher specificity) — do not replace with a bare aria-pressed:border-*.
         outline:
           "border border-border bg-transparent text-text-muted hover:border-border-hover active:border-border-active aria-pressed:border-border-selected aria-pressed:hover:border-border-hover aria-pressed:active:border-border-active aria-pressed:text-text",
+        // Hover/Active moved one step darker in #112's re-fetch; both borrowed pixel-for-pixel from surface-active/surface-raised (no token of their own). See design/notes/Button.md.
         white:
-          "bg-surface text-text-muted hover:bg-surface-hover active:bg-surface-active aria-pressed:text-text",
-        // Hover/Active fills are new in #107 (previously none — docs/open-questions.md#no-pointer-affordance). No token of their own yet; borrowed pixel-for-pixel from surface-active/surface-raised. See design/notes/Button.md.
+          "bg-surface text-text-muted hover:bg-surface-active active:bg-surface-raised aria-pressed:text-text",
+        // Hover/Active likewise moved one step darker in #112; now borrowed from surface-raised/surface-raised-hover. See design/notes/Button.md.
         transparent:
-          "bg-transparent text-text-muted hover:bg-surface-active active:bg-surface-raised aria-pressed:text-text",
+          "bg-transparent text-text-muted hover:bg-surface-raised active:bg-surface-raised-hover aria-pressed:text-text",
         // Known gap: hover/active both resolve to red-950 in dark mode, so this variant has no visible pointer feedback there.
         destructive:
           "bg-priority-urgent-bg text-priority-urgent hover:bg-priority-urgent-bg-hover active:bg-priority-urgent-bg-active",
@@ -109,8 +115,8 @@ export function Button({
       })}
       {...props}
     >
-      {/* Mirrors Figma's "Leading + Text" frame (row, gap-1) as the root's first slot. */}
-      <span className="flex items-center gap-1">
+      {/* Mirrors Figma's "Leading + Text" frame (row, gap-2 = 8px, #112) as the root's first slot. */}
+      <span className="flex items-center gap-2">
         {icon && <Icon name={icon} />}
         {children}
       </span>
