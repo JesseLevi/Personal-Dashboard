@@ -62,6 +62,27 @@ export interface BoardViewProps<TItem extends { id: string }> {
 // default, hence the explicit override. See design/notes/Carousel.md.
 const BOARD_COLUMN_WIDTH = "w-74 md:w-80";
 
+// #115: dnd-kit calls this fresh on every pointerdown with the real event
+// (confirmed in the installed @dnd-kit/dom source), so branching on
+// `event.pointerType` — not a device-wide `matchMedia` check read once at
+// mount — gets hybrid devices (touch laptop, iPad + mouse) right per
+// interaction and needs no `window`/SSR guard at all. `touch` gets the 2s
+// long-press (Figma node 3680:1442); mouse/pen get the fine-pointer
+// delay+distance from #94 (dnd-kit's own default groups `pen` with `mouse`,
+// not `touch`). See design/notes/BoardView.md for why the old matchMedia
+// version was wrong and the touch-action/callout fix on SortableCard above
+// this pairs with. Exported for tests/board-view-sensors.test.ts — this
+// repo's Vitest setup is framework-free, so the branch logic is tested
+// directly rather than by mounting DragDropProvider.
+export function boardCardActivationConstraints(event: PointerEvent) {
+  return event.pointerType === "touch"
+    ? [new PointerActivationConstraints.Delay({ value: 2000, tolerance: 5 })]
+    : [
+        new PointerActivationConstraints.Delay({ value: 200, tolerance: 10 }),
+        new PointerActivationConstraints.Distance({ value: 5 }),
+      ];
+}
+
 function toItemsByColumn<TItem>(
   columns: BoardColumn<TItem>[],
 ): Record<string, TItem[]> {
@@ -105,6 +126,15 @@ function SortableCard({
       onClick={onClick}
       className={clsx(
         "transition-opacity duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+        // #115: coarse pointers only. Blocks the browser's own native pan
+        // gesture from stealing a touch before the 2s hold (below) elapses —
+        // dnd-kit only sets touch-action:none once dragging has *already*
+        // started, too late for the pending phase — and suppresses iOS's
+        // long-press callout/text-selection. Trade-off recorded in
+        // design/notes/BoardView.md: a scroll gesture starting ON a card
+        // itself won't pan while coarse; the Carousel/page remain scrollable
+        // from everywhere else. Fine pointers (mouse) are untouched.
+        "[@media(any-pointer:coarse)]:touch-none [@media(any-pointer:coarse)]:select-none touch-callout-none",
         disabled ? "cursor-default" : "cursor-grab",
         isDragging && "opacity-40",
       )}
@@ -226,35 +256,13 @@ export function BoardView<TItem extends { id: string }>({
 
   return (
     <DragDropProvider
-      // Mobile long-press (2s, coarse pointers only — Dev Mode annotation
-      // "On mobile when holding for 2s activate drag-handle"): a hold-to-start
-      // constraint on PointerSensor, no separate drag-handle child.
-      // Fine pointers (mouse) also get an explicit small delay+distance
-      // constraint: the library's own default for a mouse pointer targeting
-      // the drag source itself (always true here) is genuinely unconstrained
-      // — any movement activates instantly — which would swallow plain
-      // clicks. See design/notes/BoardView.md for the verification this
-      // replaced an incorrect assumption in a prior version of this comment.
+      // Mobile long-press (2s) vs. desktop click-through — see
+      // boardCardActivationConstraints above for the per-interaction branch.
       sensors={(defaults) =>
         defaults.map((sensor) =>
           sensor === PointerSensor
             ? PointerSensor.configure({
-                activationConstraints:
-                  typeof window !== "undefined" &&
-                  window.matchMedia("(pointer: coarse)").matches
-                    ? [
-                        new PointerActivationConstraints.Delay({
-                          value: 2000,
-                          tolerance: 5,
-                        }),
-                      ]
-                    : [
-                        new PointerActivationConstraints.Delay({
-                          value: 200,
-                          tolerance: 10,
-                        }),
-                        new PointerActivationConstraints.Distance({ value: 5 }),
-                      ],
+                activationConstraints: boardCardActivationConstraints,
               })
             : sensor,
         )
