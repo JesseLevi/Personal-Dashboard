@@ -1,2 +1,14 @@
 @import "tailwindcss";
 @import "./theme.css";
+
+/* #115 (components/organisms/BoardView.tsx SortableCard): iOS Safari's
+   native long-press callout/text-selection has no Tailwind utility
+   (`-webkit-touch-callout` isn't part of the utility set) and would
+   otherwise fire mid-hold on a draggable card, well before the 2s
+   activation delay elapses. Coarse pointers only — desktop mice never
+   trigger it. See design/notes/BoardView.md. */
+@media (any-pointer: coarse) {
+  .touch-callout-none {
+    -webkit-touch-callout: none;
+  }
+}
