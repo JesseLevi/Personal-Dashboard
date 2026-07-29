@@ -65,19 +65,20 @@ const BOARD_COLUMN_WIDTH = "w-74 md:w-80";
 // #115: dnd-kit calls this fresh on every pointerdown with the real event,
 // so branching on `event.pointerType` — not a device-wide `matchMedia` read
 // once at mount — gets hybrid devices (touch laptop, iPad + mouse) right
-// per interaction. `touch` gets the 2s long-press (Figma node 3680:1442);
-// mouse/pen get the #94 fine-pointer delay+distance (dnd-kit's own default
-// groups `pen` with `mouse`). Exported for tests/board-view-sensors.test.ts.
+// per interaction. `touch` gets the long-press (#118: 750ms, deviating from
+// Figma node 3680:1442's 2s annotation — see
+// docs/open-questions.md#touch-hold-duration-deviates-from-figma); mouse/pen
+// get the #94 fine-pointer delay+distance. Exported for
+// tests/board-view-sensors.test.ts.
 //
 // #116: touch `tolerance` must stay a number — `DelayConstraint` calls
 // `exceedsDistance` unguarded, so `undefined` throws on the first
-// pointermove. 16, not the old 5: now the browser owns scroll-vs-hold
-// (SortableCard below), so this only has to absorb hold jitter under the
-// browser's own pan-commit slop, not discriminate a real swipe. Full
-// reasoning: design/notes/BoardView.md.
+// pointermove. 16, not the old 5, kept as-is by #118's shorter window —
+// deliberately more generous than strictly needed. Full reasoning:
+// design/notes/BoardView.md.
 export function boardCardActivationConstraints(event: PointerEvent) {
   return event.pointerType === "touch"
-    ? [new PointerActivationConstraints.Delay({ value: 2000, tolerance: 16 })]
+    ? [new PointerActivationConstraints.Delay({ value: 750, tolerance: 16 })]
     : [
         new PointerActivationConstraints.Delay({ value: 200, tolerance: 10 }),
         new PointerActivationConstraints.Distance({ value: 5 }),
@@ -259,7 +260,7 @@ export function BoardView<TItem extends { id: string }>({
 
   return (
     <DragDropProvider
-      // Mobile long-press (2s) vs. desktop click-through — see
+      // Mobile long-press (750ms, #118) vs. desktop click-through — see
       // boardCardActivationConstraints above for the per-interaction branch.
       sensors={(defaults) =>
         defaults.map((sensor) =>
