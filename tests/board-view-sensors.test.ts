@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { PointerActivationConstraints } from "@dnd-kit/dom";
 import { boardCardActivationConstraints } from "../components/organisms/BoardView";
 
-// #115: real device/touch-emulation verification wasn't possible in this
-// environment (see design/notes/BoardView.md) — this covers the branch
+// #115/#116: real device/touch-emulation verification wasn't possible in
+// this environment (see design/notes/BoardView.md) — this covers the branch
 // logic itself, since dnd-kit calls `boardCardActivationConstraints` fresh
 // per pointerdown with the real event rather than us reading a device-wide
 // `matchMedia` once at mount (the bug this replaced).
@@ -19,11 +19,20 @@ function optionsOf(constraint: object): { value: number; tolerance?: number } {
 }
 
 describe("boardCardActivationConstraints", () => {
-  it("gives touch a 2s hold (Figma node 3680:1442) with a small tolerance", () => {
+  it("gives touch a 2s hold (Figma node 3680:1442) with a jitter tolerance", () => {
     const constraints = boardCardActivationConstraints(fakeEvent("touch"));
     expect(constraints).toHaveLength(1);
     expect(constraints![0]).toBeInstanceOf(PointerActivationConstraints.Delay);
-    expect(optionsOf(constraints![0])).toEqual({ value: 2000, tolerance: 5 });
+    expect(optionsOf(constraints![0])).toEqual({ value: 2000, tolerance: 16 });
+  });
+
+  it("#116: touch tolerance is always a number, never undefined", () => {
+    // Trap this ticket documents: DelayConstraint calls
+    // exceedsDistance(delta, tolerance) unguarded (unlike DistanceConstraint,
+    // which guards with `tolerance &&`), so an undefined tolerance throws a
+    // TypeError on the first pointermove instead of silently no-op'ing.
+    const [constraint] = boardCardActivationConstraints(fakeEvent("touch"))!;
+    expect(typeof optionsOf(constraint).tolerance).toBe("number");
   });
 
   it("gives mouse the #94 quick delay+distance click-through constraint", () => {
