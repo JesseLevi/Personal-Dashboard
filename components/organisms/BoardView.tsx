@@ -62,21 +62,22 @@ export interface BoardViewProps<TItem extends { id: string }> {
 // default, hence the explicit override. See design/notes/Carousel.md.
 const BOARD_COLUMN_WIDTH = "w-74 md:w-80";
 
-// #115: dnd-kit calls this fresh on every pointerdown with the real event
-// (confirmed in the installed @dnd-kit/dom source), so branching on
-// `event.pointerType` — not a device-wide `matchMedia` check read once at
-// mount — gets hybrid devices (touch laptop, iPad + mouse) right per
-// interaction and needs no `window`/SSR guard at all. `touch` gets the 2s
-// long-press (Figma node 3680:1442); mouse/pen get the fine-pointer
-// delay+distance from #94 (dnd-kit's own default groups `pen` with `mouse`,
-// not `touch`). See design/notes/BoardView.md for why the old matchMedia
-// version was wrong and the touch-action/callout fix on SortableCard above
-// this pairs with. Exported for tests/board-view-sensors.test.ts — this
-// repo's Vitest setup is framework-free, so the branch logic is tested
-// directly rather than by mounting DragDropProvider.
+// #115: dnd-kit calls this fresh on every pointerdown with the real event,
+// so branching on `event.pointerType` — not a device-wide `matchMedia` read
+// once at mount — gets hybrid devices (touch laptop, iPad + mouse) right
+// per interaction. `touch` gets the 2s long-press (Figma node 3680:1442);
+// mouse/pen get the #94 fine-pointer delay+distance (dnd-kit's own default
+// groups `pen` with `mouse`). Exported for tests/board-view-sensors.test.ts.
+//
+// #116: touch `tolerance` must stay a number — `DelayConstraint` calls
+// `exceedsDistance` unguarded, so `undefined` throws on the first
+// pointermove. 16, not the old 5: now the browser owns scroll-vs-hold
+// (SortableCard below), so this only has to absorb hold jitter under the
+// browser's own pan-commit slop, not discriminate a real swipe. Full
+// reasoning: design/notes/BoardView.md.
 export function boardCardActivationConstraints(event: PointerEvent) {
   return event.pointerType === "touch"
-    ? [new PointerActivationConstraints.Delay({ value: 2000, tolerance: 5 })]
+    ? [new PointerActivationConstraints.Delay({ value: 2000, tolerance: 16 })]
     : [
         new PointerActivationConstraints.Delay({ value: 200, tolerance: 10 }),
         new PointerActivationConstraints.Distance({ value: 5 }),
@@ -126,15 +127,17 @@ function SortableCard({
       onClick={onClick}
       className={clsx(
         "transition-opacity duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
-        // #115: coarse pointers only. Blocks the browser's own native pan
-        // gesture from stealing a touch before the 2s hold (below) elapses —
-        // dnd-kit only sets touch-action:none once dragging has *already*
-        // started, too late for the pending phase — and suppresses iOS's
-        // long-press callout/text-selection. Trade-off recorded in
-        // design/notes/BoardView.md: a scroll gesture starting ON a card
-        // itself won't pan while coarse; the Carousel/page remain scrollable
-        // from everywhere else. Fine pointers (mouse) are untouched.
-        "[@media(any-pointer:coarse)]:touch-none [@media(any-pointer:coarse)]:select-none touch-callout-none",
+        // #116: coarse pointers only, `touch-manipulation` not `touch-none`
+        // — panning must work again (a scrolled column was the #115
+        // regression), and `touch-manipulation` still permits pinch-zoom
+        // (pan-x pan-y would not), only dropping the double-tap-zoom delay.
+        // With panning restored, the browser owns the scroll-vs-hold call:
+        // its own slop lets a still finger through and turns a real swipe
+        // into a `pointercancel`, which dnd-kit's `handleCancel` already
+        // aborts cleanly. `select-none`/`touch-callout-none` (iOS long-press
+        // callout) are unchanged from #115. Fine pointers (mouse) untouched.
+        // Reasoning: design/notes/BoardView.md.
+        "[@media(any-pointer:coarse)]:touch-manipulation [@media(any-pointer:coarse)]:select-none touch-callout-none",
         disabled ? "cursor-default" : "cursor-grab",
         isDragging && "opacity-40",
       )}
