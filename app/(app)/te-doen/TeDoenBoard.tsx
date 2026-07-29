@@ -42,13 +42,14 @@ export function TeDoenBoard({ board, dragDisabled }: TeDoenBoardProps) {
   // sortable-state-management.mdx: render from local state, only re-sync
   // from fetched data when nothing is pending, revert to a snapshot on
   // failure). `board` (the server prop) is re-fetched via `router.refresh()`
-  // after every successful mutation elsewhere in this file already; this
-  // effect re-syncs `localBoard` whenever that lands, EXCEPT while a move is
-  // still in flight — otherwise a `board` prop update that races an
-  // in-flight moveCard() would yank the optimistic move back out from under
-  // it before the request even settles. A *count*, not a boolean: with two
-  // quick drags queued (see below), the first settling must not flip this
-  // back to "nothing pending" while the second is still outstanding.
+  // after every create/update/delete/rename in this file, but NOT after a
+  // successful move (#114 — see handleMove) — this effect still re-syncs
+  // `localBoard` whenever one of those OTHER refreshes lands, EXCEPT while a
+  // move is still in flight, so an unrelated mutation's refresh can't yank
+  // an in-flight optimistic move out from under it. A *count*, not a
+  // boolean: with two quick drags queued (see below), the first settling
+  // must not flip this back to "nothing pending" while the second is still
+  // outstanding.
   const [localBoard, setLocalBoard] = useState(board);
   const pendingMoves = useRef(0);
   useEffect(() => {
@@ -79,14 +80,19 @@ export function TeDoenBoard({ board, dragDisabled }: TeDoenBoardProps) {
           // Reverts to this specific move's own pre-drop snapshot. If a
           // later drag already landed on top of it while this request was
           // in flight, that later drag's own moveCard() call is queued right
-          // behind this one and — once it resolves — either re-applies (on
-          // success, via router.refresh() below) or reverts itself the same
-          // way, so the board still converges on server truth either way.
+          // behind this one and — once it resolves — either leaves its own
+          // (already-applied) optimistic state in place or reverts itself
+          // the same way, so the board still converges on server truth
+          // either way.
           setLocalBoard(preMoveSnapshot);
           setMoveError(tErrors(result.error));
-        } else {
-          router.refresh();
         }
+        // Success: no `router.refresh()` here (#114) — `applyCardMove` above
+        // already IS the landed state, so a drop never waits on a network
+        // round trip to visually settle. `moveCard` re-queries live sibling
+        // positions server-side on every call, so this client's now
+        // out-of-date `position` numbers are harmless until the next
+        // refresh (any other mutation, or a reload) re-syncs them for free.
       })
       .catch(() => {
         setLocalBoard(preMoveSnapshot);

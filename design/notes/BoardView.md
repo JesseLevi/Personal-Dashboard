@@ -97,3 +97,11 @@ mobile, the collapse animation, all four scroll-input methods, and — the
 one check specific to this file's own concern, drag-and-drop hit-testing
 after a horizontal scroll on the now differently-sized/margined row) live in
 `design/notes/Carousel.md`, not duplicated here.
+
+## Issue #114 — desktop drop hover: reproduced in Ladle first, ruled out this file
+
+The ticket gave two mutually exclusive candidate causes and an explicit order: reproduce in `pnpm ladle` (no server action there) before touching anything. Measured with Playwright driven against a live `pnpm ladle` server (`board-view--default`): real `page.mouse.down/move×15/up` across columns, timestamping via a `pointerup` listener plus a `requestAnimationFrame` loop polling the (re-queried, not cached — the card's DOM node is a different instance post cross-column move, a fresh React mount under the new column's list) dragged element's `getBoundingClientRect()` until 8 consecutive stable frames. **Result: the card's position stopped changing ~246ms after mouseup** — matching dnd-kit's own documented 250ms default drop-animation duration (Context7 `/clauderic/dnd-kit`, `feedback.mdx`) almost exactly. This file's own drag mechanics/sensor config are not the cause — cause 1 ruled out by measurement, not assumption.
+
+By the ticket's own elimination (fast in Ladle → the hang is specific to `/te-doen`), the cause is the `moveCard()`/`router.refresh()` round trip in `app/(app)/te-doen/TeDoenBoard.tsx`, not this component — the fix lives entirely there. Full reasoning: `design/notes/TeDoenBoard.md`'s own `TICKET #114` section. Nothing in `BoardView.tsx` changed for #114.
+
+**Not verified against the real `/te-doen` route** — this worktree has no `.env` (Supabase credentials are git-ignored per `CLAUDE.md`, and this dev machine has no local Supabase/Docker), so the actual authenticated board couldn't be exercised end-to-end. The fix (removing `router.refresh()` from a successful drag-move, since `applyCardMove`'s optimistic result already is the correct end state and `moveCard` re-queries live sibling positions server-side on every call rather than trusting client-cached ones) is reasoned from reading `TeDoenBoard.tsx`/`actions.ts` directly, not from reproducing the 3s hang live.

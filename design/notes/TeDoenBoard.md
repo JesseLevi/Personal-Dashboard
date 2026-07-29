@@ -287,9 +287,11 @@ is derived from `localBoard`, not `board`, from here on.
   `localBoard` reverts to `preMoveSnapshot` and a translated message renders
   (`boards.errors.*` — no new i18n keys: `moveCard`'s closed error-code union
   was already fully covered in both catalogs, same keys `CardDetailPanel.tsx`
-  already reuses for the same errors). On success, `router.refresh()` — same
-  call every other mutation in this file already makes on success — pulls
-  real DB state back down through `board`, which the sync effect then adopts.
+  already reuses for the same errors). On success this originally also called
+  `router.refresh()`, same as every other mutation in this file — **removed
+  by #114 below**, since it turned out to tie the drop's visual landing to a
+  network round trip instead of letting the optimistic apply above be the
+  landed state.
 - **No toast component exists in this design system yet** (checked before
   building one — none of `components/`, no fetched Figma node for one
   either), so the failure message reuses the exact inline convention
@@ -370,3 +372,13 @@ failed request (e.g. RLS-denied or network-down), (4) the two-quick-drags
 queueing behaves as reasoned above under real network latency instead of
 synchronous test promises. A future ticket/CI run needs to close this gap
 the same way `BoardView.md` flagged its own mobile-long-press gap.
+
+## TICKET #114 — drop hover fixed: an unnecessary `router.refresh()` on move-success
+
+**Diagnosis, with the evidence that established it:** the ticket's own instruction was to reproduce in `pnpm ladle` first (no server action runs there) before touching anything. Measured with Playwright against a live Ladle server (`board-view--default`): a real mouse drag settled — the dragged element's `getBoundingClientRect()` stopped changing — **~246ms after mouseup**, matching dnd-kit's documented 250ms default drop animation almost exactly (full method in `design/notes/BoardView.md`'s own `#114` section). That rules out this ticket's cause 1 (pure dnd-kit drag mechanics/sensor config) — nothing in `BoardView.tsx` needed to change. By the ticket's own elimination, the cause is specific to `/te-doen`.
+
+Reading `handleMove` (above): the optimistic apply (`setLocalBoard(applyCardMove(...))`) already runs synchronously, before any network call — so the *landing* was never actually waiting on `moveCard()` itself. What it *did* wait on, needlessly, was the `router.refresh()` call in the success branch: every render of `TeDoenBoard` recomputes `columns` fresh from `localBoard` and hands it straight to `BoardView`, so nothing downstream needed a fresh `board` prop to look right — `moveCard`'s own server-side siblings query (`actions.ts`) re-reads live positions from the DB on every call and never trusts a client-supplied `position`, so this client's now-out-of-date `position` numbers were always harmless. The refresh bought nothing for a move and only added a live network+RSC round trip between "optimistically correct" and "provably idle" — a trip whose latency is exactly what a slow dev-mode Supabase connection (or a cold module compile) would turn into a multi-second visible stall, matching the reported symptom.
+
+**Fix:** removed the `router.refresh()` call from `handleMove`'s success branch (kept, unchanged, on every other mutation in this file — createCard/updateCard/deleteCard/rename all still need it, since those *do* return server-generated fields the client doesn't otherwise have). `pendingMoves`/the `localBoard`-from-`board` sync effect are untouched — they still matter for those other mutations racing an in-flight drag.
+
+**Verification:** `pnpm test`/`typecheck`/`lint`/`build` all green, `tests/boards-optimistic.test.ts` (unchanged, still 8 passing) covers `applyCardMove` itself. **Not verified against the real authenticated `/te-doen` route** — this worktree has no `.env` (no Supabase credentials, no Docker on this dev machine per `CLAUDE.md`), so the actual reported 3s stall could not be reproduced or timed live; the fix is reasoned from reading `handleMove`/`moveCard` directly (above), not from watching the hang disappear. A future ticket with a real dev Supabase connection should time a drop on `/te-doen` the same way `BoardView.md` timed the Ladle one, to confirm this closes the gap completely rather than just removing the one redundant network dependency found by inspection.
