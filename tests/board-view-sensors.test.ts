@@ -19,11 +19,11 @@ function optionsOf(constraint: object): { value: number; tolerance?: number } {
 }
 
 describe("boardCardActivationConstraints", () => {
-  it("gives touch a 2s hold (Figma node 3680:1442) with a jitter tolerance", () => {
+  it("gives touch a 750ms hold (#118, deviates from Figma node 3680:1442's 2s) with a jitter tolerance", () => {
     const constraints = boardCardActivationConstraints(fakeEvent("touch"));
     expect(constraints).toHaveLength(1);
     expect(constraints![0]).toBeInstanceOf(PointerActivationConstraints.Delay);
-    expect(optionsOf(constraints![0])).toEqual({ value: 2000, tolerance: 16 });
+    expect(optionsOf(constraints![0])).toEqual({ value: 750, tolerance: 16 });
   });
 
   it("#116: touch tolerance is always a number, never undefined", () => {
