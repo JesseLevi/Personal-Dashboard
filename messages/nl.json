@@ -23,6 +23,27 @@
       "generic": "Er ging iets mis. Probeer het opnieuw."
     }
   },
+  "recipes": {
+    "units": {
+      "gram": "Gram",
+      "kilogram": "Kilogram",
+      "ounce": "Ounce",
+      "pound": "Pound",
+      "milliliter": "Milliliter",
+      "deciliter": "Deciliter",
+      "liter": "Liter",
+      "theelepel": "Theelepel",
+      "eetlepel": "Eetlepel",
+      "cup": "Cup",
+      "teaspoon": "Teaspoon",
+      "tablespoon": "Tablespoon",
+      "fluid_ounce": "Fluid ounce",
+      "stuk": "Stuk",
+      "snufje": "Snufje",
+      "scoop": "Scoop",
+      "naar_smaak": "Naar smaak"
+    }
+  },
   "boards": {
     "errors": {
       "invalid-input": "Controleer de ingevoerde gegevens.",
