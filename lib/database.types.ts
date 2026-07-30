@@ -1,8 +1,8 @@
-// Hand-maintained to match supabase/migrations/*.sql (#91, #130). This dev
-// machine has no Docker/standalone Supabase CLI, so `pnpm db:types` (which
-// shells out to `supabase gen types typescript --local --schema public,reference`)
-// cannot run here — CI must regenerate this file against the real local
-// stack and confirm it matches.
+// Hand-maintained to match supabase/migrations/*.sql (#91, #119, #130). This
+// dev machine has no Docker/standalone Supabase CLI, so `pnpm db:types`
+// (which shells out to `supabase gen types typescript --local --schema
+// public,reference`) cannot run here — CI must regenerate this file against
+// the real local stack and confirm it matches.
 //
 // #130: `public.recipe_unit` is a Postgres enum (created in the public
 // schema, per ADR-0011 §3) reused by both ingredient_unit_masses tables
@@ -10,6 +10,11 @@
 // public.ingredient_unit_masses.unit both type as
 // Database["public"]["Enums"]["recipe_unit"], same as a real generator
 // would emit for a cross-schema enum reference.
+//
+// #119 (recipe schema): recipe_categories, recipes, recipe_ingredients,
+// recipe_steps, tags, recipe_tags. recipe_ingredients.unit reuses the same
+// Database["public"]["Enums"]["recipe_unit"] rather than a second type — see
+// 20260730000002_recipe_schema.sql's file header.
 export type Json =
   | string
   | number
@@ -376,6 +381,285 @@ export interface Database {
             columns: ["ingredient_id"];
             isOneToOne: false;
             referencedRelation: "ingredients";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      recipe_categories: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          icon: string;
+          position: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          icon: string;
+          position: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          icon?: string;
+          position?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "recipe_categories_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      recipes: {
+        Row: {
+          id: string;
+          user_id: string;
+          category_id: string;
+          title: string;
+          servings: number;
+          thumbnail_path: string | null;
+          time_minutes: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          category_id: string;
+          title: string;
+          servings?: number;
+          thumbnail_path?: string | null;
+          time_minutes?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          category_id?: string;
+          title?: string;
+          servings?: number;
+          thumbnail_path?: string | null;
+          time_minutes?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "recipes_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recipes_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "recipe_categories";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      recipe_ingredients: {
+        Row: {
+          id: string;
+          user_id: string;
+          recipe_id: string;
+          ingredient_id: string | null;
+          name: string;
+          quantity: number | null;
+          unit: Database["public"]["Enums"]["recipe_unit"];
+          position: number;
+          group_label: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          recipe_id: string;
+          ingredient_id?: string | null;
+          name: string;
+          quantity?: number | null;
+          unit: Database["public"]["Enums"]["recipe_unit"];
+          position: number;
+          group_label?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          recipe_id?: string;
+          ingredient_id?: string | null;
+          name?: string;
+          quantity?: number | null;
+          unit?: Database["public"]["Enums"]["recipe_unit"];
+          position?: number;
+          group_label?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "recipe_ingredients_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey";
+            columns: ["recipe_id"];
+            isOneToOne: false;
+            referencedRelation: "recipes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recipe_ingredients_ingredient_id_fkey";
+            columns: ["ingredient_id"];
+            isOneToOne: false;
+            referencedRelation: "ingredients";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      recipe_steps: {
+        Row: {
+          id: string;
+          user_id: string;
+          recipe_id: string;
+          position: number;
+          instruction: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          recipe_id: string;
+          position: number;
+          instruction: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          recipe_id?: string;
+          position?: number;
+          instruction?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "recipe_steps_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recipe_steps_recipe_id_fkey";
+            columns: ["recipe_id"];
+            isOneToOne: false;
+            referencedRelation: "recipes";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tags: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tags_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      recipe_tags: {
+        Row: {
+          id: string;
+          user_id: string;
+          recipe_id: string;
+          tag_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          recipe_id: string;
+          tag_id: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          recipe_id?: string;
+          tag_id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "recipe_tags_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recipe_tags_recipe_id_fkey";
+            columns: ["recipe_id"];
+            isOneToOne: false;
+            referencedRelation: "recipes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recipe_tags_tag_id_fkey";
+            columns: ["tag_id"];
+            isOneToOne: false;
+            referencedRelation: "tags";
             referencedColumns: ["id"];
           },
         ];
