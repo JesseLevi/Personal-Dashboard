@@ -43,6 +43,17 @@ export const InCard = () => (
   </Card>
 );
 
+// #124's two new optional-prop branches, which the stories above never reach
+// because they all pass an explicit imageUrl and duration: a recipe with no
+// stored photo (imageUrl absent -> the molecule's own bg-surface-muted
+// placeholder, no ThumbnailBackdrop needed) and a nullable time_minutes
+// (duration absent -> the Timer row is omitted, not rendered empty).
+export const NoPhotoOrDuration = () => (
+  <Card>
+    <CardContentRecipe name="Amandel Pasta" />
+  </Card>
+);
+
 type PlaygroundProps = {
   name: string;
   duration: string;
