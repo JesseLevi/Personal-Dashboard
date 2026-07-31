@@ -137,9 +137,21 @@ Deliberately simple: no streaming, no agent frameworks, no LangChain. A queue ta
 
 ## 8. Environments & CI/CD
 
-- **Local dev**: `supabase start` (CLI), local Ollama, `next dev`.
+**This section describes two topologies. ADR-0012 is authoritative on which one is current** — as of 2026-07-31 that is the "Current" subsection below; the Mac-mini plan is a future/optional target, kept here for when it's picked back up (e.g. once local-inference phases 7–8 make provisioning the Mac mini for Ollama worthwhile anyway). ADR-0012 also records that this decision is the user's, not yet ratified by the architecture layer.
+
+### Current (ADR-0012): Vercel + Supabase Cloud
+
+- **Local dev**: `supabase start` (CLI), local Ollama, `next dev` — unchanged.
+- **Hosted**: Vercel hosts the Next.js app (production + per-PR preview deployments, via its GitHub integration). Supabase Cloud hosts the single hosted project's Postgres + Auth + RLS + Storage. There is currently one hosted environment (production) — no separate on-demand staging stack exists yet under this topology; ADR-0012 doesn't add one.
+- **CI (GitHub Actions)**: `ci.yml` is unchanged — lint → typecheck → unit tests (`--frozen-lockfile`) → token-drift check → `supabase db reset` + RLS suite (ADR-0009, against an ephemeral local container) → build. This proves migrations are sound; it does not deploy them anywhere. The **Ladle/Playwright screenshot diff (ADR-0010) is wired in** as `pnpm test:visual` (#6); its CI job's arming status is tracked in `docs/HANDOFF.md`, not here.
+- **CD**: `deploy.yml` (ADR-0012) — on push to `main` (or `workflow_dispatch`), a `migrate` job applies pending migrations to the hosted Supabase project (`supabase db push`, forward-only, never `db reset`), then a `deploy` job builds and deploys to Vercel production (`vercel build --prod` + `vercel deploy --prebuilt --prod`). Vercel's own Git-triggered production build is disabled via `vercel.json`'s `ignoreCommand` — `deploy.yml`'s `deploy` job is the only path to production, and it only runs after migrations succeed. See ADR-0012 §3 for why (Vercel's Git integration otherwise races the migration and reproduces exactly the kind of outage this fixes) and §4 for the security trade-off of giving CI production-schema access.
+- The worker (`worker/`) and Ollama have no hosted equivalent decided yet under this topology — out of scope for ADR-0012, to be settled when Phase 7+ starts.
+
+### Future/optional: self-hosted Mac mini
+
 - **Staging + prod**: two Supabase Docker stacks + two app instances on the Mac mini, separate tunnel hostnames. **Capacity note**: prod Supabase + Ollama (a 14B q4 model ≈ 9 GB) already stress a 16 GB machine — staging runs **on-demand** (started for deploy verification/restore drills, stopped otherwise), and model size follows available RAM, not ambition.
-- **CI (GitHub Actions)**: lint → typecheck → unit tests (`--frozen-lockfile`) → token-drift check → `supabase db reset` + RLS suite (ADR-0009) → build. The **Ladle/Playwright screenshot diff (ADR-0010) is wired in** as `pnpm test:visual` (#6); its CI job's arming status is tracked in `docs/HANDOFF.md`, not here. **CD**: self-hosted runner on the Mac mini (hardened per §7); deploy = migrate then restart app/worker; staging on merge to `main`, prod on tag.
+- **CD**: self-hosted runner on the Mac mini (hardened per §7); deploy = migrate then restart app/worker; staging on merge to `main`, prod on tag.
+- None of this infrastructure has been built (`docs/phase-log.md` tracks #1–#5 as not started); it remains the plan to return to if/when running fully locally becomes the priority again (CLAUDE.md priority 2).
 
 ## 9. Testing
 
