@@ -40,6 +40,12 @@ Conventions the design-system components locked in are in `docs/guides/ui-compon
 
 Schema (`boards`/`board_columns`/`cards`/`labels`/`card_labels`), server actions, `BoardView` (dnd-kit drag & drop), `SidePanel`, the app-shell route group, and the `/te-doen` + `/te-doen/[boardId]` pages are built and merged (#87–#98). No Phase 3 database path has ever run against a live Supabase — see `docs/HANDOFF.md` for the verification gaps.
 
-## Phases 4–9: ⬜ not started
+## Phase 4 — Recepten: 🔶 in progress
 
-One tracking ticket per phase (#28–33), all still in Backlog with no implementation work. Ticket detail per `Architecture.md` §10. The token/RLS/CI infrastructure and the worker skeleton they depend on are in place.
+Merged so far: the unit library (#120 — `lib/recipes/units.ts`, the canonical 17-code list plus same-magnitude `convert()`/`scaleQuantity()`/`formatQuantity()`), the two-layer ingredient library and the `reference` schema (#130, `ADR-0011`), the recipe schema (#119 — `recipe_categories`/`recipes`/`recipe_ingredients`/`recipe_steps`, sharing the `public.recipe_unit` enum), the data layer (#122 — `lib/recipes/queries.ts` + `app/(app)/recepten/actions.ts`), the portion-stepper molecule (#123), and the `/recepten` category-kanban page (#124 — `ReceptenBoard.tsx` driving the generic `BoardView`).
+
+Still open: #121 (thumbnails bucket, parallel), then #125/#126/#127/#131 → #128. `recipes` has no `position` column by design, so the overview ships with dragging disabled — see `docs/HANDOFF.md`.
+
+## Phases 5–9: ⬜ not started
+
+One tracking ticket per phase (#29–33), all still in Backlog with no implementation work. Ticket detail per `Architecture.md` §10. The token/RLS/CI infrastructure and the worker skeleton they depend on are in place.
