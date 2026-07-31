@@ -36,6 +36,9 @@ const ICON_NAMES: IconName[] = [
   "StarPlus",
   "WeightTilde",
   "AArrowDown",
+  "Search",
+  "ArrowRightLeft",
+  "Minus",
 ];
 
 export const AllIcons = () => (
