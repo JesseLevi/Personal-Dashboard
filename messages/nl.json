@@ -78,6 +78,11 @@
     "cardContentIngredient": {
       "deleteLabel": "Ingrediënt verwijderen"
     },
+    "portionStepper": {
+      "count": "{count, plural, one {# persoon} other {# personen}}",
+      "decrementLabel": "Aantal personen verlagen",
+      "incrementLabel": "Aantal personen verhogen"
+    },
     "cardContainer": {
       "addLabel": "Toevoegen",
       "editLabel": "Bewerken",
