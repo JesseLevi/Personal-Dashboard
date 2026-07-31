@@ -1,7 +1,15 @@
-// Hand-maintained to match supabase/migrations/*.sql (#91). This dev machine
-// has no Docker/standalone Supabase CLI, so `pnpm db:types` (which shells out
-// to `supabase gen types typescript --local`) cannot run here — CI must
-// regenerate this file against the real local stack and confirm it matches.
+// Hand-maintained to match supabase/migrations/*.sql (#91, #130). This dev
+// machine has no Docker/standalone Supabase CLI, so `pnpm db:types` (which
+// shells out to `supabase gen types typescript --local --schema public,reference`)
+// cannot run here — CI must regenerate this file against the real local
+// stack and confirm it matches.
+//
+// #130: `public.recipe_unit` is a Postgres enum (created in the public
+// schema, per ADR-0011 §3) reused by both ingredient_unit_masses tables
+// below — reference.ingredient_unit_masses.unit and
+// public.ingredient_unit_masses.unit both type as
+// Database["public"]["Enums"]["recipe_unit"], same as a real generator
+// would emit for a cross-schema enum reference.
 export type Json =
   | string
   | number
@@ -278,6 +286,200 @@ export interface Database {
             columns: ["label_id"];
             isOneToOne: false;
             referencedRelation: "labels";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      ingredients: {
+        Row: {
+          id: string;
+          user_id: string;
+          reference_id: string | null;
+          name: string;
+          category: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          reference_id?: string | null;
+          name: string;
+          category?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          reference_id?: string | null;
+          name?: string;
+          category?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ingredients_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ingredients_reference_id_fkey";
+            columns: ["reference_id"];
+            isOneToOne: false;
+            referencedRelation: "reference.ingredients";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      ingredient_unit_masses: {
+        Row: {
+          id: string;
+          user_id: string;
+          ingredient_id: string;
+          unit: Database["public"]["Enums"]["recipe_unit"];
+          grams: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          ingredient_id: string;
+          unit: Database["public"]["Enums"]["recipe_unit"];
+          grams: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          ingredient_id?: string;
+          unit?: Database["public"]["Enums"]["recipe_unit"];
+          grams?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_unit_masses_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "ingredient_unit_masses_ingredient_id_fkey";
+            columns: ["ingredient_id"];
+            isOneToOne: false;
+            referencedRelation: "ingredients";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+    };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: {
+      recipe_unit:
+        | "gram"
+        | "kilogram"
+        | "ounce"
+        | "pound"
+        | "milliliter"
+        | "deciliter"
+        | "liter"
+        | "theelepel"
+        | "eetlepel"
+        | "cup"
+        | "teaspoon"
+        | "tablespoon"
+        | "fluid_ounce"
+        | "stuk"
+        | "snufje"
+        | "scoop"
+        | "naar_smaak";
+    };
+    CompositeTypes: Record<string, never>;
+  };
+  reference: {
+    Tables: {
+      ingredients: {
+        Row: {
+          id: string;
+          name_nl: string;
+          name_en: string | null;
+          category: string | null;
+          kcal_per_100g: number | null;
+          protein_g_per_100g: number | null;
+          carbs_g_per_100g: number | null;
+          fat_g_per_100g: number | null;
+          source: string;
+          source_ref: string | null;
+          source_version: string;
+        };
+        Insert: {
+          id?: string;
+          name_nl: string;
+          name_en?: string | null;
+          category?: string | null;
+          kcal_per_100g?: number | null;
+          protein_g_per_100g?: number | null;
+          carbs_g_per_100g?: number | null;
+          fat_g_per_100g?: number | null;
+          source: string;
+          source_ref?: string | null;
+          source_version: string;
+        };
+        Update: {
+          id?: string;
+          name_nl?: string;
+          name_en?: string | null;
+          category?: string | null;
+          kcal_per_100g?: number | null;
+          protein_g_per_100g?: number | null;
+          carbs_g_per_100g?: number | null;
+          fat_g_per_100g?: number | null;
+          source?: string;
+          source_ref?: string | null;
+          source_version?: string;
+        };
+        Relationships: [];
+      };
+      ingredient_unit_masses: {
+        Row: {
+          id: string;
+          ingredient_id: string;
+          unit: Database["public"]["Enums"]["recipe_unit"];
+          grams: number;
+          source: string;
+          source_version: string;
+        };
+        Insert: {
+          id?: string;
+          ingredient_id: string;
+          unit: Database["public"]["Enums"]["recipe_unit"];
+          grams: number;
+          source: string;
+          source_version: string;
+        };
+        Update: {
+          id?: string;
+          ingredient_id?: string;
+          unit?: Database["public"]["Enums"]["recipe_unit"];
+          grams?: number;
+          source?: string;
+          source_version?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_unit_masses_ingredient_id_fkey";
+            columns: ["ingredient_id"];
+            isOneToOne: false;
+            referencedRelation: "ingredients";
             referencedColumns: ["id"];
           },
         ];
