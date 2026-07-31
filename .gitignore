@@ -35,3 +35,9 @@ tmp/
 
 # claude code worktrees (transient agent isolation)
 .claude/worktrees/
+# claude code personal local config (not project-level settings.json)
+.claude/settings.local.json
+
+# vendored skill docs, restorable via `npx skills experimental_install` from skills-lock.json
+.agents/skills/
+.claude/skills/
