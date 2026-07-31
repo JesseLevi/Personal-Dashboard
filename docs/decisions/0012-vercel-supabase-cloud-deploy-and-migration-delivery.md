@@ -86,6 +86,7 @@ The Mac-mini/self-hosted design in `Architecture.md` is not wrong or discarded �
 
 ## Consequences
 
+- **Activation order is not optional: create all six secrets BEFORE this ADR's PR merges.** The moment `vercel.json` lands on `main`, Vercel stops building production from Git (§3) — but `deploy.yml` cannot take over until its secrets exist, and it fails at `supabase link` without them. Merging first and adding secrets later therefore leaves production with *no* deploy path at all: the currently-live deployment keeps serving (so there is no outage, and no rollback), but every subsequent merge silently never reaches production, and the only symptom is that the site quietly stops changing. Recovery is simply to add the secrets and re-run the workflow, but the failure is easy to misread as "the deploy is slow" rather than "the deploy never ran". If the secrets cannot be created yet, hold the PR rather than merging it in a half-armed state.
 - **`Architecture.md` §8 is amended** to point here for the current topology, with the Mac-mini plan kept as a clearly labeled future/optional section rather than deleted.
 - **Merge-to-live latency increases** by the `migrate` job's runtime (§3) — an accepted, documented trade-off, not a regression to silently work around later.
 - **A GitHub Actions job now holds production-schema-altering and production-app-replacing credentials.** Mitigated by trigger restriction, environment scoping, and (recommended, not yet applied) environment protection rules and required reviewers — see §4.

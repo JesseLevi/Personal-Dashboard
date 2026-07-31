@@ -9,6 +9,12 @@ name: Deploy (migrate + production)
 # and it only runs after `migrate` succeeds. Preview deployments for PRs are
 # untouched -- they go through Vercel's Git integration exactly as before.
 #
+# ACTIVATION ORDER: the six secrets below must exist BEFORE this file and
+# `vercel.json` reach `main`. `vercel.json` disables Vercel's own production
+# build on arrival, so if this workflow cannot authenticate, production has no
+# deploy path at all — the live deployment keeps serving, but no later merge
+# ever ships. See ADR-0012's first Consequences bullet.
+#
 # Hard rules, do not weaken:
 #   - never add `supabase db reset`, `--force`, or any other destructive or
 #     rewriting flag against the hosted project. `db push` only ever applies
