@@ -88,6 +88,9 @@
       "editLabel": "Bewerken",
       "addItemLabel": "Voeg item toe"
     },
+    "cardContentRecipe": {
+      "durationMinutes": "{minutes} min"
+    },
     "sidebar": {
       "navLabel": "Hoofdnavigatie",
       "expandLabel": "Zijbalk uitklappen",

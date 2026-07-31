@@ -88,6 +88,9 @@
       "editLabel": "Edit",
       "addItemLabel": "Add item"
     },
+    "cardContentRecipe": {
+      "durationMinutes": "{minutes} min"
+    },
     "sidebar": {
       "navLabel": "Main navigation",
       "expandLabel": "Expand sidebar",
