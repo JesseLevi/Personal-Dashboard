@@ -258,6 +258,39 @@
       "addNewIngredientLabel": "\"{name}\" toevoegen als nieuw ingrediënt",
       "saveLabel": "Opslaan",
       "savingLabel": "Opslaan..."
+    },
+    "recipePanel": {
+      "addTitle": "Recept toevoegen",
+      "editTitle": "Recept bewerken",
+      "fields": {
+        "titleLabel": "Titel",
+        "categoryLabel": "Categorie",
+        "servingsLabel": "Personen",
+        "timeLabel": "Tijd",
+        "timePlaceholder": "Minuten",
+        "tagsLabel": "Tags",
+        "tagsPlaceholder": "Voeg tags toe",
+        "tagsAddPlaceholder": "Nieuwe tag",
+        "tagsAddLabel": "Tag toevoegen",
+        "tagsRemoveLabel": "Tag \"{tag}\" verwijderen",
+        "ingredientNameLabel": "Item",
+        "ingredientNamePlaceholder": "Kies een ingrediënt",
+        "ingredientQuantityLabel": "Aantal",
+        "ingredientQuantityPlaceholder": "0",
+        "ingredientUnitLabel": "Eenheid",
+        "ingredientUnitPlaceholder": "Kies eenheid",
+        "stepLabel": "Stap {number}",
+        "stepPlaceholder": "Typ hier een instructie..."
+      },
+      "addRowLabel": "Voeg toe",
+      "stepIngredientPillLabel": "Ingrediënt",
+      "saveLabel": "Opslaan",
+      "savingLabel": "Opslaan...",
+      "deleteLabel": "Verwijderen",
+      "deleteConfirmLabel": "Weet je het zeker?",
+      "deleteConfirmButtonLabel": "Ja, verwijderen",
+      "deletingLabel": "Verwijderen...",
+      "cancelLabel": "Annuleren"
     }
   }
 }
