@@ -96,24 +96,26 @@ This is a deliberate deviation, not an oversight — `CLAUDE.md` still requires 
 
 Not built (`app/(app)/recepten/page.tsx`/`ReceptenBoard.tsx` render however many categories `recipe_categories` actually holds — three today, per the seed trigger). Needs a design answer only if a 4th default category (dessert/toetje?) was actually intended; otherwise this entry can simply be closed once design confirms it was copy-paste.
 
-## category-icon-picker-curated-set
+## category-icon-picker-curated-set (RESOLVED 2026-08-01)
 
-**#125's "Icoon" picker shows 8 curated lucide icons, not the ticket's
-literal "list all 74 lucide food icons here."** Both fetched nodes
-(`3891:18524` mobile, `3957:11544` desktop) draw exactly 8 `Button/Default`
-instances — a fixed slot count, all 8 rendering the identical `Icon/Sandwich`
-placeholder — and the Dev Mode annotation the ticket quotes is an
-instruction to the builder, not delivered content (the ticket itself flags
-this as unresolved). Building 74 new `IconName` entries on a text
-instruction alone, with no Figma vector behind any of them to shape-verify
-against, would invert this codebase's own "never build what isn't in Figma"
-rule and also wouldn't fit the 8-slot layout Figma actually draws. Shipped:
-`Sandwich`, `Croissant`, `CakeSlice`, `Broccoli` (already valid, and the
-first three are `seed_default_recipe_categories()`'s own seeded icons),
-`Coffee`, `Soup`, `Pizza`, `Cookie` (newly added, `design/notes/Icon.md`'s
-#125 entry). Full reasoning: `design/notes/CategoryPanel.md`. Needs a
-design/product answer: ratify this curated 8, or specify a real UI shape
-(search? paginated grid?) that could actually hold all 74.
+**Originally: #125's "Icoon" picker shipped 8 curated lucide icons, not the
+ticket's literal "list all 74 lucide food icons here,"** because both
+fetched nodes (`3891:18524` mobile, `3957:11544` desktop) draw exactly 8
+`Button/Default` instances — a fixed slot count, all 8 rendering the
+identical `Icon/Sandwich` placeholder — and building 74 new `IconName`
+entries on a text instruction alone, with no Figma vector behind any of them
+to shape-verify against, would have inverted this codebase's own "never
+build what isn't in Figma" rule.
+
+**Resolved by direct user instruction (2026-08-01): show all 74, not a
+curation.** The picker now lists every icon in lucide's own "Food & beverage"
+category — sourced from `lucide-icons/lucide`'s per-icon `categories`
+metadata via the GitHub API (verified, not guessed; lucide.dev's category
+page doesn't render its grid server-side), each name confirmed as a real
+`lucide-react@1.25.0` export. `SidePanel`'s content area already scrolls, so
+the 8-slot layout question resolved itself without a new UI shape. Full
+reasoning: `design/notes/CategoryPanel.md#icon-picker-all-74-of-lucides-food--beverage-icons-superseded-curation`,
+`design/notes/Icon.md`.
 
 ## category-icon-no-selected-state
 

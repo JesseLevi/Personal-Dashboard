@@ -33,6 +33,48 @@ already in the union (`Sandwich`, `Croissant`, `Broccoli` — all three used by
 `seed_default_recipe_categories()`) plus the already-present `CakeSlice`, for
 a curated 8: `Sandwich`, `Croissant`, `CakeSlice`, `Broccoli`, `Coffee`,
 `Soup`, `Pizza`, `Cookie` — spanning breakfast/drink, lunch/veg, dinner and
-dessert/snack rather than 8 near-duplicates. Union is now 38 names (was 34).
+dessert/snack rather than 8 near-duplicates.
+
+66 more were added 2026-08-01 on direct user instruction, superseding the
+curated-8 decision above: `CategoryPanel`'s icon picker now shows all 74 of
+lucide's own "Food & beverage" category
+(`design/notes/CategoryPanel.md#icon-picker-all-74`), not a curation.
+**Same no-Figma-vector situation as `Coffee`/`Soup`/`Pizza`/`Cookie` above —
+none of the 66 has a shape to verify against**, so verification here means
+confirming the *list itself* is correct and complete, and that every name is
+a real export, not the usual path/bbox comparison:
+
+- The list came from `lucide-icons/lucide`'s own repo, not lucide.dev's
+  page text — fetching that page returns no icon names (its grid isn't
+  server-rendered). Each icon in the lucide repo carries a `categories`
+  array in its own metadata file (e.g. `icons/coffee.json` →
+  `"categories": ["food-beverage"]`); pulling all 1756 icons' metadata via
+  the GitHub API and filtering on `"food-beverage"` returned exactly 74
+  names — matching the count lucide.dev's category page displays, so the
+  74-icon universe itself is corroborated by two independent sources, not
+  one.
+- Every one of the 66 PascalCase names was checked against the installed
+  `lucide-react@1.25.0` package's actual exports (`Object.keys` on the
+  required module) before being added — none were guessed from the
+  kebab-case-to-PascalCase convention alone.
+- A handful read as non-obviously food-related from the name alone
+  (`Cuboid`, `Torus`, `Tractor`, `DnaOff`, `PaperBag`, `Shell`, `Snail`) —
+  each was individually re-checked against its own `tags` metadata before
+  being trusted (`Cuboid`: butter/tofu/cheese/soap block shape; `Torus`:
+  donut/ring shape, distinct from the literal `Donut` icon; `Tractor`:
+  farming/harvest; `DnaOff`: GMO-free; `PaperBag`: takeout bag; `Shell`/
+  `Snail`: shellfish/escargot), all genuinely tagged `food-beverage`
+  upstream, not a filtering mistake.
+- Each of the 66 also has a distinct accessible label in both message
+  catalogs (`components.categoryPanel.iconLabels.*`), sourced from the same
+  tag metadata rather than a literal reading of the PascalCase name — e.g.
+  the four `*Off` dietary-restriction icons whose tags explicitly say
+  "gluten free"/"lactose free"/"soy free" read as "Gluten-free"/
+  "Lactose-free"/"Soy-free", not "No wheat"/"No milk"/"No bean".
+
+Union is 107 names (counted directly from `IconName`'s union type, not
+carried forward from the previous paragraph's running tally, which had
+already drifted 3 short of the real count by this point — a pre-existing
+documentation slip, not introduced here).
 
 No open discrepancies remain.

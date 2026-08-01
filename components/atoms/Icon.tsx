@@ -42,6 +42,72 @@ import {
   Soup,
   Pizza,
   Cookie,
+  Amphora,
+  Apple,
+  Banana,
+  Barrel,
+  Bean,
+  BeanOff,
+  Beef,
+  BeefOff,
+  Beer,
+  BeerOff,
+  Blender,
+  BottleWine,
+  Cake,
+  Candy,
+  CandyCane,
+  CandyOff,
+  Carrot,
+  ChefHat,
+  Cherry,
+  Citrus,
+  CookingPot,
+  Cuboid,
+  CupSoda,
+  Dessert,
+  DnaOff,
+  Donut,
+  Drumstick,
+  Egg,
+  EggFried,
+  EggOff,
+  Fish,
+  FishOff,
+  FishSymbol,
+  GlassWater,
+  Grape,
+  Ham,
+  Hamburger,
+  HandPlatter,
+  Hop,
+  HopOff,
+  IceCreamBowl,
+  IceCreamCone,
+  LeafyGreen,
+  Lollipop,
+  Martini,
+  Microwave,
+  Milk,
+  MilkOff,
+  Nut,
+  NutOff,
+  PaperBag,
+  Popcorn,
+  Popsicle,
+  Refrigerator,
+  Salad,
+  Shell,
+  Snail,
+  Torus,
+  Tractor,
+  Utensils,
+  UtensilsCrossed,
+  Vegan,
+  Wheat,
+  WheatOff,
+  Wine,
+  WineOff,
   type LucideProps,
 } from "lucide-react";
 
@@ -98,7 +164,80 @@ export type IconName =
   | "Coffee"
   | "Soup"
   | "Pizza"
-  | "Cookie";
+  | "Cookie"
+  // The 66 below are lucide's full "Food & beverage" category (74 total
+  // with the 8 above), added on direct user instruction (2026-08-01) for
+  // CategoryPanel's icon picker (#125 follow-up) — not sourced from a
+  // Figma frame like every entry above. Names/count verified against
+  // lucide-icons/lucide's own per-icon `categories` metadata (GitHub API),
+  // never guessed from lucide.dev's page text, which doesn't render the
+  // list server-side. Full reasoning: design/notes/Icon.md.
+  | "Amphora"
+  | "Apple"
+  | "Banana"
+  | "Barrel"
+  | "Bean"
+  | "BeanOff"
+  | "Beef"
+  | "BeefOff"
+  | "Beer"
+  | "BeerOff"
+  | "Blender"
+  | "BottleWine"
+  | "Cake"
+  | "Candy"
+  | "CandyCane"
+  | "CandyOff"
+  | "Carrot"
+  | "ChefHat"
+  | "Cherry"
+  | "Citrus"
+  | "CookingPot"
+  | "Cuboid"
+  | "CupSoda"
+  | "Dessert"
+  | "DnaOff"
+  | "Donut"
+  | "Drumstick"
+  | "Egg"
+  | "EggFried"
+  | "EggOff"
+  | "Fish"
+  | "FishOff"
+  | "FishSymbol"
+  | "GlassWater"
+  | "Grape"
+  | "Ham"
+  | "Hamburger"
+  | "HandPlatter"
+  | "Hop"
+  | "HopOff"
+  | "IceCreamBowl"
+  | "IceCreamCone"
+  | "LeafyGreen"
+  | "Lollipop"
+  | "Martini"
+  | "Microwave"
+  | "Milk"
+  | "MilkOff"
+  | "Nut"
+  | "NutOff"
+  | "PaperBag"
+  | "Popcorn"
+  | "Popsicle"
+  | "Refrigerator"
+  | "Salad"
+  | "Shell"
+  | "Snail"
+  | "Torus"
+  | "Tractor"
+  | "Utensils"
+  | "UtensilsCrossed"
+  | "Vegan"
+  | "Wheat"
+  | "WheatOff"
+  | "Wine"
+  | "WineOff";
 
 // Figma name -> lucide-react component.
 const ICONS: Record<IconName, ComponentType<LucideProps>> = {
@@ -143,6 +282,72 @@ const ICONS: Record<IconName, ComponentType<LucideProps>> = {
   Soup: Soup,
   Pizza: Pizza,
   Cookie: Cookie,
+  Amphora: Amphora,
+  Apple: Apple,
+  Banana: Banana,
+  Barrel: Barrel,
+  Bean: Bean,
+  BeanOff: BeanOff,
+  Beef: Beef,
+  BeefOff: BeefOff,
+  Beer: Beer,
+  BeerOff: BeerOff,
+  Blender: Blender,
+  BottleWine: BottleWine,
+  Cake: Cake,
+  Candy: Candy,
+  CandyCane: CandyCane,
+  CandyOff: CandyOff,
+  Carrot: Carrot,
+  ChefHat: ChefHat,
+  Cherry: Cherry,
+  Citrus: Citrus,
+  CookingPot: CookingPot,
+  Cuboid: Cuboid,
+  CupSoda: CupSoda,
+  Dessert: Dessert,
+  DnaOff: DnaOff,
+  Donut: Donut,
+  Drumstick: Drumstick,
+  Egg: Egg,
+  EggFried: EggFried,
+  EggOff: EggOff,
+  Fish: Fish,
+  FishOff: FishOff,
+  FishSymbol: FishSymbol,
+  GlassWater: GlassWater,
+  Grape: Grape,
+  Ham: Ham,
+  Hamburger: Hamburger,
+  HandPlatter: HandPlatter,
+  Hop: Hop,
+  HopOff: HopOff,
+  IceCreamBowl: IceCreamBowl,
+  IceCreamCone: IceCreamCone,
+  LeafyGreen: LeafyGreen,
+  Lollipop: Lollipop,
+  Martini: Martini,
+  Microwave: Microwave,
+  Milk: Milk,
+  MilkOff: MilkOff,
+  Nut: Nut,
+  NutOff: NutOff,
+  PaperBag: PaperBag,
+  Popcorn: Popcorn,
+  Popsicle: Popsicle,
+  Refrigerator: Refrigerator,
+  Salad: Salad,
+  Shell: Shell,
+  Snail: Snail,
+  Torus: Torus,
+  Tractor: Tractor,
+  Utensils: Utensils,
+  UtensilsCrossed: UtensilsCrossed,
+  Vegan: Vegan,
+  Wheat: Wheat,
+  WheatOff: WheatOff,
+  Wine: Wine,
+  WineOff: WineOff,
 };
 
 const ICON_NAMES = new Set<string>(Object.keys(ICONS));
