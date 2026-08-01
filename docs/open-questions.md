@@ -230,3 +230,10 @@ the UI before save is attempted, rather than only after a failed submit.
 ## recipe-panel-trigger-annotation-misattributed
 
 **`3777:3923` (the overview's `+` button, #124) carries the annotation "Adds a kanban column."** — Te-Doen residue, not a real description of what this button does on the Recepten screen. The real trigger annotation lives on the nested `I3777:3924;3670:1765;3777:4094;3686:1894` instance ("Pull up panel slides up with animation"), which #126 wired instead. Recorded here so a future reader doesn't re-trust the outer node's own annotation. No action needed — already correctly resolved in the build.
+## recipe-image-field-personen-label
+
+**The "Selecteer afbeelding" image-upload field's bound Title text reads "Personen" in both the mobile and desktop "Add recipi" frames** (`3968:11192` / `3953:9875`) — confirmed a duplication artifact, not a translation gap: the instance was copied from the adjacent servings field and only its `Content` was edited. #121 renders no visible label for this field rather than showing the wrong one (`design/notes/ImageUploadField.md` has the full record). Needs a real label from design (e.g. "Afbeelding"/"Foto") to replace the omission.
+
+## recipe-image-field-no-filled-state
+
+**The fetched "Selecteer afbeelding" node only samples the empty state** — no Figma variant shows the box after a photo is chosen. `ImageUploadField` shows the picked file's name in place of the placeholder as its own interpretation (`design/notes/ImageUploadField.md`). Needs a design pass only if a real "filled" visual (e.g. a thumbnail preview inside the box) is wanted instead of plain filename text.

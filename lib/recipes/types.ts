@@ -48,11 +48,18 @@ export type IngredientSearchResult =
 // deliberately smaller, recipes-specific set: "column-mismatch" (boards) has
 // no recipes equivalent in this ticket's scope (no cross-category move
 // action exists yet), so it isn't copied over unused.
+// "invalid-file-type"/"file-too-large"/"upload-failed" are #121's
+// recipe-thumbnails upload additions (lib/recipes/thumbnail-validation.ts /
+// thumbnails.ts) -- kept in this shared union rather than a second
+// thumbnail-specific ActionResult, same reasoning as the rest of this file.
 export type RecipesErrorCode =
   | "invalid-input"
   | "unauthenticated"
   | "not-found"
-  | "generic";
+  | "generic"
+  | "invalid-file-type"
+  | "file-too-large"
+  | "upload-failed";
 
 export type ActionResult<T = undefined> =
   | { success: true; data: T }

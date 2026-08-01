@@ -28,7 +28,10 @@
       "invalid-input": "Check the information you entered.",
       "unauthenticated": "Sign in again to continue.",
       "not-found": "This item no longer exists or isn't yours.",
-      "generic": "Something went wrong. Please try again."
+      "generic": "Something went wrong. Please try again.",
+      "invalid-file-type": "Choose a JPEG, PNG or WebP image.",
+      "file-too-large": "This image is too large (max 5 MB).",
+      "upload-failed": "The image could not be uploaded. Please try again."
     },
     "units": {
       "gram": "Gram",
@@ -291,6 +294,9 @@
       "deleteConfirmButtonLabel": "Yes, delete",
       "deletingLabel": "Deleting...",
       "cancelLabel": "Cancel"
+    },
+    "imageUploadField": {
+      "selectImage": "Select image"
     }
   }
 }
