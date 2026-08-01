@@ -42,9 +42,9 @@ Schema (`boards`/`board_columns`/`cards`/`labels`/`card_labels`), server actions
 
 ## Phase 4 — Recepten: 🔶 in progress
 
-Merged so far: the unit library (#120 — `lib/recipes/units.ts`, the canonical 17-code list plus same-magnitude `convert()`/`scaleQuantity()`/`formatQuantity()`), the two-layer ingredient library and the `reference` schema (#130, `ADR-0011`), the recipe schema (#119 — `recipe_categories`/`recipes`/`recipe_ingredients`/`recipe_steps`, sharing the `public.recipe_unit` enum), the data layer (#122 — `lib/recipes/queries.ts` + `app/(app)/recepten/actions.ts`), the portion-stepper molecule (#123), and the `/recepten` category-kanban page (#124 — `ReceptenBoard.tsx` driving the generic `BoardView`).
+Merged so far: the unit library (#120 — `lib/recipes/units.ts`, the canonical 17-code list plus same-magnitude `convert()`/`scaleQuantity()`/`formatQuantity()`), the two-layer ingredient library and the `reference` schema (#130, `ADR-0011`), the recipe schema (#119 — `recipe_categories`/`recipes`/`recipe_ingredients`/`recipe_steps`, sharing the `public.recipe_unit` enum), the data layer (#122 — `lib/recipes/queries.ts` + `app/(app)/recepten/actions.ts`), the portion-stepper molecule (#123), the `/recepten` category-kanban page (#124 — `ReceptenBoard.tsx` driving the generic `BoardView`), the category add/rename/delete panel (#125 — `CategoryPanel.tsx`, 8-icon curated picker), and the ingredient search panel (#131 — `components/organisms/IngredientSearchPanel.tsx` + the `searchIngredients` action; `CardContentIngredient` gained optional `quantity`/`divider`).
 
-Still open: #121 (thumbnails bucket, parallel), then #125/#126/#127/#131 → #128. `recipes` has no `position` column by design, so the overview ships with dragging disabled — see `docs/HANDOFF.md`.
+Still open: #121 (thumbnails bucket, parallel), then #126/#127 → #128. `recipes` has no `position` column by design, so the overview ships with dragging disabled — see `docs/HANDOFF.md`. `IngredientSearchPanel` exists but has no caller until #126 wires it to the ingredient name field.
 
 ## Phases 5–9: ⬜ not started
 
