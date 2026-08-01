@@ -181,6 +181,17 @@
         "Pizza": "Pizza",
         "Cookie": "Cookie"
       }
+    },
+    "ingredientSearchPanel": {
+      "title": "Search ingredient",
+      "searchPlaceholder": "Search",
+      "searchPromptLabel": "Type to search ingredients.",
+      "searchingLabel": "Searching...",
+      "searchErrorLabel": "Search failed. Please try again.",
+      "noResultsLabel": "No ingredients found for \"{query}\".",
+      "addNewIngredientLabel": "Add \"{name}\" as a new ingredient",
+      "saveLabel": "Save",
+      "savingLabel": "Saving..."
     }
   }
 }

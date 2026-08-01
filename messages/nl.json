@@ -181,6 +181,17 @@
         "Pizza": "Pizza",
         "Cookie": "Koekje"
       }
+    },
+    "ingredientSearchPanel": {
+      "title": "Ingrediënt zoeken",
+      "searchPlaceholder": "Zoeken",
+      "searchPromptLabel": "Typ om ingrediënten te zoeken.",
+      "searchingLabel": "Zoeken...",
+      "searchErrorLabel": "Zoeken mislukt. Probeer het opnieuw.",
+      "noResultsLabel": "Geen ingrediënten gevonden voor \"{query}\".",
+      "addNewIngredientLabel": "\"{name}\" toevoegen als nieuw ingrediënt",
+      "saveLabel": "Opslaan",
+      "savingLabel": "Opslaan..."
     }
   }
 }
