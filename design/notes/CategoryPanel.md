@@ -29,50 +29,58 @@ the way this panel's two triggers (header "create" + any column's pencil
 "edit") do — this panel needed the correct pattern from the start, so it was
 built with it rather than inherited the older one.
 
-## Icon picker: 8 curated icons, not the ticket's literal "all 74"
+## Icon picker: all 74 of lucide's "Food & beverage" icons (superseded curation)
 
 Both fetched nodes' `Icon list` (`3891:18524` mobile, `3957:11544` desktop)
 are a row of exactly 8 `Button/Default` instances, wrap-gap 12px, all 8
 rendering the identical `Icon/Sandwich` (`3632:177`) placeholder — Figma
 specifies a *slot count*, not a *list*. The ticket's own Dev Mode annotation
 ("List all lucide food icons here") is quoted in the ticket body as an
-instruction to the builder, not delivered content — the ticket itself frames
-this as unresolved and asks for a curated, justified set instead of a literal
-74-icon build.
+instruction to the builder, not delivered content.
 
-**Decision: build the 8 slots Figma actually draws, filled with a curated
-8-icon set, not 74 new `IconName` entries.** Reasons, in order:
+**First pass (this ticket's original merge) shipped a curated 8-icon set**,
+reasoning that a 74-icon union expansion on a text instruction alone inverted
+`CLAUDE.md`'s "never build what isn't in Figma" rule, and that the 8-slot
+layout couldn't hold 74 without inventing a scroll/search UI Figma doesn't
+draw. That reasoning still explains why the first version looked the way it
+did; it did not survive contact with the actual product decision.
 
-1. **The layout doesn't hold 74.** A wrapping row of 8 buttons is what both
-   fetched nodes show; nothing in either node models a scrollable/paginated/
-   searchable list that could hold 74 without a new layout `CLAUDE.md`
-   forbids inventing ("never build UI that doesn't exist in Figma yet").
-2. **`Icon.tsx`'s `IconName` union is a verified, Figma-sourced vocabulary**
-   (`docs/guides/ui-components.md`: "every entry verified against rendered
-   SVG structure, not name alone... same-named exports can be false
-   friends"). Every existing entry traces to a real Figma vector that was
-   fetched and shape-compared. None of the 74 lucide food icons (bar the one
-   already-present `Sandwich`) has a Figma vector behind it here — Figma only
-   ever draws the placeholder — so a 74-icon addition would be 70 new union
-   members added on a text instruction alone, the exact inverse of the "never
-   build what isn't in Figma" rule this codebase otherwise enforces strictly.
-3. **Precedent for a curated subset already exists in this same file's
-   history** — `docs/open-questions.md#unit-dropdown-list-not-drawn` records
-   the *reverse* situation for the unit dropdown (a Dev Mode annotation names
-   4 examples + "etc.", and the codebase shipped a fuller 17-code list as a
-   flagged, user-ratified decision) — here the situation is symmetric: the
-   annotation asks for "all", the codebase ships a smaller, justified,
-   flagged set instead, for the reasons above.
+**Superseded 2026-08-01 by direct, explicit user instruction: show all 74.**
+This is the user exercising their own authority over their product, not a
+ticket ambiguity Claude Code gets to resolve by judgment call — per
+`docs/guides/ticket-workflow.md` ("you are not the architecture layer"), a
+direct user decision *is* the architecture layer speaking, and is followed
+without re-litigating it. What stayed true from the original reasoning, and
+is still enforced:
 
-Curated set (`CATEGORY_ICONS` in `CategoryPanel.tsx`): `Sandwich`,
-`Croissant`, `CakeSlice`, `Broccoli` (already valid `IconName` members — the
-first three are also `seed_default_recipe_categories()`'s own seeded icons,
-so editing any seeded category always finds its icon in this list) plus four
-newly added (`design/notes/Icon.md`'s own #125 entry has the verification
-reasoning): `Coffee`, `Soup`, `Pizza`, `Cookie` — chosen to span
-breakfast/drink, lunch, dinner and dessert/snack rather than 8
-near-duplicates. Flagged for a design/product answer:
-`docs/open-questions.md#category-icon-picker-curated-set`.
+1. **Every icon is verified against the same authoritative source**, not
+   assumed from lucide.dev's page text (which doesn't render its icon grid
+   server-side — confirmed by fetching it directly and getting no icon
+   names back). The list was built from `lucide-icons/lucide`'s own
+   per-icon `categories` metadata (GitHub API, one JSON file per icon, e.g.
+   `icons/coffee.json` → `"categories": ["food-beverage"]`), which returned
+   exactly 74 names — matching the count lucide.dev's own page shows. Every
+   PascalCase name was then confirmed as a real `lucide-react` export before
+   being added to `Icon.tsx` (`design/notes/Icon.md`).
+2. **The layout still needed no new decision.** `SidePanel`'s content area
+   already scrolls (`overflow-y-auto`, footer pinned outside it,
+   `SidePanel.tsx`) — 74 wrapped icon buttons grow inside existing behaviour,
+   not a new one.
+3. `docs/open-questions.md#category-icon-picker-curated-set` is now resolved
+   by this instruction and should be read as historical.
+
+Full list (`CATEGORY_ICONS` in `CategoryPanel.tsx`, `Icon.tsx`): the original
+8 (`Sandwich`, `Croissant`, `CakeSlice`, `Broccoli`, `Coffee`, `Soup`,
+`Pizza`, `Cookie`) plus 66 more, alphabetical, covering lucide's full
+`food-beverage` category including several non-obvious members their own tags
+justify (`Cuboid` = butter/tofu/cheese block, `Torus` = a plain ring/donut
+shape distinct from `Donut`, `Tractor` = farming/harvest, `DnaOff` =
+GMO-free, `Shell`/`Snail` = shellfish/escargot). Every icon has a distinct,
+accurate a11y label in both catalogs (`iconLabels.*`) sourced from the same
+per-icon tag metadata, not guessed from the PascalCase name alone — e.g.
+`FishOff`/`MilkOff`/`WheatOff` read as "Fish-free"/"Lactose-free"/
+"Gluten-free" (their tags say `soy free`/`lactose free`/`gluten free`
+explicitly) rather than a literal "no X".
 
 ## No Selected state drawn — reused Button's own `aria-pressed` semantics
 
@@ -197,8 +205,9 @@ New keys, both catalogs, identical key sets: `components.categoryPanel.*`
 (`addTitle`, `editTitle`, `fields.nameLabel`, `fields.iconLabel`,
 `saveLabel`/`savingLabel`, `deleteLabel`/`deletingLabel`,
 `deleteConfirmLabel`/`deleteConfirmButtonLabel`, `cancelLabel`,
-`iconLabels.*` — one accessible name per curated icon, not one generic "pick
-an icon" label, per the ticket's explicit instruction). Wording mirrors
+`iconLabels.*` — one accessible name per icon (all 74, see the icon-picker
+section above), not one generic "pick an icon" label, per the ticket's
+explicit instruction). Wording mirrors
 `cardDetailPanel`'s existing save/delete strings exactly (same verbs, same
 "..." pending-state convention) for a consistent voice across every
 SidePanel-based form. Figma's `"Frodo"` placeholder content and the ticket's
