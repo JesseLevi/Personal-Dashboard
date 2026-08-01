@@ -127,6 +127,58 @@ moved from `page.tsx` into `ReceptenBoard.tsx` in the same ticket — see
 and the column pencil buttons target the same entity and need one shared
 client state owner, unlike Te-Doen's Header/Board split).
 
+## Baselines needed the `min-h-screen` harness wrapper — first pass shipped silent
+
+`CategoryPanel.stories.tsx`'s original `CreateCategory`/`EditCategory` (first
+committed as part of this ticket) returned `<CategoryPanel .../>` with no
+wrapper, following `CardDetailPanel.stories.tsx`'s literal shape — which
+turned out to be inheriting a real bug (also open as #106 on
+`card-detail-panel`'s own baselines), not a safe precedent. `SidePanel`'s
+overlay/panel are `position: fixed`, so they contribute nothing to their
+ancestor's normal-flow height. Ladle's own `Provider`
+(`.ladle/components.tsx`) already wraps every story in a `min-h-screen` div
+for the interactive workbench, but `tests/visual/screenshot-override.css`
+deliberately forces that specific wrapper's `min-height` back to `0` for
+screenshots (`#ladle-root > div { min-height: 0 !important; }`), so the
+baseline crops to real content height, not the full viewport — a story with
+no *own* in-flow content taller than a few header pixels collapses to
+near-zero. Without a story-level `min-h-screen` div sitting one level below
+that overridden wrapper, both baselines shipped at **1280×64** — a strip
+containing none of the panel (not the name field, not the 8 icon buttons,
+not the footer), byte-identical no matter what changed inside
+`CategoryPanel`. Caught in review, not by the gate itself (`pnpm test:visual`
+reported "68/68 passed" the whole time — a passing suite that meant nothing
+for these two stories).
+
+**Fix:** wrapped `CreateCategory`/`EditCategory` (not `Interactive`, which
+legitimately starts closed and is correctly ~viewport-height already) in the
+same `<div className="min-h-screen">` `SidePanel.stories.tsx` itself uses —
+this inner div sits below the screenshot-override'd outer wrapper, so its own
+`min-height: 100vh` is unaffected by that override and gives the flow-height
+crop something real to measure against. Regenerated both baselines at
+**1280×784**, matching `side-panel--add-item`'s own 784px class exactly.
+
+**Verified the fix is real, not just bigger.** Temporarily removed `"Cookie"`
+from `CATEGORY_ICONS` (one of the 8 icon buttons) and re-ran the two scoped
+tests without `--update-snapshots`: both **failed** —
+`1356 pixels (ratio 0.01 of all image pixels) are different` on each,
+`2 failed` in the summary. Reverted the removal and re-ran: both passed
+again against the unchanged 784px baselines. This is the actual proof the
+64px baselines never could have given — they'd have passed byte-identical
+through that same edit, silently.
+
+**Environment note, not a code issue:** regenerating/verifying these locally
+required manually killing a leftover `ladle preview` process on port 4310
+between runs — `playwright.config.ts`'s `webServer.reuseExistingServer:
+!process.env.CI` will happily reuse an already-listening server instead of
+rebuilding, so a stale server left over from an earlier run can silently
+serve an outdated build to a later `--update-snapshots`/verification pass
+(this is what produced a spurious 1280×200 intermediate reading mid-fix,
+before the port was found and cleared). Not something this ticket's code
+changed or can fix; noted here so a future agent hitting the same "why is my
+freshly-edited story still showing the old content" confusion has the actual
+cause on record.
+
 ## Pixel-parity check — geometry-only, no screenshot compare run
 
 `SidePanel`'s own chrome is already pixel-verified (`SidePanel.md`); this
@@ -158,9 +210,18 @@ trailing-space precedent from #94/#95.
 
 ## Verification — what was and wasn't run
 
-`pnpm lint`/`typecheck`/`test`/`check:server-only`/`check:comment-budget`/
-`test:visual` all run (see the PR for exact output). **Not run:** a real
-authenticated `/recepten` route in a browser, and `pnpm db:reset`/
-`test:rls`/`check:rls-coverage` — same standing Docker/Supabase gap every
-Phase 3/4 ticket hits on this dev machine (`CLAUDE.md`), unchanged by this
-ticket (no new table, no migration).
+`pnpm lint`/`typecheck`/`test`/`check:server-only`/`check:comment-budget` all
+run clean on the final tree (see the PR for exact output). The two
+`category-panel` baselines were scoped-verified directly (regenerated at
+784px, deliberately broken to confirm a real failure, reverted to confirm a
+real pass again — see the entry above). **A clean *full* `pnpm test:visual`
+run was not obtained from this worktree**: another agent was running the
+same Playwright suite in a parallel worktree on the same machine at the same
+time, and the two overlapping runs produced unrelated tiny-pixel-diff
+noise/contention rather than real regressions. The full-suite confirmation
+was left to the coordinator to run serially once both branches settled,
+rather than reported here as green on the strength of a contended run. **Not
+run:** a real authenticated `/recepten` route in a browser, and `pnpm
+db:reset`/`test:rls`/`check:rls-coverage` — same standing Docker/Supabase gap
+every Phase 3/4 ticket hits on this dev machine (`CLAUDE.md`), unchanged by
+this ticket (no new table, no migration).

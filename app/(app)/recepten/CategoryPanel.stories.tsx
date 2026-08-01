@@ -30,17 +30,27 @@ const sampleCategory: RecipeCategoryRow = {
   updated_at: "2026-07-01T00:00:00.000Z",
 };
 
+// `min-h-screen` wrapper (SidePanel.stories.tsx's own precedent, not
+// CardDetailPanel.stories.tsx's — see this file's #125 fix entry in
+// design/notes/CategoryPanel.md for why the latter is a bug, not a pattern):
+// SidePanel's overlay/panel are `position: fixed`, so they contribute 0 to
+// their ancestors' flow height. Without this wrapper, the Provider div that
+// tests/visual/screenshot-override.css crops the baseline to collapses to
+// near-zero, and the screenshot misses almost the entire panel.
+
 // Create mode: empty name, first curated icon (Sandwich) pre-selected as the
 // default. Delete button absent (nothing to delete yet) — "leeg" variant.
 export const CreateCategory = () => (
-  <CategoryPanel
-    open
-    onClose={() => {}}
-    target={{ mode: "create" }}
-    onCreateCategory={mockCreateCategory}
-    onRenameCategory={mockRenameCategory}
-    onDeleteCategory={mockDeleteCategory}
-  />
+  <div className="min-h-screen">
+    <CategoryPanel
+      open
+      onClose={() => {}}
+      target={{ mode: "create" }}
+      onCreateCategory={mockCreateCategory}
+      onRenameCategory={mockRenameCategory}
+      onDeleteCategory={mockDeleteCategory}
+    />
+  </div>
 );
 
 // Rename mode: name prefilled from `sampleCategory`, its icon (Croissant)
@@ -48,14 +58,16 @@ export const CreateCategory = () => (
 // in one story, same combined-coverage precedent as CardDetailPanel's
 // EditItem. Click "Verwijderen" to exercise the two-step delete confirm.
 export const EditCategory = () => (
-  <CategoryPanel
-    open
-    onClose={() => {}}
-    target={{ mode: "edit", category: sampleCategory }}
-    onCreateCategory={mockCreateCategory}
-    onRenameCategory={mockRenameCategory}
-    onDeleteCategory={mockDeleteCategory}
-  />
+  <div className="min-h-screen">
+    <CategoryPanel
+      open
+      onClose={() => {}}
+      target={{ mode: "edit", category: sampleCategory }}
+      onCreateCategory={mockCreateCategory}
+      onRenameCategory={mockRenameCategory}
+      onDeleteCategory={mockDeleteCategory}
+    />
+  </div>
 );
 
 // Exercises the real open/close cycle plus create->edit target switching —
