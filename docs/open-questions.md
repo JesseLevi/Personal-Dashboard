@@ -170,3 +170,11 @@ the UI before save is attempted, rather than only after a failed submit.
 ## ingredient-search-panel-empty-and-zero-result-states-unsourced
 
 **Figma only ever draws the populated-results state.** Neither the "not yet searched" prompt copy nor the zero-results layout (beyond the user-approved "add as new ingredient" affordance, which has its own deviation note in `design/notes/IngredientSearchPanel.md`) has a Figma source — both are this codebase's own copy/layout decisions. Low product risk (plain muted prompt text, a `Card` reusing existing atoms), but flagged rather than silently presented as design-sourced. Needs a design pass only if these states should look meaningfully different from the current build.
+
+## recipe-image-field-personen-label
+
+**The "Selecteer afbeelding" image-upload field's bound Title text reads "Personen" in both the mobile and desktop "Add recipi" frames** (`3968:11192` / `3953:9875`) — confirmed a duplication artifact, not a translation gap: the instance was copied from the adjacent servings field and only its `Content` was edited. #121 renders no visible label for this field rather than showing the wrong one (`design/notes/ImageUploadField.md` has the full record). Needs a real label from design (e.g. "Afbeelding"/"Foto") to replace the omission.
+
+## recipe-image-field-no-filled-state
+
+**The fetched "Selecteer afbeelding" node only samples the empty state** — no Figma variant shows the box after a photo is chosen. `ImageUploadField` shows the picked file's name in place of the placeholder as its own interpretation (`design/notes/ImageUploadField.md`). Needs a design pass only if a real "filled" visual (e.g. a thumbnail preview inside the box) is wanted instead of plain filename text.

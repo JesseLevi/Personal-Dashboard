@@ -13,6 +13,7 @@ import {
   Croissant,
   Scroll,
   Plus,
+  Image,
   Pencil,
   FolderClosed,
   Shirt,
@@ -136,6 +137,7 @@ export type IconName =
   | "Croissant"
   | "Scroll"
   | "Plus"
+  | "Image"
   | "Pencil"
   | "FolderClosed"
   | "Shirt"
@@ -253,6 +255,7 @@ const ICONS: Record<IconName, ComponentType<LucideProps>> = {
   Croissant: Croissant,
   Scroll: Scroll,
   Plus: Plus,
+  Image: Image,
   Pencil: Pencil,
   FolderClosed: FolderClosed,
   Shirt: Shirt,

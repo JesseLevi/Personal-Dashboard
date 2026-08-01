@@ -7,6 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import { nextPosition } from "@/lib/boards/positioning";
 import { searchIngredientLibrary } from "@/lib/recipes/queries";
+import { uploadRecipeThumbnail as uploadRecipeThumbnailToStorage } from "@/lib/recipes/thumbnails";
 import {
   createCategorySchema,
   createOwnIngredientSchema,
@@ -527,4 +528,24 @@ export async function searchIngredients(input: unknown): Promise<IngredientSearc
   const parsed = searchIngredientsSchema.safeParse(input);
   if (!parsed.success) return [];
   return searchIngredientLibrary(parsed.data.query);
+}
+
+// ============================================================================
+// #121: recipe-thumbnails upload
+// ============================================================================
+
+/**
+ * Thin `"use server"` wrapper around lib/recipes/thumbnails.ts's
+ * uploadRecipeThumbnail -- same "Client Component needs a real action
+ * reference" reasoning as searchIngredients above. `formData` (not a bare
+ * `File`) because a Server Action's client-callable signature must be a
+ * serialisable/FormData shape; the field is read here rather than trusted
+ * as already-a-File.
+ */
+export async function uploadRecipeThumbnail(
+  formData: FormData,
+): Promise<ActionResult<{ path: string }>> {
+  const file = formData.get("thumbnail");
+  if (!(file instanceof File)) return { success: false, error: "invalid-input" };
+  return uploadRecipeThumbnailToStorage(file);
 }

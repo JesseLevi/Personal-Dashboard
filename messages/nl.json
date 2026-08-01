@@ -28,7 +28,10 @@
       "invalid-input": "Controleer de ingevoerde gegevens.",
       "unauthenticated": "Log opnieuw in om door te gaan.",
       "not-found": "Dit onderdeel bestaat niet (meer) of is niet van jou.",
-      "generic": "Er ging iets mis. Probeer het opnieuw."
+      "generic": "Er ging iets mis. Probeer het opnieuw.",
+      "invalid-file-type": "Kies een JPEG-, PNG- of WebP-afbeelding.",
+      "file-too-large": "Deze afbeelding is te groot (max 5 MB).",
+      "upload-failed": "De afbeelding kon niet worden geüpload. Probeer het opnieuw."
     },
     "units": {
       "gram": "Gram",
@@ -258,6 +261,9 @@
       "addNewIngredientLabel": "\"{name}\" toevoegen als nieuw ingrediënt",
       "saveLabel": "Opslaan",
       "savingLabel": "Opslaan..."
+    },
+    "imageUploadField": {
+      "selectImage": "Selecteer afbeelding"
     }
   }
 }
