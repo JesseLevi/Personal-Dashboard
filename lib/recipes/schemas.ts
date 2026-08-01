@@ -40,16 +40,53 @@ const recipeIngredientLine = z.object({
 
 const recipeStepLine = z.object({
   instruction: z.string().trim().min(1).max(5000),
+  // 0-based indexes into the same call's `ingredients` array (#149) — which
+  // of this step's own recipe's ingredient lines render as Tags under it
+  // (Figma node 3749:3091 picker / 3778:5467 detail rendering). Range-checked
+  // against `ingredients.length` in createRecipeSchema/updateRecipeSchema's
+  // superRefine below, not here — a single step line has no visibility into
+  // the full ingredients array on its own.
+  ingredientRefs: z.array(z.int().nonnegative()).default([]),
 });
+
+// Shared by createRecipeSchema/updateRecipeSchema's superRefine below —
+// rejects any step's ingredientRefs index that is out of range for the
+// ingredients array in the same payload, since the RPC (#149,
+// public.replace_recipe_contents) silently skips an out-of-range index
+// rather than raising, and a bad index reaching that far is more useful
+// caught here as a normal validation error than swallowed in the database.
+function validateIngredientRefs(
+  ingredients: ReadonlyArray<unknown> | undefined,
+  steps: ReadonlyArray<{ ingredientRefs: number[] }> | undefined,
+  ctx: z.RefinementCtx,
+) {
+  const ingredientCount = ingredients?.length ?? 0;
+  steps?.forEach((step, stepIndex) => {
+    step.ingredientRefs.forEach((ref, refIndex) => {
+      if (ref >= ingredientCount) {
+        ctx.addIssue({
+          code: "custom",
+          message: `ingredientRefs[${refIndex}] (${ref}) is out of range for ${ingredientCount} ingredient(s)`,
+          path: ["steps", stepIndex, "ingredientRefs", refIndex],
+        });
+      }
+    });
+  });
+}
 
 export const createCategorySchema = z.object({
   name,
   icon,
 });
 
-export const renameCategorySchema = z.object({
+// Rename -> update (#149's category-icon bug, see actions.ts): the panel
+// always knows the selected icon and must resend it, not just `name` — the
+// old renameCategorySchema/renameCategory only ever wrote `name`, which is
+// why picking a different icon and saving silently did nothing.
+export const updateCategorySchema = z.object({
   categoryId: z.uuid(),
   name,
+  icon,
 });
 
 export const deleteCategorySchema = z.object({
@@ -60,31 +97,53 @@ export const deleteCategorySchema = z.object({
 // (#126's add-recipe form, see lib/recipes/queries.ts / actions.ts header
 // comments on the replace-in-transaction decision) -- not one schema per
 // row. `.default([])` lets a recipe be created with no lines yet.
-export const createRecipeSchema = z.object({
-  categoryId: z.uuid(),
-  title,
-  servings: z.int().positive().optional(),
-  thumbnailPath: z.string().trim().min(1).max(500).nullable().optional(),
-  timeMinutes: z.int().positive().nullable().optional(),
-  ingredients: z.array(recipeIngredientLine).default([]),
-  steps: z.array(recipeStepLine).default([]),
-});
+export const createRecipeSchema = z
+  .object({
+    categoryId: z.uuid(),
+    title,
+    servings: z.int().positive().optional(),
+    thumbnailPath: z.string().trim().min(1).max(500).nullable().optional(),
+    timeMinutes: z.int().positive().nullable().optional(),
+    ingredients: z.array(recipeIngredientLine).default([]),
+    steps: z.array(recipeStepLine).default([]),
+  })
+  .superRefine((data, ctx) => validateIngredientRefs(data.ingredients, data.steps, ctx));
 
 // Every field but recipeId is optional and independently omittable: a
 // metadata-only edit (e.g. rename) must not be forced to resend the full
 // ingredients/steps sets. `ingredients`/`steps` themselves are the exception
 // -- when present at all they always mean "replace the full set with this
 // one" (see actions.ts), never a partial patch of individual lines.
-export const updateRecipeSchema = z.object({
-  recipeId: z.uuid(),
-  categoryId: z.uuid().optional(),
-  title: title.optional(),
-  servings: z.int().positive().optional(),
-  thumbnailPath: z.string().trim().min(1).max(500).nullable().optional(),
-  timeMinutes: z.int().positive().nullable().optional(),
-  ingredients: z.array(recipeIngredientLine).optional(),
-  steps: z.array(recipeStepLine).optional(),
-});
+//
+// Both-or-neither (#149): the write path is now one RPC call
+// (public.replace_recipe_contents) that replaces recipe_ingredients AND
+// recipe_steps together in a single transaction -- there is no server
+// operation left that can apply just one half of that pair, so a client
+// sending `steps` without `ingredients` (or vice versa) can never be
+// satisfied correctly and is rejected here rather than silently replacing
+// one set against a database-side array it never saw.
+export const updateRecipeSchema = z
+  .object({
+    recipeId: z.uuid(),
+    categoryId: z.uuid().optional(),
+    title: title.optional(),
+    servings: z.int().positive().optional(),
+    thumbnailPath: z.string().trim().min(1).max(500).nullable().optional(),
+    timeMinutes: z.int().positive().nullable().optional(),
+    ingredients: z.array(recipeIngredientLine).optional(),
+    steps: z.array(recipeStepLine).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if ((data.ingredients === undefined) !== (data.steps === undefined)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "ingredients and steps must be sent together, or neither",
+        path: ["steps"],
+      });
+      return;
+    }
+    validateIngredientRefs(data.ingredients, data.steps, ctx);
+  });
 
 export const deleteRecipeSchema = z.object({
   recipeId: z.uuid(),

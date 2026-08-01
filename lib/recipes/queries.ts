@@ -14,6 +14,7 @@ import type {
   RecipeCategoryRow,
   RecipeIngredientRow,
   RecipeRow,
+  RecipeStepIngredientRow,
   RecipeStepRow,
   RecipeWithIngredientsAndSteps,
 } from "@/lib/recipes/types";
@@ -33,9 +34,15 @@ type Client = SupabaseClient<Database>;
 interface RawCategoryQueryRow extends RecipeCategoryRow {
   recipes: RecipeRow[];
 }
+// #149: each embedded recipe_steps row also carries its
+// recipe_step_ingredients links (id-and-position only, not the full join
+// row — nothing downstream needs the join row's own id/user_id/timestamps).
+interface RawRecipeStepQueryRow extends RecipeStepRow {
+  recipe_step_ingredients: Pick<RecipeStepIngredientRow, "recipe_ingredient_id" | "position">[];
+}
 interface RawRecipeQueryRow extends RecipeRow {
   recipe_ingredients: RecipeIngredientRow[];
-  recipe_steps: RecipeStepRow[];
+  recipe_steps: RawRecipeStepQueryRow[];
 }
 
 /**
@@ -113,7 +120,8 @@ export async function getRecipeWithIngredientsAndSteps(
         position, group_label, created_at, updated_at
       ),
       recipe_steps (
-        id, user_id, recipe_id, position, instruction, created_at, updated_at
+        id, user_id, recipe_id, position, instruction, created_at, updated_at,
+        recipe_step_ingredients ( recipe_ingredient_id, position )
       )
     `,
     )
@@ -136,7 +144,16 @@ export async function getRecipeWithIngredientsAndSteps(
   return {
     ...recipe,
     ingredients: [...recipe_ingredients].sort((a, b) => a.position - b.position),
-    steps: [...recipe_steps].sort((a, b) => a.position - b.position),
+    steps: [...recipe_steps]
+      .sort((a, b) => a.position - b.position)
+      .map(({ recipe_step_ingredients, ...step }) => ({
+        ...step,
+        // #149: link rows aren't guaranteed embedded in position order —
+        // sort explicitly, same as every other position-ordered set here.
+        ingredientIds: [...recipe_step_ingredients]
+          .sort((a, b) => a.position - b.position)
+          .map((link) => link.recipe_ingredient_id),
+      })),
   };
 }
 

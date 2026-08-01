@@ -119,7 +119,7 @@ export interface CategoryPanelProps {
   onClose: () => void;
   target: CategoryPanelTarget;
   onCreateCategory: (input: unknown) => Promise<ActionResult<RecipeCategoryRow>>;
-  onRenameCategory: (input: unknown) => Promise<ActionResult>;
+  onUpdateCategory: (input: unknown) => Promise<ActionResult>;
   onDeleteCategory: (input: unknown) => Promise<ActionResult>;
   /** Fired after a successful create/rename/delete, before `onClose`. */
   onMutated?: () => void;
@@ -130,7 +130,7 @@ export function CategoryPanel({
   onClose,
   target,
   onCreateCategory,
-  onRenameCategory,
+  onUpdateCategory,
   onDeleteCategory,
   onMutated,
 }: CategoryPanelProps) {
@@ -191,7 +191,11 @@ export function CategoryPanel({
           return;
         }
       } else {
-        const result = await onRenameCategory({ categoryId: target.category.id, name: trimmed });
+        const result = await onUpdateCategory({
+          categoryId: target.category.id,
+          name: trimmed,
+          icon,
+        });
         if (!result.success) {
           setError(tErrors(result.error));
           return;
@@ -221,7 +225,7 @@ export function CategoryPanel({
   // docs/open-questions.md#category-delete-no-confirm-designed and
   // #category-name-no-validation-designed) — reuses CardDetailPanel.tsx's
   // #94 two-step confirm precedent verbatim, and gates Save on a non-empty
-  // trimmed name (createCategorySchema/renameCategorySchema's own
+  // trimmed name (createCategorySchema/updateCategorySchema's own
   // `min(1).max(200)`, lib/recipes/schemas.ts), the same minimal client-side
   // mirror BoardPanel.tsx/CardDetailPanel.tsx already use for their own name
   // fields.

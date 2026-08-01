@@ -13,7 +13,7 @@ import { CategoryPanel, type CategoryPanelTarget } from "./CategoryPanel";
 import { RecipePanel, type RecipePanelTarget } from "./RecipePanel";
 import {
   createCategory,
-  renameCategory,
+  updateCategory,
   deleteCategory,
   createRecipe,
   updateRecipe,
@@ -132,7 +132,7 @@ export function ReceptenBoard({ categories, title, addCategoryLabel }: ReceptenB
         onClose={() => setPanel((current) => ({ ...current, open: false }))}
         target={panel.target}
         onCreateCategory={createCategory}
-        onRenameCategory={renameCategory}
+        onUpdateCategory={updateCategory}
         onDeleteCategory={deleteCategory}
         onMutated={() => router.refresh()}
       />

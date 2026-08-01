@@ -8,6 +8,9 @@ export type RecipeCategoryRow = Database["public"]["Tables"]["recipe_categories"
 export type RecipeRow = Database["public"]["Tables"]["recipes"]["Row"];
 export type RecipeIngredientRow = Database["public"]["Tables"]["recipe_ingredients"]["Row"];
 export type RecipeStepRow = Database["public"]["Tables"]["recipe_steps"]["Row"];
+// #149: step <-> ingredient join row (public.recipe_step_ingredients).
+export type RecipeStepIngredientRow =
+  Database["public"]["Tables"]["recipe_step_ingredients"]["Row"];
 export type TagRow = Database["public"]["Tables"]["tags"]["Row"];
 export type RecipeTagRow = Database["public"]["Tables"]["recipe_tags"]["Row"];
 
@@ -18,9 +21,16 @@ export type RecipeTagRow = Database["public"]["Tables"]["recipe_tags"]["Row"];
 export type IngredientRow = Database["public"]["Tables"]["ingredients"]["Row"];
 export type ReferenceIngredientRow = Database["reference"]["Tables"]["ingredients"]["Row"];
 
+// #149: which of the recipe's own recipe_ingredients rows this step links
+// to, ordered by the link's own `position` (Figma 3778:5467's Tags). Plain
+// ids, not embedded rows -- the recipe's full ingredient list is already
+// available on the parent RecipeWithIngredientsAndSteps, so the detail page
+// looks each id up there rather than this carrying a second copy of the row.
+export type RecipeStepWithIngredients = RecipeStepRow & { ingredientIds: string[] };
+
 export type RecipeWithIngredientsAndSteps = RecipeRow & {
   ingredients: RecipeIngredientRow[];
-  steps: RecipeStepRow[];
+  steps: RecipeStepWithIngredients[];
 };
 export type CategoryWithRecipes = RecipeCategoryRow & { recipes: RecipeRow[] };
 

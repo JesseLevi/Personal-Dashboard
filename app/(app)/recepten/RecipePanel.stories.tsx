@@ -138,6 +138,10 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
       instruction: "Meng de droge ingrediënten in een grote kom.",
       created_at: "2026-07-01T00:00:00.000Z",
       updated_at: "2026-07-01T00:00:00.000Z",
+      // #149: RecipeStepWithIngredients's step<->ingredient links — none in
+      // this fixture, no picker UI consumes it yet (that's the second half
+      // of #149, out of this ticket's scope).
+      ingredientIds: [],
     },
     {
       id: "step-row-2",
@@ -147,6 +151,7 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
       instruction: "Vouw de bosbessen erdoor en verdeel over de vorm.",
       created_at: "2026-07-01T00:00:00.000Z",
       updated_at: "2026-07-01T00:00:00.000Z",
+      ingredientIds: [],
     },
   ],
 };

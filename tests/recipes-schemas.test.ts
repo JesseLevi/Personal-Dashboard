@@ -5,7 +5,7 @@ import {
   createRecipeSchema,
   deleteCategorySchema,
   deleteRecipeSchema,
-  renameCategorySchema,
+  updateCategorySchema,
   updateRecipeSchema,
 } from "../lib/recipes/schemas";
 import { UNIT_CODES } from "../lib/recipes/units";
@@ -33,15 +33,24 @@ describe("createCategorySchema", () => {
   });
 });
 
-describe("renameCategorySchema", () => {
-  it("accepts categoryId + name", () => {
+describe("updateCategorySchema", () => {
+  it("accepts categoryId + name + icon", () => {
     expect(
-      renameCategorySchema.safeParse({ categoryId: uuid, name: "Lunch" }).success,
+      updateCategorySchema.safeParse({ categoryId: uuid, name: "Lunch", icon: "Sandwich" })
+        .success,
     ).toBe(true);
   });
 
   it("rejects a missing categoryId", () => {
-    expect(renameCategorySchema.safeParse({ name: "Lunch" }).success).toBe(false);
+    expect(
+      updateCategorySchema.safeParse({ name: "Lunch", icon: "Sandwich" }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a missing icon (#149: the picker's save must always send it)", () => {
+    expect(
+      updateCategorySchema.safeParse({ categoryId: uuid, name: "Lunch" }).success,
+    ).toBe(false);
   });
 });
 
@@ -146,6 +155,51 @@ describe("createRecipeSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("accepts a step's ingredientRefs pointing at valid ingredient indexes (#149)", () => {
+    const result = createRecipeSchema.safeParse({
+      categoryId: uuid,
+      title: "X",
+      ingredients: [
+        { name: "Havermout", quantity: 250, unit: "gram" },
+        { name: "Melk", quantity: 375, unit: "milliliter" },
+      ],
+      steps: [{ instruction: "Meng de ingrediënten.", ingredientRefs: [0, 1] }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("defaults a step's ingredientRefs to an empty array when omitted", () => {
+    const result = createRecipeSchema.safeParse({
+      categoryId: uuid,
+      title: "X",
+      steps: [{ instruction: "Verwarm de oven voor op 180 graden." }],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.steps[0].ingredientRefs).toEqual([]);
+    }
+  });
+
+  it("rejects a step's ingredientRefs index that is out of range for ingredients", () => {
+    const result = createRecipeSchema.safeParse({
+      categoryId: uuid,
+      title: "X",
+      ingredients: [{ name: "Havermout", quantity: 250, unit: "gram" }],
+      steps: [{ instruction: "Meng.", ingredientRefs: [1] }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a negative ingredientRefs index", () => {
+    const result = createRecipeSchema.safeParse({
+      categoryId: uuid,
+      title: "X",
+      ingredients: [{ name: "Havermout", quantity: 250, unit: "gram" }],
+      steps: [{ instruction: "Meng.", ingredientRefs: [-1] }],
+    });
+    expect(result.success).toBe(false);
+  });
+
   it("rejects an empty title", () => {
     expect(
       createRecipeSchema.safeParse({ categoryId: uuid, title: "" }).success,
@@ -185,6 +239,34 @@ describe("updateRecipeSchema", () => {
 
   it("rejects a missing recipeId", () => {
     expect(updateRecipeSchema.safeParse({ title: "X" }).success).toBe(false);
+  });
+
+  // #149: the RPC (public.replace_recipe_contents) replaces
+  // recipe_ingredients AND recipe_steps together in one transaction, so a
+  // client cannot send just one half of that pair.
+  it("rejects ingredients sent without steps", () => {
+    const result = updateRecipeSchema.safeParse({
+      recipeId: uuid,
+      ingredients: [{ name: "Ei", quantity: 2, unit: "stuk" }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects steps sent without ingredients", () => {
+    const result = updateRecipeSchema.safeParse({
+      recipeId: uuid,
+      steps: [{ instruction: "Klop de eieren los." }],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a step's ingredientRefs index that is out of range for ingredients", () => {
+    const result = updateRecipeSchema.safeParse({
+      recipeId: uuid,
+      ingredients: [{ name: "Ei", quantity: 2, unit: "stuk" }],
+      steps: [{ instruction: "Klop.", ingredientRefs: [3] }],
+    });
+    expect(result.success).toBe(false);
   });
 });
 
