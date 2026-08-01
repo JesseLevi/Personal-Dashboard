@@ -10,7 +10,17 @@ import { CardContentRecipe } from "@/components/molecules/CardContentRecipe";
 import { isIconName } from "@/components/atoms/Icon";
 import type { CategoryWithRecipes, RecipeRow } from "@/lib/recipes/types";
 import { CategoryPanel, type CategoryPanelTarget } from "./CategoryPanel";
-import { createCategory, renameCategory, deleteCategory } from "./actions";
+import { RecipePanel, type RecipePanelTarget } from "./RecipePanel";
+import {
+  createCategory,
+  renameCategory,
+  deleteCategory,
+  createRecipe,
+  updateRecipe,
+  deleteRecipe,
+  searchIngredients,
+  createOwnIngredient,
+} from "./actions";
 
 // Client wrapper around BoardView (#124) — `renderItem` is a function prop
 // and can't cross the Server->Client boundary, so `page.tsx` stays a Server
@@ -63,6 +73,16 @@ export function ReceptenBoard({ categories, title, addCategoryLabel }: ReceptenB
     target: { mode: "create" },
   });
 
+  // Recipe add/edit panel (#126) — same independent open/target convention
+  // as `panel` above. Only `create` has a wired trigger today (each
+  // column's `+`, via `onAddItem` below); `edit` has no host UI yet
+  // (Card-content/Recipe draws no pencil affordance) — see
+  // design/notes/RecipePanel.md.
+  const [recipePanel, setRecipePanel] = useState<{ open: boolean; target: RecipePanelTarget }>({
+    open: false,
+    target: { mode: "create", categoryId: categories[0]?.id ?? "" },
+  });
+
   return (
     <>
       <PageHeader
@@ -89,6 +109,9 @@ export function ReceptenBoard({ categories, title, addCategoryLabel }: ReceptenB
           const category = categories.find((c) => c.id === columnId);
           if (category) setPanel({ open: true, target: { mode: "edit", category } });
         }}
+        onAddItem={(columnId) =>
+          setRecipePanel({ open: true, target: { mode: "create", categoryId: columnId } })
+        }
         renderItem={(recipe) => (
           <CardContentRecipe
             name={recipe.title}
@@ -111,6 +134,18 @@ export function ReceptenBoard({ categories, title, addCategoryLabel }: ReceptenB
         onCreateCategory={createCategory}
         onRenameCategory={renameCategory}
         onDeleteCategory={deleteCategory}
+        onMutated={() => router.refresh()}
+      />
+      <RecipePanel
+        open={recipePanel.open}
+        onClose={() => setRecipePanel((current) => ({ ...current, open: false }))}
+        target={recipePanel.target}
+        categories={categories}
+        onCreateRecipe={createRecipe}
+        onUpdateRecipe={updateRecipe}
+        onDeleteRecipe={deleteRecipe}
+        onSearchIngredients={searchIngredients}
+        onCreateOwnIngredient={createOwnIngredient}
         onMutated={() => router.refresh()}
       />
     </>

@@ -171,6 +171,65 @@ the UI before save is attempted, rather than only after a failed submit.
 
 **Figma only ever draws the populated-results state.** Neither the "not yet searched" prompt copy nor the zero-results layout (beyond the user-approved "add as new ingredient" affordance, which has its own deviation note in `design/notes/IngredientSearchPanel.md`) has a Figma source — both are this codebase's own copy/layout decisions. Low product risk (plain muted prompt text, a `Card` reusing existing atoms), but flagged rather than silently presented as design-sourced. Needs a design pass only if these states should look meaningfully different from the current build.
 
+## recipe-edit-trigger-no-host-yet
+
+**#126's `RecipePanel` supports `edit` mode end to end (prefilled fields, Ladle `Filled` story), but nothing in the app can open it in that mode yet.** `Card-content/Recipe` draws no pencil/edit affordance, and `BoardView`'s `onItemClick` still navigates to `/recepten/[id]`, a detail page no ticket has built. Needs a design answer (or just the detail-page ticket landing) for where an edit trigger lives — the recipe card itself, or a button on the eventual detail page.
+
+## ingredient-name-annotation-only-on-row-two
+
+**Only `3717:2844` row 2's name field (`I3740:4302;3761:8982`) carries the "opens the ingredient search" Dev Mode annotation** — rows 1 and 3 have byte-identical structure (`Icon/Arrow-right-left`, same `Input-field` variant) but no annotation of their own. `RecipeIngredientRow` applies the same open-search behaviour to all three rows (the least-surprising reading — a picker icon that only sometimes opens a picker would be worse). Needs a design answer confirming rows 1/3 should behave identically, or explaining why they were left unannotated.
+
+## recipe-tags-no-query-or-write-path
+
+**`public.tags`/`recipe_tags` exist in the schema (`TagRow`/`RecipeTagRow`, `lib/recipes/types.ts`) but no query lists a user's existing tags, no server action creates or attaches one, and `createRecipeSchema`/`updateRecipeSchema` accept no `tags` field.** #126 built only the "type a new tag" half of the ticket's suggested Tags composition (local component state, not persisted); the "existing tags as checkboxes" half has no data source to render. Needs a data-layer ticket (query + action + schema field) before Tags can do anything beyond decorate the form.
+
+## step-ingredient-pill-panel-undesigned
+
+**The step field's "Ingrediënt" pill (`I3742:2829;3761:6083;3953:9745`) is annotated as opening a second pull-up panel whose content is drawn nowhere in the file.** #126 renders the pill (Figma draws it) but leaves it `disabled` rather than inventing content for a panel with no source. Needs a design answer: what that panel shows (likely: pick from the recipe's own ingredient rows to reference inside a step's text), or confirmation it's out of scope entirely.
+
+## screen-03-overlay-purpose-unclear
+
+**`3777:3984`'s second `Pull-up panel` (`3777:4012`) — a `Card` of three unchecked `Card-content/Ingredient` rows with a lone "Oplsaan" footer button — carries no Dev Mode annotation anywhere.** #126 reads it as a plausible "confirm ingredients" step but did not build it (guessing both its trigger and its semantics would mean improvising, not implementing). Needs a design answer on what triggers it and what "Oplsaan" does there that the underlying form's own "Opslaan" doesn't already cover.
+
+## ingredient-step-rows-no-delete-reorder-v1
+
+**Neither ingredient rows nor step rows have any delete/reorder affordance in #126's build.** Figma draws exactly three static ingredient rows and one static step, with no per-row chrome — v1 shipped literally that (a "Voeg toe" button appends a row; nothing removes one). Needs a design answer: a real trailing-icon delete/reorder control, or confirmation that rows are meant to be immutable once added (awkward on `edit`, where a wrong row currently can't be removed without recreating the whole recipe).
+
+## recipe-panel-verwijderen-hidden-on-create
+
+**Whether "Verwijderen" should be hidden on a brand-new recipe (vs. always visible) has no Figma source** — both fetched footers (`3717:2939`/`3777:4008`) show it unconditionally, with no separate "create" frame to compare against. #126 defaults to hidden-on-create, visible-on-edit (nothing to delete yet), the same default every other create/edit `SidePanel` in this codebase already uses. Needs a design answer only if the intended behaviour differs.
+
+## recipe-panel-unit-list-etc-unsourced
+
+**The unit `Dropdown`'s full option list is not drawn anywhere** — the annotation on `3777:3942`/`3740:4275` names Gram/Kilogram/Liter/Scoop "etc." and stops there. #126 wires the *complete* `UNIT_CODES` list from #120 (17 units) into the picker, which is a superset of the four named examples, not a literal read of "etc." Needs a design answer only if the full list should visually differ from a flat list (grouped by magnitude, for instance).
+
+## recipe-panel-personen-chevron-behaviour-unsourced
+
+**The Personen field's trailing chevron (`3968:10298`) has `Trekking-icon: true` but no annotation describing what it opens.** #126 built it as a `Dropdown` listing 1-12 (an unsourced, reasonable default — see `design/notes/RecipePanel.md`). Needs a design answer on the real range/behaviour (a stepper instead of a list? A different upper bound?).
+
+## recipe-panel-desktop-layout-gap
+
+**No desktop Figma node exists for the add/edit-recipe field content** — only `3717:2844` (402px mobile) is drawn. #126 kept every field in the same single-column order at every breakpoint, per the ticket's own instruction to avoid inventing new layout decisions. Needs a design answer only if a real desktop layout (e.g. two-column fields) was intended.
+
+## recipe-panel-photo-upload-not-built
+
+**No file-upload control exists anywhere in this form** — per the 2026-07-29 decision, #121 owns the storage bucket and server-side validation, not this ticket's input control, and no control is designed for it yet. `recipes.thumbnail_path` stays unset from this form. Needs a design answer (an `InputField`-adjacent upload affordance, drag-and-drop, or something else) before a future ticket can wire it up.
+
+## recipe-name-field-swap-icon-unusual
+
+**The ingredient name field's `Icon/Arrow-right-left` (swap icon) is an unusual choice for "open a picker/list"** — a magnifying glass (search) or a chevron (like every other field in this form) would be the more conventional affordance. Built exactly as specified since the annotation and icon are both explicit and consistent with each other. Needs a design answer confirming this was intentional.
+
+## recipe-panel-two-identical-voeg-toe-buttons
+
+**Both "Voeg toe" buttons (ingredients' `3717:2938`, steps' `3717:2948`) carry the exact same text**, distinguished only by vertical position on the page. #126 kept them textually identical (a literal read of the source) rather than inventing differentiated copy ("Voeg ingrediënt toe"/"Voeg stap toe") the ticket only offered as an option. Needs a design answer on whether differentiated labels are preferred.
+
+## recipe-ingredient-row-unit-label-always-shown
+
+**`Dropdown`'s labelless mode has no collapse/trigger behaviour at all** — reading `components/atoms/Dropdown.tsx` directly shows its `return` renders `children` unconditionally when no `label` is supplied; only the labelled branch has the open/closed chrome (`aria-expanded`, chevron rotation, grid-collapse). #126's `RecipeIngredientRow` needs a real closeable picker for its Eenheid column on every row, so it always passes `label` — the "Eenheid" text now renders on rows 2/3 too, not just row 1, diverging from Figma's `Title: false` there. Needs either a design ratification of this (label always visible is arguably fine/better) or a `Dropdown` atom enhancement adding a real labelless-but-collapsible mode.
+
+## recipe-panel-trigger-annotation-misattributed
+
+**`3777:3923` (the overview's `+` button, #124) carries the annotation "Adds a kanban column."** — Te-Doen residue, not a real description of what this button does on the Recepten screen. The real trigger annotation lives on the nested `I3777:3924;3670:1765;3777:4094;3686:1894` instance ("Pull up panel slides up with animation"), which #126 wired instead. Recorded here so a future reader doesn't re-trust the outer node's own annotation. No action needed — already correctly resolved in the build.
 ## recipe-image-field-personen-label
 
 **The "Selecteer afbeelding" image-upload field's bound Title text reads "Personen" in both the mobile and desktop "Add recipi" frames** (`3968:11192` / `3953:9875`) — confirmed a duplication artifact, not a translation gap: the instance was copied from the adjacent servings field and only its `Content` was edited. #121 renders no visible label for this field rather than showing the wrong one (`design/notes/ImageUploadField.md` has the full record). Needs a real label from design (e.g. "Afbeelding"/"Foto") to replace the omission.
