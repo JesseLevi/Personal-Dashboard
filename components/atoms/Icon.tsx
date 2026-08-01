@@ -38,6 +38,10 @@ import {
   Search,
   ArrowRightLeft,
   Minus,
+  Coffee,
+  Soup,
+  Pizza,
+  Cookie,
   type LucideProps,
 } from "lucide-react";
 
@@ -90,7 +94,11 @@ export type IconName =
   | "AArrowDown"
   | "Search"
   | "ArrowRightLeft"
-  | "Minus";
+  | "Minus"
+  | "Coffee"
+  | "Soup"
+  | "Pizza"
+  | "Cookie";
 
 // Figma name -> lucide-react component.
 const ICONS: Record<IconName, ComponentType<LucideProps>> = {
@@ -131,6 +139,10 @@ const ICONS: Record<IconName, ComponentType<LucideProps>> = {
   Search: Search,
   ArrowRightLeft: ArrowRightLeft,
   Minus: Minus,
+  Coffee: Coffee,
+  Soup: Soup,
+  Pizza: Pizza,
+  Cookie: Cookie,
 };
 
 const ICON_NAMES = new Set<string>(Object.keys(ICONS));

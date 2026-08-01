@@ -96,6 +96,55 @@ This is a deliberate deviation, not an oversight — `CLAUDE.md` still requires 
 
 Not built (`app/(app)/recepten/page.tsx`/`ReceptenBoard.tsx` render however many categories `recipe_categories` actually holds — three today, per the seed trigger). Needs a design answer only if a 4th default category (dessert/toetje?) was actually intended; otherwise this entry can simply be closed once design confirms it was copy-paste.
 
+## category-icon-picker-curated-set
+
+**#125's "Icoon" picker shows 8 curated lucide icons, not the ticket's
+literal "list all 74 lucide food icons here."** Both fetched nodes
+(`3891:18524` mobile, `3957:11544` desktop) draw exactly 8 `Button/Default`
+instances — a fixed slot count, all 8 rendering the identical `Icon/Sandwich`
+placeholder — and the Dev Mode annotation the ticket quotes is an
+instruction to the builder, not delivered content (the ticket itself flags
+this as unresolved). Building 74 new `IconName` entries on a text
+instruction alone, with no Figma vector behind any of them to shape-verify
+against, would invert this codebase's own "never build what isn't in Figma"
+rule and also wouldn't fit the 8-slot layout Figma actually draws. Shipped:
+`Sandwich`, `Croissant`, `CakeSlice`, `Broccoli` (already valid, and the
+first three are `seed_default_recipe_categories()`'s own seeded icons),
+`Coffee`, `Soup`, `Pizza`, `Cookie` (newly added, `design/notes/Icon.md`'s
+#125 entry). Full reasoning: `design/notes/CategoryPanel.md`. Needs a
+design/product answer: ratify this curated 8, or specify a real UI shape
+(search? paginated grid?) that could actually hold all 74.
+
+## category-icon-no-selected-state
+
+**#125's icon picker has no Selected state to build against.** All 8 button
+instances in both fetched nodes are the same `Style=Filled, State=Default` —
+Figma draws no visual difference for "this is the chosen icon." Built with
+`aria-pressed` reusing `Atom/Button`'s own existing Selected semantics
+(`docs/design-tokens.md`: Filled's Selected only darkens text) rather than
+inventing new styling. Needs a design answer: ratify text-only Selected here,
+or design a real selected-icon treatment (e.g. a border/fill ring).
+
+## category-delete-no-confirm-designed
+
+**#125's footer draws a destructive `Verwijderen` button with no
+confirmation step modelled anywhere in Figma.** Built with `CardDetailPanel.
+tsx`'s existing two-step confirm (#94 precedent, "kies de minst-uitvindende
+weg" per the ticket) rather than inventing a new pattern. Needs a design
+answer: ratify the reused two-step confirm, or design a category-specific
+one (e.g. warning that deleting a category cascades to its recipes —
+`recipe_categories`'s `on delete cascade`, see `actions.ts`'s
+`deleteCategory` comment).
+
+## category-name-no-validation-designed
+
+**#125's name field carries no visible validation state in Figma** (empty,
+too long, duplicate). Built with the schema's own `min(1).max(200)`
+(`lib/recipes/schemas.ts`) mirrored client-side as a disabled-Save gate only
+— no length counter, no duplicate-name check (neither is enforced server-side
+either). Needs a design answer on whether any of these should be surfaced in
+the UI before save is attempted, rather than only after a failed submit.
+
 ## portion-stepper-figma-draws-plus-twice
 
 **Both portion-stepper nodes (`3953:9750` mobile, `3778:5596` desktop) draw the same `Icon/Plus` component (`3629:149`) on the left AND the right** — there is no minus/decrement glyph anywhere in either node. #123 treats this as a design error rather than a literal spec: a decrement control that visually adds is functionally nonsensical next to a text label reading "N personen"/"N people", so the built `PortionStepper` (`components/molecules/PortionStepper.tsx`) renders lucide's `Minus` on the left (decrement) button and leaves `Icon/Plus` unchanged on the right (increment) button — a deliberate, functionally-motivated deviation from the literal Figma source, not a guess (`CLAUDE.md` forbids silently "fixing" a Figma mismatch without flagging it, which this entry does). `Minus` itself has no Figma node to verify against; `design/notes/Icon.md`'s #123 entry confirms lucide's `Minus` export really is a single horizontal stroke, coordinate-identical to the horizontal bar of Figma's own already-verified `Icon/Plus`. Needs a design answer: either add a real `Icon/Minus` variant to both nodes, or explicitly ratify this code's substitution as correct.

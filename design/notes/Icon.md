@@ -15,4 +15,24 @@ single wrapper around lucide-react@1.25.0+ (upgraded 2026-07-20 for the Broccoli
 
 `Search`, `ArrowRightLeft` and `Minus` were added for #123 (portion-stepper molecule + the upcoming ingredient searcher/#131 and `Add recipi/Mobile` name field/#126). `Search` (node `3957:9761`) verified path-for-path: Figma's 16×16 circle at `3,3` matches lucide's `circle cx=11 cy=11 r=8` exactly, and the `4.34×4.34` handle vector at `16.66,16.66` matches lucide's `m21 21-4.34-4.34` endpoint-for-endpoint. `ArrowRightLeft` (node `3957:11145`) was checked against BOTH `ArrowRightLeft` and the same-shaped-sounding `ArrowLeftRight` export to rule out a mirrored false friend: Figma's four sub-vectors (`16,3`/`4×8`; `4,7`/`16×0`; `4,13`/`4×8`; `4,17`/`16×0`) match `ArrowRightLeft`'s four paths bounding-box-for-bounding-box (top arrowhead pointing right at x16–20, bottom arrowhead pointing left at x4–8) — `ArrowLeftRight` draws the mirrored arrangement and does not match. `Minus` has no Figma node to compare against (see `docs/open-questions.md#portion-stepper-figma-draws-plus-twice` — Figma draws `Icon/Plus` on both sides of the stepper it's used in); verified instead that lucide's export really is a single horizontal stroke (`renderToStaticMarkup` → one `path d="M5 12h14"`), and that this stroke is coordinate-identical to the horizontal bar of Figma's own already-verified `Icon/Plus` (`3629:149`, sub-vector at `5,12`/`14×0`) — i.e. `Minus` is exactly "Plus with the vertical stroke removed", not a different glyph (em-dash, underscore, etc.) wearing the right name. Union is now 34 names (was 31).
 
+`Coffee`, `Soup`, `Pizza` and `Cookie` were added for #125's category icon
+picker (`Add column/Mobile` `3891:17997` / desktop `3957:11537`, "Icon list"
+`3891:18524`/`3957:11544`). **Unlike every earlier addition in this file,
+these have no Figma vector to shape-verify against**: all 8 button instances
+in both fetched nodes render the identical `Icon/Sandwich` placeholder
+(`3632:177`) — the ticket's own Dev Mode annotation ("List all lucide food
+icons here") is an instruction to the builder, not a delivered icon list (see
+`docs/open-questions.md#category-icon-picker-curated-set`). With no Figma
+shape to compare paths against, verification here is confirming each is a
+real, unambiguous `lucide-react@1.25.0` export via `Object.keys(lucide)`
+(`node -e "console.log(Object.keys(require('lucide-react')))"`) rather than
+the usual path/bbox comparison — all four are common, single-referent food
+glyphs (a mug, a bowl, a wedge, a round biscuit) with no known false-friend
+history the way `Cross`/`Astroid` had. Picked alongside the three icons
+already in the union (`Sandwich`, `Croissant`, `Broccoli` — all three used by
+`seed_default_recipe_categories()`) plus the already-present `CakeSlice`, for
+a curated 8: `Sandwich`, `Croissant`, `CakeSlice`, `Broccoli`, `Coffee`,
+`Soup`, `Pizza`, `Cookie` — spanning breakfast/drink, lunch/veg, dinner and
+dessert/snack rather than 8 near-duplicates. Union is now 38 names (was 34).
+
 No open discrepancies remain.

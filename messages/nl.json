@@ -156,6 +156,31 @@
       "deleteConfirmButtonLabel": "Ja, verwijderen",
       "deletingLabel": "Verwijderen...",
       "cancelLabel": "Annuleren"
+    },
+    "categoryPanel": {
+      "addTitle": "Categorie toevoegen",
+      "editTitle": "Categorie hernoemen",
+      "fields": {
+        "nameLabel": "Naam",
+        "iconLabel": "Icoon"
+      },
+      "saveLabel": "Opslaan",
+      "savingLabel": "Opslaan...",
+      "deleteLabel": "Verwijderen",
+      "deleteConfirmLabel": "Weet je het zeker?",
+      "deleteConfirmButtonLabel": "Ja, verwijderen",
+      "deletingLabel": "Verwijderen...",
+      "cancelLabel": "Annuleren",
+      "iconLabels": {
+        "Sandwich": "Broodje",
+        "Croissant": "Croissant",
+        "CakeSlice": "Taartpunt",
+        "Broccoli": "Broccoli",
+        "Coffee": "Koffie",
+        "Soup": "Soep",
+        "Pizza": "Pizza",
+        "Cookie": "Koekje"
+      }
     }
   }
 }
