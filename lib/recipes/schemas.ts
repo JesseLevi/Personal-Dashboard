@@ -99,3 +99,12 @@ export const createOwnIngredientSchema = z.object({
   name,
   referenceId: z.uuid().nullable(),
 });
+
+// #131's IngredientSearchPanel search box. searchIngredientLibrary
+// (queries.ts) itself trims/empty-guards `query`, so this only bounds length
+// against a pathological payload -- an empty string is valid input (the
+// panel's own "not yet searched" state never calls this action at all, but
+// the server-side boundary shouldn't rely on that client behaviour).
+export const searchIngredientsSchema = z.object({
+  query: z.string().max(200),
+});

@@ -148,3 +148,23 @@ the UI before save is attempted, rather than only after a failed submit.
 ## portion-stepper-figma-draws-plus-twice
 
 **Both portion-stepper nodes (`3953:9750` mobile, `3778:5596` desktop) draw the same `Icon/Plus` component (`3629:149`) on the left AND the right** — there is no minus/decrement glyph anywhere in either node. #123 treats this as a design error rather than a literal spec: a decrement control that visually adds is functionally nonsensical next to a text label reading "N personen"/"N people", so the built `PortionStepper` (`components/molecules/PortionStepper.tsx`) renders lucide's `Minus` on the left (decrement) button and leaves `Icon/Plus` unchanged on the right (increment) button — a deliberate, functionally-motivated deviation from the literal Figma source, not a guess (`CLAUDE.md` forbids silently "fixing" a Figma mismatch without flagging it, which this entry does). `Minus` itself has no Figma node to verify against; `design/notes/Icon.md`'s #123 entry confirms lucide's `Minus` export really is a single horizontal stroke, coordinate-identical to the horizontal bar of Figma's own already-verified `Icon/Plus`. Needs a design answer: either add a real `Icon/Minus` variant to both nodes, or explicitly ratify this code's substitution as correct.
+
+## ingredient-search-mock-duplicate-citroen
+
+**The ingredient-search-panel mock (`3957:10356`/`3957:11025`) draws "Citroen" twice** (positions 3 and 11 of 11 rows) — confirmed directly from a fresh `get_figma_data` fetch (#131), not just taken on the ticket's word: both instances share the identical template node (`EL-f4c34eed`), reading as copy-paste residue rather than an intended duplicate. Not built as a duplicate — `IngredientSearchPanel` renders whatever `searchIngredientLibrary` actually returns (the seed migration has one "Citroen" row), so this only affected how the static mock was read, never the live list. No design answer needed unless a future re-fetch shows the duplicate was intentional.
+
+## ingredient-search-mock-halumi-typo
+
+**The same mock spells the halloumi row "Halumi"** — a typo for "Halloumi". `supabase/migrations/20260730000001_ingredient_library.sql`'s seed already spells it correctly (`'Halloumi', 'Halloumi'`, confirmed by reading the migration directly), so nothing needed correcting in the seed or in i18n — this entry exists only to record that the mock's spelling was deliberately not reproduced anywhere in the built UI, per the ticket's own instruction to flag it.
+
+## card-content-ingredient-no-checked-example
+
+**Neither ingredient-search-panel node draws a checked row** — every `Checkbox` instance in the mock is `Checked=No`. `IngredientSearchPanel` reuses `CardContentIngredient`'s existing `checked` styling (built for the recipe detail screen, node `3778:3792`) rather than inventing a new one, so no new visual decision was made, but this screen itself gives no independent confirmation that styling is correct in this context. No action needed unless a future mock actually draws a checked state here.
+
+## ingredient-search-panel-zero-dev-mode-annotations
+
+**Node `3957:10337` (and its desktop pair) carry zero Dev Mode annotations** — verified by the ticket's own raw REST grep over the full node payload (no parse error, genuinely empty), not assumed from the Figma MCP's payload alone (`docs/guides/ui-components.md`'s standing warning that the MCP silently drops annotations that DO exist elsewhere). Recorded here only so a later reader doesn't re-derive "maybe the MCP just dropped them" from scratch. No open question remains once verified this way.
+
+## ingredient-search-panel-empty-and-zero-result-states-unsourced
+
+**Figma only ever draws the populated-results state.** Neither the "not yet searched" prompt copy nor the zero-results layout (beyond the user-approved "add as new ingredient" affordance, which has its own deviation note in `design/notes/IngredientSearchPanel.md`) has a Figma source — both are this codebase's own copy/layout decisions. Low product risk (plain muted prompt text, a `Card` reusing existing atoms), but flagged rather than silently presented as design-sourced. Needs a design pass only if these states should look meaningfully different from the current build.

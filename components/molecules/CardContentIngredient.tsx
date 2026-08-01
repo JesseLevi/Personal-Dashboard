@@ -13,13 +13,14 @@ import { Tag } from "../atoms/Tag";
  * has no Hover — see design/notes/CardContentIngredient.md); Delete -> presence
  * of `onDelete` (requires `deleteLabel`), rendering an unconditional pill with
  * the Trash `Button` as a sibling, not a hover-gated child.
+ * `Tag` boolean -> `quantity?: string` (#131: omit both to hide the Tag).
  * — see design/notes/CardContentIngredient.md for full token/measurement detail.
  */
 export interface CardContentIngredientBaseProps {
   /** Ingredient name (Figma TEXT "Banana"). */
   name: string;
-  /** Quantity text, rendered via the neutral Atom/Tag (Figma TEXT "300 gr"). */
-  quantity: string;
+  /** Quantity text, rendered via the neutral Atom/Tag (Figma TEXT "300 gr"). Omit to hide the Tag (Figma `Tag=false`, seen on #131's name-only search-result rows). */
+  quantity?: string;
   /**
    * Figma `Checkbox` variant axis (None/Unchecked/Checked). Omit for
    * `Checkbox=None` (no checkbox rendered). Pass `false`/`true` for
@@ -29,6 +30,8 @@ export interface CardContentIngredientBaseProps {
   checked?: boolean;
   /** Forwarded to the Checkbox atom's `onClick`; ignored when `checked` is omitted. */
   onCheckedToggle?: () => void;
+  /** Instance override seen on every row of #131's usage (not a named variant axis): a `border-muted` bottom rule separating rows in a multi-row `Card` list, applied per-row including the last (matches the fetched node — no last-child exception). Omit (default) elsewhere; every other call site's pixels are unchanged. */
+  divider?: boolean;
   className?: string;
 }
 
@@ -54,6 +57,7 @@ export function CardContentIngredient({
   onCheckedToggle,
   onDelete,
   deleteLabel,
+  divider,
   className,
 }: CardContentIngredientProps) {
   const content = (
@@ -64,7 +68,7 @@ export function CardContentIngredient({
       )}
     >
       <p className="text-base font-semibold text-text">{name}</p>
-      <Tag variant="neutral">{quantity}</Tag>
+      {quantity !== undefined && <Tag variant="neutral">{quantity}</Tag>}
     </div>
   );
 
@@ -104,6 +108,7 @@ export function CardContentIngredient({
     <div
       className={clsx(
         "flex w-full items-center gap-5 rounded-3xl pl-3 pr-3 py-3 transition-colors active:bg-surface-raised active:pr-4",
+        divider && "border-b border-border-muted",
         className,
       )}
     >

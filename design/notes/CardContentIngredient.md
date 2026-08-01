@@ -15,3 +15,12 @@ the Checkbox and Trash Button rendered inside this molecule's rows are flex chil
 - Padding uses explicit longhand (`pl-3 pr-3 py-3`, never the `px-3` shorthand) because `px-*` emits `padding-inline`, a different longhand from `pr-*`'s `padding-right` — both affect the right side in LTR, but as two distinct declarations the winner would be decided by Tailwind's utility emission order, not by one overriding the other. Using `pr-3` in the base means the `:active` variant's `pr-4` overrides the identical longhand property. `Atom/Button`'s own doc comment flags the general version of this fragility (`h-8`/`h-10` on the same property, same specificity); splitting the shorthand here is the same defensive move applied to padding. `transition-colors` only animates colour, not padding/spacing, so the row visibly shifts 4px the instant `:active` fires rather than easing — that shift is in the fetched node (the padding literally changes), so it is kept deliberately, not smoothed away.
 - Text style: `text-base/semibold` (Figma) -> `text-base font-semibold` (design/tokens.json typography map). Name fill stone-950 -> `text-text`.
 - Trash Button footprint archaeology (root padding 8/24/4 = 40x40, atom bug, fix) is recorded in `design/notes/Button.md` ticket #75 — not duplicated here.
+
+## TICKET #131 (2026-08-01) — `quantity` optional, `divider` added
+
+Fresh fetch of `3727:4309` (via the ingredient-search-panel node, `IngredientSearchPanel.md`) found two instance properties this atom didn't model, both applied consistently across every row in that usage:
+
+- `componentProperties: {"Tag": false}` — the quantity chip is a real, hideable Figma boolean, not always-on. `quantity` changed from required to optional; the `Tag` only renders when supplied. No existing call site passes `quantity: undefined`, so every current rendering is byte-identical.
+- `strokes: #E7E5E4` bottom-only (1px) on every row template, including the last — a per-row list divider with no last-child exception in the source. `#E7E5E4` == `border-muted` exactly (`design/tokens.json`), no token gap. New optional `divider?: boolean` prop, default `false` (every pre-#131 call site unaffected).
+
+Full reasoning for why these are real Figma findings and not codebase guesses lives in `IngredientSearchPanel.md`, not duplicated here.

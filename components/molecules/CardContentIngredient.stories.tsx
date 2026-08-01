@@ -77,6 +77,16 @@ export const AllVariants = () => (
   </div>
 );
 
+// #131: `Tag=false` (no `quantity`) + `divider` — the ingredient-search-panel
+// usage, a name-only pick list with a per-row bottom rule.
+export const NoQuantityWithDivider = () => (
+  <div className="w-96 rounded-xl border border-border bg-surface p-2">
+    <CardContentIngredient name="Appel" checked={false} divider />
+    <CardContentIngredient name="Blauwe bes" checked={false} divider />
+    <CardContentIngredient name="Havermout" checked divider />
+  </div>
+);
+
 // NL catalog check for the delete label.
 export const DeleteLabelNl = () => (
   <div className="w-96">

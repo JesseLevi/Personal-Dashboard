@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import { nextPosition } from "@/lib/boards/positioning";
+import { searchIngredientLibrary } from "@/lib/recipes/queries";
 import {
   createCategorySchema,
   createOwnIngredientSchema,
@@ -13,11 +14,13 @@ import {
   deleteCategorySchema,
   deleteRecipeSchema,
   renameCategorySchema,
+  searchIngredientsSchema,
   updateRecipeSchema,
 } from "@/lib/recipes/schemas";
 import type {
   ActionResult,
   IngredientRow,
+  IngredientSearchResult,
   RecipeCategoryRow,
   RecipeRow,
 } from "@/lib/recipes/types";
@@ -506,4 +509,22 @@ export async function createOwnIngredient(
   // /recepten route — it's called from within the recipe write flow
   // (#126/#131), whose own actions already revalidate it.
   return { success: true, data };
+}
+
+/**
+ * Thin `"use server"` wrapper around `searchIngredientLibrary`
+ * (queries.ts) — not a second implementation. `queries.ts` is guarded by
+ * `import "server-only"`, which only blocks it from being *bundled* into
+ * client code; it isn't itself an RPC boundary, so `IngredientSearchPanel`
+ * (a Client Component, #131) cannot call it directly and needs a real
+ * server action reference to pass down as a prop (same "props in, callback
+ * out" shape `CardDetailPanel.tsx` uses for its mutations). Input is parsed
+ * like every other action here rather than trusted from the TS call site,
+ * because a Server Action is a real network endpoint regardless of how it's
+ * invoked from the client bundle.
+ */
+export async function searchIngredients(input: unknown): Promise<IngredientSearchResult[]> {
+  const parsed = searchIngredientsSchema.safeParse(input);
+  if (!parsed.success) return [];
+  return searchIngredientLibrary(parsed.data.query);
 }
