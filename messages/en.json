@@ -156,6 +156,31 @@
       "deleteConfirmButtonLabel": "Yes, delete",
       "deletingLabel": "Deleting...",
       "cancelLabel": "Cancel"
+    },
+    "categoryPanel": {
+      "addTitle": "Add category",
+      "editTitle": "Rename category",
+      "fields": {
+        "nameLabel": "Name",
+        "iconLabel": "Icon"
+      },
+      "saveLabel": "Save",
+      "savingLabel": "Saving...",
+      "deleteLabel": "Delete",
+      "deleteConfirmLabel": "Are you sure?",
+      "deleteConfirmButtonLabel": "Yes, delete",
+      "deletingLabel": "Deleting...",
+      "cancelLabel": "Cancel",
+      "iconLabels": {
+        "Sandwich": "Sandwich",
+        "Croissant": "Croissant",
+        "CakeSlice": "Cake slice",
+        "Broccoli": "Broccoli",
+        "Coffee": "Coffee",
+        "Soup": "Soup",
+        "Pizza": "Pizza",
+        "Cookie": "Cookie"
+      }
     }
   }
 }

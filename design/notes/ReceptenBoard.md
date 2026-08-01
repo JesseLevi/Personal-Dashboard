@@ -61,17 +61,20 @@ finished renaming it. `seed_default_recipe_categories()` only ever inserts
 three categories. Not built; recorded at
 `docs/open-questions.md#recipes-overview-duplicate-fourth-column`.
 
-## Header "Categorie" button — left as the existing no-op, not wired here
+## Header "Categorie" button — wired by #125, and `PageHeader` moved here
 
-`page.tsx` carries the exact same `<Button icon="Plus">` the #28 stub
-already rendered, with no `onClick`. Opening an add-category panel is #125's
-job (`design/notes/PageHeader.md` already documents this as "no
-category-creation flow wired — out of scope, #28"); this ticket doesn't
-change that, it just confirms the decision explicitly rather than leaving it
-implicit. Alternative considered and rejected: wiring a placeholder
-`onClick` (e.g. `console.log`) — adds nothing observable and would need
-undoing the moment #125 lands, so the button stays a plain, label-only
-`Button` exactly as built.
+**Superseded by #125.** The button is now wired: it opens `CategoryPanel`
+(`./CategoryPanel.tsx`) in create mode. `PageHeader` itself moved from
+`page.tsx` into this file in the same ticket — `page.tsx` now only fetches
+data/translations and passes plain strings (`title`, `addCategoryLabel`)
+down, same Server/Client split as before, just one file lower. Reason for
+the move: the header's Plus button and every column's pencil button
+(`BoardView`'s `onEditColumn`, wired below) both need to open the *same*
+`CategoryPanel` instance — unlike Te-Doen's `TeDoenHeader.tsx`/
+`TeDoenBoard.tsx` split (boards vs. cards, never sharing state), category
+create and category edit are the same entity reachable from two different
+triggers, so they need one shared `panel` state and one owner. Full panel
+reasoning: `design/notes/CategoryPanel.md`.
 
 ## Empty state — Te-Doen's shape reused, no Figma reference of its own
 
@@ -84,12 +87,14 @@ Te-Doen's empty columns use, sourced from the same
 is generic ("add item"), not recipe-specific. **Figma draws no empty state
 for Recepten** (`3878:10175`, the only fetched `EmptyState` node, is
 Te-Doen's) — this is a deliberate reuse of a shape with no Recepten Figma
-reference behind it, not a fresh design read. `onAddItem`/`onEditColumn` are
-left unset (`undefined`) on `BoardView`, same reasoning as the header
-button above: #126 (add-recipe form) and #125 (category rename) own that
-wiring, and an unset callback just makes the Plus/Pencil/empty-state buttons
-inert (`BoardColumnView`'s own `handleAdd`/`onEditColumn ? … : undefined`
-pattern), not broken.
+reference behind it, not a fresh design read. `onAddItem` (the empty-state
+and per-column "+" buttons — adding a *recipe*) is still left unset
+(`undefined`) — #126 (add-recipe form) owns that wiring, out of scope here.
+**`onEditColumn` is wired by #125**, opening `CategoryPanel` in edit mode
+with the clicked column's `RecipeCategoryRow` looked up from `categories` by
+id — the same `BoardColumnView`'s own `onEditColumn ? … : undefined` pattern
+now has a real callback behind it instead of leaving the pencil button
+inert.
 
 ## Navigation: card click -> `/recepten/[recipeId]`, a build decision
 
