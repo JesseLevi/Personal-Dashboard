@@ -22,6 +22,7 @@ import {
   deleteRecipe,
   searchIngredients,
   updateRecipe,
+  uploadRecipeThumbnail,
 } from "../actions";
 
 // #127 recipe detail route body — Figma "Recept/Mobile" (3778:5427) /
@@ -268,6 +269,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
         }}
         onSearchIngredients={searchIngredients}
         onCreateOwnIngredient={createOwnIngredient}
+        onUploadThumbnail={uploadRecipeThumbnail}
         onMutated={() => router.refresh()}
       />
     </div>
