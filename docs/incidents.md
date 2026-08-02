@@ -2,6 +2,29 @@
 
 Append-only archive of per-ticket incident write-ups: defects that shipped past every CI gate, the merge-conflict resolutions for specific PRs, and the reasoning behind non-obvious fixes. These are moved here verbatim, not summarised, because the detail is the evidence base for why this project doesn't fully trust its CI gates. Nothing here is current status — entries are never updated once written. Read on demand when investigating a specific ticket, a recurring failure mode, or a past merge — never as part of session start.
 
+## 2026-08-02 — The `db` CI gate shipped broken because it could never be run before merging (#121)
+
+`20260801000001_recipe_thumbnails_storage.sql` (PR #147, ticket #121) added
+`recipe-thumbnails` storage RLS plus `rls-recipe-thumbnails-storage.sql`'s
+two-user object test, written and reviewed entirely without ever running it —
+this dev machine has no Docker, so `pnpm test:rls` is CI/server-only
+(`CLAUDE.md`, "This dev machine"). CI failed on every run of `main` since the
+merge: `storage.protect_delete()`, a `BEFORE DELETE ... FOR EACH STATEMENT`
+trigger Supabase's own storage migrations install on `storage.objects` to
+force callers onto the Storage API, fires unconditionally on any direct SQL
+`DELETE` — including the test's delete, which RLS correctly filters to zero
+rows, except the trigger never gets to see that: it runs once per statement,
+before RLS has a chance to matter. `is_empty(... delete ... returning id
+...)` therefore aborted the whole transaction instead of returning an empty
+set, and pgTAP's plan of 6 only ran 3 subtests. Fixed by setting
+`storage.allow_delete_query to 'true'` for the one assertion that needs it —
+the same session flag Supabase's own storage-api server sets on every
+connection before it performs a delete on a caller's behalf, confirmed by
+reading the storage repo's own migration source and connection code, not
+guessed. **Lesson:** a gate that can only be verified by CI, never locally,
+ships with exactly this kind of blind spot — this fix landed in its own PR,
+after `main` had already been red for two PRs' worth of merges.
+
 ## Token changes — #97 (`design/tokens.json`)
 
 Card `priority` scale collapses `urgent|medium|mid|low` to
