@@ -12,19 +12,19 @@ values ('00000000-0000-0000-0000-0000000000ba', 'a@test.local'),
 set local role authenticated;
 
 set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-0000000000ba", "role": "authenticated"}';
-insert into public.recipes (user_id, category_id, title, servings)
+insert into public.recipes (user_id, category_id, title, servings, position)
 values (
   '00000000-0000-0000-0000-0000000000ba',
   (select id from public.recipe_categories where user_id = '00000000-0000-0000-0000-0000000000ba' limit 1),
-  'A''s recipe', 2
+  'A''s recipe', 2, 1000
 );
 
 set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-0000000000bb", "role": "authenticated"}';
-insert into public.recipes (user_id, category_id, title, servings)
+insert into public.recipes (user_id, category_id, title, servings, position)
 values (
   '00000000-0000-0000-0000-0000000000bb',
   (select id from public.recipe_categories where user_id = '00000000-0000-0000-0000-0000000000bb' limit 1),
-  'B''s recipe', 4
+  'B''s recipe', 4, 1000
 );
 
 -- Act as user A.
@@ -51,11 +51,11 @@ select is_empty(
   'A cannot delete B''s recipe'
 );
 select throws_ok(
-  $$ insert into public.recipes (user_id, category_id, title, servings)
+  $$ insert into public.recipes (user_id, category_id, title, servings, position)
      values (
        '00000000-0000-0000-0000-0000000000bb',
        (select id from public.recipe_categories where user_id = '00000000-0000-0000-0000-0000000000ba' limit 1),
-       'sneaky recipe', 1
+       'sneaky recipe', 1, 5000
      ) $$,
   '42501',
   null,
