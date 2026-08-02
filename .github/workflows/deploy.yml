@@ -1,34 +1,33 @@
 name: Deploy (migrate + production)
 
-# ADR-0012: Vercel + Supabase Cloud is the current deploy target. Vercel's own
-# Git integration would otherwise deploy production the instant `main` moves,
-# racing this workflow's migration step and reproducing the /recepten
-# PGRST205 outage for the window in between. `vercel.json`'s `ignoreCommand`
-# skips Vercel's own Git-triggered production build (VERCEL_ENV=production);
-# this workflow's `deploy` job is the ONLY path to a production deployment,
-# and it only runs after `migrate` succeeds. Preview deployments for PRs are
-# untouched -- they go through Vercel's Git integration exactly as before.
+# ADR-0012, amended 2026-08-02: Vercel + Supabase Cloud is the current deploy
+# target, but production promotion is manual, by user decision -- this
+# workflow no longer runs on every push to `main`. The user promotes a
+# specific, already-built Vercel deployment to production themselves (Vercel
+# dashboard or `vercel promote`) once they've confirmed it's good, instead of
+# every merge going live automatically. `vercel.json`'s `ignoreCommand` still
+# skips Vercel's own Git-triggered production build either way, so nothing
+# reaches production without a deliberate action.
 #
-# ACTIVATION ORDER: the six secrets below must exist BEFORE this file and
-# `vercel.json` reach `main`. `vercel.json` disables Vercel's own production
-# build on arrival, so if this workflow cannot authenticate, production has no
-# deploy path at all — the live deployment keeps serving, but no later merge
-# ever ships. See ADR-0012's first Consequences bullet.
+# This workflow is now an on-demand tool: `workflow_dispatch` only, run by
+# hand when the user wants CI to apply pending migrations and/or push a
+# build to production together (e.g. to keep schema and app code landing in
+# the same coordinated step, per ADR-0012 §3's original race-condition
+# reasoning -- that reasoning still applies whenever this workflow's `deploy`
+# job specifically is the thing promoting, it just no longer fires by itself).
 #
 # Hard rules, do not weaken:
 #   - never add `supabase db reset`, `--force`, or any other destructive or
 #     rewriting flag against the hosted project. `db push` only ever applies
 #     pending migrations forward.
-#   - never add `pull_request` to the trigger below. This job holds
-#     production-schema and production-app credentials; it must only run
-#     from `main` (post-merge) or an explicit manual dispatch.
+#   - never add a `push` or `pull_request` trigger back. This job holds
+#     production-schema and production-app credentials; it must only run via
+#     an explicit manual dispatch.
 #   - no `continue-on-error`, no output piped through a filter that could
 #     mask a non-zero exit. A failed migration must fail the workflow and
 #     block the deploy job below, not continue past it.
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
