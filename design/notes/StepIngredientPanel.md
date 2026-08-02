@@ -31,6 +31,10 @@ Same #103/#105 pattern `RecipePanel.tsx`/`CardDetailPanel.tsx` use: the panel ke
 
 Same precedent `IngredientSearchPanel.tsx` already established for `CardContentIngredient`'s `divider` prop (see that component's own doc comment) — applied unconditionally, matching the fetched node rather than guessing a "no divider after the last row" convention it doesn't draw.
 
+## #153: squashed footer button — bare child of `SidePanel`'s column footer
+
+User feedback: "Onderaan de opslaan button is platgedrukt. Heeft niet de juiste verticale padding." Root cause: `SidePanel.tsx`'s footer container is `flex flex-col` (own #103 comment: a column's `align-items: stretch` gives a lone composer button full width for free). This file passed its "Opslaan" `Button` with `className="grow basis-0"` as a **bare direct child** of that column — `flex-basis: 0` then applies on the *column's* (block) axis, collapsing the button to ~0 height, not the row-axis share-of-width it's meant for. `RecipePanel.tsx`/`CategoryPanel.tsx`/`CardDetailPanel.tsx`/`BoardPanel.tsx`/`IngredientSearchPanel.tsx` all wrap their footer button(s) in their own `<div className="flex gap-2">` row first — checked every other `footer=` call site in the repo (`grep -rn "footer=" components app`) and this was the only bare one. Fixed by wrapping in the same `<div className="flex gap-2">` row, matching every other caller exactly rather than inventing a StepIngredientPanel-specific shape.
+
 ## Ladle stories
 
 `Empty` (no pre-selection), `WithSelection` (two of three real rows pre-checked), `Interactive` (stateful, exercises checkbox toggling + `onSave`'s payload via `console.log`). All three sample lists include one empty-name row to make the filter visible in the story fixture, not just asserted in code. Wrapped in `<div className="min-h-screen">` — `SidePanel.stories.tsx`'s own known trap (a bare static `SidePanel` story crops to a 1280x64 sliver).
