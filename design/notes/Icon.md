@@ -21,8 +21,10 @@ picker (`Add column/Mobile` `3891:17997` / desktop `3957:11537`, "Icon list"
 these have no Figma vector to shape-verify against**: all 8 button instances
 in both fetched nodes render the identical `Icon/Sandwich` placeholder
 (`3632:177`) — the ticket's own Dev Mode annotation ("List all lucide food
-icons here") is an instruction to the builder, not a delivered icon list (see
-`docs/open-questions.md#category-icon-picker-curated-set`). With no Figma
+icons here") is an instruction to the builder, not a delivered icon list (the
+`category-icon-picker-curated-set` open question this raised was resolved by
+direct user instruction and now lives in
+`design/notes/CategoryPanel.md`). With no Figma
 shape to compare paths against, verification here is confirming each is a
 real, unambiguous `lucide-react@1.25.0` export via `Object.keys(lucide)`
 (`node -e "console.log(Object.keys(require('lucide-react')))"`) rather than
