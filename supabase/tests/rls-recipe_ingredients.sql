@@ -14,11 +14,11 @@ values ('00000000-0000-0000-0000-0000000000ca', 'a@test.local'),
 set local role authenticated;
 
 set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-0000000000ca", "role": "authenticated"}';
-insert into public.recipes (user_id, category_id, title, servings)
+insert into public.recipes (user_id, category_id, title, servings, position)
 values (
   '00000000-0000-0000-0000-0000000000ca',
   (select id from public.recipe_categories where user_id = '00000000-0000-0000-0000-0000000000ca' limit 1),
-  'A''s recipe', 2
+  'A''s recipe', 2, 1000
 );
 insert into public.recipe_ingredients (user_id, recipe_id, name, quantity, unit, position)
 values (
@@ -28,11 +28,11 @@ values (
 );
 
 set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-0000000000cb", "role": "authenticated"}';
-insert into public.recipes (user_id, category_id, title, servings)
+insert into public.recipes (user_id, category_id, title, servings, position)
 values (
   '00000000-0000-0000-0000-0000000000cb',
   (select id from public.recipe_categories where user_id = '00000000-0000-0000-0000-0000000000cb' limit 1),
-  'B''s recipe', 4
+  'B''s recipe', 4, 1000
 );
 insert into public.recipe_ingredients (user_id, recipe_id, name, quantity, unit, position)
 values (

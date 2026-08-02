@@ -91,6 +91,7 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
   servings: 4,
   thumbnail_path: null,
   time_minutes: 25,
+  position: 1000,
   created_at: "2026-07-01T00:00:00.000Z",
   updated_at: "2026-07-01T00:00:00.000Z",
   ingredients: [

@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
-import { nextPosition } from "@/lib/boards/positioning";
+import { InvalidNeighborOrderError, nextPosition } from "@/lib/boards/positioning";
 import { searchIngredientLibrary } from "@/lib/recipes/queries";
 import {
   uploadRecipeThumbnail as uploadRecipeThumbnailToStorage,
@@ -17,6 +17,7 @@ import {
   createRecipeSchema,
   deleteCategorySchema,
   deleteRecipeSchema,
+  moveRecipeSchema,
   searchIngredientsSchema,
   updateCategorySchema,
   updateRecipeSchema,
@@ -96,6 +97,28 @@ async function lastCategoryPosition(supabase: Client, userId: string): Promise<n
     .from("recipe_categories")
     .select("position")
     .eq("user_id", userId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.position ?? null;
+}
+
+// Position of the last recipe (by `position`) owned by `userId` within one
+// category -- the #155 analogue of lastCategoryPosition above, and of
+// lib/boards' lastCardPosition (recipe_categories : recipes :: board_columns
+// : cards). Used to append a newly created recipe, or a recipe whose
+// category just changed, at the end of its (new) category rather than at an
+// arbitrary position.
+async function lastRecipePosition(
+  supabase: Client,
+  userId: string,
+  categoryId: string,
+): Promise<number | null> {
+  const { data } = await supabase
+    .from("recipes")
+    .select("position")
+    .eq("user_id", userId)
+    .eq("category_id", categoryId)
     .order("position", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -281,6 +304,12 @@ export async function createRecipe(input: unknown): Promise<ActionResult<RecipeR
   }
   if (!category) return { success: false, error: "not-found" };
 
+  // #155: append at the end of the target category, same
+  // last-position-then-nextPosition(last, null) shape as createCategory/
+  // createBoard/createColumn/createCard.
+  const last = await lastRecipePosition(supabase, auth.userId, parsed.data.categoryId);
+  const position = nextPosition(last, null);
+
   const { data: recipe, error: recipeError } = await supabase
     .from("recipes")
     .insert({
@@ -290,6 +319,7 @@ export async function createRecipe(input: unknown): Promise<ActionResult<RecipeR
       servings: parsed.data.servings,
       thumbnail_path: parsed.data.thumbnailPath ?? null,
       time_minutes: parsed.data.timeMinutes ?? null,
+      position,
     })
     .select()
     .single();
@@ -347,7 +377,10 @@ export async function updateRecipe(input: unknown): Promise<ActionResult> {
 
   const { data: existing, error: existingError } = await supabase
     .from("recipes")
-    .select("id")
+    // #155: `category_id` too — the re-position below must fire on a real
+    // category *change*, not merely on the field being present in the
+    // payload (RecipePanel always sends it, even when untouched).
+    .select("id, category_id")
     .eq("id", recipeId)
     .eq("user_id", auth.userId)
     .maybeSingle();
@@ -369,6 +402,20 @@ export async function updateRecipe(input: unknown): Promise<ActionResult> {
       return { success: false, error: "generic" };
     }
     if (!category) return { success: false, error: "not-found" };
+
+    // #155: a recipe moved to a different category via the edit panel (not
+    // drag & drop) has no drop index to derive a position from -- land it
+    // at the end of its new category, same "append" shape createRecipe
+    // uses, rather than keeping whatever `position` it happened to hold in
+    // its old category (which would place it at an arbitrary spot among the
+    // new category's siblings). Only on a real change: RecipePanel sends
+    // `categoryId` on every save, so re-positioning whenever the field is
+    // merely present would drop a recipe to the bottom of its column every
+    // time the user edited its title -- silently undoing a drag.
+    if (update.category_id !== existing.category_id) {
+      const last = await lastRecipePosition(supabase, auth.userId, update.category_id);
+      update.position = nextPosition(last, null);
+    }
   }
 
   if (Object.keys(update).length > 0) {
@@ -442,6 +489,93 @@ export async function deleteRecipe(input: unknown): Promise<ActionResult> {
 
   revalidatePath("/recepten");
   return { success: true, data: undefined };
+}
+
+// #155: drag & drop persistence, modelled directly on te-doen/actions.ts's
+// moveCard -- same targetIndex-to-neighbor-positions resolution
+// (lib/boards/positioning.ts's nextPosition), same typed-result/logged-code
+// shape. One real difference from moveCard: recipe_categories have no
+// parent entity the way board_columns has boards, so there is no
+// "column-mismatch" case (a column can name a real column on a *different*
+// board of the same user; a category is never on anything but this user's
+// account) -- verifying the target category's own ownership below (not just
+// relying on RLS) is already the complete version of that check here,
+// where moveCard needs a second lookup (the column's board_id) to get the
+// same guarantee.
+export async function moveRecipe(
+  input: unknown,
+): Promise<ActionResult<{ position: number }>> {
+  const parsed = moveRecipeSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+  const { recipeId, categoryId, targetIndex } = parsed.data;
+
+  const supabase = await createSupabaseServerClient();
+  const auth = await requireUserId(supabase);
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  const { data: recipe, error: recipeError } = await supabase
+    .from("recipes")
+    .select("id")
+    .eq("id", recipeId)
+    .eq("user_id", auth.userId)
+    .maybeSingle();
+  if (recipeError) {
+    logDbError("moveRecipe/recipe-lookup", recipeError);
+    return { success: false, error: "generic" };
+  }
+  if (!recipe) return { success: false, error: "not-found" };
+
+  const { data: category, error: categoryError } = await supabase
+    .from("recipe_categories")
+    .select("id")
+    .eq("id", categoryId)
+    .eq("user_id", auth.userId)
+    .maybeSingle();
+  if (categoryError) {
+    logDbError("moveRecipe/category-lookup", categoryError);
+    return { success: false, error: "generic" };
+  }
+  if (!category) return { success: false, error: "not-found" };
+
+  const { data: siblings, error: siblingsError } = await supabase
+    .from("recipes")
+    .select("id, position")
+    .eq("category_id", categoryId)
+    .eq("user_id", auth.userId)
+    .neq("id", recipeId)
+    .order("position", { ascending: true });
+  if (siblingsError) {
+    logDbError("moveRecipe/siblings-lookup", siblingsError);
+    return { success: false, error: "generic" };
+  }
+
+  const clampedIndex = Math.min(Math.max(targetIndex, 0), siblings.length);
+  const before = clampedIndex > 0 ? siblings[clampedIndex - 1].position : null;
+  const after = clampedIndex < siblings.length ? siblings[clampedIndex].position : null;
+
+  let position: number;
+  try {
+    position = nextPosition(before, after);
+  } catch (err) {
+    if (err instanceof InvalidNeighborOrderError) {
+      return { success: false, error: "generic" };
+    }
+    throw err;
+  }
+
+  const { error: updateError } = await supabase
+    .from("recipes")
+    .update({ category_id: categoryId, position })
+    .eq("id", recipeId)
+    .eq("user_id", auth.userId);
+
+  if (updateError) {
+    logDbError("moveRecipe/update", updateError);
+    return { success: false, error: "generic" };
+  }
+
+  revalidatePath("/recepten");
+  return { success: true, data: { position } };
 }
 
 // ============================================================================
