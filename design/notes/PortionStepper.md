@@ -25,7 +25,17 @@ Chose a single `onChange?: (next: number) => void`, mirroring `ButtonToggle`'s `
 - Matches the native `<input type="number">`/`<input type="range">` idiom (`onChange` with the new value) that `ButtonToggle` already follows for this codebase's other "pick the next state" control.
 - Two separate callbacks would make the *same* piece of information (the delta) implicit in which prop fired, rather than explicit in the payload — `onChange(next)` is self-documenting about intent at every call site.
 
-No `min`/`max` clamping or `disabled` state was added: neither fetched node shows a disabled/bounded state for either button, and `CLAUDE.md` forbids inventing states Figma doesn't contain. Bounding portions at a sane floor (e.g. never below 1) is left to #128, which owns the actual scaling logic and has the domain context to decide it.
+No `min`/`max` clamping or `disabled` state was added at #123: neither fetched node shows a disabled/bounded state for either button, and `CLAUDE.md` forbids inventing states Figma doesn't contain. Bounding portions at a sane floor was left to #128/a future ticket.
+
+## #153 (2026-08-02): `min` prop, floor of 1 — closes the #123 open item
+
+User feedback: "Personen teller kan op dit moment naar -x personen. Minimale moet 1 zijn." Added `min?: number` (default `1`) directly on `PortionStepper` rather than clamping in `RecipeDetailPage`'s `onChange`:
+
+- **Why the atom, not the caller.** `PortionStepper` is presentational but already owns the decrement/increment math (`portions - 1`/`portions + 1`) — the floor is the same category of concern (what a legal next-value even is), not a page-level business rule. Putting it here means every current and future caller gets the floor for free and can't forget to clamp, and the *disabled* affordance (which must live next to the button it disables) has nowhere else sensible to go.
+- **Shape**: `atMin = portions <= min`; decrement's `onClick` computes `Math.max(min, portions - 1)` (belt-and-braces — `disabled` already blocks the click, but the clamp keeps the callback contract correct even if a caller ever calls the handler programmatically) and the left `Button` gets `disabled={atMin}`. No change to increment.
+- Still no Figma-sourced disabled state (unchanged fact from #123) — this is a user-ruled product decision, not a design read, same as the deviation this file already tracks for the Minus icon. Not re-flagged as a new open question since the user gave a direct, unambiguous ruling (unlike the icon substitution, which had no explicit user sign-off at the time).
+- `RecipeDetailPage.tsx` needed no change to enforce the floor (`design/notes/RecipeDetailPage.md`'s own #153 entry) — it still passes a plain `useState`/`onChange` pair, now safe by construction.
+- `PortionStepper.stories.tsx` needed no new story: `RepresentativeValues`' existing `portions={1}` case now exercises the disabled-at-floor state directly (default `min={1}` applies), so the clamp is already demonstrated by an existing fixture rather than a new one.
 
 ### i18n
 

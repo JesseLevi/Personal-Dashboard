@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
+import { Tag } from "@/components/atoms/Tag";
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
 import { CardContentStep } from "@/components/molecules/CardContentStep";
@@ -62,17 +63,20 @@ function groupIngredients(ingredients: RecipeIngredientRow[]): IngredientGroup[]
 export interface RecipeDetailPageProps {
   recipe: RecipeWithIngredientsAndSteps;
   categories: RecipeCategoryRow[];
+  /** Signed URL for `recipe.thumbnail_path`, resolved server-side (#153) — `null` for a recipe with no stored photo yet. */
+  thumbnailUrl: string | null;
 }
 
-export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) {
+export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDetailPageProps) {
   const t = useTranslations("components.recipeDetailPage");
   const tUnits = useTranslations("recipes.units");
   const tPortion = useTranslations("components.portionStepper");
   const tErrors = useTranslations("recipes.errors");
   const router = useRouter();
 
-  // Display-only: #128 owns rescaling recipe_ingredients.quantity against
-  // this value. See design/notes/RecipeDetailPage.md.
+  // #128 still owns rescaling recipe_ingredients.quantity against this
+  // value; #153 added the floor of 1 (PortionStepper's own `min` prop).
+  // See design/notes/RecipeDetailPage.md / PortionStepper.md.
   const [portions, setPortions] = useState(recipe.servings);
   const [editOpen, setEditOpen] = useState(false);
   const [overflowOpen, setOverflowOpen] = useState(false);
@@ -112,6 +116,12 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
   );
   const steps = [...recipe.steps].sort((a, b) => a.position - b.position);
   const editTarget: RecipePanelTarget = { mode: "edit", recipe };
+
+  // #153: steps carry ordered recipe_ingredients ids (RecipeStepWithIngredients);
+  // looked up here rather than carrying a second copy, per that type's own
+  // doc comment. Ids with no matching row (shouldn't happen, FK-enforced,
+  // but never crash on it) are silently dropped.
+  const ingredientsById = new Map(recipe.ingredients.map((ingredient) => [ingredient.id, ingredient]));
 
   return (
     <div className="flex w-full flex-col items-stretch gap-6 pr-4 md:pr-32">
@@ -206,13 +216,21 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
         <p className="text-base font-semibold text-priority-urgent">{deleteError}</p>
       )}
 
-      {/* recipes.thumbnail_path is never resolved to a signed URL yet (see
-          design/notes/RecipeDetailPage.md) — same placeholder-fill
-          CardContentRecipe already renders for a photo-less recipe. */}
-      <div
-        aria-hidden="true"
-        className="h-[146.4px] w-full rounded-xl bg-surface-muted md:h-[440px]"
-      />
+      {/* #153: real signed thumbnail, 2:1 at every breakpoint (user-ordered
+          override of the fetched node's own ~2:1-but-not-exact geometry —
+          see design/notes/RecipeDetailPage.md). Decorative alt: recipe.title
+          already renders as adjacent text below, same reasoning
+          CardContentRecipe.tsx uses for its own thumbnail. No photo -> same
+          bg-surface-muted placeholder, same box, so layout doesn't jump. */}
+      {thumbnailUrl ? (
+        <img
+          src={thumbnailUrl}
+          alt=""
+          className="aspect-[2/1] w-full rounded-xl object-cover"
+        />
+      ) : (
+        <div aria-hidden="true" className="aspect-[2/1] w-full rounded-xl bg-surface-muted" />
+      )}
 
       <div className="flex w-full flex-col items-center gap-6 py-4">
         <h1 className="w-full text-center text-4xl font-semibold text-text">{recipe.title}</h1>
@@ -245,14 +263,35 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
       </div>
 
       <div className="flex w-full flex-col gap-6">
-        {steps.map((step, index) => (
-          <Card key={step.id} step={index + 1} title={index === 0 ? t("stepsTitle") : undefined}>
-            {/* No per-step ingredient tags: recipe_steps carries no link to
-                specific ingredients anywhere in the schema — see
-                design/notes/RecipeDetailPage.md. */}
-            <CardContentStep text={step.instruction} withIngredientTags={false} />
-          </Card>
-        ))}
+        {steps.map((step, index) => {
+          const stepIngredients = step.ingredientIds
+            .map((id) => ingredientsById.get(id))
+            .filter((ingredient): ingredient is RecipeIngredientRow => ingredient !== undefined);
+          return (
+            <Card key={step.id} step={index + 1} title={index === 0 ? t("stepsTitle") : undefined}>
+              {/* #153: real per-step ingredient tags — see
+                  design/notes/RecipeDetailPage.md for the "name + quantity,
+                  neutral Tag" decision. Zero linked ingredients still
+                  renders withIngredientTags={false}, no empty tag strip. */}
+              <CardContentStep
+                text={step.instruction}
+                withIngredientTags={stepIngredients.length > 0}
+              >
+                {stepIngredients.map((ingredient) => {
+                  const quantityPart = formatQuantity(ingredient.quantity, tUnits(ingredient.unit));
+                  const tagLabel = quantityPart
+                    ? `${quantityPart} ${ingredient.name}`
+                    : ingredient.name;
+                  return (
+                    <Tag key={ingredient.id} variant="neutral">
+                      {tagLabel}
+                    </Tag>
+                  );
+                })}
+              </CardContentStep>
+            </Card>
+          );
+        })}
       </div>
 
       <RecipePanel
