@@ -9,7 +9,7 @@
 ## Where the project stands (2026-08-01)
 
 - `main` is green. Phases 0–3 are merged and feature-complete, as are design-review rounds 1–3. **Phase 4 (Recepten) is mid-flight**: `/recepten` renders the real category-kanban, categories can be added/renamed/deleted from a `SidePanel`, a recipe can be created through `RecipePanel` (the `+` on each category column) — with a photo, and with each step linked to the ingredients it uses (#149) — and the private `recipe-thumbnails` bucket exists and is now read by the recipe cards. Which sub-tickets are done lives on the board.
-- Gates verified by hand on `main`: `lint` (0 errors, 2 pre-existing warnings), `typecheck`, 154 unit tests, `build`, `check:server-only`, `check:comment-budget`, no token drift, `test:visual` 84/84.
+- Gates verified by hand on `main`: `lint` (0 errors, 2 pre-existing warnings), `typecheck`, 162 unit tests, `build`, `check:server-only`, `check:comment-budget`, no token drift, `test:visual` 84/84.
 - **Playwright visual runs must not overlap.** Two concurrent `pnpm test:visual` runs each failed a *different* small set of untouched stories on tiny pixel diffs, all passing in isolation — a zero-tolerance gate plus contended rasterization. Run it serially; a "flaky" full suite is this before it is a regression.
 - Everything merged so far is awaiting the user's review. Backlog: the server-side tickets (#1–#5, #8–#11), Phase 4's remaining sub-tickets and its parent #28, Phase 5+ (#29–#33), #49, #106.
 - Missing by design: **`middleware.ts` does not exist.** Session refresh is #8; the auth guard lives in `app/(app)/layout.tsx` until then.
