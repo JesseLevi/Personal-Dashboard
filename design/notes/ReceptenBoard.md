@@ -58,8 +58,11 @@ un-overridden at the *base component's own default sample values*
 ("Ontbijt"/"4") rather than a real name like "Toetje"/"Dessert" — i.e.
 someone duplicated the Ontbijt instance, swapped only the icon, and never
 finished renaming it. `seed_default_recipe_categories()` only ever inserts
-three categories. Not built; recorded at
-`docs/open-questions.md#recipes-overview-duplicate-fourth-column`.
+three categories. Not built.
+
+**Closed 2026-08-02**: user confirmed a 4th category was originally intended
+but is fine to leave unbuilt — everything on this screen is placeholder
+content for now. Removed from `docs/open-questions.md`.
 
 ## Header "Categorie" button — wired by #125, and `PageHeader` moved here
 

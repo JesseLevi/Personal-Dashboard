@@ -3,7 +3,7 @@
 - **Code:** `components/organisms/StepIngredientPanel.tsx` (+ `.stories.tsx`)
 - **Node IDs:** `3749:3091` ("Add recipi/ingredient/Mobile"), panel `3749:3241`.
 
-Built #149, closing `docs/open-questions.md#step-ingredient-pill-panel-undesigned` — #126 left the step field's "+ Ingrediënt" pill `disabled` because this panel had no Figma source at the time; it does now.
+Built #149, closing the `step-ingredient-pill-panel-undesigned` open question (removed from `docs/open-questions.md`) — #126 left the step field's "+ Ingrediënt" pill `disabled` because this panel had no Figma source at the time; it does now.
 
 ## Structure read from the fetched node
 

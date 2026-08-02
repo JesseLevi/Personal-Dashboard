@@ -88,34 +88,7 @@ This is a deliberate deviation, not an oversight — `CLAUDE.md` still requires 
 
 ## recipe-card-no-photo-placeholder
 
-**`Card-content/Recipi` (node `3628:67`) always draws a photo — it has no "no photo yet" state.** #124 needed one anyway: `recipes.thumbnail_path` is nullable and, in practice, always null right now (#121's storage bucket + upload flow don't exist yet), so every recipe card on `/recepten` renders without a real image. `CardContentRecipe.tsx`'s `imageUrl` prop became optional and falls back to a plain `bg-surface-muted` placeholder square in the Thumbnail's own place (`design/notes/CardContentRecipe.md`'s "#124" entry has the full reasoning) — a functionally-motivated deviation, not a guess, but Figma itself gives no visual spec for this case (unlike, say, `CardContentRecipe.md`'s earlier confirmation that the Thumbnail frame carries no skeleton fill for a *filled* state — this is the reverse question: what a *missing* photo should look like at all). Needs a design answer once #121 makes real thumbnails reachable: is a muted square the intended empty-photo treatment, or should design draw one (e.g. a generic food/camera icon)?
-
-## recipes-overview-duplicate-fourth-column
-
-**The recipe overview (`3672:1588`, the desktop Carousel instance) draws a 4th `Card-container` after Ontbijt/Lunch/Avond, and it is copy-paste residue, not a 4th category.** Confirmed directly by fetching the node (#124), not just taken on the ticket's word: the 4th instance carries a distinct icon override (`Icon/Cake-slice`) but its `Name`/`Hoeveelheid` text nodes are left at the *base component's own unedited default sample values* — `"Ontbijt"`/`"4"` — identical to the real Ontbijt column, rather than a real label like "Toetje"/"Dessert". Reads as someone duplicating the Ontbijt instance, swapping only the icon, and never finishing the rename. `seed_default_recipe_categories()` (`supabase/migrations/20260730000002_recipe_schema.sql`) only ever seeds three categories (Ontbijt/Lunch/Avond), matching the read that this is authoring debris, not an intended design.
-
-Not built (`app/(app)/recepten/page.tsx`/`ReceptenBoard.tsx` render however many categories `recipe_categories` actually holds — three today, per the seed trigger). Needs a design answer only if a 4th default category (dessert/toetje?) was actually intended; otherwise this entry can simply be closed once design confirms it was copy-paste.
-
-## category-icon-picker-curated-set (RESOLVED 2026-08-01)
-
-**Originally: #125's "Icoon" picker shipped 8 curated lucide icons, not the
-ticket's literal "list all 74 lucide food icons here,"** because both
-fetched nodes (`3891:18524` mobile, `3957:11544` desktop) draw exactly 8
-`Button/Default` instances — a fixed slot count, all 8 rendering the
-identical `Icon/Sandwich` placeholder — and building 74 new `IconName`
-entries on a text instruction alone, with no Figma vector behind any of them
-to shape-verify against, would have inverted this codebase's own "never
-build what isn't in Figma" rule.
-
-**Resolved by direct user instruction (2026-08-01): show all 74, not a
-curation.** The picker now lists every icon in lucide's own "Food & beverage"
-category — sourced from `lucide-icons/lucide`'s per-icon `categories`
-metadata via the GitHub API (verified, not guessed; lucide.dev's category
-page doesn't render its grid server-side), each name confirmed as a real
-`lucide-react@1.25.0` export. `SidePanel`'s content area already scrolls, so
-the 8-slot layout question resolved itself without a new UI shape. Full
-reasoning: `design/notes/CategoryPanel.md#icon-picker-all-74-of-lucides-food--beverage-icons-superseded-curation`,
-`design/notes/Icon.md`.
+**`Card-content/Recipi` (node `3628:67`) always draws a photo — it has no "no photo yet" state.** #124 needed one anyway: `recipes.thumbnail_path` is nullable and, in practice, still null for every existing recipe — #121 (merged) built the storage bucket and upload validation, but no form yet writes a real path into it (see `recipe-panel-photo-upload-not-built`). `CardContentRecipe.tsx`'s `imageUrl` prop became optional and falls back to a plain `bg-surface-muted` placeholder square in the Thumbnail's own place (`design/notes/CardContentRecipe.md`'s "#124" entry has the full reasoning) — a functionally-motivated deviation, not a guess, but Figma itself gives no visual spec for this case (unlike, say, `CardContentRecipe.md`'s earlier confirmation that the Thumbnail frame carries no skeleton fill for a *filled* state — this is the reverse question: what a *missing* photo should look like at all). Needs a design answer now that #121 has shipped and real thumbnails are reachable: is a muted square the intended empty-photo treatment, or should design draw one (e.g. a generic food/camera icon)?
 
 ## category-icon-no-selected-state
 
@@ -150,22 +123,6 @@ the UI before save is attempted, rather than only after a failed submit.
 ## portion-stepper-figma-draws-plus-twice
 
 **Both portion-stepper nodes (`3953:9750` mobile, `3778:5596` desktop) draw the same `Icon/Plus` component (`3629:149`) on the left AND the right** — there is no minus/decrement glyph anywhere in either node. #123 treats this as a design error rather than a literal spec: a decrement control that visually adds is functionally nonsensical next to a text label reading "N personen"/"N people", so the built `PortionStepper` (`components/molecules/PortionStepper.tsx`) renders lucide's `Minus` on the left (decrement) button and leaves `Icon/Plus` unchanged on the right (increment) button — a deliberate, functionally-motivated deviation from the literal Figma source, not a guess (`CLAUDE.md` forbids silently "fixing" a Figma mismatch without flagging it, which this entry does). `Minus` itself has no Figma node to verify against; `design/notes/Icon.md`'s #123 entry confirms lucide's `Minus` export really is a single horizontal stroke, coordinate-identical to the horizontal bar of Figma's own already-verified `Icon/Plus`. Needs a design answer: either add a real `Icon/Minus` variant to both nodes, or explicitly ratify this code's substitution as correct.
-
-## ingredient-search-mock-duplicate-citroen
-
-**The ingredient-search-panel mock (`3957:10356`/`3957:11025`) draws "Citroen" twice** (positions 3 and 11 of 11 rows) — confirmed directly from a fresh `get_figma_data` fetch (#131), not just taken on the ticket's word: both instances share the identical template node (`EL-f4c34eed`), reading as copy-paste residue rather than an intended duplicate. Not built as a duplicate — `IngredientSearchPanel` renders whatever `searchIngredientLibrary` actually returns (the seed migration has one "Citroen" row), so this only affected how the static mock was read, never the live list. No design answer needed unless a future re-fetch shows the duplicate was intentional.
-
-## ingredient-search-mock-halumi-typo
-
-**The same mock spells the halloumi row "Halumi"** — a typo for "Halloumi". `supabase/migrations/20260730000001_ingredient_library.sql`'s seed already spells it correctly (`'Halloumi', 'Halloumi'`, confirmed by reading the migration directly), so nothing needed correcting in the seed or in i18n — this entry exists only to record that the mock's spelling was deliberately not reproduced anywhere in the built UI, per the ticket's own instruction to flag it.
-
-## card-content-ingredient-no-checked-example
-
-**Neither ingredient-search-panel node draws a checked row** — every `Checkbox` instance in the mock is `Checked=No`. `IngredientSearchPanel` reuses `CardContentIngredient`'s existing `checked` styling (built for the recipe detail screen, node `3778:3792`) rather than inventing a new one, so no new visual decision was made, but this screen itself gives no independent confirmation that styling is correct in this context. No action needed unless a future mock actually draws a checked state here.
-
-## ingredient-search-panel-zero-dev-mode-annotations
-
-**Node `3957:10337` (and its desktop pair) carry zero Dev Mode annotations** — verified by the ticket's own raw REST grep over the full node payload (no parse error, genuinely empty), not assumed from the Figma MCP's payload alone (`docs/guides/ui-components.md`'s standing warning that the MCP silently drops annotations that DO exist elsewhere). Recorded here only so a later reader doesn't re-derive "maybe the MCP just dropped them" from scratch. No open question remains once verified this way.
 
 ## ingredient-search-panel-empty-and-zero-result-states-unsourced
 
@@ -211,9 +168,6 @@ the UI before save is attempted, rather than only after a failed submit.
 
 **`Dropdown`'s labelless mode has no collapse/trigger behaviour at all** — reading `components/atoms/Dropdown.tsx` directly shows its `return` renders `children` unconditionally when no `label` is supplied; only the labelled branch has the open/closed chrome (`aria-expanded`, chevron rotation, grid-collapse). #126's `RecipeIngredientRow` needs a real closeable picker for its Eenheid column on every row, so it always passes `label` — the "Eenheid" text now renders on rows 2/3 too, not just row 1, diverging from Figma's `Title: false` there. Needs either a design ratification of this (label always visible is arguably fine/better) or a `Dropdown` atom enhancement adding a real labelless-but-collapsible mode.
 
-## recipe-panel-trigger-annotation-misattributed
-
-**`3777:3923` (the overview's `+` button, #124) carries the annotation "Adds a kanban column."** — Te-Doen residue, not a real description of what this button does on the Recepten screen. The real trigger annotation lives on the nested `I3777:3924;3670:1765;3777:4094;3686:1894` instance ("Pull up panel slides up with animation"), which #126 wired instead. Recorded here so a future reader doesn't re-trust the outer node's own annotation. No action needed — already correctly resolved in the build.
 ## recipe-image-field-personen-label
 
 **The "Selecteer afbeelding" image-upload field's bound Title text reads "Personen" in both the mobile and desktop "Add recipi" frames** (`3968:11192` / `3953:9875`) — confirmed a duplication artifact, not a translation gap: the instance was copied from the adjacent servings field and only its `Content` was edited. #121 renders no visible label for this field rather than showing the wrong one (`design/notes/ImageUploadField.md` has the full record). Needs a real label from design (e.g. "Afbeelding"/"Foto") to replace the omission.
