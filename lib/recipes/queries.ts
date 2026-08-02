@@ -62,7 +62,7 @@ export async function getRecipeCategoriesWithRecipes(): Promise<CategoryWithReci
       id, user_id, name, icon, position, created_at, updated_at,
       recipes (
         id, user_id, category_id, title, servings, thumbnail_path,
-        time_minutes, created_at, updated_at
+        time_minutes, position, created_at, updated_at
       )
     `,
     )
@@ -83,12 +83,13 @@ export async function getRecipeCategoriesWithRecipes(): Promise<CategoryWithReci
     throw new Error("Failed to load recipe categories");
   }
 
-  // recipes.position doesn't exist (recipes aren't reordered within a
-  // category, see 20260730000002_recipe_schema.sql's file header), so
-  // created_at is the only stable, deterministic order available.
+  // #155: recipes now carry their own `position` (drag & drop reordering
+  // within a category, 20260802010000_recipe_position.sql) -- sort by that,
+  // same as every other position-ordered set in this codebase, instead of
+  // the old `created_at` fallback from before that column existed.
   return data.map(({ recipes, ...category }) => ({
     ...category,
-    recipes: [...recipes].sort((a, b) => a.created_at.localeCompare(b.created_at)),
+    recipes: [...recipes].sort((a, b) => a.position - b.position),
   }));
 }
 
@@ -114,7 +115,7 @@ export async function getRecipeWithIngredientsAndSteps(
     .select(
       `
       id, user_id, category_id, title, servings, thumbnail_path,
-      time_minutes, created_at, updated_at,
+      time_minutes, position, created_at, updated_at,
       recipe_ingredients (
         id, user_id, recipe_id, ingredient_id, name, quantity, unit,
         position, group_label, created_at, updated_at

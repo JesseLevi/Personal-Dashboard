@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/organisms/PageHeader";
@@ -8,6 +8,7 @@ import { Button } from "@/components/atoms/Button";
 import { BoardView, type BoardColumn } from "@/components/organisms/BoardView";
 import { CardContentRecipe } from "@/components/molecules/CardContentRecipe";
 import { isIconName } from "@/components/atoms/Icon";
+import { applyItemMove, type CardMove } from "@/lib/boards/optimistic";
 import type { CategoryWithRecipes, RecipeRow } from "@/lib/recipes/types";
 import { CategoryPanel, type CategoryPanelTarget } from "./CategoryPanel";
 import { RecipePanel, type RecipePanelTarget } from "./RecipePanel";
@@ -18,6 +19,7 @@ import {
   createRecipe,
   updateRecipe,
   deleteRecipe,
+  moveRecipe,
   searchIngredients,
   createOwnIngredient,
   uploadRecipeThumbnail,
@@ -33,8 +35,15 @@ import {
 // split works there because BoardPanel (header-only) and CardDetailPanel
 // (board-only) never target the same entity, but the header's Plus button
 // and every column's pencil button both open the same CategoryPanel here —
-// one shared `panel` state, one owner. Full reasoning for every decision
-// below: design/notes/ReceptenBoard.md.
+// one shared `panel` state, one owner.
+//
+// #155: drag & drop between (and within) category columns, reversing #124's
+// `dragDisabled` now that `recipes.position` exists to persist a drop
+// against. Local-copy/pending-count/queue/revert machinery below is the
+// same optimistic-update story as TeDoenBoard.tsx's own `handleMove`, just
+// keyed on `localCategories` (this page has no separate "board" wrapper —
+// a recipe category IS the column) instead of a nested `localBoard.columns`.
+// Full reasoning for every decision below: design/notes/ReceptenBoard.md.
 export interface ReceptenBoardProps {
   categories: CategoryWithRecipes[];
   /** Signed thumbnail URLs (#149), keyed by `recipes.id` — resolved server-side in `page.tsx` since the storage bucket is private. A recipe with no entry here (no `thumbnail_path`, or its signed-URL lookup failed) renders `CardContentRecipe`'s own placeholder. */
@@ -63,9 +72,66 @@ export function ReceptenBoard({
 }: ReceptenBoardProps) {
   const t = useTranslations("components.cardContainer");
   const tRecipe = useTranslations("components.cardContentRecipe");
+  const tErrors = useTranslations("recipes.errors");
   const router = useRouter();
 
-  const columns: BoardColumn<RecipeRow>[] = categories.map((category) => ({
+  // Local optimistic copy of `categories` (#155) — same "render from local
+  // state, only re-sync from fetched data when nothing is pending" story as
+  // TeDoenBoard.tsx's `localBoard`/`pendingMoves`, see that file's own
+  // comment for the full Context7 citation. `pendingMoves` is a *count*, not
+  // a boolean, for the same reason: two quick drags queued must not have the
+  // first settling flip this back to "nothing pending" while the second is
+  // still outstanding.
+  const [localCategories, setLocalCategories] = useState(categories);
+  const pendingMoves = useRef(0);
+  useEffect(() => {
+    if (pendingMoves.current === 0) setLocalCategories(categories);
+  }, [categories]);
+
+  // Serializes moveRecipe() calls one at a time — same reasoning as
+  // TeDoenBoard.tsx's `moveQueue`: a second drag dropped before the first
+  // request settles must not compute its target position against sibling
+  // rows the first move hasn't persisted yet.
+  const moveQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const [moveError, setMoveError] = useState<string | null>(null);
+
+  function handleMove(move: CardMove) {
+    setMoveError(null);
+    const preMoveSnapshot = localCategories;
+    pendingMoves.current += 1;
+    setLocalCategories((current) =>
+      applyItemMove<RecipeRow, "recipes", CategoryWithRecipes>(current, move, "recipes"),
+    );
+
+    moveQueue.current = moveQueue.current
+      .then(() =>
+        moveRecipe({
+          recipeId: move.itemId,
+          categoryId: move.toColumnId,
+          targetIndex: move.toIndex,
+        }),
+      )
+      .then((result) => {
+        if (!result.success) {
+          // Reverts to this specific move's own pre-drop snapshot — see
+          // TeDoenBoard.tsx's `handleMove` for why this stays correct even
+          // when a later drag already landed on top of it.
+          setLocalCategories(preMoveSnapshot);
+          setMoveError(tErrors(result.error));
+        }
+        // Success: no `router.refresh()` here, same "the optimistic state
+        // already IS the landed state" reasoning as TeDoenBoard.tsx.
+      })
+      .catch(() => {
+        setLocalCategories(preMoveSnapshot);
+        setMoveError(tErrors("generic"));
+      })
+      .finally(() => {
+        pendingMoves.current -= 1;
+      });
+  }
+
+  const columns: BoardColumn<RecipeRow>[] = localCategories.map((category) => ({
     id: category.id,
     name: category.name,
     icon: isIconName(category.icon) ? category.icon : FALLBACK_CATEGORY_ICON,
@@ -88,7 +154,7 @@ export function ReceptenBoard({
   // design/notes/RecipePanel.md.
   const [recipePanel, setRecipePanel] = useState<{ open: boolean; target: RecipePanelTarget }>({
     open: false,
-    target: { mode: "create", categoryId: categories[0]?.id ?? "" },
+    target: { mode: "create", categoryId: localCategories[0]?.id ?? "" },
   });
 
   return (
@@ -101,20 +167,20 @@ export function ReceptenBoard({
           </Button>
         }
       />
+      {/* Drag-persist failure only (create/update/delete errors surface
+          inside CategoryPanel/RecipePanel's own forms) — same inline
+          convention as TeDoenBoard.tsx (`recipes.errors.*`, no toast
+          component exists in this design system yet). */}
+      {moveError && <p className="text-base font-semibold text-priority-urgent">{moveError}</p>}
       <BoardView
         columns={columns}
-        // recipes carry no `position` column by design (see the recipe-schema
-        // migration's own file header) — a drop's target index would have
-        // nothing real to persist against, the same "meaningless index"
-        // reasoning TeDoenBoard.tsx applies to a sorted view. See
-        // design/notes/ReceptenBoard.md for the alternative considered.
-        dragDisabled
+        onMove={handleMove}
         addLabel={t("addLabel")}
         editLabel={t("editLabel")}
         emptyLabel={t("addItemLabel")}
         onItemClick={(recipe) => router.push(`/recepten/${recipe.id}`)}
         onEditColumn={(columnId) => {
-          const category = categories.find((c) => c.id === columnId);
+          const category = localCategories.find((c) => c.id === columnId);
           if (category) setPanel({ open: true, target: { mode: "edit", category } });
         }}
         onAddItem={(columnId) =>
@@ -150,7 +216,7 @@ export function ReceptenBoard({
         open={recipePanel.open}
         onClose={() => setRecipePanel((current) => ({ ...current, open: false }))}
         target={recipePanel.target}
-        categories={categories}
+        categories={localCategories}
         onCreateRecipe={createRecipe}
         onUpdateRecipe={updateRecipe}
         onDeleteRecipe={deleteRecipe}

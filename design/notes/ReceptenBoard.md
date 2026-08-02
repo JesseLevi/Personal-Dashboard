@@ -109,26 +109,69 @@ panel. `/recepten/[recipeId]` does not exist yet (#127) — linking to it
 anyway is fine (`pnpm build` doesn't require the target route to exist) and
 was confirmed by running the full gate suite below.
 
-## Drag & drop: `dragDisabled`, not persisted — recipes have no `position`
+## Drag & drop: full parity with Te-Doen (#155)
 
-**Decision: disabled.** `recipe_schema`'s own migration header states
-plainly that "recipes are not reordered within a category in this phase's
-design" — no `recipes.position` column exists at all, only `created_at`
-(the query's own sort key, see `lib/recipes/queries.ts`). A drop's
-`toIndex` would therefore have nothing real to persist against — the exact
-"meaningless index" reasoning `TeDoenBoard.tsx` already uses to disable
-dragging under an active sort (`design/notes/TeDoenBoard.md`).
+**#124's decision (disabled, no `position` column) is reversed.** The user
+asked for the same drag behaviour Te-Doen already has ("zoals tickets bij
+te-doen dat wel kunnen") — full parity, including in-column reordering, not
+just the cross-column half #124 had already flagged as technically
+reachable. `20260802010000_recipe_position.sql` adds `recipes.position`
+(same fractional-positioning scheme as `recipe_categories.position` /
+`board_columns.position` / `cards.position`, backfilled per-category by
+`created_at` order so nothing visibly reorders the first time this lands),
+which is exactly the thing #124's "meaningless index" reasoning said was
+missing — with it, a drop's `toIndex` now has a real neighbour set to
+persist against, the same as a Te-Doen card's drop.
 
-**Alternative considered and rejected:** persist only the *cross-column*
-half of a drag (call `updateRecipe({recipeId, categoryId: toColumnId})`,
-silently drop `toIndex`) — `updateRecipe` (#122) already accepts a
-`categoryId` field, so this is technically reachable without a new action.
-Rejected because it would be a real, user-visible feature (moving a recipe
-between meal categories by drag) built without a ticket asking for it, with
-no optimistic-update/rollback UI (unlike `TeDoenBoard.tsx`'s `onMove`, which
-has a full snapshot/revert/queueing story behind it) and no product sign-off
-on whether silently discarding the drop's requested index is acceptable.
-Out of scope for #124; a future ticket can build this properly if wanted.
+**#124's rejected alternative (persist only the category change, drop
+`toIndex` silently) stays rejected — a real `position` column was built
+instead of shipping that shortcut.** A card visually landing at the drop
+index and then jumping back to `created_at` order on the next refresh would
+have been the exact user-visible glitch that alternative produces; #155
+explicitly asked for the real column instead.
+
+**Implementation, mirroring `app/(app)/te-doen/` exactly:**
+- `app/(app)/recepten/actions.ts`'s `moveRecipe` is `moveCard`'s structural
+  twin — parse, resolve neighbours via `nextPosition`, explicit ownership
+  check on the target `recipe_categories` row. The one real difference:
+  `moveCard` needs a second lookup (the target column's `board_id`) because
+  a column can belong to a *different* board of the same user; a
+  `recipe_categories` row has no such parent to mismatch against, so
+  verifying the target category's own `user_id` is already the complete
+  check — no `column-mismatch`-shaped error code exists for recipes.
+- `ReceptenBoard.tsx` gained the same `localCategories`/`pendingMoves`
+  (a count)/`moveQueue`/`moveError` machinery as `TeDoenBoard.tsx`'s
+  `handleMove`, keyed on `localCategories` directly rather than a nested
+  `localBoard.columns` — this page has no separate "board" wrapper object,
+  a recipe category IS the column.
+- `lib/boards/optimistic.ts`'s `applyCardMove` (was hardcoded to
+  `BoardWithColumns`/`CardWithLabels`/the `"cards"` key) is now a thin
+  wrapper around a new exported `applyItemMove<TItem, TKey, TColumn>`,
+  parameterized over the items-array key name (`"cards"` vs `"recipes"` —
+  the one thing that actually varies between the two callers, since a
+  recipe category has no further "board" wrapper the way `BoardWithColumns`
+  does). `applyCardMove`'s own two-argument call shape is unchanged, so
+  `tests/boards-optimistic.test.ts` needed no edits. Chose one shared
+  generic implementation over a second copy-pasted `applyRecipeMove`
+  because the remove-then-reinsert-clamped-to-siblings algorithm itself is
+  identical; only the key name differs, and that's a one-argument
+  parameterization, not a fight with the type system.
+- `getRecipeCategoriesWithRecipes` (`lib/recipes/queries.ts`) now sorts
+  nested recipes by `position` instead of the old `created_at` fallback.
+- `createRecipe` gained a `lastRecipePosition` helper (the
+  `recipe_categories : recipes :: board_columns : cards` analogue of
+  `lastCardPosition`) so a new recipe appends at the end of its category
+  instead of getting no position at all. `updateRecipe` assigns a fresh
+  end-of-category position whenever `categoryId` is part of the update —
+  a recipe moved via the edit panel (not drag & drop) has no drop index to
+  derive a position from, so it lands at the end of its new category rather
+  than keeping a `position` value that made sense only among its old
+  category's siblings.
+
+**RLS**: no new policies/grants needed. `supabase/tests/rls-recipes.sql`'s
+existing two-user isolation assertions (select/update/delete/insert) already
+cover every column on `public.recipes`, `position` included — verified, not
+extended, when #155 landed.
 
 ## Search/filter — explicitly out of scope, not an open question
 

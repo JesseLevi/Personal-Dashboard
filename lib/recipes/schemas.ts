@@ -149,6 +149,17 @@ export const deleteRecipeSchema = z.object({
   recipeId: z.uuid(),
 });
 
+// #155 drag & drop -- same "index, not a raw position" shape and the same
+// reason for it as lib/boards/schemas.ts's moveCardSchema (a client can
+// influence where a recipe lands but never inject an arbitrary position
+// number for it); see that schema's own comment rather than repeating it
+// here.
+export const moveRecipeSchema = z.object({
+  recipeId: z.uuid(),
+  categoryId: z.uuid(),
+  targetIndex: z.int().nonnegative(),
+});
+
 // ADR-0011 §2's "add as new ingredient" / "materialise a picked library
 // ingredient" action (lib/recipes/queries.ts header comment explains why one
 // function covers both). referenceId null = self-added, unlinked ingredient;
