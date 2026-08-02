@@ -271,13 +271,8 @@
         "servingsLabel": "Personen",
         "timeLabel": "Tijd",
         "timePlaceholder": "Minuten",
-        "tagsLabel": "Tags",
-        "tagsPlaceholder": "Voeg tags toe",
-        "tagsAddPlaceholder": "Nieuwe tag",
-        "tagsAddLabel": "Tag toevoegen",
-        "tagsRemoveLabel": "Tag \"{tag}\" verwijderen",
         "ingredientNameLabel": "Item",
-        "ingredientNamePlaceholder": "Kies een ingrediënt",
+        "ingredientNamePlaceholder": "Kies",
         "ingredientQuantityLabel": "Aantal",
         "ingredientQuantityPlaceholder": "0",
         "ingredientUnitLabel": "Eenheid",
@@ -287,6 +282,7 @@
       },
       "addRowLabel": "Voeg toe",
       "stepIngredientPillLabel": "Ingrediënt",
+      "stepIngredientPillLabelWithCount": "Ingrediënt ({count})",
       "saveLabel": "Opslaan",
       "savingLabel": "Opslaan...",
       "deleteLabel": "Verwijderen",
@@ -294,6 +290,10 @@
       "deleteConfirmButtonLabel": "Ja, verwijderen",
       "deletingLabel": "Verwijderen...",
       "cancelLabel": "Annuleren"
+    },
+    "stepIngredientPanel": {
+      "title": "Ingrediënten kiezen voor deze stap",
+      "saveLabel": "Opslaan"
     },
     "recipeDetailPage": {
       "backLabel": "Terug naar recepten",

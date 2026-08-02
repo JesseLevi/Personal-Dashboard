@@ -5,14 +5,14 @@ import type { ActionResult, RecipeCategoryRow } from "@/lib/recipes/types";
 
 // Dev-only mock actions — CategoryPanel never imports the real "use server"
 // module itself (design/notes/CategoryPanel.md), so these stand in for
-// createCategory/renameCategory/deleteCategory without needing Supabase/
+// createCategory/updateCategory/deleteCategory without needing Supabase/
 // Next's request context, same precedent as CardDetailPanel.stories.tsx.
 async function mockCreateCategory(input: unknown): Promise<ActionResult<RecipeCategoryRow>> {
   console.log("createCategory", input);
   return { success: true, data: input as unknown as RecipeCategoryRow };
 }
-async function mockRenameCategory(input: unknown): Promise<ActionResult> {
-  console.log("renameCategory", input);
+async function mockUpdateCategory(input: unknown): Promise<ActionResult> {
+  console.log("updateCategory", input);
   return { success: true, data: undefined };
 }
 async function mockDeleteCategory(input: unknown): Promise<ActionResult> {
@@ -47,7 +47,7 @@ export const CreateCategory = () => (
       onClose={() => {}}
       target={{ mode: "create" }}
       onCreateCategory={mockCreateCategory}
-      onRenameCategory={mockRenameCategory}
+      onUpdateCategory={mockUpdateCategory}
       onDeleteCategory={mockDeleteCategory}
     />
   </div>
@@ -64,7 +64,7 @@ export const EditCategory = () => (
       onClose={() => {}}
       target={{ mode: "edit", category: sampleCategory }}
       onCreateCategory={mockCreateCategory}
-      onRenameCategory={mockRenameCategory}
+      onUpdateCategory={mockUpdateCategory}
       onDeleteCategory={mockDeleteCategory}
     />
   </div>
@@ -101,7 +101,7 @@ export const Interactive = () => {
         onClose={() => setState((current) => ({ ...current, open: false }))}
         target={state.target}
         onCreateCategory={mockCreateCategory}
-        onRenameCategory={mockRenameCategory}
+        onUpdateCategory={mockUpdateCategory}
         onDeleteCategory={mockDeleteCategory}
       />
     </div>

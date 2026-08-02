@@ -21,7 +21,9 @@ import { Button } from "../atoms/Button";
  * per #89. `title` is required so `aria-labelledby` always resolves. #103's
  * mobile-only drag-to-close *gesture* is the one deliberate runtime-only
  * exception (`matchMedia` at drag-start, not render) — Figma models no
- * gesture. Full rationale + measurements: design/notes/SidePanel.md.
+ * gesture. `level` (#149) stacks a second panel (scrim + panel) above a
+ * level-1 one already on screen. Full rationale + measurements:
+ * design/notes/SidePanel.md.
  */
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -64,6 +66,15 @@ export interface SidePanelProps {
   /** Accessible name for the icon-only close button. */
   closeLabel: string;
   className?: string;
+  /**
+   * Stacking level (#149). `1` (default): today's `z-40` scrim / `z-50`
+   * panel, unchanged. `2`: renders above a level-1 panel INCLUDING its
+   * scrim, so opening a second panel (e.g. `StepIngredientPanel` over
+   * `RecipePanel`) visibly dims the first one too, matching Figma's
+   * full-screen overlay on the second pull-up panel. See
+   * design/notes/SidePanel.md.
+   */
+  level?: 1 | 2;
 }
 
 export function SidePanel({
@@ -74,6 +85,7 @@ export function SidePanel({
   footer,
   closeLabel,
   className,
+  level = 1,
 }: SidePanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -204,7 +216,8 @@ export function SidePanel({
         // allow-discrete`) defers the `visibility` flip to hidden until the
         // opacity transition finishes, so the fade-out still plays.
         className={clsx(
-          "fixed inset-0 z-40 bg-text/60 transition-[opacity,visibility] transition-discrete duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+          "fixed inset-0 bg-text/60 transition-[opacity,visibility] transition-discrete duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+          level === 2 ? "z-[60]" : "z-40",
           open ? "visible opacity-100" : "invisible pointer-events-none opacity-0",
         )}
       />
@@ -217,7 +230,8 @@ export function SidePanel({
         inert={!open}
         onKeyDown={handleKeyDown}
         className={clsx(
-          "fixed z-50 flex flex-col overflow-hidden bg-surface-muted transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+          "fixed flex flex-col overflow-hidden bg-surface-muted transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+          level === 2 ? "z-[70]" : "z-50",
           // Corner radii are 16/12, not a uniform value on either shape —
           // Figma reports "16px 12px 0px 0px" (mobile) / "16px 0px 0px 12px"
           // (desktop); see design/notes/SidePanel.md.

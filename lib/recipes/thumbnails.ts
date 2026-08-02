@@ -52,6 +52,26 @@ export async function uploadRecipeThumbnail(file: File): Promise<ActionResult<{ 
 }
 
 /**
+ * Removes a stored thumbnail object (#149, deleteRecipe in
+ * app/(app)/recepten/actions.ts). `path` must already be prefixed with the
+ * caller's own user id -- same fail-fast-without-a-round-trip guard as
+ * `getRecipeThumbnailSignedUrl` below. Best-effort by design: logs and
+ * swallows its own error rather than throwing, because the caller must be
+ * able to delete the recipe row regardless of whether this cleanup
+ * succeeds.
+ */
+export async function deleteRecipeThumbnail(path: string): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const userId = await getAuthenticatedUserId(supabase);
+  if (!userId || !path.startsWith(`${userId}/`)) return;
+
+  const { error } = await supabase.storage.from(RECIPE_THUMBNAILS_BUCKET).remove([path]);
+  if (error) {
+    console.error("[recipes] deleteRecipeThumbnail failed:", error.message);
+  }
+}
+
+/**
  * Short-lived signed URL for a stored thumbnail -- never a public bucket
  * URL (Architecture.md §7). `path` must already be prefixed with the
  * caller's own user id; a mismatched prefix returns `null` without a

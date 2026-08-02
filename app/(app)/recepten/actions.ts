@@ -7,15 +7,18 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import { nextPosition } from "@/lib/boards/positioning";
 import { searchIngredientLibrary } from "@/lib/recipes/queries";
-import { uploadRecipeThumbnail as uploadRecipeThumbnailToStorage } from "@/lib/recipes/thumbnails";
+import {
+  uploadRecipeThumbnail as uploadRecipeThumbnailToStorage,
+  deleteRecipeThumbnail,
+} from "@/lib/recipes/thumbnails";
 import {
   createCategorySchema,
   createOwnIngredientSchema,
   createRecipeSchema,
   deleteCategorySchema,
   deleteRecipeSchema,
-  renameCategorySchema,
   searchIngredientsSchema,
+  updateCategorySchema,
   updateRecipeSchema,
 } from "@/lib/recipes/schemas";
 import type {
@@ -33,7 +36,7 @@ import type { Database } from "@/lib/database.types";
 //   1. parses its input with the matching lib/recipes/schemas.ts schema;
 //   2. resolves the signed-in user and filters every query on that id
 //      explicitly, on top of RLS (same "don't trust the client for
-//      ownership" reasoning as #92 — see replaceRecipeIngredients below for
+//      ownership" reasoning as #92 — see replaceRecipeContents below for
 //      this ticket's version of that check);
 //   3. returns a typed ActionResult instead of throwing, so the UI can look
 //      up `recipes.errors.${error}` in the message catalog.
@@ -46,21 +49,28 @@ import type { Database } from "@/lib/database.types";
 // asked for this by analogy and no reason surfaced during this ticket to
 // deviate (recipes has no cross-cutting concern boards doesn't).
 //
-// Ingredients/steps write strategy (ticket decision a): replace-in-
-// transaction, not per-row diff. #126's add-recipe form always sends a
-// recipe's full ingredient/step set in one call (no per-row endpoints exist
-// yet — the ticket itself flags a standalone "delete this row" endpoint as
-// still open, see #122's body), so per-row diffing would be built for a
-// write shape nothing calls. "In transaction" is the ideal — a real single
-// Postgres transaction — but supabase-js only reaches that via an RPC
-// function, and no migration is in this ticket's stated file list to add
-// one. replaceRecipeIngredients/replaceRecipeSteps below therefore do
-// delete-then-insert as two sequential statements (same accepted trade-off
-// this codebase already ships in toggleBoardFavorite's clear-then-set), and
-// createRecipe compensates a failed ingredients/steps write by deleting the
-// just-created recipe rather than leaving an empty one behind. A real RPC
-// transaction is the natural follow-up if this window ever proves to matter
-// in practice.
+// Ingredients/steps write strategy (ticket decision a, #122; upgraded #149):
+// replace-in-transaction, not per-row diff. #126's add-recipe form always
+// sends a recipe's full ingredient/step set in one call (no per-row
+// endpoints exist yet), so per-row diffing would be built for a write shape
+// nothing calls. "In transaction" used to be an intent, not a fact:
+// supabase-js only reaches a real Postgres transaction via an RPC function,
+// and #122's stated file list didn't include one, so the old
+// replaceRecipeIngredients/replaceRecipeSteps did delete-then-insert as two
+// sequential statements (the same accepted trade-off toggleBoardFavorite's
+// clear-then-set already ships). #149 closes that gap: the user
+// (2026-08-01) approved this repo's first RPC,
+// public.replace_recipe_contents (20260802000001_recipe_step_ingredients.sql),
+// and replaceRecipeContents below is one supabase.rpc(...) call — the
+// delete-then-insert across recipe_ingredients/recipe_steps/
+// recipe_step_ingredients now runs inside one real Postgres transaction, not
+// two round trips. createRecipe still compensates a failed contents write by
+// deleting the just-created recipe (the RPC call can still fail before ever
+// running, e.g. a network error, leaving an empty recipe behind). updateRecipe
+// needs no equivalent compensation: the "successful delete then failing
+// insert" data-loss window this file used to have between the two statements
+// is closed by the RPC's transaction — either the whole replace lands, or
+// none of it does.
 
 type Client = SupabaseClient<Database>;
 type IngredientLine = z.infer<typeof createRecipeSchema>["ingredients"][number];
@@ -92,24 +102,27 @@ async function lastCategoryPosition(supabase: Client, userId: string): Promise<n
   return data?.position ?? null;
 }
 
-// Replaces every recipe_ingredients row for `recipeId` with `lines`, in
-// submitted order (position = (index+1)*1000, same spacing convention as
-// lib/boards/defaults.ts's DEFAULT_BOARD_COLUMNS — a direct index-based
-// scheme rather than repeated nextPosition() calls, since the whole set
-// arrives at once rather than one row being inserted into an existing
-// order). Rejects the whole write (returns `{ ok: false }`, nothing is
-// deleted) if any line's ingredientId doesn't belong to this user — the
-// same "don't trust the client for ownership" check moveCard applies to
-// columnId, applied here to recipe_ingredients.ingredient_id.
-async function replaceRecipeIngredients(
+// Replaces every recipe_ingredients/recipe_steps/recipe_step_ingredients row
+// for `recipeId` with `ingredients`/`steps`, via one call to the
+// public.replace_recipe_contents RPC (#149, see the module header comment)
+// — a real Postgres transaction, not the old two-statement delete-then-
+// insert pairs. Still rejects the whole write from this layer (returns
+// `{ ok: false }`, the RPC is never called, nothing is touched) if any
+// line's ingredientId doesn't belong to this user — the same "don't trust
+// the client for ownership" check moveCard applies to columnId, applied
+// here to recipe_ingredients.ingredient_id. This check stays in this file
+// rather than folding into the RPC because it's a cross-table check against
+// public.ingredients, unrelated to the RPC's own recipe-ownership guard.
+async function replaceRecipeContents(
   supabase: Client,
   userId: string,
   recipeId: string,
-  lines: IngredientLine[],
+  ingredients: IngredientLine[],
+  steps: StepLine[],
 ): Promise<{ ok: true } | { ok: false }> {
   const ingredientIds = [
     ...new Set(
-      lines
+      ingredients
         .map((line) => line.ingredientId)
         .filter((id): id is string => id != null),
     ),
@@ -121,72 +134,28 @@ async function replaceRecipeIngredients(
       .eq("user_id", userId)
       .in("id", ingredientIds);
     if (ownedError) {
-      logDbError("replaceRecipeIngredients/ownership-check", ownedError);
+      logDbError("replaceRecipeContents/ownership-check", ownedError);
       return { ok: false };
     }
     if ((owned?.length ?? 0) !== ingredientIds.length) return { ok: false };
   }
 
-  const { error: deleteError } = await supabase
-    .from("recipe_ingredients")
-    .delete()
-    .eq("recipe_id", recipeId)
-    .eq("user_id", userId);
-  if (deleteError) {
-    logDbError("replaceRecipeIngredients/delete", deleteError);
-    return { ok: false };
-  }
-  if (lines.length === 0) return { ok: true };
-
-  const { error: insertError } = await supabase.from("recipe_ingredients").insert(
-    lines.map((line, index) => ({
-      user_id: userId,
-      recipe_id: recipeId,
-      ingredient_id: line.ingredientId ?? null,
+  const { error } = await supabase.rpc("replace_recipe_contents", {
+    p_recipe_id: recipeId,
+    p_ingredients: ingredients.map((line) => ({
       name: line.name,
       quantity: line.quantity,
       unit: line.unit,
-      position: (index + 1) * 1000,
-      group_label: line.groupLabel ?? null,
+      ingredientId: line.ingredientId ?? null,
+      groupLabel: line.groupLabel ?? null,
     })),
-  );
-  if (insertError) {
-    logDbError("replaceRecipeIngredients/insert", insertError);
-    return { ok: false };
-  }
-  return { ok: true };
-}
-
-// Same replace strategy as replaceRecipeIngredients above, for recipe_steps
-// — no ownership-of-a-linked-id check needed here, steps carry no FK besides
-// recipe_id (already resolved and checked by the caller).
-async function replaceRecipeSteps(
-  supabase: Client,
-  userId: string,
-  recipeId: string,
-  lines: StepLine[],
-): Promise<{ ok: true } | { ok: false }> {
-  const { error: deleteError } = await supabase
-    .from("recipe_steps")
-    .delete()
-    .eq("recipe_id", recipeId)
-    .eq("user_id", userId);
-  if (deleteError) {
-    logDbError("replaceRecipeSteps/delete", deleteError);
-    return { ok: false };
-  }
-  if (lines.length === 0) return { ok: true };
-
-  const { error: insertError } = await supabase.from("recipe_steps").insert(
-    lines.map((line, index) => ({
-      user_id: userId,
-      recipe_id: recipeId,
-      position: (index + 1) * 1000,
+    p_steps: steps.map((line) => ({
       instruction: line.instruction,
+      ingredientRefs: line.ingredientRefs,
     })),
-  );
-  if (insertError) {
-    logDbError("replaceRecipeSteps/insert", insertError);
+  });
+  if (error) {
+    logDbError("replaceRecipeContents", error);
     return { ok: false };
   }
   return { ok: true };
@@ -229,8 +198,12 @@ export async function createCategory(
   return { success: true, data };
 }
 
-export async function renameCategory(input: unknown): Promise<ActionResult> {
-  const parsed = renameCategorySchema.safeParse(input);
+// Rename -> update (#149's category-icon bug): the panel always sends the
+// selected icon alongside the name, and this action now writes both — the
+// old renameCategory only ever wrote `name`, which is why picking a
+// different icon and saving silently did nothing.
+export async function updateCategory(input: unknown): Promise<ActionResult> {
+  const parsed = updateCategorySchema.safeParse(input);
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
@@ -239,14 +212,14 @@ export async function renameCategory(input: unknown): Promise<ActionResult> {
 
   const { data, error } = await supabase
     .from("recipe_categories")
-    .update({ name: parsed.data.name })
+    .update({ name: parsed.data.name, icon: parsed.data.icon })
     .eq("id", parsed.data.categoryId)
     .eq("user_id", auth.userId)
     .select("id")
     .maybeSingle();
 
   if (error) {
-    logDbError("renameCategory", error);
+    logDbError("updateCategory", error);
     return { success: false, error: "generic" };
   }
   if (!data) return { success: false, error: "not-found" };
@@ -325,17 +298,15 @@ export async function createRecipe(input: unknown): Promise<ActionResult<RecipeR
     return { success: false, error: "generic" };
   }
 
-  const ingredientsResult = await replaceRecipeIngredients(
+  const contentsResult = await replaceRecipeContents(
     supabase,
     auth.userId,
     recipe.id,
     parsed.data.ingredients,
+    parsed.data.steps,
   );
-  const stepsResult = ingredientsResult.ok
-    ? await replaceRecipeSteps(supabase, auth.userId, recipe.id, parsed.data.steps)
-    : ({ ok: false } as const);
 
-  if (!ingredientsResult.ok || !stepsResult.ok) {
+  if (!contentsResult.ok) {
     // See the module header comment (decision a): compensate rather than
     // leave a recipe with no ingredients/steps behind.
     const { error: cleanupError } = await supabase
@@ -412,12 +383,12 @@ export async function updateRecipe(input: unknown): Promise<ActionResult> {
     }
   }
 
-  if (ingredients !== undefined) {
-    const result = await replaceRecipeIngredients(supabase, auth.userId, recipeId, ingredients);
-    if (!result.ok) return { success: false, error: "generic" };
-  }
-  if (steps !== undefined) {
-    const result = await replaceRecipeSteps(supabase, auth.userId, recipeId, steps);
+  // updateRecipeSchema's superRefine enforces both-or-neither, so `ingredients`
+  // and `steps` are always defined together here (see schemas.ts's comment) —
+  // one replaceRecipeContents call, one RPC transaction, no partial-write
+  // window left between them (module header comment).
+  if (ingredients !== undefined && steps !== undefined) {
+    const result = await replaceRecipeContents(supabase, auth.userId, recipeId, ingredients, steps);
     if (!result.ok) return { success: false, error: "generic" };
   }
 
@@ -433,8 +404,21 @@ export async function deleteRecipe(input: unknown): Promise<ActionResult> {
   const auth = await requireUserId(supabase);
   if ("error" in auth) return { success: false, error: auth.error };
 
+  // #149: read thumbnail_path before deleting the row, so a stored
+  // recipe-thumbnails object doesn't outlive the recipe it belonged to. Not
+  // fatal if this lookup comes back empty/errored — the delete below still
+  // runs and reports its own not-found/generic error the normal way.
+  const { data: existing, error: existingError } = await supabase
+    .from("recipes")
+    .select("thumbnail_path")
+    .eq("id", parsed.data.recipeId)
+    .eq("user_id", auth.userId)
+    .maybeSingle();
+  if (existingError) logDbError("deleteRecipe/lookup", existingError);
+
   // recipe_ingredients/recipe_steps are `on delete cascade` from recipes.id
-  // (20260730000002_recipe_schema.sql) — no manual cleanup needed here.
+  // (20260730000002_recipe_schema.sql); recipe_step_ingredients cascades a
+  // further step from recipe_steps (#149) — no manual cleanup needed here.
   const { data, error } = await supabase
     .from("recipes")
     .delete()
@@ -448,6 +432,13 @@ export async function deleteRecipe(input: unknown): Promise<ActionResult> {
     return { success: false, error: "generic" };
   }
   if (!data) return { success: false, error: "not-found" };
+
+  // Best-effort, after the row is confirmed gone: a failed storage removal
+  // must never fail the recipe delete (the row is already gone either way)
+  // — deleteRecipeThumbnail itself logs and swallows its own errors.
+  if (existing?.thumbnail_path) {
+    await deleteRecipeThumbnail(existing.thumbnail_path);
+  }
 
   revalidatePath("/recepten");
   return { success: true, data: undefined };

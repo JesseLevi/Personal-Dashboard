@@ -148,15 +148,11 @@ the UI before save is attempted, rather than only after a failed submit.
 
 ## recipe-panel-personen-chevron-behaviour-unsourced
 
-**The Personen field's trailing chevron (`3968:10298`) has `Trekking-icon: true` but no annotation describing what it opens.** #126 built it as a `Dropdown` listing 1-12 (an unsourced, reasonable default — see `design/notes/RecipePanel.md`). Needs a design answer on the real range/behaviour (a stepper instead of a list? A different upper bound?).
+**The Personen field's trailing chevron (`3968:10298`) has `Trekking-icon: true` but no annotation describing what it opens.** #126 built it as a `Dropdown` listing 1-12 (an unsourced, reasonable default); #149 rebuilt the same field on `InputField`'s new `options` (select) variant instead, since that's what the fetched node actually models (`design/notes/RecipePanel.md`) — the range itself is unchanged. Needs a design answer on the real range/behaviour (a stepper instead of a list? A different upper bound?).
 
 ## recipe-panel-desktop-layout-gap
 
 **No desktop Figma node exists for the add/edit-recipe field content** — only `3717:2844` (402px mobile) is drawn. #126 kept every field in the same single-column order at every breakpoint, per the ticket's own instruction to avoid inventing new layout decisions. Needs a design answer only if a real desktop layout (e.g. two-column fields) was intended.
-
-## recipe-panel-photo-upload-not-built
-
-**No file-upload control is wired into the recipe form** — per the 2026-07-29 decision, #121 owns the storage bucket and server-side validation, and it has since shipped `ImageUploadField` (`components/molecules/ImageUploadField.tsx`) as the control itself. `RecipePanel.tsx` doesn't render it, so `recipes.thumbnail_path` still stays unset from this form. #149 (open) confirms this as user-facing feedback ("Afbeelding input field is niet zichtbaar. Toevoegen."), so the fix is tracked there; this entry stays only for the still-unanswered design questions on the field itself (see `recipe-image-field-personen-label`, `recipe-image-field-no-filled-state`).
 
 ## recipe-name-field-swap-icon-unusual
 

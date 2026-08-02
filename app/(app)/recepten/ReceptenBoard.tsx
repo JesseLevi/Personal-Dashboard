@@ -13,13 +13,14 @@ import { CategoryPanel, type CategoryPanelTarget } from "./CategoryPanel";
 import { RecipePanel, type RecipePanelTarget } from "./RecipePanel";
 import {
   createCategory,
-  renameCategory,
+  updateCategory,
   deleteCategory,
   createRecipe,
   updateRecipe,
   deleteRecipe,
   searchIngredients,
   createOwnIngredient,
+  uploadRecipeThumbnail,
 } from "./actions";
 
 // Client wrapper around BoardView (#124) — `renderItem` is a function prop
@@ -36,6 +37,8 @@ import {
 // below: design/notes/ReceptenBoard.md.
 export interface ReceptenBoardProps {
   categories: CategoryWithRecipes[];
+  /** Signed thumbnail URLs (#149), keyed by `recipes.id` — resolved server-side in `page.tsx` since the storage bucket is private. A recipe with no entry here (no `thumbnail_path`, or its signed-URL lookup failed) renders `CardContentRecipe`'s own placeholder. */
+  thumbnailUrls: Record<string, string>;
   /** Recepten page title (`nav.recipes`) — PageHeader now renders here, not in page.tsx. */
   title: string;
   /** Header "Categorie" trigger label (`components.pageHeader.recipes.addCategoryLabel`). */
@@ -52,7 +55,12 @@ export interface ReceptenBoardProps {
 // design/notes/ReceptenBoard.md.
 const FALLBACK_CATEGORY_ICON = "FolderClosed";
 
-export function ReceptenBoard({ categories, title, addCategoryLabel }: ReceptenBoardProps) {
+export function ReceptenBoard({
+  categories,
+  thumbnailUrls,
+  title,
+  addCategoryLabel,
+}: ReceptenBoardProps) {
   const t = useTranslations("components.cardContainer");
   const tRecipe = useTranslations("components.cardContentRecipe");
   const router = useRouter();
@@ -115,10 +123,12 @@ export function ReceptenBoard({ categories, title, addCategoryLabel }: ReceptenB
         renderItem={(recipe) => (
           <CardContentRecipe
             name={recipe.title}
-            // `imageUrl` left unset: `recipes.thumbnail_path` has no real value
-            // yet (#121 storage bucket not built) and CardContentRecipe itself
-            // now renders the "no photo" placeholder when absent — see
+            // `imageUrl` resolved server-side (#149, page.tsx) — a recipe
+            // with no stored thumbnail (or a lookup miss) has no entry in
+            // `thumbnailUrls`, and CardContentRecipe itself renders the "no
+            // photo" placeholder for `undefined` — see
             // design/notes/CardContentRecipe.md's "#124" entry.
+            imageUrl={thumbnailUrls[recipe.id]}
             duration={
               recipe.time_minutes != null
                 ? tRecipe("durationMinutes", { minutes: recipe.time_minutes })
@@ -132,7 +142,7 @@ export function ReceptenBoard({ categories, title, addCategoryLabel }: ReceptenB
         onClose={() => setPanel((current) => ({ ...current, open: false }))}
         target={panel.target}
         onCreateCategory={createCategory}
-        onRenameCategory={renameCategory}
+        onUpdateCategory={updateCategory}
         onDeleteCategory={deleteCategory}
         onMutated={() => router.refresh()}
       />
@@ -146,6 +156,7 @@ export function ReceptenBoard({ categories, title, addCategoryLabel }: ReceptenB
         onDeleteRecipe={deleteRecipe}
         onSearchIngredients={searchIngredients}
         onCreateOwnIngredient={createOwnIngredient}
+        onUploadThumbnail={uploadRecipeThumbnail}
         onMutated={() => router.refresh()}
       />
     </>

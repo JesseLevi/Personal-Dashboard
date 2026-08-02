@@ -1,6 +1,5 @@
 import clsx from "clsx";
 import { InputField } from "../atoms/InputField";
-import { Dropdown } from "../atoms/Dropdown";
 import type { UnitCode } from "@/lib/recipes/units";
 
 /**
@@ -10,8 +9,10 @@ import type { UnitCode } from "@/lib/recipes/units";
  * component (a "Rij" is three separate instances, never one named
  * component) — no `figma-map.json` entry, per the ticket's own instruction.
  * Name is read-only (opens #131's `IngredientSearchPanel` on click, per its
- * Dev Mode annotation); quantity is free numeric entry; unit reuses
- * `Dropdown`. Full reasoning: `design/notes/RecipeIngredientRow.md`.
+ * Dev Mode annotation); quantity is free numeric entry; unit uses
+ * `InputField`'s `options` (select) variant (#149) — genuinely labelless and
+ * closed on rows 2/3 now, unlike the `Dropdown` this replaced. Full
+ * reasoning: `design/notes/RecipeIngredientRow.md`.
  */
 export interface RecipeIngredientRowProps {
   /** Stable per-row id, used to derive every field's `id`. */
@@ -52,8 +53,7 @@ export function RecipeIngredientRow({
   onUnitChange,
   className,
 }: RecipeIngredientRowProps) {
-  const selectedUnit = unitOptions.find((option) => option.code === unit);
-  const otherUnits = unitOptions.filter((option) => option.code !== unit);
+  const selectOptions = unitOptions.map((option) => ({ value: option.code, label: option.label }));
 
   return (
     <div className={clsx("flex w-full items-start gap-2", className)}>
@@ -108,27 +108,26 @@ export function RecipeIngredientRow({
         )}
       </div>
       <div className="w-[104px] shrink-0">
-        {/* Always labelled, even on rows 2/3 (Figma `Title: false`) — a
-            flagged, functionally-forced deviation: `Dropdown`'s labelless
-            mode has no collapse/trigger behaviour at all (it renders every
-            child unconditionally, see Dropdown.tsx's own return branch),
-            so it cannot act as a compact closed picker. Only the labelled
-            branch actually closes. See design/notes/RecipeIngredientRow.md. */}
-        <Dropdown key={unit || "empty"} id={`${id}-unit`} label={unitLabel} defaultOpen={false}>
-          <button type="button" className="w-full rounded-lg text-left text-base font-semibold text-text">
-            {selectedUnit?.label ?? unitPlaceholder}
-          </button>
-          {otherUnits.map((option) => (
-            <button
-              key={option.code}
-              type="button"
-              onClick={() => onUnitChange(option.code)}
-              className="flex w-full rounded-lg p-2 text-left text-base font-semibold text-text-muted transition-colors hover:bg-surface-hover"
-            >
-              {option.label}
-            </button>
-          ))}
-        </Dropdown>
+        {showLabels ? (
+          <InputField
+            id={`${id}-unit`}
+            label={unitLabel}
+            options={selectOptions}
+            placeholderOption={unitPlaceholder}
+            trailingIcon="ChevronDown"
+            value={unit}
+            onChange={(event) => onUnitChange(event.target.value as UnitCode)}
+          />
+        ) : (
+          <InputField
+            id={`${id}-unit`}
+            options={selectOptions}
+            placeholderOption={unitPlaceholder}
+            trailingIcon="ChevronDown"
+            value={unit}
+            onChange={(event) => onUnitChange(event.target.value as UnitCode)}
+          />
+        )}
       </div>
     </div>
   );

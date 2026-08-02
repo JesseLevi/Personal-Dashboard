@@ -4,13 +4,14 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { SidePanel } from "@/components/organisms/SidePanel";
 import { IngredientSearchPanel } from "@/components/organisms/IngredientSearchPanel";
+import { StepIngredientPanel } from "@/components/organisms/StepIngredientPanel";
 import { InputField } from "@/components/atoms/InputField";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { Button } from "@/components/atoms/Button";
-import { Tag } from "@/components/atoms/Tag";
+import { ImageUploadField } from "@/components/molecules/ImageUploadField";
 import { RecipeIngredientRow } from "@/components/molecules/RecipeIngredientRow";
 import { isIconName } from "@/components/atoms/Icon";
-import { UNIT_CODES, type UnitCode } from "@/lib/recipes/units";
+import { UNIT_CODES, formatQuantity, type UnitCode } from "@/lib/recipes/units";
 import type {
   ActionResult,
   IngredientRow,
@@ -20,15 +21,16 @@ import type {
   RecipeWithIngredientsAndSteps,
 } from "@/lib/recipes/types";
 
-// Add/edit-recipe SidePanel content (#126) — Figma "Add recipi/Mobile"
-// (3777:3932, fields refreshed under 3717:2844 per the ticket's own brief
-// v2 §A2) + "01: Main/Mobile" (3777:3918, the "+" trigger). Page-level
-// composition of existing atoms/organisms exactly like CardDetailPanel.tsx/
-// CategoryPanel.tsx — not a fetched Figma component itself, so (same
-// precedent as those two) this is NOT added to design/figma-map.json.
-// One component for create+edit (`target.mode`, analogous to #94 — no
-// separate "Recept bewerken" node exists). Full field-by-field reasoning,
-// every flagged deviation and open question: design/notes/RecipePanel.md.
+// Add/edit-recipe SidePanel content (#126, extended #149) — Figma
+// "Add recipi/Mobile" (3777:3932, fields refreshed under 3717:2844 per the
+// ticket's own brief v2 §A2) + "01: Main/Mobile" (3777:3918, the "+"
+// trigger). Page-level composition of existing atoms/organisms exactly like
+// CardDetailPanel.tsx/CategoryPanel.tsx — not a fetched Figma component
+// itself, so (same precedent as those two) this is NOT added to
+// design/figma-map.json. One component for create+edit (`target.mode`,
+// analogous to #94 — no separate "Recept bewerken" node exists). Full
+// field-by-field reasoning, every flagged deviation and open question:
+// design/notes/RecipePanel.md.
 
 export type RecipePanelTarget =
   | { mode: "create"; categoryId: string }
@@ -40,24 +42,32 @@ interface IngredientRowState {
   quantity: number | null;
   unit: UnitCode | "";
   ingredientId: string | null;
+  /** The `recipe_ingredients.id` this row was loaded from (edit mode only) — used once, at construction, to seed a step's `ingredientLocalIds` from the recipe's own `steps[].ingredientIds` (#149). Never sent in the save payload; `null` for a freshly typed/added row. */
+  sourceId: string | null;
 }
 
 interface StepRowState {
   localId: string;
   instruction: string;
+  /** Selected ingredient rows for this step, by their local `IngredientRowState.localId` — translated into payload `ingredientRefs` (indexes) at save time, never sent as-is. See `buildContentsPayload` below. */
+  ingredientLocalIds: string[];
 }
 
 // Fallback icon for a category whose stored icon isn't a real `IconName` —
 // same gap and same fallback ReceptenBoard.tsx already applies.
 const FALLBACK_CATEGORY_ICON = "FolderClosed";
 
-// Personen options (Dropdown, decision (h) — the ticket asks for "the
-// least-inventive interpretation" of the trailing chevron with no behaviour
-// specified). A fixed 1-12 range, unsourced from Figma/product like
-// SidePanel's own drag thresholds (design/notes/SidePanel.md's #103 entry)
-// — reasonable default, flagged rather than silently presented as
-// design-sourced.
+// Personen options (InputField's `options` select variant, #149 — Figma
+// models this field as the same Input-field component with a chevron, not a
+// separate Dropdown; see design/notes/InputField.md). A fixed 1-12 range,
+// unsourced from Figma/product like SidePanel's own drag thresholds
+// (design/notes/SidePanel.md's #103 entry) — reasonable default, flagged
+// rather than silently presented as design-sourced.
 const SERVINGS_OPTIONS = Array.from({ length: 12 }, (_, index) => index + 1);
+const SERVINGS_SELECT_OPTIONS = SERVINGS_OPTIONS.map((value) => ({
+  value: String(value),
+  label: String(value),
+}));
 
 let rowIdCounter = 0;
 function nextRowId(prefix: string): string {
@@ -66,11 +76,18 @@ function nextRowId(prefix: string): string {
 }
 
 function emptyIngredientRow(): IngredientRowState {
-  return { localId: nextRowId("ingredient"), name: "", quantity: null, unit: "gram", ingredientId: null };
+  return {
+    localId: nextRowId("ingredient"),
+    name: "",
+    quantity: null,
+    unit: "gram",
+    ingredientId: null,
+    sourceId: null,
+  };
 }
 
 function emptyStepRow(): StepRowState {
-  return { localId: nextRowId("step"), instruction: "" };
+  return { localId: nextRowId("step"), instruction: "", ingredientLocalIds: [] };
 }
 
 function ingredientRowsFromRecipe(recipe: RecipeWithIngredientsAndSteps): IngredientRowState[] {
@@ -82,13 +99,33 @@ function ingredientRowsFromRecipe(recipe: RecipeWithIngredientsAndSteps): Ingred
     quantity: row.quantity,
     unit: row.unit as UnitCode,
     ingredientId: row.ingredient_id,
+    sourceId: row.id,
   }));
 }
 
-function stepRowsFromRecipe(recipe: RecipeWithIngredientsAndSteps): StepRowState[] {
+// `ingredientRows` must be the exact array already assigned to the
+// `ingredients` state (never a fresh `ingredientRowsFromRecipe(recipe)`
+// call) — each row's `localId` is generated once by `nextRowId` and a
+// second call would mint different ids, breaking the `sourceId` lookup
+// below.
+function stepRowsFromRecipe(
+  recipe: RecipeWithIngredientsAndSteps,
+  ingredientRows: IngredientRowState[],
+): StepRowState[] {
   const sorted = [...recipe.steps].sort((a, b) => a.position - b.position);
   if (sorted.length === 0) return [emptyStepRow()];
-  return sorted.map((row) => ({ localId: nextRowId("step"), instruction: row.instruction }));
+  const localIdBySourceId = new Map(
+    ingredientRows
+      .filter((row): row is IngredientRowState & { sourceId: string } => row.sourceId !== null)
+      .map((row) => [row.sourceId, row.localId]),
+  );
+  return sorted.map((row) => ({
+    localId: nextRowId("step"),
+    instruction: row.instruction,
+    ingredientLocalIds: row.ingredientIds
+      .map((id) => localIdBySourceId.get(id))
+      .filter((localId): localId is string => localId !== undefined),
+  }));
 }
 
 export interface RecipePanelProps {
@@ -101,6 +138,8 @@ export interface RecipePanelProps {
   onDeleteRecipe: (input: unknown) => Promise<ActionResult>;
   onSearchIngredients: (input: unknown) => Promise<IngredientSearchResult[]>;
   onCreateOwnIngredient: (input: unknown) => Promise<ActionResult<IngredientRow>>;
+  /** `"use server"` action `uploadRecipeThumbnail` (`app/(app)/recepten/actions.ts`) — called before create/update whenever a new thumbnail file was picked (#149). */
+  onUploadThumbnail: (formData: FormData) => Promise<ActionResult<{ path: string }>>;
   /** Fired after a successful create/update/delete, before `onClose`. Never fired on a plain close/cancel. */
   onMutated?: () => void;
 }
@@ -115,12 +154,14 @@ export function RecipePanel({
   onDeleteRecipe,
   onSearchIngredients,
   onCreateOwnIngredient,
+  onUploadThumbnail,
   onMutated,
 }: RecipePanelProps) {
   const t = useTranslations("components.recipePanel");
   const tSidePanel = useTranslations("components.sidePanel");
   const tUnits = useTranslations("recipes.units");
   const tErrors = useTranslations("recipes.errors");
+  const tImageUpload = useTranslations("components.imageUploadField");
 
   const recipe = target.mode === "edit" ? target.recipe : null;
 
@@ -130,23 +171,29 @@ export function RecipePanel({
   );
   const [servings, setServings] = useState(recipe?.servings ?? 4);
   const [timeMinutes, setTimeMinutes] = useState<number | "">(recipe?.time_minutes ?? "");
+  // Newly-picked thumbnail file, uploaded on save (#149) — `null` means "keep
+  // whatever `recipes.thumbnail_path` already has" on edit, or "no photo" on
+  // create. See handleSave's own comment for the upload-before-write order.
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [ingredients, setIngredients] = useState<IngredientRowState[]>(() =>
     recipe ? ingredientRowsFromRecipe(recipe) : [emptyIngredientRow()],
   );
+  // Reads `ingredients` (the const just above, already resolved by this
+  // point in the same render — not the state setter) rather than calling
+  // ingredientRowsFromRecipe(recipe) a second time, so both states start
+  // from the exact same `localId`s (see stepRowsFromRecipe's own comment).
   const [steps, setSteps] = useState<StepRowState[]>(() =>
-    recipe ? stepRowsFromRecipe(recipe) : [emptyStepRow()],
+    recipe ? stepRowsFromRecipe(recipe, ingredients) : [emptyStepRow()],
   );
-  // Tags: local-only, see design/notes/RecipePanel.md — no query exists yet
-  // for a user's existing tags, and createRecipeSchema/updateRecipeSchema
-  // (lib/recipes/schemas.ts) accept no `tags` field, so nothing typed here
-  // is persisted today. Flagged, not silently wired to a fake save.
-  const [tags, setTags] = useState<string[]>([]);
-  const [newTagDraft, setNewTagDraft] = useState("");
 
   const [ingredientSearch, setIngredientSearch] = useState<{ open: boolean; rowLocalId: string | null }>({
     open: false,
     rowLocalId: null,
   });
+  const [stepIngredientPanel, setStepIngredientPanel] = useState<{
+    open: boolean;
+    stepLocalId: string | null;
+  }>({ open: false, stepLocalId: null });
   const [deleteConfirming, setDeleteConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -163,15 +210,16 @@ export function RecipePanel({
     setPrevOpen(open);
     setPrevTargetKey(targetKey);
     if (shouldReset) {
+      const nextIngredients = recipe ? ingredientRowsFromRecipe(recipe) : [emptyIngredientRow()];
       setTitle(recipe?.title ?? "");
       setCategoryId(recipe?.category_id ?? (target.mode === "create" ? target.categoryId : ""));
       setServings(recipe?.servings ?? 4);
       setTimeMinutes(recipe?.time_minutes ?? "");
-      setIngredients(recipe ? ingredientRowsFromRecipe(recipe) : [emptyIngredientRow()]);
-      setSteps(recipe ? stepRowsFromRecipe(recipe) : [emptyStepRow()]);
-      setTags([]);
-      setNewTagDraft("");
+      setThumbnailFile(null);
+      setIngredients(nextIngredients);
+      setSteps(recipe ? stepRowsFromRecipe(recipe, nextIngredients) : [emptyStepRow()]);
       setIngredientSearch({ open: false, rowLocalId: null });
+      setStepIngredientPanel({ open: false, stepLocalId: null });
       setDeleteConfirming(false);
       setError(null);
     }
@@ -193,18 +241,9 @@ export function RecipePanel({
     setSteps((current) => [...current, emptyStepRow()]);
   }
 
-  function handleAddTag() {
-    const trimmed = newTagDraft.trim();
-    if (trimmed === "" || tags.includes(trimmed)) return;
-    setTags((current) => [...current, trimmed]);
-    setNewTagDraft("");
-  }
-
-  function handleRemoveTag(tagToRemove: string) {
-    setTags((current) => current.filter((tagValue) => tagValue !== tagToRemove));
-  }
-
   const searchRow = ingredients.find((row) => row.localId === ingredientSearch.rowLocalId) ?? null;
+  const activeStepIngredientRow =
+    steps.find((row) => row.localId === stepIngredientPanel.stepLocalId) ?? null;
 
   function handleIngredientSaved(selected: IngredientRow[]) {
     // Reuses #131's multi-select IngredientSearchPanel as a single-select
@@ -219,33 +258,62 @@ export function RecipePanel({
     }
   }
 
-  function buildIngredientsPayload() {
-    return ingredients
-      .filter((row) => row.name.trim() !== "")
-      .map((row) => ({
+  // Ingredients/steps are built together, not by two independent filters
+  // (#149): a step's `ingredientRefs` are indexes into the payload's
+  // `ingredients` array, and that array only contains rows that survive the
+  // empty-name filter — so the index map must be built from the FILTERED
+  // list, never the raw `ingredients` state (an index computed before
+  // filtering would point at the wrong row, or at a row that got dropped
+  // entirely). See `lib/recipes/schemas.ts`'s `ingredientRefs` comment for
+  // the receiving end of this contract.
+  function buildContentsPayload() {
+    const filteredIngredients = ingredients.filter((row) => row.name.trim() !== "");
+    const indexByLocalId = new Map(filteredIngredients.map((row, index) => [row.localId, index]));
+    return {
+      ingredients: filteredIngredients.map((row) => ({
         name: row.name.trim(),
         quantity: row.quantity,
         unit: row.unit || "gram",
         ingredientId: row.ingredientId,
-      }));
-  }
-
-  function buildStepsPayload() {
-    return steps
-      .filter((row) => row.instruction.trim() !== "")
-      .map((row) => ({ instruction: row.instruction.trim() }));
+      })),
+      steps: steps
+        .filter((row) => row.instruction.trim() !== "")
+        .map((row) => ({
+          instruction: row.instruction.trim(),
+          ingredientRefs: row.ingredientLocalIds
+            .map((localId) => indexByLocalId.get(localId))
+            .filter((index): index is number => index !== undefined),
+        })),
+    };
   }
 
   function handleSave() {
     setError(null);
     startTransition(async () => {
+      // Upload runs before the create/update call, not in parallel with it:
+      // the resulting storage path is part of the same payload
+      // (`thumbnailPath`), so create/update must wait for it. `undefined`
+      // (no key sent) when no new file was picked — create defaults to no
+      // photo, edit leaves the existing `thumbnail_path` untouched
+      // (updateRecipeSchema's per-field-optional contract).
+      let thumbnailPath: string | undefined;
+      if (thumbnailFile) {
+        const formData = new FormData();
+        formData.set("thumbnail", thumbnailFile);
+        const uploadResult = await onUploadThumbnail(formData);
+        if (!uploadResult.success) {
+          setError(tErrors(uploadResult.error));
+          return;
+        }
+        thumbnailPath = uploadResult.data.path;
+      }
       const payload = {
         categoryId,
         title: title.trim(),
         servings,
         timeMinutes: timeMinutes === "" ? null : timeMinutes,
-        ingredients: buildIngredientsPayload(),
-        steps: buildStepsPayload(),
+        ...(thumbnailPath !== undefined ? { thumbnailPath } : {}),
+        ...buildContentsPayload(),
       };
       const result =
         target.mode === "create"
@@ -277,6 +345,13 @@ export function RecipePanel({
 
   const selectedCategory = categories.find((category) => category.id === categoryId) ?? categories[0];
   const otherCategories = categories.filter((category) => category.id !== selectedCategory?.id);
+
+  // Shown in the Afbeelding field while no new file has been picked yet
+  // (#149) — `thumbnail_path` is a storage object path
+  // (`<user_id>/<uuid>.<ext>`, lib/recipes/thumbnails.ts), not a stored
+  // original filename, so this is the best available approximation of "the
+  // existing thumbnail's file name."
+  const existingThumbnailFileName = recipe?.thumbnail_path?.split("/").pop() ?? null;
 
   // Verwijderen visibility (decision (i), no Figma source either way):
   // hidden on create, visible on edit — a new recipe has nothing to delete
@@ -348,6 +423,19 @@ export function RecipePanel({
           required
         />
 
+        {/* Afbeelding (#149) — between Titel and Personen per Figma
+            3777:3932's field order. Uploaded on save (handleSave), never
+            eagerly, so a cancelled form never leaves an orphaned storage
+            object behind. */}
+        <ImageUploadField
+          id="recipe-panel-thumbnail"
+          name="thumbnail"
+          placeholder={tImageUpload("selectImage")}
+          ariaLabel={tImageUpload("selectImage")}
+          selectedFileName={thumbnailFile?.name ?? existingThumbnailFileName}
+          onFileSelect={setThumbnailFile}
+        />
+
         {selectedCategory && (
           <Dropdown
             key={selectedCategory.id}
@@ -375,27 +463,19 @@ export function RecipePanel({
           </Dropdown>
         )}
 
-        <Dropdown key={servings} label={t("fields.servingsLabel")} id="recipe-panel-servings" defaultOpen={false}>
-          <button type="button" className="w-full rounded-lg text-left text-xl font-semibold text-text">
-            {servings}
-          </button>
-          {SERVINGS_OPTIONS.filter((value) => value !== servings).map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setServings(value)}
-              className="flex w-full rounded-lg p-2 text-left text-base font-semibold text-text-muted transition-colors hover:bg-surface-hover"
-            >
-              {value}
-            </button>
-          ))}
-        </Dropdown>
+        <InputField
+          label={t("fields.servingsLabel")}
+          id="recipe-panel-servings"
+          options={SERVINGS_SELECT_OPTIONS}
+          trailingIcon="ChevronDown"
+          value={String(servings)}
+          onChange={(event) => setServings(Number(event.target.value))}
+        />
 
-        {/* Tijd + Tags: user-ordered deviation from Figma (2026-07-29) — no
-            node in 3777:3932/3717:2844 draws either field, but recipes need
-            a category to land in a kanban column at all, and Tijd/Tags are
-            "input fields or dropdowns, no new UI needed" per the user's own
-            instruction. Composed entirely from existing atoms. See
+        {/* Tijd: user-ordered deviation from Figma (2026-07-29) — no node in
+            3777:3932/3717:2844 draws it, but it was requested as "an input
+            field, no new UI needed" per the user's own instruction. Tags
+            (the field's original companion) was removed in #149 — see
             design/notes/RecipePanel.md. */}
         <InputField
           label={t("fields.timeLabel")}
@@ -410,53 +490,6 @@ export function RecipePanel({
             setTimeMinutes(raw === "" ? "" : Number(raw));
           }}
         />
-
-        <Dropdown label={t("fields.tagsLabel")} id="recipe-panel-tags" defaultOpen={false}>
-          <button type="button" className="w-full rounded-lg text-left text-base font-semibold text-text">
-            {tags.length > 0 ? tags.join(", ") : t("fields.tagsPlaceholder")}
-          </button>
-          <div className="flex flex-col gap-2 p-2">
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {tags.map((tagValue) => (
-                  <span key={tagValue} className="inline-flex items-center gap-1">
-                    <Tag variant="neutral">{tagValue}</Tag>
-                    <Button
-                      variant="white"
-                      size="compact"
-                      icon="X"
-                      aria-label={t("fields.tagsRemoveLabel", { tag: tagValue })}
-                      onClick={() => handleRemoveTag(tagValue)}
-                    />
-                  </span>
-                ))}
-              </div>
-            )}
-            <div className="flex items-end gap-2">
-              <div className="min-w-0 flex-1">
-                <InputField
-                  id="recipe-panel-tags-new"
-                  placeholder={t("fields.tagsAddPlaceholder")}
-                  value={newTagDraft}
-                  onChange={(event) => setNewTagDraft(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      handleAddTag();
-                    }
-                  }}
-                />
-              </div>
-              <Button
-                variant="filled"
-                icon="Plus"
-                aria-label={t("fields.tagsAddLabel")}
-                onClick={handleAddTag}
-                disabled={newTagDraft.trim() === ""}
-              />
-            </div>
-          </div>
-        </Dropdown>
 
         <div className="flex w-full flex-col items-stretch gap-4">
           {ingredients.map((row, index) => (
@@ -507,15 +540,19 @@ export function RecipePanel({
                 )
               }
               button={
-                // Figma annotation: the "Ingrediënt" pill opens a second
-                // pull-up panel whose content is nowhere designed (screen
-                // 03's own overlay, 3777:3984, is the closest candidate and
-                // is itself unannotated). Deferred, not improvised — see
-                // design/notes/RecipePanel.md. Rendered per Figma, disabled
-                // so it reads as "not yet available" rather than a dead
-                // click.
-                <Button variant="filled" icon="Plus" disabled>
-                  {t("stepIngredientPillLabel")}
+                // Opens StepIngredientPanel (#149, Figma 3749:3091/3749:3241)
+                // for this step — no longer `disabled`, the panel is built.
+                // Label grows a "(count)" suffix once a selection exists,
+                // this codebase's own judgement call (no Figma count badge
+                // exists on this pill) — see design/notes/RecipePanel.md.
+                <Button
+                  variant="filled"
+                  icon="Plus"
+                  onClick={() => setStepIngredientPanel({ open: true, stepLocalId: row.localId })}
+                >
+                  {row.ingredientLocalIds.length > 0
+                    ? t("stepIngredientPillLabelWithCount", { count: row.ingredientLocalIds.length })
+                    : t("stepIngredientPillLabel")}
                 </Button>
               }
             />
@@ -529,12 +566,33 @@ export function RecipePanel({
       </SidePanel>
 
       <IngredientSearchPanel
+        level={2}
         open={ingredientSearch.open}
         onClose={() => setIngredientSearch({ open: false, rowLocalId: null })}
         onSearch={onSearchIngredients}
         onCreateOwnIngredient={onCreateOwnIngredient}
         onSave={handleIngredientSaved}
         initialQuery={searchRow?.name}
+      />
+
+      <StepIngredientPanel
+        open={stepIngredientPanel.open}
+        onClose={() => setStepIngredientPanel({ open: false, stepLocalId: null })}
+        ingredients={ingredients.map((row) => ({
+          localId: row.localId,
+          name: row.name,
+          quantityLabel: formatQuantity(row.quantity, row.unit ? tUnits(row.unit) : null),
+        }))}
+        selectedIds={activeStepIngredientRow?.ingredientLocalIds ?? []}
+        onSave={(selectedIds) => {
+          const stepLocalId = stepIngredientPanel.stepLocalId;
+          if (!stepLocalId) return;
+          setSteps((current) =>
+            current.map((step) =>
+              step.localId === stepLocalId ? { ...step, ingredientLocalIds: selectedIds } : step,
+            ),
+          );
+        }}
       />
     </>
   );

@@ -30,6 +30,7 @@ import type {
  * Deliberate Figma deviation (user decision 2026-07-30): a zero-results
  * "add as new ingredient" affordance the fetched node doesn't draw — full
  * reasoning in design/notes/IngredientSearchPanel.md and the PR body.
+ * `level` (#149) forwards straight to `SidePanel` (`RecipePanel` passes `2`).
  */
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -76,6 +77,8 @@ export interface IngredientSearchPanelProps {
   initialQuery?: string;
   /** `ingredientSearchResultKey` values to render pre-checked once the initial search resolves — lets a caller reopen the panel with a previous multi-select intact, and is the "checked rows" Ladle story's determinism mechanism. */
   initialSelectedIds?: string[];
+  /** Forwarded to `SidePanel` (#149) — `RecipePanel` passes `2` since this panel always opens on top of its own. Defaults to `1` (a standalone caller/story). */
+  level?: 1 | 2;
 }
 
 export function IngredientSearchPanel({
@@ -86,6 +89,7 @@ export function IngredientSearchPanel({
   onSave,
   initialQuery,
   initialSelectedIds,
+  level = 1,
 }: IngredientSearchPanelProps) {
   const t = useTranslations("components.ingredientSearchPanel");
   const tSidePanel = useTranslations("components.sidePanel");
@@ -225,6 +229,7 @@ export function IngredientSearchPanel({
       onClose={handleClose}
       title={t("title")}
       closeLabel={tSidePanel("closeLabel")}
+      level={level}
       footer={
         <div className="flex gap-2">
           <Button

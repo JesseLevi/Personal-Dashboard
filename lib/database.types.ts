@@ -1,8 +1,12 @@
-// Hand-maintained to match supabase/migrations/*.sql (#91, #119, #130). This
-// dev machine has no Docker/standalone Supabase CLI, so `pnpm db:types`
+// Hand-maintained to match supabase/migrations/*.sql (#91, #119, #130, #149).
+// This dev machine has no Docker/standalone Supabase CLI, so `pnpm db:types`
 // (which shells out to `supabase gen types typescript --local --schema
 // public,reference`) cannot run here — CI must regenerate this file against
 // the real local stack and confirm it matches.
+//
+// #149: recipe_step_ingredients (step<->ingredient join) and the
+// replace_recipe_contents RPC, both from
+// 20260802000001_recipe_step_ingredients.sql.
 //
 // #130: `public.recipe_unit` is a Postgres enum (created in the public
 // schema, per ADR-0011 §3) reused by both ingredient_unit_masses tables
@@ -583,6 +587,58 @@ export interface Database {
           },
         ];
       };
+      recipe_step_ingredients: {
+        Row: {
+          id: string;
+          user_id: string;
+          step_id: string;
+          recipe_ingredient_id: string;
+          position: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          step_id: string;
+          recipe_ingredient_id: string;
+          position: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          step_id?: string;
+          recipe_ingredient_id?: string;
+          position?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "recipe_step_ingredients_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recipe_step_ingredients_step_id_fkey";
+            columns: ["step_id"];
+            isOneToOne: false;
+            referencedRelation: "recipe_steps";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "recipe_step_ingredients_recipe_ingredient_id_fkey";
+            columns: ["recipe_ingredient_id"];
+            isOneToOne: false;
+            referencedRelation: "recipe_ingredients";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       tags: {
         Row: {
           id: string;
@@ -666,7 +722,20 @@ export interface Database {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    // #149: public.replace_recipe_contents (20260802000001_recipe_step_ingredients.sql)
+    // -- this repo's first RPC. `Args` uses `Json` for the two array
+    // parameters, matching what a real `supabase gen types` emits for a
+    // `jsonb` function argument.
+    Functions: {
+      replace_recipe_contents: {
+        Args: {
+          p_recipe_id: string;
+          p_ingredients: Json;
+          p_steps: Json;
+        };
+        Returns: undefined;
+      };
+    };
     Enums: {
       recipe_unit:
         | "gram"

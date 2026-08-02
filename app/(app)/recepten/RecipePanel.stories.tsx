@@ -43,6 +43,11 @@ async function mockCreateOwnIngredient(input: unknown): Promise<ActionResult<Ing
     },
   };
 }
+async function mockUploadThumbnail(formData: FormData): Promise<ActionResult<{ path: string }>> {
+  const file = formData.get("thumbnail");
+  console.log("uploadRecipeThumbnail", file);
+  return { success: true, data: { path: "mock-user/mock-thumbnail.jpg" } };
+}
 
 const sampleCategories: RecipeCategoryRow[] = [
   {
@@ -138,6 +143,10 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
       instruction: "Meng de droge ingrediënten in een grote kom.",
       created_at: "2026-07-01T00:00:00.000Z",
       updated_at: "2026-07-01T00:00:00.000Z",
+      // #149: step<->ingredient links — seeded here to exercise
+      // `RecipePanel`'s own `ingredientIds` → `ingredientLocalIds` mapping
+      // (matched back onto the ingredient rows above by `recipe_ingredients.id`).
+      ingredientIds: ["ingredient-row-1", "ingredient-row-2"],
     },
     {
       id: "step-row-2",
@@ -147,6 +156,7 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
       instruction: "Vouw de bosbessen erdoor en verdeel over de vorm.",
       created_at: "2026-07-01T00:00:00.000Z",
       updated_at: "2026-07-01T00:00:00.000Z",
+      ingredientIds: [],
     },
   ],
 };
@@ -170,6 +180,7 @@ export const Empty = () => (
       onDeleteRecipe={mockDeleteRecipe}
       onSearchIngredients={mockSearchIngredients}
       onCreateOwnIngredient={mockCreateOwnIngredient}
+      onUploadThumbnail={mockUploadThumbnail}
     />
   </div>
 );
@@ -188,6 +199,7 @@ export const Filled = () => (
       onDeleteRecipe={mockDeleteRecipe}
       onSearchIngredients={mockSearchIngredients}
       onCreateOwnIngredient={mockCreateOwnIngredient}
+      onUploadThumbnail={mockUploadThumbnail}
     />
   </div>
 );
