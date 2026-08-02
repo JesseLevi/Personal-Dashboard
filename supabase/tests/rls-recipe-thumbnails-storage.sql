@@ -42,6 +42,20 @@ select is_empty(
      returning id $$,
   'A cannot update B''s object'
 );
+-- storage.objects carries a `protect_objects_delete` trigger (BEFORE DELETE
+-- ... FOR EACH STATEMENT, storage.protect_delete() in Supabase's own storage
+-- migrations) that pushes callers onto the Storage API instead of raw SQL.
+-- It is a "use the Storage API" guard, not a security boundary, and being
+-- statement-level it fires before RLS gets a chance to filter any rows --
+-- unconditionally, even though this delete matches zero rows once RLS has
+-- done its job, which is what turned this assertion into an uncaught error
+-- instead of an empty result. Supabase's own storage-api server sets this
+-- same session-local flag on every connection when it performs a delete on
+-- a caller's behalf, so this is the guard's real, intended escape hatch --
+-- not a workaround -- and it only silences protect_delete(), leaving every
+-- other trigger (and RLS) exactly as it is. `set local` keeps it scoped to
+-- this transaction, which the file already rolls back at the bottom.
+set local storage.allow_delete_query to 'true';
 select is_empty(
   $$ delete from storage.objects
      where bucket_id = 'recipe-thumbnails'
