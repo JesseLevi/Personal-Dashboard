@@ -66,8 +66,9 @@ is still enforced:
    already scrolls (`overflow-y-auto`, footer pinned outside it,
    `SidePanel.tsx`) — 74 wrapped icon buttons grow inside existing behaviour,
    not a new one.
-3. `docs/open-questions.md#category-icon-picker-curated-set` is now resolved
-   by this instruction and should be read as historical.
+3. The open question this raised (`category-icon-picker-curated-set`) was
+   resolved by this instruction and has been removed from
+   `docs/open-questions.md` — this section is the historical record now.
 
 Full list (`CATEGORY_ICONS` in `CategoryPanel.tsx`, `Icon.tsx`): the original
 8 (`Sandwich`, `Croissant`, `CakeSlice`, `Broccoli`, `Coffee`, `Soup`,

@@ -60,11 +60,13 @@ The ticket text asks for `pg_trgm`-backed search. `searchIngredientLibrary`'s ow
 
 ## Open questions raised (`docs/open-questions.md`, added by this ticket)
 
-- `ingredient-search-mock-duplicate-citroen`
-- `ingredient-search-mock-halumi-typo`
-- `card-content-ingredient-no-checked-example`
-- `ingredient-search-panel-zero-dev-mode-annotations`
 - `ingredient-search-panel-empty-and-zero-result-states-unsourced`
+
+Four more were raised and later closed as self-resolved / no action needed
+(mock's duplicate "Citroen" row, the "Halumi" typo, no checked-row example in
+the mock, zero Dev Mode annotations on the node) — removed from
+`docs/open-questions.md` during its 2026-08-02 cleanup; the underlying facts
+are recorded above in this file.
 
 ## Ladle stories
 

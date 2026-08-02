@@ -43,15 +43,21 @@ None of these three fields exist in either fetched node. Built per direct user i
 
 The ticket suggests "`Dropdown` with `Checkbox` rows for the user's existing tags, plus an `InputField` to type a new one." `public.tags`/`recipe_tags` exist in the schema (`TagRow`/`RecipeTagRow` in `lib/recipes/types.ts`) but **no query or server action exists anywhere in this codebase to list, create, or attach a tag** — `lib/recipes/queries.ts` has no `getTags`, `app/(app)/recepten/actions.ts` has no tag action, and `createRecipeSchema`/`updateRecipeSchema` (`lib/recipes/schemas.ts`) accept no `tags` field at all. That plumbing is outside #126's own stated scope (its "Data" section only names ingredients/steps).
 
-Built: the `InputField`-to-add-new-tag half only (fully functional, no backend needed), rendering added tags as removable `Tag` pills (`Button` `size="compact"` `icon="X"`) inside the same `Dropdown` shell the ticket asked for — so the composition is still "existing atoms only, no new component." The "existing tags as Checkbox rows" half is **not built**: there is no query to source it from, and rendering an always-empty checkbox list would be worse than omitting it. **Nothing typed into this field is persisted** — `handleSave`'s payload has no `tags` key, and even if it did, the schemas would silently strip it (`z.object` drops unknown keys by default). Flagged prominently, not silently dropped: `docs/open-questions.md#recipe-tags-no-query-or-write-path`.
+Built: the `InputField`-to-add-new-tag half only (fully functional, no backend needed), rendering added tags as removable `Tag` pills (`Button` `size="compact"` `icon="X"`) inside the same `Dropdown` shell the ticket asked for — so the composition is still "existing atoms only, no new component." The "existing tags as Checkbox rows" half is **not built**: there is no query to source it from, and rendering an always-empty checkbox list would be worse than omitting it. **Nothing typed into this field is persisted** — `handleSave`'s payload has no `tags` key, and even if it did, the schemas would silently strip it (`z.object` drops unknown keys by default).
+
+**Superseded 2026-08-02**: #149's feedback drops this field from the panel entirely ("Tags veld mag weg") — `tags`/`recipe_tags` stay in the schema, but this input's own missing query/write path is no longer worth building. The open question tracking that gap (`recipe-tags-no-query-or-write-path`) has been removed from `docs/open-questions.md`; this section is now only a record of what shipped and why it's coming back out.
 
 ## Ingrediënt-pill in the step field — deferred, not improvised
 
-The step `Input-field`'s `Button` SLOT ("Ingrediënt") is rendered (Figma draws it) but `disabled` — its annotation says it opens *"another pull-up panel,"* content undesigned anywhere in the file. Wiring a click handler would mean inventing that panel's contents from nothing. Deferred; `docs/open-questions.md#step-ingredient-pill-panel-undesigned` (already carried from the ticket body).
+The step `Input-field`'s `Button` SLOT ("Ingrediënt") is rendered (Figma draws it) but `disabled` — its annotation says it opens *"another pull-up panel,"* content undesigned anywhere in the file. Wiring a click handler would mean inventing that panel's contents from nothing.
+
+**Speced 2026-08-02 by #149**: the feedback ticket now describes the flow in full — clicking "+ ingredient" on a step opens a pull-up panel pre-filled with the recipe's own ingredients (entered earlier in the form), excluding whatever's already picked for that step, letting the user select which ones belong to this step (Figma node `3749:3091`). Still not built — tracked as implementation work under #149 now, not as an open design question. This is also very likely the same panel described just below ("Screen 03"), which #149 resolves too; the two were never confirmed to be the same node, so both notes stay as separate history.
 
 ## Screen 03 — confirm-ingredients overlay, deferred
 
-`3777:3984`'s second `Pull-up panel` (`3777:4012`, a `Card` of three `Card-content/Ingredient` rows with unchecked `Checkbox`es, footer "Oplsaan" only) is **not built**. No Dev Mode annotation explains its purpose, and its own footer duplicates the underlying form's `Opslaan` action with no visible different effect described anywhere — building it would mean guessing both its trigger and its semantics. `docs/open-questions.md#screen-03-overlay-purpose-unclear` (ticket-carried).
+`3777:3984`'s second `Pull-up panel` (`3777:4012`, a `Card` of three `Card-content/Ingredient` rows with unchecked `Checkbox`es, footer "Oplsaan" only) is **not built**. No Dev Mode annotation explains its purpose, and its own footer duplicates the underlying form's `Opslaan` action with no visible different effect described anywhere — building it would mean guessing both its trigger and its semantics.
+
+**Closed 2026-08-02**: both this and the Ingrediënt-pill question above were removed from `docs/open-questions.md` per user confirmation — #149's spec (above) covers the real behaviour needed here, whether or not this is literally the same Figma node.
 
 ## Ingredient/step row affordances — none in v1
 
@@ -84,9 +90,6 @@ No desktop node exists for the field content (`SidePanel` itself already has bot
 
 - `recipe-edit-trigger-no-host-yet`
 - `ingredient-name-annotation-only-on-row-two` (ticket-carried)
-- `recipe-tags-no-query-or-write-path`
-- `step-ingredient-pill-panel-undesigned` (ticket-carried)
-- `screen-03-overlay-purpose-unclear` (ticket-carried)
 - `ingredient-step-rows-no-delete-reorder-v1` (ticket-carried)
 - `recipe-panel-verwijderen-hidden-on-create` (ticket-carried, default chosen: hidden)
 - `recipe-panel-unit-list-etc-unsourced` (ticket-carried)
@@ -95,7 +98,12 @@ No desktop node exists for the field content (`SidePanel` itself already has bot
 - `recipe-panel-photo-upload-not-built` (ticket-carried, shared with #121)
 - `recipe-name-field-swap-icon-unusual` (ticket-carried)
 - `recipe-panel-two-identical-voeg-toe-buttons` (ticket-carried)
-- `recipe-panel-trigger-annotation-misattributed` (ticket-carried, `3777:3923`)
+
+Four more were raised and later closed during `docs/open-questions.md`'s
+2026-08-02 cleanup (`recipe-tags-no-query-or-write-path`,
+`step-ingredient-pill-panel-undesigned`, `screen-03-overlay-purpose-unclear`,
+`recipe-panel-trigger-annotation-misattributed`) — see the Tags and
+Ingrediënt-pill/Screen 03 sections above for what's still current.
 
 ## Ladle stories
 
