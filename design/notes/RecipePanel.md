@@ -62,9 +62,9 @@ Each `StepRowState` carries `ingredientLocalIds: string[]`, referencing `Ingredi
 
 **Reloading a saved recipe reverses the same translation.** `ingredientRowsFromRecipe` seeds each row's `sourceId` from `recipe_ingredients.id` (edit mode only; `null` for a freshly typed row). `stepRowsFromRecipe` now takes that resolved `ingredientRows` array as a second argument — never a fresh second call to `ingredientRowsFromRecipe(recipe)` — builds a `sourceId → localId` map from it, and uses each `RecipeStepWithIngredients.ingredientIds` (real `recipe_ingredients.id` values) to look up the matching `localId`s. Reusing the exact array already assigned to the `ingredients` state matters: `localId`s are minted once by `nextRowId`, and a second `ingredientRowsFromRecipe` call would mint different ones, breaking the `sourceId` lookup silently rather than loudly.
 
-## Screen 03 — confirm-ingredients overlay, deferred
+## Screen 03 — confirm-ingredients overlay, resolved by #149
 
-`3777:3984`'s second `Pull-up panel` (`3777:4012`, a `Card` of three `Card-content/Ingredient` rows with unchecked `Checkbox`es, footer "Oplsaan" only) is **not built**. No Dev Mode annotation explains its purpose, and its own footer duplicates the underlying form's `Opslaan` action with no visible different effect described anywhere — building it would mean guessing both its trigger and its semantics. `docs/open-questions.md#screen-03-overlay-purpose-unclear` (ticket-carried).
+`3777:3984`'s second `Pull-up panel` (`3777:4012`, a `Card` of three `Card-content/Ingredient` rows with unchecked `Checkbox`es, footer "Oplsaan" only) carried no Dev Mode annotation, so #126 deferred it rather than guess its trigger and semantics. #149 answered it: `3749:3241` on frame `3749:3091` is the same panel, and the user's own feedback on the issue names its purpose — it is the per-step ingredient picker, opened by a step's "+ Ingrediënt" pill, and its "Opslaan" commits that step's selection, not the recipe. Built as `StepIngredientPanel`; `docs/open-questions.md#screen-03-overlay-purpose-unclear` removed.
 
 ## Ingredient/step row affordances — none in v1
 
@@ -99,7 +99,6 @@ Still open:
 
 - `recipe-edit-trigger-no-host-yet`
 - `ingredient-name-annotation-only-on-row-two` (ticket-carried)
-- `screen-03-overlay-purpose-unclear` (ticket-carried)
 - `ingredient-step-rows-no-delete-reorder-v1` (ticket-carried)
 - `recipe-panel-verwijderen-hidden-on-create` (ticket-carried, default chosen: hidden)
 - `recipe-panel-unit-list-etc-unsourced` (ticket-carried)
@@ -109,7 +108,7 @@ Still open:
 - `recipe-panel-two-identical-voeg-toe-buttons` (ticket-carried)
 - `recipe-panel-trigger-annotation-misattributed` (ticket-carried, `3777:3923`)
 
-Closed by #149: `recipe-tags-no-query-or-write-path` (field removed), `step-ingredient-pill-panel-undesigned` (`StepIngredientPanel` built), `recipe-panel-photo-upload-not-built` (`ImageUploadField` wired in).
+Closed by #149: `recipe-tags-no-query-or-write-path` (field removed), `step-ingredient-pill-panel-undesigned` (`StepIngredientPanel` built), `recipe-panel-photo-upload-not-built` (`ImageUploadField` wired in), `screen-03-overlay-purpose-unclear` (same panel, purpose named by the user on #149).
 
 ## Ladle stories
 

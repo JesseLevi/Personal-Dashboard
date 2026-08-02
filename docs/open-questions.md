@@ -179,10 +179,6 @@ the UI before save is attempted, rather than only after a failed submit.
 
 **Only `3717:2844` row 2's name field (`I3740:4302;3761:8982`) carries the "opens the ingredient search" Dev Mode annotation** — rows 1 and 3 have byte-identical structure (`Icon/Arrow-right-left`, same `Input-field` variant) but no annotation of their own. `RecipeIngredientRow` applies the same open-search behaviour to all three rows (the least-surprising reading — a picker icon that only sometimes opens a picker would be worse). Needs a design answer confirming rows 1/3 should behave identically, or explaining why they were left unannotated.
 
-## screen-03-overlay-purpose-unclear
-
-**`3777:3984`'s second `Pull-up panel` (`3777:4012`) — a `Card` of three unchecked `Card-content/Ingredient` rows with a lone "Oplsaan" footer button — carries no Dev Mode annotation anywhere.** #126 reads it as a plausible "confirm ingredients" step but did not build it (guessing both its trigger and its semantics would mean improvising, not implementing). Needs a design answer on what triggers it and what "Oplsaan" does there that the underlying form's own "Opslaan" doesn't already cover.
-
 ## ingredient-step-rows-no-delete-reorder-v1
 
 **Neither ingredient rows nor step rows have any delete/reorder affordance in #126's build.** Figma draws exactly three static ingredient rows and one static step, with no per-row chrome — v1 shipped literally that (a "Voeg toe" button appends a row; nothing removes one). Needs a design answer: a real trailing-icon delete/reorder control, or confirmation that rows are meant to be immutable once added (awkward on `edit`, where a wrong row currently can't be removed without recreating the whole recipe).
