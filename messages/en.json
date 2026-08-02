@@ -295,6 +295,18 @@
       "title": "Choose ingredients for this step",
       "saveLabel": "Save"
     },
+    "recipeDetailPage": {
+      "backLabel": "Back to recipes",
+      "addToBasketLabel": "Add to basket",
+      "editLabel": "Edit",
+      "deleteLabel": "Delete",
+      "overflowMenuLabel": "More options",
+      "deleteConfirmLabel": "Are you sure?",
+      "deleteConfirmButtonLabel": "Yes, delete",
+      "deletingLabel": "Deleting...",
+      "cancelLabel": "Cancel",
+      "stepsTitle": "Steps"
+    },
     "imageUploadField": {
       "selectImage": "Select image"
     }

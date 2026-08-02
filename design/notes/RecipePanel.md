@@ -15,7 +15,7 @@ No separate "Recept bewerken" node exists in Figma — `target.mode` follows `Ca
 
 `ReceptenBoard.tsx`'s `BoardView` already exposes `onAddItem(columnId)` (#124), fired from each category's header `+` button (`Card-container`'s own `Atom/Button` — the *correct* trigger per the ticket's own "verkeerde annotatie" callout on `3777:3923`/`"Adds a kanban column."`, which is Te-Doen residue, not this panel's trigger). Wired to open `RecipePanel` in `create` mode with that column's id as `categoryId`.
 
-**Edit mode has no wired trigger yet.** `Card-content/Recipe` (`CardContentRecipe.tsx`) draws no pencil/edit affordance — `BoardView`'s `onItemClick` still navigates to `/recepten/[id]` (a detail page that doesn't exist yet, #124's own scope). Building a new edit-entry UI element here would be inventing UI Figma doesn't draw. `RecipePanel`'s `edit` mode is fully implemented and Ladle-testable (`Filled` story passes a real `RecipeWithIngredientsAndSteps`) but is only reachable once the recipe detail page ticket adds a real trigger to it. Flagged: `docs/open-questions.md#recipe-edit-trigger-no-host-yet`.
+**Edit mode had no wired trigger until #127.** `Card-content/Recipe` (`CardContentRecipe.tsx`) still draws no pencil/edit affordance, but `/recepten/[recipeId]` (#127, `design/notes/RecipeDetailPage.md`) now opens this same `RecipePanel` in `edit` mode from its own "Bewerken" button/menu item, passing the fetched `RecipeWithIngredientsAndSteps` straight through as `target.recipe` — exactly the shape the `Filled` Ladle story already exercised. **Closed 2026-08-02**, removed from `docs/open-questions.md`.
 
 ## Ingredient rows — `RecipeIngredientRow` molecule
 
