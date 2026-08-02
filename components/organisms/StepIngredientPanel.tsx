@@ -86,10 +86,16 @@ export function StepIngredientPanel({
       title={t("title")}
       closeLabel={tSidePanel("closeLabel")}
       level={2}
+      // #153: footer row wrapper (matches RecipePanel.tsx/IngredientSearchPanel.tsx) —
+      // a bare `grow basis-0` Button as SidePanel's flex-col footer's direct
+      // child collapses to ~0 height (basis-0 applies on the column axis
+      // instead of a row's). See design/notes/StepIngredientPanel.md.
       footer={
-        <Button variant="filled" icon="Save" className="grow basis-0" onClick={handleSave}>
-          {t("saveLabel")}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="filled" icon="Save" className="grow basis-0" onClick={handleSave}>
+            {t("saveLabel")}
+          </Button>
+        </div>
       }
     >
       {visibleIngredients.length > 0 && (

@@ -10,7 +10,9 @@ import { Button } from "../atoms/Button";
  * ticket history and the deviation record: `design/notes/PortionStepper.md`.
  * Presentational only (Server Component) — `label`/`decrementLabel`/
  * `incrementLabel` arrive pre-translated, same idiom as
- * `CardContentIngredient`'s `deleteLabel`.
+ * `CardContentIngredient`'s `deleteLabel`. `min` (#153) clamps the decrement
+ * target and disables the decrement Button at the floor — see
+ * design/notes/PortionStepper.md for why this lives here, not in the caller.
  */
 export interface PortionStepperProps {
   /** Current portion count (Figma TEXT "6 personen") — caller-owned state. */
@@ -23,6 +25,8 @@ export interface PortionStepperProps {
   incrementLabel: string;
   /** Fires with the target portion count on either press. See design/notes/PortionStepper.md for why this is a single onChange rather than onIncrement/onDecrement. */
   onChange?: (next: number) => void;
+  /** Floor for the decrement button — clamped and disabled at this value. Default `1` (#153, user-ruled: personen can never go to 0 or negative). */
+  min?: number;
   className?: string;
 }
 
@@ -32,14 +36,17 @@ export function PortionStepper({
   decrementLabel,
   incrementLabel,
   onChange,
+  min = 1,
   className,
 }: PortionStepperProps) {
+  const atMin = portions <= min;
   return (
     <div className={clsx("inline-flex items-center gap-6", className)}>
       <Button
         icon="Minus"
         aria-label={decrementLabel}
-        onClick={() => onChange?.(portions - 1)}
+        onClick={() => onChange?.(Math.max(min, portions - 1))}
+        disabled={atMin}
       />
       <span className="text-xl font-semibold text-text">{label}</span>
       <Button
