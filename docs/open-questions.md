@@ -179,14 +179,6 @@ the UI before save is attempted, rather than only after a failed submit.
 
 **Only `3717:2844` row 2's name field (`I3740:4302;3761:8982`) carries the "opens the ingredient search" Dev Mode annotation** — rows 1 and 3 have byte-identical structure (`Icon/Arrow-right-left`, same `Input-field` variant) but no annotation of their own. `RecipeIngredientRow` applies the same open-search behaviour to all three rows (the least-surprising reading — a picker icon that only sometimes opens a picker would be worse). Needs a design answer confirming rows 1/3 should behave identically, or explaining why they were left unannotated.
 
-## recipe-tags-no-query-or-write-path
-
-**`public.tags`/`recipe_tags` exist in the schema (`TagRow`/`RecipeTagRow`, `lib/recipes/types.ts`) but no query lists a user's existing tags, no server action creates or attaches one, and `createRecipeSchema`/`updateRecipeSchema` accept no `tags` field.** #126 built only the "type a new tag" half of the ticket's suggested Tags composition (local component state, not persisted); the "existing tags as checkboxes" half has no data source to render. Needs a data-layer ticket (query + action + schema field) before Tags can do anything beyond decorate the form.
-
-## step-ingredient-pill-panel-undesigned
-
-**The step field's "Ingrediënt" pill (`I3742:2829;3761:6083;3953:9745`) is annotated as opening a second pull-up panel whose content is drawn nowhere in the file.** #126 renders the pill (Figma draws it) but leaves it `disabled` rather than inventing content for a panel with no source. Needs a design answer: what that panel shows (likely: pick from the recipe's own ingredient rows to reference inside a step's text), or confirmation it's out of scope entirely.
-
 ## screen-03-overlay-purpose-unclear
 
 **`3777:3984`'s second `Pull-up panel` (`3777:4012`) — a `Card` of three unchecked `Card-content/Ingredient` rows with a lone "Oplsaan" footer button — carries no Dev Mode annotation anywhere.** #126 reads it as a plausible "confirm ingredients" step but did not build it (guessing both its trigger and its semantics would mean improvising, not implementing). Needs a design answer on what triggers it and what "Oplsaan" does there that the underlying form's own "Opslaan" doesn't already cover.
@@ -205,15 +197,11 @@ the UI before save is attempted, rather than only after a failed submit.
 
 ## recipe-panel-personen-chevron-behaviour-unsourced
 
-**The Personen field's trailing chevron (`3968:10298`) has `Trekking-icon: true` but no annotation describing what it opens.** #126 built it as a `Dropdown` listing 1-12 (an unsourced, reasonable default — see `design/notes/RecipePanel.md`). Needs a design answer on the real range/behaviour (a stepper instead of a list? A different upper bound?).
+**The Personen field's trailing chevron (`3968:10298`) has `Trekking-icon: true` but no annotation describing what it opens.** #126 built it as a `Dropdown` listing 1-12 (an unsourced, reasonable default); #149 rebuilt the same field on `InputField`'s new `options` (select) variant instead, since that's what the fetched node actually models (`design/notes/RecipePanel.md`) — the range itself is unchanged. Needs a design answer on the real range/behaviour (a stepper instead of a list? A different upper bound?).
 
 ## recipe-panel-desktop-layout-gap
 
 **No desktop Figma node exists for the add/edit-recipe field content** — only `3717:2844` (402px mobile) is drawn. #126 kept every field in the same single-column order at every breakpoint, per the ticket's own instruction to avoid inventing new layout decisions. Needs a design answer only if a real desktop layout (e.g. two-column fields) was intended.
-
-## recipe-panel-photo-upload-not-built
-
-**No file-upload control exists anywhere in this form** — per the 2026-07-29 decision, #121 owns the storage bucket and server-side validation, not this ticket's input control, and no control is designed for it yet. `recipes.thumbnail_path` stays unset from this form. Needs a design answer (an `InputField`-adjacent upload affordance, drag-and-drop, or something else) before a future ticket can wire it up.
 
 ## recipe-name-field-swap-icon-unusual
 

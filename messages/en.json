@@ -271,13 +271,8 @@
         "servingsLabel": "Servings",
         "timeLabel": "Time",
         "timePlaceholder": "Minutes",
-        "tagsLabel": "Tags",
-        "tagsPlaceholder": "Add tags",
-        "tagsAddPlaceholder": "New tag",
-        "tagsAddLabel": "Add tag",
-        "tagsRemoveLabel": "Remove tag \"{tag}\"",
         "ingredientNameLabel": "Item",
-        "ingredientNamePlaceholder": "Pick an ingredient",
+        "ingredientNamePlaceholder": "Choose",
         "ingredientQuantityLabel": "Amount",
         "ingredientQuantityPlaceholder": "0",
         "ingredientUnitLabel": "Unit",
@@ -287,6 +282,7 @@
       },
       "addRowLabel": "Add",
       "stepIngredientPillLabel": "Ingredient",
+      "stepIngredientPillLabelWithCount": "Ingredient ({count})",
       "saveLabel": "Save",
       "savingLabel": "Saving...",
       "deleteLabel": "Delete",
@@ -294,6 +290,10 @@
       "deleteConfirmButtonLabel": "Yes, delete",
       "deletingLabel": "Deleting...",
       "cancelLabel": "Cancel"
+    },
+    "stepIngredientPanel": {
+      "title": "Choose ingredients for this step",
+      "saveLabel": "Save"
     },
     "imageUploadField": {
       "selectImage": "Select image"

@@ -5,6 +5,8 @@
 
 Built #126. Fetched all three nodes live via `mcp__figma__get_figma_data` before writing any UI, plus the raw REST annotations the ticket already transcribed (MCP drops Dev Mode annotations — `docs/guides/ui-components.md`'s standing warning).
 
+Extended #149: Tags removed (never had a write path — see below), an Afbeelding field added (`ImageUploadField`, upload-on-save), Personen switched from `Dropdown` to `InputField`'s new `options` (select) variant, and each step gained a working "+ Ingrediënt" picker (`StepIngredientPanel`) — see the dedicated sections below for each.
+
 ## One component, create+edit (analogous to #94)
 
 No separate "Recept bewerken" node exists in Figma — `target.mode` follows `CardDetailPanel.tsx`'s precedent exactly, including its reset-on-open (not remount-on-target-change) pattern for the same #105 first-open-animation reason.
@@ -27,27 +29,38 @@ Three `Input-field` instances per row (name/quantity/unit), matching `3717:2844`
 
 Two `SidePanel`s can be open at once (this one + `IngredientSearchPanel`'s own) — no z-index conflict: both use the same `z-40`/`z-50` classes, but `IngredientSearchPanel` renders after `RecipePanel`'s own `SidePanel` in the returned JSX, so normal DOM paint order stacks it on top.
 
-## Personen — Dropdown, least-inventive reuse
+## Personen — `InputField`'s `options` (select) variant (#149, supersedes `Dropdown`)
 
-The trailing chevron's behaviour isn't specified beyond "Trekking-icon: true". Built as a `Dropdown` (reusing `CardDetailPanel.tsx`'s exact `key={value}`-remount-closes-on-select pattern) listing a fixed 1-12 range — unsourced from Figma/product, flagged the same way `SidePanel`'s own drag thresholds are (`design/notes/SidePanel.md`'s #103 entry): a reasonable default, not a design decision.
+The trailing chevron's behaviour still isn't annotated beyond "Trekking-icon: true" — that part is unchanged and stays flagged (`docs/open-questions.md#recipe-panel-personen-chevron-behaviour-unsourced`). What changed in #149 is the *widget*, not the range: Figma models Personen (`3968:10298`) as the same `Input-field` component with a chevron, never a separate `Atom/Dropdown` instance, so `#126`'s `Dropdown` build was a mismatch (this is what produced the reported "Personen looks wrong" feedback). Rebuilt on `InputField`'s new `options` variant (`design/notes/InputField.md`'s #149 entry) — same fixed 1-12 range as before, still unsourced from Figma/product, flagged the same way `SidePanel`'s own drag thresholds are (`design/notes/SidePanel.md`'s #103 entry): a reasonable default, not a design decision.
 
-## Categorie/Tijd/Tags — user-ordered deviation (2026-07-29), not in `3717:2844`/`3777:3932`
+## Afbeelding — `ImageUploadField`, upload-on-save (#149)
 
-None of these three fields exist in either fetched node. Built per direct user instruction: *"Zijn allemaal input fields of dropdowns. Geen nieuwe ui nodig."* — and without a category, a new recipe cannot land in any kanban column at all (`ReceptenBoard.tsx` renders one column per `recipe_categories` row), which would make the create flow unusable.
+`3777:3932` draws a "Selecteer afbeelding" field between Titel and Personen — #121 built the `ImageUploadField` molecule and the storage/signed-URL plumbing (`lib/recipes/thumbnails.ts`) but no form ever rendered the control. #149 wires it in at that same position: `thumbnailFile` (a plain `File | null`, `null` meaning "keep the existing thumbnail" on edit or "no photo" on create) is local state, uploaded only from `handleSave` — never eagerly on file pick — via the new `onUploadThumbnail` prop (`"use server"` `uploadRecipeThumbnail`, `app/(app)/recepten/actions.ts`), so a cancelled form never orphans a storage object. The upload runs *before* the create/update call (awaited, not parallel) because its result (`thumbnailPath`) is part of the same payload; on edit with no new file picked, `thumbnailPath` is left out of the payload entirely so `updateRecipeSchema`'s per-field-optional contract leaves the stored `thumbnail_path` untouched. `selectedFileName` shows the picked file's name, or — on edit, before a new file is picked — `recipe.thumbnail_path`'s own basename as a best-effort approximation of a filename (the storage path is `<user_id>/<uuid>.<ext>`, not a stored original name). Closes `docs/open-questions.md#recipe-panel-photo-upload-not-built`.
+
+## Categorie/Tijd — user-ordered deviation (2026-07-29), not in `3717:2844`/`3777:3932`
+
+Neither field exists in either fetched node. Built per direct user instruction: *"Zijn allemaal input fields of dropdowns. Geen nieuwe ui nodig."* — and without a category, a new recipe cannot land in any kanban column at all (`ReceptenBoard.tsx` renders one column per `recipe_categories` row), which would make the create flow unusable.
 
 - **Categorie**: `Dropdown` listing the caller's `recipe_categories`, same trigger pattern as `CardDetailPanel.tsx`'s Status field (`Button` with the category's icon, `align="left"`, doubling as the disclosure trigger). Preselects `target.categoryId` on create (the column whose `+` was clicked) or `recipe.category_id` on edit.
 - **Tijd**: plain numeric `InputField`, writes `recipes.time_minutes`.
-- **Tags**: see below — the one field that shipped smaller than the ticket's suggested composition, and why.
 
-## Tags — scoped down from the ticket's suggested composition (flagged)
+A third field, Tags, was built alongside these two in #126 and removed again in #149 — see below.
 
-The ticket suggests "`Dropdown` with `Checkbox` rows for the user's existing tags, plus an `InputField` to type a new one." `public.tags`/`recipe_tags` exist in the schema (`TagRow`/`RecipeTagRow` in `lib/recipes/types.ts`) but **no query or server action exists anywhere in this codebase to list, create, or attach a tag** — `lib/recipes/queries.ts` has no `getTags`, `app/(app)/recepten/actions.ts` has no tag action, and `createRecipeSchema`/`updateRecipeSchema` (`lib/recipes/schemas.ts`) accept no `tags` field at all. That plumbing is outside #126's own stated scope (its "Data" section only names ingredients/steps).
+## Tags — removed (#149)
 
-Built: the `InputField`-to-add-new-tag half only (fully functional, no backend needed), rendering added tags as removable `Tag` pills (`Button` `size="compact"` `icon="X"`) inside the same `Dropdown` shell the ticket asked for — so the composition is still "existing atoms only, no new component." The "existing tags as Checkbox rows" half is **not built**: there is no query to source it from, and rendering an always-empty checkbox list would be worse than omitting it. **Nothing typed into this field is persisted** — `handleSave`'s payload has no `tags` key, and even if it did, the schemas would silently strip it (`z.object` drops unknown keys by default). Flagged prominently, not silently dropped: `docs/open-questions.md#recipe-tags-no-query-or-write-path`.
+#126 shipped only the "type a new tag, render it as a removable pill" half of the ticket's suggested composition: `public.tags`/`recipe_tags` exist in the schema but no query/action/schema field ever existed to list, create, or attach one, so nothing typed into the field was ever persisted (`handleSave`'s payload had no `tags` key, and the schemas would have silently stripped it either way). #149 removes the field entirely, per the same reasoning that flagged it in the first place — a field that visibly accepts input and silently discards it is worse than no field. Closes `docs/open-questions.md#recipe-tags-no-query-or-write-path`; a future data-layer ticket can reintroduce Tags once `getTags`/an attach action/a schema field exist to back it.
 
-## Ingrediënt-pill in the step field — deferred, not improvised
+## Ingrediënt-pill in the step field — built (#149, `StepIngredientPanel`)
 
-The step `Input-field`'s `Button` SLOT ("Ingrediënt") is rendered (Figma draws it) but `disabled` — its annotation says it opens *"another pull-up panel,"* content undesigned anywhere in the file. Wiring a click handler would mean inventing that panel's contents from nothing. Deferred; `docs/open-questions.md#step-ingredient-pill-panel-undesigned` (already carried from the ticket body).
+#126 rendered the step `Input-field`'s `Button` SLOT ("Ingrediënt") `disabled` because its annotated target — "another pull-up panel" — had no Figma source anywhere in the file at the time. It does now (`3749:3091`/`3749:3241`, fetched for #149): the pill opens `StepIngredientPanel` (`components/organisms/StepIngredientPanel.tsx`, full reasoning in `design/notes/StepIngredientPanel.md`), a per-step picker over this panel's own local ingredient rows. The pill's label grows a `(count)` suffix once a step has a selection — this codebase's own judgement call, no Figma count badge exists on this pill. Closes `docs/open-questions.md#step-ingredient-pill-panel-undesigned`.
+
+## Step↔ingredient wiring — local-id state, translated to `ingredientRefs` at save time (#149)
+
+Each `StepRowState` carries `ingredientLocalIds: string[]`, referencing `IngredientRowState.localId` — never a database id, since on `create` the ingredient rows themselves don't have one yet. `StepIngredientPanel` reads/writes this array through plain props (`selectedIds`/`onSave`), the same "props in, callback out" shape `IngredientSearchPanel` already uses.
+
+**The translation into payload `ingredientRefs` (array indexes) happens in `buildContentsPayload`, and only after the empty-name filter, never before it.** `ingredientRefs` are indexes into the payload's own `ingredients` array — the array the server actually receives — and that array only contains rows that survive `row.name.trim() !== ""`. Building the local-id→index map from the *unfiltered* `ingredients` state would produce indexes that either point at the wrong row (once a blank row ahead of it is dropped) or reference a row that was dropped entirely. So `buildContentsPayload` filters first, builds `indexByLocalId` from the filtered array, and only then maps each step's `ingredientLocalIds` through that map (silently dropping any id that didn't survive filtering — an unnamed ingredient row was never a real ingredient to begin with). See `lib/recipes/schemas.ts`'s own `ingredientRefs` comment for the receiving end of this contract.
+
+**Reloading a saved recipe reverses the same translation.** `ingredientRowsFromRecipe` seeds each row's `sourceId` from `recipe_ingredients.id` (edit mode only; `null` for a freshly typed row). `stepRowsFromRecipe` now takes that resolved `ingredientRows` array as a second argument — never a fresh second call to `ingredientRowsFromRecipe(recipe)` — builds a `sourceId → localId` map from it, and uses each `RecipeStepWithIngredients.ingredientIds` (real `recipe_ingredients.id` values) to look up the matching `localId`s. Reusing the exact array already assigned to the `ingredients` state matters: `localId`s are minted once by `nextRowId`, and a second `ingredientRowsFromRecipe` call would mint different ones, breaking the `sourceId` lookup silently rather than loudly.
 
 ## Screen 03 — confirm-ingredients overlay, deferred
 
@@ -72,9 +85,9 @@ Every literal source typo/placeholder is corrected in the catalog, never reprodu
 | "Blueberry Protein \LPacked Muffins" (stray `\L`) | Never used as a translation key — sample content only in the Filled Ladle story, with the artefact stripped |
 | "Proteine poeder" (missing diaeresis) | Sample content stays as literal Ladle story fixture data (not a translation key at all — it's a per-row `name` value from a fictional recipe, same treatment as "Halumi" in `design/notes/IngredientSearchPanel.md`), not corrected in the catalog since it never reaches one |
 
-## `updateRecipe`'s replace-not-transactional write (real risk this form now exposes)
+## `updateRecipe`'s write is now transactional (resolved #149)
 
-`app/(app)/recepten/actions.ts`'s own header comment already documents that `replaceRecipeIngredients`/`replaceRecipeSteps` are delete-then-insert, not one transaction — a successful delete followed by a failing insert leaves a recipe with **no** ingredients or steps. This ticket's edit form is the first real caller that can trigger that window (create's compensating cleanup deletes the whole recipe on the same failure; `updateRecipe` has no equivalent compensation for an existing recipe). Not papered over here — flagged again in the PR body per `CLAUDE.md`'s "flag, don't silently redesign," same as `IngredientSearchPanel.md`'s own `ilike`-not-`pg_trgm` flag.
+#126 flagged that `replaceRecipeIngredients`/`replaceRecipeSteps` were delete-then-insert, not one transaction — a successful delete followed by a failing insert could leave a recipe with **no** ingredients or steps, and `updateRecipe` had no compensation for an existing recipe the way `createRecipe` does for a brand-new one. #149's data-layer commit resolves this: both actions now call a single `public.replace_recipe_contents` RPC (`supabase/migrations/20260802000001_recipe_step_ingredients.sql`), a real Postgres transaction that replaces ingredients, steps, and their `recipe_step_ingredients` links in one round trip. No longer an open risk.
 
 ## Desktop — no new layout decisions
 
@@ -82,21 +95,22 @@ No desktop node exists for the field content (`SidePanel` itself already has bot
 
 ## Open questions raised (`docs/open-questions.md`, appended by this ticket)
 
+Still open:
+
 - `recipe-edit-trigger-no-host-yet`
 - `ingredient-name-annotation-only-on-row-two` (ticket-carried)
-- `recipe-tags-no-query-or-write-path`
-- `step-ingredient-pill-panel-undesigned` (ticket-carried)
 - `screen-03-overlay-purpose-unclear` (ticket-carried)
 - `ingredient-step-rows-no-delete-reorder-v1` (ticket-carried)
 - `recipe-panel-verwijderen-hidden-on-create` (ticket-carried, default chosen: hidden)
 - `recipe-panel-unit-list-etc-unsourced` (ticket-carried)
-- `recipe-panel-personen-chevron-behaviour-unsourced` (ticket-carried)
+- `recipe-panel-personen-chevron-behaviour-unsourced` (ticket-carried, widget changed #149, range/behaviour still unsourced)
 - `recipe-panel-desktop-layout-gap` (ticket-carried)
-- `recipe-panel-photo-upload-not-built` (ticket-carried, shared with #121)
 - `recipe-name-field-swap-icon-unusual` (ticket-carried)
 - `recipe-panel-two-identical-voeg-toe-buttons` (ticket-carried)
 - `recipe-panel-trigger-annotation-misattributed` (ticket-carried, `3777:3923`)
 
+Closed by #149: `recipe-tags-no-query-or-write-path` (field removed), `step-ingredient-pill-panel-undesigned` (`StepIngredientPanel` built), `recipe-panel-photo-upload-not-built` (`ImageUploadField` wired in).
+
 ## Ladle stories
 
-`Empty` (create mode, one empty ingredient row, one empty step), `Filled` (edit mode, three ingredient rows incl. one with and one without `ingredientId`, two steps). Mock `onCreateRecipe`/`onUpdateRecipe`/`onDeleteRecipe`/`onSearchIngredients`/`onCreateOwnIngredient` never import the real action module, matching `CardDetailPanel.stories.tsx`'s precedent. Wrapped in `<div className="min-h-screen">` — `SidePanel.stories.tsx`'s known trap (a bare static `SidePanel` story crops to a 1280x64 sliver).
+`Empty` (create mode, one empty ingredient row, one empty step), `Filled` (edit mode, three ingredient rows incl. one with and one without `ingredientId`, two steps). Mock `onCreateRecipe`/`onUpdateRecipe`/`onDeleteRecipe`/`onSearchIngredients`/`onCreateOwnIngredient`/`onUploadThumbnail` (#149) never import the real action module, matching `CardDetailPanel.stories.tsx`'s precedent. `Filled`'s sample recipe now seeds `steps[0].ingredientIds` with two of its ingredient rows' ids (#149), exercising `stepRowsFromRecipe`'s `sourceId → localId` reload path rather than always starting from an empty selection. Wrapped in `<div className="min-h-screen">` — `SidePanel.stories.tsx`'s known trap (a bare static `SidePanel` story crops to a 1280x64 sliver).

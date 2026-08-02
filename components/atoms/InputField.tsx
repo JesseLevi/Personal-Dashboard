@@ -1,20 +1,25 @@
 // figma: node-id=3705:4402
 import clsx from "clsx";
-import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from "react";
 import { Icon, type IconName } from "./Icon";
 
 /**
  * Atom/InputField — Figma "Input-field" (node-id 3705:4402). Full history:
  * `design/notes/InputField.md`.
- *
  * `Field`+`Title` → `label`; `Leading-icon`/`Trekking-icon` (Figma misnomer
  * for trailing) → `leadingIcon`/`trailingIcon`; `Button` SLOT → `button`.
- * `multiline` (#94, cards.description) → `<textarea>` instead of `<input>`,
- * same fixed-height container Figma shows (144px) rather than a growing box.
+ * `multiline` (#94) → `<textarea>` in a fixed 144px box. `options` (#149) →
+ * native `<select>`: Figma models Personen/Eenheid as this same field with a
+ * chevron, never `Atom/Dropdown` — native select for free OS/a11y semantics.
  * States → CSS: Hover → `:hover`, Active → `:active`, Selected →
- * `:focus-within` — this atom's own interpretation, flagged for design
- * confirmation. `border-input-active` is a deliberate component-scoped
- * token divergence from Button/Outline (docs/open-questions.md#button-vs-input-active-border).
+ * `:focus-within` (this atom's own interpretation, flagged for design
+ * confirmation); `border-input-active` diverges from Button/Outline on
+ * purpose — docs/open-questions.md#button-vs-input-active-border.
  */
 type InputFieldSharedProps = {
   /** Figma `Leading-icon` — icon rendered before the input. */
@@ -30,15 +35,36 @@ type InputFieldSharedProps = {
 type InputFieldSingleLineProps = InputFieldSharedProps &
   Omit<InputHTMLAttributes<HTMLInputElement>, "className"> & {
     multiline?: false;
+    options?: never;
+    placeholderOption?: never;
   };
 
 type InputFieldMultilineProps = InputFieldSharedProps &
   Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "className"> & {
     /** Renders a `<textarea>` in the fixed-height (144px) shape Figma's Omschrijving sample uses, instead of the single-line `<input>`. */
     multiline: true;
+    options?: never;
+    placeholderOption?: never;
   };
 
-type InputFieldBaseProps = InputFieldSingleLineProps | InputFieldMultilineProps;
+export interface InputFieldSelectOption {
+  value: string;
+  label: string;
+}
+
+type InputFieldSelectProps = InputFieldSharedProps &
+  Omit<SelectHTMLAttributes<HTMLSelectElement>, "className"> & {
+    multiline?: false;
+    /** Renders a native `<select>` instead of `<input>` — pair with `trailingIcon="ChevronDown"` for the Figma chevron. */
+    options: InputFieldSelectOption[];
+    /** Rendered as a disabled, unselectable first `<option value="">` for "nothing chosen yet" — `<select>` has no native `placeholder` attribute. */
+    placeholderOption?: string;
+  };
+
+type InputFieldBaseProps =
+  | InputFieldSingleLineProps
+  | InputFieldMultilineProps
+  | InputFieldSelectProps;
 
 /**
  * A visible `label` must be associated with the input. This atom is a Server
@@ -56,8 +82,20 @@ export function InputField({
   button,
   className,
   multiline,
+  options,
+  placeholderOption,
   ...props
 }: InputFieldProps) {
+  // #149: the text row's own bottom padding only drops when `button` is
+  // present (the Figma-correct "8px 0px 0px 8px" reading for every instance
+  // — see design/notes/InputField.md) so a plain input/textarea with no
+  // `button` renders pixel-identically to before this ticket, and only the
+  // reported "step field has a dead 8px gap above its button pill" case
+  // moves. Same reasoning for the multiline+button container height: fixed
+  // at Figma's 124px instead of the plain-multiline 144px, with the row
+  // flexing (not `h-full`) to share that height with the button row.
+  const hasButtonRow = Boolean(button);
+
   return (
     <div className={clsx("flex w-full flex-col gap-2", className)}>
       {label ? (
@@ -73,14 +111,19 @@ export function InputField({
       <div
         className={clsx(
           "flex flex-row items-start justify-center gap-3 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-hover active:border-border-input-active focus-within:border-border-selected",
-          multiline && "h-36",
+          multiline && (hasButtonRow ? "h-[124px]" : "h-36"),
         )}
       >
-        <div className="flex flex-1 flex-col gap-3">
+        {/* self-stretch: only takes effect when the container has a fixed
+            height (multiline) — gives the row below a real, definite height
+            to flex against instead of `h-full` resolving against an
+            indefinite (hug) parent. */}
+        <div className="flex flex-1 flex-col gap-3 self-stretch">
           <div
             className={clsx(
-              "flex flex-row gap-2 self-stretch py-2 pl-2",
-              multiline ? "h-full items-start" : "items-center",
+              "flex flex-row gap-2 self-stretch pl-2",
+              hasButtonRow ? "pt-2" : "py-2",
+              multiline ? "min-h-0 flex-1 items-start" : "items-center",
             )}
           >
             {leadingIcon ? (
@@ -91,6 +134,22 @@ export function InputField({
                 {...(props as Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "className">)}
                 className="h-full w-full resize-none border-0 bg-transparent p-0 text-base font-semibold text-text placeholder:text-placeholder focus:outline-none"
               />
+            ) : options ? (
+              <select
+                {...(props as Omit<SelectHTMLAttributes<HTMLSelectElement>, "className">)}
+                className="w-full appearance-none border-0 bg-transparent p-0 text-base font-semibold text-text focus:outline-none"
+              >
+                {placeholderOption !== undefined ? (
+                  <option value="" disabled hidden>
+                    {placeholderOption}
+                  </option>
+                ) : null}
+                {options.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             ) : (
               <input
                 {...(props as Omit<InputHTMLAttributes<HTMLInputElement>, "className">)}

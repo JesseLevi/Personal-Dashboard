@@ -29,7 +29,8 @@
     "PageHeader": { "path": "components/organisms/PageHeader.tsx", "nodeId": "3878:7959" },
     "SidePanel": { "path": "components/organisms/SidePanel.tsx", "nodeId": "3779:4846" },
     "BoardView": { "path": "components/organisms/BoardView.tsx", "nodeId": "3680:1442" },
-    "IngredientSearchPanel": { "path": "components/organisms/IngredientSearchPanel.tsx", "nodeId": "3957:10337" }
+    "IngredientSearchPanel": { "path": "components/organisms/IngredientSearchPanel.tsx", "nodeId": "3957:10337" },
+    "StepIngredientPanel": { "path": "components/organisms/StepIngredientPanel.tsx", "nodeId": "3749:3241" }
   },
   "molecules_composed": {
     "$comment": "Not a distinct Figma component (no separate componentId) -- a specific Atom/Input-field (3705:4402) instance reused inside a page frame. nodeId points at that instance, per component/README's 'fetched node' convention.",
