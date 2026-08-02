@@ -295,6 +295,18 @@
       "deletingLabel": "Verwijderen...",
       "cancelLabel": "Annuleren"
     },
+    "recipeDetailPage": {
+      "backLabel": "Terug naar recepten",
+      "addToBasketLabel": "Voeg toe aan mand",
+      "editLabel": "Bewerken",
+      "deleteLabel": "Verwijderen",
+      "overflowMenuLabel": "Meer opties",
+      "deleteConfirmLabel": "Weet je het zeker?",
+      "deleteConfirmButtonLabel": "Ja, verwijderen",
+      "deletingLabel": "Verwijderen...",
+      "cancelLabel": "Annuleren",
+      "stepsTitle": "Stappen"
+    },
     "imageUploadField": {
       "selectImage": "Selecteer afbeelding"
     }

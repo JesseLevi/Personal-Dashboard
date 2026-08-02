@@ -295,6 +295,18 @@
       "deletingLabel": "Deleting...",
       "cancelLabel": "Cancel"
     },
+    "recipeDetailPage": {
+      "backLabel": "Back to recipes",
+      "addToBasketLabel": "Add to basket",
+      "editLabel": "Edit",
+      "deleteLabel": "Delete",
+      "overflowMenuLabel": "More options",
+      "deleteConfirmLabel": "Are you sure?",
+      "deleteConfirmButtonLabel": "Yes, delete",
+      "deletingLabel": "Deleting...",
+      "cancelLabel": "Cancel",
+      "stepsTitle": "Steps"
+    },
     "imageUploadField": {
       "selectImage": "Select image"
     }
