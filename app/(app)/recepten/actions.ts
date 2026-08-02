@@ -377,7 +377,10 @@ export async function updateRecipe(input: unknown): Promise<ActionResult> {
 
   const { data: existing, error: existingError } = await supabase
     .from("recipes")
-    .select("id")
+    // #155: `category_id` too — the re-position below must fire on a real
+    // category *change*, not merely on the field being present in the
+    // payload (RecipePanel always sends it, even when untouched).
+    .select("id, category_id")
     .eq("id", recipeId)
     .eq("user_id", auth.userId)
     .maybeSingle();
@@ -405,9 +408,14 @@ export async function updateRecipe(input: unknown): Promise<ActionResult> {
     // at the end of its new category, same "append" shape createRecipe
     // uses, rather than keeping whatever `position` it happened to hold in
     // its old category (which would place it at an arbitrary spot among the
-    // new category's siblings).
-    const last = await lastRecipePosition(supabase, auth.userId, update.category_id);
-    update.position = nextPosition(last, null);
+    // new category's siblings). Only on a real change: RecipePanel sends
+    // `categoryId` on every save, so re-positioning whenever the field is
+    // merely present would drop a recipe to the bottom of its column every
+    // time the user edited its title -- silently undoing a drag.
+    if (update.category_id !== existing.category_id) {
+      const last = await lastRecipePosition(supabase, auth.userId, update.category_id);
+      update.position = nextPosition(last, null);
+    }
   }
 
   if (Object.keys(update).length > 0) {

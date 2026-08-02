@@ -162,11 +162,17 @@ explicitly asked for the real column instead.
   `recipe_categories : recipes :: board_columns : cards` analogue of
   `lastCardPosition`) so a new recipe appends at the end of its category
   instead of getting no position at all. `updateRecipe` assigns a fresh
-  end-of-category position whenever `categoryId` is part of the update —
-  a recipe moved via the edit panel (not drag & drop) has no drop index to
-  derive a position from, so it lands at the end of its new category rather
-  than keeping a `position` value that made sense only among its old
-  category's siblings.
+  end-of-category position when `categoryId` names a *different* category
+  than the stored one — a recipe moved via the edit panel (not drag & drop)
+  has no drop index to derive a position from, so it lands at the end of its
+  new category rather than keeping a `position` value that made sense only
+  among its old category's siblings. The comparison against the stored
+  `category_id` is load-bearing, not defensive: `RecipePanel` sends
+  `categoryId` on *every* save, so re-positioning whenever the field is
+  merely present would drop a recipe to the bottom of its column each time
+  the user edited its title — silently undoing a drag. Harmless before #155
+  (the list was `created_at`-ordered); a visible bug the moment order became
+  user-controlled.
 
 **RLS**: no new policies/grants needed. `supabase/tests/rls-recipes.sql`'s
 existing two-user isolation assertions (select/update/delete/insert) already
