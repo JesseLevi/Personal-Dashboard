@@ -10,6 +10,7 @@ import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
 import { CardContentStep } from "@/components/molecules/CardContentStep";
 import { PortionStepper } from "@/components/molecules/PortionStepper";
+import { scaleIngredientRows } from "@/lib/recipes/scaling";
 import { formatQuantity } from "@/lib/recipes/units";
 import type {
   RecipeCategoryRow,
@@ -74,8 +75,8 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
   const tErrors = useTranslations("recipes.errors");
   const router = useRouter();
 
-  // #128 still owns rescaling recipe_ingredients.quantity against this
-  // value; #153 added the floor of 1 (PortionStepper's own `min` prop).
+  // Local, display-only multiplier -- never written back to recipe.servings
+  // (#128). #153 added the floor of 1 (PortionStepper's own `min` prop).
   // See design/notes/RecipeDetailPage.md / PortionStepper.md.
   const [portions, setPortions] = useState(recipe.servings);
   const [editOpen, setEditOpen] = useState(false);
@@ -111,8 +112,11 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
     });
   }
 
+  // #128: one shared scaled list feeds both the ingredient cards and the
+  // per-step Tags below, so `portions` only gets applied once per render.
+  const scaledIngredients = scaleIngredientRows(recipe.ingredients, recipe.servings, portions);
   const ingredientGroups = groupIngredients(
-    [...recipe.ingredients].sort((a, b) => a.position - b.position),
+    [...scaledIngredients].sort((a, b) => a.position - b.position),
   );
   const steps = [...recipe.steps].sort((a, b) => a.position - b.position);
   const editTarget: RecipePanelTarget = { mode: "edit", recipe };
@@ -120,8 +124,10 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
   // #153: steps carry ordered recipe_ingredients ids (RecipeStepWithIngredients);
   // looked up here rather than carrying a second copy, per that type's own
   // doc comment. Ids with no matching row (shouldn't happen, FK-enforced,
-  // but never crash on it) are silently dropped.
-  const ingredientsById = new Map(recipe.ingredients.map((ingredient) => [ingredient.id, ingredient]));
+  // but never crash on it) are silently dropped. Looked up against the
+  // scaled list (#128) so step Tags show the same scaled quantities as the
+  // ingredient cards above.
+  const ingredientsById = new Map(scaledIngredients.map((ingredient) => [ingredient.id, ingredient]));
 
   return (
     <div className="flex w-full flex-col items-stretch gap-6 pr-4 md:pr-32">
