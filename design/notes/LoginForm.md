@@ -9,7 +9,8 @@
   below):** `LogIn/Desktop` `3929:25202`, `LogIn/Mobile` `3929:25182`,
   `LogIn/Mobile/Step-01` `3934:32620`, `LogIn/Mobile/Step-03` `3933:32343`,
   `LogIn/Mobile/Error` `3985:10266`, `LogIn/Mobile/InloglinkSend`
-  `3989:13128`.
+  `3989:13128`. **Fix round, same ticket:** `LogIn/Mobile/Step-03/Error`
+  `3991:13224` — see "Terug/Inloggen row" below.
 - Page-level composition (Server Component + one colocated client
   component), same precedent as `CategoryPanel.tsx` — not added to
   `design/figma-map.json`, which only holds `components/` design-system
@@ -61,10 +62,13 @@ the equivalent REST image-render endpoint was used for the pixel check
   24). Login content here genuinely **is** vertically centered: header
   offset from block top = 312px, and (836−212)/2 = 312 exactly. Unlike
   mobile's 418px, desktop's 836px height is not arbitrary — it's the
-  image's own square height (836 wide because that's the available column
-  width), so centering the login content against it is the correct
-  responsive read: `md:items-center` on the row, not a fixed height.
-  **Desktop only ever draws Step-01** (`StepAnimation` didn't exist yet
+  full available row height (836 = 868 − 2×16 padding), which the image
+  fills by being height-driven (`h-full`/`aspect-square`, not a
+  width-driven square) and the login column matches by being `flex-1` and
+  stretching to the row's height by default, with its own inner
+  `justify-center` doing the vertical centering — see "Page layout" below
+  for the bug this replaced and why it needed `h-screen`, not
+  `min-h-screen`, on the page's root. **Desktop only ever draws Step-01** (`StepAnimation` didn't exist yet
   when this frame was authored — no `Step-03`/rail node anywhere under
   `3929:25202`) — read as "desktop gets the same two-step behaviour as
   mobile, just never separately drawn", not "desktop has no step 3", since
@@ -172,34 +176,114 @@ Shipped as four whole sentences per locale (`auth.greeting.night/morning/
 afternoon/evening`), not a composed string, per ADR-0007 and the ticket's
 own instruction.
 
-## Back-to-email trigger — undesigned, kept minimal
+## Terug/Inloggen row — the back trigger is now designed (fix round)
 
-No Figma node draws any "go back to step 1" affordance, and the ticket
-explicitly leaves the trigger to be chosen, asking only that it not leave
-the user stuck. Built as two redundant, low-footprint triggers rather than
-inventing a full visible layout: **Escape** (matching this codebase's own
-existing close-on-Escape convention — `Dropdown.tsx`, the mobile nav
-drawer in `AppShellNav.tsx`) for keyboard users, plus a small icon-only
-`Button` (`variant="transparent" size="compact" icon="ArrowLeft"`, the
-`ButtonToggle.tsx` segment precedent for icon-only `compact`) for
-mouse/touch users who have no keyboard. The icon button adds ~40px
-(button height 32 + 8px margin) to the Step-03 pane beyond the
-Figma-measured 160/144/200px heights — a small, deliberate, flagged
-deviation, not an oversight. See
-`docs/open-questions.md#login-step-3-back-to-email-trigger-undesigned`.
+`LogIn/Mobile/Step-03/Error` (`3991:13224`), fetched in a fix round after
+the user drew it, resolves `docs/open-questions.md#login-step-3-back-to-
+email-trigger-undesigned` (removed, not left open) and replaces the
+undesigned icon-only back button the first pass shipped. The node's
+Step-03 pane (`3991:13233`, `Input + Button`, `VERTICAL gap=16`,
+`counterAxisAlignItems=CENTER`) is, in order: `Input-field` "Wachtwoord"
+312×48; error text 290×24 (`#FF6467`, `Error` annotation); **`Frame 3`**
+(`3991:13289`), a `312×40 HORIZONTAL gap=8` row holding `Button` "Terug"
+(`Style: Outline`, `Leading icon: true`, `Icon/Arrow-left`, 153×40) and
+`Button` "Inloggen" (`Style: Filled`, 151×40); then the unchanged
+"Stuur mij een inloglink" button. 200 = 48 + 16 + 24 + 16 + 40 + 16 + 40,
+so with no error the pane is 160 — identical to the original Step-03
+frame's height — which is the tell that **Frame 3 replaces the
+full-width "Inloggen" button unconditionally, in both the idle and error
+states**, not only while an error shows. Built that way: the icon-only
+`ArrowLeft` button above the password field is gone, and both Step-03
+forms (idle and error, `LoginForm.stories.tsx`'s `Step3Password` and
+`Step3Error`) now render the two-button row.
+
+**153/151 vs. equal halves:** the node's own two button widths differ by
+2px (153 and 151, both against a 312px row with an 8px gap, which would
+split evenly at 152/152) — a hug/rounding artefact from how Figma sized
+each button's content, not a deliberate asymmetry. Built as two `flex-1`
+buttons sharing the row equally, which is the reading Figma's own
+`8px`-gap/`312px`-row intent actually implies.
+
+**Escape stays, now redundant.** The Escape-key handler on the Step-03
+pane (`Dropdown.tsx`'s own close-on-Escape convention) predates this node
+and costs zero pixels, so it was kept as a second, no-cost way to trigger
+`handleStepBack` alongside the now-visible "Terug" button — not removed
+just because a first trigger now exists.
+
+**Copy discrepancy, not reconciled:** this node's error text reads
+"E-mailadres of wachtwoord klopt niet" **without** a trailing period,
+while the original `Error` frame (`3985:10266`, `3985:10314`) and the
+existing `auth.errors.invalid-credentials` catalog value both carry one.
+Kept the existing i18n value (with the period) rather than editing it to
+match the newer, punctuation-less frame — a one-character inconsistency
+between two Figma frames is not a signal to touch a settled translation
+value on the strength of a single re-draw, and the ticket didn't ask for
+it. Flagged here per the "note the deviation, don't silently uniformize"
+instruction.
 
 ## Visual pane — static PNG, not re-fetched at build time
 
 Both breakpoints' visual pane is a flat `IMAGE` fill in Figma with no
 sub-structure. The two exports were copied into `public/login/` (Figma's own
 image URLs expire, so they can't be fetched again at request time) and are
-rendered via `next/image` — mobile/desktop swapped with `md:hidden`/
-`hidden md:block` rather than one `<Image>` with a responsive `src`, since
+rendered via `next/image` — mobile/desktop swapped with `lg:hidden`/
+`hidden lg:block` rather than one `<Image>` with a responsive `src`, since
 `next/image` has no art-direction primitive for two entirely different
 source files. `alt=""` + `aria-hidden="true"`: purely decorative, matches
 the ticket. The box under the image carries `bg-surface-raised` so a slow
 image load never flashes a mismatched background — the image itself
 happens to show app UI already painted in `stone-200`.
+
+## Page layout — two real bugs found in a browser, fixed (fix round)
+
+`LoginForm.stories.tsx`'s Ladle baselines only ever cover `LoginForm`
+itself, never `app/login/page.tsx`'s surrounding layout — so a first pass
+that read as pixel-correct in Ladle still shipped two real bugs, both only
+visible by actually loading `/login` in a browser at several viewport
+sizes (`pnpm dev` + a throwaway Playwright script, `node` run from the
+repo root so it resolves `@playwright/test`). Confirmed empirically, not
+reasoned from CSS alone, since one of the two is a genuine CSS subtlety
+that's easy to get backwards:
+
+- **Breakpoint was `md` (768px); should be `lg` (1024px).** At 820px wide
+  (a real tablet width) the row layout kicked in with the 548px fixed
+  login column eating most of the width and the image squeezed into a
+  tiny square in the top-right corner of an otherwise empty page. Figma
+  only ever draws a 402px mobile frame and a 1440px desktop frame, so
+  where the actual switch should land was always this codebase's own
+  call, not a Figma fact — `lg` was chosen so tablet widths get the
+  stacked layout instead of a half-broken row.
+- **The image pane was width-driven (`aspect-square` on a `flex-1` box)
+  when it needed to be height-driven.** On the 1440×868 viewport the
+  ticket happened to pass by coincidence — the remaining width after a
+  548px login column and 24px gap is exactly 868px, so a width-driven
+  square landed on the right height purely by chance. At 1280×800 the
+  same math gives a 676px-tall square inside a 768px-tall row, leaving a
+  visible gap under the image — confirmed both algebraically and with a
+  real screenshot. Figma's own image block is full-height (836 of 868 −
+  2×16 padding), so the fix makes the image `aspect-square` off its own
+  *height* (`h-full` desktop, `shrink-0`) with the login column as the
+  one that's `flex-1` and absorbs whatever horizontal space is left —
+  the reverse of the first pass's roles.
+- **That fix only worked once `main` changed from `min-h-screen` to
+  `h-screen`.** `h-full` on the image is a percentage height, and a
+  percentage height only resolves against an ancestor with a *definite*
+  computed height — `min-height` alone does not count, even once the box
+  has actually painted at exactly that height on screen. Verified with a
+  `page.evaluate` dump of `getBoundingClientRect()`/`getComputedStyle()`
+  inside the throwaway Playwright script: with `min-h-screen` the image
+  box measured `0×0`; switching the ancestor to `h-screen` (a real,
+  explicit height) made the exact same `h-full` rule resolve correctly
+  (836×836 at 1440×868, matching Figma to the pixel). Not assumed from
+  reading the CSS — the 0×0 measurement is what caught it.
+- **Mobile (402×820) was re-verified after the fix**, not just
+  eyeballed: `getBoundingClientRect()` gave the login block 370×418 at
+  (16,16) and the image 370×370 at (16,434) — 434 = 16 + 418, and
+  434 + 370 + 16 = 820, an exact match to Figma's own
+  418 + 370 + 2×16 = 820 composition.
+
+`LoginForm` itself needed no changes for this — the fix is entirely in
+`app/login/page.tsx`'s `main`/wrapper classes.
 
 ## Pixel check
 
@@ -210,6 +294,11 @@ not available" above) and compared by eye against the Ladle stories
 styling, and the Error frame's actual content (which drove the "Error
 frame's real content" deviation above) all matched. No additional pixel
 mismatches found beyond the deviations already recorded in this file.
+Fix round: re-verified against `3991:13224`'s own rendered PNG (Terug/
+Inloggen row) and, separately, against real `/login` screenshots at
+1440×868, 1280×800, 820×1180 and 402×820 — see "Page layout" above for
+what that second check caught that the first pixel check couldn't, since
+it never looked past `LoginForm`'s own boundary.
 
 ## Visual-baseline clock freeze
 

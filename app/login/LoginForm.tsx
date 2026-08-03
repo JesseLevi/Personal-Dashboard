@@ -167,22 +167,16 @@ export function LoginForm({
             </form>
           </div>
 
-          {/* Step 3 — Wachtwoord (3934:32750) */}
+          {/* Step 3 — Wachtwoord (3991:13224, the redrawn Step-03/Error node
+              — the Terug/Inloggen row it introduces replaces the plain
+              full-width "Inloggen" button unconditionally, not only while
+              an error shows) */}
           <div
             className="ml-[45px] w-[312px] shrink-0"
             aria-hidden={step !== "password"}
             inert={step !== "password"}
             onKeyDown={handlePasswordPaneKeyDown}
           >
-            <Button
-              variant="transparent"
-              size="compact"
-              icon="ArrowLeft"
-              aria-label={t("backToEmail")}
-              onClick={handleStepBack}
-              className="mb-2"
-            />
-
             <form action={passwordFormAction}>
               <input type="hidden" name="email" value={email} />
               <InputField
@@ -201,9 +195,23 @@ export function LoginForm({
                   passwordState.status === "error" ? t(`errors.${passwordState.errorKey}`) : null
                 }
               />
-              <Button type="submit" disabled={passwordPending} className="mt-4 w-full">
-                {t("signIn")}
-              </Button>
+              {/* Frame 3 (3991:13289) — Figma draws 153/151px, a hug/
+                  rounding artefact (see design/notes/LoginForm.md); equal
+                  flex-1 halves is the correct read. */}
+              <div className="mt-4 flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  icon="ArrowLeft"
+                  onClick={handleStepBack}
+                  className="flex-1"
+                >
+                  {t("back")}
+                </Button>
+                <Button type="submit" disabled={passwordPending} className="flex-1">
+                  {t("signIn")}
+                </Button>
+              </div>
             </form>
 
             <form action={magicLinkFormAction} className="mt-4">

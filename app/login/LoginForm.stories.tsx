@@ -1,5 +1,6 @@
 // figma: node-id=3934:32620 (Step-01), 3933:32343 (Step-03), 3985:10266
-// (Error), 3989:13128 (InloglinkSend) — see design/notes/LoginForm.md.
+// (Error), 3989:13128 (InloglinkSend), 3991:13224 (Step-03/Error, fix
+// round — the Terug/Inloggen row) — see design/notes/LoginForm.md.
 import { LoginForm } from "./LoginForm";
 import type { MagicLinkState, PasswordLoginState } from "./actions";
 
@@ -43,9 +44,9 @@ export const Step3Password = () => (
   />
 );
 
-// LogIn/Mobile/Error (3985:10266) — generic credentials error, reused on the
-// Step-03/password pane per #158's deliberate deviation from the fetched
-// frame (design/notes/LoginForm.md).
+// LogIn/Mobile/Step-03/Error (3991:13224) — generic credentials error, with
+// the Terug/Inloggen row (also present, unconditionally, on Step3Password
+// above) — design/notes/LoginForm.md.
 export const Step3Error = () => (
   <LoginForm
     signInWithPasswordAction={mockSignInWithPassword}

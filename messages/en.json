@@ -15,7 +15,7 @@
     "signIn": "Sign in",
     "sendMagicLink": "Send me a sign-in link",
     "magicLinkSent": "Sign-in link sent",
-    "backToEmail": "Back to email address",
+    "back": "Back",
     "errors": {
       "invalid-input": "Enter a valid email address and password.",
       "invalid-email-format": "Enter a valid email address.",
