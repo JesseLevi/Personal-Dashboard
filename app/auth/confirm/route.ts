@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   if (tokenHash && type) {
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
-    if (!error) return NextResponse.redirect(new URL("/", request.url));
+    if (!error) return NextResponse.redirect(new URL("/te-doen", request.url));
   }
   return NextResponse.redirect(new URL("/login?error=magic-link-invalid", request.url));
 }

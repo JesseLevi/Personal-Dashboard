@@ -1,22 +1,24 @@
 {
-  "home": {
-    "title": "Personal Dashboard",
-    "loggedInAs": "Ingelogd als {email}"
-  },
   "nav": {
     "recipes": "Recepten"
   },
   "auth": {
-    "title": "Inloggen",
-    "emailLabel": "E-mailadres",
-    "passwordLabel": "Wachtwoord",
+    "greeting": {
+      "night": "Goeienacht en welkom",
+      "morning": "Goeiemorgen en welkom",
+      "afternoon": "Goeiemiddag en welkom",
+      "evening": "Goeieavond en welkom"
+    },
+    "emailPlaceholder": "E-mail",
+    "passwordPlaceholder": "Wachtwoord",
+    "continue": "Doorgaan",
     "signIn": "Inloggen",
-    "magicLinkLabel": "Of log in met een magic link",
-    "sendMagicLink": "Stuur magic link",
-    "magicLinkSent": "Check je e-mail voor de inloglink.",
-    "signOut": "Uitloggen",
+    "sendMagicLink": "Stuur mij een inloglink",
+    "magicLinkSent": "Inlog link verstuurd",
+    "back": "Terug",
     "errors": {
       "invalid-input": "Vul een geldig e-mailadres en wachtwoord in.",
+      "invalid-email-format": "Vul een geldig e-mailadres in.",
       "invalid-credentials": "E-mailadres of wachtwoord klopt niet.",
       "magic-link-failed": "De magic link kon niet worden verstuurd. Probeer het later opnieuw.",
       "magic-link-invalid": "Deze inloglink is ongeldig of verlopen. Vraag een nieuwe aan.",
