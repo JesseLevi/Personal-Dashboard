@@ -14,6 +14,7 @@
 - Everything merged so far is awaiting the user's review. Backlog: the server-side tickets (#1–#5, #8–#11), Phase 4's remaining sub-tickets and its parent #28, Phase 5+ (#29–#33), #49, #106.
 - Missing by design: **`middleware.ts` does not exist.** Session refresh is #8; the auth guard lives in `app/(app)/layout.tsx` until then.
 - Minor, unfixed: Tailwind v4's content scanner reads `design/notes/*.md`, so class strings quoted in prose ship in the production bundle (a dead `.[@media(any-pointer:coarse)]:touch-none` rule). Harmless; fix with `@source not` if docs ever grow the CSS meaningfully.
+- **Login has a real design as of #158** — ADR-0004's "no Figma design for login" has lapsed; `/login` is now the two-step email/password (+ magic-link) animation in `app/login/LoginForm.tsx`, replacing the deliberately-plain Phase-1 form. `/te-doen` is now the landing route for every successful sign-in path (password, magic link via `/auth/confirm`, and `/` itself, which is redirect-only — signed in → `/te-doen`, signed out → `/login` — the old placeholder homepage is gone). `accent` (see `docs/guides/ui-components.md`) has no consumer left anywhere in the repo now that this ticket migrated its last two `app/` call sites — ready to retire whenever the architecture layer wants to. Design record, every deviation, and the login-only `pnpm test:visual` clock freeze: `design/notes/LoginForm.md`.
 
 ## Nothing below has run for real
 

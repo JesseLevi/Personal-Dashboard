@@ -1,100 +1,59 @@
-import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
+import Image from "next/image";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { greetingKeyForHour } from "@/lib/auth/greeting";
+import { LoginForm } from "./LoginForm";
 import { sendMagicLink, signInWithPassword } from "./actions";
 
-// Deliberately plain — no Figma design exists for login (ADR-0004); a designed
-// login goes through the Figma loop in a later round.
-
-const ERROR_KEYS = [
-  "invalid-input",
-  "invalid-credentials",
-  "magic-link-failed",
-  "magic-link-invalid",
-] as const;
-
-export default async function LoginPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string; notice?: string }>;
-}) {
+// figma: node-id=3929:25181 (Pages/Login — LogIn/Desktop 3929:25202,
+// LogIn/Mobile 3929:25182). Server Component: auth-check + translations +
+// layout + the decorative visual pane; LoginForm.tsx owns the interactive
+// two-step animation. Full record: design/notes/LoginForm.md.
+//
+// Desktop only ever draws step 1 (StepAnimation didn't exist yet when that
+// frame was made) — read as "desktop gets the same two-step behaviour as
+// mobile", not "desktop has no step 3" (design/notes/LoginForm.md).
+export default async function LoginPage() {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) redirect("/");
+  if (user) redirect("/te-doen");
 
-  const { error, notice } = await searchParams;
-  const t = await getTranslations("auth");
-  const errorKey = error
-    ? (ERROR_KEYS.find((key) => key === error) ?? "generic")
-    : null;
+  const greetingKey = greetingKeyForHour(new Date().getHours());
 
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-sm rounded-lg border border-border bg-surface p-6">
-        <h1 className="text-xl font-semibold">{t("title")}</h1>
+    <main className="min-h-screen p-4">
+      <div className="mx-auto flex max-w-[1408px] flex-col md:flex-row md:items-center md:gap-6">
+        <div className="flex w-full flex-col items-center md:w-[548px] md:shrink-0">
+          <LoginForm
+            signInWithPasswordAction={signInWithPassword}
+            sendMagicLinkAction={sendMagicLink}
+            serverGreetingKey={greetingKey}
+          />
+        </div>
 
-        {errorKey ? (
-          <p className="mt-4 rounded bg-priority-urgent-bg p-2 text-sm text-priority-urgent">
-            {t(`errors.${errorKey}`)}
-          </p>
-        ) : null}
-        {notice === "magic-link-sent" ? (
-          <p className="mt-4 rounded bg-priority-low-bg p-2 text-sm text-priority-low">
-            {t("magicLinkSent")}
-          </p>
-        ) : null}
-
-        <form action={signInWithPassword} className="mt-6 flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-sm">
-            {t("emailLabel")}
-            <input
-              type="email"
-              name="email"
-              required
-              autoComplete="email"
-              className="rounded border border-border bg-surface px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            {t("passwordLabel")}
-            <input
-              type="password"
-              name="password"
-              required
-              autoComplete="current-password"
-              className="rounded border border-border bg-surface px-3 py-2"
-            />
-          </label>
-          <button
-            type="submit"
-            className="rounded bg-accent px-3 py-2 text-sm font-semibold text-white"
-          >
-            {t("signIn")}
-          </button>
-        </form>
-
-        <hr className="my-6 border-border-muted" />
-
-        <form action={sendMagicLink} className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-sm">
-            {t("magicLinkLabel")}
-            <input
-              type="email"
-              name="email"
-              required
-              autoComplete="email"
-              className="rounded border border-border bg-surface px-3 py-2"
-            />
-          </label>
-          <button
-            type="submit"
-            className="rounded border border-border px-3 py-2 text-sm font-semibold"
-          >
-            {t("sendMagicLink")}
-          </button>
-        </form>
+        {/* Flat image-fill in Figma (both breakpoints) — exported once and
+            committed as a static asset rather than re-fetched at build time
+            (Figma URLs expire). Decorative: aria-hidden + empty alt. */}
+        <div className="relative aspect-square w-full overflow-hidden rounded-3xl bg-surface-raised md:max-w-[836px] md:flex-1">
+          <Image
+            src="/login/login-visual-mobile.png"
+            alt=""
+            aria-hidden="true"
+            fill
+            sizes="(min-width: 768px) 0px, 370px"
+            className="object-cover md:hidden"
+          />
+          <Image
+            src="/login/login-visual-desktop.png"
+            alt=""
+            aria-hidden="true"
+            fill
+            sizes="(min-width: 768px) 836px, 0px"
+            className="hidden object-cover md:block"
+          />
+        </div>
       </div>
     </main>
   );

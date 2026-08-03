@@ -1,22 +1,24 @@
 {
-  "home": {
-    "title": "Personal Dashboard",
-    "loggedInAs": "Logged in as {email}"
-  },
   "nav": {
     "recipes": "Recipes"
   },
   "auth": {
-    "title": "Sign in",
-    "emailLabel": "Email address",
-    "passwordLabel": "Password",
+    "greeting": {
+      "night": "Good night and welcome",
+      "morning": "Good morning and welcome",
+      "afternoon": "Good afternoon and welcome",
+      "evening": "Good evening and welcome"
+    },
+    "emailPlaceholder": "Email",
+    "passwordPlaceholder": "Password",
+    "continue": "Continue",
     "signIn": "Sign in",
-    "magicLinkLabel": "Or sign in with a magic link",
-    "sendMagicLink": "Send magic link",
-    "magicLinkSent": "Check your email for the sign-in link.",
-    "signOut": "Sign out",
+    "sendMagicLink": "Send me a sign-in link",
+    "magicLinkSent": "Sign-in link sent",
+    "backToEmail": "Back to email address",
     "errors": {
       "invalid-input": "Enter a valid email address and password.",
+      "invalid-email-format": "Enter a valid email address.",
       "invalid-credentials": "Email address or password is incorrect.",
       "magic-link-failed": "The magic link could not be sent. Please try again later.",
       "magic-link-invalid": "This sign-in link is invalid or expired. Request a new one.",
