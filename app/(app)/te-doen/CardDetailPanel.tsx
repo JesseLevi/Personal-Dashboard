@@ -8,7 +8,7 @@ import { Dropdown } from "@/components/atoms/Dropdown";
 import { Tag } from "@/components/atoms/Tag";
 import { Button } from "@/components/atoms/Button";
 import type { IconName } from "@/components/atoms/Icon";
-import { PRIORITIES, SIZES, isPriority, isSize } from "@/lib/boards/enums";
+import { PRIORITIES, SIZES, isPriority, isSize, type Size } from "@/lib/boards/enums";
 import type { ActionResult, CardRow, CardWithLabels } from "@/lib/boards/types";
 
 // Card-detail SidePanel content (#94) — Figma "Te doen/*/AddItem"
@@ -218,7 +218,7 @@ export function CardDetailPanel({
   const selectedColumn = columns.find((column) => column.id === columnId) ?? columns[0];
   const otherColumns = columns.filter((column) => column.id !== selectedColumn?.id);
   const otherPriorities = PRIORITIES.filter((value) => value !== priority);
-  const otherSizes = SIZES.filter((value) => value !== size);
+  const otherSizes: (Size | null)[] = [null, ...SIZES].filter((value) => value !== size);
 
   // Footer width (#103): SidePanel's footer container is a column, so this
   // row of buttons is already forced full-width; each Button opts into an
@@ -363,12 +363,12 @@ export function CardDetailPanel({
         </button>
         {otherSizes.map((value) => (
           <button
-            key={value}
+            key={value ?? "none"}
             type="button"
             onClick={() => setSize(value)}
             className="flex w-full rounded-lg text-left transition-colors hover:bg-surface-hover"
           >
-            <Tag variant="neutral">{value.toUpperCase()}</Tag>
+            <Tag variant="neutral">{value ? value.toUpperCase() : t("fields.sizePlaceholder")}</Tag>
           </button>
         ))}
       </Dropdown>

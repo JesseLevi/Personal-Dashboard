@@ -92,12 +92,14 @@ export function Dropdown({
   }
 
   // The first child (current selection) becomes the real disclosure
-  // trigger: Dropdown injects aria-expanded/aria-controls/onClick onto
-  // whatever interactive element the caller already supplied (a `Button`, or
-  // a `<button>` wrapping a `Tag`) instead of wrapping it in a second
-  // `<button>` — a button inside a button is invalid HTML. This makes
-  // "caller supplies the trigger" the chosen API (the rejected alternative,
-  // "Dropdown wraps the trigger itself", is documented in
+  // trigger: Dropdown injects aria-expanded/aria-controls onto whatever
+  // interactive element the caller already supplied (a `Button`, or a
+  // `<button>` wrapping a `Tag`) instead of wrapping it in a second
+  // `<button>` — a button inside a button is invalid HTML. The toggle click
+  // handler itself lives on the trigger row below, not here — see that
+  // comment. This makes "caller supplies the trigger" the chosen API (the
+  // rejected alternative, "Dropdown wraps the trigger itself", is documented
+  // in
   // design/notes/Dropdown.md along with why). The trigger element's own
   // Figma-authored button semantics carry through untouched.
   const trigger =
@@ -106,10 +108,6 @@ export function Dropdown({
           id: triggerId,
           "aria-expanded": isOpen,
           "aria-controls": panelId,
-          onClick: (event: MouseEvent<HTMLButtonElement>) => {
-            (selectedChild as ReactElement<TriggerProps>).props.onClick?.(event);
-            setIsOpen((open) => !open);
-          },
         })
       : selectedChild;
 
@@ -152,7 +150,10 @@ export function Dropdown({
                 Input-field's own trailing-icon layout. Supersedes #100's
                 `items-start` (hug) reading, which only inspected the
                 innermost Slot. See design/notes/Dropdown.md. */}
-            <div className="flex w-full items-center gap-3">
+            <div
+              className="flex w-full cursor-pointer items-center gap-3"
+              onClick={() => setIsOpen((open) => !open)}
+            >
               <div className="min-w-0 flex-1">{trigger}</div>
               <Icon
                 name="ChevronDown"
