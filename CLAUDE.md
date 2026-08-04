@@ -4,7 +4,7 @@ Guidance for Claude Code in this repository — *how* to build, not *what* to bu
 
 ## Read this first, per task
 
-Load only the guide your task touches. Each is authoritative for its area; don't work from memory in these areas.
+Load only the guide your task touches — each is authoritative for its area; don't work from memory there.
 
 | If your task touches… | Read |
 | --- | --- |
@@ -16,18 +16,18 @@ Load only the guide your task touches. Each is authoritative for its area; don't
 | Figma is missing something the ticket assumes | `docs/open-questions.md` — reference by slug, never by number |
 | Why a past ticket went wrong, or why a token has its value | `docs/incidents.md` — on demand only |
 
-Session start: read **`docs/HANDOFF.md`** (where the project stands, what's next) and keep it accurate when you finish work — it is **state, not a changelog**: replace bullets that have become history rather than appending a new dated section, and let `git log` / `docs/incidents.md` / `design/notes/` carry the story. `docs/phase-log.md` = what infrastructure exists per phase; read on demand, update when a phase item lands. Per-ticket status lives on the **board**, not in these files.
+Session start: read **`docs/HANDOFF.md`** (state, next steps); keep accurate on finish — replace stale bullets, don't append dated sections; `git log`/`docs/incidents.md`/`design/notes/` carry history. `docs/phase-log.md` = infra per phase, read on demand, update when a phase item lands. Per-ticket status → **board**, not these files.
 
 ## Non-negotiables (apply to every task)
 
-- **You are not the architecture layer.** If a ticket conflicts with an ADR or the Figma design system, flag it — don't silently redesign.
-- **Never build UI that doesn't exist in Figma yet.** Fetch the dev-ready node via Figma MCP before building or changing a component; never guess from memory or a screenshot.
-- **Tailwind v4 utility classes + semantic tokens only** — no inline styles, no raw hex anywhere in `components/` (also not in comments; `check:server-only` greps the file). A missing token is flagged, never hardcoded.
-- **All data access goes through Next.js server code.** The browser never talks to Supabase directly; `service_role` never leaves server/worker modules (ADR-0002/0003).
-- **Every table**: `user_id` FK + RLS policy + an RLS test in `supabase/tests` in the same PR (ADR-0009). Schema changes only via `supabase/migrations`.
-- **One home per fact.** Ticket history, measurements and the design record live in `design/notes/<Component>.md` — a component file carries a short header and pointers, never a second copy of the story. Budgeted by `check:comment-budget`.
-- **No hardcoded user-facing strings** — next-intl catalogs, `messages/nl.json` *and* `messages/en.json` in the same PR (ADR-0007).
-- **Move the ticket card to "In progress" before writing code**, and to "In review" when it's done. Check the In-progress column before starting anything new.
+- **Not the architecture layer** — flag ADR/Figma-design-system conflicts, don't silently redesign.
+- **Never build UI absent from Figma** — fetch the dev-ready node via Figma MCP first; never guess from memory or a screenshot.
+- **Tailwind v4 utilities + semantic tokens only** — no inline styles/raw hex in `components/` (incl. comments; `check:server-only` greps the file). Missing token → flag, never hardcode.
+- **All data access via Next.js server code** — browser never talks to Supabase directly; `service_role` never leaves server/worker modules (ADR-0002/0003).
+- **Every table**: `user_id` FK + RLS policy + an RLS test in `supabase/tests`, same PR (ADR-0009). Schema changes only via `supabase/migrations`.
+- **One home per fact** — ticket history/measurements/design record live in `design/notes/<Component>.md`; component files carry only a short header + pointers. Budgeted by `check:comment-budget`.
+- **No hardcoded user-facing strings** — next-intl catalogs, `messages/nl.json` *and* `messages/en.json`, same PR (ADR-0007).
+- **Move ticket card to "In progress" before coding**, to "In review" when done. Check In-progress column before starting anything new.
 
 ## Priorities
 
@@ -42,9 +42,9 @@ When a ticket forces a trade-off, resolve it in this order:
 
 ## This dev machine
 
-- **No Docker and no standalone supabase CLI** — `supabase` runs via `npx` (devDependency), so `pnpm db:reset` / `pnpm test:rls` are CI/server-only. Don't treat their absence as a failure.
-- `gh` is installed and authenticated (incl. `project` scope), so board and PR commands work.
-- `.mcp.json` (Figma key) and `.env` are git-ignored on purpose; `.env.example` documents the needed vars.
+- No Docker, no standalone supabase CLI — `supabase` runs via `npx`; `pnpm db:reset` / `pnpm test:rls` are CI/server-only, absence isn't a failure.
+- `gh` installed and authenticated (incl. `project` scope) — board and PR commands work.
+- `.mcp.json` (Figma key) and `.env` are git-ignored on purpose; `.env.example` documents needed vars.
 
 ## Commands
 
