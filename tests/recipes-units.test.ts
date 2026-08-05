@@ -5,6 +5,7 @@ import {
   UNITS,
   UnknownUnitError,
   convert,
+  convertToUnitSystem,
   formatQuantity,
   isUnitCode,
   magnitudeOf,
@@ -168,6 +169,46 @@ describe("scaleQuantity", () => {
     expect(() => scaleQuantity(100, 4, Infinity)).toThrow(
       InvalidPortionCountError,
     );
+  });
+});
+
+describe("convertToUnitSystem", () => {
+  it("converts a mass unit to the metric flagship unit (gram)", () => {
+    expect(convertToUnitSystem(1, "kilogram", "metric")).toEqual({ quantity: 1000, unit: "gram" });
+    expect(convertToUnitSystem(1, "pound", "metric")).toEqual({ quantity: 453.59, unit: "gram" });
+  });
+
+  it("converts a mass unit to the US flagship unit (ounce)", () => {
+    expect(convertToUnitSystem(100, "gram", "us")).toEqual({ quantity: 3.53, unit: "ounce" });
+  });
+
+  it("converts a volume unit to the metric flagship unit (milliliter)", () => {
+    expect(convertToUnitSystem(1, "liter", "metric")).toEqual({ quantity: 1000, unit: "milliliter" });
+  });
+
+  it("converts a volume unit to the US flagship unit (cup)", () => {
+    expect(convertToUnitSystem(240, "milliliter", "us")).toEqual({ quantity: 1, unit: "cup" });
+  });
+
+  it("is a no-op when already the flagship unit for that system", () => {
+    expect(convertToUnitSystem(5, "gram", "metric")).toEqual({ quantity: 5, unit: "gram" });
+    expect(convertToUnitSystem(3, "cup", "us")).toEqual({ quantity: 3, unit: "cup" });
+  });
+
+  it("passes count units through unchanged, regardless of system", () => {
+    expect(convertToUnitSystem(2, "scoop", "us")).toEqual({ quantity: 2, unit: "scoop" });
+    expect(convertToUnitSystem(2, "scoop", "metric")).toEqual({ quantity: 2, unit: "scoop" });
+  });
+
+  it("keeps a null quantity ('naar smaak') null and the unit unchanged", () => {
+    expect(convertToUnitSystem(null, "naar_smaak", "us")).toEqual({ quantity: null, unit: "naar_smaak" });
+    expect(convertToUnitSystem(null, "gram", "us")).toEqual({ quantity: null, unit: "gram" });
+  });
+
+  it("rounds the converted quantity to 2 decimals", () => {
+    const result = convertToUnitSystem(1, "tablespoon", "metric");
+    expect(result.unit).toBe("milliliter");
+    expect(result.quantity).toBe(14.79);
   });
 });
 

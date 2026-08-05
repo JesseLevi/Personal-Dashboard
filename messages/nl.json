@@ -307,7 +307,31 @@
       "deleteConfirmButtonLabel": "Ja, verwijderen",
       "deletingLabel": "Verwijderen...",
       "cancelLabel": "Annuleren",
-      "stepsTitle": "Stappen"
+      "stepsTitle": "Stappen",
+      "settingsLabel": "Pas aan",
+      "nutrition": {
+        "unknownValue": "?",
+        "timeLabel": "Tijd",
+        "timeUnit": "min",
+        "caloriesLabel": "Calorieën",
+        "caloriesUnit": "cal",
+        "carbsLabel": "Koolhydraten",
+        "carbsUnit": "gr.",
+        "proteinLabel": "Proteïne",
+        "proteinUnit": "gr.",
+        "fatLabel": "Vet",
+        "fatUnit": "gr.",
+        "servingsUnit": "pers."
+      }
+    },
+    "pasAanPanel": {
+      "title": "Pas aan",
+      "ingredientsCardTitle": "Ingrediënten",
+      "personenLabel": "Personen",
+      "eenheidLabel": "Eenheid",
+      "metricOption": "Metrisch",
+      "usOption": "Amerikaans",
+      "saveLabel": "Opslaan"
     },
     "imageUploadField": {
       "selectImage": "Selecteer afbeelding"

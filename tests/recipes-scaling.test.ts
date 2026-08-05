@@ -90,7 +90,7 @@ describe("scaleIngredientRows", () => {
     expect(scaled.map((row) => row.quantity)).toEqual([200, 4, null]);
   });
 
-  it("is a no-op list when target === source", () => {
+  it("is a no-op list when target === source and no unitSystem is given", () => {
     const rows = [makeRow({ id: "a", quantity: 100 })];
     expect(scaleIngredientRows(rows, 4, 4)).toBe(rows);
   });
@@ -99,5 +99,48 @@ describe("scaleIngredientRows", () => {
     const rows = [makeRow({ id: "a", quantity: 100 }), makeRow({ id: "b", quantity: 2, unit: "scoop" })];
     expect(() => scaleIngredientRows(rows, 0, 4)).not.toThrow();
     expect(scaleIngredientRows(rows, 0, 4).map((row) => row.quantity)).toEqual([100, 2]);
+  });
+});
+
+// #160: unit-system conversion composed with portion scaling, one pass.
+describe("scaleIngredientRow(s) with unitSystem", () => {
+  it("scales, then converts to the target system's flagship unit", () => {
+    const row = makeRow({ quantity: 100, unit: "gram" });
+    // 100g at 4 portions -> 200g at 8 portions -> converted to ounces.
+    const scaled = scaleIngredientRow(row, 4, 8, "us");
+    expect(scaled.unit).toBe("ounce");
+    expect(scaled.quantity).toBe(7.05);
+  });
+
+  it("still converts even when portions are unchanged", () => {
+    const row = makeRow({ quantity: 1, unit: "liter" });
+    const scaled = scaleIngredientRow(row, 4, 4, "metric");
+    expect(scaled).toEqual({ ...row, quantity: 1000, unit: "milliliter" });
+  });
+
+  it("leaves a count unit's unit unchanged while still scaling its quantity", () => {
+    const row = makeRow({ quantity: 2, unit: "scoop" });
+    const scaled = scaleIngredientRow(row, 2, 4, "us");
+    expect(scaled.quantity).toBe(4);
+    expect(scaled.unit).toBe("scoop");
+  });
+
+  it("scaleIngredientRows applies the same composed conversion to every row", () => {
+    const rows = [
+      makeRow({ id: "a", quantity: 1, unit: "kilogram" }),
+      makeRow({ id: "b", quantity: 2, unit: "scoop" }),
+    ];
+    const scaled = scaleIngredientRows(rows, 1, 1, "us");
+    expect(scaled.map((row) => ({ quantity: row.quantity, unit: row.unit }))).toEqual([
+      { quantity: 35.27, unit: "ounce" },
+      { quantity: 2, unit: "scoop" },
+    ]);
+  });
+
+  it("is not a no-op list when a unitSystem is given, even if target === source", () => {
+    const rows = [makeRow({ id: "a", quantity: 1, unit: "liter" })];
+    const scaled = scaleIngredientRows(rows, 4, 4, "metric");
+    expect(scaled).not.toBe(rows);
+    expect(scaled[0].unit).toBe("milliliter");
   });
 });

@@ -79,4 +79,27 @@ carried forward from the previous paragraph's running tally, which had
 already drifted 3 short of the real count by this point — a pre-existing
 documentation slip, not introduced here).
 
+`Flame`, `BicepsFlexed`, `Droplet`, `User` (V2 `NutritionalData` row, node
+`3997:15948` mobile / `3997:15543` desktop) and `Settings2` (the ingredients
+`Card`'s Pas-aan trigger, node `I3997:25493;3997:25434`) were added for
+#160. All five were downloaded (`download_figma_images`) and compared
+path-for-path against `lucide-react@1.25.0`'s real exports
+(`renderToStaticMarkup`), not matched by name alone: `Flame`'s single closed
+path shares every landmark (`12,3` apex, the `16,9.5`/`19,15` right-side
+curve, the `8.5,14.5`-region inner teardrop) with lucide's `M12 3q1 4 4
+6.5t3 5.5…` — cubic-bezier vs. `q`/`t` quadratic notation, the same
+non-difference class as `Save`/`WeightTilde`'s prior entries in this file.
+`BicepsFlexed`'s three paths match lucide's three paths point-for-point,
+including the shared `12.409,13.017` and `9.964,6.825` anchors. `Droplet`'s
+closed path (`12,22`→`19,15`→`16,9.5`→`12,3`→`8,9.5`→`5,15`→back to `12,22`)
+matches lucide's arc-based teardrop at every one of those coordinates.
+`User`'s two Figma paths (a rounded-rect body + a circle-as-cubic-bezier at
+`12,7` radius 4) match lucide's `path` + `circle cx=12 cy=7 r=4` exactly.
+`Settings2`'s four Figma paths (two horizontal lines + two circles-as-cubic-
+beziers at `17,17` and `7,7`, both radius 3) match lucide's two lines + two
+`circle r=3` elements at the same centres. No false friend found for any of
+the five.
+
+Union is now 112 names.
+
 No open discrepancies remain.
