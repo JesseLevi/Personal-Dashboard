@@ -14,7 +14,7 @@ import { scaleIngredientRows } from "@/lib/recipes/scaling";
 import { formatQuantity } from "@/lib/recipes/units";
 import type {
   RecipeCategoryRow,
-  RecipeIngredientRow,
+  RecipeIngredientWithNutrition,
   RecipeWithIngredientsAndSteps,
 } from "@/lib/recipes/types";
 import { RecipePanel, type RecipePanelTarget } from "../RecipePanel";
@@ -44,12 +44,12 @@ import {
  * "default" group name — see design/notes/RecipeDetailPage.md). */
 interface IngredientGroup {
   groupLabel: string | null;
-  ingredients: RecipeIngredientRow[];
+  ingredients: RecipeIngredientWithNutrition[];
 }
 
-function groupIngredients(ingredients: RecipeIngredientRow[]): IngredientGroup[] {
+function groupIngredients(ingredients: RecipeIngredientWithNutrition[]): IngredientGroup[] {
   const order: (string | null)[] = [];
-  const byLabel = new Map<string | null, RecipeIngredientRow[]>();
+  const byLabel = new Map<string | null, RecipeIngredientWithNutrition[]>();
   for (const ingredient of ingredients) {
     const key = ingredient.group_label;
     if (!byLabel.has(key)) {
@@ -256,12 +256,12 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
             title={group.groupLabel ?? undefined}
             className="md:flex-1"
           >
-            {group.ingredients.map((ingredient) => (
+            {group.ingredients.map((ingredient, index) => (
               <CardContentIngredient
                 key={ingredient.id}
                 name={ingredient.name}
                 quantity={formatQuantity(ingredient.quantity, tUnits(ingredient.unit))}
-                divider
+                divider={index < group.ingredients.length - 1}
               />
             ))}
           </Card>
@@ -272,7 +272,7 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
         {steps.map((step, index) => {
           const stepIngredients = step.ingredientIds
             .map((id) => ingredientsById.get(id))
-            .filter((ingredient): ingredient is RecipeIngredientRow => ingredient !== undefined);
+            .filter((ingredient): ingredient is RecipeIngredientWithNutrition => ingredient !== undefined);
           return (
             <Card key={step.id} step={index + 1} title={index === 0 ? t("stepsTitle") : undefined}>
               {/* #153: real per-step ingredient tags — see

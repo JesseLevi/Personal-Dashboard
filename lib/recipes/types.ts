@@ -1,4 +1,5 @@
 import type { Database } from "@/lib/database.types";
+import type { IngredientNutrients } from "@/lib/recipes/nutrition";
 
 // Read-side shapes returned by lib/recipes/queries.ts, plus the write-side
 // ActionResult/RecipesErrorCode contract for app/(app)/recepten/actions.ts
@@ -28,8 +29,20 @@ export type ReferenceIngredientRow = Database["reference"]["Tables"]["ingredient
 // looks each id up there rather than this carrying a second copy of the row.
 export type RecipeStepWithIngredients = RecipeStepRow & { ingredientIds: string[] };
 
+// #160 part 1: the nutrition inputs getRecipeWithIngredientsAndSteps now
+// attaches to each ingredient row, feeding lib/recipes/nutrition.ts's
+// computeRecipeNutritionPerPerson (part 2 renders the actual row). Both
+// fields are all-null for a row with no `ingredient_id` link or no
+// resolvable data -- "unknown", never "zero" (ADR-0011 §4).
+export type RecipeIngredientWithNutrition = RecipeIngredientRow & {
+  /** `reference.ingredients`' nutrient-per-100g columns for this row's linked ingredient. All-null today: no licensed import has run yet (ADR-0011 §5). */
+  nutrients: IngredientNutrients;
+  /** Grams for ONE unit of this row's `unit`, resolved user-override-then-reference (ADR-0011 §3, mass-resolution.ts's `resolveMass`). Only meaningful for volume/count magnitude units -- nutrition.ts converts mass units itself and ignores this field for those rows. */
+  unitMassGrams: number | null;
+};
+
 export type RecipeWithIngredientsAndSteps = RecipeRow & {
-  ingredients: RecipeIngredientRow[];
+  ingredients: RecipeIngredientWithNutrition[];
   steps: RecipeStepWithIngredients[];
 };
 export type CategoryWithRecipes = RecipeCategoryRow & { recipes: RecipeRow[] };

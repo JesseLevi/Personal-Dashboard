@@ -4,6 +4,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import { resolveMass } from "@/lib/recipes/mass-resolution";
+import { EMPTY_NUTRIENTS } from "@/lib/recipes/nutrition";
+import type { IngredientNutrients } from "@/lib/recipes/nutrition";
 import type { UnitCode } from "@/lib/recipes/units";
 import type { Database } from "@/lib/database.types";
 import type {
@@ -94,11 +96,138 @@ export async function getRecipeCategoriesWithRecipes(): Promise<CategoryWithReci
 }
 
 /**
+ * Batched nutrition inputs for #160's per-person nutrition row: for every
+ * `recipe_ingredients` row with a linked `ingredient_id`, its
+ * `reference.ingredients` nutrient-per-100g columns (via the public
+ * ingredient's nullable `reference_id`) and its resolved grams-per-unit
+ * (ADR-0011 §3's user-override-then-reference precedence, via
+ * mass-resolution.ts's `resolveMass` — the same precedence
+ * `resolveIngredientUnitMass` below uses, applied here as four batched
+ * queries total instead of one round trip per ingredient row).
+ *
+ * Rows with no `ingredient_id` (the FK is an enrichment link, never a
+ * precondition for rendering, ADR-0011 §2) are simply absent from the
+ * returned map — the caller falls back to all-null inputs, which
+ * `computeRecipeNutritionPerPerson` (lib/recipes/nutrition.ts) already
+ * treats as "unknown", never "zero".
+ */
+async function nutritionInputsForIngredients(
+  supabase: Client,
+  userId: string,
+  ingredients: RecipeIngredientRow[],
+): Promise<Map<string, { nutrients: IngredientNutrients; unitMassGrams: number | null }>> {
+  const result = new Map<string, { nutrients: IngredientNutrients; unitMassGrams: number | null }>();
+  const ingredientIds = [
+    ...new Set(ingredients.map((row) => row.ingredient_id).filter((id): id is string => id !== null)),
+  ];
+  if (ingredientIds.length === 0) return result;
+
+  const { data: ownRows, error: ownError } = await supabase
+    .from("ingredients")
+    .select("id, reference_id")
+    .eq("user_id", userId)
+    .in("id", ingredientIds);
+  if (ownError) {
+    console.error(
+      "[recipes] nutritionInputsForIngredients (ingredients) failed:",
+      ownError.code,
+      ownError.message,
+    );
+    return result;
+  }
+
+  const { data: userMassRows, error: userMassError } = await supabase
+    .from("ingredient_unit_masses")
+    .select("ingredient_id, unit, grams")
+    .eq("user_id", userId)
+    .in("ingredient_id", ingredientIds);
+  if (userMassError) {
+    console.error(
+      "[recipes] nutritionInputsForIngredients (user masses) failed:",
+      userMassError.code,
+      userMassError.message,
+    );
+    return result;
+  }
+
+  const referenceIdByIngredientId = new Map(ownRows.map((row) => [row.id, row.reference_id] as const));
+  const referenceIds = [
+    ...new Set(ownRows.map((row) => row.reference_id).filter((id): id is string => id !== null)),
+  ];
+
+  let nutrientsByReferenceId = new Map<
+    string,
+    Pick<ReferenceIngredientRow, "kcal_per_100g" | "protein_g_per_100g" | "carbs_g_per_100g" | "fat_g_per_100g">
+  >();
+  let referenceGramsByKey = new Map<string, number>();
+
+  if (referenceIds.length > 0) {
+    const [nutrientsResult, referenceMassResult] = await Promise.all([
+      supabase
+        .schema("reference")
+        .from("ingredients")
+        .select("id, kcal_per_100g, protein_g_per_100g, carbs_g_per_100g, fat_g_per_100g")
+        .in("id", referenceIds),
+      supabase
+        .schema("reference")
+        .from("ingredient_unit_masses")
+        .select("ingredient_id, unit, grams")
+        .in("ingredient_id", referenceIds),
+    ]);
+    if (nutrientsResult.error || referenceMassResult.error) {
+      const error = nutrientsResult.error ?? referenceMassResult.error!;
+      console.error(
+        "[recipes] nutritionInputsForIngredients (reference) failed:",
+        error.code,
+        error.message,
+      );
+      return result;
+    }
+    nutrientsByReferenceId = new Map(nutrientsResult.data.map((row) => [row.id, row] as const));
+    referenceGramsByKey = new Map(
+      referenceMassResult.data.map((row) => [`${row.ingredient_id}:${row.unit}`, row.grams] as const),
+    );
+  }
+
+  const userGramsByKey = new Map(
+    userMassRows.map((row) => [`${row.ingredient_id}:${row.unit}`, row.grams] as const),
+  );
+
+  for (const row of ingredients) {
+    if (row.ingredient_id === null) continue;
+    const referenceId = referenceIdByIngredientId.get(row.ingredient_id) ?? null;
+    const referenceRow = referenceId ? nutrientsByReferenceId.get(referenceId) : undefined;
+    const nutrients: IngredientNutrients = referenceRow
+      ? {
+          kcalPer100g: referenceRow.kcal_per_100g,
+          proteinGPer100g: referenceRow.protein_g_per_100g,
+          carbsGPer100g: referenceRow.carbs_g_per_100g,
+          fatGPer100g: referenceRow.fat_g_per_100g,
+        }
+      : EMPTY_NUTRIENTS;
+
+    const userGrams = userGramsByKey.get(`${row.ingredient_id}:${row.unit}`) ?? null;
+    const referenceGrams = referenceId
+      ? (referenceGramsByKey.get(`${referenceId}:${row.unit}`) ?? null)
+      : null;
+    const mass = resolveMass(userGrams, referenceGrams);
+
+    result.set(row.id, {
+      nutrients,
+      unitMassGrams: mass.status === "resolved" ? mass.grams : null,
+    });
+  }
+
+  return result;
+}
+
+/**
  * One recipe — ingredients ordered by `position`, steps ordered by
- * `position` — fetched in a single PostgREST round trip. Returns `null` if
- * the recipe doesn't exist, isn't owned by the signed-in user, or the caller
- * is signed out. Feeds the recipe detail page (later ticket) but is built
- * here per #122's scope.
+ * `position` — fetched in a single PostgREST round trip (plus #160's
+ * batched nutrition-input queries, `nutritionInputsForIngredients` above).
+ * Returns `null` if the recipe doesn't exist, isn't owned by the signed-in
+ * user, or the caller is signed out. Feeds the recipe detail page (later
+ * ticket) but is built here per #122's scope.
  */
 export async function getRecipeWithIngredientsAndSteps(
   recipeId: string,
@@ -142,9 +271,22 @@ export async function getRecipeWithIngredientsAndSteps(
   if (!data) return null;
 
   const { recipe_ingredients, recipe_steps, ...recipe } = data;
+  const nutritionByIngredientId = await nutritionInputsForIngredients(
+    supabase,
+    userId,
+    recipe_ingredients,
+  );
   return {
     ...recipe,
-    ingredients: [...recipe_ingredients].sort((a, b) => a.position - b.position),
+    ingredients: [...recipe_ingredients]
+      .sort((a, b) => a.position - b.position)
+      .map((ingredient) => ({
+        ...ingredient,
+        ...(nutritionByIngredientId.get(ingredient.id) ?? {
+          nutrients: EMPTY_NUTRIENTS,
+          unitMassGrams: null,
+        }),
+      })),
     steps: [...recipe_steps]
       .sort((a, b) => a.position - b.position)
       .map(({ recipe_step_ingredients, ...step }) => ({

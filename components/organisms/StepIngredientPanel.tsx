@@ -100,14 +100,14 @@ export function StepIngredientPanel({
     >
       {visibleIngredients.length > 0 && (
         <Card>
-          {visibleIngredients.map((ingredient) => (
+          {visibleIngredients.map((ingredient, index) => (
             <CardContentIngredient
               key={ingredient.localId}
               name={ingredient.name}
               quantity={ingredient.quantityLabel}
               checked={selected.has(ingredient.localId)}
               onCheckedToggle={() => toggle(ingredient.localId)}
-              divider
+              divider={index < visibleIngredients.length - 1}
             />
           ))}
         </Card>

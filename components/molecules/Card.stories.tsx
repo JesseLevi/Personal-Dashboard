@@ -51,14 +51,15 @@ export const AllContentTypes = () => (
     </Card>
     <Card title="Ingredient">
       <div className="flex flex-col gap-2">
-        <CardContentIngredient name="Banana" quantity="300 gr" />
-        <CardContentIngredient name="Banana" quantity="300 gr" checked />
+        <CardContentIngredient name="Banana" quantity="300 gr" divider />
+        <CardContentIngredient name="Banana" quantity="300 gr" checked divider />
         <CardContentIngredient
           name="Banana"
           quantity="300 gr"
           checked={false}
           onDelete={() => {}}
           deleteLabel={deleteLabel}
+          swipeToDelete
         />
       </div>
     </Card>
