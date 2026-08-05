@@ -112,10 +112,21 @@ describe("scaleIngredientRow(s) with unitSystem", () => {
     expect(scaled.quantity).toBe(7.05);
   });
 
-  it("still converts even when portions are unchanged", () => {
-    const row = makeRow({ quantity: 1, unit: "liter" });
+  it("still converts a foreign unit even when portions are unchanged", () => {
+    // "cup" is a US unit, foreign to "metric" -- converted regardless of
+    // the portion counts matching. "liter" would NOT convert here: it's
+    // already a metric unit (membership wins over flagship normalisation,
+    // see convertToUnitSystem's own regression coverage in recipes-units.test.ts).
+    const row = makeRow({ quantity: 1, unit: "cup" });
     const scaled = scaleIngredientRow(row, 4, 4, "metric");
-    expect(scaled).toEqual({ ...row, quantity: 1000, unit: "milliliter" });
+    expect(scaled).toEqual({ ...row, quantity: 240, unit: "milliliter" });
+  });
+
+  it("leaves a unit already in the target system alone, even with a portion change", () => {
+    const row = makeRow({ quantity: 1, unit: "liter" });
+    const scaled = scaleIngredientRow(row, 4, 8, "metric");
+    expect(scaled.unit).toBe("liter");
+    expect(scaled.quantity).toBe(2);
   });
 
   it("leaves a count unit's unit unchanged while still scaling its quantity", () => {
@@ -138,7 +149,7 @@ describe("scaleIngredientRow(s) with unitSystem", () => {
   });
 
   it("is not a no-op list when a unitSystem is given, even if target === source", () => {
-    const rows = [makeRow({ id: "a", quantity: 1, unit: "liter" })];
+    const rows = [makeRow({ id: "a", quantity: 1, unit: "cup" })];
     const scaled = scaleIngredientRows(rows, 4, 4, "metric");
     expect(scaled).not.toBe(rows);
     expect(scaled[0].unit).toBe("milliliter");
