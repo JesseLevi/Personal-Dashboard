@@ -5,6 +5,7 @@ import {
   UNITS,
   UnknownUnitError,
   convert,
+  convertToUnitSystem,
   formatQuantity,
   isUnitCode,
   magnitudeOf,
@@ -168,6 +169,67 @@ describe("scaleQuantity", () => {
     expect(() => scaleQuantity(100, 4, Infinity)).toThrow(
       InvalidPortionCountError,
     );
+  });
+});
+
+describe("convertToUnitSystem", () => {
+  // Regression coverage: an earlier version of this function normalised
+  // EVERY mass/volume unit onto one flagship unit per system, so a Dutch
+  // recipe entered as "2 eetlepel" rendered as "30 milliliter" even under
+  // "Metrisch" -- eetlepel already IS a metric unit. Membership must win
+  // before the flagship-unit conversion ever runs.
+  it("leaves a unit already in the selected system untouched (metric)", () => {
+    expect(convertToUnitSystem(2, "eetlepel", "metric")).toEqual({ quantity: 2, unit: "eetlepel" });
+    expect(convertToUnitSystem(1, "theelepel", "metric")).toEqual({ quantity: 1, unit: "theelepel" });
+    expect(convertToUnitSystem(1, "kilogram", "metric")).toEqual({ quantity: 1, unit: "kilogram" });
+    expect(convertToUnitSystem(1, "liter", "metric")).toEqual({ quantity: 1, unit: "liter" });
+    expect(convertToUnitSystem(1, "deciliter", "metric")).toEqual({ quantity: 1, unit: "deciliter" });
+    expect(convertToUnitSystem(5, "gram", "metric")).toEqual({ quantity: 5, unit: "gram" });
+  });
+
+  it("leaves a unit already in the selected system untouched (us)", () => {
+    expect(convertToUnitSystem(2, "cup", "us")).toEqual({ quantity: 2, unit: "cup" });
+    expect(convertToUnitSystem(1, "tablespoon", "us")).toEqual({ quantity: 1, unit: "tablespoon" });
+    expect(convertToUnitSystem(1, "pound", "us")).toEqual({ quantity: 1, unit: "pound" });
+    expect(convertToUnitSystem(1, "teaspoon", "us")).toEqual({ quantity: 1, unit: "teaspoon" });
+    expect(convertToUnitSystem(1, "fluid_ounce", "us")).toEqual({ quantity: 1, unit: "fluid_ounce" });
+    expect(convertToUnitSystem(3, "ounce", "us")).toEqual({ quantity: 3, unit: "ounce" });
+  });
+
+  it("converts a foreign mass unit to the metric flagship unit (gram)", () => {
+    expect(convertToUnitSystem(1, "pound", "metric")).toEqual({ quantity: 453.59, unit: "gram" });
+    expect(convertToUnitSystem(1, "ounce", "metric")).toEqual({ quantity: 28.35, unit: "gram" });
+  });
+
+  it("converts a foreign mass unit to the US flagship unit (ounce)", () => {
+    expect(convertToUnitSystem(100, "gram", "us")).toEqual({ quantity: 3.53, unit: "ounce" });
+    expect(convertToUnitSystem(1, "kilogram", "us")).toEqual({ quantity: 35.27, unit: "ounce" });
+  });
+
+  it("converts a foreign volume unit to the metric flagship unit (milliliter)", () => {
+    expect(convertToUnitSystem(1, "cup", "metric")).toEqual({ quantity: 240, unit: "milliliter" });
+    expect(convertToUnitSystem(1, "tablespoon", "metric")).toEqual({ quantity: 14.79, unit: "milliliter" });
+  });
+
+  it("converts a foreign volume unit to the US flagship unit (cup)", () => {
+    expect(convertToUnitSystem(240, "milliliter", "us")).toEqual({ quantity: 1, unit: "cup" });
+    expect(convertToUnitSystem(1, "liter", "us")).toEqual({ quantity: 4.17, unit: "cup" });
+  });
+
+  it("passes count units through unchanged, regardless of system", () => {
+    expect(convertToUnitSystem(2, "scoop", "us")).toEqual({ quantity: 2, unit: "scoop" });
+    expect(convertToUnitSystem(2, "scoop", "metric")).toEqual({ quantity: 2, unit: "scoop" });
+  });
+
+  it("keeps a null quantity ('naar smaak') null and the unit unchanged", () => {
+    expect(convertToUnitSystem(null, "naar_smaak", "us")).toEqual({ quantity: null, unit: "naar_smaak" });
+    expect(convertToUnitSystem(null, "gram", "us")).toEqual({ quantity: null, unit: "gram" });
+  });
+
+  it("rounds a foreign-unit conversion to 2 decimals", () => {
+    const result = convertToUnitSystem(1, "tablespoon", "metric");
+    expect(result.unit).toBe("milliliter");
+    expect(result.quantity).toBe(14.79);
   });
 });
 

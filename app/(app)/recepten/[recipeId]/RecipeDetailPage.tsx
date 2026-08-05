@@ -9,14 +9,16 @@ import { Tag } from "@/components/atoms/Tag";
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
 import { CardContentStep } from "@/components/molecules/CardContentStep";
-import { PortionStepper } from "@/components/molecules/PortionStepper";
+import { computeRecipeNutritionPerPerson, type RecipeIngredientNutritionInput } from "@/lib/recipes/nutrition";
 import { scaleIngredientRows } from "@/lib/recipes/scaling";
-import { formatQuantity } from "@/lib/recipes/units";
+import { formatQuantity, type UnitSystem } from "@/lib/recipes/units";
 import type {
   RecipeCategoryRow,
-  RecipeIngredientRow,
+  RecipeIngredientWithNutrition,
   RecipeWithIngredientsAndSteps,
 } from "@/lib/recipes/types";
+import { NutritionalDataRow } from "./NutritionalDataRow";
+import { PasAanPanel } from "./PasAanPanel";
 import { RecipePanel, type RecipePanelTarget } from "../RecipePanel";
 import {
   createOwnIngredient,
@@ -27,16 +29,16 @@ import {
   uploadRecipeThumbnail,
 } from "../actions";
 
-// #127 recipe detail route body — Figma "Recept/Mobile" (3778:5427) /
-// "Recept/Desktop" (3778:5584), portion row 3953:9750/3778:5596, ingredient
-// cards 3778:5437/3778:5600. Page-level composition of existing atoms/
-// molecules (Card, Card-content/Ingredient, Card-content/Step, Button,
-// Dropdown, #123's PortionStepper) — same non-mapped-component precedent as
-// ReceptenBoard.tsx/RecipePanel.tsx, not added to design/figma-map.json. No
-// new Ladle story: this is a full route body (like ReceptenBoard.tsx, which
-// also ships without one), not a self-contained overlay like RecipePanel.tsx/
-// CardDetailPanel.tsx. Every decision/deviation below: design/notes/
-// RecipeDetailPage.md.
+// #127/#160 recipe detail route body — V2 Figma "Recept/Mobile" (3997:14737)
+// / "Recept/Desktop" (3997:15171), NutritionalData row 3997:15948/3997:15543,
+// ingredient cards (unchanged geometry) 3778:5437/3778:5600. Page-level
+// composition of existing atoms/molecules plus #160's two new page-local
+// components (NutritionalDataRow, PasAanPanel) — same non-mapped-component
+// precedent as ReceptenBoard.tsx/RecipePanel.tsx, not added to
+// design/figma-map.json. No new Ladle story: this is a full route body (like
+// ReceptenBoard.tsx, which also ships without one), not a self-contained
+// overlay like RecipePanel.tsx/CardDetailPanel.tsx. Every decision/deviation
+// below: design/notes/RecipeDetailPage.md.
 
 /** Buckets ingredients (already position-sorted) by `group_label`, preserving
  * each group's first-seen order — including one shared bucket for every
@@ -44,12 +46,12 @@ import {
  * "default" group name — see design/notes/RecipeDetailPage.md). */
 interface IngredientGroup {
   groupLabel: string | null;
-  ingredients: RecipeIngredientRow[];
+  ingredients: RecipeIngredientWithNutrition[];
 }
 
-function groupIngredients(ingredients: RecipeIngredientRow[]): IngredientGroup[] {
+function groupIngredients(ingredients: RecipeIngredientWithNutrition[]): IngredientGroup[] {
   const order: (string | null)[] = [];
-  const byLabel = new Map<string | null, RecipeIngredientRow[]>();
+  const byLabel = new Map<string | null, RecipeIngredientWithNutrition[]>();
   for (const ingredient of ingredients) {
     const key = ingredient.group_label;
     if (!byLabel.has(key)) {
@@ -71,14 +73,17 @@ export interface RecipeDetailPageProps {
 export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDetailPageProps) {
   const t = useTranslations("components.recipeDetailPage");
   const tUnits = useTranslations("recipes.units");
-  const tPortion = useTranslations("components.portionStepper");
   const tErrors = useTranslations("recipes.errors");
   const router = useRouter();
 
-  // Local, display-only multiplier -- never written back to recipe.servings
-  // (#128). #153 added the floor of 1 (PortionStepper's own `min` prop).
-  // See design/notes/RecipeDetailPage.md / PortionStepper.md.
+  // Local, display-only, session-only state -- never written back to
+  // `recipe.servings` (#128) nor persisted anywhere (#160's unit system).
+  // #153 added the floor of 1 (PortionStepper's own `min` prop). Both are
+  // now set from the Pas-aan panel rather than a page-level control -- see
+  // design/notes/RecipeDetailPage.md.
   const [portions, setPortions] = useState(recipe.servings);
+  const [unitSystem, setUnitSystem] = useState<UnitSystem>("metric");
+  const [panelOpen, setPanelOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [deleteConfirming, setDeleteConfirming] = useState(false);
@@ -112,11 +117,13 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
     });
   }
 
-  // #128: one shared scaled list feeds both the ingredient cards and the
-  // per-step Tags below, so `portions` only gets applied once per render.
-  const scaledIngredients = scaleIngredientRows(recipe.ingredients, recipe.servings, portions);
+  // #128/#160: one shared scaled-and-converted list feeds both the
+  // ingredient cards and the per-step Tags below, so `portions`/`unitSystem`
+  // each only get applied once per render (lib/recipes/scaling.ts composes
+  // both in one pass).
+  const displayIngredients = scaleIngredientRows(recipe.ingredients, recipe.servings, portions, unitSystem);
   const ingredientGroups = groupIngredients(
-    [...scaledIngredients].sort((a, b) => a.position - b.position),
+    [...displayIngredients].sort((a, b) => a.position - b.position),
   );
   const steps = [...recipe.steps].sort((a, b) => a.position - b.position);
   const editTarget: RecipePanelTarget = { mode: "edit", recipe };
@@ -125,9 +132,25 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
   // looked up here rather than carrying a second copy, per that type's own
   // doc comment. Ids with no matching row (shouldn't happen, FK-enforced,
   // but never crash on it) are silently dropped. Looked up against the
-  // scaled list (#128) so step Tags show the same scaled quantities as the
-  // ingredient cards above.
-  const ingredientsById = new Map(scaledIngredients.map((ingredient) => [ingredient.id, ingredient]));
+  // display list (#128/#160) so step Tags show the same scaled/converted
+  // quantities as the ingredient cards above.
+  const ingredientsById = new Map(displayIngredients.map((ingredient) => [ingredient.id, ingredient]));
+
+  // #160: per-person nutrition, from the recipe's OWN stored quantities/
+  // `servings` -- never `portions`/`unitSystem`. Per-person nutrition is
+  // portion-count-invariant (scaling ingredient mass by portions/servings
+  // and then dividing by the same portions cancels out), so recomputing it
+  // against the session-only display state would be redundant and would
+  // additionally launder a display-only unit conversion into a nutrition
+  // input, which lib/recipes/nutrition.ts's own header forbids. See
+  // design/notes/RecipeDetailPage.md.
+  const nutritionInputs: RecipeIngredientNutritionInput[] = recipe.ingredients.map((ingredient) => ({
+    quantity: ingredient.quantity,
+    unit: ingredient.unit,
+    unitMassGrams: ingredient.unitMassGrams,
+    nutrients: ingredient.nutrients,
+  }));
+  const nutritionPerPerson = computeRecipeNutritionPerPerson(nutritionInputs, recipe.servings);
 
   return (
     <div className="flex w-full flex-col items-stretch gap-6 pr-4 md:pr-32">
@@ -240,28 +263,43 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
 
       <div className="flex w-full flex-col items-center gap-6 py-4">
         <h1 className="w-full text-center text-4xl font-semibold text-text">{recipe.title}</h1>
-        <PortionStepper
-          portions={portions}
-          label={tPortion("count", { count: portions })}
-          decrementLabel={tPortion("decrementLabel")}
-          incrementLabel={tPortion("incrementLabel")}
-          onChange={setPortions}
+        <NutritionalDataRow
+          timeMinutes={recipe.time_minutes}
+          kcal={nutritionPerPerson.kcal}
+          carbsG={nutritionPerPerson.carbsG}
+          proteinG={nutritionPerPerson.proteinG}
+          fatG={nutritionPerPerson.fatG}
+          servings={portions}
         />
       </div>
 
       <div className="flex w-full flex-col gap-6 md:flex-row">
-        {ingredientGroups.map((group) => (
+        {ingredientGroups.map((group, groupIndex) => (
           <Card
             key={group.groupLabel ?? "__ungrouped"}
             title={group.groupLabel ?? undefined}
             className="md:flex-1"
+            settings={
+              // #160: Personen/Eenheid apply to the whole recipe, not one
+              // group -- the trigger renders once, on the first ingredient
+              // Card, whichever group that is (including an untitled one;
+              // Card's own `settings` slot handles that, see design/notes/Card.md).
+              groupIndex === 0 ? (
+                <Button
+                  variant="filled"
+                  icon="Settings2"
+                  aria-label={t("settingsLabel")}
+                  onClick={() => setPanelOpen(true)}
+                />
+              ) : undefined
+            }
           >
-            {group.ingredients.map((ingredient) => (
+            {group.ingredients.map((ingredient, index) => (
               <CardContentIngredient
                 key={ingredient.id}
                 name={ingredient.name}
                 quantity={formatQuantity(ingredient.quantity, tUnits(ingredient.unit))}
-                divider
+                divider={index < group.ingredients.length - 1}
               />
             ))}
           </Card>
@@ -272,7 +310,7 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
         {steps.map((step, index) => {
           const stepIngredients = step.ingredientIds
             .map((id) => ingredientsById.get(id))
-            .filter((ingredient): ingredient is RecipeIngredientRow => ingredient !== undefined);
+            .filter((ingredient): ingredient is RecipeIngredientWithNutrition => ingredient !== undefined);
           return (
             <Card key={step.id} step={index + 1} title={index === 0 ? t("stepsTitle") : undefined}>
               {/* #153: real per-step ingredient tags — see
@@ -316,6 +354,17 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
         onCreateOwnIngredient={createOwnIngredient}
         onUploadThumbnail={uploadRecipeThumbnail}
         onMutated={() => router.refresh()}
+      />
+
+      <PasAanPanel
+        open={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        portions={portions}
+        unitSystem={unitSystem}
+        onApply={(nextPortions, nextUnitSystem) => {
+          setPortions(nextPortions);
+          setUnitSystem(nextUnitSystem);
+        }}
       />
     </div>
   );

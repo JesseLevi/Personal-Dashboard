@@ -18,46 +18,67 @@
 // catches InvalidPortionCountError and falls back to the row's own source
 // quantity unchanged, so the page still renders instead of crashing.
 //
-// -- count units, never touching convert() -------------------------------
+// -- count units, portion scaling never touches convert() -----------------
 // scaleQuantity has no notion of unit at all -- it just scales the number.
-// This module deliberately imports nothing from convert()/mass-resolution.ts
-// (ADR-0011 §3): count units (stuk, scoop, snufje, naar_smaak) scale
-// numerically like any other unit but must never cross the mass<->volume
-// magnitude layer, and there is no UI entry point for that layer in this
-// ticket (see docs/open-questions.md's shared conversion-toggle entry).
+// count units (stuk, scoop, snufje, naar_smaak) scale numerically like any
+// other unit but must never cross the mass<->volume magnitude layer.
+//
+// -- unit-system conversion, added #160 ------------------------------------
+// #160's "Pas aan" panel is the UI entry point docs/open-questions.md's
+// former metric-imperial-conversion-has-no-ui-entry-point named as missing
+// (now resolved/removed there). `scaleIngredientRow(s)` below takes an
+// optional `unitSystem` and, when given one, applies `units.ts`'s own
+// `convertToUnitSystem` AFTER scaling -- one composed pass, not two
+// independent ones, so the ingredient cards and the per-step `Tag`s (both
+// fed from RecipeDetailPage.tsx's one shared list) always show the same
+// scaled-and-converted numbers. Still no import from
+// lib/recipes/mass-resolution.ts (ADR-0011 §3's ingredient-specific mass
+// lookup) -- `convertToUnitSystem` stays same-magnitude-only, same as the
+// `convert()` it wraps.
 
 import type { RecipeIngredientRow } from "@/lib/recipes/types";
-import { InvalidPortionCountError, scaleQuantity } from "@/lib/recipes/units";
+import { InvalidPortionCountError, convertToUnitSystem, scaleQuantity, type UnitSystem } from "@/lib/recipes/units";
 
 /** Scales a single ingredient row's `quantity` from `sourcePortions` to
- * `targetPortions`, keeping every other field (unit, name, group_label, ...)
- * untouched. Identity fast-path when the counts already match, so a page at
- * its initial render does zero redundant rounding. */
-export function scaleIngredientRow<T extends Pick<RecipeIngredientRow, "quantity">>(
+ * `targetPortions`, then (if `unitSystem` is given) converts the result to
+ * that system's flagship unit for the row's magnitude -- see the module
+ * header. Keeps every other field (name, group_label, ...) untouched.
+ * Identity fast-path when neither operation would change anything, so a
+ * page at its initial render does zero redundant rounding. */
+export function scaleIngredientRow<T extends Pick<RecipeIngredientRow, "quantity" | "unit">>(
   ingredient: T,
   sourcePortions: number,
   targetPortions: number,
+  unitSystem?: UnitSystem,
 ): T {
-  if (targetPortions === sourcePortions) return ingredient;
-  try {
-    return { ...ingredient, quantity: scaleQuantity(ingredient.quantity, sourcePortions, targetPortions) };
-  } catch (error) {
-    if (error instanceof InvalidPortionCountError) return ingredient;
-    throw error;
+  if (targetPortions === sourcePortions && !unitSystem) return ingredient;
+  let quantity = ingredient.quantity;
+  if (targetPortions !== sourcePortions) {
+    try {
+      quantity = scaleQuantity(quantity, sourcePortions, targetPortions);
+    } catch (error) {
+      if (!(error instanceof InvalidPortionCountError)) throw error;
+      quantity = ingredient.quantity;
+    }
   }
+  if (!unitSystem) return { ...ingredient, quantity };
+  const converted = convertToUnitSystem(quantity, ingredient.unit, unitSystem);
+  return { ...ingredient, quantity: converted.quantity, unit: converted.unit };
 }
 
-/** Scales every row in a recipe's ingredient list the same way -- the
- * function the detail page actually calls, once per render, to feed both the
- * ingredient cards and the per-step Tags from one shared, already-scaled
- * list rather than recomputing per call site. */
-export function scaleIngredientRows<T extends Pick<RecipeIngredientRow, "quantity">>(
+/** Scales (and, given `unitSystem`, converts) every row in a recipe's
+ * ingredient list the same way -- the function the detail page actually
+ * calls, once per render, to feed both the ingredient cards and the
+ * per-step Tags from one shared, already-scaled-and-converted list rather
+ * than recomputing per call site. */
+export function scaleIngredientRows<T extends Pick<RecipeIngredientRow, "quantity" | "unit">>(
   ingredients: readonly T[],
   sourcePortions: number,
   targetPortions: number,
+  unitSystem?: UnitSystem,
 ): T[] {
-  if (targetPortions === sourcePortions) return ingredients as T[];
+  if (targetPortions === sourcePortions && !unitSystem) return ingredients as T[];
   return ingredients.map((ingredient) =>
-    scaleIngredientRow(ingredient, sourcePortions, targetPortions),
+    scaleIngredientRow(ingredient, sourcePortions, targetPortions, unitSystem),
   );
 }

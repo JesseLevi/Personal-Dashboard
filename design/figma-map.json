@@ -15,7 +15,7 @@
     "Step": { "path": "components/atoms/Step.tsx", "nodeId": "3727:3208" }
   },
   "molecules": {
-    "Card": { "path": "components/molecules/Card.tsx", "nodeId": "3624:4448" },
+    "Card": { "path": "components/molecules/Card.tsx", "nodeId": "3997:25430" },
     "Card-content/Recipi": { "path": "components/molecules/CardContentRecipe.tsx", "nodeId": "3628:67" },
     "Card-content/Ingredient": { "path": "components/molecules/CardContentIngredient.tsx", "nodeId": "3727:4021" },
     "Card-content/Ticket": { "path": "components/molecules/CardContentTicket.tsx", "nodeId": "3670:1696" },

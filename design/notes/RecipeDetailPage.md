@@ -1,7 +1,8 @@
 # RecipeDetailPage (`/recepten/[recipeId]`)
 
 - **Code:** `app/(app)/recepten/[recipeId]/page.tsx` (Server Component: fetch + `notFound()`), `RecipeDetailPage.tsx` (`"use client"`, page-level composition — same non-mapped-component precedent as `ReceptenBoard.tsx`/`RecipePanel.tsx`, not added to `design/figma-map.json`).
-- **Node IDs:** `3778:5427` (Mobile, 402px), `3778:5584` (Desktop, 1440px), `3953:9750`/`3778:5596` (portion row, already `design/notes/PortionStepper.md`'s), `3778:5437`/`3778:5600` (ingredient cards), `3778:5459`/`3778:5622` + `3778:5467`/`3778:5630` (step cards).
+- **Node IDs (V2, current — #160):** `3997:14736` (section), `3997:14737` (Mobile) / `3997:15171` (Desktop), `3997:15948`/`3997:15543` (NutritionalData row), `3997:25600`/`3999:10604` (PasAan overlay) with panels `3998:10701` (pull-up) / `3999:10877` (slide-in).
+- **Node IDs (V1, superseded — #127/#128/#153):** `3778:5427` (Mobile, 402px), `3778:5584` (Desktop, 1440px), `3953:9750`/`3778:5596` (portion row, already `design/notes/PortionStepper.md`'s), `3778:5437`/`3778:5600` (ingredient cards), `3778:5459`/`3778:5622` + `3778:5467`/`3778:5630` (step cards).
 
 Built #127. Fetched all nodes live via `mcp__figma__get_figma_data` before writing any UI.
 
@@ -17,9 +18,11 @@ Figma's header row (`3778:5430`/`3778:5587`) has no `<h1>` slot at all (back-arr
 
 Binding user decision (2026-07-29): rendered at both breakpoints, `disabled`, no click handler. `#29` (Phase 5) wires it; Phase 4 builds no `shopping_list_items` and no write path. Flagged in the PR so a reviewer doesn't read the empty handler as an omission.
 
-## No duration/time, no category tags — deliberate, not an omission
+## No category tags — deliberate, not an omission
 
-Neither `Icon/Timer`+minutes nor a category `Tag` row appears anywhere in either fetched node, even though `recipes.duration`/`recipe_categories` both exist in the schema and the overview card (`CardContentRecipe`) renders duration. Not built here — a Figma-recorded scope boundary per the ticket, not a gap.
+No category `Tag` row appears anywhere in any fetched node, V1 or V2, even though `recipe_categories` exists in the schema. Not built — a Figma-recorded scope boundary, not a gap.
+
+**Duration/time was in this list until #160.** V1's nodes drew no `Icon/Timer`+minutes either; V2's `NutritionalData` row does, so `recipes.time_minutes` is now rendered — see the V2 rework section below.
 
 ## Mobile Ellipsis overflow menu — undesigned, least-inventive fill
 
@@ -35,9 +38,9 @@ No confirmation dialog is modelled anywhere in Figma for either "Verwijderen." F
 
 Ingredients with a `null` `group_label` render inside one shared, **untitled** `Card` (no "Overig"/"Other" label invented) rather than being hidden or scattered. Reasoning: `Card`'s own `title` prop is already optional/boolean-gated in Figma (`Title` bool + `Text`) — omitting it for a group with no name is the literal behaviour the atom already models, not a new state. Inventing a default label string would be UI content Figma never draws for this component. Groups render in first-seen order (by `position`); a `group_label` value that recurs non-contiguously merges into its first occurrence's bucket rather than opening a second card with the same title — an edge case with no real-world likelihood (a user re-using "Wet" twice non-adjacently) rather than a designed behaviour.
 
-## Ingredient row divider — measured, not invented
+## Ingredient row divider — superseded by #160
 
-Every fetched `Card-content/Ingredient` instance under both `Ingredients` nodes carries the same `strokeWeight: 0px 0px 1px` / `#E7E5E4` bottom rule `CardContentIngredient.md`'s `#131` entry already named `divider` for — including the last row in each card, no last-child exception. Passed `divider` on every row rendered here, matching the fetched reality rather than the ticket prose alone.
+**#127's rule (a bottom rule on every row, last row included) no longer holds.** Figma removed the border from `Card-content/Ingredient` itself in V2; the rule is now drawn *between* rows only, with none above the first or below the last. This page passes `divider={index < group.ingredients.length - 1}` accordingly. The measurement history and the ownership decision live in `design/notes/CardContentIngredient.md`'s #160 entry — not repeated here.
 
 ## Step ingredient tags — real, shipped #153, closes the #127 gap
 
@@ -90,6 +93,63 @@ No prior route needed it. `getRecipeWithIngredientsAndSteps` already returns `nu
 
 This file composes only existing, already-storied atoms/molecules (`Card`, `CardContentIngredient`, `CardContentStep`, `Button`, `Dropdown`, `PortionStepper`) with no extracted reusable unit of its own (the ingredient-group and step cards are inline JSX, not a new component). Same shape as `ReceptenBoard.tsx` — a full route body, not a self-contained overlay like `RecipePanel.tsx`/`CardDetailPanel.tsx`/`CategoryPanel.tsx` (which get stories precisely because they render standalone inside a `SidePanel`) — so, following that same precedent, no story was added here.
 
-## Verification
+## V2 rework (#160 part 2) — Figma "Pages/Recept_V2/Breakpoints" (`3997:14736`)
+
+Fetched all four frames live (`3997:14737` Mobile, `3997:25600` Mobile/PasAan/Dropdown, `3997:15171` Desktop, `3999:10604` Desktop/PasAan/Dropdown) plus Dev Mode annotations via the REST API (`get_figma_data` drops them, per `docs/guides/ui-components.md`). Structurally V2 changes three things versus #127/#128/#153's V1: a `NutritionalData` row replaces the portion stepper directly under the title, the ingredients `Card` gains a `Settings` boolean opening a new "Pas aan" panel, and that panel is where servings/unit-system now live. Header/Knoppen, the 2:1 hero, ingredient/step card geometry, and the disabled "Voeg toe aan mand" button are all unchanged from V1 — re-fetched and confirmed, not re-documented here.
+
+### NutritionalData row — six buttons, one new component
+
+`app/(app)/recepten/[recipeId]/NutritionalDataRow.tsx` (page composition, no `figma-map.json` entry — same precedent as this page's own Header/Knoppen rows, which are also plain Figma FRAMEs, not fetched components). Six `Button/Default` pills (mobile `3997:15948`, wraps, `justify-center`; desktop `3997:15543`, single row, `justify-start`): Timer/60 min, Flame/cal, Wheat/carbs, BicepsFlexed/protein, Droplet/fat, User/servings. Icons verified path-for-path against the fetched vectors — `design/notes/Icon.md`'s #160 entry.
+
+- **Time** comes from `recipes.time_minutes` (real, nullable column — #127's own note already flagged its *absence* in V1 as "a Figma-recorded scope boundary, not a gap"; V2 draws it, so it's now built).
+- **Calories/Koolhydraten/Proteïne/Vet** come from part 1's `computeRecipeNutritionPerPerson`, called once per render against `recipe.ingredients`' **original, unscaled** quantities and `recipe.servings` — deliberately NOT `displayIngredients`/`portions`/`unitSystem`. Per-person nutrition is portion-count-invariant (scaling every ingredient's mass by `portions/servings` and then dividing the total by the same `portions` cancels out algebraically), so recomputing it against the session-only display state would be both redundant and would launder a display-only unit conversion into a nutrition input — `lib/recipes/nutrition.ts`'s own header explicitly separates unit-conversion from nutrition math, and this keeps that boundary real in the one place that could have blurred it.
+- **"When number is unknown show: ?"** (annotation on `3997:15950`, stated to cover all five buttons including Time): `NutritionalDataRow`'s `formatValue` renders `t("nutrition.unknownValue")` ("?") for any `null` input, never a fabricated `0`. **Every macro is legitimately `?` today** — `reference.ingredients`' nutrient columns are all-NULL and `reference.ingredient_unit_masses` is empty (no licensed USDA import has run, ADR-0011 §5) — this is the design-specified behaviour part 1's own module header already anticipated, not a bug introduced here.
+- **Servings ("5 pers.")** is the session `portions` state, always a real number (floored at 1 by `PortionStepper`) — never `?`.
+- **Five of the six buttons open a dropdown** naming the abbreviated figure's full word (Time/Calorieën/Koolhydraten/Proteïne/Vet — annotations on `3997:15949`–`3997:15953`), reusing `Atom/Dropdown`'s labelless bordered-panel mode with a single line of explanatory text, plus the same click-outside-closes convention `RecipeDetailPage.tsx`'s own overflow menu and `TeDoenHeader.tsx` already use (one shared `openKey`/ref per row — only one popover open at a time). The popover's own content is Figma-specified (the annotation names it); its exact visual (width/padding/position) is not — flagged: `docs/open-questions.md#nutrition-dropdown-content-undesigned`.
+- **The sixth (servings) button carries no annotation** (`3997:16065`/`3997:25590`, unlike the five above) — no dropdown/handler is invented for it. Rendered `disabled`, the same "real but non-functional" precedent this page's own "Voeg toe aan mand" button already established for an undrawn/unwired affordance.
+
+### Ingredients Card gains a `settings` slot — the Pas-aan trigger
+
+Figma's `Card` component set gained a `Settings` boolean (V2, fetched instances `3997:25493` mobile / `3998:10755` desktop) rendering an icon-only `Settings2` `Button` in the title row, annotated "Clicking launches #Recept/Mobile/PasAan/Dropdown". Mapped onto `Card`'s new `settings?: ReactNode` prop (`components/molecules/Card.tsx`, `design/notes/Card.md`'s own #160 entry has the full prop/rendering reasoning, including why the title row now renders even without a `title` — the common "no `group_label`" case would otherwise silently drop the trigger).
+
+**Rendered on the first ingredient group's Card only** (`groupIndex === 0`): every fetched instance shows exactly one ingredient Card carrying `Settings=true` (the sample recipe has one group), and Personen/Eenheid apply to the whole recipe, not one group — showing the trigger on every group's Card would duplicate one recipe-wide control across N cards. A reasoned extension of the fetched single-instance sample to the multi-group case, not a literal read (flagged here per the same "extend past what's literally sampled" precedent as `RecipeDetailPage.md`'s own pre-existing "`group_label`-less ingredients" entry).
+
+### Pas-aan panel — `PasAanPanel.tsx`, `SidePanel` reused as-is
+
+`app/(app)/recepten/[recipeId]/PasAanPanel.tsx` (page composition, no `figma-map.json` entry). Wraps the existing `components/organisms/SidePanel.tsx` directly — its pull-up (mobile)/slide-in (desktop) behaviour is already exactly what the fetched nodes show (mobile `3998:10701` "Pull-up panel"; desktop `3999:10877` annotated "Slides in from right"), so no second panel primitive was built, per the ticket's own instruction.
+
+**Personen** (`Card` titled "Ingrediënten", reused directly — Figma wraps both rows in a real `Card` instance, same bordered slot every other `Card` uses) renders `PortionStepper` (#123/#153, unchanged: floor of 1, `min` default 1) rather than the literal fetched node. Deviation, flagged: the fetched "Personen" row (`I3998:10928;3997:25437;3998:11009` mobile / `I3999:11007;3997:25437;3999:11001` desktop) draws a *single* `Button/Default` instance with `Icon/Plus` in both its leading AND trailing icon slots — the same root Figma-authoring pattern `docs/open-questions.md#portion-stepper-figma-draws-plus-twice` already names for `PortionStepper`'s own nodes, just in a different structural shape (one button with two icon slots, not two buttons). Rather than build a second, differently-shaped servings widget for this one panel, `PasAanPanel` reuses the already-built, already-approved `PortionStepper` molecule — functionally identical intent ("adapts the ingredient amounts based on n.o. people", the row's own annotation), same component, one fewer bespoke control in the codebase. Extended that open question with this recurrence rather than opening a new one.
+
+**Eenheid** (annotation: "Clicking launches dropdown with 2 options: Amerikaans / Metrisch") is a `Button` trigger (current system's label + `ChevronDown`) opening a 2-option `Atom/Dropdown`, same selected-highlight convention as `TeDoenHeader.tsx`'s sort menu (`variant="filled"` for the active option, `"white"` otherwise, `aria-pressed`).
+
+**Session-only, both settings — binding, not relitigated.** Neither `portions` nor `unitSystem` is written anywhere: `recipes.servings` is never updated from this page (upholds #128's existing decision, itself restated from #94-era product direction), and the unit preference has no column at all. Both reset on navigation, same as `portions` already did pre-#160.
+
+**Draft state, committed only on "Opslaan" — user decision.** The Figma panel draws two footer buttons, "Verwijderen" and "Opslaan"; **the user decided (2026-08-05): drop "Verwijderen" entirely, keep only "Opslaan", which merely applies the setting for this session and closes the panel.** `PasAanPanel` therefore keeps its own `draftPortions`/`draftUnitSystem` state, reset to the currently-applied `portions`/`unitSystem` props every time the panel opens (a `useEffect` on `open`), and only calls `onApply` (which is what actually updates `RecipeDetailPage`'s state) from the "Opslaan" button's `onClick`. Closing the panel any other way — the `X` button, overlay click, Escape, or (mobile) the drag-to-close gesture, all of which `SidePanel` already wires to `onClose` — discards the draft, since `onApply` was never called. This is the literal reading of "applies... and closes" as two things Opslaan does (implying the setting is NOT already live before Opslaan is pressed), not an invented cancel/confirm model.
+
+### Unit conversion — `lib/recipes/units.ts`'s `convertToUnitSystem`, the ticket's own UI entry point
+
+Resolves `docs/open-questions.md#metric-imperial-conversion-has-no-ui-entry-point` (removed — this ticket IS that entry point, same closure pattern #153 used for `recipe-step-ingredient-tags-no-data-link`).
+
+`convertToUnitSystem(quantity, unit, system)` is **membership-based, not normalising**: it converts a unit only when that unit is *foreign* to `system`, and leaves a unit that already belongs to `system` untouched. Metric membership: `gram`, `kilogram`, `milliliter`, `deciliter`, `liter`, `theelepel`, `eetlepel` (the Dutch measuring spoons are the metric side, matching #120's own factor split from teaspoon/tablespoon). US membership: `ounce`, `pound`, `cup`, `teaspoon`, `tablespoon`, `fluid_ounce`. A foreign unit converts onto one **flagship unit per magnitude** for the target system (via the existing `convert()`) — metric → gram/milliliter (each magnitude's own base unit, factor 1); US → ounce/cup (the two most commonly recognised US customary units). **The flagship-unit choice for a foreign unit is a build decision, not a Figma spec** — the fetched Eenheid annotation names only the two system labels ("Amerikaans"/"Metrisch"), never which specific unit a foreign quantity should land on, and a "best-fit unit per quantity" scheme (e.g. picking tsp vs tbsp vs cup by magnitude) would need genuinely new, ingredient-agnostic selection logic the ticket doesn't ask for and `units.ts`'s own header explicitly scopes out. Flagged in `units.ts` itself, not just here.
+
+**Regression, caught in review (2026-08-06):** the first version of this function normalised onto the flagship unit unconditionally — a recipe entered as "2 eetlepel olijfolie" rendered "30 milliliter olijfolie" even under the default "Metrisch" view, since `eetlepel` was treated the same as any other volume unit rather than as an already-metric one. Fixed by adding the membership check before the flagship conversion ever runs; `tests/recipes-units.test.ts` now locks in that same-system units (`eetlepel`/`theelepel`/`kilogram`/`liter`/`deciliter` under metric, `cup`/`tablespoon`/`pound`/`teaspoon`/`fluid_ounce` under US) come back unchanged, alongside the cross-system conversion cases.
+
+**`count` units (stuk, snufje, scoop, naar_smaak) render as-is regardless of system**, per the ticket's own instruction — `convertToUnitSystem` passes them through unchanged (structurally unconvertible, same reasoning `units.ts`'s file header already gives for why `convert()` itself has no `count` overload).
+
+**Composes with portion scaling in one place**, per the ticket's own instruction: `lib/recipes/scaling.ts`'s `scaleIngredientRow(s)` now takes an optional `unitSystem` and applies `convertToUnitSystem` AFTER `scaleQuantity`, in the same pass — `RecipeDetailPage.tsx`'s `displayIngredients` (renamed from `scaledIngredients`, #128's own variable) is still the one list feeding both the ingredient `Card`s and the per-step `Tag`s, unchanged from #128's own reasoning for why that matters.
+
+**Formatting**: `formatQuantity` (#120) is unchanged and still emits decimals, not fractions — `docs/open-questions.md#fraction-notation-vs-decimal-formatter` stays open/deferred, per the ticket's own instruction not to solve it here. `convertToUnitSystem` rounds a foreign-unit conversion's output to 2 decimals (the same `roundQuantity` `scaleQuantity` already uses) before `formatQuantity` trims trailing zeros for display, so a converted value never shows raw floating-point noise; a same-system unit's original quantity (already 2-decimal-clean from entry/scaling) passes through untouched.
+
+**Default system**: `metric`. Because membership now wins over normalisation, this means a recipe stored in Dutch-metric units (the common case) renders on first load exactly as entered — no conversion-on-load flash, and no rewritten units for a user who never opens the Pas-aan panel.
+
+### Icon additions
+
+`Flame`, `BicepsFlexed`, `Droplet`, `User` (NutritionalData row) and `Settings2` (Pas-aan trigger) — all five verified path-for-path against their fetched Figma vectors via `download_figma_images` + `renderToStaticMarkup`, no false friends found. Full verification: `design/notes/Icon.md`.
+
+### Verification (part 2)
+
+`pnpm lint`/`typecheck`/`test`/`build`/`check:server-only`/`check:comment-budget`/`test:visual` run — see the PR for exact numbers. **Not run:** a real authenticated `/recepten/[recipeId]` in a browser — this dev machine has no Docker/local Supabase (`CLAUDE.md`), the same standing gap every Phase 3/4 page has hit (`docs/HANDOFF.md`); nothing about the nutrition row's real (non-`?`) rendering, the panel's real save round trip, or the unit conversion's on-screen appearance has been exercised against real seeded data.
+
+## Verification (part 1, #127/#128/#153)
 
 `pnpm lint`/`typecheck`/`test`/`build`/`check:server-only`/`check:comment-budget` run and green (see the PR for exact numbers). **Not run:** a real authenticated `/recepten/[recipeId]` in a browser — this dev machine has no Docker/local Supabase (`CLAUDE.md`), the same standing gap every Phase 3/4 page has hit (`docs/HANDOFF.md`).

@@ -258,7 +258,7 @@ export function IngredientSearchPanel({
 
       {results !== null && !isSearching && results.length > 0 && (
         <Card>
-          {results.map((result) => {
+          {results.map((result, index) => {
             const key = ingredientSearchResultKey(result);
             return (
               <CardContentIngredient
@@ -266,7 +266,7 @@ export function IngredientSearchPanel({
                 name={resultDisplayName(result)}
                 checked={selections.has(key)}
                 onCheckedToggle={() => toggleResult(result)}
-                divider
+                divider={index < results.length - 1}
               />
             );
           })}

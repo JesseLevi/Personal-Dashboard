@@ -43,6 +43,11 @@ import {
   Soup,
   Pizza,
   Cookie,
+  Flame,
+  BicepsFlexed,
+  Droplet,
+  User,
+  Settings2,
   Amphora,
   Apple,
   Banana,
@@ -167,6 +172,16 @@ export type IconName =
   | "Soup"
   | "Pizza"
   | "Cookie"
+  // Recept/Mobile+Desktop's NutritionalData row (#160, node 3997:15948/
+  // 3997:15543): Flame/BicepsFlexed/Droplet/User verified path-for-path
+  // against the fetched Icon/Flame|Biceps-flexed|Droplet|User vectors
+  // (3997:15930/3997:15932/3997:15931/3997:25587); Settings2 (Icon/
+  // Settings-2, 3997:16080, the Pas-aan trigger) likewise. See design/notes/Icon.md.
+  | "Flame"
+  | "BicepsFlexed"
+  | "Droplet"
+  | "User"
+  | "Settings2"
   // The 66 below are lucide's full "Food & beverage" category (74 total
   // with the 8 above), added on direct user instruction (2026-08-01) for
   // CategoryPanel's icon picker (#125 follow-up) — not sourced from a
@@ -285,6 +300,11 @@ const ICONS: Record<IconName, ComponentType<LucideProps>> = {
   Soup: Soup,
   Pizza: Pizza,
   Cookie: Cookie,
+  Flame: Flame,
+  BicepsFlexed: BicepsFlexed,
+  Droplet: Droplet,
+  User: User,
+  Settings2: Settings2,
   Amphora: Amphora,
   Apple: Apple,
   Banana: Banana,

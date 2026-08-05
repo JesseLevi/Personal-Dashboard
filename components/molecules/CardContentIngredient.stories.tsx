@@ -31,6 +31,7 @@ export const Playground: Story<PlaygroundProps> = ({
           checked={checked}
           onDelete={() => {}}
           deleteLabel={deleteLabelEn}
+          swipeToDelete
         />
       ) : (
         <CardContentIngredient
@@ -60,30 +61,58 @@ Playground.argTypes = {
   deletable: { control: { type: "boolean" } },
 };
 
-// Full variant axis side by side. Click-and-hold (:active) the Unchecked row
-// for the Active pill — see design/notes/CardContentIngredient.md (no Hover state).
+// Base variant axis side by side (Checkbox None/Unchecked/Checked). Delete
+// moved to its own SwipeToDelete story below (#160: it's a gesture, not an
+// always-visible row). Click-and-hold (:active) the Unchecked row for the
+// Active pill — see design/notes/CardContentIngredient.md (no Hover state).
 export const AllVariants = () => (
   <div className="flex w-96 flex-col gap-2">
     <CardContentIngredient name="Banana" quantity="300 gr" />
     <CardContentIngredient name="Banana" quantity="300 gr" checked={false} />
     <CardContentIngredient name="Banana" quantity="300 gr" checked />
+  </div>
+);
+
+// #131/#160: `Tag=false` (no `quantity`) + `divider` computed per-row as
+// "not the last one" — the ingredient-search-panel usage, a name-only pick
+// list whose rule sits only BETWEEN rows (none above the first, none below
+// the last).
+export const NoQuantityWithDivider = () => {
+  const rows = [
+    { name: "Appel", checked: false },
+    { name: "Blauwe bes", checked: false },
+    { name: "Havermout", checked: true },
+  ];
+  return (
+    <div className="w-96 rounded-xl border border-border bg-surface p-2">
+      {rows.map((row, index) => (
+        <CardContentIngredient
+          key={row.name}
+          name={row.name}
+          checked={row.checked}
+          divider={index < rows.length - 1}
+        />
+      ))}
+    </div>
+  );
+};
+
+// #160: State=Delete (node 3727:4378, annotation "When sliding") is a swipe
+// reveal, opt-in via `swipeToDelete` — the shopping basket (#29, Phase 5) is
+// its only planned consumer, so this Ladle story is the only place it's
+// exercised today. Renders at rest (closed); the open/revealed pill state
+// needs a live drag and isn't captured by the static screenshot baseline,
+// same as the Active pill above.
+export const SwipeToDelete = () => (
+  <div className="w-96">
     <CardContentIngredient
       name="Banana"
       quantity="300 gr"
       checked={false}
       onDelete={() => {}}
       deleteLabel={deleteLabelEn}
+      swipeToDelete
     />
-  </div>
-);
-
-// #131: `Tag=false` (no `quantity`) + `divider` — the ingredient-search-panel
-// usage, a name-only pick list with a per-row bottom rule.
-export const NoQuantityWithDivider = () => (
-  <div className="w-96 rounded-xl border border-border bg-surface p-2">
-    <CardContentIngredient name="Appel" checked={false} divider />
-    <CardContentIngredient name="Blauwe bes" checked={false} divider />
-    <CardContentIngredient name="Havermout" checked divider />
   </div>
 );
 
@@ -96,6 +125,7 @@ export const DeleteLabelNl = () => (
       checked={false}
       onDelete={() => {}}
       deleteLabel={nl.components.cardContentIngredient.deleteLabel}
+      swipeToDelete
     />
   </div>
 );

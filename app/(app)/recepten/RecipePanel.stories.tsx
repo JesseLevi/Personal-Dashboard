@@ -1,5 +1,6 @@
 // figma: node-id=3777:3918 (+3717:2844 fields, 3777:3984 read-only reference)
 import { RecipePanel } from "./RecipePanel";
+import { EMPTY_NUTRIENTS } from "@/lib/recipes/nutrition";
 import type {
   ActionResult,
   IngredientRow,
@@ -105,6 +106,10 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
       unit: "gram",
       position: 1000,
       group_label: null,
+      // #160: all-null today, same as the seeded data (no licensed
+      // nutrition import has run, ADR-0011 §5).
+      nutrients: EMPTY_NUTRIENTS,
+      unitMassGrams: null,
       created_at: "2026-07-01T00:00:00.000Z",
       updated_at: "2026-07-01T00:00:00.000Z",
     },
@@ -118,6 +123,8 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
       unit: "scoop",
       position: 2000,
       group_label: null,
+      nutrients: EMPTY_NUTRIENTS,
+      unitMassGrams: null,
       created_at: "2026-07-01T00:00:00.000Z",
       updated_at: "2026-07-01T00:00:00.000Z",
     },
@@ -131,6 +138,8 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
       unit: "stuk",
       position: 3000,
       group_label: null,
+      nutrients: EMPTY_NUTRIENTS,
+      unitMassGrams: null,
       created_at: "2026-07-01T00:00:00.000Z",
       updated_at: "2026-07-01T00:00:00.000Z",
     },

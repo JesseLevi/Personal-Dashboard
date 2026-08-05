@@ -4,6 +4,7 @@ import { CardContentRecipe } from "./CardContentRecipe";
 import { CardContentIngredient } from "./CardContentIngredient";
 import { CardContentTicket } from "./CardContentTicket";
 import { CardContentStep } from "./CardContentStep";
+import { Button } from "../atoms/Button";
 import { Tag } from "../atoms/Tag";
 import en from "../../messages/en.json";
 
@@ -18,6 +19,20 @@ export const WithTitle = () => (
 );
 
 export const WithStep = () => <Card step={1}>{placeholderContent}</Card>;
+
+// #160: `settings` slot (the ingredients Card's Pas-aan trigger). Rendered
+// even without a `title` (the "no group label" case) — see design/notes/Card.md.
+export const WithSettings = () => (
+  <Card title="Ingrediënten" settings={<Button variant="filled" icon="Settings2" aria-label="Pas aan" />}>
+    {placeholderContent}
+  </Card>
+);
+
+export const WithSettingsNoTitle = () => (
+  <Card settings={<Button variant="filled" icon="Settings2" aria-label="Pas aan" />}>
+    {placeholderContent}
+  </Card>
+);
 
 export const WithTitleAndStep = () => (
   <Card title="Titel" step={1}>
@@ -51,14 +66,15 @@ export const AllContentTypes = () => (
     </Card>
     <Card title="Ingredient">
       <div className="flex flex-col gap-2">
-        <CardContentIngredient name="Banana" quantity="300 gr" />
-        <CardContentIngredient name="Banana" quantity="300 gr" checked />
+        <CardContentIngredient name="Banana" quantity="300 gr" divider />
+        <CardContentIngredient name="Banana" quantity="300 gr" checked divider />
         <CardContentIngredient
           name="Banana"
           quantity="300 gr"
           checked={false}
           onDelete={() => {}}
           deleteLabel={deleteLabel}
+          swipeToDelete
         />
       </div>
     </Card>

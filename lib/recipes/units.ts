@@ -211,6 +211,81 @@ export function scaleQuantity(
   return roundQuantity(quantity * (targetPortions / sourcePortions));
 }
 
+/** The two systems #160's "Pas aan" panel toggles between (Figma: "Metrisch"
+ * / "Amerikaans"). Purely a display-layer concept -- nothing is persisted,
+ * see design/notes/RecipeDetailPage.md. */
+export type UnitSystem = "metric" | "us";
+
+// Membership, not normalisation. The ticket asks for "omzetting ingrediënten
+// van metric (gram/ml) naar amerikaans (cups, tsp etc.) en andersom" -- i.e.
+// convert a unit that belongs to the OTHER system, never rewrite a unit
+// that's already in the selected one. A Dutch recipe entered as "2 eetlepel"
+// must still read "2 eetlepel" under "Metrisch" -- eetlepel/theelepel are
+// already Dutch-metric units (#120's own factor split treats them as the
+// Dutch-recipe side, distinct from teaspoon/tablespoon), not a foreign unit
+// to be collapsed onto milliliter. Every mass/volume unit belongs to exactly
+// one of these two sets; `count` units belong to neither (handled below).
+const METRIC_UNITS: ReadonlySet<UnitCode> = new Set<UnitCode>([
+  "gram",
+  "kilogram",
+  "milliliter",
+  "deciliter",
+  "liter",
+  "theelepel",
+  "eetlepel",
+]);
+const US_UNITS: ReadonlySet<UnitCode> = new Set<UnitCode>([
+  "ounce",
+  "pound",
+  "cup",
+  "teaspoon",
+  "tablespoon",
+  "fluid_ounce",
+]);
+
+// One flagship unit per magnitude, used ONLY for a unit foreign to the
+// selected system (see convertToUnitSystem below) -- a build decision, not a
+// Figma spec: the fetched Eenheid annotation only names the two system
+// labels, never which specific unit a foreign quantity should land on.
+// Metric's targets are each magnitude's own base unit (gram/milliliter,
+// factor 1); US's are the two most commonly recognised US customary units
+// (ounce/cup) rather than a "best-fit" unit chosen per quantity, which would
+// need ingredient-agnostic magnitude-selection logic this module doesn't
+// have and the ticket doesn't ask for. Flagged, not silently invented --
+// docs/open-questions.md's now-resolved metric-imperial-conversion entry
+// records this choice.
+const SYSTEM_TARGET_UNIT: Record<UnitSystem, { mass: MassUnitCode; volume: VolumeUnitCode }> = {
+  metric: { mass: "gram", volume: "milliliter" },
+  us: { mass: "ounce", volume: "cup" },
+};
+
+/**
+ * Converts one ingredient row's quantity+unit for display under `system`.
+ * A unit that already belongs to `system` (`METRIC_UNITS`/`US_UNITS` above)
+ * is returned untouched -- this is the #160 UI entry point for this file's
+ * own `convert()`, and only ever converts a unit *foreign* to the selected
+ * system, onto that system's flagship unit for the row's magnitude
+ * (`SYSTEM_TARGET_UNIT`). `count` units (stuk, scoop, snufje, naar_smaak)
+ * are structurally unconvertible (file header) and pass through unchanged,
+ * same for `quantity === null` ("naar smaak") -- nothing to convert either way.
+ */
+export function convertToUnitSystem(
+  quantity: number | null,
+  unit: UnitCode,
+  system: UnitSystem,
+): { quantity: number | null; unit: UnitCode } {
+  const magnitude = magnitudeOf(unit);
+  if (magnitude === "count" || quantity === null) return { quantity, unit };
+  const membersOfSelectedSystem = system === "metric" ? METRIC_UNITS : US_UNITS;
+  if (membersOfSelectedSystem.has(unit)) return { quantity, unit };
+  const target = SYSTEM_TARGET_UNIT[system][magnitude];
+  const converted =
+    magnitude === "mass"
+      ? convert(quantity, unit as MassUnitCode, target as MassUnitCode)
+      : convert(quantity, unit as VolumeUnitCode, target as VolumeUnitCode);
+  return { quantity: roundQuantity(converted), unit: target };
+}
+
 // Mirrors roundQuantity's 2-decimal precision, then trims trailing zeros so
 // whole numbers print as "1250" (not "1250.00") and thirds print as "0.33"
 // (not "0.330000000000001" -- `toFixed` alone doesn't remove those). This
