@@ -1,4 +1,4 @@
-// figma: node-id=3624:4448
+// figma: node-id=3997:25430
 import clsx from "clsx";
 import type { ReactNode } from "react";
 import { Step } from "../atoms/Step";

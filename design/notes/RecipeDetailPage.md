@@ -1,7 +1,8 @@
 # RecipeDetailPage (`/recepten/[recipeId]`)
 
 - **Code:** `app/(app)/recepten/[recipeId]/page.tsx` (Server Component: fetch + `notFound()`), `RecipeDetailPage.tsx` (`"use client"`, page-level composition — same non-mapped-component precedent as `ReceptenBoard.tsx`/`RecipePanel.tsx`, not added to `design/figma-map.json`).
-- **Node IDs:** `3778:5427` (Mobile, 402px), `3778:5584` (Desktop, 1440px), `3953:9750`/`3778:5596` (portion row, already `design/notes/PortionStepper.md`'s), `3778:5437`/`3778:5600` (ingredient cards), `3778:5459`/`3778:5622` + `3778:5467`/`3778:5630` (step cards).
+- **Node IDs (V2, current — #160):** `3997:14736` (section), `3997:14737` (Mobile) / `3997:15171` (Desktop), `3997:15948`/`3997:15543` (NutritionalData row), `3997:25600`/`3999:10604` (PasAan overlay) with panels `3998:10701` (pull-up) / `3999:10877` (slide-in).
+- **Node IDs (V1, superseded — #127/#128/#153):** `3778:5427` (Mobile, 402px), `3778:5584` (Desktop, 1440px), `3953:9750`/`3778:5596` (portion row, already `design/notes/PortionStepper.md`'s), `3778:5437`/`3778:5600` (ingredient cards), `3778:5459`/`3778:5622` + `3778:5467`/`3778:5630` (step cards).
 
 Built #127. Fetched all nodes live via `mcp__figma__get_figma_data` before writing any UI.
 
@@ -17,9 +18,11 @@ Figma's header row (`3778:5430`/`3778:5587`) has no `<h1>` slot at all (back-arr
 
 Binding user decision (2026-07-29): rendered at both breakpoints, `disabled`, no click handler. `#29` (Phase 5) wires it; Phase 4 builds no `shopping_list_items` and no write path. Flagged in the PR so a reviewer doesn't read the empty handler as an omission.
 
-## No duration/time, no category tags — deliberate, not an omission
+## No category tags — deliberate, not an omission
 
-Neither `Icon/Timer`+minutes nor a category `Tag` row appears anywhere in either fetched node, even though `recipes.duration`/`recipe_categories` both exist in the schema and the overview card (`CardContentRecipe`) renders duration. Not built here — a Figma-recorded scope boundary per the ticket, not a gap.
+No category `Tag` row appears anywhere in any fetched node, V1 or V2, even though `recipe_categories` exists in the schema. Not built — a Figma-recorded scope boundary, not a gap.
+
+**Duration/time was in this list until #160.** V1's nodes drew no `Icon/Timer`+minutes either; V2's `NutritionalData` row does, so `recipes.time_minutes` is now rendered — see the V2 rework section below.
 
 ## Mobile Ellipsis overflow menu — undesigned, least-inventive fill
 
@@ -35,9 +38,9 @@ No confirmation dialog is modelled anywhere in Figma for either "Verwijderen." F
 
 Ingredients with a `null` `group_label` render inside one shared, **untitled** `Card` (no "Overig"/"Other" label invented) rather than being hidden or scattered. Reasoning: `Card`'s own `title` prop is already optional/boolean-gated in Figma (`Title` bool + `Text`) — omitting it for a group with no name is the literal behaviour the atom already models, not a new state. Inventing a default label string would be UI content Figma never draws for this component. Groups render in first-seen order (by `position`); a `group_label` value that recurs non-contiguously merges into its first occurrence's bucket rather than opening a second card with the same title — an edge case with no real-world likelihood (a user re-using "Wet" twice non-adjacently) rather than a designed behaviour.
 
-## Ingredient row divider — measured, not invented
+## Ingredient row divider — superseded by #160
 
-Every fetched `Card-content/Ingredient` instance under both `Ingredients` nodes carries the same `strokeWeight: 0px 0px 1px` / `#E7E5E4` bottom rule `CardContentIngredient.md`'s `#131` entry already named `divider` for — including the last row in each card, no last-child exception. Passed `divider` on every row rendered here, matching the fetched reality rather than the ticket prose alone.
+**#127's rule (a bottom rule on every row, last row included) no longer holds.** Figma removed the border from `Card-content/Ingredient` itself in V2; the rule is now drawn *between* rows only, with none above the first or below the last. This page passes `divider={index < group.ingredients.length - 1}` accordingly. The measurement history and the ownership decision live in `design/notes/CardContentIngredient.md`'s #160 entry — not repeated here.
 
 ## Step ingredient tags — real, shipped #153, closes the #127 gap
 
