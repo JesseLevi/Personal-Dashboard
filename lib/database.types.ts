@@ -1,8 +1,16 @@
-// Hand-maintained to match supabase/migrations/*.sql (#91, #119, #130, #149).
-// This dev machine has no Docker/standalone Supabase CLI, so `pnpm db:types`
-// (which shells out to `supabase gen types typescript --local --schema
-// public,reference`) cannot run here — CI must regenerate this file against
-// the real local stack and confirm it matches.
+// Hand-maintained to match supabase/migrations/*.sql (#91, #119, #130, #149,
+// #161). This dev machine has no Docker/standalone Supabase CLI, so `pnpm
+// db:types` (which shells out to `supabase gen types typescript --local
+// --schema public,reference`) cannot run here — CI must regenerate this
+// file against the real local stack and confirm it matches.
+//
+// #161: reference.ingredients gains fiber_g_per_100g, nutrient_basis,
+// category_nl/category_en and loses category (ADR-0013, executed by
+// 20260806000001_nevo_nutrition_import.sql). nutrient_basis types as
+// `string` here (not a `'per_100g' | 'per_100ml'` literal union) because
+// this file has no way to express the migration's `check` constraint the
+// way a real `supabase gen types` run would still type it as plain `text`
+// too -- Postgres CHECK constraints don't surface as enum types.
 //
 // #149: recipe_step_ingredients (step<->ingredient join) and the
 // replace_recipe_contents RPC, both from
@@ -768,11 +776,14 @@ export interface Database {
           id: string;
           name_nl: string;
           name_en: string | null;
-          category: string | null;
+          category_nl: string | null;
+          category_en: string | null;
           kcal_per_100g: number | null;
           protein_g_per_100g: number | null;
           carbs_g_per_100g: number | null;
           fat_g_per_100g: number | null;
+          fiber_g_per_100g: number | null;
+          nutrient_basis: string;
           source: string;
           source_ref: string | null;
           source_version: string;
@@ -781,11 +792,14 @@ export interface Database {
           id?: string;
           name_nl: string;
           name_en?: string | null;
-          category?: string | null;
+          category_nl?: string | null;
+          category_en?: string | null;
           kcal_per_100g?: number | null;
           protein_g_per_100g?: number | null;
           carbs_g_per_100g?: number | null;
           fat_g_per_100g?: number | null;
+          fiber_g_per_100g?: number | null;
+          nutrient_basis: string;
           source: string;
           source_ref?: string | null;
           source_version: string;
@@ -794,11 +808,14 @@ export interface Database {
           id?: string;
           name_nl?: string;
           name_en?: string | null;
-          category?: string | null;
+          category_nl?: string | null;
+          category_en?: string | null;
           kcal_per_100g?: number | null;
           protein_g_per_100g?: number | null;
           carbs_g_per_100g?: number | null;
           fat_g_per_100g?: number | null;
+          fiber_g_per_100g?: number | null;
+          nutrient_basis?: string;
           source?: string;
           source_ref?: string | null;
           source_version?: string;

@@ -2,7 +2,7 @@
 
 // figma: node-id=3957:10337
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { SidePanel } from "./SidePanel";
 import { InputField } from "../atoms/InputField";
 import { Checkbox } from "../atoms/Checkbox";
@@ -43,9 +43,9 @@ type SelectedEntry =
 // Builds the Map entry for a search result, branching explicitly on
 // `source` rather than casting — `result.ingredient`'s type is only known
 // per-branch (IngredientRow vs. ReferenceIngredientRow).
-function selectedEntryFromResult(result: IngredientSearchResult): SelectedEntry {
+function selectedEntryFromResult(result: IngredientSearchResult, locale: string): SelectedEntry {
   const key = ingredientSearchResultKey(result);
-  const name = resultDisplayName(result);
+  const name = resultDisplayName(result, locale);
   return result.source === "own"
     ? { kind: "own", key, name, ingredient: result.ingredient }
     : { kind: "reference", key, name, ingredient: result.ingredient };
@@ -60,8 +60,18 @@ function newIngredientKey(name: string): string {
   return `new:${name.trim().toLowerCase()}`;
 }
 
-function resultDisplayName(result: IngredientSearchResult): string {
-  return result.source === "own" ? result.ingredient.name : result.ingredient.name_nl;
+// `own` rows carry the user's own free-text `name` and are never translated
+// (ADR-0011 §2/§3, restated ADR-0013 §6). `reference` rows are the shared
+// bilingual library layer (ADR-0013 §6): pick `name_en` for locale "en",
+// falling back to `name_nl` whenever the English name is absent/empty (NEVO
+// doesn't guarantee a non-empty English name for every row) or the locale
+// isn't "en". `i18n/request.ts` hardcodes "nl" today (#162 wires
+// `profiles.locale`), so this renders Dutch in practice until #162 lands —
+// no further change needed here once it does.
+export function resultDisplayName(result: IngredientSearchResult, locale: string): string {
+  if (result.source === "own") return result.ingredient.name;
+  const nameEn = result.ingredient.name_en;
+  return locale === "en" && nameEn ? nameEn : result.ingredient.name_nl;
 }
 
 export interface IngredientSearchPanelProps {
@@ -94,6 +104,7 @@ export function IngredientSearchPanel({
   const t = useTranslations("components.ingredientSearchPanel");
   const tSidePanel = useTranslations("components.sidePanel");
   const tErrors = useTranslations("recipes.errors");
+  const locale = useLocale();
 
   const [query, setQuery] = useState(initialQuery ?? "");
   const [results, setResults] = useState<IngredientSearchResult[] | null>(null);
@@ -156,11 +167,11 @@ export function IngredientSearchPanel({
       for (const result of results) {
         const key = ingredientSearchResultKey(result);
         if (!initialSelectedIds.includes(key) || next.has(key)) continue;
-        next.set(key, selectedEntryFromResult(result));
+        next.set(key, selectedEntryFromResult(result, locale));
       }
       return next;
     });
-  }, [results, initialSelectedIds]);
+  }, [results, initialSelectedIds, locale]);
 
   function toggleResult(result: IngredientSearchResult) {
     const key = ingredientSearchResultKey(result);
@@ -169,7 +180,7 @@ export function IngredientSearchPanel({
       if (next.has(key)) {
         next.delete(key);
       } else {
-        next.set(key, selectedEntryFromResult(result));
+        next.set(key, selectedEntryFromResult(result, locale));
       }
       return next;
     });
@@ -263,7 +274,7 @@ export function IngredientSearchPanel({
             return (
               <CardContentIngredient
                 key={key}
-                name={resultDisplayName(result)}
+                name={resultDisplayName(result, locale)}
                 checked={selections.has(key)}
                 onCheckedToggle={() => toggleResult(result)}
                 divider={index < results.length - 1}

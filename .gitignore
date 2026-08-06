@@ -41,3 +41,7 @@ tmp/
 # vendored skill docs, restorable via `npx skills experimental_install` from skills-lock.json
 .agents/skills/
 .claude/skills/
+
+# NEVO source data (ADR-0013): 108MB of raw RIVM CSVs. The derived seed
+# migration is committed; the upstream dump is not.
+/NEVO2025_v9.0/

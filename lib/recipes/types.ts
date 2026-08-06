@@ -35,7 +35,7 @@ export type RecipeStepWithIngredients = RecipeStepRow & { ingredientIds: string[
 // fields are all-null for a row with no `ingredient_id` link or no
 // resolvable data -- "unknown", never "zero" (ADR-0011 §4).
 export type RecipeIngredientWithNutrition = RecipeIngredientRow & {
-  /** `reference.ingredients`' nutrient-per-100g columns for this row's linked ingredient. All-null today: no licensed import has run yet (ADR-0011 §5). */
+  /** `reference.ingredients`' nutrient-per-100g columns for this row's linked ingredient (NEVO-online 2025/9.0, ADR-0013). All-null for an unlinked row or a `per_100ml` reference row (ADR-0013 §4). */
   nutrients: IngredientNutrients;
   /** Grams for ONE unit of this row's `unit`, resolved user-override-then-reference (ADR-0011 §3, mass-resolution.ts's `resolveMass`). Only meaningful for volume/count magnitude units -- nutrition.ts converts mass units itself and ignores this field for those rows. */
   unitMassGrams: number | null;

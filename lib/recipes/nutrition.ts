@@ -16,13 +16,20 @@
 //
 // -- NULL means unknown, never 0 (ADR-0011 §4) ---------------------------
 // A `null` anywhere in a row's inputs (quantity, unitMassGrams, or any one
-// of the four nutrient columns) makes that row's contribution to that
+// of the five nutrient columns) makes that row's contribution to that
 // nutrient `null`, and one unknown row's contribution makes the whole
 // recipe's total for that nutrient `null` -- never a silent sum of the
-// known subset presented as a total. `reference.ingredients`' nutrient
-// columns are entirely NULL in the seeded data today (no licensed import
-// has run, ADR-0011 §5), so every macro legitimately renders "?" until one
-// does -- expected, not a bug.
+// known subset presented as a total. NEVO's import (#161, ADR-0013) fills
+// kcal/protein/carbs/fat/fiber for 2328 `reference.ingredients` rows; an
+// unlinked ingredient (or a `per_100ml` row, ADR-0013 §4) still resolves to
+// EMPTY_NUTRIENTS, so its macros render "?" -- expected, not a bug.
+//
+// -- Fibre is imported and computed but not displayed (ADR-0013 §3) ------
+// `fiberGPer100g`/`fiberG` exist end-to-end here for the same reason the
+// other four nutrients do -- one shared calculation layer, one set of
+// null-propagation rules -- but no UI reads `fiberG` yet: Figma's
+// NutritionalData row draws six buttons and none of them is fibre
+// (docs/open-questions.md#nutrition-fiber-has-no-figma-button).
 
 import {
   convert,
@@ -37,6 +44,7 @@ export interface IngredientNutrients {
   proteinGPer100g: number | null;
   carbsGPer100g: number | null;
   fatGPer100g: number | null;
+  fiberGPer100g: number | null;
 }
 
 /**
@@ -58,18 +66,21 @@ export interface NutritionAmounts {
   carbsG: number | null;
   proteinG: number | null;
   fatG: number | null;
+  fiberG: number | null;
 }
 
 /** All-unknown nutrients — the fallback for an ingredient row with no
- * `reference.ingredients` link, and the shape every column legitimately
- * holds today (no licensed import has run yet, ADR-0011 §5). Exported so
- * queries.ts (the DB-touching shell) and dev-only fixtures share one
- * definition instead of re-typing four `null`s in multiple places. */
+ * `reference.ingredients` link, and what a `per_100ml` reference row also
+ * resolves to (ADR-0013 §4 -- its numbers must never be fed into per-100g
+ * math). Exported so queries.ts (the DB-touching shell) and dev-only
+ * fixtures share one definition instead of re-typing five `null`s in
+ * multiple places. */
 export const EMPTY_NUTRIENTS: IngredientNutrients = {
   kcalPer100g: null,
   proteinGPer100g: null,
   carbsGPer100g: null,
   fatGPer100g: null,
+  fiberGPer100g: null,
 };
 
 function isMassUnit(unit: UnitCode): unit is MassUnitCode {
@@ -100,9 +111,9 @@ function contribution(grams: number | null, per100g: number | null): number | nu
   return (grams / 100) * per100g;
 }
 
-/** One ingredient row's resolved kcal/carbs/protein/fat contribution. Each
- * nutrient is resolved independently, so e.g. kcal can be known while
- * protein is unknown -- a row can be missing just one of the four columns. */
+/** One ingredient row's resolved kcal/carbs/protein/fat/fiber contribution.
+ * Each nutrient is resolved independently, so e.g. kcal can be known while
+ * protein is unknown -- a row can be missing just one of the five columns. */
 export function resolveIngredientNutrition(
   input: RecipeIngredientNutritionInput,
 ): NutritionAmounts {
@@ -112,6 +123,7 @@ export function resolveIngredientNutrition(
     carbsG: contribution(grams, input.nutrients.carbsGPer100g),
     proteinG: contribution(grams, input.nutrients.proteinGPer100g),
     fatG: contribution(grams, input.nutrients.fatGPer100g),
+    fiberG: contribution(grams, input.nutrients.fiberGPer100g),
   };
 }
 
@@ -136,7 +148,7 @@ function round(value: number): number {
 }
 
 /**
- * Per-person kcal/carbs/protein/fat for a whole recipe: sums every
+ * Per-person kcal/carbs/protein/fat/fiber for a whole recipe: sums every
  * ingredient row's contribution (see `sumKnown` -- one unknown row makes
  * that nutrient's total, and therefore its per-person value, unknown too),
  * then divides by `servings`. `servings` mirrors `scaleQuantity`'s own
@@ -157,11 +169,13 @@ export function computeRecipeNutritionPerPerson(
     carbsG: sumKnown(perIngredient.map((row) => row.carbsG)),
     proteinG: sumKnown(perIngredient.map((row) => row.proteinG)),
     fatG: sumKnown(perIngredient.map((row) => row.fatG)),
+    fiberG: sumKnown(perIngredient.map((row) => row.fiberG)),
   };
   return {
     kcal: totals.kcal === null ? null : round(totals.kcal / servings),
     carbsG: totals.carbsG === null ? null : round(totals.carbsG / servings),
     proteinG: totals.proteinG === null ? null : round(totals.proteinG / servings),
     fatG: totals.fatG === null ? null : round(totals.fatG / servings),
+    fiberG: totals.fiberG === null ? null : round(totals.fiberG / servings),
   };
 }

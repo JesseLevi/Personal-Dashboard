@@ -13,21 +13,33 @@ import { InvalidPortionCountError } from "../lib/recipes/units";
 // approximations — the rounding rule itself is covered separately by
 // units.ts's own roundQuantity tests, not re-verified here.
 
-// 200 g at 100 kcal/carb20/protein10/fat5 per 100 g -> 200/40/20/10.
+// 200 g at 100 kcal/carb20/protein10/fat5/fiber4 per 100 g -> 200/40/20/10/8.
 const knownGram: RecipeIngredientNutritionInput = {
   quantity: 200,
   unit: "gram",
   unitMassGrams: null,
-  nutrients: { kcalPer100g: 100, carbsGPer100g: 20, proteinGPer100g: 10, fatGPer100g: 5 },
+  nutrients: {
+    kcalPer100g: 100,
+    carbsGPer100g: 20,
+    proteinGPer100g: 10,
+    fatGPer100g: 5,
+    fiberGPer100g: 4,
+  },
 };
 
-// 2 stuk at 50 g/stuk = 100 g, at 200 kcal/carb0(legit zero)/protein8/fat2
-// per 100 g -> 200/0/8/2.
+// 2 stuk at 50 g/stuk = 100 g, at 200 kcal/carb0(legit zero)/protein8/fat2/
+// fiber1 per 100 g -> 200/0/8/2/1.
 const knownCount: RecipeIngredientNutritionInput = {
   quantity: 2,
   unit: "stuk",
   unitMassGrams: 50,
-  nutrients: { kcalPer100g: 200, carbsGPer100g: 0, proteinGPer100g: 8, fatGPer100g: 2 },
+  nutrients: {
+    kcalPer100g: 200,
+    carbsGPer100g: 0,
+    proteinGPer100g: 8,
+    fatGPer100g: 2,
+    fiberGPer100g: 1,
+  },
 };
 
 describe("resolveIngredientGrams", () => {
@@ -50,21 +62,23 @@ describe("resolveIngredientGrams", () => {
 });
 
 describe("resolveIngredientNutrition", () => {
-  it("computes all four macros for a fully-known mass-unit row (happy path)", () => {
+  it("computes all five macros for a fully-known mass-unit row (happy path)", () => {
     expect(resolveIngredientNutrition(knownGram)).toEqual({
       kcal: 200,
       carbsG: 40,
       proteinG: 20,
       fatG: 10,
+      fiberG: 8,
     });
   });
 
-  it("computes all four macros for a fully-known count-unit row via its resolved grams-per-unit", () => {
+  it("computes all five macros for a fully-known count-unit row via its resolved grams-per-unit", () => {
     expect(resolveIngredientNutrition(knownCount)).toEqual({
       kcal: 200,
       carbsG: 0,
       proteinG: 8,
       fatG: 2,
+      fiberG: 1,
     });
   });
 
@@ -73,17 +87,24 @@ describe("resolveIngredientNutrition", () => {
       quantity: 100,
       unit: "gram",
       unitMassGrams: null,
-      nutrients: { kcalPer100g: 0, carbsGPer100g: 0, proteinGPer100g: 0, fatGPer100g: 0 },
+      nutrients: {
+        kcalPer100g: 0,
+        carbsGPer100g: 0,
+        proteinGPer100g: 0,
+        fatGPer100g: 0,
+        fiberGPer100g: 0,
+      },
     };
     expect(resolveIngredientNutrition(zeroEverything)).toEqual({
       kcal: 0,
       carbsG: 0,
       proteinG: 0,
       fatG: 0,
+      fiberG: 0,
     });
   });
 
-  it("resolves only the unknown nutrient to null, leaving the other three known (a row can be missing just one column)", () => {
+  it("resolves only the unknown nutrient to null, leaving the other four known (a row can be missing just one column)", () => {
     const missingCarbsOnly: RecipeIngredientNutritionInput = {
       ...knownGram,
       nutrients: { ...knownGram.nutrients, carbsGPer100g: null },
@@ -93,6 +114,7 @@ describe("resolveIngredientNutrition", () => {
       carbsG: null,
       proteinG: 20,
       fatG: 10,
+      fiberG: 8,
     });
   });
 
@@ -101,25 +123,33 @@ describe("resolveIngredientNutrition", () => {
       quantity: 1,
       unit: "cup",
       unitMassGrams: null,
-      nutrients: { kcalPer100g: 389, carbsGPer100g: 66, proteinGPer100g: 17, fatGPer100g: 7 },
+      nutrients: {
+        kcalPer100g: 389,
+        carbsGPer100g: 66,
+        proteinGPer100g: 17,
+        fatGPer100g: 7,
+        fiberGPer100g: 9,
+      },
     };
     expect(resolveIngredientNutrition(unresolvedMass)).toEqual({
       kcal: null,
       carbsG: null,
       proteinG: null,
       fatG: null,
+      fiberG: null,
     });
   });
 });
 
 describe("computeRecipeNutritionPerPerson", () => {
   it("sums every row's contribution then divides by servings (happy path)", () => {
-    // Totals: kcal 400, carbs 40, protein 28, fat 12 -- servings 2 -> halved.
+    // Totals: kcal 400, carbs 40, protein 28, fat 12, fiber 9 -- servings 2 -> halved.
     expect(computeRecipeNutritionPerPerson([knownGram, knownCount], 2)).toEqual({
       kcal: 200,
       carbsG: 20,
       proteinG: 14,
       fatG: 6,
+      fiberG: 4.5,
     });
   });
 
@@ -129,6 +159,7 @@ describe("computeRecipeNutritionPerPerson", () => {
       carbsG: 10,
       proteinG: 7,
       fatG: 3,
+      fiberG: 2.25,
     });
   });
 
@@ -139,11 +170,12 @@ describe("computeRecipeNutritionPerPerson", () => {
     };
     const totals = computeRecipeNutritionPerPerson([knownGram, missingProtein], 2);
     expect(totals.proteinG).toBeNull();
-    // The other three macros stay known -- one unknown ingredient value
+    // The other four macros stay known -- one unknown ingredient value
     // doesn't null out unrelated nutrients or unrelated rows.
     expect(totals.kcal).toBe(200);
     expect(totals.carbsG).toBe(20);
     expect(totals.fatG).toBe(6);
+    expect(totals.fiberG).toBe(4.5);
   });
 
   it("is unknown when any row's grams are unresolved, never a silent sum of the known subset", () => {
@@ -151,10 +183,16 @@ describe("computeRecipeNutritionPerPerson", () => {
       quantity: 1,
       unit: "cup",
       unitMassGrams: null,
-      nutrients: { kcalPer100g: 389, carbsGPer100g: 66, proteinGPer100g: 17, fatGPer100g: 7 },
+      nutrients: {
+        kcalPer100g: 389,
+        carbsGPer100g: 66,
+        proteinGPer100g: 17,
+        fatGPer100g: 7,
+        fiberGPer100g: 10,
+      },
     };
     const totals = computeRecipeNutritionPerPerson([knownGram, unresolved], 2);
-    expect(totals).toEqual({ kcal: null, carbsG: null, proteinG: null, fatG: null });
+    expect(totals).toEqual({ kcal: null, carbsG: null, proteinG: null, fatG: null, fiberG: null });
   });
 
   it("is all-zero (known), not null, for an empty ingredient list -- vacuously nothing is unknown", () => {
@@ -163,6 +201,7 @@ describe("computeRecipeNutritionPerPerson", () => {
       carbsG: 0,
       proteinG: 0,
       fatG: 0,
+      fiberG: 0,
     });
   });
 

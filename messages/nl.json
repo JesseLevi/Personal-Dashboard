@@ -321,7 +321,8 @@
         "proteinUnit": "gr.",
         "fatLabel": "Vet",
         "fatUnit": "gr.",
-        "servingsUnit": "pers."
+        "servingsUnit": "pers.",
+        "nevoAttribution": "Based on data from NEVO online version 2025/9.0, RIVM, Bilthoven and other data sources"
       }
     },
     "pasAanPanel": {

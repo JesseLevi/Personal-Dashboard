@@ -109,7 +109,10 @@ export async function getRecipeCategoriesWithRecipes(): Promise<CategoryWithReci
  * precondition for rendering, ADR-0011 §2) are simply absent from the
  * returned map — the caller falls back to all-null inputs, which
  * `computeRecipeNutritionPerPerson` (lib/recipes/nutrition.ts) already
- * treats as "unknown", never "zero".
+ * treats as "unknown", never "zero". A linked row whose reference ingredient
+ * is `nutrient_basis = 'per_100ml'` is treated the same way (ADR-0013 §4,
+ * see the guard below) — its numbers exist but aren't per-100g, so they're
+ * unknown to this per-100g pipeline rather than silently misread.
  */
 async function nutritionInputsForIngredients(
   supabase: Client,
@@ -157,7 +160,15 @@ async function nutritionInputsForIngredients(
 
   let nutrientsByReferenceId = new Map<
     string,
-    Pick<ReferenceIngredientRow, "kcal_per_100g" | "protein_g_per_100g" | "carbs_g_per_100g" | "fat_g_per_100g">
+    Pick<
+      ReferenceIngredientRow,
+      | "kcal_per_100g"
+      | "protein_g_per_100g"
+      | "carbs_g_per_100g"
+      | "fat_g_per_100g"
+      | "fiber_g_per_100g"
+      | "nutrient_basis"
+    >
   >();
   let referenceGramsByKey = new Map<string, number>();
 
@@ -166,7 +177,9 @@ async function nutritionInputsForIngredients(
       supabase
         .schema("reference")
         .from("ingredients")
-        .select("id, kcal_per_100g, protein_g_per_100g, carbs_g_per_100g, fat_g_per_100g")
+        .select(
+          "id, kcal_per_100g, protein_g_per_100g, carbs_g_per_100g, fat_g_per_100g, fiber_g_per_100g, nutrient_basis",
+        )
         .in("id", referenceIds),
       supabase
         .schema("reference")
@@ -197,14 +210,24 @@ async function nutritionInputsForIngredients(
     if (row.ingredient_id === null) continue;
     const referenceId = referenceIdByIngredientId.get(row.ingredient_id) ?? null;
     const referenceRow = referenceId ? nutrientsByReferenceId.get(referenceId) : undefined;
-    const nutrients: IngredientNutrients = referenceRow
-      ? {
-          kcalPer100g: referenceRow.kcal_per_100g,
-          proteinGPer100g: referenceRow.protein_g_per_100g,
-          carbsGPer100g: referenceRow.carbs_g_per_100g,
-          fatGPer100g: referenceRow.fat_g_per_100g,
-        }
-      : EMPTY_NUTRIENTS;
+    // ADR-0013 §4 guard: a `per_100ml` reference row's five nutrient columns
+    // are expressed per 100 ml, not per 100 g (NEVO's 53 infant-formula
+    // rows). Feeding those numbers into nutrition.ts's per-100g math would
+    // be a silent lie -- so a per_100ml row's nutrients are treated as
+    // unknown, the same EMPTY_NUTRIENTS path an unlinked ingredient takes,
+    // rather than mixed in. A real volume-based nutrition path is a
+    // separate mechanism (ADR-0011 §3's standing rule) and out of scope
+    // here.
+    const nutrients: IngredientNutrients =
+      referenceRow && referenceRow.nutrient_basis === "per_100g"
+        ? {
+            kcalPer100g: referenceRow.kcal_per_100g,
+            proteinGPer100g: referenceRow.protein_g_per_100g,
+            carbsGPer100g: referenceRow.carbs_g_per_100g,
+            fatGPer100g: referenceRow.fat_g_per_100g,
+            fiberGPer100g: referenceRow.fiber_g_per_100g,
+          }
+        : EMPTY_NUTRIENTS;
 
     const userGrams = userGramsByKey.get(`${row.ingredient_id}:${row.unit}`) ?? null;
     const referenceGrams = referenceId
@@ -402,6 +425,15 @@ export async function searchIngredientLibrary(
   for (const row of [...byNameNl.data, ...byNameEn.data]) {
     referenceById.set(row.id, row);
   }
+  // Sorted by name_nl regardless of viewer locale -- deliberately not made
+  // locale-aware here (#161/ADR-0013 §6, which only sourced the display
+  // name in IngredientSearchPanel.tsx). i18n/request.ts hardcodes "nl" for
+  // every request today, so any locale this Server Action read would still
+  // resolve to "nl" -- there is no observable behaviour to gain yet, and
+  // next-intl's own guidance is to pass a locale explicitly into a Server
+  // Action rather than infer one, which would mean widening
+  // searchIngredients' input contract (actions.ts) for a change with zero
+  // effect until #162 lands. Revisit alongside that ticket instead.
   const reference = [...referenceById.values()].sort((a, b) =>
     a.name_nl.localeCompare(b.name_nl),
   );

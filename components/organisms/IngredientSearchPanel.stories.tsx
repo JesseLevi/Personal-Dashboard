@@ -1,4 +1,5 @@
 // figma: node-id=3957:10337 (+3957:10595 desktop, panel 3957:11006)
+import { NextIntlClientProvider } from "next-intl";
 import { IngredientSearchPanel, ingredientSearchResultKey } from "./IngredientSearchPanel";
 import type {
   ActionResult,
@@ -6,6 +7,7 @@ import type {
   IngredientSearchResult,
   ReferenceIngredientRow,
 } from "@/lib/recipes/types";
+import en from "../../messages/en.json";
 
 // Dev-only mock actions -- IngredientSearchPanel never imports the real
 // "use server" module itself (design/notes/IngredientSearchPanel.md), same
@@ -18,11 +20,14 @@ const mockReferenceIngredients: ReferenceIngredientRow[] = [
     id: "ref-appel",
     name_nl: "Appel",
     name_en: "Apple",
-    category: null,
+    category_nl: null,
+    category_en: null,
     kcal_per_100g: null,
     protein_g_per_100g: null,
     carbs_g_per_100g: null,
     fat_g_per_100g: null,
+    fiber_g_per_100g: null,
+    nutrient_basis: "per_100g",
     source: "hand-curated",
     source_ref: null,
     source_version: "2026-07-30",
@@ -31,11 +36,14 @@ const mockReferenceIngredients: ReferenceIngredientRow[] = [
     id: "ref-banaan",
     name_nl: "Banaan",
     name_en: "Banana",
-    category: null,
+    category_nl: null,
+    category_en: null,
     kcal_per_100g: null,
     protein_g_per_100g: null,
     carbs_g_per_100g: null,
     fat_g_per_100g: null,
+    fiber_g_per_100g: null,
+    nutrient_basis: "per_100g",
     source: "hand-curated",
     source_ref: null,
     source_version: "2026-07-30",
@@ -44,11 +52,14 @@ const mockReferenceIngredients: ReferenceIngredientRow[] = [
     id: "ref-havermout",
     name_nl: "Havermout",
     name_en: "Oats",
-    category: null,
+    category_nl: null,
+    category_en: null,
     kcal_per_100g: null,
     protein_g_per_100g: null,
     carbs_g_per_100g: null,
     fat_g_per_100g: null,
+    fiber_g_per_100g: null,
+    nutrient_basis: "per_100g",
     source: "hand-curated",
     source_ref: null,
     source_version: "2026-07-30",
@@ -169,4 +180,27 @@ export const SomeRowsChecked = () => (
       ]}
     />
   </div>
+);
+
+// English catalog check (#161, ADR-0013 §6): reference rows render name_en
+// over name_nl once the active locale is "en" -- Appel/Havermout become
+// Apple/Oats (same "e" query/result set as FilledResults, matched via
+// mockOnSearch's own name_nl substring check). Kipfilet (own) stays
+// untranslated -- user-entered ingredient names are never localised. Nests
+// its own NextIntlClientProvider since Ladle's global one
+// (.ladle/components.tsx) is fixed to locale "nl" -- same precedent as
+// PortionStepper.stories.tsx's EnglishCatalog story.
+export const EnglishCatalog = () => (
+  <NextIntlClientProvider locale="en" messages={en}>
+    <div className="min-h-screen">
+      <IngredientSearchPanel
+        open
+        onClose={() => {}}
+        onSearch={mockOnSearch}
+        onCreateOwnIngredient={mockOnCreateOwnIngredient}
+        onSave={logSave}
+        initialQuery="e"
+      />
+    </div>
+  </NextIntlClientProvider>
 );
