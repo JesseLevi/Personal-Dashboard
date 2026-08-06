@@ -27,6 +27,10 @@
 
 No Docker on this dev machine — nothing here has been exercised against live Supabase or a real device, and #96's acceptance was never run in a browser. Close before trusting the app in production.
 
+**Exception, #161/#163**: the two NEVO migrations *are* applied to the hosted project (`reference.ingredients` 2328 rows / 53 `per_100ml` / 7 fibre-NULLs; `reference.ingredient_unit_masses` 1175 rows / 1026 ingredients), verified by query. They were applied **via the Supabase MCP server, not `supabase db push`** — `.github/workflows/deploy.yml` has never succeeded (4 runs, 4 failures) because `supabase-production` lacks `SUPABASE_ACCESS_TOKEN`/`SUPABASE_DB_PASSWORD` and `vercel-production` lacks `VERCEL_TOKEN`. Two consequences worth knowing before the next deploy:
+- **Migration-history versions drifted.** MCP registered them as `20260806213724`/`20260806220745`, not the repo's `20260806000001`/`20260806000002`, so a future `supabase db push` will try to re-apply both and fail on the already-added columns. Fix by updating `supabase_migrations.schema_migrations.version` to match the filenames (an attempt was blocked by the permission classifier; needs the user).
+- **Never batch a large migration across parallel agents.** Doing so on #161 raced two writers into 250 duplicate `reference.ingredients` rows, cleaned up afterwards with `delete … using … where a.ctid > b.ctid`. Apply migrations in a single call, sequentially.
+
 | What | Why unverified / how to close |
 | --- | --- |
 | Live Supabase — board/card | `createBoard` seed, `/te-doen/[boardId]` RLS fetch, `toggleBoardFavorite`, `getBoardWithColumns` select, `moveCard`'s `board_columns!inner(board_id)` embed. |
