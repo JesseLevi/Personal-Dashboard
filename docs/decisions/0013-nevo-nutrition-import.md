@@ -91,3 +91,14 @@ Display selects on the active locale. Today `i18n/request.ts` hardcodes `'nl'` a
 - **Monetisation is now encumbered** on any surface showing these figures (§2).
 - **`Vision.md`'s "voedingswaarde-informatie buiten scope"** was already narrowed to the UI by ADR-0011; that narrowing now has real data behind it. The feature scope is still not reopened — this ADR fills existing designed slots, it does not add a nutrition feature.
 - **A licence conflict is documented and unresolved** (Context). If RIVM's conditions PDF is ever held to be controlling over `data.overheid.nl`'s CC-BY 4.0, this import must be revisited. The user's direct confirmation from RIVM is part of the record precisely so that reassessment starts from what was actually known.
+
+## Amendment (2026-08-06, #163): `ingredient_unit_masses` is no longer empty
+
+The Consequences bullet above — "`ingredient_unit_masses` stays empty" — is superseded. #163 seeds `reference.ingredient_unit_masses` from **NEVO Portie-online 2025/9.0** (26 CSVs of household-measure weights, a separate NEVO export from the composition table this ADR otherwise concerns), via `scripts/import-nevo-portions.ts` and `supabase/migrations/20260806000002_nevo_unit_masses.sql`.
+
+**Populated**: `eetlepel`, `theelepel`, `stuk` — the only three units that exist in both NEVO's `Maat` column and `public.recipe_unit`. 1175 `(ingredient, unit)` pairs across 1026 of 2328 ingredients (44%): 683 eetlepel, 336 stuk, 156 theelepel.
+
+**Deliberately still unresolved** (render `?`, which is correct behaviour, not a gap):
+- `snufje`, `scoop`, `cup`, `teaspoon`, `tablespoon` — no corresponding NEVO `Maat` measure maps to these.
+- All volume units (`milliliter`, `deciliter`, `liter`, `fluid_ounce`) — density conversion from NEVO's `ml`-denominated portion rows is Layer 2, out of scope for #163 and explicitly deferred to its own future ticket (ADR-0011 §3: the mass and volume mechanisms never merge).
+- The ~1.3% of Portie-online NEVO-codes with no matching `reference.ingredients` row (seeded by #161's separate import).
