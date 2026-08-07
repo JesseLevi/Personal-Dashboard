@@ -42,9 +42,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Pinned, not `latest`, since 2026-08-07: CLI v2.112.0 (released that
+      # morning, between this workflow's first green run and the next dispatch)
+      # broke `supabase link` outright -- it validates the api-keys response's
+      # `inserted_at` against a regex demanding a `Z` suffix, which the API
+      # doesn't send, so link exits 1 with a SchemaError before `db push` is
+      # ever reached (upstream supabase/cli#6115). `latest` means a routine
+      # upstream release can break production migrations with no change on our
+      # side, which is exactly what happened. Bump this deliberately once
+      # #6115 is fixed and verified, rather than floating again.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.111.0
 
       - name: Link the hosted project
         env:
