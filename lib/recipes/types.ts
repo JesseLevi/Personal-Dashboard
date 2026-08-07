@@ -1,4 +1,5 @@
 import type { Database } from "@/lib/database.types";
+import type { KitchenUnitMasses } from "@/lib/recipes/kitchen-units";
 import type { IngredientNutrients } from "@/lib/recipes/nutrition";
 
 // Read-side shapes returned by lib/recipes/queries.ts, plus the write-side
@@ -39,6 +40,8 @@ export type RecipeIngredientWithNutrition = RecipeIngredientRow & {
   nutrients: IngredientNutrients;
   /** Grams for ONE unit of this row's `unit`, resolved user-override-then-reference (ADR-0011 §3, mass-resolution.ts's `resolveMass`). Only meaningful for volume/count magnitude units -- nutrition.ts converts mass units itself and ignores this field for those rows. */
   unitMassGrams: number | null;
+  /** #164/#157 slice 2: grams-per-cup/tablespoon/teaspoon/fluid_ounce for this row's ingredient, resolved the same batched way as `unitMassGrams` (queries.ts's `kitchenUnitMassesFor`, no second round trip). Feeds `lib/recipes/kitchen-units.ts`'s `convertToKitchenUnit` -- all-null for an unlinked row, same "unknown, never zero" rule as `unitMassGrams`. */
+  kitchenUnitMasses: KitchenUnitMasses;
 };
 
 export type RecipeWithIngredientsAndSteps = RecipeRow & {

@@ -35,21 +35,34 @@
 // lib/recipes/mass-resolution.ts (ADR-0011 §3's ingredient-specific mass
 // lookup) -- `convertToUnitSystem` stays same-magnitude-only, same as the
 // `convert()` it wraps.
+//
+// -- kitchen-friendly unit choice, added #164/#157 slice 2 ------------------
+// `convertToUnitSystem` above became `convertToKitchenUnit`
+// (lib/recipes/kitchen-units.ts), which composes the same flagship-unit
+// conversion with an optional, already-resolved per-ingredient
+// `KitchenUnitMasses`. `masses`/`getMasses` are both optional and default to
+// `undefined`, which makes `convertToKitchenUnit` reproduce
+// `convertToUnitSystem`'s own behaviour exactly -- the identity fast-path
+// and every existing no-mass call site are unchanged.
 
 import type { RecipeIngredientRow } from "@/lib/recipes/types";
-import { InvalidPortionCountError, convertToUnitSystem, scaleQuantity, type UnitSystem } from "@/lib/recipes/units";
+import { convertToKitchenUnit, type KitchenUnitMasses } from "@/lib/recipes/kitchen-units";
+import { InvalidPortionCountError, scaleQuantity, type UnitSystem } from "@/lib/recipes/units";
 
 /** Scales a single ingredient row's `quantity` from `sourcePortions` to
- * `targetPortions`, then (if `unitSystem` is given) converts the result to
- * that system's flagship unit for the row's magnitude -- see the module
- * header. Keeps every other field (name, group_label, ...) untouched.
- * Identity fast-path when neither operation would change anything, so a
- * page at its initial render does zero redundant rounding. */
+ * `targetPortions`, then (if `unitSystem` is given) converts the result via
+ * `convertToKitchenUnit` -- that system's flagship unit for the row's
+ * magnitude, or a kitchen-friendlier unit (cup/tablespoon/teaspoon/gram)
+ * when `masses` resolves one -- see the module header. Keeps every other
+ * field (name, group_label, ...) untouched. Identity fast-path when neither
+ * operation would change anything, so a page at its initial render does
+ * zero redundant rounding. */
 export function scaleIngredientRow<T extends Pick<RecipeIngredientRow, "quantity" | "unit">>(
   ingredient: T,
   sourcePortions: number,
   targetPortions: number,
   unitSystem?: UnitSystem,
+  masses?: KitchenUnitMasses,
 ): T {
   if (targetPortions === sourcePortions && !unitSystem) return ingredient;
   let quantity = ingredient.quantity;
@@ -62,7 +75,7 @@ export function scaleIngredientRow<T extends Pick<RecipeIngredientRow, "quantity
     }
   }
   if (!unitSystem) return { ...ingredient, quantity };
-  const converted = convertToUnitSystem(quantity, ingredient.unit, unitSystem);
+  const converted = convertToKitchenUnit(quantity, ingredient.unit, unitSystem, masses);
   return { ...ingredient, quantity: converted.quantity, unit: converted.unit };
 }
 
@@ -70,15 +83,20 @@ export function scaleIngredientRow<T extends Pick<RecipeIngredientRow, "quantity
  * ingredient list the same way -- the function the detail page actually
  * calls, once per render, to feed both the ingredient cards and the
  * per-step Tags from one shared, already-scaled-and-converted list rather
- * than recomputing per call site. */
+ * than recomputing per call site. `getMasses`, when given, resolves each
+ * row's own `KitchenUnitMasses` (typically a direct field read off the row,
+ * e.g. `RecipeIngredientWithNutrition.kitchenUnitMasses` -- a callback
+ * rather than a bare field access so this module stays agnostic of exactly
+ * which `T` shape carries it). */
 export function scaleIngredientRows<T extends Pick<RecipeIngredientRow, "quantity" | "unit">>(
   ingredients: readonly T[],
   sourcePortions: number,
   targetPortions: number,
   unitSystem?: UnitSystem,
+  getMasses?: (ingredient: T) => KitchenUnitMasses | undefined,
 ): T[] {
   if (targetPortions === sourcePortions && !unitSystem) return ingredients as T[];
   return ingredients.map((ingredient) =>
-    scaleIngredientRow(ingredient, sourcePortions, targetPortions, unitSystem),
+    scaleIngredientRow(ingredient, sourcePortions, targetPortions, unitSystem, getMasses?.(ingredient)),
   );
 }

@@ -45,3 +45,8 @@ tmp/
 # NEVO source data (ADR-0013): 108MB of raw RIVM CSVs. The derived seed
 # migration is committed; the upstream dump is not.
 /NEVO2025_v9.0/
+
+# USDA FoodData Central source data (#164/#157): FNDDS/Survey Foods +
+# SR Legacy CSV bundles from https://fdc.nal.usda.gov/download-datasets.
+# The derived seed migration is committed; the upstream dump is not.
+/usda/

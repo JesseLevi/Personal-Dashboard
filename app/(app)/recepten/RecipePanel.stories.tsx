@@ -1,5 +1,6 @@
 // figma: node-id=3777:3918 (+3717:2844 fields, 3777:3984 read-only reference)
 import { RecipePanel } from "./RecipePanel";
+import { EMPTY_KITCHEN_UNIT_MASSES } from "@/lib/recipes/kitchen-units";
 import { EMPTY_NUTRIENTS } from "@/lib/recipes/nutrition";
 import type {
   ActionResult,
@@ -110,6 +111,7 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
       // nutrition import has run, ADR-0011 §5).
       nutrients: EMPTY_NUTRIENTS,
       unitMassGrams: null,
+      kitchenUnitMasses: EMPTY_KITCHEN_UNIT_MASSES,
       created_at: "2026-07-01T00:00:00.000Z",
       updated_at: "2026-07-01T00:00:00.000Z",
     },
@@ -125,6 +127,7 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
       group_label: null,
       nutrients: EMPTY_NUTRIENTS,
       unitMassGrams: null,
+      kitchenUnitMasses: EMPTY_KITCHEN_UNIT_MASSES,
       created_at: "2026-07-01T00:00:00.000Z",
       updated_at: "2026-07-01T00:00:00.000Z",
     },
@@ -140,6 +143,7 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
       group_label: null,
       nutrients: EMPTY_NUTRIENTS,
       unitMassGrams: null,
+      kitchenUnitMasses: EMPTY_KITCHEN_UNIT_MASSES,
       created_at: "2026-07-01T00:00:00.000Z",
       updated_at: "2026-07-01T00:00:00.000Z",
     },

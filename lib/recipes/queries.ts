@@ -3,10 +3,15 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
-import { resolveMass } from "@/lib/recipes/mass-resolution";
+import {
+  EMPTY_BRIDGE_UNIT_GRAMS,
+  resolveMassWithBridge,
+  type BridgeUnitGrams,
+} from "@/lib/recipes/mass-resolution";
+import { EMPTY_KITCHEN_UNIT_MASSES, type KitchenUnitMasses } from "@/lib/recipes/kitchen-units";
 import { EMPTY_NUTRIENTS } from "@/lib/recipes/nutrition";
 import type { IngredientNutrients } from "@/lib/recipes/nutrition";
-import type { UnitCode } from "@/lib/recipes/units";
+import { magnitudeOf, type UnitCode } from "@/lib/recipes/units";
 import type { Database } from "@/lib/database.types";
 import type {
   CategoryWithRecipes,
@@ -100,10 +105,16 @@ export async function getRecipeCategoriesWithRecipes(): Promise<CategoryWithReci
  * `recipe_ingredients` row with a linked `ingredient_id`, its
  * `reference.ingredients` nutrient-per-100g columns (via the public
  * ingredient's nullable `reference_id`) and its resolved grams-per-unit
- * (ADR-0011 §3's user-override-then-reference precedence, via
- * mass-resolution.ts's `resolveMass` — the same precedence
- * `resolveIngredientUnitMass` below uses, applied here as four batched
- * queries total instead of one round trip per ingredient row).
+ * (ADR-0011 §3's user-override-then-reference precedence, extended by
+ * #164/#157 with the volume→ml and spoon bridges — via mass-resolution.ts's
+ * `resolveMassWithBridge`, the same precedence `resolveIngredientUnitMass`
+ * below uses, applied here as four batched queries total instead of one
+ * round trip per ingredient row). The two mass queries below already
+ * select every `unit` row per ingredient (no `.eq("unit", ...)` filter),
+ * so the milliliter/eetlepel/theelepel rows the bridge tiers need are
+ * already present in `userGramsByKey`/`referenceGramsByKey` — no extra
+ * round trip was needed to satisfy the bridge, just reading more of what
+ * was already fetched (see `bridgeUnitGramsFrom` below).
  *
  * Rows with no `ingredient_id` (the FK is an enrichment link, never a
  * precondition for rendering, ADR-0011 §2) are simply absent from the
@@ -114,12 +125,76 @@ export async function getRecipeCategoriesWithRecipes(): Promise<CategoryWithReci
  * see the guard below) — its numbers exist but aren't per-100g, so they're
  * unknown to this per-100g pipeline rather than silently misread.
  */
+/**
+ * Builds one ownership layer's `BridgeUnitGrams` (mass-resolution.ts) from
+ * a `unit -> grams` lookup already fetched for one ingredient — shared by
+ * `nutritionInputsForIngredients`' batched map lookup and
+ * `resolveIngredientUnitMass`'s single-ingredient row list below. Only
+ * `milliliter`/`eetlepel`/`theelepel` are ever populated here
+ * (`tablespoon`/`teaspoon` stay `null`): this app's recipes are authored
+ * in Dutch `eetlepel`/`theelepel`, not US `tablespoon`/`teaspoon`, so
+ * fetching those two extra units for every ingredient would be dead
+ * weight — `resolveMassWithBridge` itself stays fully bidirectional for
+ * tests/future callers, this is just what the two query sites below
+ * choose to feed it.
+ */
+function bridgeUnitGramsFrom(gramsForUnit: (unit: string) => number | null): BridgeUnitGrams {
+  return {
+    milliliter: gramsForUnit("milliliter"),
+    eetlepel: gramsForUnit("eetlepel"),
+    theelepel: gramsForUnit("theelepel"),
+    tablespoon: null,
+    teaspoon: null,
+  };
+}
+
+// #164/#157 slice 2: grams-per-cup/tablespoon/teaspoon/fluid_ounce for one
+// ingredient, resolved via the exact same resolveMassWithBridge/userBridge/
+// referenceBridge inputs nutritionInputsForIngredients already builds for
+// the row's own unit -- reads more of what nutritionInputsForIngredients
+// already fetched (userGramsByKey/referenceGramsByKey carry every `unit`
+// row per ingredient, no `.eq("unit", ...)` filter, see that function's own
+// header) rather than a second round trip. Feeds
+// lib/recipes/kitchen-units.ts's convertToKitchenUnit, via
+// RecipeIngredientWithNutrition's new `kitchenUnitMasses` field.
+function kitchenUnitMassesFor(
+  ingredientId: string,
+  referenceId: string | null,
+  userGramsByKey: Map<string, number>,
+  referenceGramsByKey: Map<string, number>,
+  userBridge: BridgeUnitGrams,
+  referenceBridge: BridgeUnitGrams,
+): KitchenUnitMasses {
+  function gramsFor(unit: "cup" | "tablespoon" | "teaspoon" | "fluid_ounce"): number | null {
+    const userGrams = userGramsByKey.get(`${ingredientId}:${unit}`) ?? null;
+    const referenceGrams = referenceId
+      ? (referenceGramsByKey.get(`${referenceId}:${unit}`) ?? null)
+      : null;
+    const resolved = resolveMassWithBridge(unit, userGrams, referenceGrams, userBridge, referenceBridge);
+    return resolved.status === "resolved" ? resolved.grams : null;
+  }
+  return {
+    cup: gramsFor("cup"),
+    tablespoon: gramsFor("tablespoon"),
+    teaspoon: gramsFor("teaspoon"),
+    fluid_ounce: gramsFor("fluid_ounce"),
+  };
+}
+
 async function nutritionInputsForIngredients(
   supabase: Client,
   userId: string,
   ingredients: RecipeIngredientRow[],
-): Promise<Map<string, { nutrients: IngredientNutrients; unitMassGrams: number | null }>> {
-  const result = new Map<string, { nutrients: IngredientNutrients; unitMassGrams: number | null }>();
+): Promise<
+  Map<
+    string,
+    { nutrients: IngredientNutrients; unitMassGrams: number | null; kitchenUnitMasses: KitchenUnitMasses }
+  >
+> {
+  const result = new Map<
+    string,
+    { nutrients: IngredientNutrients; unitMassGrams: number | null; kitchenUnitMasses: KitchenUnitMasses }
+  >();
   const ingredientIds = [
     ...new Set(ingredients.map((row) => row.ingredient_id).filter((id): id is string => id !== null)),
   ];
@@ -202,7 +277,7 @@ async function nutritionInputsForIngredients(
     );
   }
 
-  const userGramsByKey = new Map(
+  const userGramsByKey = new Map<string, number>(
     userMassRows.map((row) => [`${row.ingredient_id}:${row.unit}`, row.grams] as const),
   );
 
@@ -233,11 +308,27 @@ async function nutritionInputsForIngredients(
     const referenceGrams = referenceId
       ? (referenceGramsByKey.get(`${referenceId}:${row.unit}`) ?? null)
       : null;
-    const mass = resolveMass(userGrams, referenceGrams);
+    const ingredientId = row.ingredient_id;
+    const userBridge = bridgeUnitGramsFrom(
+      (unit) => userGramsByKey.get(`${ingredientId}:${unit}`) ?? null,
+    );
+    const referenceBridge = referenceId
+      ? bridgeUnitGramsFrom((unit) => referenceGramsByKey.get(`${referenceId}:${unit}`) ?? null)
+      : EMPTY_BRIDGE_UNIT_GRAMS;
+    const mass = resolveMassWithBridge(row.unit, userGrams, referenceGrams, userBridge, referenceBridge);
+    const kitchenUnitMasses = kitchenUnitMassesFor(
+      ingredientId,
+      referenceId,
+      userGramsByKey,
+      referenceGramsByKey,
+      userBridge,
+      referenceBridge,
+    );
 
     result.set(row.id, {
       nutrients,
       unitMassGrams: mass.status === "resolved" ? mass.grams : null,
+      kitchenUnitMasses,
     });
   }
 
@@ -308,6 +399,7 @@ export async function getRecipeWithIngredientsAndSteps(
         ...(nutritionByIngredientId.get(ingredient.id) ?? {
           nutrients: EMPTY_NUTRIENTS,
           unitMassGrams: null,
+          kitchenUnitMasses: EMPTY_KITCHEN_UNIT_MASSES,
         }),
       })),
     steps: [...recipe_steps]
@@ -450,9 +542,10 @@ export async function searchIngredientLibrary(
 
 /**
  * Resolves the gram weight of one unit of `ingredientId` (a
- * `public.ingredients.id`), following ADR-0011 §3's order: user override
- * (`public.ingredient_unit_masses`) → reference
- * (`reference.ingredient_unit_masses`) → unresolved. "Unresolved" is
+ * `public.ingredients.id`), following ADR-0011 §3's order as extended by
+ * #164/#157: user override for the exact unit → reference for the exact
+ * unit → user override bridge (volume→ml, then eetlepel/theelepel↔
+ * tablespoon/teaspoon) → reference bridge → unresolved. "Unresolved" is
  * returned as an explicit `{ status: "unresolved" }`, never a `0`/`null`
  * grams value silently treated as a known weight — the exact pitfall
  * ADR-0011 §4 names for the (still-empty) nutrition columns, called out by
@@ -465,12 +558,12 @@ export async function searchIngredientLibrary(
  * result when signed out.
  *
  * The precedence decision itself lives in the pure, framework-free
- * lib/recipes/mass-resolution.ts (resolveMass) — pulled out of this module
- * specifically because it, unlike this function, is unit-testable without a
- * database (tests/recipes-mass-resolution.test.ts): this function is the
- * thin, Supabase-dependent shell around it, same split as
- * lib/boards/positioning.ts's pure nextPosition vs. its DB-touching callers
- * in actions.ts.
+ * lib/recipes/mass-resolution.ts (resolveMassWithBridge) — pulled out of
+ * this module specifically because it, unlike this function, is
+ * unit-testable without a database (tests/recipes-mass-resolution.test.ts):
+ * this function is the thin, Supabase-dependent shell around it, same
+ * split as lib/boards/positioning.ts's pure nextPosition vs. its
+ * DB-touching callers in actions.ts.
  */
 export async function resolveIngredientUnitMass(
   ingredientId: string,
@@ -483,26 +576,40 @@ export async function resolveIngredientUnitMass(
   const userId = await getAuthenticatedUserId(supabase);
   if (!userId) return { status: "unresolved" };
 
-  const { data: override, error: overrideError } = await supabase
+  // Bridge tiers only ever fire for a volume-magnitude unit
+  // (mass-resolution.ts's mlBridgeGrams/spoonBridgeGrams both no-op
+  // otherwise), so mass/count units (gram, stuk, ...) fetch only the exact
+  // unit row, same query shape as before the bridge existed.
+  const bridgeUnits: UnitCode[] =
+    magnitudeOf(unit) === "volume" ? ["milliliter", "eetlepel", "theelepel"] : [];
+  const unitsToFetch = [...new Set<UnitCode>([unit, ...bridgeUnits])];
+
+  const { data: userRows, error: userError } = await supabase
     .from("ingredient_unit_masses")
-    .select("grams")
+    .select("unit, grams")
     .eq("user_id", userId)
     .eq("ingredient_id", parsedId.data)
-    .eq("unit", unit)
-    .maybeSingle();
-  if (overrideError) {
+    .in("unit", unitsToFetch);
+  if (userError) {
     console.error(
       "[recipes] resolveIngredientUnitMass (override) failed:",
-      overrideError.code,
-      overrideError.message,
+      userError.code,
+      userError.message,
     );
     return { status: "unresolved" };
   }
+  const userExact = userRows.find((row) => row.unit === unit)?.grams ?? null;
+  const userBridge = bridgeUnitGramsFrom(
+    (candidate) => userRows.find((row) => row.unit === candidate)?.grams ?? null,
+  );
   // Reference layer is deliberately not fetched at all once a user override
-  // is found — resolveMass's ordering already makes it irrelevant to the
-  // outcome, so skipping the extra round trip is a real (not just
-  // theoretical) savings for every overridden ingredient.
-  if (override) return resolveMass(override.grams, null);
+  // for the EXACT unit is found — resolveMassWithBridge's ordering already
+  // makes it irrelevant to the outcome (tier 1 beats every other tier), so
+  // skipping the extra round trip is a real (not just theoretical) savings
+  // for every overridden ingredient.
+  if (userExact !== null) {
+    return resolveMassWithBridge(unit, userExact, null, userBridge, EMPTY_BRIDGE_UNIT_GRAMS);
+  }
 
   // reference.ingredient_unit_masses keys on reference.ingredients.id, not
   // public.ingredients.id (see 20260730000001_ingredient_library.sql) — the
@@ -521,15 +628,16 @@ export async function resolveIngredientUnitMass(
     );
     return { status: "unresolved" };
   }
-  if (!ingredient?.reference_id) return resolveMass(null, null);
+  if (!ingredient?.reference_id) {
+    return resolveMassWithBridge(unit, null, null, userBridge, EMPTY_BRIDGE_UNIT_GRAMS);
+  }
 
-  const { data: referenceMass, error: referenceError } = await supabase
+  const { data: referenceRows, error: referenceError } = await supabase
     .schema("reference")
     .from("ingredient_unit_masses")
-    .select("grams")
+    .select("unit, grams")
     .eq("ingredient_id", ingredient.reference_id)
-    .eq("unit", unit)
-    .maybeSingle();
+    .in("unit", unitsToFetch);
   if (referenceError) {
     console.error(
       "[recipes] resolveIngredientUnitMass (reference) failed:",
@@ -539,5 +647,10 @@ export async function resolveIngredientUnitMass(
     return { status: "unresolved" };
   }
 
-  return resolveMass(null, referenceMass?.grams ?? null);
+  const referenceExact = referenceRows.find((row) => row.unit === unit)?.grams ?? null;
+  const referenceBridge = bridgeUnitGramsFrom(
+    (candidate) => referenceRows.find((row) => row.unit === candidate)?.grams ?? null,
+  );
+
+  return resolveMassWithBridge(unit, null, referenceExact, userBridge, referenceBridge);
 }

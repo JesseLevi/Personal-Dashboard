@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { EMPTY_KITCHEN_UNIT_MASSES } from "../lib/recipes/kitchen-units";
 import { scaleIngredientRow, scaleIngredientRows } from "../lib/recipes/scaling";
 import type { RecipeIngredientRow } from "../lib/recipes/types";
 
@@ -153,5 +154,46 @@ describe("scaleIngredientRow(s) with unitSystem", () => {
     const scaled = scaleIngredientRows(rows, 4, 4, "metric");
     expect(scaled).not.toBe(rows);
     expect(scaled[0].unit).toBe("milliliter");
+  });
+});
+
+// #164/#157 slice 2: a per-row resolved KitchenUnitMasses can flow into the
+// same composed pass via convertToKitchenUnit (lib/recipes/kitchen-units.ts)
+// -- the arithmetic itself is covered by tests/recipes-kitchen-units.test.ts;
+// this only asserts scaleIngredientRow(s) wires `masses`/`getMasses` through
+// correctly and keeps degrading exactly like before when neither is given.
+describe("scaleIngredientRow(s) with a resolved KitchenUnitMasses", () => {
+  it("passes masses through to land on a kitchen-friendlier unit than the flagship", () => {
+    const row = makeRow({ quantity: 200, unit: "gram" });
+    const scaled = scaleIngredientRow(row, 1, 1, "us", { ...EMPTY_KITCHEN_UNIT_MASSES, cup: 100 });
+    expect(scaled).toEqual({ ...row, quantity: 2, unit: "cup" });
+  });
+
+  it("still degrades to the flagship unit when masses is omitted", () => {
+    const row = makeRow({ quantity: 200, unit: "gram" });
+    const scaled = scaleIngredientRow(row, 1, 1, "us");
+    expect(scaled).toEqual({ ...row, quantity: 7.05, unit: "ounce" });
+  });
+
+  it("scaleIngredientRows resolves each row's masses via getMasses, keyed per row", () => {
+    const rows = [
+      makeRow({ id: "a", quantity: 200, unit: "gram" }),
+      makeRow({ id: "b", quantity: 100, unit: "gram" }),
+    ];
+    const massesById: Record<string, number> = { a: 100, b: 50 };
+    const scaled = scaleIngredientRows(rows, 1, 1, "us", (row) => ({
+      ...EMPTY_KITCHEN_UNIT_MASSES,
+      cup: massesById[row.id],
+    }));
+    expect(scaled.map((row) => ({ quantity: row.quantity, unit: row.unit }))).toEqual([
+      { quantity: 2, unit: "cup" },
+      { quantity: 2, unit: "cup" },
+    ]);
+  });
+
+  it("scaleIngredientRows falls back per row when getMasses returns undefined for that row", () => {
+    const rows = [makeRow({ id: "a", quantity: 200, unit: "gram" })];
+    const scaled = scaleIngredientRows(rows, 1, 1, "us", () => undefined);
+    expect(scaled[0].unit).toBe("ounce");
   });
 });

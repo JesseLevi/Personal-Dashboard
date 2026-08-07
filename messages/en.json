@@ -53,6 +53,25 @@
       "snufje": "Pinch",
       "scoop": "Scoop",
       "naar_smaak": "To taste"
+    },
+    "unitsShort": {
+      "gram": "g",
+      "kilogram": "kg",
+      "ounce": "oz",
+      "pound": "lb",
+      "milliliter": "ml",
+      "deciliter": "dl",
+      "liter": "l",
+      "theelepel": "tl",
+      "eetlepel": "el",
+      "cup": "cup",
+      "teaspoon": "tsp",
+      "tablespoon": "tbs",
+      "fluid_ounce": "fl oz",
+      "stuk": "piece",
+      "snufje": "pinch",
+      "scoop": "scoop",
+      "naar_smaak": "to taste"
     }
   },
   "boards": {

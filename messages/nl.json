@@ -53,6 +53,25 @@
       "snufje": "Snufje",
       "scoop": "Scoop",
       "naar_smaak": "Naar smaak"
+    },
+    "unitsShort": {
+      "gram": "g",
+      "kilogram": "kg",
+      "ounce": "oz",
+      "pound": "lb",
+      "milliliter": "ml",
+      "deciliter": "dl",
+      "liter": "l",
+      "theelepel": "tl",
+      "eetlepel": "el",
+      "cup": "cup",
+      "teaspoon": "tsp",
+      "tablespoon": "tbs",
+      "fluid_ounce": "fl oz",
+      "stuk": "stuk",
+      "snufje": "snufje",
+      "scoop": "scoop",
+      "naar_smaak": "naar smaak"
     }
   },
   "boards": {

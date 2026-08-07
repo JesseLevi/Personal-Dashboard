@@ -9,9 +9,10 @@ import { Tag } from "@/components/atoms/Tag";
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
 import { CardContentStep } from "@/components/molecules/CardContentStep";
+import { formatQuantityFraction } from "@/lib/recipes/kitchen-units";
 import { computeRecipeNutritionPerPerson, type RecipeIngredientNutritionInput } from "@/lib/recipes/nutrition";
 import { scaleIngredientRows } from "@/lib/recipes/scaling";
-import { formatQuantity, type UnitSystem } from "@/lib/recipes/units";
+import type { UnitSystem } from "@/lib/recipes/units";
 import type {
   RecipeCategoryRow,
   RecipeIngredientWithNutrition,
@@ -73,6 +74,11 @@ export interface RecipeDetailPageProps {
 export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDetailPageProps) {
   const t = useTranslations("components.recipeDetailPage");
   const tUnits = useTranslations("recipes.units");
+  // #164/#157: short unit labels for the per-step Tags only (Figma draws
+  // those abbreviated -- "2 tbs Chia Seeds", "375 ml Non Dairy Milk"). The
+  // ingredient-card Tag keeps the long label (`tUnits`) -- see
+  // design/notes/RecipeDetailPage.md.
+  const tUnitsShort = useTranslations("recipes.unitsShort");
   const tErrors = useTranslations("recipes.errors");
   const router = useRouter();
 
@@ -117,11 +123,19 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
     });
   }
 
-  // #128/#160: one shared scaled-and-converted list feeds both the
+  // #128/#160/#164/#157: one shared scaled-and-converted list feeds both the
   // ingredient cards and the per-step Tags below, so `portions`/`unitSystem`
   // each only get applied once per render (lib/recipes/scaling.ts composes
-  // both in one pass).
-  const displayIngredients = scaleIngredientRows(recipe.ingredients, recipe.servings, portions, unitSystem);
+  // scaling + kitchen-unit conversion in one pass). `getMasses` reads each
+  // row's own batched `kitchenUnitMasses` (queries.ts, no second round
+  // trip) rather than resolving anything here.
+  const displayIngredients = scaleIngredientRows(
+    recipe.ingredients,
+    recipe.servings,
+    portions,
+    unitSystem,
+    (ingredient) => ingredient.kitchenUnitMasses,
+  );
   const ingredientGroups = groupIngredients(
     [...displayIngredients].sort((a, b) => a.position - b.position),
   );
@@ -298,7 +312,7 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
               <CardContentIngredient
                 key={ingredient.id}
                 name={ingredient.name}
-                quantity={formatQuantity(ingredient.quantity, tUnits(ingredient.unit))}
+                quantity={formatQuantityFraction(ingredient.quantity, ingredient.unit, tUnits(ingredient.unit))}
                 divider={index < group.ingredients.length - 1}
               />
             ))}
@@ -322,7 +336,11 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
                 withIngredientTags={stepIngredients.length > 0}
               >
                 {stepIngredients.map((ingredient) => {
-                  const quantityPart = formatQuantity(ingredient.quantity, tUnits(ingredient.unit));
+                  const quantityPart = formatQuantityFraction(
+                    ingredient.quantity,
+                    ingredient.unit,
+                    tUnitsShort(ingredient.unit),
+                  );
                   const tagLabel = quantityPart
                     ? `${quantityPart} ${ingredient.name}`
                     : ingredient.name;
