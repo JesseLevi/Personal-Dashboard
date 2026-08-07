@@ -84,6 +84,26 @@
 //   unsweetened desiccated coconut (present in one CSV but not matched by
 //   a real row in the other, or vice versa).
 //
+// Prepared/canned follow-up (#164/#157, same ticket): NEVO's cup coverage
+// originally stopped at raw/dry staples, which left cooked/canned recipe
+// lines (e.g. "2 cups Rijst witte gekookt") unresolved even after the raw
+// pairings above landed -- see this migration's own header for why the
+// obvious shortcut (bridging from the NEVO-portie-online eetlepel value)
+// is physically wrong, not merely imprecise. SOLID_PAIRINGS below the
+// barley entry extends the same hand-curation to cooked grains/legumes and
+// drained canned legumes/corn. Also rejected there, same rule (no exact,
+// defensible cup row -> drop, don't approximate): multi-grain cooked rice
+// and cooked red lentils (no such row in either bundle); canned white
+// beans, canned cannellini beans, and canned black-eyed peas (every
+// candidate row is either "solids and liquids" at ~240-262 g/cup -- brine-
+// inclusive, not what a cook scoops -- or has no cup portion at all, only
+// a can-sized one); whole, non-split, non-sprouted dried peas cooked (only
+// sprouted-pea and split-pea cooked rows exist, a different food each);
+// whole-wheat couscous (no such row); pasta cooked without egg (the one
+// matching USDA row has only an oz portion, no cup); and frozen cooked
+// peas (the only cup-sized portion is 0.5 cup, and scaling it to 1 cup
+// would violate the "never derived by scaling" rule above).
+//
 // Rounding: solid gram values are the CSV's own value, unmodified. Liquid
 // densities are rounded to 4 decimal places (roundTo4dp below) -- enough
 // precision to round-trip through a `cup` conversion without drift, not
@@ -131,9 +151,10 @@ function portion(bundle: UsdaBundle, fdcId: string, portionId: string, label: st
   return { bundle, fdcId, portionId, label };
 }
 
-// 41 solid staples. Every entry gets `cup`; `tablespoon`/`teaspoon` are
-// added only where USDA's own food_portion.csv carries an exact "1 tbsp"/
-// "1 tsp" row for the same fdc_id (see header).
+// 66 solid staples (40 raw/dry + 26 prepared/canned, see header). Every
+// entry gets `cup`; `tablespoon`/`teaspoon` are added only where USDA's own
+// food_portion.csv carries an exact "1 tbsp"/"1 tsp" row for the same
+// fdc_id (see header).
 export const SOLID_PAIRINGS: readonly SolidPairing[] = [
   {
     nevoCode: "5", usdaFdcId: "168877",
@@ -402,6 +423,238 @@ export const SOLID_PAIRINGS: readonly SolidPairing[] = [
     nevoCode: "1890", usdaFdcId: "170283",
     usdaDescription: "Barley, hulled",
     units: { cup: portion("sr_legacy", "170283", "86366", "cup") },
+  },
+  // ==========================================================================
+  // Prepared/canned staples (#164/#157 follow-up): the raw/dry pairings above
+  // don't help a recipe written in cooked or canned quantities -- "2 cups
+  // Rijst witte gekookt" needs *cooked* rice's cup weight, not raw rice's.
+  // Every entry below is a *different* NEVO ingredient than its raw
+  // counterpart above (NEVO's own nutrient composition differs pre/post
+  // cooking), paired to USDA's own cooked/canned food rows -- never derived
+  // by scaling a raw cup value by a cooked-yield ratio, for the same
+  // exactness-first reason the header rejects the eetlepel->cup bridge.
+  //
+  // Canned legumes: per the curation rule, drained rows are preferred over
+  // "solids and liquids" wherever both exist. Several USDA canned-bean
+  // entries carry no cup-portion "drained solids" row at all (only a
+  // can-sized "can drained solids" portion, unusable for a `cup` unit) --
+  // in those cases the "drained solids, rinsed in tap water" row was used
+  // instead where it has an exact cup portion, since a cook measuring
+  // canned beans by the cup has, in practice, drained (and often rinsed)
+  // them first; that is flagged per-entry below. Where *no* drained cup row
+  // exists in either bundle at all (only "solids and liquids", which is
+  // ~240 g/cup -- essentially water density, i.e. the can's brine included)
+  // the ingredient was dropped rather than seeded with a brine-inclusive
+  // number -- see the rejection list above for which ones.
+  {
+    nevoCode: "658", usdaFdcId: "2708408",
+    usdaDescription: "Rice, white, cooked, no added fat",
+    units: { cup: portion("fndds", "2708408", "302892", "1 cup, cooked") },
+  },
+  {
+    nevoCode: "1014", usdaFdcId: "2708414",
+    usdaDescription: "Rice, brown, cooked, no added fat",
+    units: { cup: portion("fndds", "2708414", "302904", "1 cup, cooked") },
+  },
+  {
+    // Linzen groene en bruine gekookt ("Lentils green and brown boiled") ->
+    // SR Legacy's plain "Lentils" cooked row carries no colour qualifier,
+    // which is the standard/common (green-brown) lentil, not red.
+    nevoCode: "970", usdaFdcId: "172421",
+    usdaDescription: "Lentils, mature seeds, cooked, boiled, without salt",
+    units: {
+      cup: portion("sr_legacy", "172421", "90596", "cup"),
+      tablespoon: portion("sr_legacy", "172421", "90597", "tbsp"),
+    },
+  },
+  {
+    // Linzen bruine blik/glas ("Lentils brown canned") -> FNDDS carries no
+    // colour-specific canned-lentil row; brown/green is the default canned
+    // lentil (red lentils are rarely canned whole, they disintegrate when
+    // cooked), so the colour-agnostic "from canned" row is the right match.
+    nevoCode: "5169", usdaFdcId: "2707426",
+    usdaDescription: "Lentils, from canned",
+    units: { cup: portion("fndds", "2707426", "298086", "1 cup") },
+  },
+  {
+    // Linzen blik/glas geen zout toegevoegd ("Lentils canned no salt
+    // added") -> FNDDS's "from canned" row doesn't split by added salt;
+    // reused from 5169 rather than left unresolved, same as 375/374's
+    // reuse of the granulated-sugar row above.
+    nevoCode: "5429", usdaFdcId: "2707426",
+    usdaDescription: "Lentils, from canned",
+    units: { cup: portion("fndds", "2707426", "298086", "1 cup") },
+  },
+  {
+    nevoCode: "5173", usdaFdcId: "175194",
+    usdaDescription: "Beans, kidney, red, mature seeds, cooked, boiled, without salt",
+    units: {
+      cup: portion("sr_legacy", "175194", "95822", "cup"),
+      tablespoon: portion("sr_legacy", "175194", "95823", "tbsp"),
+    },
+  },
+  {
+    // Bonen kidney- rode blik/glas ("Beans kidney red canned") -> SR
+    // Legacy's plain "canned, drained solids" row (fdc_id 174285) carries
+    // only a can-sized portion, no cup; "canned, drained solids, rinsed in
+    // tap water" is the only kidney-bean-canned row with an exact cup
+    // portion, and rinsed-drained is what a cook scooping a cup of canned
+    // kidney beans actually has.
+    nevoCode: "3184", usdaFdcId: "175243",
+    usdaDescription: "Beans, kidney, red, mature seeds, canned, drained solids, rinsed in tap water",
+    units: { cup: portion("sr_legacy", "175243", "95885", "cup cup rinsed solids") },
+  },
+  {
+    // Bonen kidney- rode blik/glas geen zout toegevoegd -> no drained +
+    // no-salt-added kidney bean row exists (only "solids and liquid, low
+    // sodium" at 256 g/cup, which is brine-inclusive); reused from 3184's
+    // drained-and-rinsed row, since rinsing after draining removes most of
+    // whatever salt was in the brine regardless of the can's own recipe.
+    nevoCode: "5431", usdaFdcId: "175243",
+    usdaDescription: "Beans, kidney, red, mature seeds, canned, drained solids, rinsed in tap water",
+    units: { cup: portion("sr_legacy", "175243", "95885", "cup cup rinsed solids") },
+  },
+  {
+    // Bonen bruine gekookt / blik/glas ("Beans brown boiled/canned") --
+    // USDA carries no "brown bean" category. Dutch "bruine bonen" (as in
+    // "bruine bonen met spek") are commonly rendered in English as "pinto
+    // beans" or "brown/pinto beans" interchangeably; paired to USDA's pinto
+    // bean rows as the closest defensible identity match. Flagged as a
+    // judgment call, not a certain one -- unlike the white/kidney/soy/mung
+    // pairings above, which match a USDA food category by name exactly.
+    nevoCode: "5168", usdaFdcId: "175200",
+    usdaDescription: "Beans, pinto, mature seeds, cooked, boiled, without salt",
+    units: {
+      cup: portion("sr_legacy", "175200", "95832", "cup"),
+      tablespoon: portion("sr_legacy", "175200", "95833", "tbsp"),
+    },
+  },
+  {
+    // Bonen bruine blik/glas -> pinto beans, canned. Same judgment call as
+    // 5168 above. SR Legacy's plain "canned, drained solids" row (174286)
+    // has only a can-sized portion; "canned, drained solids, rinsed in tap
+    // water" is the pinto row with an exact cup portion.
+    nevoCode: "660", usdaFdcId: "173797",
+    usdaDescription: "Beans, pinto, mature seeds, canned, drained solids, rinsed in tap water",
+    units: { cup: portion("sr_legacy", "173797", "93269", "cup") },
+  },
+  {
+    // Bonen bruine blik/glas geen zout toegevoegd -> reused from 660's
+    // drained-and-rinsed pinto row, same reasoning as 5431 above (no
+    // drained + no-salt-added row exists; rinsing after draining already
+    // removes most brine salt regardless of the can's recipe).
+    nevoCode: "5428", usdaFdcId: "173797",
+    usdaDescription: "Beans, pinto, mature seeds, canned, drained solids, rinsed in tap water",
+    units: { cup: portion("sr_legacy", "173797", "93269", "cup") },
+  },
+  {
+    nevoCode: "5175", usdaFdcId: "175203",
+    usdaDescription: "Beans, white, mature seeds, cooked, boiled, without salt",
+    units: {
+      cup: portion("sr_legacy", "175203", "95838", "cup"),
+      tablespoon: portion("sr_legacy", "175203", "95839", "tbsp"),
+    },
+  },
+  {
+    nevoCode: "971", usdaFdcId: "174271",
+    // Verbatim USDA text -- SR Legacy's own description omits "seeds"
+    // ("Soybeans, mature cooked...", not "mature seeds, cooked...").
+    usdaDescription: "Soybeans, mature cooked, boiled, without salt",
+    units: {
+      cup: portion("sr_legacy", "174271", "94059", "cup"),
+      tablespoon: portion("sr_legacy", "174271", "94060", "tbsp"),
+    },
+  },
+  {
+    nevoCode: "3073", usdaFdcId: "174257",
+    usdaDescription: "Mung beans, mature seeds, cooked, boiled, without salt",
+    units: { cup: portion("sr_legacy", "174257", "94032", "cup") },
+  },
+  {
+    nevoCode: "1095", usdaFdcId: "173757",
+    usdaDescription: "Chickpeas (garbanzo beans, bengal gram), mature seeds, cooked, boiled, without salt",
+    units: { cup: portion("sr_legacy", "173757", "93226", "cup") },
+  },
+  {
+    // Erwten kikker- blik/glas geen zout toegevoegd -> reuses 3185's
+    // (already-curated, see above) drained-and-rinsed chickpea row --
+    // rinsing after draining removes most brine salt regardless of the
+    // can's own recipe, same reasoning as the kidney/pinto reuses above.
+    nevoCode: "5430", usdaFdcId: "173801",
+    usdaDescription: "Chickpeas (garbanzo beans, bengal gram), mature seeds, canned, drained, rinsed in tap water",
+    units: { cup: portion("sr_legacy", "173801", "93275", "cup drained, rinsed") },
+  },
+  {
+    nevoCode: "2314", usdaFdcId: "172429",
+    usdaDescription: "Peas, split, mature seeds, cooked, boiled, without salt",
+    units: {
+      cup: portion("sr_legacy", "172429", "90606", "cup"),
+      tablespoon: portion("sr_legacy", "172429", "90607", "tbsp"),
+    },
+  },
+  {
+    // Erwten split- groene gekookt -> USDA's "Peas, split" cooked row
+    // doesn't split by colour (yellow vs green); reused from 2314 above.
+    nevoCode: "3216", usdaFdcId: "172429",
+    usdaDescription: "Peas, split, mature seeds, cooked, boiled, without salt",
+    units: {
+      cup: portion("sr_legacy", "172429", "90606", "cup"),
+      tablespoon: portion("sr_legacy", "172429", "90607", "tbsp"),
+    },
+  },
+  {
+    nevoCode: "3154", usdaFdcId: "168917",
+    usdaDescription: "Quinoa, cooked",
+    units: { cup: portion("sr_legacy", "168917", "83990", "cup") },
+  },
+  {
+    nevoCode: "2158", usdaFdcId: "169700",
+    usdaDescription: "Couscous, cooked",
+    units: { cup: portion("sr_legacy", "169700", "85372", "cup, cooked") },
+  },
+  {
+    // Pasta witte gem gekookt ("Pasta white average cooked") -- USDA's
+    // cooked-pasta cup weight still varies by shape (105-151 g across the
+    // "not packed" rows below), though far less than dry pasta's 64-122 g
+    // range (which is why raw pasta stays rejected, see header). "cup
+    // elbows not packed" (120 g) was picked as the representative "average"
+    // shape -- close to the not-packed-shapes' mean (~112 g) and the shape
+    // most diet-tracking references default to for unqualified "pasta".
+    // Flagged as a judgment call.
+    nevoCode: "659", usdaFdcId: "169737",
+    usdaDescription: "Pasta, cooked, enriched, without added salt",
+    units: { cup: portion("sr_legacy", "169737", "85422", "cup elbows not packed") },
+  },
+  {
+    // Pasta volkoren gekookt ("Pasta wholemeal cooked") -- same shape
+    // judgment call as 659 above, same shape (elbows) for consistency;
+    // whole-wheat's elbow row isn't split into packed/not-packed.
+    nevoCode: "2157", usdaFdcId: "168910",
+    usdaDescription: "Pasta, whole-wheat, cooked (Includes foods for USDA's Food Distribution Program)",
+    units: { cup: portion("sr_legacy", "168910", "83965", "cup elbows") },
+  },
+  {
+    nevoCode: "3200", usdaFdcId: "170287",
+    usdaDescription: "Bulgur, cooked",
+    units: {
+      cup: portion("sr_legacy", "170287", "86370", "cup"),
+      tablespoon: portion("sr_legacy", "170287", "86371", "tbsp"),
+    },
+  },
+  {
+    nevoCode: "963", usdaFdcId: "170420",
+    usdaDescription: "Peas, green, cooked, boiled, drained, without salt",
+    units: { cup: portion("sr_legacy", "170420", "86614", "cup") },
+  },
+  {
+    nevoCode: "2900", usdaFdcId: "169214",
+    usdaDescription: "Corn, sweet, yellow, canned, whole kernel, drained solids",
+    units: { cup: portion("sr_legacy", "169214", "84446", "cup") },
+  },
+  {
+    nevoCode: "57", usdaFdcId: "169999",
+    usdaDescription: "Corn, sweet, yellow, cooked, boiled, drained, without salt",
+    units: { cup: portion("sr_legacy", "169999", "85853", "cup cut") },
   },
 ];
 

@@ -50,86 +50,137 @@
 -- header for the specific staples/liquids rejected and why (wine, dry
 -- pasta, split peas, molasses, etc.).
 --
+-- Prepared/canned follow-up (same ticket, #164/#157): the pairings above
+-- only cover raw/dry staples, which left recipe lines written in cooked or
+-- canned quantities (e.g. "2 cups Rijst witte gekookt", "1 cup Linzen
+-- bruine blik/glas") unresolved even after this migration first landed --
+-- see this file's own top-of-file comment for why the obvious shortcut
+-- (bridging from the NEVO-portie-online eetlepel value already seeded by
+-- 20260806000002_nevo_unit_masses.sql) is physically wrong, not merely
+-- imprecise: it implies a density around 2.0 g/ml for cooked rice, which
+-- is impossible for a solid food. The rows below extend the same hand-
+-- curation to cooked grains/legumes and drained canned legumes/corn,
+-- preferring USDA's drained-solids rows over "solids and liquids" (the
+-- latter includes the can's brine, ~240-260 g/cup -- not what a cook
+-- scoops) -- see scripts/import-usda-unit-masses.ts's header for the full
+-- rejected-candidate list this round added (multi-grain cooked rice,
+-- cooked red lentils, canned white/cannellini/black-eyed beans, whole dried
+-- peas, whole-wheat couscous, egg-free pasta, frozen cooked peas).
+--
 -- Curation table (NEVO source_ref | USDA bundle:fdc_id | unit | grams):
---   5      sr_legacy:168877       cup         185
---   33     fndds:2709212      cup         160
---   80     sr_legacy:169714       cup         158
---   120    sr_legacy:172420       cup         192
---   120    sr_legacy:172420       tablespoon  12
---   181    sr_legacy:171726       cup         147
---   198    fndds:2707489      cup         141
---   199    fndds:2707497      cup         130
---   206    sr_legacy:170187       cup         100
---   208    sr_legacy:170687       cup         120
---   213    fndds:2708489      cup         80
---   215    sr_legacy:169698       cup         128
---   217    sr_legacy:168887       cup         102
---   218    sr_legacy:168885       cup         128
---   220    sr_legacy:168894       cup         125
---   222    sr_legacy:168893       cup         120
---   278    fndds:2705418      milliliter  1.0208
---   279    sr_legacy:172217       milliliter  1.0167
---   281    sr_legacy:171275       milliliter  1.275
---   286    sr_legacy:172205       milliliter  1.025
---   289    sr_legacy:172225       milliliter  1.0208
---   293    fndds:2705600      milliliter  1
---   294    sr_legacy:173432       milliliter  1.0208
---   299    fndds:2705597      milliliter  1
---   310    sr_legacy:173430       cup         227
---   310    sr_legacy:173430       tablespoon  14.2
---   317    sr_legacy:171017       milliliter  0.9083
---   374    sr_legacy:168833       cup         220
---   375    sr_legacy:169655       cup         200
---   377    sr_legacy:169655       cup         200
---   377    sr_legacy:169655       teaspoon    4.2
---   383    sr_legacy:173933       milliliter  1.0333
---   410    sr_legacy:169099       milliliter  1.0375
---   413    sr_legacy:170545       milliliter  1.0125
---   430    sr_legacy:169593       cup         86
---   430    sr_legacy:169593       tablespoon  5.4
---   443    sr_legacy:169640       milliliter  1.4125
---   455    sr_legacy:172470       cup         258
---   541    sr_legacy:172469       cup         258
---   590    sr_legacy:169722       cup         58
---   601    sr_legacy:171413       milliliter  0.9
---   630    sr_legacy:167959       cup         8
---   696    sr_legacy:170290       cup         117
---   712    sr_legacy:169703       cup         185
---   718    sr_legacy:171247       cup         100
---   718    sr_legacy:171247       tablespoon  5
---   725    sr_legacy:173414       cup         113
---   812    sr_legacy:171257       milliliter  0.9583
---   838    sr_legacy:169412       cup         150
---   838    sr_legacy:169412       tablespoon  8
---   838    sr_legacy:169412       teaspoon    2.7
---   879    sr_legacy:173410       cup         227
---   879    sr_legacy:173410       tablespoon  14.2
---   1013   sr_legacy:174928       cup         108
---   1127   sr_legacy:167747       milliliter  1.0167
---   1528   sr_legacy:172884       milliliter  1
---   1652   sr_legacy:168837       milliliter  1.4208
---   1885   fndds:2710707      milliliter  1
---   1889   sr_legacy:169699       cup         173
---   1890   sr_legacy:170283       cup         184
---   2176   sr_legacy:170591       cup         135
---   2275   fndds:2705594      milliliter  1
---   2290   fndds:2705413      milliliter  1.0167
---   2615   sr_legacy:172237       milliliter  0.9917
---   2819   sr_legacy:173468       cup         292
---   2819   sr_legacy:173468       tablespoon  18
---   2819   sr_legacy:173468       teaspoon    6
---   2890   fndds:2709202      cup         160
---   3058   sr_legacy:168872       cup         94
---   3063   sr_legacy:169661       milliliter  1.3125
---   3153   sr_legacy:168874       cup         170
---   3185   sr_legacy:173801       cup         152
---   3242   sr_legacy:169578       milliliter  1.3083
---   5089   sr_legacy:169656       cup         120
---   5089   sr_legacy:169656       tablespoon  8
---   5089   sr_legacy:169656       teaspoon    2.5
---   5253   sr_legacy:172241       milliliter  1.0625
---   5470   sr_legacy:174277       milliliter  1.0625
--- (40 solid staples / 52 solid rows, 26 liquids / 26 milliliter rows, 78
+--   5      sr_legacy:168877    cup         185
+--   33     fndds:2709212       cup         160
+--   57     sr_legacy:169999    cup         149
+--   80     sr_legacy:169714    cup         158
+--   120    sr_legacy:172420    cup         192
+--   120    sr_legacy:172420    tablespoon  12
+--   181    sr_legacy:171726    cup         147
+--   198    fndds:2707489       cup         141
+--   199    fndds:2707497       cup         130
+--   206    sr_legacy:170187    cup         100
+--   208    sr_legacy:170687    cup         120
+--   213    fndds:2708489       cup         80
+--   215    sr_legacy:169698    cup         128
+--   217    sr_legacy:168887    cup         102
+--   218    sr_legacy:168885    cup         128
+--   220    sr_legacy:168894    cup         125
+--   222    sr_legacy:168893    cup         120
+--   278    fndds:2705418       milliliter  1.0208
+--   279    sr_legacy:172217    milliliter  1.0167
+--   281    sr_legacy:171275    milliliter  1.275
+--   286    sr_legacy:172205    milliliter  1.025
+--   289    sr_legacy:172225    milliliter  1.0208
+--   293    fndds:2705600       milliliter  1
+--   294    sr_legacy:173432    milliliter  1.0208
+--   299    fndds:2705597       milliliter  1
+--   310    sr_legacy:173430    cup         227
+--   310    sr_legacy:173430    tablespoon  14.2
+--   317    sr_legacy:171017    milliliter  0.9083
+--   374    sr_legacy:168833    cup         220
+--   375    sr_legacy:169655    cup         200
+--   377    sr_legacy:169655    cup         200
+--   377    sr_legacy:169655    teaspoon    4.2
+--   383    sr_legacy:173933    milliliter  1.0333
+--   410    sr_legacy:169099    milliliter  1.0375
+--   413    sr_legacy:170545    milliliter  1.0125
+--   430    sr_legacy:169593    cup         86
+--   430    sr_legacy:169593    tablespoon  5.4
+--   443    sr_legacy:169640    milliliter  1.4125
+--   455    sr_legacy:172470    cup         258
+--   541    sr_legacy:172469    cup         258
+--   590    sr_legacy:169722    cup         58
+--   601    sr_legacy:171413    milliliter  0.9
+--   630    sr_legacy:167959    cup         8
+--   658    fndds:2708408       cup         158
+--   659    sr_legacy:169737    cup         120
+--   660    sr_legacy:173797    cup         169
+--   696    sr_legacy:170290    cup         117
+--   712    sr_legacy:169703    cup         185
+--   718    sr_legacy:171247    cup         100
+--   718    sr_legacy:171247    tablespoon  5
+--   725    sr_legacy:173414    cup         113
+--   812    sr_legacy:171257    milliliter  0.9583
+--   838    sr_legacy:169412    cup         150
+--   838    sr_legacy:169412    tablespoon  8
+--   838    sr_legacy:169412    teaspoon    2.7
+--   879    sr_legacy:173410    cup         227
+--   879    sr_legacy:173410    tablespoon  14.2
+--   963    sr_legacy:170420    cup         160
+--   970    sr_legacy:172421    cup         198
+--   970    sr_legacy:172421    tablespoon  12.3
+--   971    sr_legacy:174271    cup         172
+--   971    sr_legacy:174271    tablespoon  10.7
+--   1013   sr_legacy:174928    cup         108
+--   1014   fndds:2708414       cup         195
+--   1095   sr_legacy:173757    cup         164
+--   1127   sr_legacy:167747    milliliter  1.0167
+--   1528   sr_legacy:172884    milliliter  1
+--   1652   sr_legacy:168837    milliliter  1.4208
+--   1885   fndds:2710707       milliliter  1
+--   1889   sr_legacy:169699    cup         173
+--   1890   sr_legacy:170283    cup         184
+--   2157   sr_legacy:168910    cup         117
+--   2158   sr_legacy:169700    cup         157
+--   2176   sr_legacy:170591    cup         135
+--   2275   fndds:2705594       milliliter  1
+--   2290   fndds:2705413       milliliter  1.0167
+--   2314   sr_legacy:172429    cup         196
+--   2314   sr_legacy:172429    tablespoon  12.2
+--   2615   sr_legacy:172237    milliliter  0.9917
+--   2819   sr_legacy:173468    cup         292
+--   2819   sr_legacy:173468    tablespoon  18
+--   2819   sr_legacy:173468    teaspoon    6
+--   2890   fndds:2709202       cup         160
+--   2900   sr_legacy:169214    cup         164
+--   3058   sr_legacy:168872    cup         94
+--   3063   sr_legacy:169661    milliliter  1.3125
+--   3073   sr_legacy:174257    cup         202
+--   3153   sr_legacy:168874    cup         170
+--   3154   sr_legacy:168917    cup         185
+--   3184   sr_legacy:175243    cup         158
+--   3185   sr_legacy:173801    cup         152
+--   3200   sr_legacy:170287    cup         182
+--   3200   sr_legacy:170287    tablespoon  8.4
+--   3216   sr_legacy:172429    cup         196
+--   3216   sr_legacy:172429    tablespoon  12.2
+--   3242   sr_legacy:169578    milliliter  1.3083
+--   5089   sr_legacy:169656    cup         120
+--   5089   sr_legacy:169656    tablespoon  8
+--   5089   sr_legacy:169656    teaspoon    2.5
+--   5168   sr_legacy:175200    cup         171
+--   5168   sr_legacy:175200    tablespoon  10.6
+--   5169   fndds:2707426       cup         185
+--   5173   sr_legacy:175194    cup         177
+--   5173   sr_legacy:175194    tablespoon  11
+--   5175   sr_legacy:175203    cup         179
+--   5175   sr_legacy:175203    tablespoon  11.2
+--   5253   sr_legacy:172241    milliliter  1.0625
+--   5428   sr_legacy:173797    cup         169
+--   5429   fndds:2707426       cup         185
+--   5430   sr_legacy:173801    cup         152
+--   5431   sr_legacy:175243    cup         158
+--   5470   sr_legacy:174277    milliliter  1.0625
+-- (66 solid staples / 86 solid rows, 26 liquids / 26 milliliter rows, 112
 -- rows total -- see scripts/import-usda-unit-masses.ts for the full
 -- per-row rationale, including which NEVO name each source_ref is and
 -- exactly which USDA food_portion.csv qualifier was chosen when a food had
@@ -166,6 +217,7 @@ select ri.id, v.unit::public.recipe_unit, v.grams, v.source, v.source_version
 from (values
   ('5', 'cup', 185, 'USDA-SR-Legacy', '2018-04'),
   ('33', 'cup', 160, 'USDA-FNDDS', '2024-10-31'),
+  ('57', 'cup', 149, 'USDA-SR-Legacy', '2018-04'),
   ('80', 'cup', 158, 'USDA-SR-Legacy', '2018-04'),
   ('120', 'cup', 192, 'USDA-SR-Legacy', '2018-04'),
   ('120', 'tablespoon', 12, 'USDA-SR-Legacy', '2018-04'),
@@ -206,6 +258,9 @@ from (values
   ('590', 'cup', 58, 'USDA-SR-Legacy', '2018-04'),
   ('601', 'milliliter', 0.9, 'USDA-SR-Legacy', '2018-04'),
   ('630', 'cup', 8, 'USDA-SR-Legacy', '2018-04'),
+  ('658', 'cup', 158, 'USDA-FNDDS', '2024-10-31'),
+  ('659', 'cup', 120, 'USDA-SR-Legacy', '2018-04'),
+  ('660', 'cup', 169, 'USDA-SR-Legacy', '2018-04'),
   ('696', 'cup', 117, 'USDA-SR-Legacy', '2018-04'),
   ('712', 'cup', 185, 'USDA-SR-Legacy', '2018-04'),
   ('718', 'cup', 100, 'USDA-SR-Legacy', '2018-04'),
@@ -217,30 +272,60 @@ from (values
   ('838', 'teaspoon', 2.7, 'USDA-SR-Legacy', '2018-04'),
   ('879', 'cup', 227, 'USDA-SR-Legacy', '2018-04'),
   ('879', 'tablespoon', 14.2, 'USDA-SR-Legacy', '2018-04'),
+  ('963', 'cup', 160, 'USDA-SR-Legacy', '2018-04'),
+  ('970', 'cup', 198, 'USDA-SR-Legacy', '2018-04'),
+  ('970', 'tablespoon', 12.3, 'USDA-SR-Legacy', '2018-04'),
+  ('971', 'cup', 172, 'USDA-SR-Legacy', '2018-04'),
+  ('971', 'tablespoon', 10.7, 'USDA-SR-Legacy', '2018-04'),
   ('1013', 'cup', 108, 'USDA-SR-Legacy', '2018-04'),
+  ('1014', 'cup', 195, 'USDA-FNDDS', '2024-10-31'),
+  ('1095', 'cup', 164, 'USDA-SR-Legacy', '2018-04'),
   ('1127', 'milliliter', 1.0167, 'USDA-SR-Legacy', '2018-04'),
   ('1528', 'milliliter', 1, 'USDA-SR-Legacy', '2018-04'),
   ('1652', 'milliliter', 1.4208, 'USDA-SR-Legacy', '2018-04'),
   ('1885', 'milliliter', 1, 'USDA-FNDDS', '2024-10-31'),
   ('1889', 'cup', 173, 'USDA-SR-Legacy', '2018-04'),
   ('1890', 'cup', 184, 'USDA-SR-Legacy', '2018-04'),
+  ('2157', 'cup', 117, 'USDA-SR-Legacy', '2018-04'),
+  ('2158', 'cup', 157, 'USDA-SR-Legacy', '2018-04'),
   ('2176', 'cup', 135, 'USDA-SR-Legacy', '2018-04'),
   ('2275', 'milliliter', 1, 'USDA-FNDDS', '2024-10-31'),
   ('2290', 'milliliter', 1.0167, 'USDA-FNDDS', '2024-10-31'),
+  ('2314', 'cup', 196, 'USDA-SR-Legacy', '2018-04'),
+  ('2314', 'tablespoon', 12.2, 'USDA-SR-Legacy', '2018-04'),
   ('2615', 'milliliter', 0.9917, 'USDA-SR-Legacy', '2018-04'),
   ('2819', 'cup', 292, 'USDA-SR-Legacy', '2018-04'),
   ('2819', 'tablespoon', 18, 'USDA-SR-Legacy', '2018-04'),
   ('2819', 'teaspoon', 6, 'USDA-SR-Legacy', '2018-04'),
   ('2890', 'cup', 160, 'USDA-FNDDS', '2024-10-31'),
+  ('2900', 'cup', 164, 'USDA-SR-Legacy', '2018-04'),
   ('3058', 'cup', 94, 'USDA-SR-Legacy', '2018-04'),
   ('3063', 'milliliter', 1.3125, 'USDA-SR-Legacy', '2018-04'),
+  ('3073', 'cup', 202, 'USDA-SR-Legacy', '2018-04'),
   ('3153', 'cup', 170, 'USDA-SR-Legacy', '2018-04'),
+  ('3154', 'cup', 185, 'USDA-SR-Legacy', '2018-04'),
+  ('3184', 'cup', 158, 'USDA-SR-Legacy', '2018-04'),
   ('3185', 'cup', 152, 'USDA-SR-Legacy', '2018-04'),
+  ('3200', 'cup', 182, 'USDA-SR-Legacy', '2018-04'),
+  ('3200', 'tablespoon', 8.4, 'USDA-SR-Legacy', '2018-04'),
+  ('3216', 'cup', 196, 'USDA-SR-Legacy', '2018-04'),
+  ('3216', 'tablespoon', 12.2, 'USDA-SR-Legacy', '2018-04'),
   ('3242', 'milliliter', 1.3083, 'USDA-SR-Legacy', '2018-04'),
   ('5089', 'cup', 120, 'USDA-SR-Legacy', '2018-04'),
   ('5089', 'tablespoon', 8, 'USDA-SR-Legacy', '2018-04'),
   ('5089', 'teaspoon', 2.5, 'USDA-SR-Legacy', '2018-04'),
+  ('5168', 'cup', 171, 'USDA-SR-Legacy', '2018-04'),
+  ('5168', 'tablespoon', 10.6, 'USDA-SR-Legacy', '2018-04'),
+  ('5169', 'cup', 185, 'USDA-FNDDS', '2024-10-31'),
+  ('5173', 'cup', 177, 'USDA-SR-Legacy', '2018-04'),
+  ('5173', 'tablespoon', 11, 'USDA-SR-Legacy', '2018-04'),
+  ('5175', 'cup', 179, 'USDA-SR-Legacy', '2018-04'),
+  ('5175', 'tablespoon', 11.2, 'USDA-SR-Legacy', '2018-04'),
   ('5253', 'milliliter', 1.0625, 'USDA-SR-Legacy', '2018-04'),
+  ('5428', 'cup', 169, 'USDA-SR-Legacy', '2018-04'),
+  ('5429', 'cup', 185, 'USDA-FNDDS', '2024-10-31'),
+  ('5430', 'cup', 152, 'USDA-SR-Legacy', '2018-04'),
+  ('5431', 'cup', 158, 'USDA-SR-Legacy', '2018-04'),
   ('5470', 'milliliter', 1.0625, 'USDA-SR-Legacy', '2018-04')
 ) as v (source_ref, unit, grams, source, source_version)
 join reference.ingredients ri
