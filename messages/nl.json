@@ -74,6 +74,14 @@
       "naar_smaak": "naar smaak"
     }
   },
+  "shopping": {
+    "errors": {
+      "invalid-input": "Controleer de ingevoerde gegevens.",
+      "unauthenticated": "Log opnieuw in om door te gaan.",
+      "not-found": "Dit onderdeel bestaat niet (meer) of is niet van jou.",
+      "generic": "Er ging iets mis. Probeer het opnieuw."
+    }
+  },
   "boards": {
     "errors": {
       "invalid-input": "Controleer de ingevoerde gegevens.",
