@@ -147,6 +147,18 @@ function round(value: number): number {
 }
 
 /**
+ * Display-only rounding to whole numbers (#166): the computed and stored
+ * values above keep their 2-decimal precision, only the rendered figure is
+ * whole. `null` passes straight through -- an unresolvable macro must stay
+ * unresolvable and render "?", never a fabricated `0` (ADR-0013 §4). A
+ * genuinely tiny value (0.4 g of fibre) does round to `0`, which is a real
+ * measurement rendered at the requested precision, not an unknown.
+ */
+export function roundMacroForDisplay(value: number | null): number | null {
+  return value === null ? null : Math.round(value);
+}
+
+/**
  * Per-person kcal/carbs/protein/fat/fiber for a whole recipe: sums every
  * ingredient row's contribution (see `sumKnown` -- one unknown row makes
  * that nutrient's total, and therefore its per-person value, unknown too),

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import type { IconName } from "@/components/atoms/Icon";
+import { roundMacroForDisplay } from "@/lib/recipes/nutrition";
 import { formatQuantity } from "@/lib/recipes/units";
 
 // #160 — Figma "NutritionalData" (3997:15948 mobile / 3997:15543 desktop), a
@@ -63,12 +64,10 @@ export function NutritionalDataRow({
     return value === null ? t("unknownValue") : formatQuantity(value, unit);
   }
 
-  // #166: macronutrients render as whole numbers in the UI — rounded here,
-  // display-layer only (lib/recipes/nutrition.ts's own stored/summed values
-  // stay full precision; only NutritionalDataRow's rendering rounds). `null`
-  // still short-circuits to formatValue's own "?", never `Math.round(null)`.
+  // #166: macronutrients render as whole numbers — `roundMacroForDisplay`
+  // keeps `null` null so formatValue still resolves it to "?".
   function formatMacro(value: number | null, unit: string): string {
-    return formatValue(value === null ? null : Math.round(value), unit);
+    return formatValue(roundMacroForDisplay(value), unit);
   }
 
   // Order/icons match the fetched node exactly (Timer, Flame, Wheat,
