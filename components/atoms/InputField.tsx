@@ -17,10 +17,10 @@ import { Icon, type IconName } from "./Icon";
  * native `<select>`: Figma models Personen/Eenheid as this same field with a
  * chevron, never `Atom/Dropdown` — native select for free OS/a11y semantics.
  * States → CSS: Hover → `:hover`, Active → `:active`, Selected →
- * `:focus-within` (this atom's own interpretation, flagged for design
- * confirmation); `border-input-active` diverges from Button/Outline on
- * purpose — docs/open-questions.md#button-vs-input-active-border.
- * `boxClassName` (#166) — see its own doc comment below.
+ * `:focus-within` (flagged for design confirmation); `border-input-active`
+ * diverges from Button/Outline on purpose — see open-questions.md.
+ * `boxClassName`, and the content-row/trailing-icon `<label>`s that make the
+ * whole box clickable — see their own doc comments below (#166).
  */
 type InputFieldSharedProps = {
   /** Figma `Leading-icon` — icon rendered before the input. */
@@ -98,6 +98,7 @@ export function InputField({
   multiline,
   options,
   placeholderOption,
+  id,
   ...props
 }: InputFieldProps) {
   // #149: the text row's own bottom padding only drops when `button` is
@@ -113,10 +114,7 @@ export function InputField({
   return (
     <div className={clsx("flex w-full flex-col gap-2", className)}>
       {label ? (
-        <label
-          htmlFor={props.id}
-          className="text-base font-semibold text-text-muted"
-        >
+        <label htmlFor={id} className="text-base font-semibold text-text-muted">
           {label}
         </label>
       ) : null}
@@ -134,7 +132,15 @@ export function InputField({
             to flex against instead of `h-full` resolving against an
             indefinite (hug) parent. */}
         <div className="flex flex-1 flex-col gap-3 self-stretch">
-          <div
+          {/* A real `<label htmlFor={id}>`, not a `<div>` (#166): browsers
+              natively delegate a click anywhere in this row — including the
+              leading icon — to the control, and exclude the control's own
+              value from this label's accessible-name contribution (same
+              recursion-safe rule the classic `<label>Text <input></label>`
+              pattern relies on). Deliberately does NOT wrap `button` below,
+              so that slot's own text never leaks into this label's name. */}
+          <label
+            htmlFor={id}
             className={clsx(
               "flex flex-row gap-2 self-stretch pl-2",
               hasButtonRow ? "pt-2" : "py-2",
@@ -146,11 +152,13 @@ export function InputField({
             ) : null}
             {multiline ? (
               <textarea
+                id={id}
                 {...(props as Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "className">)}
                 className="h-full w-full resize-none border-0 bg-transparent p-0 text-base font-semibold text-text placeholder:text-placeholder focus:outline-none"
               />
             ) : options ? (
               <select
+                id={id}
                 {...(props as Omit<SelectHTMLAttributes<HTMLSelectElement>, "className">)}
                 className="w-full appearance-none border-0 bg-transparent p-0 text-base font-semibold text-text focus:outline-none"
               >
@@ -167,18 +175,22 @@ export function InputField({
               </select>
             ) : (
               <input
+                id={id}
                 {...(props as Omit<InputHTMLAttributes<HTMLInputElement>, "className">)}
                 className="w-full border-0 bg-transparent p-0 text-base font-semibold text-text placeholder:text-placeholder focus:outline-none"
               />
             )}
-          </div>
+          </label>
           {button ? <div className="flex flex-row gap-2">{button}</div> : null}
         </div>
 
         {trailingIcon ? (
-          <div className="flex flex-row items-center gap-2 py-2 pr-2">
+          <label
+            htmlFor={id}
+            className="flex flex-row items-center gap-2 py-2 pr-2"
+          >
             <Icon name={trailingIcon} className="text-text-muted" />
-          </div>
+          </label>
         ) : null}
       </div>
     </div>

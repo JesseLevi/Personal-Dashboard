@@ -66,9 +66,9 @@ Each `StepRowState` carries `ingredientLocalIds: string[]`, referencing `Ingredi
 
 `3777:3984`'s second `Pull-up panel` (`3777:4012`, a `Card` of three `Card-content/Ingredient` rows with unchecked `Checkbox`es, footer "Oplsaan" only) carried no Dev Mode annotation, so #126 deferred it rather than guess its trigger and semantics. #149 answered it: `3749:3241` on frame `3749:3091` is the same panel, and the user's own feedback on the issue names its purpose — it is the per-step ingredient picker, opened by a step's "+ Ingrediënt" pill, and its "Opslaan" commits that step's selection, not the recipe. Built as `StepIngredientPanel`; the `screen-03-overlay-purpose-unclear` entry is removed from `docs/open-questions.md`.
 
-## Ingredient/step row affordances — none in v1
+## Ingredient/step row affordances — ingredients resolved (#166), steps still none
 
-No edit/delete/reorder control per ingredient or step row, on either mode (create or edit). Neither is drawn in Figma (`3717:2844` shows exactly three static rows, one static step, no per-row chrome), and adding one would be new UI beyond the fetched node. Two "Voeg toe" buttons append a row each; there is no way to remove one once added except discarding the whole form. Flagged: `docs/open-questions.md#ingredient-step-rows-no-delete-reorder-v1` — a real UX gap, especially on `edit` (a recipe imported with a wrong extra row can't be fixed without recreating it), left for a follow-up ticket rather than inventing a trailing-icon control the source doesn't show.
+**Superseded by #166 for ingredients** — see `design/notes/RecipeIngredientRow.md`'s #166 entries: every real ingredient data row now has a working, Figma-sourced destructive delete Button (`removeDisabled` only when it's the sole remaining row). Steps still have no delete/reorder control in either mode — no fetched node draws one (`3717:2844`/`4025:10628` show only the "Ingrediënt" button slot). One "Voeg toe" button still appends a step row; there is no way to remove one once added except discarding the whole form. Flagged: `docs/open-questions.md#step-rows-no-delete-reorder` (renamed/narrowed by #166) — a real UX gap on `edit`, left for a follow-up ticket rather than inventing a trailing-icon control the source doesn't show.
 
 ## Empty/new row shape — a build decision, not a literal read
 
@@ -99,7 +99,7 @@ Still open:
 
 - `recipe-edit-trigger-no-host-yet`
 - `ingredient-name-annotation-only-on-row-two` (ticket-carried)
-- `ingredient-step-rows-no-delete-reorder-v1` (ticket-carried)
+- `step-rows-no-delete-reorder` (renamed/narrowed by #166 — ingredients resolved, steps still open)
 - `recipe-panel-verwijderen-hidden-on-create` (ticket-carried, default chosen: hidden)
 - `recipe-panel-unit-list-etc-unsourced` (ticket-carried)
 - `recipe-panel-personen-chevron-behaviour-unsourced` (ticket-carried, widget changed #149, range/behaviour still unsourced)
@@ -110,6 +110,10 @@ Still open:
 Closed earlier, during `docs/open-questions.md`'s 2026-08-02 cleanup: `recipe-panel-trigger-annotation-misattributed` (ticket-carried, `3777:3923`) — the overview `+` button's "Adds a kanban column" annotation is Te-Doen residue; #126 already wired the correct nested trigger annotation instead, so there was never anything to build.
 
 Closed by #149: `recipe-tags-no-query-or-write-path` (field removed), `step-ingredient-pill-panel-undesigned` (`StepIngredientPanel` built), `recipe-panel-photo-upload-not-built` (`ImageUploadField` wired in), `screen-03-overlay-purpose-unclear` (same panel, purpose named by the user on #149).
+
+## #166 round 2 (2026-08-08) — second feedback pass
+
+Aantal width and the missing row-1 delete Button (`design/notes/RecipeIngredientRow.md`'s round-2 entry), the Personen pill rebuild (`design/notes/PortionStepper.md`'s round-2 entry, `PasAanPanel.tsx`'s only call site needed no change), and the whole-field-clickable / hover-active-focus fix (`design/notes/InputField.md`'s #166 entry, `design/notes/ImageUploadField.md`'s #166 entry) each live in their own component's note — this file only points at them since none of round 2's changes touched `RecipePanel.tsx`'s own field composition beyond the ingredient-row delete wiring (now unconditional, `removeDisabled={ingredients.length <= 1}`) and the Categorie `Dropdown` trigger, which was audited for state-parity and left unchanged (its `Button` trigger already carries Filled's own hover/active ramp — see `InputField.md`'s #166 entry for why that reads as consistent rather than needing InputField's border-based states bolted on).
 
 ## Ladle stories
 

@@ -91,17 +91,9 @@ export function Dropdown({
     }
   }
 
-  // The first child (current selection) becomes the real disclosure
-  // trigger: Dropdown injects aria-expanded/aria-controls onto whatever
-  // interactive element the caller already supplied (a `Button`, or a
-  // `<button>` wrapping a `Tag`) instead of wrapping it in a second
-  // `<button>` — a button inside a button is invalid HTML. The toggle click
-  // handler itself lives on the trigger row below, not here — see that
-  // comment. This makes "caller supplies the trigger" the chosen API (the
-  // rejected alternative, "Dropdown wraps the trigger itself", is documented
-  // in
-  // design/notes/Dropdown.md along with why). The trigger element's own
-  // Figma-authored button semantics carry through untouched.
+  // Injects aria-expanded/aria-controls onto the caller's own trigger
+  // element rather than wrapping it in a second <button> (invalid HTML) —
+  // rejected-alternative writeup: design/notes/Dropdown.md.
   const trigger =
     label && isValidElement(selectedChild)
       ? cloneElement(selectedChild as ReactElement<TriggerProps>, {
@@ -113,14 +105,10 @@ export function Dropdown({
 
   return (
     <div
-      // rounded-xl (#112): the inner panel below is already rounded-xl: an
-      // unrounded outer box made caller className (TeDoenHeader.tsx's
-      // `shadow-sm`) paint a square-cornered shadow behind it — confirmed in
-      // a real browser, see design/notes/Dropdown.md. In labelless mode this
-      // wrapper's box is pixel-identical to the panel's (single child, no
-      // padding), so the fix is exact there; in labelled mode the corners
-      // land on the label+panel group, invisible today since no caller
-      // currently themes that box.
+      // rounded-xl on the outer wrapper too, matching the inner panel —
+      // otherwise a caller className (e.g. shadow-sm) paints a square-
+      // cornered shadow behind a rounded panel. Browser-confirmed
+      // investigation: design/notes/Dropdown.md.
       className={clsx("flex w-full flex-col gap-2 rounded-xl", className)}
       onKeyDown={label ? handleRootKeyDown : undefined}
     >
@@ -132,9 +120,7 @@ export function Dropdown({
 
       <div
         role={label ? undefined : "group"}
-        // `gap-1` (labelless only): with a label, the sub-list's own `pt-1`
-        // replaces it — a parent gap would survive the `0fr` collapse and
-        // leave dead space below the closed panel. See design/notes/Dropdown.md.
+        // `gap-1` labelless only — reasoning: design/notes/Dropdown.md.
         className={clsx(
           "flex w-full flex-col rounded-xl border border-border bg-surface p-1",
           !label && "gap-1",
@@ -143,13 +129,9 @@ export function Dropdown({
       >
         {label ? (
           <>
-            {/* Trigger row (#112): re-fetching 3779:4938 (desktop AddItem)
-                shows the Container/Content columns FILL, only the innermost
-                Slot/Button stays hug — a chevron rendered by Dropdown itself
-                in a fixed trailing column, not by the trigger, matching
-                Input-field's own trailing-icon layout. Supersedes #100's
-                `items-start` (hug) reading, which only inspected the
-                innermost Slot. See design/notes/Dropdown.md. */}
+            {/* Trigger row: chevron rendered by Dropdown itself, matching
+                Input-field's own trailing-icon layout. Re-fetch findings:
+                design/notes/Dropdown.md. */}
             <div
               className="flex w-full cursor-pointer items-center gap-3"
               onClick={() => setIsOpen((open) => !open)}
@@ -166,11 +148,8 @@ export function Dropdown({
             <div
               id={panelId}
               aria-labelledby={id}
-              // `self-stretch`: the panel now defaults to `items-stretch`
-              // (#112 dropped the old `items-start`), so this is a no-op
-              // today — kept explicit since the open option rows inside are
-              // Figma `alignSelf: stretch, horizontal: fill` and must not
-              // silently start hugging if the panel's default ever changes.
+              // `self-stretch` is a no-op today, kept deliberately — see
+              // design/notes/Dropdown.md's "Implementation details".
               className={clsx(
                 "grid self-stretch transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
                 isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",

@@ -126,9 +126,9 @@ the UI before save is attempted, rather than only after a failed submit.
 
 **Only `3717:2844` row 2's name field (`I3740:4302;3761:8982`) carries the "opens the ingredient search" Dev Mode annotation** — rows 1 and 3 have byte-identical structure (`Icon/Arrow-right-left`, same `Input-field` variant) but no annotation of their own. `RecipeIngredientRow` applies the same open-search behaviour to all three rows (the least-surprising reading — a picker icon that only sometimes opens a picker would be worse). Needs a design answer confirming rows 1/3 should behave identically, or explaining why they were left unannotated.
 
-## ingredient-step-rows-no-delete-reorder-v1
+## step-rows-no-delete-reorder
 
-**Neither ingredient rows nor step rows have any delete/reorder affordance in #126's build.** Figma draws exactly three static ingredient rows and one static step, with no per-row chrome — v1 shipped literally that (a "Voeg toe" button appends a row; nothing removes one). Needs a design answer: a real trailing-icon delete/reorder control, or confirmation that rows are meant to be immutable once added (awkward on `edit`, where a wrong row currently can't be removed without recreating the whole recipe).
+**Narrowed by #166 (was `ingredient-step-rows-no-delete-reorder-v1`) — ingredient rows are resolved, steps are not.** #166 re-fetched `4025:10596` and found every real ingredient data row carries a destructive delete Button in Figma (`design/notes/RecipeIngredientRow.md`'s #166 entry); ingredient rows now have working, Figma-sourced delete (disabled only when it's the sole remaining row). No equivalent per-step delete/reorder affordance has been found in any fetched node — the step field itself (`3717:2844`, `4025:10628`) still shows no trailing icon beyond the "Ingrediënt" button slot. Needs a design answer: a real trailing-icon delete/reorder control for steps, or confirmation that steps are meant to be immutable once added (awkward on `edit`, same reasoning as before). Ingredient reordering is likewise still unaddressed (drag/drop or up-down controls — no Figma source either way).
 
 ## recipe-panel-verwijderen-hidden-on-create
 

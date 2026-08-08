@@ -32,11 +32,10 @@ export interface ImageUploadFieldProps {
  * `<input type="file">`, layered transparently over the `InputField` atom.
  * `accept` is image-only so mobile browsers already surface their native
  * "Photos/Files" chooser -- no custom dropdown was built (none in Figma).
- * #166: the file input is `peer` + rendered first, and `InputField`'s
- * `boxClassName` carries matching `peer-hover:`/`peer-active:`/
- * `peer-focus:` variants -- see design/notes/ImageUploadField.md for why
- * (the two elements are siblings, so the atom's own hover/active/focus
- * states never fired without this).
+ * #166: the outer wrapper is `group` and `InputField`'s `boxClassName`
+ * carries `group-hover:`/`group-active:`/`group-focus-within:` variants --
+ * see design/notes/ImageUploadField.md for why a `peer-*` attempt (same
+ * ticket, same PR) did not work and `group-*` does.
  */
 export function ImageUploadField({
   id,
@@ -57,8 +56,12 @@ export function ImageUploadField({
   }
 
   return (
-    <div className={clsx("relative", className)}>
-      {/* Renders before InputField -- `peer` requires a later sibling; z-10 controls the visual stack independently. */}
+    <div className={clsx("group relative", className)}>
+      {/* `group` on this wrapper (not `peer` on the input): InputField's
+          bordered box is a grandchild of this div, not a sibling of the file
+          input, so `peer-*`'s sibling combinator can't reach it -- `group-*`'s
+          descendant selector can, regardless of nesting depth. See
+          design/notes/ImageUploadField.md. */}
       <input
         id={id}
         type="file"
@@ -67,7 +70,7 @@ export function ImageUploadField({
         disabled={disabled}
         aria-label={ariaLabel}
         onChange={handleChange}
-        className="peer absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+        className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
       />
       <InputField
         leadingIcon="Image"
@@ -78,7 +81,7 @@ export function ImageUploadField({
         tabIndex={-1}
         aria-hidden="true"
         disabled={disabled}
-        boxClassName="peer-hover:border-border-hover peer-active:border-border-input-active peer-focus:border-border-selected"
+        boxClassName="group-hover:border-border-hover group-active:border-border-input-active group-focus-within:border-border-selected"
       />
     </div>
   );

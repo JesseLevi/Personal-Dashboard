@@ -1,17 +1,24 @@
-// figma: node-id=3953:9750 (mobile) / 3778:5596 (desktop, pixel-identical)
+// figma: node-id=3953:9750 (mobile) / 3778:5596 (desktop, pixel-identical) —
+// restyled per the Pas-aan panel's own Personen row, node-id=3999:11007
+// (desktop) / 3998:10928 (mobile), which models this control as ONE filled
+// Button pill.
 import clsx from "clsx";
 import { Button } from "../atoms/Button";
 
 /**
- * Molecule/Portion-stepper — two icon-only `Atom/Button` instances (Style=Filled,
- * measured 40x40) flanking a `text-xl/semibold` portion count; left renders
- * `Minus` though Figma draws `Icon/Plus` twice (deliberate deviation). #166
- * adds an `Atom/Input-field`-matching bordered box (hover/active/focus-within,
- * same tokens) — ticket-instructed, no Figma source of its own. `min` (#153)
- * clamps/disables the decrement floor. Full history: design/notes/PortionStepper.md.
+ * Molecule/Portion-stepper — Figma (3999:11007) draws Personen as a single
+ * `Button/Default` (Style=Filled) instance: leading icon, text, trailing
+ * icon, `h-10`/`gap-1`/`px-2`/`rounded-lg`/`bg-surface-raised` — exactly
+ * `Atom/Button`'s own classes. A real `<button>` can't nest two more
+ * `<button>`s, and decrement/increment need separate click targets, so this
+ * renders two plain icon-only `Button`s (their own Filled hover/active ramp)
+ * inside a same-styled pill wrapper — reads as one control, is structurally
+ * two. Left renders `Minus` though Figma draws `Icon/Plus` on both sides
+ * (deliberate deviation, recurs here). `min` (#153) clamps/disables the
+ * decrement floor. Full history: design/notes/PortionStepper.md.
  */
 export interface PortionStepperProps {
-  /** Current portion count (Figma TEXT "6 personen") — caller-owned state. */
+  /** Current portion count (Figma TEXT "6") — caller-owned state. */
   portions: number;
   /** Pre-translated display text for the count, e.g. "6 personen"/"6 people" (ICU-pluralised — see `messages/*.json` `components.portionStepper.count`). */
   label: string;
@@ -39,7 +46,7 @@ export function PortionStepper({
   return (
     <div
       className={clsx(
-        "inline-flex items-center gap-6 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-hover active:border-border-input-active focus-within:border-border-selected",
+        "inline-flex h-10 items-center gap-1 rounded-lg bg-surface-raised",
         className,
       )}
     >
@@ -49,7 +56,7 @@ export function PortionStepper({
         onClick={() => onChange?.(Math.max(min, portions - 1))}
         disabled={atMin}
       />
-      <span className="text-xl font-semibold text-text">{label}</span>
+      <span className="text-base font-semibold text-text-muted">{label}</span>
       <Button
         icon="Plus"
         aria-label={incrementLabel}

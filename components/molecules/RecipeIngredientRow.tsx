@@ -9,9 +9,12 @@ import type { UnitCode } from "@/lib/recipes/units";
  * Not itself a fetched Figma component — no `figma-map.json` entry, per the
  * ticket's own instruction. Name opens #131's `IngredientSearchPanel`;
  * quantity is free numeric entry; unit uses `InputField`'s `options` variant
- * (#149). `onRemove` (#166) adds a trailing destructive `Trash` Button,
- * matching node 4025:10610 — every row but the first carries one. Full
- * reasoning: `design/notes/RecipeIngredientRow.md`.
+ * (#149). #166 re-fetched node 4025:10596 ("Ingredienten"): every real data
+ * row (not the label-only header row) carries a trailing destructive `Trash`
+ * Button, so `onRemove`/`removeLabel` are now unconditional (`removeDisabled`
+ * covers the "last row" edge case Figma never draws). Aantal's fixed column
+ * width is 72px there, not 104 (Eenheid's own width) — round 1 gave both the
+ * same width. Full reasoning: `design/notes/RecipeIngredientRow.md`.
  */
 export interface RecipeIngredientRowProps {
   /** Stable per-row id, used to derive every field's `id`. */
@@ -31,10 +34,12 @@ export interface RecipeIngredientRowProps {
   unitPlaceholder: string;
   unitOptions: { code: UnitCode; label: string }[];
   onUnitChange: (unit: UnitCode) => void;
-  /** Removes this row (#166) — omit to hide the trailing delete Button (Figma's row 1 has none). Renders only when both this and `removeLabel` are given (checked independently at render, not via a discriminated union — RecipePanel.tsx's own conditional spread doesn't preserve one across a `.map()`), so a caller that forgets `removeLabel` silently gets no button rather than a Button with no accessible name. */
-  onRemove?: () => void;
-  /** Accessible name for the delete Button — required alongside `onRemove` for the button to render at all (see `onRemove`'s own doc comment). */
-  removeLabel?: string;
+  /** Removes this row (#166) — every row carries the trailing delete Button, matching every real data row in the fetched node (only the separate label-only header row has none, and that's not a row this component renders on its own). */
+  onRemove: () => void;
+  /** Accessible name for the delete Button. */
+  removeLabel: string;
+  /** Disables the delete Button without hiding it — Figma never draws a "last remaining row" state, so the caller (RecipePanel.tsx) disables removal at exactly one row rather than letting the list go empty. */
+  removeDisabled?: boolean;
   className?: string;
 }
 
@@ -56,6 +61,7 @@ export function RecipeIngredientRow({
   onUnitChange,
   onRemove,
   removeLabel,
+  removeDisabled,
   className,
 }: RecipeIngredientRowProps) {
   const selectOptions = unitOptions.map((option) => ({ value: option.code, label: option.label }));
@@ -84,7 +90,7 @@ export function RecipeIngredientRow({
           />
         )}
       </div>
-      <div className="w-[104px] shrink-0">
+      <div className="w-[72px] shrink-0">
         {showLabels ? (
           <InputField
             id={`${id}-quantity`}
@@ -134,19 +140,23 @@ export function RecipeIngredientRow({
           />
         )}
       </div>
-      {/* Two independent truthiness checks, not one — `onRemove`/`removeLabel`
-          are destructured out of a discriminated union, and TypeScript does
-          not re-correlate two separately-destructured bindings from the
-          same branch, so checking only `onRemove` would leave `removeLabel`
-          typed `string | undefined` here. */}
-      {onRemove && removeLabel && (
+      {/* An invisible spacer matching InputField's own label block (text-base
+          font-semibold, gap-2 below) keeps the delete Button's top edge level
+          with the field boxes on row 1, which renders real labels above them. */}
+      <div className="flex shrink-0 flex-col gap-2">
+        {showLabels ? (
+          <span aria-hidden="true" className="invisible text-base font-semibold">
+            &nbsp;
+          </span>
+        ) : null}
         <Button
           variant="destructive"
           icon="Trash"
           aria-label={removeLabel}
           onClick={onRemove}
+          disabled={removeDisabled}
         />
-      )}
+      </div>
     </div>
   );
 }
