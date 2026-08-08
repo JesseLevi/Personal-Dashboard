@@ -180,3 +180,19 @@ the UI before save is attempted, rather than only after a failed submit.
 
 **#161 (ADR-0013 §2): the four macro dropdowns (calories/carbs/protein/fat, not time) now also carry a mandatory NEVO licence attribution line** below the existing full-word text — the exact string RIVM's conditions require, rendered smaller/muted (`text-xs`/`text-text-muted`) to read as secondary to `fullLabel`, in a widened `w-64` panel (macro dropdowns only; `time`'s stays `w-40`). Like the popover itself, this line's content is fixed (the licence prescribes the exact wording) but its visual treatment — size, colour, panel width — is this codebase's own choice, not a Figma-drawn spec. Same open question, same answer needed only if design wants a different treatment.
 
+## winkelmand-no-section-grouping
+
+**#177's Winkelmand design draws one flat `Card` of rows with no supermarket-`section` grouping anywhere** (nodes `4044:10838`/`4044:10830`, and the older `3779:4112`/`3779:3996` state mockups), although #29 and `Architecture.md` §4.2 both call for it. `shopping_list_items.section` (#175) exists in the schema and is round-tripped by `addShoppingListItem` (#176), but no query or component in #177 groups or renders it — every row is fetched in one flat, `position`-ordered list (`getShoppingListItems`) and rendered in one `Card`. Needs a design pass adding a real grouped-by-section layout before this column has any UI consumer.
+
+## winkelmand-no-manual-add-entry-point
+
+**No "add item manually" control exists anywhere in the fetched Winkelmand nodes** — no input field, no "+" button — yet `Vision.md`'s Boodschappenlijst section says the list is filled "handmatig of vanuit recepten". `addShoppingListItem` (#176) is fully built and tested at the data layer; #177 ships no UI that calls it. Needs a design pass adding a real entry point (a row-adding input, a panel, or otherwise) before this action has any UI consumer.
+
+## winkelmand-empty-state-undesigned
+
+**No empty state is drawn for a zero-item Winkelmand** in either fetched node. #177 renders a minimal, text-only placeholder (`shopping.page.emptyStateText`, next-intl, both catalogs) in the Card's place rather than an empty `Card` or nothing at all — the same "must render something" reasoning `ReceptenBoard.md`'s own empty-state entry gives, but without a Figma reference to reuse the way that ticket had Te-Doen's `EmptyState` node available. Needs a real design once one exists.
+
+## winkelmand-clear-all-no-confirmation
+
+**"Alles verwijderen" (#177) has no designed confirmation step** — the fetched header (`4044:10843`/`4044:10835`) is a single destructive `Button/Default`, no second frame or annotation for a confirm/cancel state, unlike `RecipeDetailPage.tsx`'s own "Verwijderen" (`design/notes/RecipeDetailPage.md`'s #94-precedent two-step confirm). Built as a literal, single-click read of the fetched node rather than importing that precedent uninvited — a real destructive-action risk (this button empties the whole list in one click, with no undo), but inventing a confirmation step that Figma doesn't draw would be adding UI the ticket explicitly asked to flag, not build. Needs a design/product answer: ratify the single-click behaviour as correct, or design a confirm step (reusing the existing two-step pattern or a new one).
+

@@ -1,6 +1,7 @@
 {
   "nav": {
-    "recipes": "Recipes"
+    "recipes": "Recipes",
+    "shopping": "Shopping basket"
   },
   "auth": {
     "greeting": {
@@ -80,6 +81,11 @@
       "unauthenticated": "Sign in again to continue.",
       "not-found": "This item no longer exists or isn't yours.",
       "generic": "Something went wrong. Please try again."
+    },
+    "page": {
+      "clearAllLabel": "Delete all",
+      "emptyStateText": "Your shopping basket is empty.",
+      "deleteItemLabel": "Delete {name}"
     }
   },
   "boards": {

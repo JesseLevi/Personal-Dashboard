@@ -1,6 +1,7 @@
 {
   "nav": {
-    "recipes": "Recepten"
+    "recipes": "Recepten",
+    "shopping": "Winkelmand"
   },
   "auth": {
     "greeting": {
@@ -80,6 +81,11 @@
       "unauthenticated": "Log opnieuw in om door te gaan.",
       "not-found": "Dit onderdeel bestaat niet (meer) of is niet van jou.",
       "generic": "Er ging iets mis. Probeer het opnieuw."
+    },
+    "page": {
+      "clearAllLabel": "Alles verwijderen",
+      "emptyStateText": "Je winkelmand is leeg.",
+      "deleteItemLabel": "Verwijder {name}"
     }
   },
   "boards": {

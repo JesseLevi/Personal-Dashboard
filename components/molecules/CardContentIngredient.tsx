@@ -121,13 +121,16 @@ export function CardContentIngredient({
           className="absolute inset-y-0 right-0 flex items-center"
           style={{ transform: `translateX(${offset + REVEAL_PX}px)` }}
         >
+          {/* #177: keyboard-focusable unconditionally (no tabIndex/aria-hidden
+              gating) -- Tab reveals the row the same way a pointer drag does,
+              via the shared `open` state. See design/notes/CardContentIngredient.md. */}
           <Button
             variant="destructive"
             icon="Trash"
             aria-label={deleteLabel}
-            tabIndex={open ? 0 : -1}
-            aria-hidden={!open}
             onClick={onDelete}
+            onFocus={() => setOpen(true)}
+            onBlur={() => setOpen(false)}
           />
         </div>
         {/* Inline `transform`: a live drag offset, not a design value —
