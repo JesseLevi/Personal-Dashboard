@@ -42,3 +42,12 @@ export const toggleShoppingListItemSchema = z.object({
 export const deleteShoppingListItemSchema = z.object({
   id: z.uuid(),
 });
+
+// #178: the Recepten -> Boodschappenlijst hand-off. `targetPortions` mirrors
+// createRecipeSchema/updateRecipeSchema's own `servings` validation
+// (`z.int().positive()`, lib/recipes/schemas.ts) -- the same "portion count"
+// concept, just supplied by the caller at send time instead of stored.
+export const sendRecipeToShoppingListSchema = z.object({
+  recipeId: z.uuid(),
+  targetPortions: z.int().positive(),
+});

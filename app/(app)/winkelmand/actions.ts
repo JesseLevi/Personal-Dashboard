@@ -5,9 +5,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import { nextPosition } from "@/lib/boards/positioning";
+import { getRecipeWithIngredientsAndSteps } from "@/lib/recipes/queries";
+import { buildShoppingListLines } from "@/lib/shopping/send-to-list";
 import {
   addShoppingListItemSchema,
   deleteShoppingListItemSchema,
+  sendRecipeToShoppingListSchema,
   toggleShoppingListItemSchema,
 } from "@/lib/shopping/schemas";
 import type { ActionResult, ShoppingListItemRow } from "@/lib/shopping/types";
@@ -173,5 +176,61 @@ export async function clearShoppingList(): Promise<ActionResult> {
   }
 
   revalidatePath("/winkelmand");
+  return { success: true, data: undefined };
+}
+
+/**
+ * The Recepten -> Boodschappenlijst hand-off (#178, ticket #29 / Architecture
+ * §4.2's own rule): scaling happens here, at send time, in the app layer --
+ * `shopping_list_items` never carries a servings factor. Loads the recipe
+ * server-side via `getRecipeWithIngredientsAndSteps` (already ownership-
+ * filtered the same way every other query in this codebase is, RLS plus an
+ * explicit `user_id` check -- see that function's own doc comment), scales +
+ * merges via the pure `buildShoppingListLines` (lib/shopping/send-to-list.ts,
+ * which reuses `scaleIngredientRows` rather than reimplementing the
+ * arithmetic), then appends the resulting lines after the user's existing
+ * items -- `nextPosition` chained across the batch, same "append at the end"
+ * shape `addShoppingListItem` already uses, just called once per line so
+ * each new row gets its own increasing position instead of colliding on one.
+ * `recipe_id` is set on every inserted row for provenance (the migration's
+ * own `on delete set null` FK, #175).
+ */
+export async function sendRecipeToShoppingList(input: unknown): Promise<ActionResult> {
+  const parsed = sendRecipeToShoppingListSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const supabase = await createSupabaseServerClient();
+  const auth = await requireUserId(supabase);
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  const recipe = await getRecipeWithIngredientsAndSteps(parsed.data.recipeId);
+  if (!recipe) return { success: false, error: "not-found" };
+
+  const lines = buildShoppingListLines(recipe.ingredients, recipe.servings, parsed.data.targetPortions);
+  if (lines.length === 0) return { success: true, data: undefined };
+
+  let last = await lastShoppingListItemPosition(supabase, auth.userId);
+  const rows = lines.map((line) => {
+    const position = nextPosition(last, null);
+    last = position;
+    return {
+      user_id: auth.userId,
+      name: line.name,
+      quantity: line.quantity,
+      unit: line.unit,
+      section: null,
+      recipe_id: recipe.id,
+      position,
+    };
+  });
+
+  const { error: insertError } = await supabase.from("shopping_list_items").insert(rows);
+  if (insertError) {
+    logDbError("sendRecipeToShoppingList", insertError);
+    return { success: false, error: "generic" };
+  }
+
+  revalidatePath("/winkelmand");
+  revalidatePath(`/recepten/${recipe.id}`);
   return { success: true, data: undefined };
 }

@@ -29,6 +29,7 @@ import {
   updateRecipe,
   uploadRecipeThumbnail,
 } from "../actions";
+import { sendRecipeToShoppingList } from "../../winkelmand/actions";
 
 // #127/#160 recipe detail route body — V2 Figma "Recept/Mobile" (3997:14737)
 // / "Recept/Desktop" (3997:15171), NutritionalData row 3997:15948/3997:15543,
@@ -95,6 +96,11 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
   const [deleteConfirming, setDeleteConfirming] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  // #178: own transition, independent of handleDelete's -- sending to the
+  // list and deleting the recipe are mutually exclusive user actions
+  // rendered in different branches below, so sharing one pending flag would
+  // only couple their disabled states for no reason.
+  const [sendPending, startSendTransition] = useTransition();
 
   // Same click-outside-closes convention as TeDoenHeader.tsx's board-
   // switcher/sort dropdowns — reused for the mobile Ellipsis overflow menu.
@@ -120,6 +126,16 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
         return;
       }
       router.push("/recepten");
+    });
+  }
+
+  // #178: sends the whole recipe, scaled to the page's current session
+  // `portions` (#128/#160 -- display-only, never `recipe.servings` itself).
+  // No success/failure feedback is rendered -- see
+  // docs/open-questions.md#winkelmand-send-no-success-feedback.
+  function handleSendToList() {
+    startSendTransition(async () => {
+      await sendRecipeToShoppingList({ recipeId: recipe.id, targetPortions: portions });
     });
   }
 
@@ -198,9 +214,9 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
           </div>
         ) : (
           <div className="flex flex-wrap items-center justify-end gap-4">
-            {/* Rendered, deliberately non-functional in Phase 4 — #29 (Phase
-                5) wires a real handler. See design/notes/RecipeDetailPage.md. */}
-            <Button icon="ShoppingBasket" disabled>
+            {/* #178 wires the real handler -- see
+                design/notes/RecipeDetailPage.md's "Voeg toe aan mand" entry. */}
+            <Button icon="ShoppingBasket" onClick={handleSendToList} disabled={sendPending}>
               {t("addToBasketLabel")}
             </Button>
 

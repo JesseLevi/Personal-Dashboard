@@ -14,9 +14,13 @@ Built #127. Fetched all nodes live via `mcp__figma__get_figma_data` before writi
 
 Figma's header row (`3778:5430`/`3778:5587`) has no `<h1>` slot at all (back-arrow left, a buttons row right); the recipe title renders separately, centered, below the hero image. Reusing `PageHeader` (title-left/actions-right) would have imposed a shape this screen doesn't have. Built as a plain `flex justify-between` row instead.
 
-## "Voeg toe aan mand" — rendered, disabled
+## "Voeg toe aan mand" — real handler since #178
 
-Binding user decision (2026-07-29): rendered at both breakpoints, `disabled`, no click handler. `#29` (Phase 5) wires it; Phase 4 builds no `shopping_list_items` and no write path. Flagged in the PR so a reviewer doesn't read the empty handler as an omission.
+Phase 4 (#127) shipped it rendered-but-`disabled` (binding user decision 2026-07-29) since no `shopping_list_items`/write path existed yet. **#178 (Phase 5 slice 4) wires it for real**, unchanged geometry/label: `onClick` calls `handleSendToList`, which sends `{ recipeId: recipe.id, targetPortions: portions }` to `sendRecipeToShoppingList` (`app/(app)/winkelmand/actions.ts`) — the page's own session `portions` state (#128/#160, display-only), never `recipe.servings`. A dedicated `useTransition` (`sendPending`) disables the button while the action is in flight, kept separate from `handleDelete`'s own `isPending` since the two actions render in different branches and have no reason to share one pending flag.
+
+The action loads the recipe server-side (ownership via `getRecipeWithIngredientsAndSteps`'s existing RLS + `user_id` filter, never service_role), scales+merges via the new pure `lib/shopping/send-to-list.ts` (`buildShoppingListLines`, reusing `scaleIngredientRows` — no arithmetic reimplemented), and inserts the resulting lines with `recipe_id` set for provenance, appended after the user's existing Winkelmand items.
+
+**No success/confirmation feedback and no ingredient-subset picker** — both are Figma/Vision.md gaps, not omissions: `docs/open-questions.md#winkelmand-send-no-success-feedback` / `#winkelmand-send-no-subset-picker`. Whole-recipe send only.
 
 ## No category tags — deliberate, not an omission
 
