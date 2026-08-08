@@ -29,12 +29,14 @@ export interface ImageUploadFieldProps {
 
 /**
  * Selecteer-afbeelding field for the recipe add/edit flow: a real
- * `<input type="file">`, layered transparently over the `InputField` atom so
- * the atom's own hover/active/focus states (`:focus-within`) keep working
- * unmodified. `accept` is image-only so mobile browsers already surface
- * their native "Photos/Files" chooser -- the ticket's "prefer Photos/Files
- * picker, dropdown as fallback" is satisfied by the OS picker itself, no
- * custom dropdown was built (none exists in the fetched node).
+ * `<input type="file">`, layered transparently over the `InputField` atom.
+ * `accept` is image-only so mobile browsers already surface their native
+ * "Photos/Files" chooser -- no custom dropdown was built (none in Figma).
+ * #166: the file input is `peer` + rendered first, and `InputField`'s
+ * `boxClassName` carries matching `peer-hover:`/`peer-active:`/
+ * `peer-focus:` variants -- see design/notes/ImageUploadField.md for why
+ * (the two elements are siblings, so the atom's own hover/active/focus
+ * states never fired without this).
  */
 export function ImageUploadField({
   id,
@@ -56,6 +58,17 @@ export function ImageUploadField({
 
   return (
     <div className={clsx("relative", className)}>
+      {/* Renders before InputField -- `peer` requires a later sibling; z-10 controls the visual stack independently. */}
+      <input
+        id={id}
+        type="file"
+        name={name}
+        accept={ACCEPTED_MIME_TYPES}
+        disabled={disabled}
+        aria-label={ariaLabel}
+        onChange={handleChange}
+        className="peer absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+      />
       <InputField
         leadingIcon="Image"
         trailingIcon="Plus"
@@ -65,16 +78,7 @@ export function ImageUploadField({
         tabIndex={-1}
         aria-hidden="true"
         disabled={disabled}
-      />
-      <input
-        id={id}
-        type="file"
-        name={name}
-        accept={ACCEPTED_MIME_TYPES}
-        disabled={disabled}
-        aria-label={ariaLabel}
-        onChange={handleChange}
-        className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+        boxClassName="peer-hover:border-border-hover peer-active:border-border-input-active peer-focus:border-border-selected"
       />
     </div>
   );

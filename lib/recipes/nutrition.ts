@@ -24,12 +24,11 @@
 // unlinked ingredient (or a `per_100ml` row, ADR-0013 §4) still resolves to
 // EMPTY_NUTRIENTS, so its macros render "?" -- expected, not a bug.
 //
-// -- Fibre is imported and computed but not displayed (ADR-0013 §3) ------
-// `fiberGPer100g`/`fiberG` exist end-to-end here for the same reason the
-// other four nutrients do -- one shared calculation layer, one set of
-// null-propagation rules -- but no UI reads `fiberG` yet: Figma's
-// NutritionalData row draws six buttons and none of them is fibre
-// (docs/open-questions.md#nutrition-fiber-has-no-figma-button).
+// -- Fibre (#166) ----------------------------------------------------------
+// `fiberGPer100g`/`fiberG` are computed the same way as the other four
+// nutrients -- one shared calculation layer, one set of null-propagation
+// rules. Figma's NutritionalData row gained a sixth button (`Icon/Leafy-
+// green`, node 4025:11826) in #166; `NutritionalDataRow.tsx` now renders it.
 
 import {
   convert,

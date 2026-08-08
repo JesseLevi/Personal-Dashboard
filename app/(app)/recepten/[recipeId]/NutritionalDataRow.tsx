@@ -8,10 +8,11 @@ import type { IconName } from "@/components/atoms/Icon";
 import { formatQuantity } from "@/lib/recipes/units";
 
 // #160 — Figma "NutritionalData" (3997:15948 mobile / 3997:15543 desktop), a
-// plain FRAME of six Button/Default pills under the recipe title, not a
+// plain FRAME of Button/Default pills under the recipe title, not a
 // fetched Figma component — same page-level-composition, no-figma-map-entry
-// precedent as RecipeDetailPage.tsx's own Header/Knoppen rows. Full
-// reasoning: design/notes/RecipeDetailPage.md.
+// precedent as RecipeDetailPage.tsx's own Header/Knoppen rows. #166 added a
+// seventh pill (fibre, node 4025:11826). Full reasoning:
+// design/notes/RecipeDetailPage.md.
 
 export interface NutritionalDataRowProps {
   timeMinutes: number | null;
@@ -19,10 +20,12 @@ export interface NutritionalDataRowProps {
   carbsG: number | null;
   proteinG: number | null;
   fatG: number | null;
+  /** #166 — grams of dietary fibre, computed the same way as the other four macros (lib/recipes/nutrition.ts). `null` renders "?", same as any other unresolved macro. */
+  fiberG: number | null;
   servings: number;
 }
 
-type NutritionKey = "time" | "calories" | "carbs" | "protein" | "fat";
+type NutritionKey = "time" | "calories" | "carbs" | "protein" | "fat" | "fiber";
 
 export function NutritionalDataRow({
   timeMinutes,
@@ -30,6 +33,7 @@ export function NutritionalDataRow({
   carbsG,
   proteinG,
   fatG,
+  fiberG,
   servings,
 }: NutritionalDataRowProps) {
   const t = useTranslations("components.recipeDetailPage.nutrition");
@@ -51,7 +55,7 @@ export function NutritionalDataRow({
   }, [openKey]);
 
   // "When number is unknown show: ?" (Dev Mode annotation on 3997:15950,
-  // stated to apply to all five buttons this function formats) — never a
+  // stated to apply to all five/six buttons this function formats) — never a
   // fabricated 0. A `null` here means genuinely unresolvable (unlinked
   // ingredient, unconvertible unit, or a per_100ml reference row, ADR-0013
   // §4) — see lib/recipes/nutrition.ts.
@@ -59,11 +63,20 @@ export function NutritionalDataRow({
     return value === null ? t("unknownValue") : formatQuantity(value, unit);
   }
 
+  // #166: macronutrients render as whole numbers in the UI — rounded here,
+  // display-layer only (lib/recipes/nutrition.ts's own stored/summed values
+  // stay full precision; only NutritionalDataRow's rendering rounds). `null`
+  // still short-circuits to formatValue's own "?", never `Math.round(null)`.
+  function formatMacro(value: number | null, unit: string): string {
+    return formatValue(value === null ? null : Math.round(value), unit);
+  }
+
   // Order/icons match the fetched node exactly (Timer, Flame, Wheat,
-  // BicepsFlexed, Droplet) — each opens a dropdown naming the abbreviated
-  // figure's full word (annotations on 3997:15949-3997:15953). `isNevoData`
-  // marks the four macro dropdowns that must carry ADR-0013 §2's mandatory
-  // attribution — Time excluded, since recipes.time_minutes isn't NEVO data.
+  // BicepsFlexed, Droplet, LeafyGreen — fibre added #166, node 4025:11826) —
+  // each opens a dropdown naming the abbreviated figure's full word
+  // (annotations on 3997:15949-3997:15953 / 4025:11826). `isNevoData` marks
+  // the macro dropdowns that must carry ADR-0013 §2's mandatory attribution
+  // — Time excluded, since recipes.time_minutes isn't NEVO data.
   const items: { key: NutritionKey; icon: IconName; value: string; fullLabel: string; isNevoData: boolean }[] = [
     {
       key: "time",
@@ -75,29 +88,36 @@ export function NutritionalDataRow({
     {
       key: "calories",
       icon: "Flame",
-      value: formatValue(kcal, t("caloriesUnit")),
+      value: formatMacro(kcal, t("caloriesUnit")),
       fullLabel: t("caloriesLabel"),
       isNevoData: true,
     },
     {
       key: "carbs",
       icon: "Wheat",
-      value: formatValue(carbsG, t("carbsUnit")),
+      value: formatMacro(carbsG, t("carbsUnit")),
       fullLabel: t("carbsLabel"),
       isNevoData: true,
     },
     {
       key: "protein",
       icon: "BicepsFlexed",
-      value: formatValue(proteinG, t("proteinUnit")),
+      value: formatMacro(proteinG, t("proteinUnit")),
       fullLabel: t("proteinLabel"),
       isNevoData: true,
     },
     {
       key: "fat",
       icon: "Droplet",
-      value: formatValue(fatG, t("fatUnit")),
+      value: formatMacro(fatG, t("fatUnit")),
       fullLabel: t("fatLabel"),
+      isNevoData: true,
+    },
+    {
+      key: "fiber",
+      icon: "LeafyGreen",
+      value: formatMacro(fiberG, t("fiberUnit")),
+      fullLabel: t("fiberLabel"),
       isNevoData: true,
     },
   ];

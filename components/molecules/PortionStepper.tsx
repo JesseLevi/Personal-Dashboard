@@ -4,15 +4,11 @@ import { Button } from "../atoms/Button";
 
 /**
  * Molecule/Portion-stepper — two icon-only `Atom/Button` instances (Style=Filled,
- * measured 40x40, `bg-surface-raised`/`rounded-lg`) flanking a `text-xl/semibold`
- * portion count. Figma draws `Icon/Plus` on BOTH sides; the left button renders
- * `Minus` instead — a deliberate deviation, not a guess. Full measurements,
- * ticket history and the deviation record: `design/notes/PortionStepper.md`.
- * Presentational only (Server Component) — `label`/`decrementLabel`/
- * `incrementLabel` arrive pre-translated, same idiom as
- * `CardContentIngredient`'s `deleteLabel`. `min` (#153) clamps the decrement
- * target and disables the decrement Button at the floor — see
- * design/notes/PortionStepper.md for why this lives here, not in the caller.
+ * measured 40x40) flanking a `text-xl/semibold` portion count; left renders
+ * `Minus` though Figma draws `Icon/Plus` twice (deliberate deviation). #166
+ * adds an `Atom/Input-field`-matching bordered box (hover/active/focus-within,
+ * same tokens) — ticket-instructed, no Figma source of its own. `min` (#153)
+ * clamps/disables the decrement floor. Full history: design/notes/PortionStepper.md.
  */
 export interface PortionStepperProps {
   /** Current portion count (Figma TEXT "6 personen") — caller-owned state. */
@@ -41,7 +37,12 @@ export function PortionStepper({
 }: PortionStepperProps) {
   const atMin = portions <= min;
   return (
-    <div className={clsx("inline-flex items-center gap-6", className)}>
+    <div
+      className={clsx(
+        "inline-flex items-center gap-6 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-hover active:border-border-input-active focus-within:border-border-selected",
+        className,
+      )}
+    >
       <Button
         icon="Minus"
         aria-label={decrementLabel}

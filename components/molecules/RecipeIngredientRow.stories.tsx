@@ -33,7 +33,8 @@ export const Labelled = () => (
   />
 );
 
-// Rows 2/3: unlabelled (Figma `Title: false`) — same fields, no label row.
+// Rows 2/3: unlabelled (Figma `Title: false`) — same fields, no label row,
+// plus the trailing delete Button (#166) every non-first row carries.
 export const Unlabelled = () => (
   <RecipeIngredientRow
     id="story-row-2"
@@ -50,6 +51,8 @@ export const Unlabelled = () => (
     unitPlaceholder="Kies eenheid"
     unitOptions={UNIT_OPTIONS}
     onUnitChange={() => {}}
+    onRemove={() => {}}
+    removeLabel="Verwijder ingrediënt"
   />
 );
 

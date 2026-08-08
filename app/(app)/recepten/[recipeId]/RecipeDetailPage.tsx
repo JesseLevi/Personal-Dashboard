@@ -283,6 +283,7 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
           carbsG={nutritionPerPerson.carbsG}
           proteinG={nutritionPerPerson.proteinG}
           fatG={nutritionPerPerson.fatG}
+          fiberG={nutritionPerPerson.fiberG}
           servings={portions}
         />
       </div>
@@ -291,7 +292,7 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
         {ingredientGroups.map((group, groupIndex) => (
           <Card
             key={group.groupLabel ?? "__ungrouped"}
-            title={group.groupLabel ?? undefined}
+            title={group.groupLabel ?? t("ingredientsDefaultTitle")}
             className="md:flex-1"
             settings={
               // #160: Personen/Eenheid apply to the whole recipe, not one

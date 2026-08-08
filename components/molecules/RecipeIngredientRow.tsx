@@ -1,17 +1,16 @@
 import clsx from "clsx";
+import { Button } from "../atoms/Button";
 import { InputField } from "../atoms/InputField";
 import type { UnitCode } from "@/lib/recipes/units";
 
 /**
  * Molecule/RecipeIngredientRow — #126's ingredient row: three `Input-field`
- * instances side by side (name/quantity/unit), matching Figma's "Rij" frame
- * (`3777:2926`/`3717:2930`/`3717:2934`). Not itself a fetched Figma
- * component (a "Rij" is three separate instances, never one named
- * component) — no `figma-map.json` entry, per the ticket's own instruction.
- * Name is read-only (opens #131's `IngredientSearchPanel` on click, per its
- * Dev Mode annotation); quantity is free numeric entry; unit uses
- * `InputField`'s `options` (select) variant (#149) — genuinely labelless and
- * closed on rows 2/3 now, unlike the `Dropdown` this replaced. Full
+ * instances side by side (name/quantity/unit), matching Figma's "Rij" frame.
+ * Not itself a fetched Figma component — no `figma-map.json` entry, per the
+ * ticket's own instruction. Name opens #131's `IngredientSearchPanel`;
+ * quantity is free numeric entry; unit uses `InputField`'s `options` variant
+ * (#149). `onRemove` (#166) adds a trailing destructive `Trash` Button,
+ * matching node 4025:10610 — every row but the first carries one. Full
  * reasoning: `design/notes/RecipeIngredientRow.md`.
  */
 export interface RecipeIngredientRowProps {
@@ -32,6 +31,10 @@ export interface RecipeIngredientRowProps {
   unitPlaceholder: string;
   unitOptions: { code: UnitCode; label: string }[];
   onUnitChange: (unit: UnitCode) => void;
+  /** Removes this row (#166) — omit to hide the trailing delete Button (Figma's row 1 has none). Renders only when both this and `removeLabel` are given (checked independently at render, not via a discriminated union — RecipePanel.tsx's own conditional spread doesn't preserve one across a `.map()`), so a caller that forgets `removeLabel` silently gets no button rather than a Button with no accessible name. */
+  onRemove?: () => void;
+  /** Accessible name for the delete Button — required alongside `onRemove` for the button to render at all (see `onRemove`'s own doc comment). */
+  removeLabel?: string;
   className?: string;
 }
 
@@ -51,6 +54,8 @@ export function RecipeIngredientRow({
   unitPlaceholder,
   unitOptions,
   onUnitChange,
+  onRemove,
+  removeLabel,
   className,
 }: RecipeIngredientRowProps) {
   const selectOptions = unitOptions.map((option) => ({ value: option.code, label: option.label }));
@@ -129,6 +134,19 @@ export function RecipeIngredientRow({
           />
         )}
       </div>
+      {/* Two independent truthiness checks, not one — `onRemove`/`removeLabel`
+          are destructured out of a discriminated union, and TypeScript does
+          not re-correlate two separately-destructured bindings from the
+          same branch, so checking only `onRemove` would leave `removeLabel`
+          typed `string | undefined` here. */}
+      {onRemove && removeLabel && (
+        <Button
+          variant="destructive"
+          icon="Trash"
+          aria-label={removeLabel}
+          onClick={onRemove}
+        />
+      )}
     </div>
   );
 }

@@ -237,6 +237,13 @@ export function RecipePanel({
     setIngredients((current) => [...current, emptyIngredientRow()]);
   }
 
+  // #166: never offered on row 1 (Figma's labelled row has no delete Button
+  // — see RecipeIngredientRow's own doc comment), so this never empties the
+  // list entirely.
+  function handleRemoveIngredientRow(localId: string) {
+    setIngredients((current) => current.filter((row) => row.localId !== localId));
+  }
+
   function handleAddStepRow() {
     setSteps((current) => [...current, emptyStepRow()]);
   }
@@ -513,6 +520,12 @@ export function RecipePanel({
                 unitPlaceholder={t("fields.ingredientUnitPlaceholder")}
                 unitOptions={unitOptions}
                 onUnitChange={(unit) => updateIngredientRow(row.localId, { unit })}
+                {...(index > 0
+                  ? {
+                      onRemove: () => handleRemoveIngredientRow(row.localId),
+                      removeLabel: t("fields.removeIngredientLabel"),
+                    }
+                  : {})}
               />
             </div>
           ))}

@@ -20,6 +20,7 @@ import { Icon, type IconName } from "./Icon";
  * `:focus-within` (this atom's own interpretation, flagged for design
  * confirmation); `border-input-active` diverges from Button/Outline on
  * purpose — docs/open-questions.md#button-vs-input-active-border.
+ * `boxClassName` (#166) — see its own doc comment below.
  */
 type InputFieldSharedProps = {
   /** Figma `Leading-icon` — icon rendered before the input. */
@@ -30,6 +31,18 @@ type InputFieldSharedProps = {
   button?: ReactNode;
   /** Merged onto the outermost wrapper; the inner control keeps its own classes. */
   className?: string;
+  /**
+   * Merged onto the bordered interactive box (the div carrying
+   * `hover:border-border-hover`/`active:border-border-input-active`/
+   * `focus-within:border-border-selected`) — narrow escape hatch for a
+   * composed molecule whose REAL focusable control isn't a descendant of
+   * this box (e.g. `ImageUploadField`'s real `<input type="file">` sits
+   * beside a decorative, `aria-hidden` `InputField`, so this box's own
+   * `:hover`/`:active`/`:focus-within` never fire — the sibling input can't
+   * trigger them). Pass `peer-*` variants keyed off a `peer` class on that
+   * sibling instead (#166). Every other caller leaves this unset.
+   */
+  boxClassName?: string;
 };
 
 type InputFieldSingleLineProps = InputFieldSharedProps &
@@ -81,6 +94,7 @@ export function InputField({
   trailingIcon,
   button,
   className,
+  boxClassName,
   multiline,
   options,
   placeholderOption,
@@ -112,6 +126,7 @@ export function InputField({
         className={clsx(
           "flex flex-row items-start justify-center gap-3 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-hover active:border-border-input-active focus-within:border-border-selected",
           multiline && (hasButtonRow ? "h-[124px]" : "h-36"),
+          boxClassName,
         )}
       >
         {/* self-stretch: only takes effect when the container has a fixed
