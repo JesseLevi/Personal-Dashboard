@@ -68,3 +68,13 @@ Re-fetched both nodes the ticket named: `3779:4939` ("Pull-up panel", desktop Ad
 ## #166 (2026-08-08) — comment-budget cleanup, no behaviour change
 
 `pnpm check:comment-budget` failed at 31% (62/197 comment lines, max 30%) — pre-existing since #159, not introduced by any #166 code change. Fixed by moving narrative prose already duplicated here (the trigger-ownership rejected-alternative writeup, the #108 rounded-corner browser investigation, the `gap-1`/self-stretch reasoning, the #112 trigger-row re-fetch finding) out of `Dropdown.tsx` entirely, leaving only short pointers back to this file at each site — no code, markup, or behaviour changed.
+
+## #166 round 2 (2026-08-08) — border states in labelled mode
+
+User feedback: *"Het dropdown input field component (zoals 'Categorie') heeft ook nog geen hover/active effect zoals andere input fields."* The panel had `border border-border` and no state ramp at all, so the Categorie field in the recipe create/edit panel sat visually dead next to every `InputField` beside it.
+
+The panel now carries `transition-colors hover:border-border-hover active:border-border-input-active focus-within:border-border-selected` — the identical class list and the identical tokens `InputField.tsx` uses, so the two field shapes share one ramp rather than growing a second, near-miss one. `border-input-active` (not Button/Outline's `border-active`) is deliberate: this is a field, and that split is the one `docs/open-questions.md#button-vs-input-active-border` already tracks.
+
+**Applied only when `label` is present.** Labelled Dropdown is a field; labelless Dropdown is a floating menu panel (`NutritionalDataRow`'s attribution popover, `PasAanPanel`'s unit menu, `TeDoenHeader`'s sort/board-switcher), where a hover border on the panel would fire whenever the pointer is anywhere inside it and fight the option rows' own hover feedback. The `label ? … : "gap-1"` branch already existed for the gap rule, so this added no new conditional.
+
+Measured in a real browser (Playwright against `pnpm ladle`, `dropdown--closed`, real mouse events with the 200ms transition allowed to settle, computed `border-top-color` compared against the resolved custom properties): rest `--color-border`, hover `--color-border-hover`, mousedown `--color-border-input-active`, Tab-to-trigger `--color-border-selected`. All four exact.

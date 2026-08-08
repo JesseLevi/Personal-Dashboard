@@ -140,22 +140,30 @@ export function RecipeIngredientRow({
           />
         )}
       </div>
-      {/* An invisible spacer matching InputField's own label block (text-base
-          font-semibold, gap-2 below) keeps the delete Button's top edge level
-          with the field boxes on row 1, which renders real labels above them. */}
-      <div className="flex shrink-0 flex-col gap-2">
+      {/* Figma's data rows are `alignItems: center` (node 4025:10818), so the
+          40px Button centres against the field BOX, not the whole column —
+          row 1 also stacks a label above it. `self-stretch` (overriding the
+          row's `items-start`) gives this column the row's full height, the
+          invisible spacer consumes exactly the label block InputField renders
+          (text-base font-semibold + the gap-2 below it), and `flex-1` leaves
+          the box's own height for `items-center` to centre in. Measured, not
+          assumed: hard-coding the box height gets it 1px off, since the box's
+          border-box includes its 1px border. */}
+      <div className="flex shrink-0 flex-col gap-2 self-stretch">
         {showLabels ? (
           <span aria-hidden="true" className="invisible text-base font-semibold">
             &nbsp;
           </span>
         ) : null}
-        <Button
-          variant="destructive"
-          icon="Trash"
-          aria-label={removeLabel}
-          onClick={onRemove}
-          disabled={removeDisabled}
-        />
+        <div className="flex flex-1 items-center">
+          <Button
+            variant="destructive"
+            icon="Trash"
+            aria-label={removeLabel}
+            onClick={onRemove}
+            disabled={removeDisabled}
+          />
+        </div>
       </div>
     </div>
   );
