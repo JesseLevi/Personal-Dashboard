@@ -1,5 +1,5 @@
 -- Phase 5 slice 1 (#175): shopping_list_items — the Boodschappenlijst /
--- Winkelmand's single table (Architecture §91). Conventions per
+-- Winkelmand's single table (Architecture §4.2). Conventions per
 -- Architecture §4.1 / ADR-0001 / ADR-0009, same house style as
 -- 20260720000001_profiles.sql / 20260730000002_recipe_schema.sql.
 --
@@ -11,7 +11,7 @@
 -- recipe_id is `on delete set null`, not `cascade`: it is a provenance link
 -- ("this item came from recipe X"), not an ownership relationship, so
 -- deleting a recipe must never silently empty someone's shopping list
--- (ticket #175, Architecture §91).
+-- (ticket #175, Architecture §4.2).
 --
 -- section is stored but rendered by no ticket in this phase: the Winkelmand
 -- design (Figma 4044:10838 / 4044:10830) draws one flat card of rows with no
@@ -55,7 +55,7 @@ create table public.shopping_list_items (
 );
 
 comment on table public.shopping_list_items is
-  'One row per Boodschappenlijst / Winkelmand line (Architecture §91). '
+  'One row per Boodschappenlijst / Winkelmand line (Architecture §4.2). '
   'recipe_id is a nullable provenance link (on delete set null, never '
   'cascade) -- deleting a recipe must never empty a shopping list. section '
   'is stored for future supermarket grouping but rendered by no ticket in '
