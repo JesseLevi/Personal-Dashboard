@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { Tag } from "@/components/atoms/Tag";
+import { AnimatedAddToBasketButton } from "@/components/molecules/AnimatedAddToBasketButton";
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
 import { CardContentStep } from "@/components/molecules/CardContentStep";
@@ -29,7 +30,7 @@ import {
   updateRecipe,
   uploadRecipeThumbnail,
 } from "../actions";
-import { sendRecipeToShoppingList } from "../../winkelmand/actions";
+import { addIngredientToShoppingList, sendRecipeToShoppingList } from "../../winkelmand/actions";
 
 // #127/#160 recipe detail route body — V2 Figma "Recept/Mobile" (3997:14737)
 // / "Recept/Desktop" (3997:15171), NutritionalData row 3997:15948/3997:15543,
@@ -139,6 +140,17 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
     });
   }
 
+  // #179 part 2: the per-row swipe-to-cart action -- one ingredient instead
+  // of the whole recipe, same session `portions`. Fire-and-forget, same as
+  // handleSendToList above -- the "Toegevoegd" animation plays
+  // optimistically regardless of the actual result, matching the already-
+  // accepted docs/open-questions.md#winkelmand-send-no-success-feedback gap
+  // rather than inventing failure UI this ticket doesn't ask for. See
+  // design/notes/AnimatedAddToBasketButton.md.
+  async function handleAddIngredientToCart(ingredientId: string) {
+    await addIngredientToShoppingList({ recipeId: recipe.id, ingredientId, targetPortions: portions });
+  }
+
   // #128/#160/#164/#157: one shared scaled-and-converted list feeds both the
   // ingredient cards and the per-step Tags below, so `portions`/`unitSystem`
   // each only get applied once per render (lib/recipes/scaling.ts composes
@@ -214,11 +226,16 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
           </div>
         ) : (
           <div className="flex flex-wrap items-center justify-end gap-4">
-            {/* #178 wires the real handler -- see
-                design/notes/RecipeDetailPage.md's "Voeg toe aan mand" entry. */}
-            <Button icon="ShoppingBasket" onClick={handleSendToList} disabled={sendPending}>
-              {t("addToBasketLabel")}
-            </Button>
+            {/* #178 wires the real handler; #179 adds the AddToBasket ->
+                Toegevoegd slide animation -- see
+                design/notes/RecipeDetailPage.md's "Voeg toe aan mand" entry
+                and design/notes/AnimatedAddToBasketButton.md. */}
+            <AnimatedAddToBasketButton
+              label={t("addToBasketLabel")}
+              addedLabel={t("addedToBasketLabel")}
+              onAddToBasket={handleSendToList}
+              disabled={sendPending}
+            />
 
             <div className="hidden items-center gap-5 md:flex">
               <Button variant="filled" icon="Pencil" onClick={() => setEditOpen(true)}>
@@ -331,6 +348,9 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
                 name={ingredient.name}
                 quantity={formatQuantityFraction(ingredient.quantity, ingredient.unit, tUnits(ingredient.unit))}
                 divider={index < group.ingredients.length - 1}
+                swipeAction="cart"
+                onAddToCart={() => handleAddIngredientToCart(ingredient.id)}
+                addToCartLabel={t("addIngredientToBasketLabel", { name: ingredient.name })}
               />
             ))}
           </Card>

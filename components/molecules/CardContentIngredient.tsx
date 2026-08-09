@@ -3,6 +3,7 @@
 // figma: node-id=3727:4021
 import clsx from "clsx";
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { AnimatedAddToBasketButton } from "./AnimatedAddToBasketButton";
 import { Button } from "../atoms/Button";
 import { Checkbox } from "../atoms/Checkbox";
 import { Tag } from "../atoms/Tag";
@@ -11,14 +12,14 @@ import { Tag } from "../atoms/Tag";
  * Molecule/Card-content/Ingredient — Figma component set "Card-content/Ingredient"
  * (node-id 3727:4021, Molecules section). `Checkbox` -> `checked?: boolean`.
  * `State=Active`'s press fill was removed in #166 (user instruction — no
- * hover/active animation on this row at all now). `State=Delete` (annotation
- * "When sliding") is a real drag gesture behind the opt-in `swipeToDelete`
- * prop, not a CSS pseudo-class or an always-on pill — "use client" follows
- * from that (#160); still unused by any live call site, deferred until the
- * winkelmand (#166, #29). `Tag` bool -> `quantity?: string`. `divider` ->
- * a plain unrounded rule rendered as this row's own sibling, never a
- * `border-b` on the rounded row itself (#166 — see the render's own
- * comment). Full detail: design/notes/CardContentIngredient.md.
+ * hover/active animation on this row at all now). `State=Delete`/`State=Cart`
+ * (annotation "When sliding" on both) are the same drag gesture revealing
+ * one of two actions, behind the opt-in `swipeAction` prop ("delete" |
+ * "cart") — not a CSS pseudo-class or an always-on pill; "use client"
+ * follows from that (#160, generalised #179). `Tag` bool -> `quantity?:
+ * string`. `divider` -> a plain unrounded rule rendered as this row's own
+ * sibling, never a `border-b` on the rounded row itself (#166 — see the
+ * render's own comment). Full detail: design/notes/CardContentIngredient.md.
  */
 export interface CardContentIngredientBaseProps {
   /** Ingredient name (Figma TEXT "Banana"). */
@@ -34,23 +35,39 @@ export interface CardContentIngredientBaseProps {
   className?: string;
 }
 
-/** `swipeToDelete` is an explicit opt-in (#160, user decision) for Figma's
- * `State=Delete`; `onDelete`/`deleteLabel` stay required together, same
- * discriminated-union idiom as `Button`'s icon-only `aria-label`. */
+/** `swipeAction` is an explicit opt-in (#160, generalised #179) for Figma's
+ * `State=Delete`/`State=Cart` — one shared drag gesture, two revealed
+ * actions. Each action's handler/label stay required together with it, same
+ * discriminated-union idiom as `Button`'s icon-only `aria-label`, so a
+ * caller cannot ask for a swipe without supplying its handler and
+ * accessible label. */
 export type CardContentIngredientProps =
   | (CardContentIngredientBaseProps & {
+      swipeAction?: undefined;
       onDelete?: undefined;
       deleteLabel?: never;
-      swipeToDelete?: undefined;
+      onAddToCart?: undefined;
+      addToCartLabel?: never;
     })
   | (CardContentIngredientBaseProps & {
+      swipeAction: "delete";
       onDelete: () => void;
       deleteLabel: string;
-      swipeToDelete: true;
+      onAddToCart?: undefined;
+      addToCartLabel?: never;
+    })
+  | (CardContentIngredientBaseProps & {
+      swipeAction: "cart";
+      onAddToCart: () => void;
+      addToCartLabel: string;
+      onDelete?: undefined;
+      deleteLabel?: never;
     });
 
-// Trash Button footprint (40px, design/notes/Button.md #75) + the fetched
-// node's 8px gap — the distance a fully-open swipe must translate.
+// Revealed-button footprint (40px, design/notes/Button.md #75 — both the
+// Trash Button and AnimatedAddToBasketButton's icon-only face compute to
+// the same 40x40, see design/notes/AnimatedAddToBasketButton.md) + the
+// fetched node's 8px gap — the distance a fully-open swipe must translate.
 const REVEAL_PX = 48;
 const OPEN_THRESHOLD_PX = REVEAL_PX / 2;
 // Pointer movement under this on release is a tap, not a drag.
@@ -63,7 +80,9 @@ export function CardContentIngredient({
   onCheckedToggle,
   onDelete,
   deleteLabel,
-  swipeToDelete,
+  onAddToCart,
+  addToCartLabel,
+  swipeAction,
   divider,
   className,
 }: CardContentIngredientProps) {
@@ -95,7 +114,7 @@ export function CardContentIngredient({
   // design/notes/CardContentIngredient.md.
   const dragging = useRef(false);
 
-  if (swipeToDelete) {
+  if (swipeAction) {
     const offset = Math.min(0, Math.max(-REVEAL_PX, (open ? -REVEAL_PX : 0) + dragPx));
 
     function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
@@ -119,6 +138,16 @@ export function CardContentIngredient({
       setOpen((open ? -REVEAL_PX : 0) + delta <= -OPEN_THRESHOLD_PX);
     }
 
+    // #177: keyboard-focusable unconditionally (no tabIndex/aria-hidden
+    // gating) -- Tab reveals the row the same way a pointer drag does, via
+    // the shared `open` state. Shared by both revealed actions below.
+    function handleFocus() {
+      setOpen(true);
+    }
+    function handleBlur() {
+      setOpen(false);
+    }
+
     // #166: divider moved off this rounded-3xl/overflow-hidden wrapper for
     // the same reason as the default row below — a lone `border-b` here
     // would curve at the bottom corners to follow `rounded-3xl`.
@@ -132,17 +161,27 @@ export function CardContentIngredient({
             className="absolute inset-y-0 right-0 flex items-center"
             style={{ transform: `translateX(${offset + REVEAL_PX}px)` }}
           >
-            {/* #177: keyboard-focusable unconditionally (no tabIndex/aria-hidden
-                gating) -- Tab reveals the row the same way a pointer drag does,
-                via the shared `open` state. See design/notes/CardContentIngredient.md. */}
-            <Button
-              variant="destructive"
-              icon="Trash"
-              aria-label={deleteLabel}
-              onClick={onDelete}
-              onFocus={() => setOpen(true)}
-              onBlur={() => setOpen(false)}
-            />
+            {/* #179: State=Cart's revealed Button is `filled`/basket, NOT
+                destructive/Trash -- verified against the fetched node
+                (4050:11613), not assumed from State=Delete's sibling. See
+                design/notes/CardContentIngredient.md. */}
+            {swipeAction === "delete" ? (
+              <Button
+                variant="destructive"
+                icon="Trash"
+                aria-label={deleteLabel}
+                onClick={onDelete}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+              />
+            ) : (
+              <AnimatedAddToBasketButton
+                aria-label={addToCartLabel}
+                onAddToBasket={onAddToCart}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+              />
+            )}
           </div>
           {/* Inline `transform`: a live drag offset, not a design value —
               Tailwind has no utility for it. See design/notes/CardContentIngredient.md. */}

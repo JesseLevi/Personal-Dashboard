@@ -85,7 +85,7 @@ Identical shape to `ReceptenBoard.md`: `page.tsx` fetches `ShoppingListItemWithG
 
 `WinkelmandList.tsx`'s `runAction()` is a smaller sibling of `ReceptenBoard.tsx`'s `handleMove`: snapshot-before, optimistic update, call the server action, revert + surface `shopping.errors.*` on failure, `pendingActions` (a ref *count*, same reasoning as `ReceptenBoard.tsx`'s `pendingMoves`) guards the `items` prop → `localItems` resync against a background revalidation clobbering an in-flight update. **Deliberately no `moveQueue`-style sequential chain**: `ReceptenBoard.tsx` serializes `moveRecipe` calls because each one computes `targetIndex` against sibling `position` values that a second, still-in-flight move could invalidate. Every action here (`toggleShoppingListItem`/`deleteShoppingListItem`/`clearShoppingList`) targets a row (or all rows) by `id` alone with no neighbour-relative math, so two concurrent calls can never race each other's computation — firing them independently is correct, not a shortcut.
 
-`swipeToDelete`/`onDelete`/`deleteLabel` are passed on every row — #177 is `swipeToDelete`'s first real UI consumer (built in #160, exercised only by a Ladle story until now).
+`swipeAction="delete"` (renamed from `swipeToDelete: true` in #179 part 2, when the prop generalised to also cover `State=Cart` — see `design/notes/CardContentIngredient.md`)/`onDelete`/`deleteLabel` are passed on every row — #177 is this gesture's first real UI consumer (built in #160, exercised only by a Ladle story until now).
 
 ## `deleteLabel` — per-row, not the generic ingredient string
 

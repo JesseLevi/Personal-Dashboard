@@ -6,8 +6,9 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import { nextPosition } from "@/lib/boards/positioning";
 import { getRecipeWithIngredientsAndSteps } from "@/lib/recipes/queries";
-import { buildShoppingListLines } from "@/lib/shopping/send-to-list";
+import { buildShoppingListLines, mergeSingleIngredientLine } from "@/lib/shopping/send-to-list";
 import {
+  addIngredientToShoppingListSchema,
   addShoppingListItemSchema,
   deleteShoppingListItemSchema,
   sendRecipeToShoppingListSchema,
@@ -238,5 +239,79 @@ export async function sendRecipeToShoppingList(input: unknown): Promise<ActionRe
 
   revalidatePath("/winkelmand");
   revalidatePath(`/recepten/${recipe.id}`);
+  return { success: true, data: undefined };
+}
+
+/**
+ * #179 part 2: the ReceptDetailPage ingredient row's swipe-to-cart action --
+ * a single ingredient rather than `sendRecipeToShoppingList`'s whole recipe,
+ * same scaling/provenance rules. Same ownership load (`getRecipeWithIngredientsAndSteps`,
+ * RLS + explicit `user_id`) as the whole-recipe send; the target ingredient
+ * is looked up in the already-loaded, already-ownership-checked recipe
+ * rather than queried again. Unlike the bulk send, this path also merges
+ * into an EXISTING `shopping_list_items` row (same name + same unit,
+ * `lib/shopping/send-to-list.ts`'s own rule, `mergeSingleIngredientLine`)
+ * rather than always inserting -- adding "Banaan" twice from two different
+ * recipes must sum onto one line, not create two.
+ */
+export async function addIngredientToShoppingList(input: unknown): Promise<ActionResult> {
+  const parsed = addIngredientToShoppingListSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const supabase = await createSupabaseServerClient();
+  const auth = await requireUserId(supabase);
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  const recipe = await getRecipeWithIngredientsAndSteps(parsed.data.recipeId);
+  if (!recipe) return { success: false, error: "not-found" };
+
+  const ingredient = recipe.ingredients.find((row) => row.id === parsed.data.ingredientId);
+  if (!ingredient) return { success: false, error: "not-found" };
+
+  const { data: existingRows, error: existingError } = await supabase
+    .from("shopping_list_items")
+    .select("id, name, quantity, unit")
+    .eq("user_id", auth.userId);
+  if (existingError) {
+    logDbError("addIngredientToShoppingList", existingError);
+    return { success: false, error: "generic" };
+  }
+
+  const merge = mergeSingleIngredientLine(
+    ingredient,
+    recipe.servings,
+    parsed.data.targetPortions,
+    existingRows ?? [],
+  );
+
+  if (merge.kind === "update") {
+    const { error } = await supabase
+      .from("shopping_list_items")
+      .update({ quantity: merge.quantity })
+      .eq("id", merge.id)
+      .eq("user_id", auth.userId);
+    if (error) {
+      logDbError("addIngredientToShoppingList", error);
+      return { success: false, error: "generic" };
+    }
+  } else {
+    const last = await lastShoppingListItemPosition(supabase, auth.userId);
+    const { error } = await supabase.from("shopping_list_items").insert({
+      user_id: auth.userId,
+      name: merge.line.name,
+      quantity: merge.line.quantity,
+      unit: merge.line.unit,
+      section: null,
+      recipe_id: recipe.id,
+      reference_ingredient_id: merge.line.referenceIngredientId ?? null,
+      position: nextPosition(last, null),
+    });
+    if (error) {
+      logDbError("addIngredientToShoppingList", error);
+      return { success: false, error: "generic" };
+    }
+  }
+
+  revalidatePath("/winkelmand");
   return { success: true, data: undefined };
 }

@@ -51,3 +51,12 @@ export const sendRecipeToShoppingListSchema = z.object({
   recipeId: z.uuid(),
   targetPortions: z.int().positive(),
 });
+
+// #179 part 2: the swipe-to-cart single-ingredient add -- same shape as
+// sendRecipeToShoppingListSchema plus which of the recipe's own
+// recipe_ingredients rows to send (a real FK to that table, not free text).
+export const addIngredientToShoppingListSchema = z.object({
+  recipeId: z.uuid(),
+  ingredientId: z.uuid(),
+  targetPortions: z.int().positive(),
+});

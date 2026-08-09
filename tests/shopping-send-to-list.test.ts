@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildShoppingListLines, type SendToListIngredient } from "../lib/shopping/send-to-list";
+import {
+  buildShoppingListLines,
+  mergeSingleIngredientLine,
+  type ExistingShoppingListLine,
+  type SendToListIngredient,
+} from "../lib/shopping/send-to-list";
 
 // Architecture §9 names portion scaling a high-value test target -- this is
 // the send-time heart of #178. lib/shopping/send-to-list.ts's own header
@@ -112,5 +117,107 @@ describe("buildShoppingListLines", () => {
     );
     expect(lines.map((line) => line.name)).toEqual(["Melk", "Bloem"]);
     expect(lines[0].quantity).toBe(300);
+  });
+});
+
+// #179 part 2: the swipe-to-cart single-ingredient add's own merge decision
+// (app/(app)/winkelmand/actions.ts's addIngredientToShoppingList) -- same
+// merge rule as buildShoppingListLines above, applied against rows that
+// already exist in the database instead of a second batch being merged with
+// itself.
+function existingLine(overrides: Partial<ExistingShoppingListLine>): ExistingShoppingListLine {
+  return {
+    id: "existing-1",
+    name: "Bloem",
+    quantity: 100,
+    unit: "gram",
+    ...overrides,
+  };
+}
+
+describe("mergeSingleIngredientLine", () => {
+  it("inserts a new line when no existing row matches", () => {
+    const result = mergeSingleIngredientLine(ingredient({ quantity: 100 }), 4, 4, []);
+    expect(result).toEqual({
+      kind: "insert",
+      line: { name: "Bloem", quantity: 100, unit: "gram", referenceIngredientId: undefined },
+    });
+  });
+
+  it("scales before deciding, same as the bulk path", () => {
+    const result = mergeSingleIngredientLine(ingredient({ quantity: 100 }), 4, 8, []);
+    expect(result).toEqual({
+      kind: "insert",
+      line: { name: "Bloem", quantity: 200, unit: "gram", referenceIngredientId: undefined },
+    });
+  });
+
+  it("updates an existing row's quantity on a same-name/same-unit match, summing", () => {
+    const result = mergeSingleIngredientLine(
+      ingredient({ name: "Bloem", quantity: 100, unit: "gram" }),
+      1,
+      1,
+      [existingLine({ id: "row-1", name: "Bloem", quantity: 50, unit: "gram" })],
+    );
+    expect(result).toEqual({ kind: "update", id: "row-1", quantity: 150 });
+  });
+
+  it("matches case-insensitively", () => {
+    const result = mergeSingleIngredientLine(
+      ingredient({ name: "bloem", quantity: 100, unit: "gram" }),
+      1,
+      1,
+      [existingLine({ id: "row-1", name: "Bloem", quantity: 50, unit: "gram" })],
+    );
+    expect(result).toEqual({ kind: "update", id: "row-1", quantity: 150 });
+  });
+
+  it("does NOT match the same name in a different unit -- inserts instead", () => {
+    const result = mergeSingleIngredientLine(
+      ingredient({ name: "Bloem", quantity: 1, unit: "cup" }),
+      1,
+      1,
+      [existingLine({ id: "row-1", name: "Bloem", quantity: 200, unit: "gram" })],
+    );
+    expect(result).toEqual({
+      kind: "insert",
+      line: { name: "Bloem", quantity: 1, unit: "cup", referenceIngredientId: undefined },
+    });
+  });
+
+  it("never matches an existing row with a null unit (a manually-typed item)", () => {
+    const result = mergeSingleIngredientLine(
+      ingredient({ name: "Melk", quantity: 200, unit: "milliliter" }),
+      1,
+      1,
+      [existingLine({ id: "row-1", name: "Melk", quantity: 100, unit: null })],
+    );
+    expect(result).toEqual({
+      kind: "insert",
+      line: { name: "Melk", quantity: 200, unit: "milliliter", referenceIngredientId: undefined },
+    });
+  });
+
+  it("keeps the numeric side when merging a null quantity with a known one", () => {
+    const result = mergeSingleIngredientLine(
+      ingredient({ name: "Zout", quantity: null, unit: "snufje" }),
+      1,
+      1,
+      [existingLine({ id: "row-1", name: "Zout", quantity: 2, unit: "snufje" })],
+    );
+    expect(result).toEqual({ kind: "update", id: "row-1", quantity: 2 });
+  });
+
+  it("carries the ingredient's referenceIngredientId through on insert", () => {
+    const result = mergeSingleIngredientLine(
+      ingredient({ name: "Bloem", quantity: 100, referenceIngredientId: "ref-1" }),
+      1,
+      1,
+      [],
+    );
+    expect(result).toEqual({
+      kind: "insert",
+      line: { name: "Bloem", quantity: 100, unit: "gram", referenceIngredientId: "ref-1" },
+    });
   });
 });

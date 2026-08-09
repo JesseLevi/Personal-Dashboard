@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  addIngredientToShoppingListSchema,
   addShoppingListItemSchema,
   deleteShoppingListItemSchema,
   toggleShoppingListItemSchema,
@@ -112,5 +113,55 @@ describe("deleteShoppingListItemSchema", () => {
 
   it("rejects a non-uuid id", () => {
     expect(deleteShoppingListItemSchema.safeParse({ id: "1" }).success).toBe(false);
+  });
+});
+
+// #179 part 2: the swipe-to-cart single-ingredient add.
+describe("addIngredientToShoppingListSchema", () => {
+  const uuid2 = "223e4567-e89b-12d3-a456-426614174001";
+
+  it("accepts a recipeId + ingredientId + positive targetPortions", () => {
+    const result = addIngredientToShoppingListSchema.safeParse({
+      recipeId: uuid,
+      ingredientId: uuid2,
+      targetPortions: 4,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a non-uuid recipeId or ingredientId", () => {
+    expect(
+      addIngredientToShoppingListSchema.safeParse({
+        recipeId: "not-a-uuid",
+        ingredientId: uuid2,
+        targetPortions: 4,
+      }).success,
+    ).toBe(false);
+    expect(
+      addIngredientToShoppingListSchema.safeParse({
+        recipeId: uuid,
+        ingredientId: "not-a-uuid",
+        targetPortions: 4,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a zero or negative targetPortions", () => {
+    for (const targetPortions of [0, -1]) {
+      expect(
+        addIngredientToShoppingListSchema.safeParse({
+          recipeId: uuid,
+          ingredientId: uuid2,
+          targetPortions,
+        }).success,
+      ).toBe(false);
+    }
+  });
+
+  it("rejects a missing targetPortions", () => {
+    expect(
+      addIngredientToShoppingListSchema.safeParse({ recipeId: uuid, ingredientId: uuid2 })
+        .success,
+    ).toBe(false);
   });
 });

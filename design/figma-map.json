@@ -34,6 +34,7 @@
   },
   "molecules_composed": {
     "$comment": "Not a distinct Figma component (no separate componentId) -- a specific Atom/Input-field (3705:4402) instance reused inside a page frame. nodeId points at that instance, per component/README's 'fetched node' convention.",
-    "Add recipi/Image-field": { "path": "components/molecules/ImageUploadField.tsx", "nodeId": "3968:11192" }
+    "Add recipi/Image-field": { "path": "components/molecules/ImageUploadField.tsx", "nodeId": "3968:11192" },
+    "AddToBasketAnimation": { "path": "components/molecules/AnimatedAddToBasketButton.tsx", "nodeId": "4051:12960" }
   }
 }

@@ -121,7 +121,8 @@
       }
     },
     "cardContentIngredient": {
-      "deleteLabel": "Delete ingredient"
+      "deleteLabel": "Delete ingredient",
+      "addToCartLabel": "Add ingredient to basket"
     },
     "portionStepper": {
       "count": "{count, plural, one {# person} other {# people}}",
@@ -341,6 +342,8 @@
     "recipeDetailPage": {
       "backLabel": "Back to recipes",
       "addToBasketLabel": "Add to basket",
+      "addedToBasketLabel": "Added",
+      "addIngredientToBasketLabel": "Add {name} to basket",
       "editLabel": "Edit",
       "deleteLabel": "Delete",
       "overflowMenuLabel": "More options",

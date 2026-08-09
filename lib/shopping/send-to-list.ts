@@ -53,6 +53,22 @@ export interface ShoppingListLine {
   referenceIngredientId?: string | null;
 }
 
+/** A row already stored in `shopping_list_items` -- the merge target for
+ * `mergeSingleIngredientLine` below. `unit` is nullable (a manually-typed
+ * item may carry none, #175/#176) unlike a recipe ingredient's own
+ * always-set `unit`; such a row can never match (`mergeKey` needs a real
+ * `UnitCode` on both sides), so it's simply excluded from the search. */
+export interface ExistingShoppingListLine {
+  id: string;
+  name: string;
+  quantity: number | null;
+  unit: UnitCode | null;
+}
+
+export type SingleItemMergeResult =
+  | { kind: "update"; id: string; quantity: number | null }
+  | { kind: "insert"; line: ShoppingListLine };
+
 function mergeKey(name: string, unit: UnitCode): string {
   // NUL separator, written as an escape and never as a raw byte: no
   // name/unit pair can collide across it (names are user text but never
@@ -103,4 +119,39 @@ export function buildShoppingListLines<T extends SendToListIngredient>(
   }
 
   return order.map((key) => byKey.get(key)!);
+}
+
+/**
+ * #179 part 2: the swipe-to-cart single-ingredient add (app/(app)/winkelmand/
+ * actions.ts's `addIngredientToShoppingList`). Scales one recipe ingredient
+ * to `targetPortions` (same `scaleIngredientRows` call `buildShoppingListLines`
+ * makes for a whole recipe, just given a one-element array) and applies this
+ * module's own same-name/same-unit merge rule -- but against rows that
+ * already exist in the database, not a second batch being merged with
+ * itself. A pure decision only: the caller (a Server Action, since this
+ * module stays Supabase-free) does the actual update-or-insert.
+ */
+export function mergeSingleIngredientLine<T extends SendToListIngredient>(
+  ingredient: T,
+  sourcePortions: number,
+  targetPortions: number,
+  existingLines: readonly ExistingShoppingListLine[],
+): SingleItemMergeResult {
+  const [scaled] = scaleIngredientRows([ingredient], sourcePortions, targetPortions);
+  const key = mergeKey(scaled.name, scaled.unit);
+  const match = existingLines.find(
+    (line) => line.unit !== null && mergeKey(line.name, line.unit) === key,
+  );
+  if (match) {
+    return { kind: "update", id: match.id, quantity: mergeQuantities(match.quantity, scaled.quantity) };
+  }
+  return {
+    kind: "insert",
+    line: {
+      name: scaled.name,
+      quantity: scaled.quantity,
+      unit: scaled.unit,
+      referenceIngredientId: scaled.referenceIngredientId,
+    },
+  };
 }

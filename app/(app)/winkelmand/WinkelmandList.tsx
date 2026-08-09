@@ -287,7 +287,7 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
                   checked={item.checked}
                   onCheckedToggle={() => handleToggle(item)}
                   divider={index < group.items.length - 1}
-                  swipeToDelete
+                  swipeAction="delete"
                   onDelete={() => handleDelete(item)}
                   deleteLabel={t("deleteItemLabel", { name: item.name })}
                 />
