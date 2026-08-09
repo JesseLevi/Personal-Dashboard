@@ -83,9 +83,16 @@
       "generic": "Er ging iets mis. Probeer het opnieuw."
     },
     "page": {
-      "clearAllLabel": "Alles verwijderen",
-      "emptyStateText": "Je winkelmand is leeg.",
-      "deleteItemLabel": "Verwijder {name}"
+      "clearAllLabel": "Verwijder alles",
+      "deleteItemLabel": "Verwijder {name}",
+      "sortLabel": "Sorteer",
+      "sortOptions": {
+        "recipe": "Recept",
+        "foodGroup": "Voedingsgroep"
+      },
+      "otherGroupLabel": "Overig",
+      "emptyStateTitle": "Winkelmand is leeg",
+      "emptyStateCta": "Ga naar recepten"
     }
   },
   "boards": {

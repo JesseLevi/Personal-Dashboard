@@ -188,12 +188,22 @@ async function nutritionInputsForIngredients(
 ): Promise<
   Map<
     string,
-    { nutrients: IngredientNutrients; unitMassGrams: number | null; kitchenUnitMasses: KitchenUnitMasses }
+    {
+      nutrients: IngredientNutrients;
+      unitMassGrams: number | null;
+      kitchenUnitMasses: KitchenUnitMasses;
+      referenceIngredientId: string | null;
+    }
   >
 > {
   const result = new Map<
     string,
-    { nutrients: IngredientNutrients; unitMassGrams: number | null; kitchenUnitMasses: KitchenUnitMasses }
+    {
+      nutrients: IngredientNutrients;
+      unitMassGrams: number | null;
+      kitchenUnitMasses: KitchenUnitMasses;
+      referenceIngredientId: string | null;
+    }
   >();
   const ingredientIds = [
     ...new Set(ingredients.map((row) => row.ingredient_id).filter((id): id is string => id !== null)),
@@ -329,6 +339,9 @@ async function nutritionInputsForIngredients(
       nutrients,
       unitMassGrams: mass.status === "resolved" ? mass.grams : null,
       kitchenUnitMasses,
+      // #179: same referenceIdByIngredientId lookup nutrients already used,
+      // exposed on the row rather than recomputed by a caller.
+      referenceIngredientId: referenceId,
     });
   }
 
@@ -400,6 +413,7 @@ export async function getRecipeWithIngredientsAndSteps(
           nutrients: EMPTY_NUTRIENTS,
           unitMassGrams: null,
           kitchenUnitMasses: EMPTY_KITCHEN_UNIT_MASSES,
+          referenceIngredientId: null,
         }),
       })),
     steps: [...recipe_steps]

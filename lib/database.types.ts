@@ -736,6 +736,11 @@ export interface Database {
       // #175 (Phase 5 slice 1): 20260808000001_shopping_list_items.sql.
       // unit reuses Database["public"]["Enums"]["recipe_unit"], nullable
       // (unlike recipe_ingredients.unit) — see that migration's file header.
+      //
+      // #179: reference_ingredient_id
+      // (20260809000001_shopping_list_items_reference_ingredient.sql) — a
+      // nullable link into reference.ingredients (NEVO food group), same
+      // provenance-not-ownership shape as recipe_id.
       shopping_list_items: {
         Row: {
           id: string;
@@ -746,6 +751,7 @@ export interface Database {
           checked: boolean;
           section: string | null;
           recipe_id: string | null;
+          reference_ingredient_id: string | null;
           position: number;
           created_at: string;
           updated_at: string;
@@ -759,6 +765,7 @@ export interface Database {
           checked?: boolean;
           section?: string | null;
           recipe_id?: string | null;
+          reference_ingredient_id?: string | null;
           position: number;
           created_at?: string;
           updated_at?: string;
@@ -772,6 +779,7 @@ export interface Database {
           checked?: boolean;
           section?: string | null;
           recipe_id?: string | null;
+          reference_ingredient_id?: string | null;
           position?: number;
           created_at?: string;
           updated_at?: string;
@@ -789,6 +797,13 @@ export interface Database {
             columns: ["recipe_id"];
             isOneToOne: false;
             referencedRelation: "recipes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "shopping_list_items_reference_ingredient_id_fkey";
+            columns: ["reference_ingredient_id"];
+            isOneToOne: false;
+            referencedRelation: "reference.ingredients";
             referencedColumns: ["id"];
           },
         ];

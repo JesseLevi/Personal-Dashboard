@@ -6,6 +6,20 @@ import type { Database } from "@/lib/database.types";
 
 export type ShoppingListItemRow = Database["public"]["Tables"]["shopping_list_items"]["Row"];
 
+// #179: the Winkelmand page's own read shape -- the base row plus the two
+// fields its Recept/Voedingsgroep grouping needs, resolved by
+// getShoppingListItems() in one batched round trip each (never per-row):
+// the source recipe's title (embedded via the existing recipe_id FK) and
+// the linked reference.ingredients row's bilingual food-group name. All
+// three are null wherever the underlying link is null (manually-added item,
+// no recipe, or no library match) -- WinkelmandList.tsx's own grouping
+// falls those rows into the shared "Overig"/"Other" group.
+export type ShoppingListItemWithGroupInfo = ShoppingListItemRow & {
+  recipeName: string | null;
+  categoryNl: string | null;
+  categoryEn: string | null;
+};
+
 // Every write action (app/(app)/winkelmand/actions.ts) returns one of these
 // instead of throwing or returning a bare string -- same shape and reasoning
 // as lib/recipes/types.ts's ActionResult/RecipesErrorCode. Deliberately

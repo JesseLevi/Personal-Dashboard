@@ -103,3 +103,15 @@ the five.
 Union is now 112 names.
 
 No open discrepancies remain.
+
+## #179 (2026-08-09) — `ArrowRight` added
+
+Winkelmand's empty-state CTA (`Ga naar recepten`, nodes `4049:11175`/
+`4049:11167`) draws a trailing `Icon/Arrow-right` (`4050:11532`) with no
+prior entry in `IconName`. Fetched directly: two vectors, a horizontal line
+(`x:5,y:12,width:14`, i.e. `M5 12h14`) and a chevron
+(`x:12,y:5,width:7,height:14`, i.e. `m12 5 7 7-7 7`) — an exact match for
+lucide's `ArrowRight` export, same mirrored-shape family as the already-
+verified `ArrowLeft`. No false friend.
+
+Union is now 113 names.

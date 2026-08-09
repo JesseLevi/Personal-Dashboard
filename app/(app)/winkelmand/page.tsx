@@ -13,12 +13,5 @@ export default async function WinkelmandPage() {
   const t = await getTranslations();
   const items = await getShoppingListItems();
 
-  return (
-    <WinkelmandList
-      items={items}
-      title={t("nav.shopping")}
-      clearAllLabel={t("shopping.page.clearAllLabel")}
-      emptyStateText={t("shopping.page.emptyStateText")}
-    />
-  );
+  return <WinkelmandList items={items} title={t("nav.shopping")} />;
 }

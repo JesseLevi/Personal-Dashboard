@@ -42,12 +42,15 @@ export interface SendToListIngredient {
   name: string;
   quantity: number | null;
   unit: UnitCode;
+  /** #179: `reference.ingredients.id`, for Voedingsgroep grouping on the Winkelmand page. Optional -- existing callers/tests that don't pass it behave exactly as before (see mergeKey's own first-seen-wins reasoning for `name`). */
+  referenceIngredientId?: string | null;
 }
 
 export interface ShoppingListLine {
   name: string;
   quantity: number | null;
   unit: UnitCode;
+  referenceIngredientId?: string | null;
 }
 
 function mergeKey(name: string, unit: UnitCode): string {
@@ -85,7 +88,14 @@ export function buildShoppingListLines<T extends SendToListIngredient>(
     const key = mergeKey(ingredient.name, ingredient.unit);
     const existing = byKey.get(key);
     if (!existing) {
-      byKey.set(key, { name: ingredient.name, quantity: ingredient.quantity, unit: ingredient.unit });
+      byKey.set(key, {
+        name: ingredient.name,
+        quantity: ingredient.quantity,
+        unit: ingredient.unit,
+        // First-seen wins, same rule as the displayed `name` above -- never
+        // overwritten on a later merge.
+        referenceIngredientId: ingredient.referenceIngredientId,
+      });
       order.push(key);
       continue;
     }

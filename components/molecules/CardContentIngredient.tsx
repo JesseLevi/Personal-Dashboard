@@ -88,18 +88,28 @@ export function CardContentIngredient({
   const [open, setOpen] = useState(false);
   const [dragPx, setDragPx] = useState(0);
   const dragStartX = useRef(0);
+  // #179: gates handlePointerMove to an actual drag. Touch only ever fires
+  // pointermove while a finger is down; a desktop mouse fires it on every
+  // hover too, with no button pressed — without this flag, hovering alone
+  // computed dragPx from a stale dragStartX and shifted the row. See
+  // design/notes/CardContentIngredient.md.
+  const dragging = useRef(false);
 
   if (swipeToDelete) {
     const offset = Math.min(0, Math.max(-REVEAL_PX, (open ? -REVEAL_PX : 0) + dragPx));
 
     function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
       dragStartX.current = event.clientX;
+      dragging.current = true;
       event.currentTarget.setPointerCapture(event.pointerId);
     }
     function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+      if (!dragging.current) return;
       setDragPx(event.clientX - dragStartX.current);
     }
     function handlePointerEnd() {
+      if (!dragging.current) return;
+      dragging.current = false;
       const delta = dragPx;
       setDragPx(0);
       if (Math.abs(delta) < TAP_SLOP_PX) {

@@ -193,7 +193,12 @@ export async function clearShoppingList(): Promise<ActionResult> {
  * shape `addShoppingListItem` already uses, just called once per line so
  * each new row gets its own increasing position instead of colliding on one.
  * `recipe_id` is set on every inserted row for provenance (the migration's
- * own `on delete set null` FK, #175).
+ * own `on delete set null` FK, #175) -- this is the source of #179's
+ * Recept-grouping on the Winkelmand page. `reference_ingredient_id` (#179)
+ * rides along the same merged lines, carried through from each recipe
+ * ingredient's own resolved `reference.ingredients` link (lib/recipes/
+ * queries.ts's `nutritionInputsForIngredients`) for #179's Voedingsgroep
+ * grouping -- null wherever that chain doesn't resolve.
  */
 export async function sendRecipeToShoppingList(input: unknown): Promise<ActionResult> {
   const parsed = sendRecipeToShoppingListSchema.safeParse(input);
@@ -220,6 +225,7 @@ export async function sendRecipeToShoppingList(input: unknown): Promise<ActionRe
       unit: line.unit,
       section: null,
       recipe_id: recipe.id,
+      reference_ingredient_id: line.referenceIngredientId ?? null,
       position,
     };
   });

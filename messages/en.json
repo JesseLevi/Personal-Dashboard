@@ -84,8 +84,15 @@
     },
     "page": {
       "clearAllLabel": "Delete all",
-      "emptyStateText": "Your shopping basket is empty.",
-      "deleteItemLabel": "Delete {name}"
+      "deleteItemLabel": "Delete {name}",
+      "sortLabel": "Sort",
+      "sortOptions": {
+        "recipe": "Recipe",
+        "foodGroup": "Food group"
+      },
+      "otherGroupLabel": "Other",
+      "emptyStateTitle": "Shopping basket is empty",
+      "emptyStateCta": "Go to recipes"
     }
   },
   "boards": {
