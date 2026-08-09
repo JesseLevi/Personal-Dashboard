@@ -17,7 +17,7 @@ import { Icon, type IconName } from "../atoms/Icon";
  * (icon-only cell) — same discriminated-union idiom as `Button`'s own
  * icon-only branch. Full reasoning: design/notes/AnimatedAddToBasketButton.md.
  */
-const REVERT_MS = 1500;
+const REVERT_MS = 2000;
 
 function Face({ icon, label, hidden }: { icon: IconName; label?: string; hidden: boolean }) {
   return (

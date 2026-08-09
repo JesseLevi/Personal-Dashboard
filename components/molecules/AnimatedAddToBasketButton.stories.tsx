@@ -5,7 +5,7 @@ import nl from "../../messages/nl.json";
 
 // Click any story below to see the slide animation (icon+label out to the
 // top, "Toegevoegd"/"Added" in from the bottom, small press-scale) -- it
-// reverts after 1.5s, see design/notes/AnimatedAddToBasketButton.md for that
+// reverts after 2s, see design/notes/AnimatedAddToBasketButton.md for that
 // judgement call. The static screenshot baseline only ever captures the
 // resting (pre-click) frame, same as CardContentIngredient's Active pill.
 export const Labelled = () => (
