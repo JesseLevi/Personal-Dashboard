@@ -312,6 +312,7 @@
         "ingredientQuantityPlaceholder": "0",
         "ingredientUnitLabel": "Unit",
         "ingredientUnitPlaceholder": "Pick a unit",
+        "removeIngredientLabel": "Remove ingredient",
         "stepLabel": "Step {number}",
         "stepPlaceholder": "Type an instruction here..."
       },
@@ -342,6 +343,7 @@
       "cancelLabel": "Cancel",
       "stepsTitle": "Steps",
       "settingsLabel": "Adjust",
+      "ingredientsDefaultTitle": "Ingredients",
       "nutrition": {
         "unknownValue": "?",
         "timeLabel": "Time",
@@ -354,6 +356,8 @@
         "proteinUnit": "gr.",
         "fatLabel": "Fat",
         "fatUnit": "gr.",
+        "fiberLabel": "Fibre",
+        "fiberUnit": "gr.",
         "servingsUnit": "pers.",
         "nevoAttribution": "Based on data from NEVO online version 2025/9.0, RIVM, Bilthoven and other data sources"
       }

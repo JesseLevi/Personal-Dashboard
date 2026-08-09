@@ -3,6 +3,7 @@ import {
   computeRecipeNutritionPerPerson,
   resolveIngredientGrams,
   resolveIngredientNutrition,
+  roundMacroForDisplay,
   type RecipeIngredientNutritionInput,
 } from "../lib/recipes/nutrition";
 import { InvalidPortionCountError } from "../lib/recipes/units";
@@ -211,5 +212,25 @@ describe("computeRecipeNutritionPerPerson", () => {
     expect(() => computeRecipeNutritionPerPerson([knownGram], Number.NaN)).toThrow(
       InvalidPortionCountError,
     );
+  });
+});
+
+// #166 -- the display layer rounds to whole numbers, but must never turn an
+// unresolvable macro into a fabricated figure. The null case is the one that
+// matters: ADR-0013 §4 requires "?" for unknown, and `Math.round(null)` would
+// silently render 0 instead.
+describe("roundMacroForDisplay", () => {
+  it("keeps null null, so the caller still renders \"?\" rather than a fabricated 0", () => {
+    expect(roundMacroForDisplay(null)).toBeNull();
+  });
+
+  it("rounds a fractional macro to a whole number", () => {
+    expect(roundMacroForDisplay(12.4)).toBe(12);
+    expect(roundMacroForDisplay(12.5)).toBe(13);
+    expect(roundMacroForDisplay(0)).toBe(0);
+  });
+
+  it("rounds a genuinely tiny but known macro to 0 -- a real measurement, distinct from null", () => {
+    expect(roundMacroForDisplay(0.4)).toBe(0);
   });
 });

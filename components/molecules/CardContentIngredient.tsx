@@ -10,12 +10,15 @@ import { Tag } from "../atoms/Tag";
 /**
  * Molecule/Card-content/Ingredient — Figma component set "Card-content/Ingredient"
  * (node-id 3727:4021, Molecules section). `Checkbox` -> `checked?: boolean`.
- * `State=Active` -> `:active` (no Hover in the node). `State=Delete`
- * (annotation "When sliding") is a real drag gesture behind the opt-in
- * `swipeToDelete` prop, not a CSS pseudo-class or an always-on pill — "use
- * client" follows from that (#160). `Tag` bool -> `quantity?: string`.
- * `divider` -> `border-b`, caller-supplied per row, omitted on the list's
- * last row. Full detail: design/notes/CardContentIngredient.md.
+ * `State=Active`'s press fill was removed in #166 (user instruction — no
+ * hover/active animation on this row at all now). `State=Delete` (annotation
+ * "When sliding") is a real drag gesture behind the opt-in `swipeToDelete`
+ * prop, not a CSS pseudo-class or an always-on pill — "use client" follows
+ * from that (#160); still unused by any live call site, deferred until the
+ * winkelmand (#166, #29). `Tag` bool -> `quantity?: string`. `divider` ->
+ * a plain unrounded rule rendered as this row's own sibling, never a
+ * `border-b` on the rounded row itself (#166 — see the render's own
+ * comment). Full detail: design/notes/CardContentIngredient.md.
  */
 export interface CardContentIngredientBaseProps {
   /** Ingredient name (Figma TEXT "Banana"). */
@@ -106,65 +109,67 @@ export function CardContentIngredient({
       setOpen((open ? -REVEAL_PX : 0) + delta <= -OPEN_THRESHOLD_PX);
     }
 
+    // #166: divider moved off this rounded-3xl/overflow-hidden wrapper for
+    // the same reason as the default row below — a lone `border-b` here
+    // would curve at the bottom corners to follow `rounded-3xl`.
     return (
-      <div
-        className={clsx(
-          "relative w-full overflow-hidden rounded-3xl",
-          divider && "border-b border-border-muted",
-          className,
-        )}
-      >
-        {/* Rests just past the right edge (clipped by overflow-hidden above)
-            and slides in lockstep with the content div below; `+REVEAL_PX`
-            cancels out at full-open. See design/notes/CardContentIngredient.md. */}
-        <div
-          className="absolute inset-y-0 right-0 flex items-center"
-          style={{ transform: `translateX(${offset + REVEAL_PX}px)` }}
-        >
-          {/* #177: keyboard-focusable unconditionally (no tabIndex/aria-hidden
-              gating) -- Tab reveals the row the same way a pointer drag does,
-              via the shared `open` state. See design/notes/CardContentIngredient.md. */}
-          <Button
-            variant="destructive"
-            icon="Trash"
-            aria-label={deleteLabel}
-            onClick={onDelete}
-            onFocus={() => setOpen(true)}
-            onBlur={() => setOpen(false)}
-          />
+      <div className={clsx("flex w-full flex-col", className)}>
+        <div className="relative w-full overflow-hidden rounded-3xl">
+          {/* Rests just past the right edge (clipped by overflow-hidden above)
+              and slides in lockstep with the content div below; `+REVEAL_PX`
+              cancels out at full-open. See design/notes/CardContentIngredient.md. */}
+          <div
+            className="absolute inset-y-0 right-0 flex items-center"
+            style={{ transform: `translateX(${offset + REVEAL_PX}px)` }}
+          >
+            {/* #177: keyboard-focusable unconditionally (no tabIndex/aria-hidden
+                gating) -- Tab reveals the row the same way a pointer drag does,
+                via the shared `open` state. See design/notes/CardContentIngredient.md. */}
+            <Button
+              variant="destructive"
+              icon="Trash"
+              aria-label={deleteLabel}
+              onClick={onDelete}
+              onFocus={() => setOpen(true)}
+              onBlur={() => setOpen(false)}
+            />
+          </div>
+          {/* Inline `transform`: a live drag offset, not a design value —
+              Tailwind has no utility for it. See design/notes/CardContentIngredient.md. */}
+          <div
+            className={clsx(
+              "relative flex w-full touch-pan-y items-center gap-5 rounded-3xl py-3 pl-3 transition-transform",
+              offset < 0 ? "bg-surface-raised pr-4" : "pr-3",
+            )}
+            style={{ transform: `translateX(${offset}px)` }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerEnd}
+            onPointerCancel={handlePointerEnd}
+          >
+            {content}
+            {checkbox}
+          </div>
         </div>
-        {/* Inline `transform`: a live drag offset, not a design value —
-            Tailwind has no utility for it. See design/notes/CardContentIngredient.md. */}
-        <div
-          className={clsx(
-            "relative flex w-full touch-pan-y items-center gap-5 rounded-3xl py-3 pl-3 transition-transform",
-            offset < 0 ? "bg-surface-raised pr-4" : "pr-3",
-          )}
-          style={{ transform: `translateX(${offset}px)` }}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerEnd}
-          onPointerCancel={handlePointerEnd}
-        >
-          {content}
-          {checkbox}
-        </div>
+        {divider && <div aria-hidden="true" className="h-px w-full bg-border-muted" />}
       </div>
     );
   }
 
-  // State=Default/Active: the row IS the pill, highlight only on :active
-  // (node has no Hover). pl-3/pr-3/py-3 stay split, not px-3 — see notes file.
+  // #166: hover/active press animation removed on user instruction (a
+  // second request after #67's Hover-only fix) — the row no longer changes
+  // fill/padding on `:active`. See design/notes/CardContentIngredient.md.
+  // Divider rendered as its own unrounded sibling, not `border-b` on this
+  // `rounded-3xl` row: a lone `border-bottom` on a fully-rounded box still
+  // curves at both bottom corners to follow `border-radius` (the #166 bug —
+  // "de border-bottom loopt rond") even with no fill of its own to round.
   return (
-    <div
-      className={clsx(
-        "flex w-full items-center gap-5 rounded-3xl pl-3 pr-3 py-3 transition-colors active:bg-surface-raised active:pr-4",
-        divider && "border-b border-border-muted",
-        className,
-      )}
-    >
-      {content}
-      {checkbox}
+    <div className={clsx("flex w-full flex-col", className)}>
+      <div className="flex w-full items-center gap-5 rounded-3xl pl-3 pr-3 py-3">
+        {content}
+        {checkbox}
+      </div>
+      {divider && <div aria-hidden="true" className="h-px w-full bg-border-muted" />}
     </div>
   );
 }

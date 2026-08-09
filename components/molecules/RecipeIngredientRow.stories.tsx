@@ -12,7 +12,9 @@ const UNIT_OPTIONS: { code: UnitCode; label: string }[] = [
   { code: "stuk", label: "Stuk" },
 ];
 
-// Row 1: labelled (Figma `Title: true`) — Item/Aantal/Eenheid field labels visible.
+// Row 1: labelled (Figma `Title: true`) — Item/Aantal/Eenheid field labels
+// visible, plus the delete Button every real data row carries (#166; the
+// invisible label-height spacer keeps it level with the boxes, not the labels).
 export const Labelled = () => (
   <RecipeIngredientRow
     id="story-row-1"
@@ -30,10 +32,13 @@ export const Labelled = () => (
     unitPlaceholder="Kies eenheid"
     unitOptions={UNIT_OPTIONS}
     onUnitChange={() => {}}
+    onRemove={() => {}}
+    removeLabel="Verwijder ingrediënt"
   />
 );
 
-// Rows 2/3: unlabelled (Figma `Title: false`) — same fields, no label row.
+// Rows 2/3: unlabelled (Figma `Title: false`) — same fields, no label row,
+// same trailing delete Button.
 export const Unlabelled = () => (
   <RecipeIngredientRow
     id="story-row-2"
@@ -50,11 +55,15 @@ export const Unlabelled = () => (
     unitPlaceholder="Kies eenheid"
     unitOptions={UNIT_OPTIONS}
     onUnitChange={() => {}}
+    onRemove={() => {}}
+    removeLabel="Verwijder ingrediënt"
   />
 );
 
 // Empty/new row — the build decision this ticket flags: no blank row is
 // drawn anywhere in Figma, unit defaults to "gram" rather than staying unset.
+// `removeDisabled` demonstrates the sole-remaining-row case (RecipePanel.tsx
+// disables rather than hides, matching PortionStepper's own min-floor precedent).
 export const Empty = () => (
   <RecipeIngredientRow
     id="story-row-empty"
@@ -72,6 +81,9 @@ export const Empty = () => (
     unitPlaceholder="Kies eenheid"
     unitOptions={UNIT_OPTIONS}
     onUnitChange={() => {}}
+    onRemove={() => {}}
+    removeLabel="Verwijder ingrediënt"
+    removeDisabled
   />
 );
 
@@ -99,6 +111,8 @@ export const Interactive = () => {
       unitPlaceholder="Kies eenheid"
       unitOptions={UNIT_OPTIONS}
       onUnitChange={setUnit}
+      onRemove={() => {}}
+      removeLabel="Verwijder ingrediënt"
     />
   );
 };

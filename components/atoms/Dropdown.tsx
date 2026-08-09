@@ -119,12 +119,16 @@ export function Dropdown({
 
       <div
         role={label ? undefined : "group"}
-        // `gap-1` (labelless only): with a label, the sub-list's own `pt-1`
-        // replaces it — a parent gap would survive the `0fr` collapse and
-        // leave dead space below the closed panel. See design/notes/Dropdown.md.
+        // `gap-1` labelless only — reasoning: design/notes/Dropdown.md.
+        // Border states are labelled-only on purpose: labelled Dropdown is a
+        // field (user-reported, must match InputField's own ramp and tokens),
+        // while labelless is a floating menu panel, where a hover border on
+        // the panel would fight its option rows' own hover.
         className={clsx(
           "flex w-full flex-col rounded-xl border border-border bg-surface p-1",
-          !label && "gap-1",
+          label
+            ? "transition-colors hover:border-border-hover active:border-border-input-active focus-within:border-border-selected"
+            : "gap-1",
         )}
         {...rest}
       >

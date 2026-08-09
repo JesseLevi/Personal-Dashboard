@@ -312,6 +312,7 @@
         "ingredientQuantityPlaceholder": "0",
         "ingredientUnitLabel": "Eenheid",
         "ingredientUnitPlaceholder": "Kies eenheid",
+        "removeIngredientLabel": "Verwijder ingrediënt",
         "stepLabel": "Stap {number}",
         "stepPlaceholder": "Typ hier een instructie..."
       },
@@ -342,6 +343,7 @@
       "cancelLabel": "Annuleren",
       "stepsTitle": "Stappen",
       "settingsLabel": "Pas aan",
+      "ingredientsDefaultTitle": "Ingrediënten",
       "nutrition": {
         "unknownValue": "?",
         "timeLabel": "Tijd",
@@ -354,6 +356,8 @@
         "proteinUnit": "gr.",
         "fatLabel": "Vet",
         "fatUnit": "gr.",
+        "fiberLabel": "Vezels",
+        "fiberUnit": "gr.",
         "servingsUnit": "pers.",
         "nevoAttribution": "Based on data from NEVO online version 2025/9.0, RIVM, Bilthoven and other data sources"
       }
