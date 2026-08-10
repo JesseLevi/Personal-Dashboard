@@ -1,6 +1,7 @@
 {
   "nav": {
-    "recipes": "Recipes"
+    "recipes": "Recipes",
+    "shopping": "Shopping basket"
   },
   "auth": {
     "greeting": {
@@ -74,6 +75,26 @@
       "naar_smaak": "to taste"
     }
   },
+  "shopping": {
+    "errors": {
+      "invalid-input": "Check the information you entered.",
+      "unauthenticated": "Sign in again to continue.",
+      "not-found": "This item no longer exists or isn't yours.",
+      "generic": "Something went wrong. Please try again."
+    },
+    "page": {
+      "clearAllLabel": "Delete all",
+      "deleteItemLabel": "Delete {name}",
+      "sortLabel": "Sort",
+      "sortOptions": {
+        "recipe": "Recipe",
+        "foodGroup": "Food group"
+      },
+      "otherGroupLabel": "Other",
+      "emptyStateTitle": "Shopping basket is empty",
+      "emptyStateCta": "Go to recipes"
+    }
+  },
   "boards": {
     "errors": {
       "invalid-input": "Check the information you entered.",
@@ -100,7 +121,8 @@
       }
     },
     "cardContentIngredient": {
-      "deleteLabel": "Delete ingredient"
+      "deleteLabel": "Delete ingredient",
+      "addToCartLabel": "Add ingredient to basket"
     },
     "portionStepper": {
       "count": "{count, plural, one {# person} other {# people}}",
@@ -298,6 +320,7 @@
         "ingredientQuantityPlaceholder": "0",
         "ingredientUnitLabel": "Unit",
         "ingredientUnitPlaceholder": "Pick a unit",
+        "removeIngredientLabel": "Remove ingredient",
         "stepLabel": "Step {number}",
         "stepPlaceholder": "Type an instruction here..."
       },
@@ -319,6 +342,8 @@
     "recipeDetailPage": {
       "backLabel": "Back to recipes",
       "addToBasketLabel": "Add to basket",
+      "addedToBasketLabel": "Added",
+      "addIngredientToBasketLabel": "Add {name} to basket",
       "editLabel": "Edit",
       "deleteLabel": "Delete",
       "overflowMenuLabel": "More options",
@@ -328,6 +353,7 @@
       "cancelLabel": "Cancel",
       "stepsTitle": "Steps",
       "settingsLabel": "Adjust",
+      "ingredientsDefaultTitle": "Ingredients",
       "nutrition": {
         "unknownValue": "?",
         "timeLabel": "Time",
@@ -340,6 +366,8 @@
         "proteinUnit": "gr.",
         "fatLabel": "Fat",
         "fatUnit": "gr.",
+        "fiberLabel": "Fibre",
+        "fiberUnit": "gr.",
         "servingsUnit": "pers.",
         "nevoAttribution": "Based on data from NEVO online version 2025/9.0, RIVM, Bilthoven and other data sources"
       }

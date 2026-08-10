@@ -74,7 +74,7 @@ export const AllContentTypes = () => (
           checked={false}
           onDelete={() => {}}
           deleteLabel={deleteLabel}
-          swipeToDelete
+          swipeAction="delete"
         />
       </div>
     </Card>

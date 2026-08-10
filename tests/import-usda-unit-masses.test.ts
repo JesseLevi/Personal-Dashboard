@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import {
   LIQUID_PAIRINGS,
   SOLID_PAIRINGS,
@@ -121,10 +121,19 @@ function loadBundle(dir: string): FoodTables {
 }
 
 describe.skipIf(!csvsPresent)("sanity gates against real resolved gram values (needs local usda/ CSVs)", () => {
-  const tables: Record<UsdaBundle, FoodTables> = {
-    fndds: loadBundle(FNDDS_DIR),
-    sr_legacy: loadBundle(SR_LEGACY_DIR),
-  };
+  // Loaded in beforeAll, not inline here: describe.skipIf still invokes this
+  // callback body during collection (to discover the nested `it`s below) even
+  // when the suite ends up skipped -- only hooks/its are actually skipped.
+  // loadBundle() reading the CSVs inline at this level ran unconditionally
+  // regardless of csvsPresent, throwing ENOENT and crashing the whole test
+  // file (0 tests collected) on any machine/CI without usda/ on disk.
+  let tables: Record<UsdaBundle, FoodTables>;
+  beforeAll(() => {
+    tables = {
+      fndds: loadBundle(FNDDS_DIR),
+      sr_legacy: loadBundle(SR_LEGACY_DIR),
+    };
+  });
 
   // NEVO 630 (popcorn, air-popped) pre-dates this test and this ticket's
   // prepared/canned follow-up -- its 8 g/cup is a real, correct

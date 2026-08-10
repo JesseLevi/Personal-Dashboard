@@ -42,6 +42,8 @@ export type RecipeIngredientWithNutrition = RecipeIngredientRow & {
   unitMassGrams: number | null;
   /** #164/#157 slice 2: grams-per-cup/tablespoon/teaspoon/fluid_ounce for this row's ingredient, resolved the same batched way as `unitMassGrams` (queries.ts's `kitchenUnitMassesFor`, no second round trip). Feeds `lib/recipes/kitchen-units.ts`'s `convertToKitchenUnit` -- all-null for an unlinked row, same "unknown, never zero" rule as `unitMassGrams`. */
   kitchenUnitMasses: KitchenUnitMasses;
+  /** #179: `public.ingredients.reference_id` for this row's linked ingredient -- the same lookup `nutrients` already resolves, exposed directly so `sendRecipeToShoppingList` (app/(app)/winkelmand/actions.ts) can carry it onto `shopping_list_items.reference_ingredient_id` without a second round trip. Null for an unlinked row. */
+  referenceIngredientId: string | null;
 };
 
 export type RecipeWithIngredientsAndSteps = RecipeRow & {

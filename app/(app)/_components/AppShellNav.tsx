@@ -12,12 +12,13 @@ import {
 } from "@/components/organisms/Sidebar";
 import { Button } from "@/components/atoms/Button";
 
-// Only the routes this ticket (#88) actually builds; ids without an entry
-// (notes, shopping, clothes, assistant) have no page yet, so clicking them
-// is a deliberate no-op rather than a link to a 404.
+// Only the routes a ticket has actually built (#88, #177); ids without an
+// entry (notes, clothes, assistant) have no page yet, so clicking them is a
+// deliberate no-op rather than a link to a 404.
 const ROUTES: Partial<Record<SidebarItemId, string>> = {
   todo: "/te-doen",
   recipes: "/recepten",
+  shopping: "/winkelmand",
 };
 
 function activeItemForPath(pathname: string): SidebarItemId | undefined {

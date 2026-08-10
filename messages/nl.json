@@ -1,6 +1,7 @@
 {
   "nav": {
-    "recipes": "Recepten"
+    "recipes": "Recepten",
+    "shopping": "Winkelmand"
   },
   "auth": {
     "greeting": {
@@ -74,6 +75,26 @@
       "naar_smaak": "naar smaak"
     }
   },
+  "shopping": {
+    "errors": {
+      "invalid-input": "Controleer de ingevoerde gegevens.",
+      "unauthenticated": "Log opnieuw in om door te gaan.",
+      "not-found": "Dit onderdeel bestaat niet (meer) of is niet van jou.",
+      "generic": "Er ging iets mis. Probeer het opnieuw."
+    },
+    "page": {
+      "clearAllLabel": "Verwijder alles",
+      "deleteItemLabel": "Verwijder {name}",
+      "sortLabel": "Sorteer",
+      "sortOptions": {
+        "recipe": "Recept",
+        "foodGroup": "Voedingsgroep"
+      },
+      "otherGroupLabel": "Overig",
+      "emptyStateTitle": "Winkelmand is leeg",
+      "emptyStateCta": "Ga naar recepten"
+    }
+  },
   "boards": {
     "errors": {
       "invalid-input": "Controleer de ingevoerde gegevens.",
@@ -100,7 +121,8 @@
       }
     },
     "cardContentIngredient": {
-      "deleteLabel": "Ingrediënt verwijderen"
+      "deleteLabel": "Ingrediënt verwijderen",
+      "addToCartLabel": "Voeg ingrediënt toe aan mand"
     },
     "portionStepper": {
       "count": "{count, plural, one {# persoon} other {# personen}}",
@@ -298,6 +320,7 @@
         "ingredientQuantityPlaceholder": "0",
         "ingredientUnitLabel": "Eenheid",
         "ingredientUnitPlaceholder": "Kies eenheid",
+        "removeIngredientLabel": "Verwijder ingrediënt",
         "stepLabel": "Stap {number}",
         "stepPlaceholder": "Typ hier een instructie..."
       },
@@ -319,6 +342,8 @@
     "recipeDetailPage": {
       "backLabel": "Terug naar recepten",
       "addToBasketLabel": "Voeg toe aan mand",
+      "addedToBasketLabel": "Toegevoegd",
+      "addIngredientToBasketLabel": "Voeg {name} toe aan mand",
       "editLabel": "Bewerken",
       "deleteLabel": "Verwijderen",
       "overflowMenuLabel": "Meer opties",
@@ -328,6 +353,7 @@
       "cancelLabel": "Annuleren",
       "stepsTitle": "Stappen",
       "settingsLabel": "Pas aan",
+      "ingredientsDefaultTitle": "Ingrediënten",
       "nutrition": {
         "unknownValue": "?",
         "timeLabel": "Tijd",
@@ -340,6 +366,8 @@
         "proteinUnit": "gr.",
         "fatLabel": "Vet",
         "fatUnit": "gr.",
+        "fiberLabel": "Vezels",
+        "fiberUnit": "gr.",
         "servingsUnit": "pers.",
         "nevoAttribution": "Based on data from NEVO online version 2025/9.0, RIVM, Bilthoven and other data sources"
       }

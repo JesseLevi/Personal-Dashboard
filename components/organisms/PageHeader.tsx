@@ -14,7 +14,8 @@ import type { ReactNode } from "react";
  * is a sibling of Carousel, not a wrapper around it — the sticky behaviour
  * itself is this codebase's own call, applied to every caller. `bg-surface-
  * muted` (matching `main`'s own background) keeps scrolling cards from
- * showing through underneath it. See design/notes/PageHeader.md.
+ * showing through underneath it. `z-10` (#179): a stacking-context fix, not
+ * cosmetic — see design/notes/PageHeader.md.
  */
 export interface PageHeaderProps {
   title: string;
@@ -29,7 +30,7 @@ export function PageHeader({ title, titleAdornments, actions, className }: PageH
   return (
     <header
       className={clsx(
-        "sticky top-0 flex items-center justify-between bg-surface-muted pr-4 md:pr-32",
+        "sticky top-0 z-10 flex items-center justify-between bg-surface-muted pr-4 md:pr-32",
         className,
       )}
     >

@@ -1,8 +1,10 @@
 // Hand-maintained to match supabase/migrations/*.sql (#91, #119, #130, #149,
-// #161). This dev machine has no Docker/standalone Supabase CLI, so `pnpm
-// db:types` (which shells out to `supabase gen types typescript --local
-// --schema public,reference`) cannot run here — CI must regenerate this
-// file against the real local stack and confirm it matches.
+// #161, #175). This dev machine has no Docker/standalone Supabase CLI, so
+// `pnpm db:types` (which shells out to `supabase gen types typescript
+// --local --schema public,reference`) cannot run here — CI must regenerate
+// this file against the real local stack and confirm it matches.
+//
+// #175: shopping_list_items (20260808000001_shopping_list_items.sql).
 //
 // #161: reference.ingredients gains fiber_g_per_100g, nutrient_basis,
 // category_nl/category_en and loses category (ADR-0013, executed by
@@ -727,6 +729,81 @@ export interface Database {
             columns: ["tag_id"];
             isOneToOne: false;
             referencedRelation: "tags";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      // #175 (Phase 5 slice 1): 20260808000001_shopping_list_items.sql.
+      // unit reuses Database["public"]["Enums"]["recipe_unit"], nullable
+      // (unlike recipe_ingredients.unit) — see that migration's file header.
+      //
+      // #179: reference_ingredient_id
+      // (20260809000001_shopping_list_items_reference_ingredient.sql) — a
+      // nullable link into reference.ingredients (NEVO food group), same
+      // provenance-not-ownership shape as recipe_id.
+      shopping_list_items: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          quantity: number | null;
+          unit: Database["public"]["Enums"]["recipe_unit"] | null;
+          checked: boolean;
+          section: string | null;
+          recipe_id: string | null;
+          reference_ingredient_id: string | null;
+          position: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          quantity?: number | null;
+          unit?: Database["public"]["Enums"]["recipe_unit"] | null;
+          checked?: boolean;
+          section?: string | null;
+          recipe_id?: string | null;
+          reference_ingredient_id?: string | null;
+          position: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          quantity?: number | null;
+          unit?: Database["public"]["Enums"]["recipe_unit"] | null;
+          checked?: boolean;
+          section?: string | null;
+          recipe_id?: string | null;
+          reference_ingredient_id?: string | null;
+          position?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "shopping_list_items_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "shopping_list_items_recipe_id_fkey";
+            columns: ["recipe_id"];
+            isOneToOne: false;
+            referencedRelation: "recipes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "shopping_list_items_reference_ingredient_id_fkey";
+            columns: ["reference_ingredient_id"];
+            isOneToOne: false;
+            referencedRelation: "reference.ingredients";
             referencedColumns: ["id"];
           },
         ];
