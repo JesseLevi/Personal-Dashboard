@@ -84,7 +84,7 @@
       "generic": "Something went wrong. Please try again."
     },
     "page": {
-      "clearAllLabel": "Delete all",
+      "clearAllLabel": "Empty basket",
       "deleteItemLabel": "Delete {name}",
       "sortLabel": "Sort",
       "sortOptions": {

@@ -84,7 +84,7 @@
       "generic": "Er ging iets mis. Probeer het opnieuw."
     },
     "page": {
-      "clearAllLabel": "Verwijder alles",
+      "clearAllLabel": "Leeg mand",
       "deleteItemLabel": "Verwijder {name}",
       "sortLabel": "Sorteer",
       "sortOptions": {
