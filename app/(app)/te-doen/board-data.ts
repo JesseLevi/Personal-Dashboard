@@ -10,6 +10,15 @@ import type { BoardRow, BoardWithColumns } from "@/lib/boards/types";
 // falls back to the favourite, same "favourite = default" behaviour
 // design/notes/TeDoenBoard.md already documented pre-#95, just reachable from
 // two routes now instead of one.
+//
+// #170: with an explicit `boardId`, `getBoardWithColumns(boardId)` doesn't
+// depend on `boards` at all — only the *fallback* (stale/foreign id, or no
+// id) does, since it needs the boards list to compute the favourite. So the
+// two only run in `Promise.all()` when `boardId` is given; the no-id path
+// stays sequential (favouriteId can't be known before `boards` resolves) and
+// so does the fallback fetch itself. #168 made this safe to parallelize:
+// both queries now share one cache()'d getAuthenticatedUserId() resolution
+// instead of each paying their own auth round trip.
 
 export interface TeDoenPageData {
   boards: BoardRow[];
@@ -26,14 +35,24 @@ export async function loadTeDoenPageData(
   // posture as getBoardWithColumns's own boardId guard.
   const sort = sortParam && isSortOption(sortParam) ? sortParam : null;
 
-  const boards = await getBoardsForUser();
+  let boards: BoardRow[];
+  let board: BoardWithColumns | null;
+
+  if (boardId) {
+    [boards, board] = await Promise.all([getBoardsForUser(), getBoardWithColumns(boardId)]);
+  } else {
+    boards = await getBoardsForUser();
+    board = null;
+  }
+
   if (boards.length === 0) return { boards, board: null, sort };
 
   const favoriteId = boards.find((b) => b.is_favorite)?.id ?? boards[0].id;
-  const targetId = boardId ?? favoriteId;
 
-  let board = await getBoardWithColumns(targetId);
-  if (!board && boardId) {
+  // No id, or `boardId` didn't resolve to one of this user's boards — both
+  // land on the favourite, and both must wait for `boards` first, so this
+  // leg stays sequential.
+  if (!boardId || !board) {
     board = await getBoardWithColumns(favoriteId);
   }
 

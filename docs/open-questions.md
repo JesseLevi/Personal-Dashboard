@@ -18,6 +18,10 @@ Figma MCP returns resolved hex only, never variable names, so every semantic tok
 
 No Figma dark frames exist for any component, so every `dark` value in `design/tokens.json` is this codebase's own pick. Two known consequences: `priority-urgent-bg-hover` and `-active` both resolve to red-950, making destructive states invisible; and `Atom/Button`'s White variant reads lighter on Hover than on Active, backwards from light mode. Only Ladle sets `data-theme` — an app-level theme switch is still an open architectural decision.
 
+### loading-skeleton-undesigned
+
+No Figma frame shows a loading/skeleton state for any page (Te-doen, Recepten, recipe detail) — Dev Mode has no "loading" variant on any of the fetched board/board-column nodes. #170's `loading.tsx`/`<Suspense>` fallbacks (`app/(app)/_components/PageSkeleton.tsx`) therefore reuse the real `CardContainer`/`Card` shells as-is (semantic tokens only, `animate-pulse` on a plain placeholder bar) rather than drawing a bespoke skeleton look. Needs a real frame from design if a more considered loading state is ever wanted.
+
 ### button-vs-input-active-border
 
 Hover and Selected were reconciled by #68 (both stone-500 / stone-400, shared tokens). **Active still diverges**: Input-field is stone-600, Button/Outline stone-800 — confirmed side by side in one fetch, a deliberate pixel difference, not a stale node. `border-input-active` therefore stays under its own name. Don't guess: re-fetch both nodes and compare exact hex. Also unresolved: Selected → `:focus-within` (Input-field) / `aria-pressed` (Button) are each atom's own reading of Figma's state *names*, not something Figma asserts.

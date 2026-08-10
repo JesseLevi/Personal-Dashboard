@@ -1,4 +1,12 @@
 {
+  "common": {
+    "loading": "Laden...",
+    "errorBoundary": {
+      "title": "Er ging iets mis",
+      "body": "Er ging iets mis bij het laden van deze pagina. Probeer het opnieuw.",
+      "retryLabel": "Opnieuw proberen"
+    }
+  },
   "nav": {
     "recipes": "Recepten",
     "shopping": "Winkelmand"
