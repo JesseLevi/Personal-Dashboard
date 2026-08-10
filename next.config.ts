@@ -5,6 +5,15 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
   experimental: {
+    // #173: Next's documented default for lucide-react's ~1500-icon barrel.
+    // Measured before/after here: no production bundle-size change, because
+    // lucide-react already declares sideEffects:false and ships one ESM
+    // module per icon, so standard tree-shaking already dropped everything
+    // components/atoms/Icon.tsx doesn't import. Kept anyway — Next's own
+    // docs recommend it for this package and it isn't harmful — but the
+    // real fix if lucide-react ever regresses this lives in
+    // design/notes/Icon.md, not here.
+    optimizePackageImports: ["lucide-react"],
     serverActions: {
       // lib/recipes/thumbnail-validation.ts's MAX_THUMBNAIL_BYTES allows
       // 10 MiB thumbnails (#174: raised from 5 MiB now that uploads are

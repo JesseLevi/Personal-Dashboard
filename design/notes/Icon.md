@@ -115,3 +115,37 @@ lucide's `ArrowRight` export, same mirrored-shape family as the already-
 verified `ArrowLeft`. No false friend.
 
 Union is now 113 names.
+
+## #173 (2026-08-10) — `optimizePackageImports: ["lucide-react"]` measured, no effect
+
+Added per the ticket, alongside `vercel.json`'s `regions: ["fra1"]`. (The
+ticket's third item, trimming `NextIntlClientProvider`'s message payload,
+was measured at 367 bytes/page and dropped by user decision — see #173.)
+The ticket flagged a real risk: this file's `ICONS` record imports ~120
+named exports up front, which could defeat Next's `optimizePackageImports`
+transform if it forced the whole barrel into the bundle regardless.
+
+Measured before/after with `pnpm build` on a clean `.next` (never two builds
+against the same `.next` concurrently, output always captured to a file and
+read back — never piped through `grep`, which would report `grep`'s exit
+code instead of the build's):
+
+- First Load JS shared-by-all chunk: 102 kB before and after (unchanged).
+- The chunk that actually contains lucide code
+  (`.next/static/chunks/389-*.js`, found via `grep -l "BicepsFlexed"` across
+  `.next/static/chunks/*.js`): 13508 bytes before, 13508 bytes after —
+  byte-for-byte identical, same content hash.
+- Per-route `First Load JS` deltas were all within Next's 3-significant-digit
+  rounding noise (e.g. `/recepten/[recipeId]` 4.84 kB → 4.82 kB).
+
+Root cause: `lucide-react@1.25.0` ships `"sideEffects": false` in its own
+`package.json` and one ES module per icon. Both before and after this
+change, webpack's standard production tree-shaking already drops every
+icon this file doesn't import — `optimizePackageImports` exists to help
+packages that lack that (barrel files with side effects, or where the
+bundler can't statically resolve named exports), which isn't this package's
+situation. The flag is harmless and left in per the ticket (it still helps
+dev-mode cold start and is Next's documented default for this exact
+package), but it does not reduce the production bundle here. This is not
+the "tree-shaking fails" case the ticket anticipated — nothing failed, there
+was just nothing left to shake — so no follow-up ticket was opened.
