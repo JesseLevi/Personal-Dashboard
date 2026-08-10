@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
-import { InvalidNeighborOrderError, nextPosition } from "@/lib/boards/positioning";
+import { nextPosition } from "@/lib/boards/positioning";
 import { searchIngredientLibrary } from "@/lib/recipes/queries";
 import {
   uploadRecipeThumbnail as uploadRecipeThumbnailToStorage,
@@ -41,9 +41,16 @@ import type { Database } from "@/lib/database.types";
 //      this ticket's version of that check);
 //   3. returns a typed ActionResult instead of throwing, so the UI can look
 //      up `recipes.errors.${error}` in the message catalog.
-// revalidatePath("/recepten") runs on every successful category/recipe
-// write, mirroring te-doen's single-route revalidation (no per-category
-// route segment exists yet).
+// revalidatePath("/recepten", "layout") runs on every successful
+// category/recipe write except moveRecipe: the category board and
+// /recepten/[recipeId] both read through this layout, and the "layout" type
+// argument (#169) is required for a bare "/recepten" call to also match that
+// dynamic child segment — Next.js only does exact-path matching without it,
+// so /recepten/[recipeId] previously got no server refresh from these
+// actions at all. moveRecipe has no revalidatePath call, mirroring
+// te-doen/actions.ts's moveCard (see that file's header comment for the
+// full "the client already updates optimistically, don't bundle an RSC
+// re-render onto the drag response" reasoning, #169).
 //
 // Location (ticket decision c): app/(app)/recepten/actions.ts, colocated
 // with the route exactly like app/(app)/te-doen/actions.ts — the ticket
@@ -217,7 +224,7 @@ export async function createCategory(
     return { success: false, error: "generic" };
   }
 
-  revalidatePath("/recepten");
+  revalidatePath("/recepten", "layout");
   return { success: true, data };
 }
 
@@ -247,7 +254,7 @@ export async function updateCategory(input: unknown): Promise<ActionResult> {
   }
   if (!data) return { success: false, error: "not-found" };
 
-  revalidatePath("/recepten");
+  revalidatePath("/recepten", "layout");
   return { success: true, data: undefined };
 }
 
@@ -276,7 +283,7 @@ export async function deleteCategory(input: unknown): Promise<ActionResult> {
   }
   if (!data) return { success: false, error: "not-found" };
 
-  revalidatePath("/recepten");
+  revalidatePath("/recepten", "layout");
   return { success: true, data: undefined };
 }
 
@@ -348,7 +355,7 @@ export async function createRecipe(input: unknown): Promise<ActionResult<RecipeR
     return { success: false, error: "generic" };
   }
 
-  revalidatePath("/recepten");
+  revalidatePath("/recepten", "layout");
   return { success: true, data: recipe };
 }
 
@@ -439,7 +446,7 @@ export async function updateRecipe(input: unknown): Promise<ActionResult> {
     if (!result.ok) return { success: false, error: "generic" };
   }
 
-  revalidatePath("/recepten");
+  revalidatePath("/recepten", "layout");
   return { success: true, data: undefined };
 }
 
@@ -487,21 +494,22 @@ export async function deleteRecipe(input: unknown): Promise<ActionResult> {
     await deleteRecipeThumbnail(existing.thumbnail_path);
   }
 
-  revalidatePath("/recepten");
+  revalidatePath("/recepten", "layout");
   return { success: true, data: undefined };
 }
 
-// #155: drag & drop persistence, modelled directly on te-doen/actions.ts's
-// moveCard -- same targetIndex-to-neighbor-positions resolution
-// (lib/boards/positioning.ts's nextPosition), same typed-result/logged-code
-// shape. One real difference from moveCard: recipe_categories have no
-// parent entity the way board_columns has boards, so there is no
-// "column-mismatch" case (a column can name a real column on a *different*
-// board of the same user; a category is never on anything but this user's
-// account) -- verifying the target category's own ownership below (not just
-// relying on RLS) is already the complete version of that check here,
-// where moveCard needs a second lookup (the column's board_id) to get the
-// same guarantee.
+// #155/#169: drag & drop persistence, modelled directly on
+// te-doen/actions.ts's moveCard -- same "one RPC round trip" shape
+// (20260810000002_move_rpcs.sql's public.move_recipe mirrors move_card's
+// ownership guard + neighbor-midpoint computation, ported from
+// lib/boards/positioning.ts's nextPosition). One real difference from
+// moveCard, unchanged by #169: recipe_categories have no parent entity the
+// way board_columns has boards, so there is no "column-mismatch" case (a
+// category is never on anything but this user's account) -- move_recipe's
+// own ownership guard on both the recipe and the target category is already
+// the complete version of that check, where move_card needs a second lookup
+// (the column's board_id) to get the same guarantee. No revalidatePath call
+// here, same reasoning as moveCard (see this file's header comment).
 export async function moveRecipe(
   input: unknown,
 ): Promise<ActionResult<{ position: number }>> {
@@ -513,68 +521,23 @@ export async function moveRecipe(
   const auth = await requireUserId(supabase);
   if ("error" in auth) return { success: false, error: auth.error };
 
-  const { data: recipe, error: recipeError } = await supabase
-    .from("recipes")
-    .select("id")
-    .eq("id", recipeId)
-    .eq("user_id", auth.userId)
-    .maybeSingle();
-  if (recipeError) {
-    logDbError("moveRecipe/recipe-lookup", recipeError);
+  const { data: position, error } = await supabase.rpc("move_recipe", {
+    p_recipe_id: recipeId,
+    p_category_id: categoryId,
+    p_target_index: targetIndex,
+  });
+
+  if (error) {
+    logDbError("moveRecipe", error);
+    // MV404 = recipe or target category not found/not owned by this user
+    // (see the migration) -- move_recipe never raises MV409, it has no
+    // column-mismatch equivalent (comment above). Anything else -- including
+    // the ported InvalidNeighborOrderError case -- falls back to "generic".
+    if (error.code === "MV404") return { success: false, error: "not-found" };
     return { success: false, error: "generic" };
   }
-  if (!recipe) return { success: false, error: "not-found" };
+  if (position === null) return { success: false, error: "generic" };
 
-  const { data: category, error: categoryError } = await supabase
-    .from("recipe_categories")
-    .select("id")
-    .eq("id", categoryId)
-    .eq("user_id", auth.userId)
-    .maybeSingle();
-  if (categoryError) {
-    logDbError("moveRecipe/category-lookup", categoryError);
-    return { success: false, error: "generic" };
-  }
-  if (!category) return { success: false, error: "not-found" };
-
-  const { data: siblings, error: siblingsError } = await supabase
-    .from("recipes")
-    .select("id, position")
-    .eq("category_id", categoryId)
-    .eq("user_id", auth.userId)
-    .neq("id", recipeId)
-    .order("position", { ascending: true });
-  if (siblingsError) {
-    logDbError("moveRecipe/siblings-lookup", siblingsError);
-    return { success: false, error: "generic" };
-  }
-
-  const clampedIndex = Math.min(Math.max(targetIndex, 0), siblings.length);
-  const before = clampedIndex > 0 ? siblings[clampedIndex - 1].position : null;
-  const after = clampedIndex < siblings.length ? siblings[clampedIndex].position : null;
-
-  let position: number;
-  try {
-    position = nextPosition(before, after);
-  } catch (err) {
-    if (err instanceof InvalidNeighborOrderError) {
-      return { success: false, error: "generic" };
-    }
-    throw err;
-  }
-
-  const { error: updateError } = await supabase
-    .from("recipes")
-    .update({ category_id: categoryId, position })
-    .eq("id", recipeId)
-    .eq("user_id", auth.userId);
-
-  if (updateError) {
-    logDbError("moveRecipe/update", updateError);
-    return { success: false, error: "generic" };
-  }
-
-  revalidatePath("/recepten");
   return { success: true, data: { position } };
 }
 
