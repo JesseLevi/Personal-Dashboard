@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
-import { InvalidNeighborOrderError, nextPosition } from "@/lib/boards/positioning";
+import { nextPosition } from "@/lib/boards/positioning";
 import { DEFAULT_BOARD_COLUMNS } from "@/lib/boards/defaults";
 import {
   boardIdSchema,
@@ -26,14 +26,23 @@ import type { Database } from "@/lib/database.types";
 //   2. resolves the signed-in user and filters every query on that id
 //      explicitly, on top of RLS (see the ticket's "don't trust the client
 //      for ownership" note — RLS alone would let a column_id from another
-//      of the same user's boards through unnoticed, see moveCard below);
+//      of the same user's boards through unnoticed; moveCard's own guard
+//      against that now lives in the public.move_card RPC, #169);
 //   3. returns a typed ActionResult instead of throwing, so the UI can look
 //      up `boards.errors.${error}` in the message catalog. Errors never
 //      carry a database message or user-supplied content (only db.code is
 //      logged, server-side, never returned).
-// revalidatePath("/te-doen") runs on every successful write: the board
-// switcher and the single /te-doen route both read through the same path,
-// and there's no per-board route segment yet (BoardView, #90) to scope it to.
+// revalidatePath("/te-doen", "layout") runs on every successful write except
+// moveCard: the board switcher and /te-doen/[boardId] both read through this
+// layout, and the "layout" type argument (#169) is required for a bare
+// "/te-doen" call to also match the dynamic child segment — Next.js only
+// does exact-path matching without it, so /te-doen/[boardId] previously got
+// no server refresh from these actions at all. moveCard has no
+// revalidatePath call: the client already applies the move optimistically
+// (see moveCard's own comment below), and re-rendering the RSC tree inside
+// the same Server Action response made the client wait through a full page
+// re-render before the drag visually settled (#169's ~2s hang) for a write
+// whose result the UI doesn't otherwise need from the server.
 
 type Client = SupabaseClient<Database>;
 
@@ -139,7 +148,7 @@ export async function createBoard(input: unknown): Promise<ActionResult<BoardRow
   );
   if (columnsError) logDbError("createBoard/default-columns", columnsError);
 
-  revalidatePath("/te-doen");
+  revalidatePath("/te-doen", "layout");
   return { success: true, data };
 }
 
@@ -165,7 +174,7 @@ export async function renameBoard(input: unknown): Promise<ActionResult> {
   }
   if (!data) return { success: false, error: "not-found" };
 
-  revalidatePath("/te-doen");
+  revalidatePath("/te-doen", "layout");
   return { success: true, data: undefined };
 }
 
@@ -225,7 +234,7 @@ export async function toggleBoardFavorite(
     return { success: false, error: "generic" };
   }
 
-  revalidatePath("/te-doen");
+  revalidatePath("/te-doen", "layout");
   return { success: true, data: { isFavorite: nextFavorite } };
 }
 
@@ -271,7 +280,7 @@ export async function createColumn(
     return { success: false, error: "generic" };
   }
 
-  revalidatePath("/te-doen");
+  revalidatePath("/te-doen", "layout");
   return { success: true, data };
 }
 
@@ -297,7 +306,7 @@ export async function renameColumn(input: unknown): Promise<ActionResult> {
   }
   if (!data) return { success: false, error: "not-found" };
 
-  revalidatePath("/te-doen");
+  revalidatePath("/te-doen", "layout");
   return { success: true, data: undefined };
 }
 
@@ -344,7 +353,7 @@ export async function createCard(input: unknown): Promise<ActionResult<CardRow>>
     return { success: false, error: "generic" };
   }
 
-  revalidatePath("/te-doen");
+  revalidatePath("/te-doen", "layout");
   return { success: true, data };
 }
 
@@ -386,7 +395,7 @@ export async function updateCard(input: unknown): Promise<ActionResult> {
   }
   if (!data) return { success: false, error: "not-found" };
 
-  revalidatePath("/te-doen");
+  revalidatePath("/te-doen", "layout");
   return { success: true, data: undefined };
 }
 
@@ -412,10 +421,20 @@ export async function deleteCard(input: unknown): Promise<ActionResult> {
   }
   if (!data) return { success: false, error: "not-found" };
 
-  revalidatePath("/te-doen");
+  revalidatePath("/te-doen", "layout");
   return { success: true, data: undefined };
 }
 
+// #169: one round trip via the public.move_card RPC instead of the previous
+// auth → card lookup → target-column lookup → siblings lookup → update
+// chain -- see 20260810000002_move_rpcs.sql's own comment for what the RPC
+// does under the hood (ownership guard, same-board check, neighbor-midpoint
+// computation ported from lib/boards/positioning.ts's nextPosition, update,
+// all inside one atomic statement). No revalidatePath call here (see this
+// file's header comment): the client already applies the move optimistically
+// (TeDoenBoard.tsx), and shipping the RSC re-render inside this same
+// response was the ~2s hang #169 exists to remove -- a single RPC round trip
+// with nothing bundled onto it is the fix.
 export async function moveCard(
   input: unknown,
 ): Promise<ActionResult<{ position: number }>> {
@@ -427,81 +446,25 @@ export async function moveCard(
   const auth = await requireUserId(supabase);
   if ("error" in auth) return { success: false, error: auth.error };
 
-  // The card must exist, be owned by this user, and we need the board it
-  // currently lives on (via its current column) to check against the
-  // target column below.
-  const { data: card, error: cardError } = await supabase
-    .from("cards")
-    .select("id, column_id, board_columns!inner(board_id)")
-    .eq("id", cardId)
-    .eq("user_id", auth.userId)
-    .maybeSingle();
-  if (cardError) {
-    logDbError("moveCard/card-lookup", cardError);
+  const { data: position, error } = await supabase.rpc("move_card", {
+    p_card_id: cardId,
+    p_column_id: columnId,
+    p_target_index: targetIndex,
+  });
+
+  if (error) {
+    logDbError("moveCard", error);
+    // Custom SQLSTATEs raised by move_card's own guards (see the migration):
+    // MV404 = card or target column not found/not owned by this user,
+    // MV409 = target column belongs to a different board than the card's
+    // current one. Anything else -- including the ported
+    // InvalidNeighborOrderError case -- falls back to "generic", matching
+    // this action's pre-RPC behavior for that branch.
+    if (error.code === "MV404") return { success: false, error: "not-found" };
+    if (error.code === "MV409") return { success: false, error: "column-mismatch" };
     return { success: false, error: "generic" };
   }
-  if (!card) return { success: false, error: "not-found" };
-  const sourceBoardId = (
-    card.board_columns as unknown as { board_id: string }
-  ).board_id;
+  if (position === null) return { success: false, error: "generic" };
 
-  // The known weak spot this ticket calls out: `columnId` is only checked
-  // against RLS (does it belong to *a* board of this user?) by default —
-  // nothing stops it from naming a column on a *different* board of the same
-  // user. So resolve the target column's own board_id explicitly and compare
-  // it to the card's current board_id; only proceed if they match.
-  const { data: targetColumn, error: targetColumnError } = await supabase
-    .from("board_columns")
-    .select("id, board_id")
-    .eq("id", columnId)
-    .eq("user_id", auth.userId)
-    .maybeSingle();
-  if (targetColumnError) {
-    logDbError("moveCard/column-lookup", targetColumnError);
-    return { success: false, error: "generic" };
-  }
-  if (!targetColumn) return { success: false, error: "not-found" };
-  if (targetColumn.board_id !== sourceBoardId) {
-    return { success: false, error: "column-mismatch" };
-  }
-
-  const { data: siblings, error: siblingsError } = await supabase
-    .from("cards")
-    .select("id, position")
-    .eq("column_id", columnId)
-    .eq("user_id", auth.userId)
-    .neq("id", cardId)
-    .order("position", { ascending: true });
-  if (siblingsError) {
-    logDbError("moveCard/siblings-lookup", siblingsError);
-    return { success: false, error: "generic" };
-  }
-
-  const clampedIndex = Math.min(Math.max(targetIndex, 0), siblings.length);
-  const before = clampedIndex > 0 ? siblings[clampedIndex - 1].position : null;
-  const after = clampedIndex < siblings.length ? siblings[clampedIndex].position : null;
-
-  let position: number;
-  try {
-    position = nextPosition(before, after);
-  } catch (err) {
-    if (err instanceof InvalidNeighborOrderError) {
-      return { success: false, error: "generic" };
-    }
-    throw err;
-  }
-
-  const { error: updateError } = await supabase
-    .from("cards")
-    .update({ column_id: columnId, position })
-    .eq("id", cardId)
-    .eq("user_id", auth.userId);
-
-  if (updateError) {
-    logDbError("moveCard/update", updateError);
-    return { success: false, error: "generic" };
-  }
-
-  revalidatePath("/te-doen");
   return { success: true, data: { position } };
 }

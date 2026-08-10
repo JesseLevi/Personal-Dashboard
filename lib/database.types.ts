@@ -1,8 +1,10 @@
 // Hand-maintained to match supabase/migrations/*.sql (#91, #119, #130, #149,
-// #161, #175). This dev machine has no Docker/standalone Supabase CLI, so
-// `pnpm db:types` (which shells out to `supabase gen types typescript
+// #161, #169, #175). This dev machine has no Docker/standalone Supabase CLI,
+// so `pnpm db:types` (which shells out to `supabase gen types typescript
 // --local --schema public,reference`) cannot run here — CI must regenerate
 // this file against the real local stack and confirm it matches.
+//
+// #169: move_card / move_recipe RPCs (20260810000002_move_rpcs.sql).
 //
 // #175: shopping_list_items (20260808000001_shopping_list_items.sql).
 //
@@ -814,6 +816,10 @@ export interface Database {
     // -- this repo's first RPC. `Args` uses `Json` for the two array
     // parameters, matching what a real `supabase gen types` emits for a
     // `jsonb` function argument.
+    // #169: public.move_card / public.move_recipe (20260810000002_move_rpcs.sql)
+    // -- both `returns numeric`, typed `number` here, same as every other
+    // `position` column in this file (numeric -> number throughout, e.g.
+    // cards.Row.position above).
     Functions: {
       replace_recipe_contents: {
         Args: {
@@ -822,6 +828,22 @@ export interface Database {
           p_steps: Json;
         };
         Returns: undefined;
+      };
+      move_card: {
+        Args: {
+          p_card_id: string;
+          p_column_id: string;
+          p_target_index: number;
+        };
+        Returns: number;
+      };
+      move_recipe: {
+        Args: {
+          p_recipe_id: string;
+          p_category_id: string;
+          p_target_index: number;
+        };
+        Returns: number;
       };
     };
     Enums: {
