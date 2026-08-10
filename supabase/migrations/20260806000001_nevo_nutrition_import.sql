@@ -95,9 +95,10 @@ comment on column reference.ingredients.category_en is
 comment on column reference.ingredients.fiber_g_per_100g is
   'NEVO''s "FIBT (g)" (dietary fibre). Nullable -- empty in the source means '
   'unknown, never 0 (ADR-0011 §4); 7 of NEVO 2025/9.0''s 2328 rows are '
-  'empty here. Imported but not displayed: Figma''s NutritionalData row '
-  '(3997:15948 mobile / 3997:15543 desktop) draws six buttons and none of '
-  'them is fibre (ADR-0013 §3, docs/open-questions.md#nutrition-fiber-has-no-figma-button).';
+  'empty here. Displayed since #166, which added Figma''s fibre button '
+  '(4025:11826) to the NutritionalData row (3997:15948 mobile / '
+  '3997:15543 desktop); its dropdown carries ADR-0013 §2''s mandatory NEVO '
+  'attribution line, like the other four macros (ADR-0013 §3).';
 
 comment on column reference.ingredients.nutrient_basis is
   'Whether this row''s kcal/protein/carbs/fat/fiber columns are per 100g or '

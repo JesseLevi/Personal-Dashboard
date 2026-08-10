@@ -147,8 +147,7 @@ export function NutritionalDataRow({
                     shows recipes.time_minutes, which isn't NEVO data) — a
                     legal attribution, not UI copy, so it's stored once in
                     both catalogs with an identical, unlocalised value rather
-                    than translated (docs/open-questions.md
-                    #nutrition-dropdown-content-undesigned). */}
+                    than translated (design/notes/RecipeDetailPage.md). */}
                 {item.isNevoData && (
                   <p className="px-2 pb-1 text-xs font-normal text-text-muted">{t("nevoAttribution")}</p>
                 )}

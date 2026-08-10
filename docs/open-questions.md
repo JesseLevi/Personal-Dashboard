@@ -1,208 +1,94 @@
 # Open questions awaiting a decision
 
-Design-side gaps where the ticket, the property list, or the token scale promises something the dev-ready Figma node doesn't contain. **Each needs a design or product answer before a follow-up ticket can model it — nobody builds these from guesswork** (`CLAUDE.md`: never build what isn't in Figma).
+Design-side gaps where the ticket, the property list or the token scale promises something the dev-ready Figma node doesn't contain, **and where the shipped code is not yet a satisfying answer**. Nobody builds these from guesswork (`CLAUDE.md`: never build what isn't in Figma).
 
-This is the single canonical list. `docs/design-tokens.md` and `docs/HANDOFF.md` link here rather than restate it, and code comments reference the **slug**, never a number — questions get resolved and removed, and numbering silently reassigns itself to the wrong question when they do.
+This is the single canonical list. `docs/design-tokens.md` and `docs/HANDOFF.md` link here rather than restate it. Reference one as `docs/open-questions.md#<slug>` — by **slug, never by number**, because resolved questions get removed and numbering would silently reassign itself.
 
-Reference one as `docs/open-questions.md#<slug>`.
+**When a question is resolved**: delete the entry and add its slug to "Resolved and removed" at the bottom. Full reasoning belongs in the component's `design/notes/<Component>.md`, not here.
 
 ---
 
-## no-pointer-affordance
+## Design-system wide
 
-**No Hover state anywhere in the pointer-affordance family.** Originally three components with no mouse-over feedback; #107 (2026-07-26) resolved one of the three — `Atom/Button`'s Transparent style. The other two are still open.
+### token-names-are-hex-derived
 
-- **Transparent**: **resolved by #107** — re-fetching `3623:4346` shows Figma now defines real Hover (`stone-100`)/Active (`stone-200`) fills, borrowed from the existing `surface-active`/`surface-raised` tokens (see `docs/design-tokens.md`). No longer an open question for `Atom/Button`.
-- **`Button/Toggle`'s segments do NOT inherit it — still open.** They render as `Button variant="transparent"`, so the new fills reached them by composition and had to be suppressed: a segment's background paints *over* the white "Active" indicator (`ButtonToggle.tsx` gives each segment `relative` precisely to stack above it), so on the selected segment Hover greyed the white pill out and Active resolved to `surface-raised` — the track colour — erasing it entirely. Measured in a browser, not reasoned: pressed segment `oklch(0.923…)` vs track `oklch(0.923…)`. Figma backs the suppression rather than the inheritance — `Button/Toggle` (`3623:4345`) is a single component with **no** state axis, its segments pinned to `Atom/Button/Icon/Default/No` with `fills: []`, and the indicator is a real `#FFFFFF` node. So whether toggle segments should have *any* pointer feedback, and what it may look like without hiding the indicator, is still an unanswered design question.
-- **`Card-content/Ingredient`** (node `3727:4021`) still defines no Hover state at all — only `Default | Active | Delete`. Fixed in #67: `Active` now maps to `:active` (not `:hover`/`:focus-within`, which #20 had wrongly used), consistent with the `Active` = "currently being pressed" reading that #56 (`Atom/Button`) and #58 (`Atom/Input-field`) already established for this exact state name. That still leaves an ingredient row where hovering does nothing and only pressing does — needs a design answer, not a code guess.
+Figma MCP returns resolved hex only, never variable names, so every semantic token name in `design/tokens.json` was derived by matching a pixel value back to a role. The names may not match Figma's real variable names. Worth reconciling before more components calcify this vocabulary.
 
-## button-vs-input-active-border
+### dark-mode-is-placeholder-only
 
-**Only Active still diverges between `Atom/Button`/Outline and `Atom/Input-field`.** Tickets #56 and #58 left three states open pending Figma reconciliation. #68 re-fetched both nodes (3623:4346, 3705:4402) and confirmed directly rather than assuming: Hover now matches (both stone-500) and Selected now matches (both stone-400, Outline's Selected having gained a border for the first time) — `border-input-hover` and `border-input-selected` are deleted, and `InputField.tsx` reads the shared `border-hover` / `border-selected` tokens.
+No Figma dark frames exist for any component, so every `dark` value in `design/tokens.json` is this codebase's own pick. Two known consequences: `priority-urgent-bg-hover` and `-active` both resolve to red-950, making destructive states invisible; and `Atom/Button`'s White variant reads lighter on Hover than on Active, backwards from light mode. Only Ladle sets `data-theme` — an app-level theme switch is still an open architectural decision.
 
-**Active is the one state that still does not line up**: Input-field's Active is stone-600, Button/Outline's moved to stone-800 (from stone-700) — confirmed side by side in the same fetch, a real, deliberate pixel difference, not a stale or unbound node. `border-input-active` stays under its own name until a future re-fetch either aligns the two values or the user confirms input borders are a genuinely distinct role from button borders. Don't guess: re-fetch and compare exact hex, the way #58 and #68 both did.
+### button-vs-input-active-border
 
-Both components' Selected → `:focus-within` (Input-field) / `aria-pressed` (Button) mappings remain each atom's own interpretation of Figma's state *names*, not something Figma's data asserts — still flagged for design confirmation, unchanged from #58.
+Hover and Selected were reconciled by #68 (both stone-500 / stone-400, shared tokens). **Active still diverges**: Input-field is stone-600, Button/Outline stone-800 — confirmed side by side in one fetch, a deliberate pixel difference, not a stale node. `border-input-active` therefore stays under its own name. Don't guess: re-fetch both nodes and compare exact hex. Also unresolved: Selected → `:focus-within` (Input-field) / `aria-pressed` (Button) are each atom's own reading of Figma's state *names*, not something Figma asserts.
 
-## token-names-are-hex-derived
+### no-pointer-affordance
 
-**Figma MCP returns resolved hex only, never variable names.** Every semantic token name in `design/tokens.json` is derived by matching a pixel value back to a role, not read from Figma's own variables. The names may need aligning with the real Figma variable names — worth doing before more components are built on this vocabulary and it calcifies further.
+Two components still have no mouse-over feedback at all, and Figma defines none.
 
-## dark-mode-is-placeholder-only
+- **`Button/Toggle` segments** render as `Button variant="transparent"`, so #107's new hover/active fills reached them by composition and had to be suppressed — a segment's background paints *over* the white "Active" indicator, so Hover greyed the selected pill out and Active erased it entirely (measured: pressed segment and track both `oklch(0.923…)`). Figma backs the suppression: `3623:4345` has no state axis and its indicator is a real `#FFFFFF` node. Open: should segments have *any* pointer feedback, and what can it look like without hiding the indicator?
+- **`Card-content/Ingredient`** (`3727:4021`) defines only `Default | Active | Delete`. Hovering a row does nothing; only pressing does.
 
-**No Figma dark frames exist for any component**, so every `dark` value in `design/tokens.json` is this codebase's own pick. Known collision: `priority-urgent-bg-hover` and `-active` both resolve to red-950, so the destructive states are invisible in dark mode. Nothing in the Next.js app sets `data-theme` yet — only Ladle does. An app-level theme switch is an open architectural decision.
+### sidebar-motion-timing-unsourced
 
-**New since #112**: `Atom/Button`'s White variant now reuses `surface-active` for Hover and `surface-raised` for Active (see `docs/design-tokens.md`'s state matrix). Their dark values (stone-700, stone-800 respectively) invert White's dark-mode press direction — Hover now reads lighter than Active, backwards from both the light-mode direction and White's own pre-#112 dark ordering. Not fixed: no Figma dark frame exists to resolve it against, and inventing a new token pair to fix an unsourced dark ordering would be worse than flagging it.
+`semantic.duration.base` (200ms) and `semantic.easing.base` (ease-out cubic-bezier) are this codebase's own defaults — the ticket's reference frame (`3859:6647`) carries no prototype timing data, and Figma's Smart Animate lives on prototype connections that don't exist here. Needs ratification. Migration is also incomplete: `Sidebar.tsx` and `Dropdown`'s chevron use the tokens, but `Dropdown`'s grid-rows transition and `ButtonToggle`'s track slide still hardcode the literal `duration-200 ease-out`.
 
-## checkbox-delete-state
+### english-nav-labels-overflow
 
-**`Checkbox` "delete" state**: `design/notes/Checkbox.md` records it, the Figma node doesn't contain it. Built only what the node exposes, per `CLAUDE.md`.
+Dutch nav labels are pixel-perfect at 40px per row; English is not — "Shopping basket" wraps and spills outside its button on the Sidebar's fixed 198px rail. Figma only ever shows Dutch. Needs a content or design call (shorter label, truncation, taller rows, or a wider rail), deliberately not invented in code.
 
-## input-field-text-boolean
+### dropdown-row-not-fully-clickable
 
-**Figma `Input-field`'s "Text" boolean** can hide the entire input row. Not modelled — an input without its input isn't a meaningful state. Confirm the boolean is a Figma-authoring artifact rather than an intended variant.
+#108's feedback asked that the whole Status/Prioriteit/Grootte row open, not just the pill. Only the pill is a click target; the chevron is a decorative sibling, matching Figma's own structure. Making the row clickable needs either `<button>`-in-`<button>` or a `role="button"` wrapper around a real button — both documented ARIA anti-patterns. Needs a product call: accept the pill-only target, or restructure so the pill becomes non-interactive and `Dropdown` owns the one real button.
 
-## toggle-group-shared-track
+## Recepten
 
-**Toggle-group / shared track**: the `Button/Toggle` node's demo shows 5 chips sharing one grey track. #69 rebuilt the track itself; whether a *grouped* composition needs its own molecule/organism ticket is still open.
+### step-rows-no-delete-reorder
 
-## sidebar-motion-timing-unsourced
+Ingredient rows got a real, Figma-sourced delete in #166. **Steps did not** — no fetched node (`3717:2844`, `4025:10628`) shows any per-step delete or reorder affordance, so a step cannot be removed once added, which is awkward on edit. Ingredient *reordering* is likewise undesigned. Needs either a real trailing-icon control or confirmation that steps are meant to be immutable.
 
-**Sidebar's collapse-slide duration/easing (#86) are this codebase's own default, not Figma-sourced.** The ticket's own reference frame (node `3859:6647`, "SidebarAnimation") was re-fetched and confirmed to carry no prototype `reactions`/`transitionNodeID`/`transitionDuration`/easing data at all — only the same static `Collapsed=No` instance already fetched for `Organism/Sidebar` itself. Figma's Smart Animate lives on prototype connections between frames, not on component-set variants, and none exist here, so there is no timing value to sync.
+### recipe-image-field-personen-label
 
-`design/tokens.json` now carries `semantic.duration.base` (200ms) / `semantic.easing.base` (standard ease-out cubic-bezier), synced to `app/theme.css` as `--duration-base`/`--ease-base` and consumed by `Sidebar.tsx`'s width transition. Both are a codebase-picked default — 200ms and ease-out are common conventions, not values read from any design source. `Dropdown.tsx`/`Button-toggle.tsx` already independently picked the identical `duration-200 ease-out` Tailwind literals for their own animations (their own doc comments flag the same gap), which is corroborating precedent for these being reasonable defaults, not a substitute for a real design/product answer.
+The image-upload field's bound Title text reads "Personen" in both frames (`3968:11192` / `3953:9875`) — a copy-paste artifact from the adjacent servings field, not a translation gap. `ImageUploadField` therefore renders **no visible label at all** rather than a wrong one. Needs a real label from design ("Afbeelding" / "Foto").
 
-Needs a design/product answer, same as any other un-sourced value in this project: confirm (or correct) the duration/easing, and decide whether `Dropdown`/`Button-toggle` should migrate onto these same named tokens now that they exist (out of scope for #86, which only touched Sidebar).
+## Winkelmand
 
-**Partially actioned since, still open**: #100 moved `Dropdown`'s chevron-rotate transition onto `--duration-base`/`--ease-base`; #112 rebuilt the chevron as Dropdown's own rendered `Icon` (rotation driven by `isOpen` directly, no more sibling-selector trick), still on the same two tokens. But `Dropdown.tsx`'s pre-existing grid-rows open/close transition and `ButtonToggle.tsx`'s track-slide transition still hardcode the literal `duration-200 ease-out` Tailwind classes — the migration is incomplete, not resolved. Same design/product answer still needed before finishing it.
+### winkelmand-no-manual-add-entry-point
 
-## english-nav-labels-overflow
+`Vision.md` says the list is filled "handmatig of vanuit recepten", but no fetched Winkelmand node contains any add-item control — no input, no "+". `addShoppingListItem` (#176) is built and tested at the data layer and has **zero UI consumers**. Needs a designed entry point.
 
-**English nav labels overflow the Sidebar's fixed 198px rail (#25).** Dutch is pixel-perfect — all six rows exactly 40px, matching Figma. English is not: "Shopping basket" wraps to two lines and spills outside its 40px button. Figma only ever shows the Dutch labels, so it offers no guidance. Needs a content or design call — shorter English label, truncation, wrapping with taller rows, or a wider rail. Deliberately not invented in code.
+### winkelmand-no-section-grouping
 
-## dropdown-row-not-fully-clickable
+`shopping_list_items.section` (#175) exists in the schema and is round-tripped by `addShoppingListItem`, but no query or component reads it — dead weight until a grouping consumes it. #179 shipped two *other* groupings (by source recipe, by NEVO food group). See `winkelmand-gangpad-grouping-not-built` for why a real aisle grouping is the larger piece.
 
-**#108's feedback asked that the whole Status/Prioriteit/Grootte row (pill + chevron) open/close, not just the pill.** Built only the pill as the click target — the chevron is a decorative, non-interactive `Icon` Dropdown renders next to the trigger (`design/notes/Dropdown.md`'s #108 entry has the full reasoning). Figma's own node shows the chevron as a separate sibling of the pill, same relationship `InputField`'s trailing icon has to its content (never independently clickable anywhere else in this codebase), so nothing in the fetched design asks for a bigger click target either. Making the whole row clickable would need either an invalid `<button>`-in-`<button>` (Status already renders a real `Button`) or a second interactive element wrapping it (`role="button"` div around a real `<button>`) — a documented ARIA/focus-order anti-pattern. Flagged rather than built; needs a product/design call on whether the pill-only target is acceptable or whether a structural change (e.g. the pill itself becoming non-interactive, with Dropdown owning the one real button) is worth the trade-off.
+### winkelmand-gangpad-grouping-not-built
 
-## touch-hold-duration-deviates-from-figma
+The annotation on `4052:13970` asks for "Gangpad" (supermarket aisle) rather than "Foodgroup", *"so eg. canned tomato's don't end up with vegetables but in the 'international' isle"*. Measured against live data, not assumed: NEVO's `category_nl`/`category_en` are food-science groups (27 of them), and the annotation's own example reproduces — `"Puree tomaten- geconcentreerd blik"` resolves to `Groente`.
 
-**Figma Dev Mode annotation on node `3680:1442`** ("Te doen/Desktop/Filled", drag frame `I3882:14505;…`) says *"On mobile when holding for 2s activate drag-handle."* #118 ships **750ms** instead, a user-made product decision made after real-device testing (#117's diagnostic route) showed 2000ms felt broken — the user let go twice before the hold completed. For reference, iOS and Android's own native long-press both land near 500ms, and dnd-kit's own default `Delay` is 250ms; 750ms was chosen as a middle ground, not either of those.
+A real aisle layer needs a curated 27-group→aisle map **plus** name-pattern overrides for the cases the category alone gets wrong: 101 rows match `blik|glas|conserv`, 42 match `diepvries|bevroren`, 48 match `gedroogd`. That is new data with no source, the same class of gap ADR-0013/ADR-0014 were written for — so it needs its own ADR, not a page-ticket call. Shipped meanwhile: Voedingsgroep only, labelled as Figma's own `Text` property spells it.
 
-This is a deliberate deviation, not an oversight — `CLAUDE.md` still requires it be flagged rather than silently reconciled. Needs a design answer: either update the Figma annotation to 750ms (or whatever value design ratifies) or explicitly ratify the code's 750ms as correct and note why Figma's spec doesn't govern here. See `design/notes/BoardView.md` for the full before/after reasoning and `tests/board-view-sensors.test.ts` for the value under test.
+### winkelmand-clear-all-no-confirmation
 
-## ios-safari-fixed-viewport-unverified
+"Verwijder alles" (`4053:14285` / `4053:14274`) is drawn as a single destructive button with no confirm state and no second frame. It empties the whole list in one click with no undo. Built as a literal read of the node rather than importing `RecipeDetailPage`'s two-step confirm uninvited. Needs a ratify-or-design answer.
 
-**#113's mobile fixes (stale scrim after close, mobile drawer not reaching true edges) are reasoned and testable in Chromium, but not confirmed against real iOS Safari** — this dev machine and CI have no way to reproduce Safari's dynamic-chrome viewport behaviour. `viewportFit: "cover"` (new `app/layout.tsx` viewport export), safe-area-inset padding on `Sidebar.tsx`/`SidePanel.tsx`, and a `visibility`/`transition-discrete` fix on both scrims are all shipped as the best-supported hypothesis (backed by measured Chromium CSS correctness + documented Safari viewport semantics), not a confirmed fix. Needs on-device testing before this question closes.
+### winkelmand-send-no-success-feedback
 
-## unit-dropdown-list-not-drawn
+No fetched node shows any acknowledgement that a send succeeded — no toast, badge, or checkmark swap. **This has already cost real time**: `AnimatedAddToBasketButton` plays its "Toegevoegd" animation regardless of the `ActionResult`, so a completely broken insert path (a migration that never reached hosted) looked like success for an entire ticket. A UI that always shows success cannot surface a broken server action. Needs a real decision: toast, inline confirmation, Winkelmand badge count, or an explicit ratification that silence is correct.
 
-**The expanded unit dropdown list is nowhere drawn in Figma.** The Dev Mode annotation on the unit field (`3777:3942`) names only Gram, Kilogram, Liter, Scoop and "etc." — that is the ceiling of what the design actually specifies. #120's canonical unit list (`lib/recipes/units.ts`) carries 17 codes (mass: gram, kilogram, ounce, pound; volume: milliliter, deciliter, liter, theelepel, eetlepel, cup, teaspoon, tablespoon, fluid_ounce; count: stuk, snufje, scoop, naar_smaak), sourced from a user decision (2026-07-29) rather than from Figma. Every unit beyond the four the annotation names — including the full imperial set and the theelepel/teaspoon, eetlepel/tablespoon split — is a build decision with no Figma source. Needs a design pass over the actual dropdown once #122/#128 build the UI that reads this list, so the visible options and their order are a real design artifact rather than an inferred one.
+### winkelmand-merged-line-keeps-first-recipes-group
 
-## recipe-card-no-photo-placeholder
+#179 groups by source recipe *and* merges same-name/same-unit lines; the two rules collide and Figma answers neither. A merged line carries one `recipe_id`, so adding "Banaan 2 stuk" from recipe A then B sums onto A's row — B's card never shows an ingredient the user did add from it. The two code paths also disagree: swipe-to-cart (`addIngredientToShoppingList`) merges into an **existing** DB row, whole-recipe send (`sendRecipeToShoppingList`) merges only within its own batch. So sending A then B leaves two "Banaan" lines, but swiping twice leaves one. Options: don't merge across recipes; merge and show the line under every contributing recipe (needs a join table); or drop `recipe_id` on merge and send the line to "Overig".
 
-**`Card-content/Recipi` (node `3628:67`) always draws a photo — it has no "no photo yet" state.** #124 needed one anyway: `recipes.thumbnail_path` is nullable and, in practice, still null for every existing recipe — #121 (merged) built the storage bucket and upload validation, but no form yet writes a real path into it (see `recipe-panel-photo-upload-not-built`). `CardContentRecipe.tsx`'s `imageUrl` prop became optional and falls back to a plain `bg-surface-muted` placeholder square in the Thumbnail's own place (`design/notes/CardContentRecipe.md`'s "#124" entry has the full reasoning) — a functionally-motivated deviation, not a guess, but Figma itself gives no visual spec for this case (unlike, say, `CardContentRecipe.md`'s earlier confirmation that the Thumbnail frame carries no skeleton fill for a *filled* state — this is the reverse question: what a *missing* photo should look like at all). Needs a design answer now that #121 has shipped and real thumbnails are reachable: is a muted square the intended empty-photo treatment, or should design draw one (e.g. a generic food/camera icon)?
+---
 
-## category-icon-no-selected-state
+## Resolved and removed
 
-**#125's icon picker has no Selected state to build against.** All 8 button
-instances in both fetched nodes are the same `Style=Filled, State=Default` —
-Figma draws no visual difference for "this is the chosen icon." Built with
-`aria-pressed` reusing `Atom/Button`'s own existing Selected semantics
-(`docs/design-tokens.md`: Filled's Selected only darkens text) rather than
-inventing new styling. Needs a design answer: ratify text-only Selected here,
-or design a real selected-icon treatment (e.g. a border/fill ring).
+These were open questions that the shipped build now answers. The deviation and its reasoning live in the component's own `design/notes/<Component>.md`; an old `#slug` link that lands here was one of them.
 
-## category-delete-no-confirm-designed
+**Decided by the user or by measurement** — `touch-hold-duration-deviates-from-figma` (750ms, chosen after real-device testing showed Figma's 2s felt broken), `unit-dropdown-list-not-drawn` and `recipe-panel-unit-list-etc-unsourced` (the 17-code `UNIT_CODES` list is a user decision, 2026-07-29), `ios-safari-fixed-viewport-unverified` (now tracked as a verification ticket, not a design gap).
 
-**#125's footer draws a destructive `Verwijderen` button with no
-confirmation step modelled anywhere in Figma.** Built with `CardDetailPanel.
-tsx`'s existing two-step confirm (#94 precedent, "kies de minst-uitvindende
-weg" per the ticket) rather than inventing a new pattern. Needs a design
-answer: ratify the reused two-step confirm, or design a category-specific
-one (e.g. warning that deleting a category cascades to its recipes —
-`recipe_categories`'s `on delete cascade`, see `actions.ts`'s
-`deleteCategory` comment).
+**Figma authoring artifacts, built the sensible way** — `portion-stepper-figma-draws-plus-twice` (both stepper nodes draw `Icon/Plus` twice; code renders `Minus` on decrement), `recipe-name-field-swap-icon-unusual` (`Icon/Arrow-right-left` for "open a picker", built as specified), `recipe-image-field-no-filled-state`, `input-field-text-boolean`, `checkbox-delete-state`.
 
-## category-name-no-validation-designed
+**Built with an existing, already-approved pattern** — `category-delete-no-confirm-designed` and `category-name-no-validation-designed` (two-step confirm + disabled-Save gate), `category-icon-no-selected-state` (`aria-pressed` reusing Button's Selected semantics), `recipe-detail-mobile-overflow-menu-undesigned` and `nutrition-dropdown-content-undesigned` (labelless `Dropdown` bordered-panel popover), `ingredient-search-panel-empty-and-zero-result-states-unsourced`, `recipe-panel-verwijderen-hidden-on-create`.
 
-**#125's name field carries no visible validation state in Figma** (empty,
-too long, duplicate). Built with the schema's own `min(1).max(200)`
-(`lib/recipes/schemas.ts`) mirrored client-side as a disabled-Save gate only
-— no length counter, no duplicate-name check (neither is enforced server-side
-either). Needs a design answer on whether any of these should be surfaced in
-the UI before save is attempted, rather than only after a failed submit.
-
-## portion-stepper-figma-draws-plus-twice
-
-**Both portion-stepper nodes (`3953:9750` mobile, `3778:5596` desktop) draw the same `Icon/Plus` component (`3629:149`) on the left AND the right** — there is no minus/decrement glyph anywhere in either node. #123 treats this as a design error rather than a literal spec: a decrement control that visually adds is functionally nonsensical next to a text label reading "N personen"/"N people", so the built `PortionStepper` (`components/molecules/PortionStepper.tsx`) renders lucide's `Minus` on the left (decrement) button and leaves `Icon/Plus` unchanged on the right (increment) button — a deliberate, functionally-motivated deviation from the literal Figma source, not a guess (`CLAUDE.md` forbids silently "fixing" a Figma mismatch without flagging it, which this entry does). `Minus` itself has no Figma node to verify against; `design/notes/Icon.md`'s #123 entry confirms lucide's `Minus` export really is a single horizontal stroke, coordinate-identical to the horizontal bar of Figma's own already-verified `Icon/Plus`. Needs a design answer: either add a real `Icon/Minus` variant to both nodes, or explicitly ratify this code's substitution as correct.
-
-**Recurs in #160's "Pas aan" panel.** The panel's "Personen" row (`I3998:10928;3997:25437;3998:11009` mobile / `I3999:11007;3997:25437;3999:11001` desktop) draws a *single* `Button/Default` instance with `Icon/Plus` in BOTH its leading and trailing icon slots (`Leading icon: true, Trekking icon: true`) — structurally different from, but the same root authoring pattern as, the issue above. `PasAanPanel.tsx` does not build a new "one button, two icons" control for this: it reuses the already-built, already-approved `PortionStepper` molecule (whose own Minus-substitution is already flagged above) rather than inventing a second, differently-shaped servings widget. See `design/notes/RecipeDetailPage.md`'s "Pas-aan panel" entry. Needs the same design answer as above, extended to this node.
-
-## ingredient-search-panel-empty-and-zero-result-states-unsourced
-
-**Figma only ever draws the populated-results state.** Neither the "not yet searched" prompt copy nor the zero-results layout (beyond the user-approved "add as new ingredient" affordance, which has its own deviation note in `design/notes/IngredientSearchPanel.md`) has a Figma source — both are this codebase's own copy/layout decisions. Low product risk (plain muted prompt text, a `Card` reusing existing atoms), but flagged rather than silently presented as design-sourced. Needs a design pass only if these states should look meaningfully different from the current build.
-
-## ingredient-name-annotation-only-on-row-two
-
-**Only `3717:2844` row 2's name field (`I3740:4302;3761:8982`) carries the "opens the ingredient search" Dev Mode annotation** — rows 1 and 3 have byte-identical structure (`Icon/Arrow-right-left`, same `Input-field` variant) but no annotation of their own. `RecipeIngredientRow` applies the same open-search behaviour to all three rows (the least-surprising reading — a picker icon that only sometimes opens a picker would be worse). Needs a design answer confirming rows 1/3 should behave identically, or explaining why they were left unannotated.
-
-## step-rows-no-delete-reorder
-
-**Narrowed by #166 (was `ingredient-step-rows-no-delete-reorder-v1`) — ingredient rows are resolved, steps are not.** #166 re-fetched `4025:10596` and found every real ingredient data row carries a destructive delete Button in Figma (`design/notes/RecipeIngredientRow.md`'s #166 entry); ingredient rows now have working, Figma-sourced delete (disabled only when it's the sole remaining row). No equivalent per-step delete/reorder affordance has been found in any fetched node — the step field itself (`3717:2844`, `4025:10628`) still shows no trailing icon beyond the "Ingrediënt" button slot. Needs a design answer: a real trailing-icon delete/reorder control for steps, or confirmation that steps are meant to be immutable once added (awkward on `edit`, same reasoning as before). Ingredient reordering is likewise still unaddressed (drag/drop or up-down controls — no Figma source either way).
-
-## recipe-panel-verwijderen-hidden-on-create
-
-**Whether "Verwijderen" should be hidden on a brand-new recipe (vs. always visible) has no Figma source** — both fetched footers (`3717:2939`/`3777:4008`) show it unconditionally, with no separate "create" frame to compare against. #126 defaults to hidden-on-create, visible-on-edit (nothing to delete yet), the same default every other create/edit `SidePanel` in this codebase already uses. Needs a design answer only if the intended behaviour differs.
-
-## recipe-panel-unit-list-etc-unsourced
-
-**The unit `Dropdown`'s full option list is not drawn anywhere** — the annotation on `3777:3942`/`3740:4275` names Gram/Kilogram/Liter/Scoop "etc." and stops there. #126 wires the *complete* `UNIT_CODES` list from #120 (17 units) into the picker, which is a superset of the four named examples, not a literal read of "etc." Needs a design answer only if the full list should visually differ from a flat list (grouped by magnitude, for instance).
-
-## recipe-panel-personen-chevron-behaviour-unsourced
-
-**The Personen field's trailing chevron (`3968:10298`) has `Trekking-icon: true` but no annotation describing what it opens.** #126 built it as a `Dropdown` listing 1-12 (an unsourced, reasonable default); #149 rebuilt the same field on `InputField`'s new `options` (select) variant instead, since that's what the fetched node actually models (`design/notes/RecipePanel.md`) — the range itself is unchanged. Needs a design answer on the real range/behaviour (a stepper instead of a list? A different upper bound?).
-
-## recipe-panel-desktop-layout-gap
-
-**No desktop Figma node exists for the add/edit-recipe field content** — only `3717:2844` (402px mobile) is drawn. #126 kept every field in the same single-column order at every breakpoint, per the ticket's own instruction to avoid inventing new layout decisions. Needs a design answer only if a real desktop layout (e.g. two-column fields) was intended.
-
-## recipe-name-field-swap-icon-unusual
-
-**The ingredient name field's `Icon/Arrow-right-left` (swap icon) is an unusual choice for "open a picker/list"** — a magnifying glass (search) or a chevron (like every other field in this form) would be the more conventional affordance. Built exactly as specified since the annotation and icon are both explicit and consistent with each other. Needs a design answer confirming this was intentional.
-
-## recipe-panel-two-identical-voeg-toe-buttons
-
-**Both "Voeg toe" buttons (ingredients' `3717:2938`, steps' `3717:2948`) carry the exact same text**, distinguished only by vertical position on the page. #126 kept them textually identical (a literal read of the source) rather than inventing differentiated copy ("Voeg ingrediënt toe"/"Voeg stap toe") the ticket only offered as an option. Needs a design answer on whether differentiated labels are preferred.
-
-## recipe-ingredient-row-unit-label-always-shown
-
-**`Dropdown`'s labelless mode has no collapse/trigger behaviour at all** — reading `components/atoms/Dropdown.tsx` directly shows its `return` renders `children` unconditionally when no `label` is supplied; only the labelled branch has the open/closed chrome (`aria-expanded`, chevron rotation, grid-collapse). #126's `RecipeIngredientRow` needs a real closeable picker for its Eenheid column on every row, so it always passes `label` — the "Eenheid" text now renders on rows 2/3 too, not just row 1, diverging from Figma's `Title: false` there. Needs either a design ratification of this (label always visible is arguably fine/better) or a `Dropdown` atom enhancement adding a real labelless-but-collapsible mode.
-
-## recipe-image-field-personen-label
-
-**The "Selecteer afbeelding" image-upload field's bound Title text reads "Personen" in both the mobile and desktop "Add recipi" frames** (`3968:11192` / `3953:9875`) — confirmed a duplication artifact, not a translation gap: the instance was copied from the adjacent servings field and only its `Content` was edited. #121 renders no visible label for this field rather than showing the wrong one (`design/notes/ImageUploadField.md` has the full record). Needs a real label from design (e.g. "Afbeelding"/"Foto") to replace the omission.
-
-## recipe-image-field-no-filled-state
-
-**The fetched "Selecteer afbeelding" node only samples the empty state** — no Figma variant shows the box after a photo is chosen. `ImageUploadField` shows the picked file's name in place of the placeholder as its own interpretation (`design/notes/ImageUploadField.md`). Needs a design pass only if a real "filled" visual (e.g. a thumbnail preview inside the box) is wanted instead of plain filename text.
-
-## recipe-detail-mobile-overflow-menu-undesigned
-
-**#127's mobile header draws an icon-only `Icon/Ellipsis` button (`3778:5434`) with no annotation and no panel behind it anywhere in the file** — unlike desktop, which draws "Bewerken"/"Verwijderen" as two real, separately-styled `Button` instances (`3778:5591`/`3778:5592`). Built as a `Button`-triggered popover reusing `Atom/Dropdown`'s bordered-panel styling exactly the way `TeDoenHeader.tsx`'s own board-switcher/sort menus already do (own `useState` open flag, `pointerdown`-outside-closes, `Dropdown` in its labelless "static panel of `Button` rows" mode) — not a new menu component, but also not read off any Figma node, since none exists. The two rows inside it (Bewerken via `variant="white"`, Verwijderen via `variant="destructive"`) are this codebase's own choice, not sourced. Needs a design answer: either draw the real mobile menu, or ratify this composition as correct.
-
-## nutrition-dropdown-content-undesigned
-
-**V2's NutritionalData row (`3997:15948` mobile / `3997:15543` desktop, fibre button added `4025:11826` in #166) carries Dev Mode annotations naming WHAT each interactive button's dropdown should contain ("Clicking launches dropdown with: Calorieën", "...Vezels", etc.) but no separate frame anywhere in the file draws the resulting expanded popover** — unlike the "Pas aan" panel, which has full frames (`3998:10701`/`3999:10877`) for its opened state. `NutritionalDataRow.tsx` builds the popover with the same `Atom/Dropdown` bordered-panel pattern already established for undrawn micro-interactions on this exact page (`recipe-detail-mobile-overflow-menu-undesigned` above), rendering a single line of explanatory text (the annotation's named full word — "Calorieën", "Koolhydraten", "Vezels", etc.). The content is Figma-specified; the popover's own width/padding/position are not. Needs a design answer only if the intended visual differs from this reused pattern.
-
-**#161 (ADR-0013 §2): the macro dropdowns (calories/carbs/protein/fat, and fibre as of #166 — not time) now also carry a mandatory NEVO licence attribution line** below the existing full-word text — the exact string RIVM's conditions require, rendered smaller/muted (`text-xs`/`text-text-muted`) to read as secondary to `fullLabel`, in a widened `w-64` panel (macro dropdowns only; `time`'s stays `w-40`). Like the popover itself, this line's content is fixed (the licence prescribes the exact wording) but its visual treatment — size, colour, panel width — is this codebase's own choice, not a Figma-drawn spec. Same open question, same answer needed only if design wants a different treatment.
-
-## winkelmand-no-section-grouping
-
-**Still open, narrowed by #179.** #177's Winkelmand design drew one flat `Card` of rows with no supermarket-`section` grouping anywhere (nodes `4044:10838`/`4044:10830`, and the older `3779:4112`/`3779:3996` state mockups, since superseded — current nodes `4051:13049`/`4051:13040`), although #29 and `Architecture.md` §4.2 both call for it. #179 built two real groupings (by source recipe, by NEVO food group/"Voedingsgroep" — `shopping_list_items.reference_ingredient_id`), but `shopping_list_items.section` (#175) itself is still unread by any query or component — it exists in the schema and is round-tripped by `addShoppingListItem` (#176), but no UI groups or renders it. See `winkelmand-gangpad-grouping-not-built` below for why a real supermarket-aisle grouping is a separate, larger piece of work than this column alone.
-
-## winkelmand-no-manual-add-entry-point
-
-**No "add item manually" control exists anywhere in the fetched Winkelmand nodes** — no input field, no "+" button — yet `Vision.md`'s Boodschappenlijst section says the list is filled "handmatig of vanuit recepten". `addShoppingListItem` (#176) is fully built and tested at the data layer; #177 ships no UI that calls it. Needs a design pass adding a real entry point (a row-adding input, a panel, or otherwise) before this action has any UI consumer.
-
-## winkelmand-clear-all-no-confirmation
-
-**"Verwijder alles" (#177, retitled by #179) has no designed confirmation step** — the fetched header (`4053:14285` desktop / `4053:14274` mobile, superseding the earlier `4044:10843`/`4044:10835`) is a single destructive `Button/Default`, no second frame or annotation for a confirm/cancel state, unlike `RecipeDetailPage.tsx`'s own "Verwijderen" (`design/notes/RecipeDetailPage.md`'s #94-precedent two-step confirm). Built as a literal, single-click read of the fetched node rather than importing that precedent uninvited — a real destructive-action risk (this button empties the whole list in one click, with no undo), but inventing a confirmation step that Figma doesn't draw would be adding UI the ticket explicitly asked to flag, not build. Needs a design/product answer: ratify the single-click behaviour as correct, or design a confirm step (reusing the existing two-step pattern or a new one).
-
-## winkelmand-gangpad-grouping-not-built
-
-**#179's Sort dropdown ships "Voedingsgroep" (NEVO food group), not the "Gangpad" (supermarket aisle) grouping the ticket text asked to explore** — the annotation on `4052:13970` itself flags why: *"I'd prefer 'Gangpad' over 'Foodgroup' so eg. canned tomato's don't end up with vegetables but in the 'international' isle."* Measured against the real data rather than guessed: NEVO's `reference.ingredients.category_nl`/`category_en` (27 groups total; `Groente` 230 rows, `Vlees en gevogelte` 216, `Gebak en koek` 170) are food-science groups, not aisle groups, and the annotation's own example reproduces exactly — `"Puree tomaten- geconcentreerd blik"` resolves to `category_nl = "Groente"`, not an "international"/canned-goods aisle.
-
-A real Gangpad layer needs a curated 27-group→aisle map (a genuinely new data artifact, not derivable from NEVO's own columns) plus name-pattern overrides for the canned/frozen/dried cases the category alone gets wrong — measured against the live `reference.ingredients` table: 101 rows match `blik|glas|conserv` (canned/jarred/preserved), 42 match `diepvries|bevroren` (frozen), 48 match `gedroogd` (dried). Building this without a curated map + override list would mean inventing supermarket-layout data with no source, the same class of gap ADR-0013/ADR-0014 were written to resolve for NEVO's own import — so this needs the same treatment (an ADR), not a page-ticket call. Shipped instead: Voedingsgroep grouping only, dropdown option labels reading "Voedingsgroep" (matching Figma's own `Text` property on `I4052:13973;3705:4471;4052:13970`) rather than "Gangpad" or "Food group" — the literal, already-drawn option, not the ticket's exploratory preference. Needs a product/design answer: commission the aisle map + override list (own ADR), or ratify Voedingsgroep as the shipped-and-final grouping.
-
-## winkelmand-send-no-success-feedback
-
-**#178's "Voeg toe aan mand" button (`RecipeDetailPage.tsx`) has no designed success/confirmation state anywhere in Figma** — the fetched node renders the button itself (already flagged, `docs/open-questions.md`'s pre-#178 "Voeg toe aan mand — rendered, disabled" history in `design/notes/RecipeDetailPage.md`) but no toast, badge, checkmark swap, or any other acknowledgement that the send succeeded. Built with only a `disabled` state while the Server Action is in flight (`sendPending`, `RecipeDetailPage.tsx`) — no success or failure feedback is rendered either way, matching what the design actually shows (nothing) rather than inventing a toast/banner pattern that doesn't exist elsewhere in this codebase. A user who sends a recipe has no on-page signal it worked short of navigating to `/winkelmand` and looking. Needs a design answer: a toast, an inline confirmation, a Winkelmand badge count, or an explicit ratification that silence is correct.
-
-## winkelmand-merged-line-keeps-first-recipes-group
-
-**#179 groups the Winkelmand by source recipe, and separately merges same-name/same-unit lines — the two rules collide and Figma answers neither.** A merged line carries one `recipe_id`, so adding "Banaan 2 stuk" from recipe A and then from recipe B sums onto A's row and renders under A's card only; recipe B's card never shows an ingredient the user did add from it. Two further inconsistencies fall out of the same tension: the swipe-to-cart path (`addIngredientToShoppingList`, #179) merges into an **existing** database row, while the whole-recipe send (`sendRecipeToShoppingList`, #178) only merges within its own batch and otherwise inserts — so sending recipe A then recipe B leaves two "Banaan" lines, but swiping the same ingredient twice leaves one. Both behaviours are individually defensible and each is recorded in `design/notes/RecipeDetailPage.md`; what is missing is a product decision about which one is right. Options: don't merge across recipes at all (grouping stays truthful, the list repeats ingredients); keep merging and show a merged line under every contributing recipe (needs a join table, i.e. a schema change); or drop `recipe_id` from a line the moment it merges, sending it to "Overig". Needs a design/product answer before either path is treated as settled.
-
-## winkelmand-send-no-subset-picker
-
-**Partly resolved by #179.** `Vision.md`'s Boodschappenlijst section says a user can send "één of meerdere ingrediënten" (one or more ingredients) to the list; #179's swipe-to-cart on `RecipeDetailPage.tsx`'s ingredient rows (Figma `State=Cart`, node `4050:11613`) is now a real per-ingredient affordance, so single sends have designed UI. What is still undesigned is a *multi*-select: no fetched node offers checkboxes, a selection mode, or any way to pick several ingredients and send them in one action — the header's "Voeg toe aan mand" stays whole-recipe, the swipe stays one row at a time. Needs a design pass only if batching several (but not all) ingredients is actually wanted.
-
+**Built as the least-surprising literal read** — `ingredient-name-annotation-only-on-row-two`, `recipe-panel-two-identical-voeg-toe-buttons`, `recipe-panel-personen-chevron-behaviour-unsourced`, `recipe-panel-desktop-layout-gap`, `recipe-ingredient-row-unit-label-always-shown`, `recipe-card-no-photo-placeholder`, `toggle-group-shared-track`, `winkelmand-send-no-subset-picker` (per-ingredient swipe covers single sends; only *multi*-select stays undesigned).

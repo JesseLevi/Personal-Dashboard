@@ -291,7 +291,8 @@ export function convertToUnitSystem(
 // (not "0.330000000000001" -- `toFixed` alone doesn't remove those). This
 // deliberately emits decimals, not vulgar fractions ("0.25 Cup", not "1/4
 // Cup"), which reads differently from the detail-page design --
-// see docs/open-questions.md#fraction-notation-vs-decimal-formatter.
+// resolved by ADR-0014 (docs/decisions/0014-kitchen-unit-conversion-and-
+// fraction-notation.md), which owns the kitchen-fraction renderer.
 function formatNumber(value: number): string {
   return Number(value.toFixed(2)).toString();
 }
