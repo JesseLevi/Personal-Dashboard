@@ -81,7 +81,7 @@ function distinctNonNull(values: (string | null | undefined)[]): string[] {
  */
 export async function getShoppingListItems(): Promise<ShoppingListItemWithGroupInfo[]> {
   const supabase = await createSupabaseServerClient();
-  const userId = await getAuthenticatedUserId(supabase);
+  const userId = await getAuthenticatedUserId();
   if (!userId) return [];
 
   const { data, error } = await supabase

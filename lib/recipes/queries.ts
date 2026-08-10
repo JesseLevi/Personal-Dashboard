@@ -59,7 +59,7 @@ interface RawRecipeQueryRow extends RecipeRow {
  */
 export async function getRecipeCategoriesWithRecipes(): Promise<CategoryWithRecipes[]> {
   const supabase = await createSupabaseServerClient();
-  const userId = await getAuthenticatedUserId(supabase);
+  const userId = await getAuthenticatedUserId();
   if (!userId) return [];
 
   const { data, error } = await supabase
@@ -363,7 +363,7 @@ export async function getRecipeWithIngredientsAndSteps(
   if (!parsedId.success) return null;
 
   const supabase = await createSupabaseServerClient();
-  const userId = await getAuthenticatedUserId(supabase);
+  const userId = await getAuthenticatedUserId();
   if (!userId) return null;
 
   const { data, error } = await supabase
@@ -485,7 +485,7 @@ export async function searchIngredientLibrary(
   if (!trimmed) return [];
 
   const supabase = await createSupabaseServerClient();
-  const userId = await getAuthenticatedUserId(supabase);
+  const userId = await getAuthenticatedUserId();
   if (!userId) return [];
 
   const pattern = `%${escapeIlike(trimmed)}%`;
@@ -587,7 +587,7 @@ export async function resolveIngredientUnitMass(
   if (!parsedId.success) return { status: "unresolved" };
 
   const supabase = await createSupabaseServerClient();
-  const userId = await getAuthenticatedUserId(supabase);
+  const userId = await getAuthenticatedUserId();
   if (!userId) return { status: "unresolved" };
 
   // Bridge tiers only ever fire for a volume-magnitude unit

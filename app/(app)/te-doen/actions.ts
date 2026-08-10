@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getAuthenticatedUserId } from "@/lib/boards/session";
+import { requireUserId } from "@/lib/boards/session";
 import { nextPosition } from "@/lib/boards/positioning";
 import { DEFAULT_BOARD_COLUMNS } from "@/lib/boards/defaults";
 import {
@@ -46,13 +46,11 @@ import type { Database } from "@/lib/database.types";
 
 type Client = SupabaseClient<Database>;
 
-async function requireUserId(
-  supabase: Client,
-): Promise<{ userId: string } | { error: "unauthenticated" }> {
-  const userId = await getAuthenticatedUserId(supabase);
-  if (!userId) return { error: "unauthenticated" };
-  return { userId };
-}
+// requireUserId used to be defined locally here (and, identically, in
+// app/(app)/recepten/actions.ts and app/(app)/winkelmand/actions.ts) taking
+// a `supabase` client as an argument. #168 replaced all three copies with
+// the shared, cache()'d, argument-free lib/boards/session.ts helper -- see
+// that file's header comment for why it no longer needs one.
 
 function logDbError(action: string, error: { code: string; message: string }) {
   console.error(`[boards] ${action} failed:`, error.code, error.message);
@@ -112,7 +110,7 @@ export async function createBoard(input: unknown): Promise<ActionResult<BoardRow
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const last = await lastBoardPosition(supabase, auth.userId);
@@ -157,7 +155,7 @@ export async function renameBoard(input: unknown): Promise<ActionResult> {
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const { data, error } = await supabase
@@ -185,7 +183,7 @@ export async function toggleBoardFavorite(
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const { data: board, error: fetchError } = await supabase
@@ -245,7 +243,7 @@ export async function createColumn(
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const { data: board, error: boardError } = await supabase
@@ -289,7 +287,7 @@ export async function renameColumn(input: unknown): Promise<ActionResult> {
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const { data, error } = await supabase
@@ -315,7 +313,7 @@ export async function createCard(input: unknown): Promise<ActionResult<CardRow>>
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const { data: column, error: columnError } = await supabase
@@ -378,7 +376,7 @@ export async function updateCard(input: unknown): Promise<ActionResult> {
   }
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const { data, error } = await supabase
@@ -404,7 +402,7 @@ export async function deleteCard(input: unknown): Promise<ActionResult> {
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const { data, error } = await supabase
@@ -443,7 +441,7 @@ export async function moveCard(
   const { cardId, columnId, targetIndex } = parsed.data;
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const { data: position, error } = await supabase.rpc("move_card", {

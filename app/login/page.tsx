@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Image from "next/image";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthenticatedUserId } from "@/lib/boards/session";
 import { greetingKeyForHour } from "@/lib/auth/greeting";
 import { LoginForm } from "./LoginForm";
 import { sendMagicLink, signInWithPassword } from "./actions";
@@ -14,11 +14,10 @@ import { sendMagicLink, signInWithPassword } from "./actions";
 // frame was made) — read as "desktop gets the same two-step behaviour as
 // mobile", not "desktop has no step 3" (design/notes/LoginForm.md).
 export default async function LoginPage() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) redirect("/te-doen");
+  // #168: cache()'d helper instead of a direct supabase.auth.getUser() call
+  // — see lib/boards/session.ts.
+  const userId = await getAuthenticatedUserId();
+  if (userId) redirect("/te-doen");
 
   const greetingKey = greetingKeyForHour(new Date().getHours());
 

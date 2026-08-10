@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getAuthenticatedUserId } from "@/lib/recipes/session";
+import { requireUserId } from "@/lib/recipes/session";
 import { nextPosition } from "@/lib/boards/positioning";
 import { searchIngredientLibrary } from "@/lib/recipes/queries";
 import {
@@ -84,13 +84,11 @@ type Client = SupabaseClient<Database>;
 type IngredientLine = z.infer<typeof createRecipeSchema>["ingredients"][number];
 type StepLine = z.infer<typeof createRecipeSchema>["steps"][number];
 
-async function requireUserId(
-  supabase: Client,
-): Promise<{ userId: string } | { error: "unauthenticated" }> {
-  const userId = await getAuthenticatedUserId(supabase);
-  if (!userId) return { error: "unauthenticated" };
-  return { userId };
-}
+// requireUserId used to be defined locally here (identically in
+// app/(app)/te-doen/actions.ts and app/(app)/winkelmand/actions.ts) taking a
+// `supabase` client argument. #168 replaced all three copies with the
+// shared, cache()'d, argument-free lib/boards/session.ts helper (re-exported
+// via lib/recipes/session.ts) -- see that file's header comment.
 
 function logDbError(action: string, error: { code: string; message: string }) {
   console.error(`[recipes] ${action} failed:`, error.code, error.message);
@@ -202,7 +200,7 @@ export async function createCategory(
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const last = await lastCategoryPosition(supabase, auth.userId);
@@ -237,7 +235,7 @@ export async function updateCategory(input: unknown): Promise<ActionResult> {
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const { data, error } = await supabase
@@ -263,7 +261,7 @@ export async function deleteCategory(input: unknown): Promise<ActionResult> {
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   // recipes.category_id is `on delete cascade` (20260730000002_recipe_schema.sql):
@@ -296,7 +294,7 @@ export async function createRecipe(input: unknown): Promise<ActionResult<RecipeR
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const { data: category, error: categoryError } = await supabase
@@ -379,7 +377,7 @@ export async function updateRecipe(input: unknown): Promise<ActionResult> {
   }
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const { data: existing, error: existingError } = await supabase
@@ -455,7 +453,7 @@ export async function deleteRecipe(input: unknown): Promise<ActionResult> {
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   // #149: read thumbnail_path before deleting the row, so a stored
@@ -518,7 +516,7 @@ export async function moveRecipe(
   const { recipeId, categoryId, targetIndex } = parsed.data;
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const { data: position, error } = await supabase.rpc("move_recipe", {
@@ -562,7 +560,7 @@ export async function createOwnIngredient(
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   if (parsed.data.referenceId) {

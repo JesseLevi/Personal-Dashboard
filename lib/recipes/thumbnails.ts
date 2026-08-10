@@ -47,7 +47,7 @@ export async function uploadRecipeThumbnail(file: File): Promise<ActionResult<{ 
   if (!validation.ok) return { success: false, error: validation.error };
 
   const supabase = await createSupabaseServerClient();
-  const userId = await getAuthenticatedUserId(supabase);
+  const userId = await getAuthenticatedUserId();
   if (!userId) return { success: false, error: "unauthenticated" };
 
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -97,7 +97,7 @@ export async function uploadRecipeThumbnail(file: File): Promise<ActionResult<{ 
  */
 export async function deleteRecipeThumbnail(stem: string): Promise<void> {
   const supabase = await createSupabaseServerClient();
-  const userId = await getAuthenticatedUserId(supabase);
+  const userId = await getAuthenticatedUserId();
   if (!userId || !stem.startsWith(`${userId}/`)) return;
 
   const { error } = await supabase.storage
