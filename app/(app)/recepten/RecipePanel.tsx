@@ -12,6 +12,7 @@ import { ImageUploadField } from "@/components/molecules/ImageUploadField";
 import { RecipeIngredientRow } from "@/components/molecules/RecipeIngredientRow";
 import { isIconName } from "@/components/atoms/Icon";
 import { UNIT_CODES, formatQuantity, type UnitCode } from "@/lib/recipes/units";
+import { downscaleImageFile } from "@/lib/images/downscale-client";
 import type {
   ActionResult,
   IngredientRow,
@@ -298,8 +299,18 @@ export function RecipePanel({
       // (updateRecipeSchema's per-field-optional contract).
       let thumbnailPath: string | undefined;
       if (thumbnailFile) {
+        // #174/#171 chunk 3: shrink the payload client-side before it ever
+        // leaves the browser (megabytes -> a few hundred kB) -- sharp's
+        // server-side re-encode (lib/recipes/thumbnail-processing.ts) stays
+        // the authority regardless, since the client is never trusted, so a
+        // resize failure here just means the original ships instead
+        // (downscaleImageFile fails open, never throws). Awaited inside this
+        // same `startTransition` block, so `isPending`/"Bezig met
+        // opslaan..." already covers the decode/encode time -- no separate
+        // loading state needed.
+        const uploadFile = await downscaleImageFile(thumbnailFile);
         const formData = new FormData();
-        formData.set("thumbnail", thumbnailFile);
+        formData.set("thumbnail", uploadFile);
         const uploadResult = await onUploadThumbnail(formData);
         if (!uploadResult.success) {
           setError(tErrors(uploadResult.error));

@@ -2,6 +2,31 @@
 
 Append-only archive of per-ticket incident write-ups: defects that shipped past every CI gate, the merge-conflict resolutions for specific PRs, and the reasoning behind non-obvious fixes. These are moved here verbatim, not summarised, because the detail is the evidence base for why this project doesn't fully trust its CI gates. Nothing here is current status — entries are never updated once written. Read on demand when investigating a specific ticket, a recurring failure mode, or a past merge — never as part of session start.
 
+## 2026-08-10 — Hand-rolled EXIF stripping dropped the Orientation tag, shipping sideways phone photos (#174/#171)
+
+`lib/recipes/thumbnail-validation.ts`'s original EXIF stripper (added for
+#121, before this repo had any image-processing dependency) deleted the
+JPEG APP1 segment wholesale to purge metadata before storing a recipe
+thumbnail. That segment is also where the EXIF `Orientation` tag lives —
+the flag a phone sets when a photo's raw pixel buffer is stored in one
+rotation (e.g. landscape) but is meant to display in another (e.g.
+portrait, because the phone was held sideways). Deleting the segment
+outright discarded that instruction along with the metadata it was meant to
+remove, so any photo relying on it rendered exactly as captured: sideways
+or upside down. Nothing in CI or code review caught this because no test
+exercised a rotated source image — every fixture used was already
+upright.
+
+Fixed in #174/#171 chunk 1 by replacing the hand-rolled stripper with
+`sharp`, whose `.autoOrient()` (`lib/recipes/thumbnail-processing.ts`)
+reads `Orientation`, physically rotates/flips the pixel buffer to match it,
+*then* discards the tag — so the metadata is still fully stripped, but only
+after it's been honoured rather than silently dropped. `tests/recipes-
+thumbnails.test.ts`'s "honours EXIF orientation before discarding it,
+unlike the old stripper" test is the regression guard: a 100×50 source
+tagged `orientation: 6` (rotate 90° CW for display) must render as a
+50×100 output.
+
 ## 2026-08-02 — The `db` CI gate shipped broken because it could never be run before merging (#121)
 
 `20260801000001_recipe_thumbnails_storage.sql` (PR #147, ticket #121) added

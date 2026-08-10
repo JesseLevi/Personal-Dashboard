@@ -34,9 +34,13 @@ const RECIPE_THUMBNAILS_BUCKET = "recipe-thumbnails";
  * stored) and uploads a recipe thumbnail under the signed-in user's own
  * path prefix. Returns the stored stem (for `recipes.thumbnail_path`),
  * never a URL -- the bucket is private, so every saved-recipe read goes
- * through app/api/recipe-thumbnail/[recipeId]/route.ts instead
- * (`getRecipeThumbnailSignedUrl` below remains for the pre-save
- * upload/preview case).
+ * through app/api/recipe-thumbnail/[recipeId]/route.ts instead. The pre-save
+ * case (a newly picked, not-yet-uploaded file in RecipePanel.tsx) never
+ * needed a signed URL either -- `ImageUploadField` shows only the picked
+ * file's name, no image preview -- so the `getRecipeThumbnailSignedUrl`
+ * helper this comment used to reserve for "the upcoming upload-preview case"
+ * (#171) was deleted in #174/#171 chunk 3 once chunk 2 left it with zero
+ * callers and chunk 3 confirmed no preview needs it either.
  */
 export async function uploadRecipeThumbnail(file: File): Promise<ActionResult<{ path: string }>> {
   const validation = validateThumbnailFile(file);
@@ -85,10 +89,11 @@ export async function uploadRecipeThumbnail(file: File): Promise<ActionResult<{ 
  * Removes both stored variant objects for a thumbnail `stem` (#149,
  * deleteRecipe in app/(app)/recepten/actions.ts). `stem` must already be
  * prefixed with the caller's own user id -- same fail-fast-without-a-
- * round-trip guard as `getRecipeThumbnailSignedUrl` below. Best-effort by
- * design: logs and swallows its own error rather than throwing, because
- * the caller must be able to delete the recipe row regardless of whether
- * this cleanup succeeds.
+ * round-trip guard every recepten/actions.ts write uses (RLS would also
+ * reject a mismatched prefix; this just fails fast without the storage
+ * round trip). Best-effort by design: logs and swallows its own error
+ * rather than throwing, because the caller must be able to delete the
+ * recipe row regardless of whether this cleanup succeeds.
  */
 export async function deleteRecipeThumbnail(stem: string): Promise<void> {
   const supabase = await createSupabaseServerClient();
@@ -101,38 +106,4 @@ export async function deleteRecipeThumbnail(stem: string): Promise<void> {
   if (error) {
     console.error("[recipes] deleteRecipeThumbnail failed:", error.message);
   }
-}
-
-/**
- * Short-lived signed URL for one variant of a stored thumbnail -- never a
- * public bucket URL (Architecture.md §7). `stem` must already be prefixed
- * with the caller's own user id; a mismatched prefix returns `null`
- * without a storage round trip (RLS would also reject it, this just fails
- * fast with the same "don't trust the client for ownership" shape every
- * recepten/actions.ts write uses).
- *
- * #171: the board and detail hero no longer call this -- they request
- * app/api/recipe-thumbnail/[recipeId]/route.ts directly so the browser can
- * cache the bytes under a stable URL. This helper stays for the
- * upload/preview case (chunk 3 of #174/#171), where a signed URL for a
- * not-yet-saved recipe's own upload is the only option.
- */
-export async function getRecipeThumbnailSignedUrl(
-  stem: string,
-  variant: ThumbnailVariant,
-  expiresInSeconds = 60,
-): Promise<string | null> {
-  const supabase = await createSupabaseServerClient();
-  const userId = await getAuthenticatedUserId(supabase);
-  if (!userId || !stem.startsWith(`${userId}/`)) return null;
-
-  const { data, error } = await supabase.storage
-    .from(RECIPE_THUMBNAILS_BUCKET)
-    .createSignedUrl(thumbnailVariantPath(stem, variant), expiresInSeconds);
-
-  if (error || !data) {
-    console.error("[recipes] getRecipeThumbnailSignedUrl failed:", error?.message);
-    return null;
-  }
-  return data.signedUrl;
 }

@@ -119,9 +119,9 @@ placeholder renders exactly as it did before. This route is a plain `<img>`
 target, not fronted by `next/image`, at both call sites — `next/image`
 would 404 an image it couldn't reach anyway.
 
-**`getRecipeThumbnailSignedUrl` (singular) survives**, unlike its plural
-sibling: it's kept for the upload/preview case (a not-yet-saved recipe's own
-freshly-picked photo, chunk 3 of #174/#171), which isn't reachable via the
-route above since there's no saved `recipes` row/`recipeId` yet to key it
-on. It currently has zero call sites in this codebase snapshot — that's
-expected, not dead code, until chunk 3 wires the preview UI.
+**`getRecipeThumbnailSignedUrl` (singular) did NOT survive** — chunk 3 of
+#174/#171 deleted it. The upload/preview case it was reserved for (a
+not-yet-saved recipe's own freshly-picked photo) turned out not to need a
+URL of any kind: `ImageUploadField` only ever displays the picked file's
+*name*, never a rendered preview image, so there was nothing for a signed
+URL to back. Confirmed unused by a repo-wide grep before deletion.
