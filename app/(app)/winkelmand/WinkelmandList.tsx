@@ -208,23 +208,52 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
         // design/notes/WinkelmandPage.md.
         actions={
           isEmpty ? undefined : (
-            <>
+            // #182: a single flex wrapper mirroring Figma's own "Knoppen"
+            // frame (row, gap 8px mobile / 20px desktop) -- both buttons
+            // must be ONE child of PageHeader's actions slot, not two.
+            // PageHeader's <header> is itself `justify-between` between
+            // title and actions; passing the two buttons as Fragment
+            // siblings made them three separate flex children of <header>,
+            // so the header's own space-between spread Sort away from
+            // Verwijder-alles instead of grouping them. See
+            // design/notes/WinkelmandPage.md#182.
+            // #182: the Sort wrapper is the positioning context at every
+            // breakpoint -- no relative/static flip. Only the panel's
+            // horizontal anchor switches per breakpoint: left-anchored to
+            // the Sort button below md, right-anchored to it from md up.
+            // Desktop's right anchor is pixel-verified against the fetched
+            // node: the Dropdown's own `absoluteBoundingBox` right edge
+            // (x=10620) exactly matches the Sort button's right edge, not
+            // the group's. Figma draws no open-dropdown mobile frame at all
+            // (Mobile/Sort, 4052:13689, has no Dropdown child) -- undesigned,
+            // so the mobile anchor is this ticket's own call: left-anchor to
+            // the button that opened it, rather than the far side of the
+            // whole group, per user decision. Geometry re-verified in a real
+            // browser at 320/375/390/430px, see design/notes/WinkelmandPage.md#182.
+            <div className="flex items-center gap-2 md:gap-5">
               <div ref={sortMenuRef} className="relative">
                 <Button
                   icon="ArrowUpDown"
                   align="left"
+                  // #182: icon-only on mobile (fetched Mobile nodes draw
+                  // "With text: false") -- text hidden via `hidden md:inline`
+                  // rather than swapping `children`, so the accessible name
+                  // stays on aria-label at both breakpoints instead of
+                  // depending on which text node happens to be visible.
+                  aria-label={t("sortLabel")}
                   aria-expanded={sortMenuOpen}
                   onClick={() => setSortMenuOpen((open) => !open)}
                 >
-                  {t("sortLabel")}
+                  <span className="hidden md:inline">{t("sortLabel")}</span>
                 </Button>
                 {sortMenuOpen && (
-                  // Right-aligned under the Sort button, z-999, closes on
-                  // outside click -- the fetched panel's own annotation
-                  // ("See #DropdownActive ... z-index: 999. Click outside to
+                  // Left-aligned under the Sort button (mobile) / right-
+                  // aligned under it (desktop), z-999, closes on outside
+                  // click -- the fetched panel's own annotation ("See
+                  // #DropdownActive ... z-index: 999. Click outside to
                   // disappear") points at the exact same mechanism
                   // TeDoenHeader.tsx's sort menu already implements.
-                  <div className="absolute top-full right-0 z-[999] mt-2 w-[209px]">
+                  <div className="absolute top-full left-0 z-[999] mt-2 w-[209px] md:left-auto md:right-0">
                     <Dropdown className="shadow-sm">
                       {SORT_OPTIONS.map((option) => (
                         <Button
@@ -248,7 +277,7 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
               <Button variant="destructive" icon="Trash" onClick={handleClearAll}>
                 {t("clearAllLabel")}
               </Button>
-            </>
+            </div>
           )
         }
       />
