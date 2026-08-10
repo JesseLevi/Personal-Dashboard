@@ -28,9 +28,8 @@
 
 ## Unverified against reality
 
-The hosted **schema** was audited 2026-08-10 and is sound: all 16 `public` tables have RLS on with 4 policies each, `reference.*` is select-only, the `recipe-thumbnails` bucket and its 4 `storage.objects` policies exist, and `replace_recipe_contents(uuid,jsonb,jsonb)` is `security invoker` with `search_path=''`. What is still untested is **behaviour**, and one migration never landed.
+The hosted **schema** was audited 2026-08-10 and is sound: all 16 `public` tables have RLS on with 4 policies each, `reference.*` is select-only, the `recipe-thumbnails` bucket and its 4 `storage.objects` policies exist, and `replace_recipe_contents(uuid,jsonb,jsonb)` is `security invoker` with `search_path=''`. Every migration in `supabase/migrations/` has landed. What is still untested is **behaviour**.
 
-- **`supabase/migrations/20260810000001_recipe_thumbnails_bucket_cap.sql` is committed but not applied** — the hosted bucket still caps uploads at 5 MiB instead of 1 MiB. Needs ADR-0012's confirm-then-apply step, plus the version-row correction above.
 - **#185** — no authenticated run has ever happened against live Supabase; every query, server action and storage-cleanup path is reasoned-only.
 - **#186** — #96's drag-persistence acceptance and #114's drop-hover fix have never run in a real browser.
 - **#187** — #113's iOS Safari viewport fixes, #118's 750ms touch-hold and #110's hidden scrollbar have never run on real hardware.
