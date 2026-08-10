@@ -12,15 +12,17 @@
 - **Phase 4 (Recepten) and Phase 5 (Boodschappenlijst) are both mid-flight.** Per-ticket status lives on the board, never here.
   - `/recepten` category-kanban · `/recepten/[recipeId]` V2 detail page (nutrition row, "Pas aan" panel, NEVO/USDA-backed macros) · private `recipe-thumbnails` bucket with server-side re-encode → `design/notes/RecipeDetailPage.md`, `ReceptenBoard.md`
   - `/winkelmand` with grouping, sort and swipe-to-cart → `design/notes/WinkelmandPage.md`
-- **Ready to pick up** (board column): #162 i18n wiring.
-- **In review**: #171 and #174 (PR #181), #172 (PR #194), #182 (PR #195) — merged, but the issues stay open by this repo's convention (no closing keyword; the user reviews, then closes).
+- **Ready to pick up** (board column): #162 i18n wiring, #190 `database.types.ts` drift gate.
+- **In review**: #171 and #174 (PR #181), #172 (PR #194), #182 (PR #195), #168/#169/#170/#173 (PRs #197–#200) — merged, but the issues stay open by this repo's convention (no closing keyword; the user reviews, then closes).
 - **The app is now an installable standalone PWA** (#172): `app/manifest.ts`, `appleWebApp` with `statusBarStyle: "black-translucent"` (a user choice over the ticket's `"default"`), Figma-sourced icons, a safe-area audit across the shell, and CSS-only touch polish. → `design/notes/AppShell.md`
-- Backlog: #1–#5, #8–#11 (server-side, need real accounts — don't start unprompted), #168–#173 (perf), #30–#33 (phases 6–9), plus the verification tickets below.
-- `middleware.ts` is deliberately absent — session refresh is #8; the auth guard lives in `app/(app)/layout.tsx` until then. Every sign-in path lands on `/te-doen`.
+- **The perf round is done** (#168–#170, #173, all merged 2026-08-10). Auth is one *local* JWT verification per request (`getClaims()` + React `cache()`), a root `middleware.ts` now refreshes session cookies, drag persists through the `move_card`/`move_recipe` RPCs with no `revalidatePath` on the response, the shell streams behind `<Suspense>` + `loading.tsx`, and Vercel functions run in `fra1` next to Supabase. #171 and #174 (thumbnails) landed earlier in the same round.
+- Backlog: #1–#5, #9–#11 (server-side, need real accounts — don't start unprompted), #30–#33 (phases 6–9), plus the verification tickets below. **#8 is closed out by #168's `middleware.ts`.**
+- `middleware.ts` exists as of #168 and **only refreshes tokens — it is not a route guard.** The single redirect rule for unauthenticated access stays in `app/(app)/layout.tsx`; don't add a competing one. Every sign-in path lands on `/te-doen`.
 
 ## Traps that have already cost a session
 
 - **Committing a migration does not apply it.** `deploy.yml` is `workflow_dispatch`-only, so a push to `main` deploys code and migrates nothing. Check `supabase_migrations.schema_migrations` on the hosted project *before* debugging a data-shaped bug.
+- **`20260810000002_move_rpcs.sql` (#169) is committed but NOT yet applied to hosted.** Until it is, `moveCard`/`moveRecipe` fail against production — they now call `public.move_card`/`move_recipe`, which don't exist there yet. Applying it means dispatching `deploy.yml`, whose `deploy` job hangs off `needs: migrate`, so **migrating and promoting to production are one action** — there is no migrate-only mode. That is a user decision (ADR-0012), not a routine step.
 - **A migration applied by hand or via the Supabase MCP server gets that route's own timestamp as its version**, not the repo filename, and `supabase db push` then refuses. Correct the version row by hand every time a migration reaches hosted outside `deploy.yml`.
 - **Never batch a migration across parallel agents** — that raced two writers into 250 duplicate `reference.ingredients` rows on #161. One sequential call.
 - **Visual flake: isolation is not a control — run the FULL suite twice.** Confirmed flaky stories: `category-panel--create-category`, `category-panel--edit-category`, `recipe-panel--filled`. Identical code has given fail-then-pass across consecutive full runs, and a story that failed 3/3 *in isolation* passed in a full run — story count, ordering and parallelism all change the rasterization. Never bisect a visual failure; regenerate the baseline or widen the threshold. Never let two runs overlap.
@@ -30,7 +32,7 @@
 
 ## Unverified against reality
 
-The hosted **schema** was audited 2026-08-10 and is sound: all 16 `public` tables have RLS on with 4 policies each, `reference.*` is select-only, the `recipe-thumbnails` bucket and its 4 `storage.objects` policies exist, and `replace_recipe_contents(uuid,jsonb,jsonb)` is `security invoker` with `search_path=''`. Every migration in `supabase/migrations/` has landed. What is still untested is **behaviour**.
+The hosted **schema** was audited 2026-08-10 and is sound: all 16 `public` tables have RLS on with 4 policies each, `reference.*` is select-only, the `recipe-thumbnails` bucket and its 4 `storage.objects` policies exist, and `replace_recipe_contents(uuid,jsonb,jsonb)` is `security invoker` with `search_path=''`. Every migration in `supabase/migrations/` had landed as of that audit — **#169's `move_rpcs` migration is the one exception and is still pending** (see Traps). What is still untested is **behaviour**.
 
 - **#185** — no authenticated run has ever happened against live Supabase; every query, server action and storage-cleanup path is reasoned-only.
 - **#186** — #96's drag-persistence acceptance and #114's drop-hover fix have never run in a real browser.
@@ -40,13 +42,16 @@ The hosted **schema** was audited 2026-08-10 and is sound: all 16 `public` table
 - **#190** — `lib/database.types.ts` is hand-written with no CI drift gate, and the obvious gate is blocked on the `reference`-schema override.
 - **#191** — `BoardPanel.tsx` has no Ladle story, so it has zero visual coverage.
 - **`toggleBoardFavorite` is not transactional** — two sequential statements; a failure between them leaves zero favourites (never two) and self-heals on the next toggle.
+- **The whole perf round (#168–#170, #173) is reasoned-and-gated, never exercised by a signed-in human.** #168 in particular replaced the auth path for every route; CI, `pnpm build` and the Vercel preview all pass, but #185's "no authenticated run has ever happened" still holds and now covers more surface. The `move_card`/`move_recipe` RPCs did run for real against Postgres in CI's `db` job (pgTAP, `supabase/tests/rls-move-rpcs.sql`), so that part is not purely reasoned.
+- **`getClaims()` verifies the JWT locally, so revocation is not immediate** (#168, deliberate). A session revoked server-side — sign-out-everywhere, a banned or deleted account — stays accepted until the access token expires, where `getUser()` caught it on the next call. This is inherent to Supabase's JWT-signing-keys model, which the ticket mandates, and is the source of the latency win. If signing keys are ever switched off, supabase-js falls back to a full `getUser()` network call automatically — the cost returns, the check does not weaken.
 - **Production promotion is manual** (ADR-0012): either "Promote to Production" / `vercel promote` on an existing build, or a `workflow_dispatch` run of `deploy.yml` (verified green 2026-08-07, #165), which migrates and promotes together. Either way, migrations land first.
 
 ## Next
 
-1. **Work the verification tickets** (#185–#191). This is the real remaining Phase 3 work — there is no missing UI behind it.
-2. **7 ADRs are owed** for shipped schema deviations: `cards.size`, `boards.is_favorite`, `recipe_categories.icon`, `recipe_ingredients.group_label`, the `unit` enum, `recipe_step_ingredients`, and the `replace_recipe_contents` RPC-backed-transaction pattern (user-approved 2026-08-01). Write-up only, but it is the architecture layer — flag, don't improvise.
-3. Phase 4 and 5 remainder, per the board.
+1. **Apply #169's `move_rpcs` migration to hosted** — drag persistence is broken in production until it lands, and it is bundled with a production promotion (see Traps). User's call.
+2. **Work the verification tickets** (#185–#191). This is the real remaining Phase 3 work — there is no missing UI behind it. #185 now matters more, not less: the perf round rewrote the auth path underneath every route.
+3. **7 ADRs are owed** for shipped schema deviations: `cards.size`, `boards.is_favorite`, `recipe_categories.icon`, `recipe_ingredients.group_label`, the `unit` enum, `recipe_step_ingredients`, and the `replace_recipe_contents` RPC-backed-transaction pattern (user-approved 2026-08-01). Write-up only, but it is the architecture layer — flag, don't improvise. (The 8th, the move RPCs, shipped with #169 as ADR-0015.)
+4. Phase 4 and 5 remainder, per the board.
 
 Constraints worth knowing before touching these areas:
 
