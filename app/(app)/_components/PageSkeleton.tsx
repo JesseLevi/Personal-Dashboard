@@ -38,7 +38,12 @@ export async function BoardSkeleton() {
   return (
     <div className="flex w-full flex-col gap-6">
       <LoadingStatus label={t("loading")} />
-      <div aria-hidden="true">
+      {/* `inert` alongside aria-hidden: CardContainer renders two real
+          Buttons (add/edit), and focusable elements inside an aria-hidden
+          subtree are an a11y violation — a keyboard user could tab into a
+          control that isn't in the accessibility tree while the board
+          loads. `inert` removes them from the tab order too. */}
+      <div aria-hidden="true" inert>
         <Carousel columnWidthClassName="w-74 md:w-80">
           {Array.from({ length: SKELETON_COLUMNS }, (_, columnIndex) => (
             <CardContainer key={columnIndex} name="" count="" addLabel={t("loading")} editLabel={t("loading")}>
