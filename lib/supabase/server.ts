@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/lib/database.types";
@@ -10,7 +11,12 @@ import type { Database } from "@/lib/database.types";
 // <Database> types every .from(table) call against lib/database.types.ts —
 // added for #92's board/column/card queries, kept here (not re-declared
 // per call site) so every caller, present and future, gets the same typing.
-export async function createSupabaseServerClient() {
+// #168: wrapped in React's cache() so every call within one request/RSC
+// render reuses the same client instance instead of re-reading cookies() and
+// re-constructing a client per call site — this is what makes the cached
+// getAuthenticatedUserId() in lib/boards/session.ts free after its first
+// call in a given request.
+export const createSupabaseServerClient = cache(async () => {
   const cookieStore = await cookies();
   return createServerClient<Database>(
     process.env.SUPABASE_URL!,
@@ -27,10 +33,11 @@ export async function createSupabaseServerClient() {
             // Next.js forbids cookie writes during Server Component render, so
             // a token refresh triggered from an RSC lands here. The refreshed
             // session still applies to this request; persisting it is the job
-            // of the session-refresh middleware (Phase 1 follow-up ticket).
+            // of middleware.ts's session-refresh pass (#168/#8), which runs
+            // ahead of the RSC render and can write cookies onto the response.
           }
         },
       },
     },
   );
-}
+});

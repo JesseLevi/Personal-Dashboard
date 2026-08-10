@@ -35,7 +35,7 @@ export async function GET(
   const size = sizeParam as ThumbnailVariant;
 
   const supabase = await createSupabaseServerClient();
-  const userId = await getAuthenticatedUserId(supabase);
+  const userId = await getAuthenticatedUserId();
   if (!userId) return new NextResponse(null, { status: 401 });
 
   const { data: recipe, error: recipeError } = await supabase

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getAuthenticatedUserId } from "@/lib/recipes/session";
+import { requireUserId } from "@/lib/recipes/session";
 import { nextPosition } from "@/lib/boards/positioning";
 import { getRecipeWithIngredientsAndSteps } from "@/lib/recipes/queries";
 import { buildShoppingListLines, mergeSingleIngredientLine } from "@/lib/shopping/send-to-list";
@@ -34,13 +34,11 @@ import type { Database } from "@/lib/database.types";
 
 type Client = SupabaseClient<Database>;
 
-async function requireUserId(
-  supabase: Client,
-): Promise<{ userId: string } | { error: "unauthenticated" }> {
-  const userId = await getAuthenticatedUserId(supabase);
-  if (!userId) return { error: "unauthenticated" };
-  return { userId };
-}
+// requireUserId used to be defined locally here (identically in
+// app/(app)/te-doen/actions.ts and app/(app)/recepten/actions.ts) taking a
+// `supabase` client argument. #168 replaced all three copies with the
+// shared, cache()'d, argument-free lib/boards/session.ts helper (re-exported
+// via lib/recipes/session.ts) -- see that file's header comment.
 
 function logDbError(action: string, error: { code: string; message: string }) {
   console.error(`[shopping] ${action} failed:`, error.code, error.message);
@@ -76,7 +74,7 @@ export async function addShoppingListItem(
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const last = await lastShoppingListItemPosition(supabase, auth.userId);
@@ -109,7 +107,7 @@ export async function toggleShoppingListItem(input: unknown): Promise<ActionResu
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const { data, error } = await supabase
@@ -135,7 +133,7 @@ export async function deleteShoppingListItem(input: unknown): Promise<ActionResu
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const { data, error } = await supabase
@@ -163,7 +161,7 @@ export async function deleteShoppingListItem(input: unknown): Promise<ActionResu
  */
 export async function clearShoppingList(): Promise<ActionResult> {
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const { error } = await supabase
@@ -206,7 +204,7 @@ export async function sendRecipeToShoppingList(input: unknown): Promise<ActionRe
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const recipe = await getRecipeWithIngredientsAndSteps(parsed.data.recipeId);
@@ -259,7 +257,7 @@ export async function addIngredientToShoppingList(input: unknown): Promise<Actio
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const supabase = await createSupabaseServerClient();
-  const auth = await requireUserId(supabase);
+  const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
   const recipe = await getRecipeWithIngredientsAndSteps(parsed.data.recipeId);

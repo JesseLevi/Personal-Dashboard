@@ -21,7 +21,7 @@ import type {
  * (the board switcher's order). Empty array if signed out. */
 export async function getBoardsForUser(): Promise<BoardRow[]> {
   const supabase = await createSupabaseServerClient();
-  const userId = await getAuthenticatedUserId(supabase);
+  const userId = await getAuthenticatedUserId();
   if (!userId) return [];
 
   const { data, error } = await supabase
@@ -67,7 +67,7 @@ export async function getBoardWithColumns(
   if (!parsedId.success) return null;
 
   const supabase = await createSupabaseServerClient();
-  const userId = await getAuthenticatedUserId(supabase);
+  const userId = await getAuthenticatedUserId();
   if (!userId) return null;
 
   const { data, error } = await supabase
