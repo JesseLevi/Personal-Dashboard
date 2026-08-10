@@ -22,7 +22,7 @@
 ## Traps that have already cost a session
 
 - **Committing a migration does not apply it.** `deploy.yml` is `workflow_dispatch`-only, so a push to `main` deploys code and migrates nothing. Check `supabase_migrations.schema_migrations` on the hosted project *before* debugging a data-shaped bug.
-- **`20260810000002_move_rpcs.sql` (#169) is committed but NOT yet applied to hosted.** Until it is, `moveCard`/`moveRecipe` fail against production — they now call `public.move_card`/`move_recipe`, which don't exist there yet. Applying it means dispatching `deploy.yml`, whose `deploy` job hangs off `needs: migrate`, so **migrating and promoting to production are one action** — there is no migrate-only mode. That is a user decision (ADR-0012), not a routine step.
+- **`deploy.yml` has no migrate-only mode.** Its `deploy` job hangs off `needs: migrate`, so applying a migration to hosted **also promotes `main` to production**, in one action. Confirm with the user before dispatching it; that is a user decision (ADR-0012), not a routine step.
 - **A migration applied by hand or via the Supabase MCP server gets that route's own timestamp as its version**, not the repo filename, and `supabase db push` then refuses. Correct the version row by hand every time a migration reaches hosted outside `deploy.yml`.
 - **Never batch a migration across parallel agents** — that raced two writers into 250 duplicate `reference.ingredients` rows on #161. One sequential call.
 - **Visual flake: isolation is not a control — run the FULL suite twice.** Confirmed flaky stories: `category-panel--create-category`, `category-panel--edit-category`, `recipe-panel--filled`. Identical code has given fail-then-pass across consecutive full runs, and a story that failed 3/3 *in isolation* passed in a full run — story count, ordering and parallelism all change the rasterization. Never bisect a visual failure; regenerate the baseline or widen the threshold. Never let two runs overlap.
@@ -32,7 +32,7 @@
 
 ## Unverified against reality
 
-The hosted **schema** was audited 2026-08-10 and is sound: all 16 `public` tables have RLS on with 4 policies each, `reference.*` is select-only, the `recipe-thumbnails` bucket and its 4 `storage.objects` policies exist, and `replace_recipe_contents(uuid,jsonb,jsonb)` is `security invoker` with `search_path=''`. Every migration in `supabase/migrations/` had landed as of that audit — **#169's `move_rpcs` migration is the one exception and is still pending** (see Traps). What is still untested is **behaviour**.
+The hosted **schema** was audited 2026-08-10 and is sound: all 16 `public` tables have RLS on with 4 policies each, `reference.*` is select-only, the `recipe-thumbnails` bucket and its 4 `storage.objects` policies exist, and `replace_recipe_contents(uuid,jsonb,jsonb)` is `security invoker` with `search_path=''`. Every migration in `supabase/migrations/` has landed, including #169's `20260810000002_move_rpcs` (applied 2026-08-10 via `deploy.yml`, which promoted the perf round to production in the same run; `move_card`/`move_recipe` verified on hosted as `security invoker` + `search_path=""`, granted to `authenticated`/`service_role` only, never `anon`, and the version row matches the repo filename — no drift). Security advisors still report the same 9 WARN as before that run, so the new RPCs added no security debt. What is still untested is **behaviour**.
 
 - **#185** — no authenticated run has ever happened against live Supabase; every query, server action and storage-cleanup path is reasoned-only.
 - **#186** — #96's drag-persistence acceptance and #114's drop-hover fix have never run in a real browser.
@@ -48,10 +48,9 @@ The hosted **schema** was audited 2026-08-10 and is sound: all 16 `public` table
 
 ## Next
 
-1. **Apply #169's `move_rpcs` migration to hosted** — drag persistence is broken in production until it lands, and it is bundled with a production promotion (see Traps). User's call.
-2. **Work the verification tickets** (#185–#191). This is the real remaining Phase 3 work — there is no missing UI behind it. #185 now matters more, not less: the perf round rewrote the auth path underneath every route.
-3. **7 ADRs are owed** for shipped schema deviations: `cards.size`, `boards.is_favorite`, `recipe_categories.icon`, `recipe_ingredients.group_label`, the `unit` enum, `recipe_step_ingredients`, and the `replace_recipe_contents` RPC-backed-transaction pattern (user-approved 2026-08-01). Write-up only, but it is the architecture layer — flag, don't improvise. (The 8th, the move RPCs, shipped with #169 as ADR-0015.)
-4. Phase 4 and 5 remainder, per the board.
+1. **Work the verification tickets** (#185–#191). This is the real remaining Phase 3 work — there is no missing UI behind it. **#185 is now the top priority**: the perf round rewrote the auth path underneath every route and is live in production, still without a single signed-in human run. Start there, and exercise a drag (the new move RPCs) while you're in.
+2. **7 ADRs are owed** for shipped schema deviations: `cards.size`, `boards.is_favorite`, `recipe_categories.icon`, `recipe_ingredients.group_label`, the `unit` enum, `recipe_step_ingredients`, and the `replace_recipe_contents` RPC-backed-transaction pattern (user-approved 2026-08-01). Write-up only, but it is the architecture layer — flag, don't improvise. (The 8th, the move RPCs, shipped with #169 as ADR-0015.)
+3. Phase 4 and 5 remainder, per the board.
 
 Constraints worth knowing before touching these areas:
 
