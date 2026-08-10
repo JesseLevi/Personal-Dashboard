@@ -7,15 +7,10 @@ import type { ReactNode } from "react";
  * (Recepten `3672:1580`, Te-Doen desktop `3878:7959`, Te-Doen mobile
  * `3680:1438`), not a Figma Component/ComponentSet — modelled as slots since
  * the two pages fill it with different buttons. `title` is caller-supplied
- * data (e.g. the active board's real name), never a translation key — see
- * design/notes/PageHeader.md.
- *
- * Sticky (#102): Figma can't express `position: sticky`, only that Header
- * is a sibling of Carousel, not a wrapper around it — the sticky behaviour
- * itself is this codebase's own call, applied to every caller. `bg-surface-
- * muted` (matching `main`'s own background) keeps scrolling cards from
- * showing through underneath it. `z-10` (#179): a stacking-context fix, not
- * cosmetic — see design/notes/PageHeader.md.
+ * data, never a translation key. Sticky (#102) is this codebase's own call,
+ * not a Figma-expressible property; `z-10` (#179) is a stacking-context fix.
+ * `top` uses a safe-area offset, not a bare `0` (#172): see
+ * design/notes/PageHeader.md and design/notes/AppShell.md.
  */
 export interface PageHeaderProps {
   title: string;
@@ -30,7 +25,9 @@ export function PageHeader({ title, titleAdornments, actions, className }: PageH
   return (
     <header
       className={clsx(
-        "sticky top-0 z-10 flex items-center justify-between bg-surface-muted pr-4 md:pr-32",
+        "sticky top-[env(safe-area-inset-top)] z-10 flex items-center justify-between bg-surface-muted pr-4 md:pr-32",
+        // #172: header chrome, not reading content — see app/globals.css.
+        "chrome-touch",
         className,
       )}
     >

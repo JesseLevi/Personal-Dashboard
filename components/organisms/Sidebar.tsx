@@ -80,6 +80,8 @@ export function Sidebar({
         // home-indicator devices when this atom fills the mobile drawer
         // edge-to-edge. Unverified on-device; see design/notes/Sidebar.md.
         "pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]",
+        // #172: nav chrome, not content — see app/globals.css.
+        "chrome-touch",
         collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH,
         className,
       )}

@@ -133,3 +133,23 @@ Verified in a real browser (Playwright, `/winkelmand` with seeded test data): be
 replaces what used to be a transparent header showing the Ladle Provider's
 own `bg-surface` through it) — `page-header--te-doen` and
 `page-header--recepten`, scoped-regenerated together, not the full suite.
+
+## #172 — `top-[env(safe-area-inset-top)]` replaces `top-0`
+
+iOS standalone PWA work chose `statusBarStyle: "black-translucent"` (full
+content behind the status bar), which means this header's sticky top edge
+pins flush to the physical top of the viewport once scrolled — exactly where
+the iOS clock/status bar sits. `top-0` → `top-[env(safe-area-inset-top)]`
+fixes it. Deliberately not the `pt-[max(1rem,env(safe-area-inset-top))]`
+padding idiom `Sidebar.tsx`/`SidePanel.tsx` use for their own safe-area
+padding: those elements are *permanently* at the edge (fixed sidebar,
+bottom-sheet footer), so a constant padding is correct. This header is only
+*intermittently* at the edge — normal document flow until scrolled, sticky
+after — and `position: sticky`'s `top` offset only affects the element once
+it's actually stuck; it has zero effect on layout while unstuck. Padding
+would have added a second, unwanted gap on top of `AppShellNav.tsx`'s own
+top padding every time a page loads unscrolled; `top` adds nothing until the
+header actually needs it. No `max()` wrapper needed either — unlike the
+padding idiom there's no base value to protect, `env()` alone resolves to 0
+with no inset. Unverified on real hardware. Full audit of every top-of-shell
+element: `design/notes/AppShell.md`.
