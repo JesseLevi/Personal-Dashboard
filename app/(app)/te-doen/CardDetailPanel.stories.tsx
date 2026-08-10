@@ -1,7 +1,8 @@
 // figma: node-id=3779:4846 (+3779:4938 desktop)
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CardDetailPanel, type CardDetailPanelColumn } from "./CardDetailPanel";
 import type { ActionResult, CardRow, CardWithLabels } from "@/lib/boards/types";
+import nl from "@/messages/nl.json";
 
 // Dev-only mock actions — CardDetailPanel never imports the real "use server"
 // module itself (design/notes/CardDetailPanel.md), so these stand in for
@@ -48,36 +49,83 @@ const sampleCard: CardWithLabels = {
   labels: [],
 };
 
+// `min-h-screen` wrapper (#106, same precedent as SidePanel.stories.tsx):
+// SidePanel's overlay/panel are `position: fixed`, so they contribute 0 to
+// their ancestors' flow height — without this, the Provider div (which
+// tests/visual/screenshot-override.css crops the baseline to) collapses to
+// near-zero and the screenshot misses almost the entire panel. Not needed by
+// real app usage (the real page around CardDetailPanel already has its own
+// height), only by this harness.
+
 // Create mode: empty fields, prefilled Status = the column whose Plus button
 // was clicked. Delete button is absent (nothing to delete yet).
 export const CreateItem = () => (
-  <CardDetailPanel
-    open
-    onClose={() => {}}
-    columns={columns}
-    target={{ mode: "create", columnId: "ideeen" }}
-    onCreateCard={mockCreateCard}
-    onUpdateCard={mockUpdateCard}
-    onMoveCard={mockMoveCard}
-    onDeleteCard={mockDeleteCard}
-  />
+  <div className="min-h-screen">
+    <CardDetailPanel
+      open
+      onClose={() => {}}
+      columns={columns}
+      target={{ mode: "create", columnId: "ideeen" }}
+      onCreateCard={mockCreateCard}
+      onUpdateCard={mockUpdateCard}
+      onMoveCard={mockMoveCard}
+      onDeleteCard={mockDeleteCard}
+    />
+  </div>
 );
 
 // Edit mode: every field prefilled from `sampleCard`. Click "Verwijderen" to
 // exercise the two-step confirm — footer swaps to "Weet je het zeker?" +
 // Annuleren/Ja, verwijderen, Annuleren returns to the normal footer.
 export const EditItem = () => (
-  <CardDetailPanel
-    open
-    onClose={() => {}}
-    columns={columns}
-    target={{ mode: "edit", card: sampleCard }}
-    onCreateCard={mockCreateCard}
-    onUpdateCard={mockUpdateCard}
-    onMoveCard={mockMoveCard}
-    onDeleteCard={mockDeleteCard}
-  />
+  <div className="min-h-screen">
+    <CardDetailPanel
+      open
+      onClose={() => {}}
+      columns={columns}
+      target={{ mode: "edit", card: sampleCard }}
+      onCreateCard={mockCreateCard}
+      onUpdateCard={mockUpdateCard}
+      onMoveCard={mockMoveCard}
+      onDeleteCard={mockDeleteCard}
+    />
+  </div>
 );
+
+// "Verwijderen" trigger button text, via the catalog (not typed here
+// directly) — `.ladle/components.tsx` locks the Ladle locale to `nl`.
+const deleteLabelNl = nl.components.cardDetailPanel.deleteLabel;
+
+// Delete-confirm footer state (#106): `deleteConfirming` is local state
+// inside CardDetailPanel, flipped by clicking "Verwijderen"
+// (design/notes/CardDetailPanel.md's "Two-step delete" entry) — there is no
+// prop to force it. This story renders the real EditItem panel and clicks
+// that button once on mount to drive the component into the confirm footer
+// (text on its own line + 2 buttons 50/50, the 2026-07-25 decision) rather
+// than adding a test-only prop just for Ladle/Playwright.
+export const EditItemDeleteConfirm = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const deleteButton = Array.from(containerRef.current?.querySelectorAll("button") ?? []).find(
+      (button) => button.textContent?.trim() === deleteLabelNl,
+    );
+    deleteButton?.click();
+  }, []);
+  return (
+    <div ref={containerRef} className="min-h-screen">
+      <CardDetailPanel
+        open
+        onClose={() => {}}
+        columns={columns}
+        target={{ mode: "edit", card: sampleCard }}
+        onCreateCard={mockCreateCard}
+        onUpdateCard={mockUpdateCard}
+        onMoveCard={mockMoveCard}
+        onDeleteCard={mockDeleteCard}
+      />
+    </div>
+  );
+};
 
 // Exercises the real open/close cycle plus create->edit target switching, the
 // same way SidePanel.stories.tsx's own Interactive story does for the bare
