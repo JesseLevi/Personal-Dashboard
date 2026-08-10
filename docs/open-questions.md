@@ -75,6 +75,14 @@ A real aisle layer needs a curated 27-group→aisle map **plus** name-pattern ov
 
 No fetched node shows any acknowledgement that a send succeeded — no toast, badge, or checkmark swap. **This has already cost real time**: `AnimatedAddToBasketButton` plays its "Toegevoegd" animation regardless of the `ActionResult`, so a completely broken insert path (a migration that never reached hosted) looked like success for an entire ticket. A UI that always shows success cannot surface a broken server action. Needs a real decision: toast, inline confirmation, Winkelmand badge count, or an explicit ratification that silence is correct.
 
+### winkelmand-mobile-sort-dropdown-anchor-undesigned
+
+Mobile/Sort (`4052:13689`) draws the Sort button icon-only but has no Dropdown child at all — Figma never shows the open-panel state on mobile, so where the panel anchors below `md` is undrawn. #182 anchors it `left-0` to the Sort button (opens rightward, stays visually attached to the button that opened it) rather than right-anchored to the wider button group, a deliberate call made after the group-anchor alternative was reviewed and rejected — see `design/notes/WinkelmandPage.md#182` for both options and the measured geometry. Needs a real mobile frame from design to ratify (or override) this reading.
+
+### winkelmand-mobile-header-content-overflows-320px
+
+Independent of the dropdown: at a 320px viewport (dropdown closed), the header row's own content — title `"Winkelmand"` + icon-only Sort button + `"Verwijder alles"` — already exceeds the viewport width (`document.body.scrollWidth` measures `339px` against a `320px` viewport), causing horizontal scroll. No wrap is applied and neither button shrinks below its min-content width. Predates #182 (the old full-text mobile Sort button would have made it worse, not better) and is unrelated to the Sort dropdown's anchor — flagged here rather than fixed, since a real fix (wrap, truncate, icon-only "Verwijder alles" on mobile, or a narrower minimum supported width) is a design call, not a page-ticket's to invent. See `design/notes/WinkelmandPage.md#182` for the measured thresholds.
+
 ### winkelmand-merged-line-keeps-first-recipes-group
 
 #179 groups by source recipe *and* merges same-name/same-unit lines; the two rules collide and Figma answers neither. A merged line carries one `recipe_id`, so adding "Banaan 2 stuk" from recipe A then B sums onto A's row — B's card never shows an ingredient the user did add from it. The two code paths also disagree: swipe-to-cart (`addIngredientToShoppingList`) merges into an **existing** DB row, whole-recipe send (`sendRecipeToShoppingList`) merges only within its own batch. So sending A then B leaves two "Banaan" lines, but swiping twice leaves one. Options: don't merge across recipes; merge and show the line under every contributing recipe (needs a join table); or drop `recipe_id` on merge and send the line to "Overig".
