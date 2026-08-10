@@ -23,8 +23,8 @@ import type { ActionResult, RecipeCategoryRow } from "@/lib/recipes/types";
 // The 8-slot "Icon list" (3891:18524 mobile / 3957:11544 desktop) renders
 // the SAME Icon/Sandwich placeholder in all 8 button instances — Figma
 // specifies a slot count, not which icons. First pass shipped a curated
-// 8-icon set for exactly that reason (see docs/open-questions.md#category-
-// icon-picker-curated-set). Superseded 2026-08-01 by direct user
+// 8-icon set for exactly that reason (see design/notes/CategoryPanel.md).
+// Superseded 2026-08-01 by direct user
 // instruction: show all 74 of lucide's "Food & beverage" category, not a
 // curation. The 66 added beyond the original 8 are listed in Icon.tsx and
 // were pulled from lucide-icons/lucide's own per-icon `categories`
@@ -222,8 +222,7 @@ export function CategoryPanel({
   }
 
   // Delete step + name validation: no Figma/ticket source for either (see
-  // docs/open-questions.md#category-delete-no-confirm-designed and
-  // #category-name-no-validation-designed) — reuses CardDetailPanel.tsx's
+  // design/notes/CategoryPanel.md) — reuses CardDetailPanel.tsx's
   // #94 two-step confirm precedent verbatim, and gates Save on a non-empty
   // trimmed name (createCategorySchema/updateCategorySchema's own
   // `min(1).max(200)`, lib/recipes/schemas.ts), the same minimal client-side
@@ -303,7 +302,7 @@ export function CategoryPanel({
           {CATEGORY_ICONS.map((iconName) => (
             // No Selected state is drawn in Figma (every one of the 8
             // instances is the same Style=Filled, State=Default) — see
-            // docs/open-questions.md#category-icon-no-selected-state. Reuses
+            // design/notes/CategoryPanel.md. Reuses
             // Button's own aria-pressed Selected semantics (design-tokens.md:
             // Filled's Selected only darkens text, no fill change) rather
             // than inventing new styling, so the picker still shows which

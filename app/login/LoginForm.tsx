@@ -122,8 +122,8 @@ export function LoginForm({
 
   // Undesigned (no Figma trigger for "back to email") — Escape plus a
   // small icon-only back button, the least-inventing option that still
-  // reaches every input modality. docs/open-questions.md#login-step-3-back-
-  // to-email-trigger-undesigned.
+  // reaches every input modality. Ratified by the user when they drew the
+  // step-3 pane; full record in design/notes/LoginForm.md.
   function handleStepBack() {
     setStep("email");
   }

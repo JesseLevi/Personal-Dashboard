@@ -65,9 +65,9 @@ const BOARD_COLUMN_WIDTH = "w-74 md:w-80";
 // #115: dnd-kit calls this fresh on every pointerdown with the real event,
 // so branching on `event.pointerType` — not a device-wide `matchMedia` read
 // once at mount — gets hybrid devices (touch laptop, iPad + mouse) right
-// per interaction. `touch` gets the long-press (#118: 750ms, deviating from
-// Figma node 3680:1442's 2s annotation — see
-// docs/open-questions.md#touch-hold-duration-deviates-from-figma); mouse/pen
+// per interaction. `touch` gets the long-press (#118: 750ms, a user decision
+// after real-device testing, deviating from Figma node 3680:1442's 2s
+// annotation — see design/notes/BoardView.md); mouse/pen
 // get the #94 fine-pointer delay+distance. Exported for
 // tests/board-view-sensors.test.ts.
 //
