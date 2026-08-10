@@ -35,7 +35,7 @@ export default async function RecipeDetailRoute({
   if (!recipe) notFound();
 
   const thumbnailUrl = recipe.thumbnail_path
-    ? await getRecipeThumbnailSignedUrl(recipe.thumbnail_path, 3600)
+    ? await getRecipeThumbnailSignedUrl(recipe.thumbnail_path, "full", 3600)
     : null;
 
   // Keyed on recipe.id so navigating straight from one recipe's detail page

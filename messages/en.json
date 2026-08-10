@@ -32,8 +32,9 @@
       "not-found": "This item no longer exists or isn't yours.",
       "generic": "Something went wrong. Please try again.",
       "invalid-file-type": "Choose a JPEG, PNG or WebP image.",
-      "file-too-large": "This image is too large (max 5 MB).",
-      "upload-failed": "The image could not be uploaded. Please try again."
+      "file-too-large": "This image is too large (max 10 MB).",
+      "upload-failed": "The image could not be uploaded. Please try again.",
+      "invalid-image": "This image could not be processed. Please try a different photo."
     },
     "units": {
       "gram": "Gram",
