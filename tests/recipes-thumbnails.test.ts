@@ -87,6 +87,27 @@ describe("renderThumbnailVariants", () => {
     expect(meta.height).toBe(640); // 2:1 source -> half the width
   });
 
+  it("constrains the full variant's LONG EDGE, not just width, for a portrait source", async () => {
+    // Regression for #174/#171 chunk 4: the two real photos in the bucket
+    // are portrait 1638x2048. A width-only constraint produced 1280x1600 --
+    // the 2:1 hero's CSS crop then threw away ~40% of those shipped bytes.
+    // Constraining the long edge yields 1024x1280 instead: the height (the
+    // long edge) is capped at 1280 and the width is NOT 1280.
+    const source = await sharp({
+      create: { width: 1638, height: 2048, channels: 3, background: { r: 80, g: 120, b: 160 } },
+    })
+      .jpeg()
+      .toBuffer();
+
+    const { full } = await renderThumbnailVariants(source);
+    const meta = await sharp(full).metadata();
+
+    expect(meta.format).toBe("webp");
+    expect(meta.height).toBe(1280);
+    expect(meta.width).toBe(1024);
+    expect(meta.width).not.toBe(1280);
+  });
+
   it("does not enlarge a source smaller than the target dimensions", async () => {
     const source = await sharp({
       create: { width: 100, height: 100, channels: 3, background: { r: 10, g: 20, b: 30 } },

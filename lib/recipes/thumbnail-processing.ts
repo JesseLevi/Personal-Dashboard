@@ -7,9 +7,20 @@
 // into two WebP derivatives instead of storing the original at all:
 //   - "card": 288x288 cover crop for the board's h-24 w-24 (96 CSS px) slot,
 //     288 = 3x DPR so a Retina/high-DPI screen still gets a sharp image.
-//   - "full": max 1280px wide, aspect preserved, for the detail hero
-//     (aspect-[2/1] w-full, object-cover -- CSS does the crop, this module
-//     only bounds the width).
+//   - "full": 1280 on the LONG EDGE, aspect preserved, for the detail hero
+//     (aspect-[2/1] w-full, object-cover -- CSS does the crop). This used to
+//     constrain only the width, which on the two real photos in the bucket
+//     (both portrait 1638x2048) produced 1280x1600 -- a tall image of which
+//     the 2:1 hero displays only the middle band, so ~40% of the shipped
+//     bytes were cropped away by CSS and never seen. Constraining the long
+//     edge instead yields 1024x1280 for those same two photos: 108.7 kB and
+//     263.4 kB versus the old 149.9 kB and 375.3 kB -- a 29% cut on the full
+//     variant, measured. A 2:1-cover crop baked in at encode time would have
+//     saved more bytes still, but was deliberately rejected: originals are
+//     not retained (see below), so baking today's hero aspect ratio into the
+//     stored pixels would make a future change of that ratio unrecoverable.
+//     Landscape sources are unaffected either way -- a 2:1 source still
+//     comes out 1280x640 whether the constraint is on width or the long edge.
 // Deliberately WITHOUT `import "server-only"` -- same rationale as
 // lib/recipes/thumbnail-validation.ts's header: the server-only package
 // throws outside a server/react-server context, including plain Node/
@@ -54,7 +65,7 @@ export async function renderThumbnailVariants(
 
   const full = await base
     .clone()
-    .resize({ width: 1280, fit: "inside", withoutEnlargement: true })
+    .resize(1280, 1280, { fit: "inside", withoutEnlargement: true })
     .webp({ quality: 72 })
     .toBuffer();
 
