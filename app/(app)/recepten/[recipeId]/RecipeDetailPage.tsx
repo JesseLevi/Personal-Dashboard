@@ -67,11 +67,16 @@ function groupIngredients(ingredients: RecipeIngredientWithNutrition[]): Ingredi
 export interface RecipeDetailPageProps {
   recipe: RecipeWithIngredientsAndSteps;
   categories: RecipeCategoryRow[];
-  /** Signed URL for `recipe.thumbnail_path`, resolved server-side (#153) — `null` for a recipe with no stored photo yet. */
-  thumbnailUrl: string | null;
 }
 
-export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDetailPageProps) {
+export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) {
+  // #171: `/api/recipe-thumbnail` route, not a resolved signed URL —
+  // `null` for a recipe with no stored photo yet, same as before. `v` is
+  // `recipe.updated_at` so the URL changes whenever the photo (or anything
+  // else on the row) changes. See design/notes/CardContentRecipe.md.
+  const thumbnailUrl = recipe.thumbnail_path
+    ? `/api/recipe-thumbnail/${recipe.id}?v=${recipe.updated_at}&size=full`
+    : null;
   const t = useTranslations("components.recipeDetailPage");
   const tUnits = useTranslations("recipes.units");
   // #164/#157: short unit labels for the per-step Tags only (Figma draws
@@ -259,16 +264,23 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl }: RecipeDet
         <p className="text-base font-semibold text-priority-urgent">{deleteError}</p>
       )}
 
-      {/* #153: real signed thumbnail, 2:1 at every breakpoint (user-ordered
+      {/* #153: real thumbnail, 2:1 at every breakpoint (user-ordered
           override of the fetched node's own ~2:1-but-not-exact geometry —
           see design/notes/RecipeDetailPage.md). Decorative alt: recipe.title
           already renders as adjacent text below, same reasoning
           CardContentRecipe.tsx uses for its own thumbnail. No photo -> same
-          bg-surface-muted placeholder, same box, so layout doesn't jump. */}
+          bg-surface-muted placeholder, same box, so layout doesn't jump.
+          #171: this is the page's LCP element — eager/high-priority, with
+          explicit dimensions matching the 2:1 box so layout is known before
+          the byte arrives. */}
       {thumbnailUrl ? (
         <img
           src={thumbnailUrl}
           alt=""
+          width={1280}
+          height={640}
+          loading="eager"
+          fetchPriority="high"
           className="aspect-[2/1] w-full rounded-xl object-cover"
         />
       ) : (

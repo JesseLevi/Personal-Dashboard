@@ -46,8 +46,6 @@ import {
 // Full reasoning for every decision below: design/notes/ReceptenBoard.md.
 export interface ReceptenBoardProps {
   categories: CategoryWithRecipes[];
-  /** Signed thumbnail URLs (#149), keyed by `recipes.id` — resolved server-side in `page.tsx` since the storage bucket is private. A recipe with no entry here (no `thumbnail_path`, or its signed-URL lookup failed) renders `CardContentRecipe`'s own placeholder. */
-  thumbnailUrls: Record<string, string>;
   /** Recepten page title (`nav.recipes`) — PageHeader now renders here, not in page.tsx. */
   title: string;
   /** Header "Categorie" trigger label (`components.pageHeader.recipes.addCategoryLabel`). */
@@ -66,7 +64,6 @@ const FALLBACK_CATEGORY_ICON = "FolderClosed";
 
 export function ReceptenBoard({
   categories,
-  thumbnailUrls,
   title,
   addCategoryLabel,
 }: ReceptenBoardProps) {
@@ -189,12 +186,16 @@ export function ReceptenBoard({
         renderItem={(recipe) => (
           <CardContentRecipe
             name={recipe.title}
-            // `imageUrl` resolved server-side (#149, page.tsx) — a recipe
-            // with no stored thumbnail (or a lookup miss) has no entry in
-            // `thumbnailUrls`, and CardContentRecipe itself renders the "no
-            // photo" placeholder for `undefined` — see
-            // design/notes/CardContentRecipe.md's "#124" entry.
-            imageUrl={thumbnailUrls[recipe.id]}
+            // #171: `/api/recipe-thumbnail` route, not a resolved signed
+            // URL — a recipe with no `thumbnail_path` gets no `imageUrl` at
+            // all (decided here, not by letting the request 404), so
+            // CardContentRecipe still renders its "no photo" placeholder.
+            // See design/notes/CardContentRecipe.md.
+            imageUrl={
+              recipe.thumbnail_path
+                ? `/api/recipe-thumbnail/${recipe.id}?v=${recipe.updated_at}&size=card`
+                : undefined
+            }
             duration={
               recipe.time_minutes != null
                 ? tRecipe("durationMinutes", { minutes: recipe.time_minutes })

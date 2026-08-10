@@ -33,9 +33,10 @@ const RECIPE_THUMBNAILS_BUCKET = "recipe-thumbnails";
  * `renderThumbnailVariants` -- two WebP derivatives, no original ever
  * stored) and uploads a recipe thumbnail under the signed-in user's own
  * path prefix. Returns the stored stem (for `recipes.thumbnail_path`),
- * never a URL -- the bucket is private, so every read goes through
- * `getRecipeThumbnailSignedUrl`/`getRecipeThumbnailSignedUrls` below
- * instead.
+ * never a URL -- the bucket is private, so every saved-recipe read goes
+ * through app/api/recipe-thumbnail/[recipeId]/route.ts instead
+ * (`getRecipeThumbnailSignedUrl` below remains for the pre-save
+ * upload/preview case).
  */
 export async function uploadRecipeThumbnail(file: File): Promise<ActionResult<{ path: string }>> {
   const validation = validateThumbnailFile(file);
@@ -109,6 +110,12 @@ export async function deleteRecipeThumbnail(stem: string): Promise<void> {
  * without a storage round trip (RLS would also reject it, this just fails
  * fast with the same "don't trust the client for ownership" shape every
  * recepten/actions.ts write uses).
+ *
+ * #171: the board and detail hero no longer call this -- they request
+ * app/api/recipe-thumbnail/[recipeId]/route.ts directly so the browser can
+ * cache the bytes under a stable URL. This helper stays for the
+ * upload/preview case (chunk 3 of #174/#171), where a signed URL for a
+ * not-yet-saved recipe's own upload is the only option.
  */
 export async function getRecipeThumbnailSignedUrl(
   stem: string,
@@ -128,41 +135,4 @@ export async function getRecipeThumbnailSignedUrl(
     return null;
   }
   return data.signedUrl;
-}
-
-/**
- * Batched form of `getRecipeThumbnailSignedUrl` (#171): one auth check and
- * one storage round trip (Supabase's plural `createSignedUrls`) for a
- * whole page of recipes, instead of one round trip per recipe. Stems
- * failing the same user-id-prefix guard as the singular helper are skipped
- * rather than included with a `null` value -- callers only need to know
- * which stems actually resolved.
- */
-export async function getRecipeThumbnailSignedUrls(
-  stems: string[],
-  variant: ThumbnailVariant,
-  expiresInSeconds = 60,
-): Promise<Record<string, string>> {
-  const supabase = await createSupabaseServerClient();
-  const userId = await getAuthenticatedUserId(supabase);
-  if (!userId) return {};
-
-  const ownStems = stems.filter((stem) => stem.startsWith(`${userId}/`));
-  if (ownStems.length === 0) return {};
-
-  const paths = ownStems.map((stem) => thumbnailVariantPath(stem, variant));
-  const { data, error } = await supabase.storage
-    .from(RECIPE_THUMBNAILS_BUCKET)
-    .createSignedUrls(paths, expiresInSeconds);
-
-  if (error || !data) {
-    console.error("[recipes] getRecipeThumbnailSignedUrls failed:", error?.message);
-    return {};
-  }
-
-  const urls: Record<string, string> = {};
-  data.forEach((entry, index) => {
-    if (!entry.error && entry.signedUrl) urls[ownStems[index]] = entry.signedUrl;
-  });
-  return urls;
 }

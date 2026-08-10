@@ -37,6 +37,10 @@ export function CardContentRecipe({
         <img
           src={imageUrl}
           alt={imageAlt ?? ""}
+          width={96}
+          height={96}
+          loading="lazy"
+          decoding="async"
           className="h-24 w-24 shrink-0 rounded object-cover"
         />
       ) : (
