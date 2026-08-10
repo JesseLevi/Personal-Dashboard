@@ -1,4 +1,12 @@
 {
+  "common": {
+    "loading": "Loading...",
+    "errorBoundary": {
+      "title": "Something went wrong",
+      "body": "Something went wrong while loading this page. Try again.",
+      "retryLabel": "Try again"
+    }
+  },
   "nav": {
     "recipes": "Recipes",
     "shopping": "Shopping basket"

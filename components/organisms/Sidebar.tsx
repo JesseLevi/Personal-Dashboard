@@ -50,6 +50,9 @@ export interface SidebarProps {
   labels: Record<SidebarItemId, string>;
   /** Fired with the item id when a module link is clicked. */
   onNavigate?: (item: SidebarItemId) => void;
+  /** #170: fired on `pointerenter`/`focus` — composer's hook for
+   * `router.prefetch(href)` ahead of the click, not a Figma-driven prop. */
+  onItemHover?: (item: SidebarItemId) => void;
   className?: string;
 }
 
@@ -64,6 +67,7 @@ export function Sidebar({
   activeItem,
   labels,
   onNavigate,
+  onItemHover,
   className,
 }: SidebarProps) {
   return (
@@ -98,6 +102,7 @@ export function Sidebar({
           const variant = isActive ? "filled" : "transparent";
           const label = labels[id];
           const handleClick = onNavigate ? () => onNavigate(id) : undefined;
+          const handleHover = onItemHover ? () => onItemHover(id) : undefined;
 
           // One Button element in both states — `overflow-hidden` clips
           // `children` visually but keeps it (and its accessible name) in
@@ -111,6 +116,8 @@ export function Sidebar({
               aria-current={isActive ? "page" : undefined}
               aria-pressed={isActive || undefined}
               onClick={handleClick}
+              onPointerEnter={handleHover}
+              onFocus={handleHover}
               className="overflow-hidden whitespace-nowrap"
             >
               {label}

@@ -72,6 +72,20 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
     router.push(href);
   }
 
+  // #170: warms the Next.js router cache for a route before the click that
+  // navigates to it — on `pointerenter`/`focus` per item (Sidebar.tsx), plus
+  // unconditionally on mount for the two data-heavy sections so a cold
+  // sidebar (no prior hover) still benefits.
+  function handleItemHover(item: SidebarItemId) {
+    const href = ROUTES[item];
+    if (href) router.prefetch(href);
+  }
+
+  useEffect(() => {
+    router.prefetch("/te-doen");
+    router.prefetch("/recepten");
+  }, [router]);
+
   const drawerRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
@@ -131,6 +145,7 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
           activeItem={activeItemForPath(pathname)}
           labels={labels}
           onNavigate={handleNavigate}
+          onItemHover={handleItemHover}
         />
       </div>
 
@@ -167,6 +182,7 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
           activeItem={activeItemForPath(pathname)}
           labels={labels}
           onNavigate={handleNavigate}
+          onItemHover={handleItemHover}
         />
       </div>
 
