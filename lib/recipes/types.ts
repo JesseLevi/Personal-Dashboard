@@ -80,6 +80,13 @@ export type IngredientSearchResult =
 // recipe-thumbnails upload additions (lib/recipes/thumbnail-validation.ts /
 // thumbnails.ts) -- kept in this shared union rather than a second
 // thumbnail-specific ActionResult, same reasoning as the rest of this file.
+// "invalid-image" is #174/#171's addition: unlike the other thumbnail
+// errors above (all raised by the pre-decode gate in thumbnail-validation.
+// ts), this one comes from lib/recipes/thumbnail-processing.ts's sharp
+// pipeline rejecting bytes that passed mime/size validation but aren't a
+// decodable image -- so it lives here next to `upload-failed` (also raised
+// by thumbnails.ts, past the validation step) rather than in
+// ThumbnailValidationError.
 export type RecipesErrorCode =
   | "invalid-input"
   | "unauthenticated"
@@ -87,7 +94,8 @@ export type RecipesErrorCode =
   | "generic"
   | "invalid-file-type"
   | "file-too-large"
-  | "upload-failed";
+  | "upload-failed"
+  | "invalid-image";
 
 export type ActionResult<T = undefined> =
   | { success: true; data: T }

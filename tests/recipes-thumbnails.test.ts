@@ -1,121 +1,23 @@
 import { describe, expect, it } from "vitest";
+import sharp from "sharp";
 import {
   ALLOWED_THUMBNAIL_MIME_TYPES,
   MAX_THUMBNAIL_BYTES,
-  stripExif,
   validateThumbnailFile,
 } from "@/lib/recipes/thumbnail-validation";
+import { renderThumbnailVariants, thumbnailVariantPath } from "@/lib/recipes/thumbnail-processing";
 
-// #121: validation + EXIF-stripping for the recipe-thumbnails upload path.
-// Tested here (not lib/recipes/thumbnails.ts, which is `import "server-only"`
-// and throws outside a server/react-server context, including plain
-// Node/Vitest) -- same split as tests/recipes-units.test.ts vs. queries.ts.
-
-function bytesToString(bytes: Uint8Array, start: number, length: number): string {
-  return String.fromCharCode(...bytes.subarray(start, start + length));
-}
-
-function includesAscii(bytes: Uint8Array, needle: string): boolean {
-  const target = Array.from(needle).map((c) => c.charCodeAt(0));
-  outer: for (let i = 0; i <= bytes.length - target.length; i++) {
-    for (let j = 0; j < target.length; j++) {
-      if (bytes[i + j] !== target[j]) continue outer;
-    }
-    return true;
-  }
-  return false;
-}
-
-// Minimal-but-structurally-real JPEG: SOI, an APP0/JFIF segment (kept), an
-// APP1/Exif segment (must be stripped), then SOS + fake scan data + EOI.
-function buildJpegWithExif(): Uint8Array {
-  const app0Data = [...Array.from("JFIF\0").map((c) => c.charCodeAt(0)), 1, 1, 0, 0, 1, 0, 1, 0, 0];
-  const exifData = [
-    ...Array.from("Exif\0\0").map((c) => c.charCodeAt(0)),
-    0x4d,
-    0x4d,
-    0x00,
-    0x2a,
-    0x00,
-    0x00,
-    0x00,
-    0x08,
-  ];
-  const bytes = [
-    0xff,
-    0xd8, // SOI
-    0xff,
-    0xe0,
-    0x00,
-    app0Data.length + 2,
-    ...app0Data, // APP0/JFIF
-    0xff,
-    0xe1,
-    0x00,
-    exifData.length + 2,
-    ...exifData, // APP1/Exif
-    0xff,
-    0xda,
-    0x00,
-    0x04,
-    0xaa,
-    0xbb, // SOS header
-    0x11,
-    0x22,
-    0x33,
-    0x44, // fake entropy-coded scan data
-    0xff,
-    0xd9, // EOI
-  ];
-  return Uint8Array.from(bytes);
-}
-
-// Minimal PNG: signature, IHDR (kept), eXIf (must be stripped), IEND.
-function buildPngWithExif(): Uint8Array {
-  const chunk = (type: string, data: number[]) => {
-    const length = data.length;
-    const lengthBytes = [(length >>> 24) & 0xff, (length >>> 16) & 0xff, (length >>> 8) & 0xff, length & 0xff];
-    const typeBytes = Array.from(type).map((c) => c.charCodeAt(0));
-    const crcBytes = [0, 0, 0, 0]; // not validated by stripPngExif
-    return [...lengthBytes, ...typeBytes, ...data, ...crcBytes];
-  };
-  const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-  const ihdr = chunk("IHDR", new Array(13).fill(0));
-  const exif = chunk("eXIf", [0x4d, 0x4d, 0x00, 0x2a, 0, 0, 0, 8]);
-  const iend = chunk("IEND", []);
-  return Uint8Array.from([...signature, ...ihdr, ...exif, ...iend]);
-}
-
-// Minimal WebP (RIFF): header, a VP8 payload chunk (kept), an EXIF chunk
-// (must be stripped, odd-length to also exercise RIFF padding).
-function buildWebpWithExif(): Uint8Array {
-  const chunk = (fourCC: string, data: number[]) => {
-    const size = data.length;
-    const sizeBytes = [size & 0xff, (size >>> 8) & 0xff, (size >>> 16) & 0xff, (size >>> 24) & 0xff];
-    const fourCCBytes = Array.from(fourCC).map((c) => c.charCodeAt(0));
-    const padded = size % 2 === 1 ? [...data, 0] : data;
-    return [...fourCCBytes, ...sizeBytes, ...padded];
-  };
-  const vp8 = chunk("VP8 ", [1, 2, 3, 4]);
-  const exif = chunk("EXIF", [0x4d, 0x4d, 0x00, 0x2a, 5]); // odd length -> padded
-  const body = [...vp8, ...exif];
-  const riffSize = 4 + body.length; // "WEBP" + body
-  const header = [
-    0x52,
-    0x49,
-    0x46,
-    0x46, // "RIFF"
-    riffSize & 0xff,
-    (riffSize >>> 8) & 0xff,
-    (riffSize >>> 16) & 0xff,
-    (riffSize >>> 24) & 0xff,
-    0x57,
-    0x45,
-    0x42,
-    0x50, // "WEBP"
-  ];
-  return Uint8Array.from([...header, ...body]);
-}
+// #121: validation for the recipe-thumbnails upload path. Tested here (not
+// lib/recipes/thumbnails.ts, which is `import "server-only"` and throws
+// outside a server/react-server context, including plain Node/Vitest) --
+// same split as tests/recipes-units.test.ts vs. queries.ts.
+//
+// #174/#171: the hand-rolled EXIF-stripping tests that used to live here
+// are gone -- `stripExif`/`stripJpegExif`/`stripPngExif`/`stripWebpExif`
+// were deleted along with the dependency-free parser they implemented (see
+// lib/recipes/thumbnail-validation.ts's header). In their place: tests for
+// `renderThumbnailVariants`, sharp's replacement, built with sharp itself
+// rather than hand-assembled binary fixtures.
 
 describe("validateThumbnailFile", () => {
   it("accepts every allowed mime type under the size limit", () => {
@@ -141,56 +43,127 @@ describe("validateThumbnailFile", () => {
     const file = new File([exact], "exact.jpg", { type: "image/jpeg" });
     expect(validateThumbnailFile(file)).toEqual({ ok: true });
   });
+
+  it("MAX_THUMBNAIL_BYTES is 10 MiB, the new input cap decoupled from bucket storage", () => {
+    expect(MAX_THUMBNAIL_BYTES).toBe(10 * 1024 * 1024);
+  });
 });
 
-describe("stripExif", () => {
-  it("removes the APP1/Exif segment from a JPEG, keeps APP0 and scan data", () => {
-    const input = buildJpegWithExif();
-    const output = stripExif(input, "image/jpeg");
+describe("thumbnailVariantPath", () => {
+  it("appends the variant and .webp extension to the stem", () => {
+    expect(thumbnailVariantPath("user-1/abc-123", "card")).toBe("user-1/abc-123_card.webp");
+    expect(thumbnailVariantPath("user-1/abc-123", "full")).toBe("user-1/abc-123_full.webp");
+  });
+});
 
-    expect(output[0]).toBe(0xff);
-    expect(output[1]).toBe(0xd8);
-    expect(output[output.length - 2]).toBe(0xff);
-    expect(output[output.length - 1]).toBe(0xd9);
-    expect(includesAscii(output, "Exif")).toBe(false);
-    expect(includesAscii(output, "JFIF")).toBe(true);
-    expect(output.length).toBeLessThan(input.length);
+describe("renderThumbnailVariants", () => {
+  it("renders a 288x288 WebP cover crop for the card variant", async () => {
+    const source = await sharp({
+      create: { width: 3000, height: 2000, channels: 3, background: { r: 200, g: 100, b: 50 } },
+    })
+      .jpeg()
+      .toBuffer();
+
+    const { card } = await renderThumbnailVariants(source);
+    const meta = await sharp(card).metadata();
+
+    expect(meta.format).toBe("webp");
+    expect(meta.width).toBe(288);
+    expect(meta.height).toBe(288);
   });
 
-  it("removes the eXIf chunk from a PNG, keeps IHDR and IEND", () => {
-    const input = buildPngWithExif();
-    const output = stripExif(input, "image/png");
+  it("renders a 1280-wide WebP with aspect preserved for the full variant", async () => {
+    const source = await sharp({
+      create: { width: 3000, height: 1500, channels: 3, background: { r: 200, g: 100, b: 50 } }, // 2:1
+    })
+      .jpeg()
+      .toBuffer();
 
-    // Signature preserved.
-    expect(bytesToString(output, 1, 3)).toBe("PNG");
-    expect(includesAscii(output, "eXIf")).toBe(false);
-    expect(includesAscii(output, "IHDR")).toBe(true);
-    expect(includesAscii(output, "IEND")).toBe(true);
-    expect(output.length).toBeLessThan(input.length);
+    const { full } = await renderThumbnailVariants(source);
+    const meta = await sharp(full).metadata();
+
+    expect(meta.format).toBe("webp");
+    expect(meta.width).toBe(1280);
+    expect(meta.height).toBe(640); // 2:1 source -> half the width
   });
 
-  it("removes the EXIF chunk from a WebP and patches the RIFF size", () => {
-    const input = buildWebpWithExif();
-    const output = stripExif(input, "image/webp");
+  it("constrains the full variant's LONG EDGE, not just width, for a portrait source", async () => {
+    // Regression for #174/#171 chunk 4: the two real photos in the bucket
+    // are portrait 1638x2048. A width-only constraint produced 1280x1600 --
+    // the 2:1 hero's CSS crop then threw away ~40% of those shipped bytes.
+    // Constraining the long edge yields 1024x1280 instead: the height (the
+    // long edge) is capped at 1280 and the width is NOT 1280.
+    const source = await sharp({
+      create: { width: 1638, height: 2048, channels: 3, background: { r: 80, g: 120, b: 160 } },
+    })
+      .jpeg()
+      .toBuffer();
 
-    expect(bytesToString(output, 0, 4)).toBe("RIFF");
-    expect(bytesToString(output, 8, 4)).toBe("WEBP");
-    expect(includesAscii(output, "EXIF")).toBe(false);
-    expect(includesAscii(output, "VP8 ")).toBe(true);
+    const { full } = await renderThumbnailVariants(source);
+    const meta = await sharp(full).metadata();
 
-    const riffSize =
-      output[4] | (output[5] << 8) | (output[6] << 16) | (output[7] << 24);
-    expect(riffSize).toBe(output.length - 8);
+    expect(meta.format).toBe("webp");
+    expect(meta.height).toBe(1280);
+    expect(meta.width).toBe(1024);
+    expect(meta.width).not.toBe(1280);
   });
 
-  it("returns bytes unchanged for an unrecognised mime type", () => {
-    const input = Uint8Array.from([1, 2, 3, 4]);
-    expect(stripExif(input, "application/octet-stream")).toEqual(input);
+  it("does not enlarge a source smaller than the target dimensions", async () => {
+    const source = await sharp({
+      create: { width: 100, height: 100, channels: 3, background: { r: 10, g: 20, b: 30 } },
+    })
+      .png()
+      .toBuffer();
+
+    const { card, full } = await renderThumbnailVariants(source);
+    const cardMeta = await sharp(card).metadata();
+    const fullMeta = await sharp(full).metadata();
+
+    expect(cardMeta.width).toBe(100);
+    expect(cardMeta.height).toBe(100);
+    expect(fullMeta.width).toBe(100);
+    expect(fullMeta.height).toBe(100);
   });
 
-  it("returns bytes unchanged when a JPEG carries no APP1 segment", () => {
-    const input = Uint8Array.from([0xff, 0xd8, 0xff, 0xd9]); // SOI + EOI only
-    const output = stripExif(input, "image/jpeg");
-    expect(output).toEqual(input);
+  it("strips EXIF metadata from both output variants", async () => {
+    const source = await sharp({
+      create: { width: 400, height: 300, channels: 3, background: { r: 5, g: 5, b: 5 } },
+    })
+      .jpeg()
+      .withMetadata({ orientation: 1, exif: { IFD0: { Copyright: "test" } } })
+      .toBuffer();
+
+    const { card, full } = await renderThumbnailVariants(source);
+    const cardMeta = await sharp(card).metadata();
+    const fullMeta = await sharp(full).metadata();
+
+    expect(cardMeta.exif).toBeUndefined();
+    expect(fullMeta.exif).toBeUndefined();
+  });
+
+  it("honours EXIF orientation before discarding it, unlike the old stripper", async () => {
+    // Orientation 6 = rotate 90deg CW for display. Raw pixel storage is
+    // landscape (100x50); a correctly-oriented render is portrait (50x100).
+    // The old hand-rolled stripper only deleted the EXIF segment/chunk and
+    // never looked at Orientation, so a photo like this one would have come
+    // out sideways -- this is the bug #174/#171 fixes.
+    const source = await sharp({
+      create: { width: 100, height: 50, channels: 3, background: { r: 1, g: 2, b: 3 } },
+    })
+      .jpeg()
+      .withMetadata({ orientation: 6 })
+      .toBuffer();
+
+    const { full } = await renderThumbnailVariants(source);
+    const meta = await sharp(full).metadata();
+
+    expect(meta.width).toBe(50);
+    expect(meta.height).toBe(100);
+    expect(meta.exif).toBeUndefined();
+  });
+
+  it("rejects garbage bytes", async () => {
+    const garbage = Uint8Array.from([1, 2, 3, 4, 5, 6, 7, 8]);
+    await expect(renderThumbnailVariants(garbage)).rejects.toThrow();
   });
 });

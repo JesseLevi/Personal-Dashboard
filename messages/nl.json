@@ -33,8 +33,9 @@
       "not-found": "Dit onderdeel bestaat niet (meer) of is niet van jou.",
       "generic": "Er ging iets mis. Probeer het opnieuw.",
       "invalid-file-type": "Kies een JPEG-, PNG- of WebP-afbeelding.",
-      "file-too-large": "Deze afbeelding is te groot (max 5 MB).",
-      "upload-failed": "De afbeelding kon niet worden geüpload. Probeer het opnieuw."
+      "file-too-large": "Deze afbeelding is te groot (max 10 MB).",
+      "upload-failed": "De afbeelding kon niet worden geüpload. Probeer het opnieuw.",
+      "invalid-image": "Deze afbeelding kon niet worden verwerkt. Probeer een andere foto."
     },
     "units": {
       "gram": "Gram",
