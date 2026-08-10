@@ -108,7 +108,7 @@ not broken. `bg-surface-muted` matches the token `main` itself already uses
 (`AppShellNav.tsx`) — needed because cards scroll *underneath* the sticky box
 and would otherwise show through a transparent header.
 
-**No explicit `z-index`.** `position: sticky` with `z-index: auto` does not
+**No explicit `z-index` — superseded by #179, see below.** Originally: `position: sticky` with `z-index: auto` does not
 establish a new stacking context, so `TeDoenHeader.tsx`'s `z-[999]`
 board-switcher/sort dropdown panels (its own file, not touched here) are
 never capped by anything this component sets. The header still paints above
@@ -120,6 +120,14 @@ opaquely occludes the cards with no z-index set at all, and separately that
 an open board-switcher/sort dropdown still renders above the scrolling board
 after this change. See `design/notes/TeDoenBoard.md`/`Carousel.md` for the
 horizontal-scroll-containment half of this same ticket.
+
+## #179 (2026-08-09) — explicit `z-10` added, the "no z-index" reasoning above only held by accident
+
+Bug report (winkelmand ticket #179): the new Winkelmand `Sorteer` dropdown, built with the identical `absolute … z-[999]` pattern `TeDoenHeader.tsx`'s own sort menu already uses, rendered *behind* the ingredient rows below it — clicks meant for a "Voedingsgroep" option landed on the row underneath instead. Root-caused in a real browser (Playwright), not guessed: `CardContentIngredient`'s `swipeToDelete` branch wraps each row in its own `position: relative` div (needed for the swipe gesture's `overflow-hidden`/absolute Trash button). Per the CSS painting-order algorithm (CSS 2.1 Appendix E), *any* positioned descendant with `z-index: auto` — including `position: relative` with no z-index set — paints in the same "stack level 0" bucket as this header's own `position: sticky`, and within that bucket, later-DOM-order wins. Since every ingredient row is a later sibling of the header under the same parent (`main`), each row's own stacking context out-paints the header's — including the header's z-999 popover, which only ever competed *inside* the header's own stacking-context boundary, never against siblings outside it.
+
+The #102 entry above wasn't wrong for what it tested (Te-Doen's plain, non-positioned board-column divs) — it just tested a case that happens not to have any positioned sibling. Winkelmand's does. Fixed with an explicit `z-10` on the `<header>` itself: any positive z-index promotes an element out of "stack level 0" into a strictly-later-painted bucket, so the header (and everything inside its own stacking context, including a caller's own high z-index dropdown) now paints above *every* stack-level-0 sibling regardless of DOM order or whether that sibling happens to be positioned. `z-10` (not `z-999`) is a deliberate choice, not a copy of the dropdown's own value: it only needs to clear stack-level-0 siblings, and staying well under `AppShellNav.tsx`'s existing `z-30`/`z-40`/`z-50` layers (desktop sidebar, mobile scrim, mobile drawer) keeps the mobile drawer able to cover the header when open, unchanged.
+
+Verified in a real browser (Playwright, `/winkelmand` with seeded test data): before the fix, a raw click on the "Voedingsgroep" option was intercepted by the ingredient row underneath (confirmed via the exact `intercepts pointer events` failure Playwright reports); after, the same click registers on the dropdown option and the row selection updates. Re-checked Te-Doen's own sort/board-switcher dropdowns after this change — no regression (nothing there was ever positioned, so this was a no-op for that page, but the header now stacks correctly by construction rather than by accident, which is the actual fix this entry is written to prevent regressing again).
 
 **Visual baseline:** both `PageHeader` stories regenerate (`bg-surface-muted`
 replaces what used to be a transparent header showing the Ladle Provider's

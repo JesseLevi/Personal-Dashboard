@@ -29,12 +29,13 @@ export interface ImageUploadFieldProps {
 
 /**
  * Selecteer-afbeelding field for the recipe add/edit flow: a real
- * `<input type="file">`, layered transparently over the `InputField` atom so
- * the atom's own hover/active/focus states (`:focus-within`) keep working
- * unmodified. `accept` is image-only so mobile browsers already surface
- * their native "Photos/Files" chooser -- the ticket's "prefer Photos/Files
- * picker, dropdown as fallback" is satisfied by the OS picker itself, no
- * custom dropdown was built (none exists in the fetched node).
+ * `<input type="file">`, layered transparently over the `InputField` atom.
+ * `accept` is image-only so mobile browsers already surface their native
+ * "Photos/Files" chooser -- no custom dropdown was built (none in Figma).
+ * #166: the outer wrapper is `group` and `InputField`'s `boxClassName`
+ * carries `group-hover:`/`group-active:`/`group-focus-within:` variants --
+ * see design/notes/ImageUploadField.md for why a `peer-*` attempt (same
+ * ticket, same PR) did not work and `group-*` does.
  */
 export function ImageUploadField({
   id,
@@ -55,17 +56,12 @@ export function ImageUploadField({
   }
 
   return (
-    <div className={clsx("relative", className)}>
-      <InputField
-        leadingIcon="Image"
-        trailingIcon="Plus"
-        value={fileName ?? ""}
-        placeholder={placeholder}
-        readOnly
-        tabIndex={-1}
-        aria-hidden="true"
-        disabled={disabled}
-      />
+    <div className={clsx("group relative", className)}>
+      {/* `group` on this wrapper (not `peer` on the input): InputField's
+          bordered box is a grandchild of this div, not a sibling of the file
+          input, so `peer-*`'s sibling combinator can't reach it -- `group-*`'s
+          descendant selector can, regardless of nesting depth. See
+          design/notes/ImageUploadField.md. */}
       <input
         id={id}
         type="file"
@@ -75,6 +71,17 @@ export function ImageUploadField({
         aria-label={ariaLabel}
         onChange={handleChange}
         className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+      />
+      <InputField
+        leadingIcon="Image"
+        trailingIcon="Plus"
+        value={fileName ?? ""}
+        placeholder={placeholder}
+        readOnly
+        tabIndex={-1}
+        aria-hidden="true"
+        disabled={disabled}
+        boxClassName="group-hover:border-border-hover group-active:border-border-input-active group-focus-within:border-border-selected"
       />
     </div>
   );

@@ -238,6 +238,14 @@ export function RecipePanel({
     setIngredients((current) => [...current, emptyIngredientRow()]);
   }
 
+  // #166: every row carries a delete Button now (re-fetched node
+  // 4025:10596 — only the separate label-only header row has none, and
+  // that's not a data row). RecipeIngredientRow's own `removeDisabled`
+  // keeps the list from ever going empty — see the render call below.
+  function handleRemoveIngredientRow(localId: string) {
+    setIngredients((current) => current.filter((row) => row.localId !== localId));
+  }
+
   function handleAddStepRow() {
     setSteps((current) => [...current, emptyStepRow()]);
   }
@@ -524,6 +532,9 @@ export function RecipePanel({
                 unitPlaceholder={t("fields.ingredientUnitPlaceholder")}
                 unitOptions={unitOptions}
                 onUnitChange={(unit) => updateIngredientRow(row.localId, { unit })}
+                onRemove={() => handleRemoveIngredientRow(row.localId)}
+                removeLabel={t("fields.removeIngredientLabel")}
+                removeDisabled={ingredients.length <= 1}
               />
             </div>
           ))}

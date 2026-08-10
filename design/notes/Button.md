@@ -97,6 +97,10 @@ flex-shrink defence added. Measured in a real browser (Playwright against `pnpm 
 
 The fetched `Atom/Dropdown` node (3705:4446) overrides its nested `Button/Default` instances to `sizing.horizontal: fill` while still specifying no `justifyContent` (i.e. still packed/left) — this is what made the `justify-center` bug visible: Dropdown's option-list slot stretches the button full-width, so `justify-center` (a no-op on a hug-sized standalone button) started centring content the instant a caller stretched it.
 
+## TICKET #166 (2026-08-08) — linked node deleted, no fix made
+
+The ticket's "Button is anders in design" pointed at node `4003:5441`, which no longer exists in the Figma file (REST API `nodes?ids=` returns `null`, confirmed two ways — see `design/notes/RecipeDetailPage.md`'s #166 entry for the full investigation). Re-fetched the component set this atom maps to (`3623:4346`) anyway: unchanged since #112 (same 40 variant node ids, same `componentPropertyDefinitions`), so nothing here drifted from what `Button.tsx` already implements. **No code change made** — flagged for the reporter to re-link rather than guessed at.
+
 ## Known gap: destructive dark mode
 
 The destructive hover and active fills both resolve to `red-950` in dark mode, so those two states are visually invisible there (text stays legible, but there's no hover/press feedback). Not yet fixed; flagged for a future dark-mode pass.

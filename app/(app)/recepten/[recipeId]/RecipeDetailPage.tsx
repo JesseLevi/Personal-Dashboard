@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { Tag } from "@/components/atoms/Tag";
+import { AnimatedAddToBasketButton } from "@/components/molecules/AnimatedAddToBasketButton";
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
 import { CardContentStep } from "@/components/molecules/CardContentStep";
@@ -29,6 +30,7 @@ import {
   updateRecipe,
   uploadRecipeThumbnail,
 } from "../actions";
+import { addIngredientToShoppingList, sendRecipeToShoppingList } from "../../winkelmand/actions";
 
 // #127/#160 recipe detail route body — V2 Figma "Recept/Mobile" (3997:14737)
 // / "Recept/Desktop" (3997:15171), NutritionalData row 3997:15948/3997:15543,
@@ -100,6 +102,11 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
   const [deleteConfirming, setDeleteConfirming] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  // #178: own transition, independent of handleDelete's -- sending to the
+  // list and deleting the recipe are mutually exclusive user actions
+  // rendered in different branches below, so sharing one pending flag would
+  // only couple their disabled states for no reason.
+  const [sendPending, startSendTransition] = useTransition();
 
   // Same click-outside-closes convention as TeDoenHeader.tsx's board-
   // switcher/sort dropdowns — reused for the mobile Ellipsis overflow menu.
@@ -126,6 +133,27 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
       }
       router.push("/recepten");
     });
+  }
+
+  // #178: sends the whole recipe, scaled to the page's current session
+  // `portions` (#128/#160 -- display-only, never `recipe.servings` itself).
+  // No success/failure feedback is rendered -- see
+  // docs/open-questions.md#winkelmand-send-no-success-feedback.
+  function handleSendToList() {
+    startSendTransition(async () => {
+      await sendRecipeToShoppingList({ recipeId: recipe.id, targetPortions: portions });
+    });
+  }
+
+  // #179 part 2: the per-row swipe-to-cart action -- one ingredient instead
+  // of the whole recipe, same session `portions`. Fire-and-forget, same as
+  // handleSendToList above -- the "Toegevoegd" animation plays
+  // optimistically regardless of the actual result, matching the already-
+  // accepted docs/open-questions.md#winkelmand-send-no-success-feedback gap
+  // rather than inventing failure UI this ticket doesn't ask for. See
+  // design/notes/AnimatedAddToBasketButton.md.
+  async function handleAddIngredientToCart(ingredientId: string) {
+    await addIngredientToShoppingList({ recipeId: recipe.id, ingredientId, targetPortions: portions });
   }
 
   // #128/#160/#164/#157: one shared scaled-and-converted list feeds both the
@@ -203,11 +231,16 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
           </div>
         ) : (
           <div className="flex flex-wrap items-center justify-end gap-4">
-            {/* Rendered, deliberately non-functional in Phase 4 — #29 (Phase
-                5) wires a real handler. See design/notes/RecipeDetailPage.md. */}
-            <Button icon="ShoppingBasket" disabled>
-              {t("addToBasketLabel")}
-            </Button>
+            {/* #178 wires the real handler; #179 adds the AddToBasket ->
+                Toegevoegd slide animation -- see
+                design/notes/RecipeDetailPage.md's "Voeg toe aan mand" entry
+                and design/notes/AnimatedAddToBasketButton.md. */}
+            <AnimatedAddToBasketButton
+              label={t("addToBasketLabel")}
+              addedLabel={t("addedToBasketLabel")}
+              onAddToBasket={handleSendToList}
+              disabled={sendPending}
+            />
 
             <div className="hidden items-center gap-5 md:flex">
               <Button variant="filled" icon="Pencil" onClick={() => setEditOpen(true)}>
@@ -295,6 +328,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
           carbsG={nutritionPerPerson.carbsG}
           proteinG={nutritionPerPerson.proteinG}
           fatG={nutritionPerPerson.fatG}
+          fiberG={nutritionPerPerson.fiberG}
           servings={portions}
         />
       </div>
@@ -303,7 +337,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
         {ingredientGroups.map((group, groupIndex) => (
           <Card
             key={group.groupLabel ?? "__ungrouped"}
-            title={group.groupLabel ?? undefined}
+            title={group.groupLabel ?? t("ingredientsDefaultTitle")}
             className="md:flex-1"
             settings={
               // #160: Personen/Eenheid apply to the whole recipe, not one
@@ -326,6 +360,9 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
                 name={ingredient.name}
                 quantity={formatQuantityFraction(ingredient.quantity, ingredient.unit, tUnits(ingredient.unit))}
                 divider={index < group.ingredients.length - 1}
+                swipeAction="cart"
+                onAddToCart={() => handleAddIngredientToCart(ingredient.id)}
+                addToCartLabel={t("addIngredientToBasketLabel", { name: ingredient.name })}
               />
             ))}
           </Card>

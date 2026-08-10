@@ -42,13 +42,18 @@ Playground.argTypes = {
 // Both fetched nodes (3953:9750 mobile / 3778:5596 desktop) are pixel-identical
 // hug-sized rows — the two breakpoints differ only in surrounding viewport, not
 // in the component itself, so this pairs the same instance in two width contexts.
+// `items-start` on every flex-col wrapper below (#166): PortionStepper's
+// root is `inline-flex` with no width of its own, so a default `stretch`
+// cross-axis alignment would stretch it to the full story width — a Ladle
+// artifact, not how it renders in its real caller (PasAanPanel.tsx's own row
+// is `items-center`, never stretch). `items-start` shows the true hug width.
 export const Breakpoints = () => (
-  <div className="flex flex-col gap-8">
-    <div className="flex w-[375px] flex-col gap-2">
+  <div className="flex flex-col items-start gap-8">
+    <div className="flex w-[375px] flex-col items-start gap-2">
       <p className="text-sm font-semibold text-text-muted">Mobile (375px)</p>
       <ControlledPortionStepper initialPortions={6} />
     </div>
-    <div className="flex w-[1024px] max-w-full flex-col gap-2">
+    <div className="flex w-[1024px] max-w-full flex-col items-start gap-2">
       <p className="text-sm font-semibold text-text-muted">Desktop</p>
       <ControlledPortionStepper initialPortions={6} />
     </div>
@@ -58,7 +63,7 @@ export const Breakpoints = () => (
 // Representative portion values, incl. the 1-vs-plural edge case — every value
 // below routes through the real ICU `count` message, not a hand-picked string.
 export const RepresentativeValues = () => (
-  <div className="flex flex-col gap-4">
+  <div className="flex flex-col items-start gap-4">
     {[1, 2, 6, 12].map((portions) => (
       <ControlledPortionStepper key={portions} initialPortions={portions} />
     ))}
@@ -70,7 +75,7 @@ export const RepresentativeValues = () => (
 // (.ladle/components.tsx) is fixed to locale "nl".
 export const EnglishCatalog = () => (
   <NextIntlClientProvider locale="en" messages={en}>
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col items-start gap-4">
       {[1, 2, 6].map((portions) => (
         <ControlledPortionStepper key={portions} initialPortions={portions} />
       ))}

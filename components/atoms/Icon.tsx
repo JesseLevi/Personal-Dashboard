@@ -18,6 +18,7 @@ import {
   FolderClosed,
   Shirt,
   ArrowLeft,
+  ArrowRight,
   ArrowUpDown,
   Sandwich,
   Columns3,
@@ -147,6 +148,7 @@ export type IconName =
   | "FolderClosed"
   | "Shirt"
   | "ArrowLeft"
+  | "ArrowRight"
   | "ArrowUpDown"
   | "Sandwich"
   | "Columns3"
@@ -275,6 +277,7 @@ const ICONS: Record<IconName, ComponentType<LucideProps>> = {
   FolderClosed: FolderClosed,
   Shirt: Shirt,
   ArrowLeft: ArrowLeft,
+  ArrowRight: ArrowRight,
   ArrowUpDown: ArrowUpDown,
   Sandwich: Sandwich,
   Columns3: Columns3,

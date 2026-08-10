@@ -1,21 +1,24 @@
-// figma: node-id=3953:9750 (mobile) / 3778:5596 (desktop, pixel-identical)
+// figma: node-id=3953:9750 (mobile) / 3778:5596 (desktop, pixel-identical) —
+// restyled per the Pas-aan panel's own Personen row, node-id=3999:11007
+// (desktop) / 3998:10928 (mobile), which models this control as ONE filled
+// Button pill.
 import clsx from "clsx";
 import { Button } from "../atoms/Button";
 
 /**
- * Molecule/Portion-stepper — two icon-only `Atom/Button` instances (Style=Filled,
- * measured 40x40, `bg-surface-raised`/`rounded-lg`) flanking a `text-xl/semibold`
- * portion count. Figma draws `Icon/Plus` on BOTH sides; the left button renders
- * `Minus` instead — a deliberate deviation, not a guess. Full measurements,
- * ticket history and the deviation record: `design/notes/PortionStepper.md`.
- * Presentational only (Server Component) — `label`/`decrementLabel`/
- * `incrementLabel` arrive pre-translated, same idiom as
- * `CardContentIngredient`'s `deleteLabel`. `min` (#153) clamps the decrement
- * target and disables the decrement Button at the floor — see
- * design/notes/PortionStepper.md for why this lives here, not in the caller.
+ * Molecule/Portion-stepper — Figma (3999:11007) draws Personen as a single
+ * `Button/Default` (Style=Filled) instance: leading icon, text, trailing
+ * icon, `h-10`/`gap-1`/`px-2`/`rounded-lg`/`bg-surface-raised` — exactly
+ * `Atom/Button`'s own classes. A real `<button>` can't nest two more
+ * `<button>`s, and decrement/increment need separate click targets, so this
+ * renders two plain icon-only `Button`s (their own Filled hover/active ramp)
+ * inside a same-styled pill wrapper — reads as one control, is structurally
+ * two. Left renders `Minus` though Figma draws `Icon/Plus` on both sides
+ * (deliberate deviation, recurs here). `min` (#153) clamps/disables the
+ * decrement floor. Full history: design/notes/PortionStepper.md.
  */
 export interface PortionStepperProps {
-  /** Current portion count (Figma TEXT "6 personen") — caller-owned state. */
+  /** Current portion count (Figma TEXT "6") — caller-owned state. */
   portions: number;
   /** Pre-translated display text for the count, e.g. "6 personen"/"6 people" (ICU-pluralised — see `messages/*.json` `components.portionStepper.count`). */
   label: string;
@@ -41,14 +44,19 @@ export function PortionStepper({
 }: PortionStepperProps) {
   const atMin = portions <= min;
   return (
-    <div className={clsx("inline-flex items-center gap-6", className)}>
+    <div
+      className={clsx(
+        "inline-flex h-10 items-center gap-1 rounded-lg bg-surface-raised",
+        className,
+      )}
+    >
       <Button
         icon="Minus"
         aria-label={decrementLabel}
         onClick={() => onChange?.(Math.max(min, portions - 1))}
         disabled={atMin}
       />
-      <span className="text-xl font-semibold text-text">{label}</span>
+      <span className="text-base font-semibold text-text-muted">{label}</span>
       <Button
         icon="Plus"
         aria-label={incrementLabel}

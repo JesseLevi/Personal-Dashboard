@@ -31,7 +31,7 @@ export const Playground: Story<PlaygroundProps> = ({
           checked={checked}
           onDelete={() => {}}
           deleteLabel={deleteLabelEn}
-          swipeToDelete
+          swipeAction="delete"
         />
       ) : (
         <CardContentIngredient
@@ -98,11 +98,10 @@ export const NoQuantityWithDivider = () => {
 };
 
 // #160: State=Delete (node 3727:4378, annotation "When sliding") is a swipe
-// reveal, opt-in via `swipeToDelete` — the shopping basket (#29, Phase 5) is
-// its only planned consumer, so this Ladle story is the only place it's
-// exercised today. Renders at rest (closed); the open/revealed pill state
-// needs a live drag and isn't captured by the static screenshot baseline,
-// same as the Active pill above.
+// reveal, opt-in via `swipeAction="delete"` — the shopping basket (#29,
+// Phase 5) is its first live consumer (#177). Renders at rest (closed); the
+// open/revealed pill state needs a live drag and isn't captured by the
+// static screenshot baseline, same as the Active pill above.
 export const SwipeToDelete = () => (
   <div className="w-96">
     <CardContentIngredient
@@ -111,7 +110,7 @@ export const SwipeToDelete = () => (
       checked={false}
       onDelete={() => {}}
       deleteLabel={deleteLabelEn}
-      swipeToDelete
+      swipeAction="delete"
     />
   </div>
 );
@@ -125,7 +124,25 @@ export const DeleteLabelNl = () => (
       checked={false}
       onDelete={() => {}}
       deleteLabel={nl.components.cardContentIngredient.deleteLabel}
-      swipeToDelete
+      swipeAction="delete"
+    />
+  </div>
+);
+
+// #179: State=Cart (node 4050:11613, annotation "When sliding" on
+// 4050:11614) is the same swipe gesture, revealing a `filled`/basket
+// AnimatedAddToBasketButton instead of the destructive Trash Button —
+// ReceptDetailPage's ingredient rows are its first live consumer. Renders at
+// rest (closed), same reasoning as SwipeToDelete above.
+export const SwipeToCart = () => (
+  <div className="w-96">
+    <CardContentIngredient
+      name="Banana"
+      quantity="300 gr"
+      checked={false}
+      onAddToCart={() => {}}
+      addToCartLabel={en.components.cardContentIngredient.addToCartLabel}
+      swipeAction="cart"
     />
   </div>
 );
