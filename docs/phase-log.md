@@ -31,8 +31,7 @@ Mac mini Supabase stacks (#1, incl. `GOTRUE_DISABLE_SIGNUP=true` — no self-sig
 
 Every atom, molecule, and organism in the Phase 2 milestone has a merged implementation, a filled-in `nodeId` in `design/figma-map.json`, and a Ladle story — see that file for the current inventory, not this section. The milestone's tickets stay open until the user reviews and closes them (per the board workflow in `CLAUDE.md`), so `gh issue list --milestone "Phase 2 — Design system core" --state open` still lists them; that is a review-queue state, not unbuilt work.
 
-Genuinely open (non-component) work in the Phase 2 milestone:
-- **#49** — Ladle chrome theming (`appendToHead`) emits a dev-only `/@fs/` path that 404s in `pnpm ladle:build`; not started.
+**#49 — Ladle chrome theming survives `pnpm ladle:build`**: `appendToHead` (@ladle/react's own `transformIndexHtml` hook) runs at "normal" priority, which Vite's build-time HTML handling only stamps into the final HTML as an inert string — it never scans it for `<link>`/`<script>` tags to bundle, which is why the dev-only `/@fs/<absolute path>` href it emitted 404'd in the built output. Fixed by registering the same `<link>` through a real Vite plugin instead: `.ladle/config.mjs` points `viteConfig` at `.ladle/vite.config.mjs`, whose plugin injects the tag via a `pre`-order `transformIndexHtml` hook — Vite scans "pre"-order output *before* deciding what to bundle, so the stylesheet goes through the normal CSS pipeline (Tailwind processing intact) and comes out fingerprinted in `build/assets/`, with no machine-specific path anywhere in the build. Dev (`pnpm ladle`) is unaffected — same `/@fs/` request, just now sourced from the plugin instead of `appendToHead`.
 
 Conventions the design-system components locked in are in `docs/guides/ui-components.md` → "Component code conventions" — they exist because parallel agent work diverged on each point.
 

@@ -3,10 +3,12 @@
  * by its bundled ladle.css through a small, documented set of CSS custom properties
  * (see @ladle/react/lib/app/ladle.css, `:root` and `[data-theme="dark"]`). That file
  * is not part of this repo, so we don't fight it with deep selectors — we override
- * the variables it already exposes, through Ladle's own `appendToHead` config hook
- * (.ladle/config.mjs), which injects this stylesheet into the *outer* chrome
- * document's <head> (the story preview renders in its own iframe document via
- * .ladle/components.tsx + app/globals.css, which never reaches this outer chrome).
+ * the variables it already exposes, through a Vite plugin (.ladle/vite.config.mjs,
+ * wired in via .ladle/config.mjs's `viteConfig` option) that injects this
+ * stylesheet into the *outer* chrome document's <head> (the story preview renders
+ * in its own iframe document via .ladle/components.tsx + app/globals.css, which
+ * never reaches this outer chrome). See that plugin's header for why a plain
+ * `appendToHead` string (the pre-#49 mechanism) doesn't survive `pnpm ladle:build`.
  *
  * Token mapping (issue #41):
  * - "surface/primary" (preview background)      -> --color-surface
