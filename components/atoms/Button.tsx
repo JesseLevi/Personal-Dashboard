@@ -15,7 +15,10 @@ import { Icon, type IconName } from "./Icon";
  * differ in `justify-*`, never in spacing (#112).
  */
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center gap-1 rounded-lg text-base font-semibold transition-colors",
+  // `chrome-touch` (#172, app/globals.css): every Button is a control, not
+  // reading content — no long-press callout/selection on its label, no
+  // double-tap-zoom delay. Never applied to actual content text elsewhere.
+  "chrome-touch inline-flex shrink-0 items-center gap-1 rounded-lg text-base font-semibold transition-colors",
   {
     variants: {
       // No Figma Size property — compact/iconOnlyDefault are structural

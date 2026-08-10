@@ -236,7 +236,13 @@ export function SidePanel({
           // Figma reports "16px 12px 0px 0px" (mobile) / "16px 0px 0px 12px"
           // (desktop); see design/notes/SidePanel.md.
           "inset-x-0 bottom-0 max-h-[90vh] rounded-tl-2xl rounded-tr-xl",
-          "md:inset-x-auto md:inset-y-0 md:right-0 md:h-full md:max-h-none md:w-[400px] md:rounded-tr-none md:rounded-bl-xl",
+          // `md:pt-` (#172): only the `md:` shape reaches the physical top
+          // of the viewport (`md:inset-y-0`) — the mobile bottom sheet
+          // never does, so it's exempt. No `max()` needed (unlike Sidebar's
+          // idiom): there's no base padding to protect, `env()` resolves to
+          // 0 with no inset, and the close button already has its own
+          // click target inside the h-14 handle strip below.
+          "md:inset-x-auto md:inset-y-0 md:right-0 md:h-full md:max-h-none md:w-[400px] md:rounded-tr-none md:rounded-bl-xl md:pt-[env(safe-area-inset-top)]",
           open
             ? "translate-x-0 translate-y-0"
             : "translate-y-full md:translate-x-full md:translate-y-0",

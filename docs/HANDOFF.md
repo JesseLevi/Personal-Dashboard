@@ -25,6 +25,7 @@
 - **Visual flake: isolation is not a control — run the FULL suite twice.** Confirmed flaky stories: `category-panel--create-category`, `category-panel--edit-category`, `recipe-panel--filled`. Identical code has given fail-then-pass across consecutive full runs, and a story that failed 3/3 *in isolation* passed in a full run — story count, ordering and parallelism all change the rasterization. Never bisect a visual failure; regenerate the baseline or widen the threshold. Never let two runs overlap.
 - **Verify a ticket's Figma links resolve before planning against them.** Two nodes cited by #166 no longer exist in the file.
 - **An optimistic success animation can hide a fully broken write path.** `AnimatedAddToBasketButton` plays "Toegevoegd" regardless of the `ActionResult`, which masked a failing insert for an entire ticket. → `docs/open-questions.md#winkelmand-send-no-success-feedback`
+- **iOS only reads the manifest/`appleWebApp` metadata (#172) when an icon is added to the home screen.** An icon added before this shipped keeps opening in tabbed Safari forever — the user must delete and re-add it after this deploys. → `design/notes/AppShell.md`
 
 ## Unverified against reality
 

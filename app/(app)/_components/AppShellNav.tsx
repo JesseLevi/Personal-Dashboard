@@ -173,8 +173,12 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
       {/* `min-w-0` is load-bearing (#102): without it this `flex-1` item
           never constrains its min-content width, so wide content (the
           Kanban carousel) stretches `main`/`body` instead of scrolling
-          inside its own row. */}
-      <main className="flex min-w-0 flex-1 flex-col gap-6 pt-4 pb-20 pl-4 md:pt-20 md:pb-20 md:pl-32">
+          inside its own row. `pt-` (#172, mobile only — `md:pt-20` already
+          clears any real inset): the hamburger button below is the
+          topmost on-screen chrome on a notched iPhone in standalone mode,
+          so it needs the same `max()` safe-area idiom #113 used on
+          Sidebar/SidePanel, or it renders partly under the status bar. */}
+      <main className="flex min-w-0 flex-1 flex-col gap-6 pt-[max(1rem,env(safe-area-inset-top))] pb-20 pl-4 md:pt-20 md:pb-20 md:pl-32">
         <Button
           variant="filled"
           icon="PanelLeftOpen"

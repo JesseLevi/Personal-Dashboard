@@ -12,3 +12,32 @@
     -webkit-touch-callout: none;
   }
 }
+
+/* #172: standalone-app touch polish, global because it's a document-level
+   default, not one component's concern — see design/notes/AppShell.md. */
+
+html {
+  /* No rubber-band/overscroll bounce past the document edges. In ordinary
+     Safari that bounce reveals browser chrome underneath, which read as a
+     glitch; in the standalone app there's no chrome to reveal, just a
+     dead-end scroll past real content, so it's suppressed everywhere. */
+  overscroll-behavior: none;
+  /* No grey/blue flash on tap — native apps have no such highlight, and
+     every tappable component here already renders its own hover/active
+     state, so the browser default is pure noise on top of it. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Chrome only (nav, buttons, headers) — never user content (recipe text,
+   ingredient names, notes), which must stay selectable/copyable. Coarse
+   pointers only, same reasoning as `.touch-callout-none` above: a mouse
+   never triggers a long-press callout, accidental selection, or the
+   double-tap-zoom `touch-action` guards against. */
+@media (any-pointer: coarse) {
+  .chrome-touch {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+}
