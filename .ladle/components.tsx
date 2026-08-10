@@ -26,10 +26,12 @@ import nl from "../messages/nl.json";
  * applies here exactly like it does in the real app, and Ladle's Light/Dark
  * toggle (which sets `data-theme` on the outer document) flips it.
  *
- * Unlike `appendToHead`'s injected `<link>` (a dev-server-only `/@fs/` path,
- * see #49), this is a real module import that Vite bundles and fingerprints
- * as part of the ordinary story module graph, so it survives `pnpm
- * ladle:build` the same way any other CSS import in this repo does.
+ * Unlike the outer chrome's stylesheet injection (.ladle/vite.config.mjs, a
+ * `pre`-order transformIndexHtml hook — needed because #49 found that a plain
+ * `appendToHead` <link> is dev-server-only and never survives `pnpm
+ * ladle:build`), this file's CSS import is a real module import that Vite
+ * bundles and fingerprints as part of the ordinary story module graph, so it
+ * survives the build the same way any other CSS import in this repo does.
  *
  * `NextIntlClientProvider` was added for #94 (the first story-able component
  * to call `useTranslations`/`useFormatter` directly rather than receiving

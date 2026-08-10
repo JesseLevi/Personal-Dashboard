@@ -1,11 +1,3 @@
-import path from "node:path";
-
-// Absolute path so Vite's dev server can resolve it via /@fs/ even though Ladle's
-// own Vite `root` is @ladle/react's bundled app folder, not this repo (see
-// .ladle/ladle-theme.css header for why this file — and not .ladle/components.tsx —
-// is where the outer chrome gets its design-system tokens).
-const chromeThemeHref = `/@fs/${path.resolve(process.cwd(), ".ladle/ladle-theme.css").split(path.sep).join("/")}`;
-
 /** @type {import('@ladle/react').UserConfig} */
 export default {
   // #94 added the first story outside components/ (CardDetailPanel.tsx
@@ -13,5 +5,8 @@ export default {
   // new atomic-design leaf — design/notes/CardDetailPanel.md) — broadened
   // from a components/-only glob so it's still picked up.
   stories: "{components,app}/**/*.stories.{js,jsx,ts,tsx}",
-  appendToHead: `<link rel="stylesheet" href="${chromeThemeHref}" />`,
+  // #49: the chrome stylesheet is injected via a real Vite plugin
+  // (.ladle/vite.config.mjs), not `appendToHead` — see that file's header
+  // for why appendToHead's tag never survives `pnpm ladle:build`.
+  viteConfig: ".ladle/vite.config.mjs",
 };

@@ -9,12 +9,14 @@
  * Each story is loaded through Ladle's own `?story=<id>&mode=preview` URL, which
  * renders ONLY the story (still wrapped by .ladle/components.tsx's `Provider`,
  * so design tokens / bg-surface apply) with none of Ladle's outer chrome DOM.
- * That is deliberate, not incidental: issue #49 documents that the outer
- * chrome's theme <link> is injected via a dev-server-only `/@fs/...` path and
- * silently no-ops in `ladle:build` output. `mode=preview` never renders that
- * chrome subtree at all (confirmed by inspecting the rendered DOM before wiring
- * this file — see the ticket #6 handoff for the walkthrough), so these
- * baselines are unaffected by #49.
+ * That is deliberate, not incidental: `mode=preview` never renders the chrome
+ * subtree at all (confirmed by inspecting the rendered DOM before wiring this
+ * file — see the ticket #6 handoff for the walkthrough), so these baselines
+ * are unaffected by how the chrome itself is themed — including #49, which
+ * fixed the chrome stylesheet no-oping in `ladle:build` output (it was
+ * injected via a dev-server-only `/@fs/...` path; now a `.ladle/vite.config.mjs`
+ * plugin makes it survive the build), and would still be irrelevant here even
+ * unfixed.
  *
  * Cross-platform caveat: screenshot pixels are only comparable when captured
  * with the same browser build + OS + font rasterizer. Playwright's default
