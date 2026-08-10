@@ -12,8 +12,9 @@
 - **Phase 4 (Recepten) and Phase 5 (Boodschappenlijst) are both mid-flight.** Per-ticket status lives on the board, never here.
   - `/recepten` category-kanban · `/recepten/[recipeId]` V2 detail page (nutrition row, "Pas aan" panel, NEVO/USDA-backed macros) · private `recipe-thumbnails` bucket with server-side re-encode → `design/notes/RecipeDetailPage.md`, `ReceptenBoard.md`
   - `/winkelmand` with grouping, sort and swipe-to-cart → `design/notes/WinkelmandPage.md`
-- **Ready to pick up** (board column): #162 i18n wiring, #172 iOS standalone PWA, #182 Winkelmand sort-button alignment.
-- **In review**: #171 and #174 — merged via PR #181, but the issues stay open by this repo's convention (no closing keyword; the user reviews, then closes).
+- **Ready to pick up** (board column): #162 i18n wiring.
+- **In review**: #171 and #174 (PR #181), #172 (PR #194), #182 (PR #195) — merged, but the issues stay open by this repo's convention (no closing keyword; the user reviews, then closes).
+- **The app is now an installable standalone PWA** (#172): `app/manifest.ts`, `appleWebApp` with `statusBarStyle: "black-translucent"` (a user choice over the ticket's `"default"`), Figma-sourced icons, a safe-area audit across the shell, and CSS-only touch polish. → `design/notes/AppShell.md`
 - Backlog: #1–#5, #8–#11 (server-side, need real accounts — don't start unprompted), #168–#173 (perf), #30–#33 (phases 6–9), plus the verification tickets below.
 - `middleware.ts` is deliberately absent — session refresh is #8; the auth guard lives in `app/(app)/layout.tsx` until then. Every sign-in path lands on `/te-doen`.
 
