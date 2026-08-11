@@ -50,11 +50,11 @@ Playground.argTypes = {
 export const Breakpoints = () => (
   <div className="flex flex-col items-start gap-8">
     <div className="flex w-[375px] flex-col items-start gap-2">
-      <p className="text-sm font-semibold text-text-muted">Mobile (375px)</p>
+      <p className="text-sm font-semibold text-text-secondary">Mobile (375px)</p>
       <ControlledPortionStepper initialPortions={6} />
     </div>
     <div className="flex w-[1024px] max-w-full flex-col items-start gap-2">
-      <p className="text-sm font-semibold text-text-muted">Desktop</p>
+      <p className="text-sm font-semibold text-text-secondary">Desktop</p>
       <ControlledPortionStepper initialPortions={6} />
     </div>
   </div>

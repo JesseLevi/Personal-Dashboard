@@ -201,10 +201,10 @@ export function SidePanel({
 
   return (
     <>
-      {/* GAP: reuses `text` (stone-950, matches Figma's rgba(12,10,9,0.6) exactly
-          in light mode) since no dedicated scrim token exists — flagged, not
-          invented. `text` flips to white in dark mode, which would invert this
-          to a light scrim; see design/notes/SidePanel.md. */}
+      {/* GAP: reuses `text-primary` (stone-950, matches Figma's rgba(12,10,9,0.6)
+          exactly in light mode) since no dedicated scrim token exists —
+          flagged, not invented. `text-primary` flips to white in dark mode,
+          which would invert this to a light scrim; see design/notes/SidePanel.md. */}
       <div
         aria-hidden="true"
         onClick={onClose}
@@ -216,7 +216,7 @@ export function SidePanel({
         // allow-discrete`) defers the `visibility` flip to hidden until the
         // opacity transition finishes, so the fade-out still plays.
         className={clsx(
-          "fixed inset-0 bg-text/60 transition-[opacity,visibility] transition-discrete duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+          "fixed inset-0 bg-text-primary/60 transition-[opacity,visibility] transition-discrete duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
           level === 2 ? "z-[60]" : "z-40",
           open ? "visible opacity-100" : "invisible pointer-events-none opacity-0",
         )}
@@ -230,7 +230,7 @@ export function SidePanel({
         inert={!open}
         onKeyDown={handleKeyDown}
         className={clsx(
-          "fixed flex flex-col overflow-hidden bg-surface-muted transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+          "fixed flex flex-col overflow-hidden bg-surface-primary transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
           level === 2 ? "z-[70]" : "z-50",
           // Corner radii are 16/12, not a uniform value on either shape —
           // Figma reports "16px 12px 0px 0px" (mobile) / "16px 0px 0px 12px"
@@ -265,7 +265,7 @@ export function SidePanel({
               anywhere in the empty header area also works. */}
           <span
             aria-hidden="true"
-            className="absolute top-3 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-border md:hidden"
+            className="absolute top-3 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-stroke-primary md:hidden"
           />
           <Button variant="filled" icon="X" aria-label={closeLabel} onClick={onClose} />
         </div>
@@ -288,7 +288,7 @@ export function SidePanel({
             // `max()` only ever adds space, never shrinks the existing
             // padding on devices with no inset. Unverified on a real device;
             // see design/notes/SidePanel.md.
-            className="flex shrink-0 flex-col gap-2 border-t border-border bg-surface p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:border-t-0 md:bg-transparent md:pb-4"
+            className="flex shrink-0 flex-col gap-2 border-t border-stroke-primary bg-surface-highlight-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:border-t-0 md:bg-transparent md:pb-4"
           >
             {footer}
           </div>

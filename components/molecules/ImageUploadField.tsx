@@ -81,7 +81,7 @@ export function ImageUploadField({
         tabIndex={-1}
         aria-hidden="true"
         disabled={disabled}
-        boxClassName="group-hover:border-border-hover group-active:border-border-input-active group-focus-within:border-border-selected"
+        boxClassName="group-hover:border-stroke-primary-hover group-active:border-stroke-primary-active group-focus-within:border-stroke-primary-selected"
       />
     </div>
   );

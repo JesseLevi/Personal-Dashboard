@@ -234,7 +234,7 @@ export function CardDetailPanel({
   const footer =
     target.mode === "edit" && deleteConfirming ? (
       <>
-        <p className="text-base font-semibold text-text">{t("deleteConfirmLabel")}</p>
+        <p className="text-base font-semibold text-text-primary">{t("deleteConfirmLabel")}</p>
         <div className="flex gap-2">
           <Button
             variant="outline"

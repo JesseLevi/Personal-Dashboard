@@ -37,7 +37,7 @@ export const States = () => (
 export const IconCombinations = () => (
   <div className="flex w-72 flex-col gap-6">
     <div className="flex flex-col gap-2">
-      <span className="text-sm font-semibold text-text-muted">
+      <span className="text-sm font-semibold text-text-secondary">
         Leading icon only
       </span>
       <InputField
@@ -48,7 +48,7 @@ export const IconCombinations = () => (
       />
     </div>
     <div className="flex flex-col gap-2">
-      <span className="text-sm font-semibold text-text-muted">
+      <span className="text-sm font-semibold text-text-secondary">
         Trailing icon only
       </span>
       <InputField
@@ -59,7 +59,7 @@ export const IconCombinations = () => (
       />
     </div>
     <div className="flex flex-col gap-2">
-      <span className="text-sm font-semibold text-text-muted">
+      <span className="text-sm font-semibold text-text-secondary">
         Both icons
       </span>
       <InputField
@@ -71,7 +71,7 @@ export const IconCombinations = () => (
       />
     </div>
     <div className="flex flex-col gap-2">
-      <span className="text-sm font-semibold text-text-muted">
+      <span className="text-sm font-semibold text-text-secondary">
         No icons
       </span>
       <InputField id="without-icons" label="Field" placeholder="Example" />

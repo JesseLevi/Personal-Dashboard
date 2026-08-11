@@ -8,7 +8,7 @@ import type { MetadataRoute } from "next";
 // translatable text, and next-intl has no locale to key off here since this
 // route is static). `background_color`/`theme_color` reuse the exact hex
 // `app/layout.tsx`'s `viewport.themeColor` already uses — `stone-100` /
-// `surface-muted` in design/tokens.json. Icons: see design/notes/AppShell.md
+// `surface-primary` in design/tokens.json. Icons: see design/notes/AppShell.md
 // for the Figma source (node 4055:14328) and the flatten-for-iOS call.
 export default function manifest(): MetadataRoute.Manifest {
   return {

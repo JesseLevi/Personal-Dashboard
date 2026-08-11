@@ -392,7 +392,7 @@ export interface IconProps {
   size?: number;
   /** Stroke width. Defaults to 2 (Figma spec). */
   strokeWidth?: number;
-  /** Forwarded to the underlying SVG — use a text-color token (e.g. `text-accent`) to set color via `currentColor`. */
+  /** Forwarded to the underlying SVG — use a text-color token (e.g. `text-text-secondary`) to set color via `currentColor`. */
   className?: string;
 }
 

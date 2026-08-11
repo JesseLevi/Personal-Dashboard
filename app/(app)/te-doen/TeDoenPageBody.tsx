@@ -27,7 +27,7 @@ export async function TeDoenPageBody({ boardId, sortParam }: TeDoenPageBodyProps
     return (
       <>
         <PageHeader title={t("emptyBoardTitle")} />
-        <p className="text-base text-text-muted">{t("emptyBoardBody")}</p>
+        <p className="text-base text-text-secondary">{t("emptyBoardBody")}</p>
       </>
     );
   }

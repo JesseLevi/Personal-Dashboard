@@ -1,0 +1,1247 @@
+{
+  "color": {
+    "surface": {
+      "primary": {
+        "default": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.10980392247438431,
+              0.09803921729326248,
+              0.09019608050584793
+            ],
+            "alpha": 1,
+            "hex": "#1C1917"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3605:2",
+            "com.figma.scopes": [
+              "FRAME_FILL",
+              "SHAPE_FILL",
+              "EFFECT_COLOR"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:9f53fa98fa171a1fe99c395b0f9fcccb242b5d9e/-1:-1",
+              "targetVariableName": "color/stone/900",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "hover": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.16078431904315948,
+              0.14509804546833038,
+              0.1411764770746231
+            ],
+            "alpha": 1,
+            "hex": "#292524"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3813:6608",
+            "com.figma.scopes": [
+              "FRAME_FILL",
+              "SHAPE_FILL",
+              "EFFECT_COLOR"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:860e25bef7310566306e7c12fc97cd765558e1eb/-1:-1",
+              "targetVariableName": "color/stone/800",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "active": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.2666666805744171,
+              0.250980406999588,
+              0.23137255012989044
+            ],
+            "alpha": 1,
+            "hex": "#44403B"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3813:6609",
+            "com.figma.scopes": [
+              "FRAME_FILL",
+              "SHAPE_FILL",
+              "EFFECT_COLOR"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:22db5c2d1a8e9343f1ade0adbd6f8af7bac601f0/-1:-1",
+              "targetVariableName": "color/stone/700",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        }
+      },
+      "secondary": {
+        "default": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.16078431904315948,
+              0.14509804546833038,
+              0.1411764770746231
+            ],
+            "alpha": 1,
+            "hex": "#292524"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3605:3",
+            "com.figma.scopes": [
+              "FRAME_FILL",
+              "SHAPE_FILL",
+              "EFFECT_COLOR"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:860e25bef7310566306e7c12fc97cd765558e1eb/-1:-1",
+              "targetVariableName": "color/stone/800",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "hover": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.2666666805744171,
+              0.250980406999588,
+              0.23137255012989044
+            ],
+            "alpha": 1,
+            "hex": "#44403B"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3815:6611",
+            "com.figma.scopes": [
+              "FRAME_FILL",
+              "SHAPE_FILL",
+              "EFFECT_COLOR"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:22db5c2d1a8e9343f1ade0adbd6f8af7bac601f0/-1:-1",
+              "targetVariableName": "color/stone/700",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "active": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.34117648005485535,
+              0.32549020648002625,
+              0.3019607961177826
+            ],
+            "alpha": 1,
+            "hex": "#57534D"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3815:6612",
+            "com.figma.scopes": [
+              "FRAME_FILL",
+              "SHAPE_FILL",
+              "EFFECT_COLOR"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:71f91ef2652823d698b5a389fdb6d7a093202f12/-1:-1",
+              "targetVariableName": "color/stone/600",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        }
+      },
+      "tertiary": {
+        "default": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.2666666805744171,
+              0.250980406999588,
+              0.23137255012989044
+            ],
+            "alpha": 1,
+            "hex": "#44403B"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3782:4807",
+            "com.figma.scopes": [
+              "FRAME_FILL",
+              "SHAPE_FILL",
+              "EFFECT_COLOR"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:22db5c2d1a8e9343f1ade0adbd6f8af7bac601f0/-1:-1",
+              "targetVariableName": "color/stone/700",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "hover": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.34117648005485535,
+              0.32549020648002625,
+              0.3019607961177826
+            ],
+            "alpha": 1,
+            "hex": "#57534D"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3815:6614",
+            "com.figma.scopes": [
+              "FRAME_FILL",
+              "SHAPE_FILL",
+              "EFFECT_COLOR"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:71f91ef2652823d698b5a389fdb6d7a093202f12/-1:-1",
+              "targetVariableName": "color/stone/600",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "active": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.4745098054409027,
+              0.4431372582912445,
+              0.41960784792900085
+            ],
+            "alpha": 1,
+            "hex": "#79716B"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3815:6615",
+            "com.figma.scopes": [
+              "FRAME_FILL",
+              "SHAPE_FILL",
+              "EFFECT_COLOR"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:427c374836802e11dbfc95b816f90dead836ad54/-1:-1",
+              "targetVariableName": "color/stone/500",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        }
+      },
+      "highlight": {
+        "white": {
+          "default": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.2666666805744171,
+                0.250980406999588,
+                0.23137255012989044
+              ],
+              "alpha": 1,
+              "hex": "#44403B"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3605:7",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:22db5c2d1a8e9343f1ade0adbd6f8af7bac601f0/-1:-1",
+                "targetVariableName": "color/stone/700",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          },
+          "selected": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.34117648005485535,
+                0.32549020648002625,
+                0.3019607961177826
+              ],
+              "alpha": 1,
+              "hex": "#57534D"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3815:6616",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:71f91ef2652823d698b5a389fdb6d7a093202f12/-1:-1",
+                "targetVariableName": "color/stone/600",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          },
+          "hover": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.4745098054409027,
+                0.4431372582912445,
+                0.41960784792900085
+              ],
+              "alpha": 1,
+              "hex": "#79716B"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3815:6621",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:427c374836802e11dbfc95b816f90dead836ad54/-1:-1",
+                "targetVariableName": "color/stone/500",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          },
+          "active": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.6509804129600525,
+                0.6274510025978088,
+                0.6078431606292725
+              ],
+              "alpha": 1,
+              "hex": "#A6A09B"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3815:6626",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:e6f89e2971b9a15a141122428bcfc6dce0cd0715/-1:-1",
+                "targetVariableName": "color/stone/400",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          }
+        },
+        "green": {
+          "default": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9411764740943909,
+                0.9921568632125854,
+                0.95686274766922
+              ],
+              "alpha": 1,
+              "hex": "#F0FDF4"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3626:4454",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:53a9aa8e1e6dd42b61e47dd384d72aa5202b02d3/-1:-1",
+                "targetVariableName": "color/green/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          },
+          "selected": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9411764740943909,
+                0.9921568632125854,
+                0.95686274766922
+              ],
+              "alpha": 1,
+              "hex": "#F0FDF4"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3815:6617",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:53a9aa8e1e6dd42b61e47dd384d72aa5202b02d3/-1:-1",
+                "targetVariableName": "color/green/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          },
+          "hover": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9411764740943909,
+                0.9921568632125854,
+                0.95686274766922
+              ],
+              "alpha": 1,
+              "hex": "#F0FDF4"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3815:6622",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:53a9aa8e1e6dd42b61e47dd384d72aa5202b02d3/-1:-1",
+                "targetVariableName": "color/green/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          },
+          "active": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9411764740943909,
+                0.9921568632125854,
+                0.95686274766922
+              ],
+              "alpha": 1,
+              "hex": "#F0FDF4"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3815:6627",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:53a9aa8e1e6dd42b61e47dd384d72aa5202b02d3/-1:-1",
+                "targetVariableName": "color/green/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          }
+        },
+        "blue": {
+          "default": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9372549057006836,
+                0.9647058844566345,
+                1
+              ],
+              "alpha": 1,
+              "hex": "#EFF6FF"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3626:4455",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:a8459f0365b303bb7d5280b9e19ad6068d6734d8/-1:-1",
+                "targetVariableName": "color/blue/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          },
+          "selected": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9372549057006836,
+                0.9647058844566345,
+                1
+              ],
+              "alpha": 1,
+              "hex": "#EFF6FF"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3815:6618",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:a8459f0365b303bb7d5280b9e19ad6068d6734d8/-1:-1",
+                "targetVariableName": "color/blue/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          },
+          "hover": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9372549057006836,
+                0.9647058844566345,
+                1
+              ],
+              "alpha": 1,
+              "hex": "#EFF6FF"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3815:6623",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:a8459f0365b303bb7d5280b9e19ad6068d6734d8/-1:-1",
+                "targetVariableName": "color/blue/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          },
+          "active": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9372549057006836,
+                0.9647058844566345,
+                1
+              ],
+              "alpha": 1,
+              "hex": "#EFF6FF"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3815:6628",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:a8459f0365b303bb7d5280b9e19ad6068d6734d8/-1:-1",
+                "targetVariableName": "color/blue/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          }
+        },
+        "yellow": {
+          "default": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                1,
+                0.9686274528503418,
+                0.929411768913269
+              ],
+              "alpha": 1,
+              "hex": "#FFF7ED"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3626:4461",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:1db07550eee9c05904315b566bd00f72b5a3b454/-1:-1",
+                "targetVariableName": "color/orange/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          },
+          "selected": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                1,
+                0.9686274528503418,
+                0.929411768913269
+              ],
+              "alpha": 1,
+              "hex": "#FFF7ED"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3815:6619",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:1db07550eee9c05904315b566bd00f72b5a3b454/-1:-1",
+                "targetVariableName": "color/orange/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          },
+          "hover": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                1,
+                0.9686274528503418,
+                0.929411768913269
+              ],
+              "alpha": 1,
+              "hex": "#FFF7ED"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3815:6624",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:1db07550eee9c05904315b566bd00f72b5a3b454/-1:-1",
+                "targetVariableName": "color/orange/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          },
+          "active": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                1,
+                0.9686274528503418,
+                0.929411768913269
+              ],
+              "alpha": 1,
+              "hex": "#FFF7ED"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3815:6629",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:1db07550eee9c05904315b566bd00f72b5a3b454/-1:-1",
+                "targetVariableName": "color/orange/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          }
+        },
+        "red": {
+          "default": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9960784316062927,
+                0.9490196108818054,
+                0.9490196108818054
+              ],
+              "alpha": 1,
+              "hex": "#FEF2F2"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3626:4456",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:6896133538e02c0b3729005766844d9a7cc2bce5/-1:-1",
+                "targetVariableName": "color/red/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          },
+          "selected": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9960784316062927,
+                0.9490196108818054,
+                0.9490196108818054
+              ],
+              "alpha": 1,
+              "hex": "#FEF2F2"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3815:6620",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:6896133538e02c0b3729005766844d9a7cc2bce5/-1:-1",
+                "targetVariableName": "color/red/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          },
+          "hover": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9960784316062927,
+                0.9490196108818054,
+                0.9490196108818054
+              ],
+              "alpha": 1,
+              "hex": "#FEF2F2"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3815:6625",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:6896133538e02c0b3729005766844d9a7cc2bce5/-1:-1",
+                "targetVariableName": "color/red/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          },
+          "active": {
+            "$type": "color",
+            "$value": {
+              "colorSpace": "srgb",
+              "components": [
+                0.9960784316062927,
+                0.9490196108818054,
+                0.9490196108818054
+              ],
+              "alpha": 1,
+              "hex": "#FEF2F2"
+            },
+            "$extensions": {
+              "com.figma.variableId": "VariableID:3815:6630",
+              "com.figma.scopes": [
+                "FRAME_FILL",
+                "SHAPE_FILL",
+                "EFFECT_COLOR"
+              ],
+              "com.figma.aliasData": {
+                "targetVariableId": "VariableID:6896133538e02c0b3729005766844d9a7cc2bce5/-1:-1",
+                "targetVariableName": "color/red/50",
+                "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+                "targetVariableSetName": "Primitives / Tailwind"
+              }
+            }
+          }
+        }
+      }
+    },
+    "text": {
+      "base": {
+        "primary": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.9803921580314636,
+              0.9803921580314636,
+              0.9764705896377563
+            ],
+            "alpha": 1,
+            "hex": "#FAFAF9"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3605:4",
+            "com.figma.scopes": [
+              "TEXT_FILL"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:3715573442f4a1cb5bd469a232e698488e68ee87/-1:-1",
+              "targetVariableName": "color/stone/50",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "secondary": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.6509804129600525,
+              0.6274510025978088,
+              0.6078431606292725
+            ],
+            "alpha": 1,
+            "hex": "#A6A09B"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3605:6",
+            "com.figma.scopes": [
+              "TEXT_FILL"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:e6f89e2971b9a15a141122428bcfc6dce0cd0715/-1:-1",
+              "targetVariableName": "color/stone/400",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "placeholder": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.8392156958580017,
+              0.8274509906768799,
+              0.8196078538894653
+            ],
+            "alpha": 1,
+            "hex": "#D6D3D1"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3705:4418",
+            "com.figma.scopes": [
+              "TEXT_FILL"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:cf8fe8bc642e9811c31c53dfa4a86d2fece67320/-1:-1",
+              "targetVariableName": "color/stone/300",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        }
+      },
+      "highlight": {
+        "green": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0,
+              0.7882353067398071,
+              0.3176470696926117
+            ],
+            "alpha": 1,
+            "hex": "#00C951"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3626:4457",
+            "com.figma.scopes": [
+              "TEXT_FILL"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:5469c94f740608786c77eafb9242ed7346c9a100/-1:-1",
+              "targetVariableName": "color/green/500",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "blue": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.3176470696926117,
+              0.6352941393852234,
+              1
+            ],
+            "alpha": 1,
+            "hex": "#51A2FF"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3626:4458",
+            "com.figma.scopes": [
+              "TEXT_FILL"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:ddf5566478b5212ed47bbe5300db5a5467ea63d8/-1:-1",
+              "targetVariableName": "color/blue/400",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "yellow": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              1,
+              0.5372549295425415,
+              0.01568627543747425
+            ],
+            "alpha": 1,
+            "hex": "#FF8904"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3626:4460",
+            "com.figma.scopes": [
+              "TEXT_FILL"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:290a82a7fa97d9a5ac20fb880bca729989f2f231/-1:-1",
+              "targetVariableName": "color/orange/400",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "red": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              1,
+              0.3921568691730499,
+              0.40392157435417175
+            ],
+            "alpha": 1,
+            "hex": "#FF6467"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3626:4459",
+            "com.figma.scopes": [
+              "TEXT_FILL"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:db3a3a551974463c4eaad760cb1b3ff98f514b4d/-1:-1",
+              "targetVariableName": "color/red/400",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        }
+      }
+    },
+    "Stroke": {
+      "primary 2": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.9803921580314636,
+            0.9803921580314636,
+            0.9764705896377563
+          ],
+          "alpha": 1,
+          "hex": "#FAFAF9"
+        },
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3787:6533",
+          "com.figma.scopes": [
+            "STROKE"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:3715573442f4a1cb5bd469a232e698488e68ee87/-1:-1",
+            "targetVariableName": "color/stone/50",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "lines": {
+        "$type": "color",
+        "$value": {
+          "colorSpace": "srgb",
+          "components": [
+            0.6509804129600525,
+            0.6274510025978088,
+            0.6078431606292725
+          ],
+          "alpha": 1,
+          "hex": "#A6A09B"
+        },
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3761:7849",
+          "com.figma.scopes": [
+            "ALL_SCOPES"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:e6f89e2971b9a15a141122428bcfc6dce0cd0715/-1:-1",
+            "targetVariableName": "color/stone/400",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "primary": {
+        "default": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.2666666805744171,
+              0.250980406999588,
+              0.23137255012989044
+            ],
+            "alpha": 1,
+            "hex": "#44403B"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3622:910",
+            "com.figma.scopes": [
+              "STROKE"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:22db5c2d1a8e9343f1ade0adbd6f8af7bac601f0/-1:-1",
+              "targetVariableName": "color/stone/700",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "selected": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.34117648005485535,
+              0.32549020648002625,
+              0.3019607961177826
+            ],
+            "alpha": 1,
+            "hex": "#57534D"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3816:6631",
+            "com.figma.scopes": [
+              "STROKE"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:71f91ef2652823d698b5a389fdb6d7a093202f12/-1:-1",
+              "targetVariableName": "color/stone/600",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "hover": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.4745098054409027,
+              0.4431372582912445,
+              0.41960784792900085
+            ],
+            "alpha": 1,
+            "hex": "#79716B"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3816:6632",
+            "com.figma.scopes": [
+              "STROKE"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:427c374836802e11dbfc95b816f90dead836ad54/-1:-1",
+              "targetVariableName": "color/stone/500",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "active": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.6509804129600525,
+              0.6274510025978088,
+              0.6078431606292725
+            ],
+            "alpha": 1,
+            "hex": "#A6A09B"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3816:6633",
+            "com.figma.scopes": [
+              "STROKE"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:e6f89e2971b9a15a141122428bcfc6dce0cd0715/-1:-1",
+              "targetVariableName": "color/stone/400",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        }
+      },
+      "secondary": {
+        "default": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.6509804129600525,
+              0.6274510025978088,
+              0.6078431606292725
+            ],
+            "alpha": 1,
+            "hex": "#A6A09B"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3761:7937",
+            "com.figma.scopes": [
+              "STROKE"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:e6f89e2971b9a15a141122428bcfc6dce0cd0715/-1:-1",
+              "targetVariableName": "color/stone/400",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "selected": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.8392156958580017,
+              0.8274509906768799,
+              0.8196078538894653
+            ],
+            "alpha": 1,
+            "hex": "#D6D3D1"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3816:6634",
+            "com.figma.scopes": [
+              "STROKE"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:cf8fe8bc642e9811c31c53dfa4a86d2fece67320/-1:-1",
+              "targetVariableName": "color/stone/300",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "hover": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.9058823585510254,
+              0.8980392217636108,
+              0.8941176533699036
+            ],
+            "alpha": 1,
+            "hex": "#E7E5E4"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3816:6635",
+            "com.figma.scopes": [
+              "STROKE"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:eef27cbca9256ab4b0f9372e3eec78406190ce2b/-1:-1",
+              "targetVariableName": "color/stone/200",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        },
+        "active": {
+          "$type": "color",
+          "$value": {
+            "colorSpace": "srgb",
+            "components": [
+              0.9607843160629272,
+              0.9607843160629272,
+              0.95686274766922
+            ],
+            "alpha": 1,
+            "hex": "#F5F5F4"
+          },
+          "$extensions": {
+            "com.figma.variableId": "VariableID:3816:6636",
+            "com.figma.scopes": [
+              "STROKE"
+            ],
+            "com.figma.aliasData": {
+              "targetVariableId": "VariableID:131011dbae489d6c32553abfe2e4fd2bc16b3863/-1:-1",
+              "targetVariableName": "color/stone/100",
+              "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+              "targetVariableSetName": "Primitives / Tailwind"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$extensions": {
+    "com.figma.modeName": "Dark"
+  }
+}

@@ -33,7 +33,7 @@ export function Card({ title, settings, step, children, className }: CardProps) 
       {title || settings ? (
         <div className="flex w-full items-end justify-between gap-3">
           {title ? (
-            <p className="text-base font-semibold text-text">{title}</p>
+            <p className="text-base font-semibold text-text-primary">{title}</p>
           ) : (
             <span aria-hidden="true" />
           )}
@@ -42,7 +42,7 @@ export function Card({ title, settings, step, children, className }: CardProps) 
       ) : null}
       <div className="flex w-full items-center gap-3">
         {step ? <Step>{step}</Step> : null}
-        <div className="flex w-full flex-col justify-center rounded-xl border border-border bg-surface p-2">
+        <div className="flex w-full flex-col justify-center rounded-xl border border-stroke-primary bg-surface-highlight-white p-2">
           {children}
         </div>
       </div>

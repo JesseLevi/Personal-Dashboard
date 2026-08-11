@@ -39,16 +39,16 @@ const buttonVariants = cva(
       },
       variant: {
         filled:
-          "bg-surface-raised text-text-muted hover:bg-surface-raised-hover active:bg-surface-raised-active aria-pressed:text-text",
+          "bg-surface-secondary text-text-secondary hover:bg-surface-secondary-hover active:bg-surface-secondary-active aria-pressed:text-text-primary",
         // Selected shares `border-color` with Hover/Active here; the aria-pressed:hover:/aria-pressed:active: compound variants are load-bearing (higher specificity) — do not replace with a bare aria-pressed:border-*.
         outline:
-          "border border-border bg-transparent text-text-muted hover:border-border-hover active:border-border-active aria-pressed:border-border-selected aria-pressed:hover:border-border-hover aria-pressed:active:border-border-active aria-pressed:text-text",
-        // Hover/Active moved one step darker in #112's re-fetch; both borrowed pixel-for-pixel from surface-active/surface-raised (no token of their own). See design/notes/Button.md.
+          "border border-stroke-primary bg-transparent text-text-secondary hover:border-stroke-primary-hover active:border-stroke-secondary-active aria-pressed:border-stroke-primary-selected aria-pressed:hover:border-stroke-primary-hover aria-pressed:active:border-stroke-secondary-active aria-pressed:text-text-primary",
+        // Hover/Active moved one step darker in #112's re-fetch; both borrowed pixel-for-pixel from surface-highlight-white-selected/surface-secondary (no token of their own). See design/notes/Button.md.
         white:
-          "bg-surface text-text-muted hover:bg-surface-active active:bg-surface-raised aria-pressed:text-text",
-        // Hover/Active likewise moved one step darker in #112; now borrowed from surface-raised/surface-raised-hover. See design/notes/Button.md.
+          "bg-surface-highlight-white text-text-secondary hover:bg-surface-highlight-white-selected active:bg-surface-secondary aria-pressed:text-text-primary",
+        // Hover/Active likewise moved one step darker in #112; now borrowed from surface-secondary/surface-secondary-hover. See design/notes/Button.md.
         transparent:
-          "bg-transparent text-text-muted hover:bg-surface-raised active:bg-surface-raised-hover aria-pressed:text-text",
+          "bg-transparent text-text-secondary hover:bg-surface-secondary active:bg-surface-secondary-hover aria-pressed:text-text-primary",
         // Known gap: hover/active both resolve to red-950 in dark mode, so this variant has no visible pointer feedback there.
         destructive:
           "bg-priority-urgent-bg text-priority-urgent hover:bg-priority-urgent-bg-hover active:bg-priority-urgent-bg-active",

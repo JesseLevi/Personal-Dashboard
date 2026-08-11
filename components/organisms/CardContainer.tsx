@@ -52,15 +52,15 @@ export function CardContainer({
   return (
     <div
       className={clsx(
-        "flex w-full flex-col rounded-3xl bg-surface-raised px-3 pb-3",
+        "flex w-full flex-col rounded-3xl bg-surface-secondary px-3 pb-3",
         className,
       )}
     >
       <div className="flex items-center justify-between px-2">
         <div className="flex h-12 items-center gap-4">
-          <Icon name={icon} className="text-text-muted" />
-          <p className="text-base font-semibold text-text">{name}</p>
-          <p className="text-base font-semibold text-text-muted">{count}</p>
+          <Icon name={icon} className="text-text-secondary" />
+          <p className="text-base font-semibold text-text-primary">{name}</p>
+          <p className="text-base font-semibold text-text-secondary">{count}</p>
         </div>
         <div className="flex h-12 items-center justify-end gap-2">
           {/* Button's icon-only size="default" already matches Figma's

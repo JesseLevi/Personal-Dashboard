@@ -13,8 +13,28 @@ export function resolveRef(tokens, ref) {
   return node;
 }
 
-/** Resolve a semantic ref (a "{primitive...}" string) to the CSS value it emits. */
+/**
+ * Resolve a semantic ref to the CSS value it emits. Two ref shapes:
+ *  - "{primitive.color.X}": the historical case — resolve to the primitive
+ *    entry's own var (or literal value for a custom, non-Tailwind-stock primitive).
+ *  - "{semantic.color.X}": the alias tier (ADR-0010 amendment, #203) — a
+ *    product-facing name (`priority-urgent` etc.) that points at ANOTHER
+ *    semantic token rather than a primitive. Emitting `var(--color-X)` here
+ *    (never resolving X's own light/dark value) is what makes the alias
+ *    single-line and dark-mode-free: the browser re-resolves that var at
+ *    compute time, so X's own `[data-theme="dark"]` override cascades
+ *    through automatically — no separate dark declaration needed for the
+ *    alias itself. Decided by the ref's own path, not by sniffing the
+ *    resolved target's shape, since a semantic entry ({light,dark,figma,...})
+ *    and a primitive entry ({value,tailwind}) don't share a duck-typed field
+ *    to branch on safely.
+ */
 function cssValueForRef(tokens, ref) {
+  const path = /^\{([^}]+)\}$/.exec(ref)[1].split(".");
+  if (path[0] === "semantic" && path[1] === "color") {
+    resolveRef(tokens, ref); // throws on a dangling alias (closed scale, same as primitives)
+    return `var(--color-${path[2]})`;
+  }
   const target = resolveRef(tokens, ref);
   if (!target.tailwind) return target.value;
   return target.tailwind === "white" ? "#FFFFFF" : `var(--color-${target.tailwind})`;
@@ -51,7 +71,7 @@ function darkRef(def) {
  * compiled `pnpm ladle:build` output (2026-07-20): the light `:root,:host`
  * vars sit inside `@layer theme`, this block is unlayered and comes last.
  * No `dark:`-prefixed utility classes are needed in component markup as a
- * result — components keep using plain semantic classes (`bg-surface-raised`
+ * result — components keep using plain semantic classes (`bg-surface-secondary`
  * etc.) and the CSS variable itself is what changes underneath them.
  */
 export function generateTheme(tokens) {

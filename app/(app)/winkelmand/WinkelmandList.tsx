@@ -293,7 +293,7 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
         <div className="pr-4 md:pr-32">
           <Card>
             <div className="flex w-full flex-col items-center justify-center gap-2 py-4">
-              <p className="text-base font-semibold text-text-muted">{t("emptyStateTitle")}</p>
+              <p className="text-base font-semibold text-text-secondary">{t("emptyStateTitle")}</p>
               <Button
                 trailingIcon="ArrowRight"
                 className="w-full md:w-fit"

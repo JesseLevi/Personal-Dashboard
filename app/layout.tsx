@@ -37,7 +37,7 @@ export const metadata: Metadata = {
 // chrome, so without it `env(safe-area-inset-*)` resolves to 0 and the
 // safe-area padding elsewhere (Sidebar, SidePanel) is inert. `themeColor` is
 // the literal hex a `<meta>` needs (no CSS var this early) — `stone-100` /
-// `surface-muted` in design/tokens.json, the value `<body>` already paints;
+// `surface-primary` in design/tokens.json, the value `<body>` already paints;
 // not under components/, so outside the raw-hex rule. Unverified on-device.
 export const viewport: Viewport = {
   width: "device-width",
@@ -52,7 +52,7 @@ export default async function RootLayout({
   const locale = await getLocale();
   return (
     <html lang={locale}>
-      <body className="bg-surface-muted text-text antialiased">
+      <body className="bg-surface-primary text-text-primary antialiased">
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>

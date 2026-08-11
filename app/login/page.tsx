@@ -50,7 +50,7 @@ export default async function LoginPage() {
           always fills the available square exactly instead of following
           whatever width `flex-1` happens to leave it — see
           design/notes/LoginForm.md for the bug this replaced. */}
-      <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-3xl bg-surface-raised lg:h-full lg:w-auto">
+      <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-3xl bg-surface-secondary lg:h-full lg:w-auto">
         <Image
           src="/login/login-visual-mobile.png"
           alt=""

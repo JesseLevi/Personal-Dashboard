@@ -84,7 +84,7 @@ export const NoQuantityWithDivider = () => {
     { name: "Havermout", checked: true },
   ];
   return (
-    <div className="w-96 rounded-xl border border-border bg-surface p-2">
+    <div className="w-96 rounded-xl border border-stroke-primary bg-surface-highlight-white p-2">
       {rows.map((row, index) => (
         <CardContentIngredient
           key={row.name}

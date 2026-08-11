@@ -17,7 +17,7 @@ import { Icon, type IconName } from "./Icon";
  * native `<select>`: Figma models Personen/Eenheid as this same field with a
  * chevron, never `Atom/Dropdown` — native select for free OS/a11y semantics.
  * States → CSS: Hover → `:hover`, Active → `:active`, Selected →
- * `:focus-within` (flagged for design confirmation); `border-input-active`
+ * `:focus-within` (flagged for design confirmation); `stroke-primary-active`
  * diverges from Button/Outline on purpose — see open-questions.md.
  * `boxClassName`, and the content-row/trailing-icon `<label>`s that make the
  * whole box clickable — see their own doc comments below (#166).
@@ -33,8 +33,8 @@ type InputFieldSharedProps = {
   className?: string;
   /**
    * Merged onto the bordered interactive box (the div carrying
-   * `hover:border-border-hover`/`active:border-border-input-active`/
-   * `focus-within:border-border-selected`) — narrow escape hatch for a
+   * `hover:border-stroke-primary-hover`/`active:border-stroke-primary-active`/
+   * `focus-within:border-stroke-primary-selected`) — narrow escape hatch for a
    * composed molecule whose REAL focusable control isn't a descendant of
    * this box (e.g. `ImageUploadField`'s real `<input type="file">` sits
    * beside a decorative, `aria-hidden` `InputField`, so this box's own
@@ -114,7 +114,7 @@ export function InputField({
   return (
     <div className={clsx("flex w-full flex-col gap-2", className)}>
       {label ? (
-        <label htmlFor={id} className="text-base font-semibold text-text-muted">
+        <label htmlFor={id} className="text-base font-semibold text-text-secondary">
           {label}
         </label>
       ) : null}
@@ -122,7 +122,7 @@ export function InputField({
       {/* items-start, not items-center: keeps the leading+text row's top edge aligned instead of centering it inside the taller trailing-icon column. */}
       <div
         className={clsx(
-          "flex flex-row items-start justify-center gap-3 rounded-xl border border-border bg-surface p-1 transition-colors hover:border-border-hover active:border-border-input-active focus-within:border-border-selected",
+          "flex flex-row items-start justify-center gap-3 rounded-xl border border-stroke-primary bg-surface-highlight-white p-1 transition-colors hover:border-stroke-primary-hover active:border-stroke-primary-active focus-within:border-stroke-primary-selected",
           multiline && (hasButtonRow ? "h-[124px]" : "h-36"),
           boxClassName,
         )}
@@ -148,19 +148,19 @@ export function InputField({
             )}
           >
             {leadingIcon ? (
-              <Icon name={leadingIcon} className="text-text-muted" />
+              <Icon name={leadingIcon} className="text-text-secondary" />
             ) : null}
             {multiline ? (
               <textarea
                 id={id}
                 {...(props as Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "className">)}
-                className="h-full w-full resize-none border-0 bg-transparent p-0 text-base font-semibold text-text placeholder:text-placeholder focus:outline-none"
+                className="h-full w-full resize-none border-0 bg-transparent p-0 text-base font-semibold text-text-primary placeholder:text-placeholder focus:outline-none"
               />
             ) : options ? (
               <select
                 id={id}
                 {...(props as Omit<SelectHTMLAttributes<HTMLSelectElement>, "className">)}
-                className="w-full appearance-none border-0 bg-transparent p-0 text-base font-semibold text-text focus:outline-none"
+                className="w-full appearance-none border-0 bg-transparent p-0 text-base font-semibold text-text-primary focus:outline-none"
               >
                 {placeholderOption !== undefined ? (
                   <option value="" disabled hidden>
@@ -177,7 +177,7 @@ export function InputField({
               <input
                 id={id}
                 {...(props as Omit<InputHTMLAttributes<HTMLInputElement>, "className">)}
-                className="w-full border-0 bg-transparent p-0 text-base font-semibold text-text placeholder:text-placeholder focus:outline-none"
+                className="w-full border-0 bg-transparent p-0 text-base font-semibold text-text-primary placeholder:text-placeholder focus:outline-none"
               />
             )}
           </label>
@@ -189,7 +189,7 @@ export function InputField({
             htmlFor={id}
             className="flex flex-row items-center gap-2 py-2 pr-2"
           >
-            <Icon name={trailingIcon} className="text-text-muted" />
+            <Icon name={trailingIcon} className="text-text-secondary" />
           </label>
         ) : null}
       </div>

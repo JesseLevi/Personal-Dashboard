@@ -9,7 +9,7 @@ import { Tag } from "../atoms/Tag";
 import en from "../../messages/en.json";
 
 const placeholderContent = (
-  <p className="text-base font-semibold text-text-muted">Card content</p>
+  <p className="text-base font-semibold text-text-secondary">Card content</p>
 );
 
 export const Default = () => <Card>{placeholderContent}</Card>;
@@ -53,7 +53,7 @@ export const AllContentTypes = () => (
       <div className="grid">
         <div
           aria-hidden="true"
-          className="col-start-1 row-start-1 h-24 w-24 rounded bg-surface-muted"
+          className="col-start-1 row-start-1 h-24 w-24 rounded bg-surface-primary"
         />
         <div className="col-start-1 row-start-1">
           <CardContentRecipe

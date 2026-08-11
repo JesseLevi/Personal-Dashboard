@@ -8,12 +8,12 @@ import { Card } from "./Card";
 const PLACEHOLDER_IMAGE =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'/%3E";
 
-// bg-surface-muted box behind the transparent placeholder so it still reads as a photo slot.
+// bg-surface-primary box behind the transparent placeholder so it still reads as a photo slot.
 const ThumbnailBackdrop = ({ children }: { children: ReactNode }) => (
   <div className="grid">
     <div
       aria-hidden="true"
-      className="col-start-1 row-start-1 h-24 w-24 rounded bg-surface-muted"
+      className="col-start-1 row-start-1 h-24 w-24 rounded bg-surface-primary"
     />
     <div className="col-start-1 row-start-1">{children}</div>
   </div>
@@ -45,7 +45,7 @@ export const InCard = () => (
 
 // #124's two new optional-prop branches, which the stories above never reach
 // because they all pass an explicit imageUrl and duration: a recipe with no
-// stored photo (imageUrl absent -> the molecule's own bg-surface-muted
+// stored photo (imageUrl absent -> the molecule's own bg-surface-primary
 // placeholder, no ThumbnailBackdrop needed) and a nullable time_minutes
 // (duration absent -> the Timer row is omitted, not rendered empty).
 export const NoPhotoOrDuration = () => (

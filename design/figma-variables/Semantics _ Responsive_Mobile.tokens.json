@@ -1,0 +1,469 @@
+{
+  "radius": {
+    "control-inner": {
+      "$type": "number",
+      "$value": 6,
+      "$extensions": {
+        "com.figma.variableId": "VariableID:3635:138",
+        "com.figma.scopes": [
+          "CORNER_RADIUS"
+        ],
+        "com.figma.aliasData": {
+          "targetVariableId": "VariableID:603fed7508624e88453fc4d665d889f4027f41e2/-1:-1",
+          "targetVariableName": "radius/md",
+          "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+          "targetVariableSetName": "Primitives / Tailwind"
+        }
+      }
+    },
+    "control": {
+      "$type": "number",
+      "$value": 8,
+      "$extensions": {
+        "com.figma.variableId": "VariableID:3635:139",
+        "com.figma.scopes": [
+          "CORNER_RADIUS"
+        ],
+        "com.figma.aliasData": {
+          "targetVariableId": "VariableID:cfc7fa288c5e5f2ef9ca00b2b0611e6ee3c407ba/-1:-1",
+          "targetVariableName": "radius/lg",
+          "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+          "targetVariableSetName": "Primitives / Tailwind"
+        }
+      }
+    },
+    "control-outer": {
+      "$type": "number",
+      "$value": 12,
+      "$extensions": {
+        "com.figma.variableId": "VariableID:3705:4401",
+        "com.figma.scopes": [
+          "CORNER_RADIUS"
+        ],
+        "com.figma.aliasData": {
+          "targetVariableId": "VariableID:5f3d20f8128ac56bbcbb2ecdc0c37630edd7606a/-1:-1",
+          "targetVariableName": "radius/xl",
+          "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+          "targetVariableSetName": "Primitives / Tailwind"
+        }
+      }
+    },
+    "card-inner": {
+      "$type": "number",
+      "$value": 4,
+      "$extensions": {
+        "com.figma.variableId": "VariableID:3637:121",
+        "com.figma.scopes": [
+          "CORNER_RADIUS"
+        ],
+        "com.figma.aliasData": {
+          "targetVariableId": "VariableID:e7c6633e38394fc47a4d229a9a1a74daab09c380/-1:-1",
+          "targetVariableName": "radius/sm",
+          "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+          "targetVariableSetName": "Primitives / Tailwind"
+        }
+      }
+    },
+    "card": {
+      "$type": "number",
+      "$value": 12,
+      "$extensions": {
+        "com.figma.variableId": "VariableID:3635:140",
+        "com.figma.scopes": [
+          "CORNER_RADIUS"
+        ],
+        "com.figma.aliasData": {
+          "targetVariableId": "VariableID:5f3d20f8128ac56bbcbb2ecdc0c37630edd7606a/-1:-1",
+          "targetVariableName": "radius/xl",
+          "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+          "targetVariableSetName": "Primitives / Tailwind"
+        }
+      }
+    },
+    "container": {
+      "$type": "number",
+      "$value": 24,
+      "$extensions": {
+        "com.figma.variableId": "VariableID:3635:141",
+        "com.figma.scopes": [
+          "CORNER_RADIUS"
+        ],
+        "com.figma.aliasData": {
+          "targetVariableId": "VariableID:87da5fb29b78074af348004cb0c00358b5407b11/-1:-1",
+          "targetVariableName": "radius/3xl",
+          "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+          "targetVariableSetName": "Primitives / Tailwind"
+        }
+      }
+    }
+  },
+  "spacing": {
+    "component": {
+      "padding-xs": {
+        "$type": "number",
+        "$value": 4,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3643:132",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:36635f44ce9fab088ec347e33ce66b3b86426262/-1:-1",
+            "targetVariableName": "spacing/1",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "padding-sm": {
+        "$type": "number",
+        "$value": 8,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3643:136",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:f264c7b76ea98386c5a4b6eacede23c18c895d42/-1:-1",
+            "targetVariableName": "spacing/2",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "padding-md": {
+        "$type": "number",
+        "$value": 12,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3643:128",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:b07626cd9bbb80c1b4c4654a7c2230164ab61911/-1:-1",
+            "targetVariableName": "spacing/3",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "padding-lg": {
+        "$type": "number",
+        "$value": 16,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3643:140",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:a3552c7ea38a94505336592fb039c08cfd2c9eb0/-1:-1",
+            "targetVariableName": "spacing/4",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      }
+    },
+    "layout": {
+      "page-padding-top": {
+        "$type": "number",
+        "$value": 16,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3648:390",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:a3552c7ea38a94505336592fb039c08cfd2c9eb0/-1:-1",
+            "targetVariableName": "spacing/4",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "page-padding-bottom": {
+        "$type": "number",
+        "$value": 80,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3655:609",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:8bd1639bf3da08ab290f7034e6fc5afc418a1ff4/-1:-1",
+            "targetVariableName": "spacing/20",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "page-padding-left": {
+        "$type": "number",
+        "$value": 16,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3655:605",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:a3552c7ea38a94505336592fb039c08cfd2c9eb0/-1:-1",
+            "targetVariableName": "spacing/4",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "page-padding-right-equal": {
+        "$type": "number",
+        "$value": 16,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3695:1510",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:a3552c7ea38a94505336592fb039c08cfd2c9eb0/-1:-1",
+            "targetVariableName": "spacing/4",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "page-padding-right-full": {
+        "$type": "number",
+        "$value": 0,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3655:598",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:31e9c15082d8550055ee65373eb479c339fc2a2a/-1:-1",
+            "targetVariableName": "spacing/0",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "page-stack": {
+        "$type": "number",
+        "$value": 24,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3648:396",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:451dcb9861e73aecc6665bfa4915b979246f6b3e/-1:-1",
+            "targetVariableName": "spacing/6",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      }
+    },
+    "inline": {
+      "gap-xs": {
+        "$type": "number",
+        "$value": 4,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3640:125",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:36635f44ce9fab088ec347e33ce66b3b86426262/-1:-1",
+            "targetVariableName": "spacing/1",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "gap-sm": {
+        "$type": "number",
+        "$value": 8,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3640:120",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:f264c7b76ea98386c5a4b6eacede23c18c895d42/-1:-1",
+            "targetVariableName": "spacing/2",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "gap-md": {
+        "$type": "number",
+        "$value": 12,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3739:5013",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:b07626cd9bbb80c1b4c4654a7c2230164ab61911/-1:-1",
+            "targetVariableName": "spacing/3",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "gap-lg": {
+        "$type": "number",
+        "$value": 16,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3640:155",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:a3552c7ea38a94505336592fb039c08cfd2c9eb0/-1:-1",
+            "targetVariableName": "spacing/4",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "gap-xl": {
+        "$type": "number",
+        "$value": 20,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3640:129",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:22618d1f6f846b30cd7edc7ebb57688e6ec1da87/-1:-1",
+            "targetVariableName": "spacing/5",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      }
+    },
+    "stack": {
+      "stack-xs": {
+        "$type": "number",
+        "$value": 4,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3877:7633",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:36635f44ce9fab088ec347e33ce66b3b86426262/-1:-1",
+            "targetVariableName": "spacing/1",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "stack-sm": {
+        "$type": "number",
+        "$value": 8,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3643:142",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:f264c7b76ea98386c5a4b6eacede23c18c895d42/-1:-1",
+            "targetVariableName": "spacing/2",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "stack-md": {
+        "$type": "number",
+        "$value": 12,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3648:147",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:b07626cd9bbb80c1b4c4654a7c2230164ab61911/-1:-1",
+            "targetVariableName": "spacing/3",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "stack-lg": {
+        "$type": "number",
+        "$value": 16,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3648:151",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:a3552c7ea38a94505336592fb039c08cfd2c9eb0/-1:-1",
+            "targetVariableName": "spacing/4",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "stack-xl": {
+        "$type": "number",
+        "$value": 24,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3670:1980",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:451dcb9861e73aecc6665bfa4915b979246f6b3e/-1:-1",
+            "targetVariableName": "spacing/6",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      },
+      "stack-xxl": {
+        "$type": "number",
+        "$value": 48,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3648:187",
+          "com.figma.scopes": [
+            "GAP"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:1e802ce1891780921930da2bbc8202fb4e1a2328/-1:-1",
+            "targetVariableName": "spacing/12",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      }
+    }
+  },
+  "text": {
+    "size": {
+      "primary": {
+        "$type": "number",
+        "$value": 16,
+        "$extensions": {
+          "com.figma.variableId": "VariableID:3635:142",
+          "com.figma.scopes": [
+            "FONT_SIZE"
+          ],
+          "com.figma.aliasData": {
+            "targetVariableId": "VariableID:b4f43ba7fff00834a64085dbda16baa33dd9bfd3/-1:-1",
+            "targetVariableName": "font/size/base",
+            "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
+            "targetVariableSetName": "Primitives / Tailwind"
+          }
+        }
+      }
+    }
+  },
+  "$extensions": {
+    "com.figma.modeName": "Mobile"
+  }
+}

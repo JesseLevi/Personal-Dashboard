@@ -17,7 +17,7 @@ export default function AppError({ reset }: { error: Error & { digest?: string }
   return (
     <div className="flex w-full flex-col items-start gap-4">
       <div className="flex flex-col gap-2">
-        <p className="text-xl font-semibold text-text">{t("title")}</p>
+        <p className="text-xl font-semibold text-text-primary">{t("title")}</p>
         <p className="text-base text-priority-urgent">{t("body")}</p>
       </div>
       <Button variant="outline" onClick={reset}>

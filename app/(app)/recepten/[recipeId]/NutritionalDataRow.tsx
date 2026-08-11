@@ -141,7 +141,7 @@ export function NutritionalDataRow({
               className={`absolute top-full left-1/2 z-[999] mt-2 -translate-x-1/2 ${item.isNevoData ? "w-64" : "w-40"}`}
             >
               <Dropdown className="shadow-sm">
-                <p className="px-2 py-1 text-base font-semibold text-text-muted">{item.fullLabel}</p>
+                <p className="px-2 py-1 text-base font-semibold text-text-secondary">{item.fullLabel}</p>
                 {/* ADR-0013 §2: NEVO's licence prescribes this exact English
                     string ("...and other data sources", since this row also
                     shows recipes.time_minutes, which isn't NEVO data) — a
@@ -149,7 +149,7 @@ export function NutritionalDataRow({
                     both catalogs with an identical, unlocalised value rather
                     than translated (design/notes/RecipeDetailPage.md). */}
                 {item.isNevoData && (
-                  <p className="px-2 pb-1 text-xs font-normal text-text-muted">{t("nevoAttribution")}</p>
+                  <p className="px-2 pb-1 text-xs font-normal text-text-secondary">{t("nevoAttribution")}</p>
                 )}
               </Dropdown>
             </div>

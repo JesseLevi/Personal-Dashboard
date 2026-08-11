@@ -22,7 +22,8 @@
     "test:rls": "supabase test db",
     "check:rls-coverage": "bash scripts/check-rls-coverage.sh",
     "check:server-only": "bash scripts/check-server-only.sh",
-    "check:comment-budget": "bash scripts/check-comment-budget.sh"
+    "check:comment-budget": "bash scripts/check-comment-budget.sh",
+    "check:tokens-drift": "node scripts/check-tokens-drift.mjs"
   },
   "dependencies": {
     "@dnd-kit/abstract": "^0.5.0",

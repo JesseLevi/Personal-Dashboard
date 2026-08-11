@@ -136,7 +136,7 @@ export function LoginForm({
 
   return (
     <div className="flex w-full flex-col items-center">
-      <h1 className="text-xl font-semibold text-text" suppressHydrationWarning>
+      <h1 className="text-xl font-semibold text-text-primary" suppressHydrationWarning>
         {t(`greeting.${greetingKey}`)}
       </h1>
 

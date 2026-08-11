@@ -231,7 +231,7 @@ export function CategoryPanel({
   const footer =
     target.mode === "edit" && deleteConfirming ? (
       <>
-        <p className="text-base font-semibold text-text">{t("deleteConfirmLabel")}</p>
+        <p className="text-base font-semibold text-text-primary">{t("deleteConfirmLabel")}</p>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -295,9 +295,9 @@ export function CategoryPanel({
       {/* Figma's "Icons" frame (3957:11251/3957:11542): label + wrapping row,
           gap 8px between them, row itself gap 12px — no dedicated molecule,
           InputField's own label styling (text-base font-semibold
-          text-text-muted) reused directly since it's the same visual role. */}
+          text-text-secondary) reused directly since it's the same visual role. */}
       <div className="flex w-full flex-col gap-2">
-        <p className="text-base font-semibold text-text-muted">{t("fields.iconLabel")}</p>
+        <p className="text-base font-semibold text-text-secondary">{t("fields.iconLabel")}</p>
         <div className="flex w-full flex-wrap gap-3">
           {CATEGORY_ICONS.map((iconName) => (
             // No Selected state is drawn in Figma (every one of the 8

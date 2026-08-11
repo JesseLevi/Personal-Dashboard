@@ -27,7 +27,7 @@ function activeItemForPath(pathname: string): SidebarItemId | undefined {
 }
 
 // Mobile drawer focus handling (#101) — same overlay/focus-trap/inert shape
-// `SidePanel` already established (bg-text/60 scrim, focus moves in on open
+// `SidePanel` already established (bg-text-primary/60 scrim, focus moves in on open
 // and back to whatever triggered it on close, Tab is trapped, Escape
 // closes), reimplemented here rather than imported: SidePanel is a
 // `role="dialog"` bottom/side-sheet with its own title contract, not a
@@ -123,7 +123,7 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen items-stretch bg-surface-muted">
+    <div className="flex min-h-screen items-stretch bg-surface-primary">
       {/* Desktop: Sidebar itself renders `fixed` below (stays put while
           `main` scrolls); this is a same-width flow spacer so the row still
           reserves the right amount of horizontal space for it. Both this and
@@ -161,7 +161,7 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
         // `opacity-0`, the prime suspect for a stale-tinted iOS status bar
         // after close (unverified on-device, see design/notes/Sidebar.md).
         className={clsx(
-          "fixed inset-0 z-40 bg-text/60 transition-[opacity,visibility] transition-discrete duration-[var(--duration-base)] ease-base motion-reduce:transition-none md:hidden",
+          "fixed inset-0 z-40 bg-text-primary/60 transition-[opacity,visibility] transition-discrete duration-[var(--duration-base)] ease-base motion-reduce:transition-none md:hidden",
           mobileOpen ? "visible opacity-100" : "invisible pointer-events-none opacity-0",
         )}
       />

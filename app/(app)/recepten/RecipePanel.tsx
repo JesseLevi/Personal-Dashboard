@@ -379,7 +379,7 @@ export function RecipePanel({
   const footer =
     target.mode === "edit" && deleteConfirming ? (
       <>
-        <p className="text-base font-semibold text-text">{t("deleteConfirmLabel")}</p>
+        <p className="text-base font-semibold text-text-primary">{t("deleteConfirmLabel")}</p>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -513,7 +513,7 @@ export function RecipePanel({
         <div className="flex w-full flex-col items-stretch gap-4">
           {ingredients.map((row, index) => (
             <div key={row.localId} className="flex w-full flex-col gap-4">
-              {index > 0 && <div className="h-px w-full bg-border" aria-hidden="true" />}
+              {index > 0 && <div className="h-px w-full bg-stroke-primary" aria-hidden="true" />}
               <RecipeIngredientRow
                 id={row.localId}
                 showLabels={index === 0}
