@@ -140,14 +140,14 @@ export const Interactive = () => {
     <div className="flex gap-2">
       <button
         type="button"
-        className="rounded-lg bg-surface-raised px-3 py-2 text-sm font-semibold"
+        className="rounded-lg bg-surface-secondary px-3 py-2 text-sm font-semibold"
         onClick={() => setState({ open: true, target: { mode: "create", columnId: "ideeen" } })}
       >
         Nieuw item in Ideeën
       </button>
       <button
         type="button"
-        className="rounded-lg bg-surface-raised px-3 py-2 text-sm font-semibold"
+        className="rounded-lg bg-surface-secondary px-3 py-2 text-sm font-semibold"
         onClick={() => setState({ open: true, target: { mode: "edit", card: sampleCard } })}
       >
         Bewerk voorbeeldkaart

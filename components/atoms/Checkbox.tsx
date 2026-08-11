@@ -9,8 +9,9 @@ import { Icon } from "./Icon";
  *
  * Host is a native `<button role="checkbox">`, not a `<div>` — free
  * focusability + Space/Enter activation; `checked` stays composer-owned.
- * Icon colour is `text-muted`, not `accent` (the purple in the fetched
- * component-SET node is a Figma canvas artifact, not a design property).
+ * Icon colour is `text-text-secondary`, not the retired `accent` token (the
+ * purple in the fetched component-SET node was a Figma canvas artifact, not
+ * a design property — see #203).
  *
  * Flagged gap: fetched node has no "delete" state.
  */
@@ -32,12 +33,12 @@ export function Checkbox({
       role="checkbox"
       aria-checked={checked}
       className={clsx(
-        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface",
+        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-stroke-primary bg-surface-highlight-white",
         className,
       )}
       {...props}
     >
-      {checked && <Icon name="Check" size={20} className="text-text-muted" />}
+      {checked && <Icon name="Check" size={20} className="text-text-secondary" />}
     </button>
   );
 }

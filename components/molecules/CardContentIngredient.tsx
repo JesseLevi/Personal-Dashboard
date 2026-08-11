@@ -30,7 +30,7 @@ export interface CardContentIngredientBaseProps {
   checked?: boolean;
   /** Forwarded to the Checkbox atom's `onClick`; ignored when `checked` is omitted. */
   onCheckedToggle?: () => void;
-  /** `border-muted` below this row — pass `true` for every row except the list's last (the component can't see its siblings; only the caller knows). */
+  /** `stroke-lines` below this row — pass `true` for every row except the list's last (the component can't see its siblings; only the caller knows). */
   divider?: boolean;
   className?: string;
 }
@@ -93,7 +93,7 @@ export function CardContentIngredient({
         checked && "opacity-40",
       )}
     >
-      <p className="text-base font-semibold text-text">{name}</p>
+      <p className="text-base font-semibold text-text-primary">{name}</p>
       {quantity !== undefined && <Tag variant="neutral">{quantity}</Tag>}
     </div>
   );
@@ -188,7 +188,7 @@ export function CardContentIngredient({
           <div
             className={clsx(
               "relative flex w-full touch-pan-y items-center gap-5 rounded-3xl py-3 pl-3 transition-transform",
-              offset < 0 ? "bg-surface-raised pr-4" : "pr-3",
+              offset < 0 ? "bg-surface-secondary pr-4" : "pr-3",
             )}
             style={{ transform: `translateX(${offset}px)` }}
             onPointerDown={handlePointerDown}
@@ -200,7 +200,7 @@ export function CardContentIngredient({
             {checkbox}
           </div>
         </div>
-        {divider && <div aria-hidden="true" className="h-px w-full bg-border-muted" />}
+        {divider && <div aria-hidden="true" className="h-px w-full bg-stroke-lines" />}
       </div>
     );
   }
@@ -218,7 +218,7 @@ export function CardContentIngredient({
         {content}
         {checkbox}
       </div>
-      {divider && <div aria-hidden="true" className="h-px w-full bg-border-muted" />}
+      {divider && <div aria-hidden="true" className="h-px w-full bg-stroke-lines" />}
     </div>
   );
 }

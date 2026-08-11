@@ -18,7 +18,7 @@ const ThumbnailBackdrop = ({ children }: { children: ReactNode }) => (
   <div className="grid">
     <div
       aria-hidden="true"
-      className="col-start-1 row-start-1 h-24 w-24 rounded bg-surface-muted"
+      className="col-start-1 row-start-1 h-24 w-24 rounded bg-surface-primary"
     />
     <div className="col-start-1 row-start-1">{children}</div>
   </div>

@@ -24,7 +24,7 @@ function LoadingStatus({ label }: { label: string }) {
 }
 
 function PlaceholderBar({ className }: { className: string }) {
-  return <div aria-hidden="true" className={clsx("animate-pulse rounded bg-border", className)} />;
+  return <div aria-hidden="true" className={clsx("animate-pulse rounded bg-stroke-primary", className)} />;
 }
 
 const SKELETON_COLUMNS = 3;

@@ -263,8 +263,8 @@ export function IngredientSearchPanel({
         onChange={(event) => setQuery(event.target.value)}
       />
 
-      {showPrompt && <p className="text-base font-semibold text-text-muted">{t("searchPromptLabel")}</p>}
-      {isSearching && <p className="text-base font-semibold text-text-muted">{t("searchingLabel")}</p>}
+      {showPrompt && <p className="text-base font-semibold text-text-secondary">{t("searchPromptLabel")}</p>}
+      {isSearching && <p className="text-base font-semibold text-text-secondary">{t("searchingLabel")}</p>}
       {searchError && <p className="text-base font-semibold text-priority-urgent">{searchError}</p>}
 
       {results !== null && !isSearching && results.length > 0 && (
@@ -286,7 +286,7 @@ export function IngredientSearchPanel({
 
       {results !== null && !isSearching && results.length === 0 && (
         <Card>
-          <p className="px-3 pb-2 text-base font-semibold text-text-muted">
+          <p className="px-3 pb-2 text-base font-semibold text-text-secondary">
             {t("noResultsLabel", { query: trimmedQuery })}
           </p>
           {/* Deliberate deviation from Figma (user decision 2026-07-30, see
@@ -298,8 +298,8 @@ export function IngredientSearchPanel({
               another button. */}
           <div className="flex w-full items-center gap-5 rounded-3xl pl-3 pr-3 py-3">
             <div className="flex w-full items-center gap-2">
-              <Icon name="Plus" className="text-text-muted" />
-              <p className="text-base font-semibold text-text">
+              <Icon name="Plus" className="text-text-secondary" />
+              <p className="text-base font-semibold text-text-primary">
                 {t("addNewIngredientLabel", { name: trimmedQuery })}
               </p>
             </div>

@@ -8,7 +8,7 @@ import { Button } from "../atoms/Button";
 /**
  * Molecule/Portion-stepper — Figma (3999:11007) draws Personen as a single
  * `Button/Default` (Style=Filled) instance: leading icon, text, trailing
- * icon, `h-10`/`gap-1`/`px-2`/`rounded-lg`/`bg-surface-raised` — exactly
+ * icon, `h-10`/`gap-1`/`px-2`/`rounded-lg`/`bg-surface-secondary` — exactly
  * `Atom/Button`'s own classes. A real `<button>` can't nest two more
  * `<button>`s, and decrement/increment need separate click targets, so this
  * renders two plain icon-only `Button`s (their own Filled hover/active ramp)
@@ -46,7 +46,7 @@ export function PortionStepper({
   return (
     <div
       className={clsx(
-        "inline-flex h-10 items-center gap-1 rounded-lg bg-surface-raised",
+        "inline-flex h-10 items-center gap-1 rounded-lg bg-surface-secondary",
         className,
       )}
     >
@@ -56,7 +56,7 @@ export function PortionStepper({
         onClick={() => onChange?.(Math.max(min, portions - 1))}
         disabled={atMin}
       />
-      <span className="text-base font-semibold text-text-muted">{label}</span>
+      <span className="text-base font-semibold text-text-secondary">{label}</span>
       <Button
         icon="Plus"
         aria-label={incrementLabel}

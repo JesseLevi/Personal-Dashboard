@@ -25,16 +25,16 @@ const VARIANTS: { variant: Variant; label: string }[] = [
 export const StateMatrix = () => (
   <div className="grid grid-cols-[112px_repeat(3,auto)] items-center gap-x-6 gap-y-3">
     <span />
-    <span className="text-sm font-semibold text-text-muted">Default</span>
-    <span className="text-sm font-semibold text-text-muted">
+    <span className="text-sm font-semibold text-text-secondary">Default</span>
+    <span className="text-sm font-semibold text-text-secondary">
       Hover / Active (hover and hold)
     </span>
-    <span className="text-sm font-semibold text-text-muted">
+    <span className="text-sm font-semibold text-text-secondary">
       Selected (+ hover / hold)
     </span>
     {VARIANTS.map(({ variant, label }) => (
       <Fragment key={variant}>
-        <span className="text-sm font-semibold text-text">{label}</span>
+        <span className="text-sm font-semibold text-text-primary">{label}</span>
         <Button variant={variant}>Categorie</Button>
         <Button variant={variant}>Categorie</Button>
         <Button variant={variant} aria-pressed="true">

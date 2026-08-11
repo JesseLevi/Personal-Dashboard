@@ -13,7 +13,7 @@ import { Icon } from "../atoms/Icon";
  * — see design/notes/CardContentRecipe.md
  */
 export interface CardContentRecipeProps {
-  /** Figma "Thumbnail" IMAGE fill — recipe photo URL. Optional: a recipe without a stored photo yet renders a `bg-surface-muted` placeholder square instead — a real, nullable state the fetched node doesn't draw (#124, design/notes/CardContentRecipe.md). */
+  /** Figma "Thumbnail" IMAGE fill — recipe photo URL. Optional: a recipe without a stored photo yet renders a `bg-surface-primary` placeholder square instead — a real, nullable state the fetched node doesn't draw (#124, design/notes/CardContentRecipe.md). */
   imageUrl?: string;
   /** Accessible name for the thumbnail. Decorative (`""`) by default since the recipe name is already rendered as adjacent text; pass an explicit value to override. Ignored when `imageUrl` is absent (the placeholder square is itself `aria-hidden`). */
   imageAlt?: string;
@@ -44,14 +44,14 @@ export function CardContentRecipe({
           className="h-24 w-24 shrink-0 rounded object-cover"
         />
       ) : (
-        <div aria-hidden="true" className="h-24 w-24 shrink-0 rounded bg-surface-muted" />
+        <div aria-hidden="true" className="h-24 w-24 shrink-0 rounded bg-surface-primary" />
       )}
       <div className="flex flex-1 flex-col justify-center gap-2">
-        <p className="w-full text-base font-semibold text-text">{name}</p>
+        <p className="w-full text-base font-semibold text-text-primary">{name}</p>
         {duration && (
           <div className="flex items-center gap-2">
-            <Icon name="Timer" className="text-text-muted" />
-            <p className="text-sm font-semibold text-text-muted">{duration}</p>
+            <Icon name="Timer" className="text-text-secondary" />
+            <p className="text-sm font-semibold text-text-secondary">{duration}</p>
           </div>
         )}
       </div>

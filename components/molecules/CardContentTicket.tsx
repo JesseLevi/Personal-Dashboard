@@ -29,7 +29,7 @@ export function CardContentTicket({
 }: CardContentTicketProps) {
   return (
     <div className={clsx("flex w-full flex-col justify-center gap-4 p-3", className)}>
-      <p className="w-full text-base font-semibold text-text">{title}</p>
+      <p className="w-full text-base font-semibold text-text-primary">{title}</p>
       <div className="flex w-full flex-wrap gap-2">{children}</div>
     </div>
   );

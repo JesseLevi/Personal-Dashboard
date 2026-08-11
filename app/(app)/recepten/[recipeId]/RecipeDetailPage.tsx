@@ -210,7 +210,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
 
         {deleteConfirming ? (
           <div className="flex flex-wrap items-center justify-end gap-4">
-            <p className="text-base font-semibold text-text">{t("deleteConfirmLabel")}</p>
+            <p className="text-base font-semibold text-text-primary">{t("deleteConfirmLabel")}</p>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -302,7 +302,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
           see design/notes/RecipeDetailPage.md). Decorative alt: recipe.title
           already renders as adjacent text below, same reasoning
           CardContentRecipe.tsx uses for its own thumbnail. No photo -> same
-          bg-surface-muted placeholder, same box, so layout doesn't jump.
+          bg-surface-primary placeholder, same box, so layout doesn't jump.
           #171: this is the page's LCP element — eager/high-priority, with
           explicit dimensions matching the 2:1 box so layout is known before
           the byte arrives. */}
@@ -317,11 +317,11 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
           className="aspect-[2/1] w-full rounded-xl object-cover"
         />
       ) : (
-        <div aria-hidden="true" className="aspect-[2/1] w-full rounded-xl bg-surface-muted" />
+        <div aria-hidden="true" className="aspect-[2/1] w-full rounded-xl bg-surface-primary" />
       )}
 
       <div className="flex w-full flex-col items-center gap-6 py-4">
-        <h1 className="w-full text-center text-4xl font-semibold text-text">{recipe.title}</h1>
+        <h1 className="w-full text-center text-4xl font-semibold text-text-primary">{recipe.title}</h1>
         <NutritionalDataRow
           timeMinutes={recipe.time_minutes}
           kcal={nutritionPerPerson.kcal}

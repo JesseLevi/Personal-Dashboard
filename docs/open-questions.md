@@ -24,7 +24,7 @@ No Figma frame shows a loading/skeleton state for any page (Te-doen, Recepten, r
 
 ### button-vs-input-active-border
 
-Hover and Selected were reconciled by #68 (both stone-500 / stone-400, shared tokens). **Active still diverges**: Input-field is stone-600, Button/Outline stone-800 — confirmed side by side in one fetch, a deliberate pixel difference, not a stale node. `border-input-active` therefore stays under its own name. Don't guess: re-fetch both nodes and compare exact hex. Also unresolved: Selected → `:focus-within` (Input-field) / `aria-pressed` (Button) are each atom's own reading of Figma's state *names*, not something Figma asserts.
+Hover and Selected were reconciled by #68 (both stone-500 / stone-400, shared tokens). **Active still diverges**: Input-field is stone-600, Button/Outline stone-800 — confirmed side by side in one fetch, a deliberate pixel difference, not a stale node. `stroke-primary-active` therefore stays under its own name. Don't guess: re-fetch both nodes and compare exact hex. Also unresolved: Selected → `:focus-within` (Input-field) / `aria-pressed` (Button) are each atom's own reading of Figma's state *names*, not something Figma asserts.
 
 ### no-pointer-affordance
 

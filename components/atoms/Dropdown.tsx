@@ -112,7 +112,7 @@ export function Dropdown({
       onKeyDown={label ? handleRootKeyDown : undefined}
     >
       {label ? (
-        <span id={id} className="w-fit text-base font-semibold text-text-muted">
+        <span id={id} className="w-fit text-base font-semibold text-text-secondary">
           {label}
         </span>
       ) : null}
@@ -125,9 +125,9 @@ export function Dropdown({
         // while labelless is a floating menu panel, where a hover border on
         // the panel would fight its option rows' own hover.
         className={clsx(
-          "flex w-full flex-col rounded-xl border border-border bg-surface p-1",
+          "flex w-full flex-col rounded-xl border border-stroke-primary bg-surface-highlight-white p-1",
           label
-            ? "transition-colors hover:border-border-hover active:border-border-input-active focus-within:border-border-selected"
+            ? "transition-colors hover:border-stroke-primary-hover active:border-stroke-primary-active focus-within:border-stroke-primary-selected"
             : "gap-1",
         )}
         {...rest}
@@ -144,7 +144,7 @@ export function Dropdown({
               <Icon
                 name="ChevronDown"
                 className={clsx(
-                  "mr-2 shrink-0 text-text-muted transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+                  "mr-2 shrink-0 text-text-secondary transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
                   isOpen && "rotate-180",
                 )}
               />

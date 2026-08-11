@@ -86,8 +86,8 @@ export function PasAanPanel({ open, onClose, portions, unitSystem, onApply }: Pa
           the same bordered slot every other Card uses — reused directly
           rather than hand-rolling the box. */}
       <Card title={t("ingredientsCardTitle")}>
-        <div className="flex w-full items-center justify-between gap-5 border-b border-border-muted py-3 pl-3 pr-3">
-          <p className="text-base font-semibold text-text">{t("personenLabel")}</p>
+        <div className="flex w-full items-center justify-between gap-5 border-b border-stroke-lines py-3 pl-3 pr-3">
+          <p className="text-base font-semibold text-text-primary">{t("personenLabel")}</p>
           <PortionStepper
             portions={draftPortions}
             label={tPortion("count", { count: draftPortions })}
@@ -97,7 +97,7 @@ export function PasAanPanel({ open, onClose, portions, unitSystem, onApply }: Pa
           />
         </div>
         <div ref={unitMenuRef} className="relative flex w-full items-center justify-between gap-5 py-3 pl-3 pr-3">
-          <p className="text-base font-semibold text-text">{t("eenheidLabel")}</p>
+          <p className="text-base font-semibold text-text-primary">{t("eenheidLabel")}</p>
           <Button
             trailingIcon="ChevronDown"
             aria-expanded={unitMenuOpen}

@@ -17,7 +17,7 @@ export function Step({ children, className, ...props }: StepProps) {
     <span
       {...props}
       className={clsx(
-        "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-raised text-sm font-semibold text-text-muted",
+        "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-sm font-semibold text-text-secondary",
         className,
       )}
     >

@@ -119,14 +119,14 @@ export function ButtonToggle({
       aria-labelledby={ariaLabelledby}
       // w-fit + self-start: without both, a stretch-cross-axis parent (e.g. flex-col) silently stretches this track full-width.
       className={clsx(
-        "relative inline-flex w-fit items-stretch gap-1 self-start rounded-lg bg-surface-raised p-1",
+        "relative inline-flex w-fit items-stretch gap-1 self-start rounded-lg bg-surface-secondary p-1",
         className,
       )}
     >
       <span
         aria-hidden="true"
         className={clsx(
-          "pointer-events-none absolute left-1 top-1 size-8 rounded-md bg-surface transition-transform duration-200 ease-out motion-reduce:transition-none",
+          "pointer-events-none absolute left-1 top-1 size-8 rounded-md bg-surface-highlight-white transition-transform duration-200 ease-out motion-reduce:transition-none",
           INDICATOR_OFFSETS[offsetIndex],
         )}
       />

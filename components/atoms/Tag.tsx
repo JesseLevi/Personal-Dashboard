@@ -16,7 +16,7 @@ const tagVariants = cva(
   {
     variants: {
       variant: {
-        neutral: "bg-surface-muted text-text-muted",
+        neutral: "bg-surface-primary text-text-secondary",
         urgent: "bg-priority-urgent-bg text-priority-urgent",
         medium: "bg-priority-medium-bg text-priority-medium",
         low: "bg-priority-low-bg text-priority-low",
