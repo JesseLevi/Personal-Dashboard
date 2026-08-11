@@ -10,7 +10,8 @@ Standard scaffold (Next.js 15 App Router, TS strict, Tailwind v4 via PostCSS, pn
 
 | Thing | Where | Why it matters |
 |---|---|---|
-| Token pipeline | `design/tokens.json` → `scripts/generate-theme.mjs` → `app/theme.css` | `pnpm sync:tokens` after every token edit; CI fails on drift. Never hand-edit `theme.css`. Unit-tested in `tests/tokens.test.ts` |
+| Token pipeline | `design/figma-variables/` (DTCG export, source) → `design/tokens.json` (curated mirror) → `scripts/generate-theme.mjs` → `app/theme.css` | `pnpm sync:tokens` after every token edit; CI fails on drift. Never hand-edit `theme.css`. Unit-tested in `tests/tokens.test.ts` |
+| Token drift gate | `scripts/check-tokens-drift.mjs` (`pnpm check:tokens-drift`, in CI as of #203) | Diffs `design/tokens.json` against the `design/figma-variables/` export on name, `figmaVariableId` and value; only entries flagged `$pendingFigmaValue` may differ. Added once #203 established that `get_variable_defs` returns real Figma variable names (previously assumed hex-only, see `docs/decisions/0010-…md`) — semantic token names now follow their Figma path (`color/` stripped, trailing `/default` dropped) instead of being derived from measured colour |
 | Figma↔code map | `design/figma-map.json` | Canonical per ADR-0010 — the component inventory, not `Architecture.md` §3.1 or this file. Records node-ids and Figma→code name translations; the per-component design notes and flagged discrepancies live in `design/notes/<Component>.md` |
 | RLS harness | `supabase/tests/000-rls-enabled.sql`, `rls-profiles.sql` | pgTAP; `rls-profiles.sql` is the copy-me template for new tables |
 | CI gates | `scripts/check-rls-coverage.sh`, `check-server-only.sh` | Coverage gate fails on a table without an RLS test; greps block service_role misplacement, `NEXT_PUBLIC_SUPABASE*`, `dangerouslySetInnerHTML`, and raw hex in `components/` (comments included) |

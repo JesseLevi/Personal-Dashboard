@@ -6,14 +6,17 @@
 
 **Keeping this file**: replace stale bullets, never append dated sections. A fact about one component belongs in that component's note, with at most a pointer here.
 
-## State (2026-08-10)
+## State (2026-08-11)
 
-- `main` is green and the open-PR queue is empty. Phases 0–3 are feature-complete, design-review rounds 1–3 merged.
+- `main` is green. **Token pipeline rebased onto real Figma variable names (#203, merged):** Figma MCP's `get_variable_defs` turns out to return variable names after all, not just resolved hex. `design/figma-variables/` now holds the committed DTCG export of the three Figma collections (Primitives, Semantics/Style Light+Dark, Semantics/Responsive Mobile+Desktop) as source of truth; `design/tokens.json` is a curated mirror carrying each token's Figma path + `figmaVariableId`, checked by `pnpm check:tokens-drift` (new CI gate). Every semantic colour name now follows its Figma path (`surface-raised` → `surface-secondary`, `border` → `stroke-primary`, `text-muted` → `text-secondary`, …); product aliases (`priority-*`, `tag-highlight*`) stay a real alias tier on top. `accent` is retired (no Figma variable backs it). This was a rename only — no value changed pixel-for-pixel in #203 itself.
+- **#204 (merged)**: the 13 tokens #203 flagged `$pendingFigmaValue` now carry their real Figma value, and a state-order bug is fixed (see `docs/incidents.md`) where Button/White and Button/Distructive had Hover/Active one column off and no Selected fill at all. `pnpm check:tokens-drift` reports zero deviations — `design/tokens.json` is a complete mirror of the export.
+- **#205 (radius/spacing/responsive tokens) and #206 (dark mode via system preference) are open, in-progress work**, not done — `design/figma-variables/Semantics _ Responsive_*.tokens.json` is already exported but not yet consumed by `design/tokens.json`.
+- Phases 0–3 are feature-complete, design-review rounds 1–3 merged.
 - **Phase 4 (Recepten) and Phase 5 (Boodschappenlijst) are both mid-flight.** Per-ticket status lives on the board, never here.
   - `/recepten` category-kanban · `/recepten/[recipeId]` V2 detail page (nutrition row, "Pas aan" panel, NEVO/USDA-backed macros) · private `recipe-thumbnails` bucket with server-side re-encode → `design/notes/RecipeDetailPage.md`, `ReceptenBoard.md`
   - `/winkelmand` with grouping, sort and swipe-to-cart → `design/notes/WinkelmandPage.md`
 - **Ready to pick up** (board column): #162 i18n wiring, #190 `database.types.ts` drift gate.
-- **In review**: #171 and #174 (PR #181), #172 (PR #194), #182 (PR #195), #168/#169/#170/#173 (PRs #197–#200) — merged, but the issues stay open by this repo's convention (no closing keyword; the user reviews, then closes).
+- **In review**: #171 and #174 (PR #181), #172 (PR #194), #182 (PR #195), #168/#169/#170/#173 (PRs #197–#200), #203/#204 (PRs #207/#208) — merged, but the issues stay open by this repo's convention (no closing keyword; the user reviews, then closes).
 - **The app is now an installable standalone PWA** (#172): `app/manifest.ts`, `appleWebApp` with `statusBarStyle: "black-translucent"` (a user choice over the ticket's `"default"`), Figma-sourced icons, a safe-area audit across the shell, and CSS-only touch polish. → `design/notes/AppShell.md`
 - **The perf round is done** (#168–#170, #173, all merged 2026-08-10). Auth is one *local* JWT verification per request (`getClaims()` + React `cache()`), a root `middleware.ts` now refreshes session cookies, drag persists through the `move_card`/`move_recipe` RPCs with no `revalidatePath` on the response, the shell streams behind `<Suspense>` + `loading.tsx`, and Vercel functions run in `fra1` next to Supabase. #171 and #174 (thumbnails) landed earlier in the same round.
 - Backlog: #1–#5, #9–#11 (server-side, need real accounts — don't start unprompted), #30–#33 (phases 6–9), plus the verification tickets below. **#8 is closed out by #168's `middleware.ts`.**
@@ -25,7 +28,7 @@
 - **`deploy.yml` has no migrate-only mode.** Its `deploy` job hangs off `needs: migrate`, so applying a migration to hosted **also promotes `main` to production**, in one action. Confirm with the user before dispatching it; that is a user decision (ADR-0012), not a routine step.
 - **A migration applied by hand or via the Supabase MCP server gets that route's own timestamp as its version**, not the repo filename, and `supabase db push` then refuses. Correct the version row by hand every time a migration reaches hosted outside `deploy.yml`.
 - **Never batch a migration across parallel agents** — that raced two writers into 250 duplicate `reference.ingredients` rows on #161. One sequential call.
-- **Visual flake: isolation is not a control — run the FULL suite twice.** Confirmed flaky stories: `category-panel--create-category`, `category-panel--edit-category`, `recipe-panel--filled`. Identical code has given fail-then-pass across consecutive full runs, and a story that failed 3/3 *in isolation* passed in a full run — story count, ordering and parallelism all change the rasterization. Never bisect a visual failure; regenerate the baseline or widen the threshold. Never let two runs overlap.
+- **Visual flake: isolation is not a control — run the FULL suite twice.** Identical code has given fail-then-pass across consecutive full runs, and a story that failed 3/3 *in isolation* passed in a full run — story count, ordering and parallelism all change the rasterization. Never bisect a visual failure. Never let two runs overlap. **Part of this was the gate itself** (#203): `maxDiffPixels` was 0, and Skia's rounded-corner antialiasing is not bit-reproducible between runs — measured on `main`, the same three stories gave 0, then 1/4/5, then 0 differing pixels, always ±1 in one channel. It now sits at 16, which still leaves ~450× headroom under a real token regression. `threshold` stays 0 and must never be widened: that is the knob that catches grey-on-grey.
 - **Verify a ticket's Figma links resolve before planning against them.** Two nodes cited by #166 no longer exist in the file.
 - **An optimistic success animation can hide a fully broken write path.** `AnimatedAddToBasketButton` plays "Toegevoegd" regardless of the `ActionResult`, which masked a failing insert for an entire ticket. → `docs/open-questions.md#winkelmand-send-no-success-feedback`
 - **iOS only reads the manifest/`appleWebApp` metadata (#172) when an icon is added to the home screen.** An icon added before this shipped keeps opening in tabbed Safari forever — the user must delete and re-add it after this deploys. → `design/notes/AppShell.md`
@@ -48,9 +51,10 @@ The hosted **schema** was audited 2026-08-10 and is sound: all 16 `public` table
 
 ## Next
 
-1. **Work the verification tickets** (#185–#191). This is the real remaining Phase 3 work — there is no missing UI behind it. **#185 is now the top priority**: the perf round rewrote the auth path underneath every route and is live in production, still without a single signed-in human run. Start there, and exercise a drag (the new move RPCs) while you're in.
-2. **7 ADRs are owed** for shipped schema deviations: `cards.size`, `boards.is_favorite`, `recipe_categories.icon`, `recipe_ingredients.group_label`, the `unit` enum, `recipe_step_ingredients`, and the `replace_recipe_contents` RPC-backed-transaction pattern (user-approved 2026-08-01). Write-up only, but it is the architecture layer — flag, don't improvise. (The 8th, the move RPCs, shipped with #169 as ADR-0015.)
-3. Phase 4 and 5 remainder, per the board.
+1. **#205 and #206 are running in parallel** (radius/spacing/responsive tokens; dark mode via `next-themes` + system preference) — check the board before starting either, don't assume either is done.
+2. **Work the verification tickets** (#185–#191). This is the real remaining Phase 3 work — there is no missing UI behind it. **#185 is now the top priority**: the perf round rewrote the auth path underneath every route and is live in production, still without a single signed-in human run. Start there, and exercise a drag (the new move RPCs) while you're in.
+3. **7 ADRs are owed** for shipped schema deviations: `cards.size`, `boards.is_favorite`, `recipe_categories.icon`, `recipe_ingredients.group_label`, the `unit` enum, `recipe_step_ingredients`, and the `replace_recipe_contents` RPC-backed-transaction pattern (user-approved 2026-08-01). Write-up only, but it is the architecture layer — flag, don't improvise. (The 8th, the move RPCs, shipped with #169 as ADR-0015.)
+4. Phase 4 and 5 remainder, per the board.
 
 Constraints worth knowing before touching these areas:
 
