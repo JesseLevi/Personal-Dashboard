@@ -51,8 +51,11 @@ describe("token → theme pipeline (ADR-0010)", () => {
   it("omits tokens without a dark override from the dark block", () => {
     const css = generateTheme(tokens);
     const darkBlock = css.slice(css.indexOf('[data-theme="dark"]'));
-    // surface-primary (formerly surface-muted) is light-only (no dark variant defined yet).
-    expect(darkBlock).not.toContain("--color-surface-primary:");
+    // text-placeholder is light-only (no dark variant defined). surface-primary
+    // USED to be the example here pre-#204 — it now has a real Figma dark value
+    // (fixing the <body> dark-background bug), so it moved to the "renames"
+    // test's dark-value coverage instead.
+    expect(darkBlock).not.toContain("--color-text-placeholder:");
   });
 
   it("emits the four-state Button token tier (ticket #68: Outline's Hover/Active/Selected re-authored)", () => {
@@ -69,15 +72,20 @@ describe("token → theme pipeline (ADR-0010)", () => {
     expect(css).toContain("--color-priority-urgent-bg-active: var(--color-surface-highlight-red-active);");
   });
 
-  it("drops surface/priority *-selected colour tokens: those styles' Selected reuses the default background and only darkens the text", () => {
+  it("emits real Selected fill tokens for White/Distructive (ticket #204 — supersedes #56's premise that Selected never carries a background)", () => {
     const css = generateTheme(tokens);
-    for (const dead of [
-      "--color-surface-highlight-white-active:", // never existed under any name
-      "--color-surface-secondary-selected:",
-      "--color-priority-urgent-bg-selected:",
-    ]) {
-      expect(css).not.toContain(dead);
-    }
+    // #56 (2026-07-20) found Selected touched no background anywhere and
+    // removed the *-selected fill tokens it had introduced. #204 (2026-08-11)
+    // found that reading came from a state-binding bug (White/Distructive's
+    // Hover/Active nodes were shifted one column onto the wrong Figma
+    // variable) — Figma's real per-node bindings prove Selected DOES carry a
+    // fill on these two styles. These tokens are the fix, not a regression.
+    expect(css).toContain("--color-surface-highlight-white-active: var(--color-stone-300);");
+    expect(css).toContain("--color-surface-highlight-white-hover: var(--color-stone-200);");
+    expect(css).toContain("--color-priority-urgent-bg-selected: var(--color-surface-highlight-red-selected);");
+    // Filled's Selected genuinely still has no fill token (Figma defines none
+    // for this style) — the one part of #56's premise that #204 reconfirmed.
+    expect(css).not.toContain("--color-surface-secondary-selected:");
   });
 
   it("re-adds stroke-primary-selected (ticket #68): Outline's Selected gained a real border for the first time since #56", () => {
@@ -159,19 +167,22 @@ describe("token → theme pipeline (ADR-0010)", () => {
         expect(def, `${name} is missing 'figma'`).toHaveProperty("figma");
         expect(def, `${name} is missing 'figmaVariableId'`).toHaveProperty("figmaVariableId");
         if (def.figma === null) {
-          // The one documented exception (surface-hover): no Figma variable
-          // backs it, but the gap must be explained in-line, not silent.
+          // #203's one documented exception was surface-hover; #204 retired it
+          // (see the test below), so as of #204 no token should hit this branch
+          // at all — kept as a guard in case a future token needs the escape hatch.
           expect(def.figmaVariableId).toBeNull();
           expect(def.$comment, `${name} has figma:null but no reason recorded`).toBeTruthy();
         }
       }
     });
 
-    it("surface-hover is the one token with no Figma counterpart, kept under its existing name/value", () => {
-      const def = tokens.semantic.color["surface-hover"];
-      expect(def.figma).toBeNull();
-      expect(def.figmaVariableId).toBeNull();
-      expect(resolveRef(tokens, def.light).value).toBe("#FAFAF9"); // stone-50, unchanged
+    it("surface-hover is retired (#204): no longer a token, no CSS var, no figma:null exception left", () => {
+      expect(tokens.semantic.color).not.toHaveProperty("surface-hover");
+      const css = generateTheme(tokens);
+      expect(css).not.toContain("--color-surface-hover:");
+      for (const def of Object.values<{ figma: string | null }>(tokens.semantic.color)) {
+        expect(def.figma).not.toBeNull();
+      }
     });
 
     it("accent is retired: no primitive, no semantic entry, no CSS var", () => {
@@ -237,20 +248,46 @@ describe("token → theme pipeline (ADR-0010)", () => {
       expect(dark).toContain("--color-surface-highlight-red:");
     });
 
-    it("$pendingFigmaValue marks exactly the 13 dark and 2 light deviations from the Figma export, deferred to #204", () => {
-      let darkPending = 0;
-      let lightPending = 0;
-      for (const def of Object.values<{ $pendingFigmaValue?: { light?: string; dark?: string; ticket: number } }>(
-        tokens.semantic.color,
-      )) {
-        const pending = def.$pendingFigmaValue;
-        if (!pending) continue;
-        expect(pending.ticket).toBe(204);
-        if (pending.dark) darkPending += 1;
-        if (pending.light) lightPending += 1;
+    it("$pendingFigmaValue is fully resolved (#204): zero tokens still carry the escape hatch", () => {
+      const stillPending = Object.entries(tokens.semantic.color).filter(
+        ([, def]) => (def as { $pendingFigmaValue?: unknown }).$pendingFigmaValue,
+      );
+      expect(stillPending).toEqual([]);
+    });
+  });
+
+  // ---- ticket #204: state-binding fix (White/Distructive) + dark values ----
+
+  describe("#204: Figma value + state-binding resolution", () => {
+    it("White/Distructive Hover/Active/Selected read their own dedicated, correctly-bound tokens", () => {
+      const css = generateTheme(tokens);
+      const light = css.slice(0, css.indexOf('[data-theme="dark"]'));
+      expect(light).toContain("--color-surface-highlight-white-hover: var(--color-stone-200);");
+      expect(light).toContain("--color-surface-highlight-white-active: var(--color-stone-300);");
+      expect(light).toContain("--color-surface-highlight-white-selected: var(--color-stone-100);");
+      expect(light).toContain("--color-surface-highlight-red-selected: var(--color-red-100);");
+      expect(light).toContain("--color-surface-highlight-red-hover: var(--color-red-200);");
+      expect(light).toContain("--color-surface-highlight-red-active: var(--color-red-300);");
+    });
+
+    it("Distructive's highlight ramp collapses to red-50 in dark mode (Figma's own dark data, deliberately accepted, not fixed)", () => {
+      const css = generateTheme(tokens);
+      const dark = css.slice(css.indexOf('[data-theme="dark"]'));
+      for (const name of [
+        "surface-highlight-red",
+        "surface-highlight-red-selected",
+        "surface-highlight-red-hover",
+        "surface-highlight-red-active",
+      ]) {
+        expect(dark).toContain(`--color-${name}: var(--color-red-50);`);
       }
-      expect(darkPending).toBe(13);
-      expect(lightPending).toBe(2);
+    });
+
+    it("surface-primary and stroke-lines get real dark values for the first time (fixes the <body> dark-background bug)", () => {
+      const css = generateTheme(tokens);
+      const dark = css.slice(css.indexOf('[data-theme="dark"]'));
+      expect(dark).toContain("--color-surface-primary: var(--color-stone-900);");
+      expect(dark).toContain("--color-stroke-lines: var(--color-stone-400);");
     });
   });
 });
