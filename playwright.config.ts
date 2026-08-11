@@ -46,13 +46,25 @@ export default defineConfig({
       // regression below any sane threshold (`maxDiffPixelRatio: 0.01` let a
       // full red->green Tag swap pass silently).
       //
-      // Zero tolerance is only viable because baselines are compared within
-      // one browser build + OS; verified stable across repeated full runs.
-      // Cross-OS rasterization differences are far larger and must be solved
-      // by matching environments, never by widening these — see the CI job's
-      // comment in .github/workflows/ci.yml.
+      // `threshold` stays at 0 — it is the knob that catches this project's
+      // characteristic defect and must never be widened.
+      //
+      // `maxDiffPixels` was also 0, on the claim that rasterization is stable
+      // within one browser build + OS. Measured on `main` (#203): it is not.
+      // Repeated runs of the same three stories reported 0, then 1/4/5, then 0
+      // differing pixels — always ±1 in a single channel, always on the
+      // antialiased pixels of a rounded corner. Skia's corner AA is not
+      // bit-reproducible across runs, so a literal zero made the gate flaky
+      // rather than strict, and the flake was previously hidden by CI retries.
+      // 16 absorbs that noise while leaving a factor ~450 of headroom below
+      // the 7248-pixel #84 regression described above: a real token mistake
+      // repaints whole fills, never four corner pixels.
+      //
+      // Cross-OS rasterization differences are far larger than this and must
+      // still be solved by matching environments, never by widening further —
+      // see the CI job's comment in .github/workflows/ci.yml.
       threshold: 0,
-      maxDiffPixels: 0,
+      maxDiffPixels: 16,
     },
   },
 
