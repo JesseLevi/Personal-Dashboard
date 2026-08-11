@@ -345,7 +345,7 @@ export function CardDetailPanel({
             key={value}
             type="button"
             onClick={() => setPriority(value)}
-            className="flex w-full rounded-lg text-left transition-colors hover:bg-surface-hover"
+            className="flex w-full rounded-lg text-left transition-colors hover:bg-surface-highlight-white-hover"
           >
             <Tag variant={value}>{tPriority(value)}</Tag>
           </button>
@@ -366,7 +366,7 @@ export function CardDetailPanel({
             key={value ?? "none"}
             type="button"
             onClick={() => setSize(value)}
-            className="flex w-full rounded-lg text-left transition-colors hover:bg-surface-hover"
+            className="flex w-full rounded-lg text-left transition-colors hover:bg-surface-highlight-white-hover"
           >
             <Tag variant="neutral">{value ? value.toUpperCase() : t("fields.sizePlaceholder")}</Tag>
           </button>

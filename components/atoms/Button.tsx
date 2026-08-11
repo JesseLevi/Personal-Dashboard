@@ -43,15 +43,15 @@ const buttonVariants = cva(
         // Selected shares `border-color` with Hover/Active here; the aria-pressed:hover:/aria-pressed:active: compound variants are load-bearing (higher specificity) — do not replace with a bare aria-pressed:border-*.
         outline:
           "border border-stroke-primary bg-transparent text-text-secondary hover:border-stroke-primary-hover active:border-stroke-secondary-active aria-pressed:border-stroke-primary-selected aria-pressed:hover:border-stroke-primary-hover aria-pressed:active:border-stroke-secondary-active aria-pressed:text-text-primary",
-        // Hover/Active moved one step darker in #112's re-fetch; both borrowed pixel-for-pixel from surface-highlight-white-selected/surface-secondary (no token of their own). See design/notes/Button.md.
+        // #204: state-binding fix — Hover/Active/Selected each read their own like-named Figma variable now (previously shifted one column: Hover borrowed Selected's fill, Active borrowed Hover's). Selected now shares `background-color` with Hover/Active, so the same aria-pressed:hover:/aria-pressed:active: compound-variant pattern Outline uses is load-bearing here too — see design/notes/Button.md.
         white:
-          "bg-surface-highlight-white text-text-secondary hover:bg-surface-highlight-white-selected active:bg-surface-secondary aria-pressed:text-text-primary",
-        // Hover/Active likewise moved one step darker in #112; now borrowed from surface-secondary/surface-secondary-hover. See design/notes/Button.md.
+          "bg-surface-highlight-white text-text-secondary hover:bg-surface-highlight-white-hover active:bg-surface-highlight-white-active aria-pressed:bg-surface-highlight-white-selected aria-pressed:hover:bg-surface-highlight-white-hover aria-pressed:active:bg-surface-highlight-white-active aria-pressed:text-text-primary",
+        // #204: Transparent's Hover/Active are a genuine rebind onto the same surface-highlight-white-hover/-active variables Button/White reads (measured on Transparent's own fetched nodes, not assumed from matching light-mode pixels) — dark-mode values now differ from the old surface-secondary(-hover) borrow. Transparent's Selected still has no fill in Figma — text-only, no compound variant needed.
         transparent:
-          "bg-transparent text-text-secondary hover:bg-surface-secondary active:bg-surface-secondary-hover aria-pressed:text-text-primary",
-        // Known gap: hover/active both resolve to red-950 in dark mode, so this variant has no visible pointer feedback there.
+          "bg-transparent text-text-secondary hover:bg-surface-highlight-white-hover active:bg-surface-highlight-white-active aria-pressed:text-text-primary",
+        // #204: Selected gains a real fill for the first time (surface-highlight-red-selected/priority-urgent-bg-selected, red-100) — same compound-variant requirement as White/Outline. Text never changes on this variant (Figma defines no text state here), so no aria-pressed:text-*. Known gap: hover/active/selected all collapse to the same red-50 as Default in dark mode (Figma's own dark values, not a codebase artifact) — no visible state feedback there, deliberately accepted, see docs/design-tokens.md.
         destructive:
-          "bg-priority-urgent-bg text-priority-urgent hover:bg-priority-urgent-bg-hover active:bg-priority-urgent-bg-active",
+          "bg-priority-urgent-bg text-priority-urgent hover:bg-priority-urgent-bg-hover active:bg-priority-urgent-bg-active aria-pressed:bg-priority-urgent-bg-selected aria-pressed:hover:bg-priority-urgent-bg-hover aria-pressed:active:bg-priority-urgent-bg-active",
       },
     },
     defaultVariants: {
