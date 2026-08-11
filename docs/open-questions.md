@@ -10,10 +10,6 @@ This is the single canonical list. `docs/design-tokens.md` and `docs/HANDOFF.md`
 
 ## Design-system wide
 
-### token-names-are-hex-derived
-
-Figma MCP returns resolved hex only, never variable names, so every semantic token name in `design/tokens.json` was derived by matching a pixel value back to a role. The names may not match Figma's real variable names. Worth reconciling before more components calcify this vocabulary.
-
 ### dark-mode-is-placeholder-only
 
 **Narrowed by #204** (2026-08-11): real Figma dark frames/variables *do* exist (`design/figma-variables/Semantics _ Style_Dark.tokens.json`) and now back every semantic colour token's dark value — this is no longer a blanket "no source, own pick" gap. Two consequences remain, both **confirmed as genuine Figma facts and deliberately accepted by the user**, not flagged for a fix: `surface-highlight-red` and its `-hover`/`-active`/`-selected` siblings all resolve to the same red-50 in dark mode, so Distructive has no visible hover/press/selected feedback there; and `surface-highlight-white-active`'s dark value (stone-400) is lighter than `-hover`'s (stone-500), backwards from the light-mode escalation direction. What's still genuinely open: only Ladle sets `data-theme` — an app-level theme switch is a separate architectural decision, tracked as ticket #206.
@@ -93,7 +89,7 @@ Independent of the dropdown: at a 320px viewport (dropdown closed), the header r
 
 These were open questions that the shipped build now answers. The deviation and its reasoning live in the component's own `design/notes/<Component>.md`; an old `#slug` link that lands here was one of them.
 
-**Decided by the user or by measurement** — `touch-hold-duration-deviates-from-figma` (750ms, chosen after real-device testing showed Figma's 2s felt broken), `unit-dropdown-list-not-drawn` and `recipe-panel-unit-list-etc-unsourced` (the 17-code `UNIT_CODES` list is a user decision, 2026-07-29), `ios-safari-fixed-viewport-unverified` (now tracked as a verification ticket, not a design gap), `button-vs-input-active-border` (#204, 2026-08-11: fetched both nodes' Active state side by side — `Stroke/secondary/active` for Button/Outline, `Stroke/primary/active` for Input-field, two distinct correctly-bound Figma variables, never a divergence to reconcile; `stroke-primary-active` keeps its own name).
+**Decided by the user or by measurement** — `touch-hold-duration-deviates-from-figma` (750ms, chosen after real-device testing showed Figma's 2s felt broken), `unit-dropdown-list-not-drawn` and `recipe-panel-unit-list-etc-unsourced` (the 17-code `UNIT_CODES` list is a user decision, 2026-07-29), `ios-safari-fixed-viewport-unverified` (now tracked as a verification ticket, not a design gap), `button-vs-input-active-border` (#204, 2026-08-11: fetched both nodes' Active state side by side — `Stroke/secondary/active` for Button/Outline, `Stroke/primary/active` for Input-field, two distinct correctly-bound Figma variables, never a divergence to reconcile; `stroke-primary-active` keeps its own name), `token-names-are-hex-derived` (#203, 2026-08-11: the premise was simply wrong — `get_variable_defs` does return variable names, verified on 3623:4346 and 3705:4402. Every semantic token now carries its real Figma variable path and id, `design/figma-variables/` holds the exported collections, and `pnpm check:tokens-drift` keeps the two in step).
 
 **Figma authoring artifacts, built the sensible way** — `portion-stepper-figma-draws-plus-twice` (both stepper nodes draw `Icon/Plus` twice; code renders `Minus` on decrement), `recipe-name-field-swap-icon-unusual` (`Icon/Arrow-right-left` for "open a picker", built as specified), `recipe-image-field-no-filled-state`, `input-field-text-boolean`, `checkbox-delete-state`.
 
