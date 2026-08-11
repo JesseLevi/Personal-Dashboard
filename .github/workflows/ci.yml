@@ -20,6 +20,8 @@ jobs:
         run: |
           pnpm sync:tokens
           git diff --exit-code app/theme.css
+      - name: Tokens match Figma export (name + value, #204-pending exempted) (#203)
+        run: pnpm check:tokens-drift
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
