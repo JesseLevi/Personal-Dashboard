@@ -6,9 +6,12 @@
 
 **Keeping this file**: replace stale bullets, never append dated sections. A fact about one component belongs in that component's note, with at most a pointer here.
 
-## State (2026-08-10)
+## State (2026-08-11)
 
-- `main` is green and the open-PR queue is empty. Phases 0–3 are feature-complete, design-review rounds 1–3 merged.
+- `main` is green. **Token pipeline rebased onto real Figma variable names (#203, merged):** Figma MCP's `get_variable_defs` turns out to return variable names after all, not just resolved hex. `design/figma-variables/` now holds the committed DTCG export of the three Figma collections (Primitives, Semantics/Style Light+Dark, Semantics/Responsive Mobile+Desktop) as source of truth; `design/tokens.json` is a curated mirror carrying each token's Figma path + `figmaVariableId`, checked by `pnpm check:tokens-drift` (new CI gate). Every semantic colour name now follows its Figma path (`surface-raised` → `surface-secondary`, `border` → `stroke-primary`, `text-muted` → `text-secondary`, …); product aliases (`priority-*`, `tag-highlight*`) stay a real alias tier on top. `accent` is retired (no Figma variable backs it). This was a rename only — no value changed pixel-for-pixel in #203 itself.
+- **#204 (PR #208) is open, not merged**: brings the 13 tokens #203 flagged `$pendingFigmaValue` to their real Figma value, and fixes a state-order bug (see `docs/incidents.md`) where Button/White and Button/Distructive had Hover/Active one column off. Don't treat those values as landed until #208 merges.
+- **#205 (radius/spacing/responsive tokens) and #206 (dark mode via system preference) are open, in-progress work**, not done — `design/figma-variables/Semantics _ Responsive_*.tokens.json` is already exported but not yet consumed by `design/tokens.json`.
+- Phases 0–3 are feature-complete, design-review rounds 1–3 merged.
 - **Phase 4 (Recepten) and Phase 5 (Boodschappenlijst) are both mid-flight.** Per-ticket status lives on the board, never here.
   - `/recepten` category-kanban · `/recepten/[recipeId]` V2 detail page (nutrition row, "Pas aan" panel, NEVO/USDA-backed macros) · private `recipe-thumbnails` bucket with server-side re-encode → `design/notes/RecipeDetailPage.md`, `ReceptenBoard.md`
   - `/winkelmand` with grouping, sort and swipe-to-cart → `design/notes/WinkelmandPage.md`
@@ -48,9 +51,11 @@ The hosted **schema** was audited 2026-08-10 and is sound: all 16 `public` table
 
 ## Next
 
-1. **Work the verification tickets** (#185–#191). This is the real remaining Phase 3 work — there is no missing UI behind it. **#185 is now the top priority**: the perf round rewrote the auth path underneath every route and is live in production, still without a single signed-in human run. Start there, and exercise a drag (the new move RPCs) while you're in.
-2. **7 ADRs are owed** for shipped schema deviations: `cards.size`, `boards.is_favorite`, `recipe_categories.icon`, `recipe_ingredients.group_label`, the `unit` enum, `recipe_step_ingredients`, and the `replace_recipe_contents` RPC-backed-transaction pattern (user-approved 2026-08-01). Write-up only, but it is the architecture layer — flag, don't improvise. (The 8th, the move RPCs, shipped with #169 as ADR-0015.)
-3. Phase 4 and 5 remainder, per the board.
+1. **Land #204 (PR #208)**: real Figma values for the 13 `$pendingFigmaValue` tokens plus the Button/White and Button/Distructive state-order fix. Once merged, `pnpm check:tokens-drift` should report zero deviations.
+2. **#205 and #206 are running in parallel** (radius/spacing/responsive tokens; dark mode via `next-themes` + system preference) — check the board before starting either, don't assume either is done.
+3. **Work the verification tickets** (#185–#191). This is the real remaining Phase 3 work — there is no missing UI behind it. **#185 is now the top priority**: the perf round rewrote the auth path underneath every route and is live in production, still without a single signed-in human run. Start there, and exercise a drag (the new move RPCs) while you're in.
+4. **7 ADRs are owed** for shipped schema deviations: `cards.size`, `boards.is_favorite`, `recipe_categories.icon`, `recipe_ingredients.group_label`, the `unit` enum, `recipe_step_ingredients`, and the `replace_recipe_contents` RPC-backed-transaction pattern (user-approved 2026-08-01). Write-up only, but it is the architecture layer — flag, don't improvise. (The 8th, the move RPCs, shipped with #169 as ADR-0015.)
+5. Phase 4 and 5 remainder, per the board.
 
 Constraints worth knowing before touching these areas:
 

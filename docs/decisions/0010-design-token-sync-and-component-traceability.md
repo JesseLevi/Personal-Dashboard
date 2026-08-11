@@ -20,6 +20,15 @@ The Figma file is deliberately built atomic with primitive → semantic tokens o
 - Tailwind v4 is thereby fixed as the Tailwind major; its CSS-first `@theme` is what makes the generated-theme approach native instead of config-file templating.
 - If Figma variable naming changes structurally, `sync:tokens` breaks loudly in CI rather than silently diverging — intended behavior.
 
+## Note (2026-08-11, ticket #203): "synced from Figma variables via MCP/API" is now literally true
+
+Point 1 above was written assuming `sync:tokens` reads Figma variables directly; in practice the Figma MCP's `get_variable_defs` was believed to return resolved hex only, so every name in `design/tokens.json` up to this point was derived from measured colour, not read from Figma (see the token-changes entries in `docs/incidents.md` for that era). Re-tested on nodes `3623:4346` and `3705:4402`: `get_variable_defs` does return real variable names. That closes the gap between this ADR's intent and the pipeline's actual behaviour, via one intermediate step rather than a live sync:
+
+- `design/figma-variables/*.json` — a committed DTCG export of the three Figma variable collections (Primitives/Tailwind, Semantics/Style Light+Dark, Semantics/Responsive Mobile+Desktop) — is now the source of truth for token names and values.
+- `design/tokens.json` is a curated mirror of that export: each semantic colour token carries its Figma path (`figma`) and variable id (`figmaVariableId`) alongside the value `sync:tokens` consumes.
+- `pnpm check:tokens-drift` (new CI gate) diffs the mirror against the export on name, id and value, and is the enforcement point 1 didn't yet have — anything not flagged `$pendingFigmaValue` must match exactly.
+- Semantic token naming now follows the Figma path rather than being coined per token (`color/` stripped, `Stroke` → `stroke`, trailing `/default` dropped, the `text/base/*` group drops the `base` segment). Product aliases (`priority-*`, `tag-highlight*`) stay a deliberate alias tier on top, per point 1's original design, now pointing at semantic tokens instead of primitives.
+
 ## Note (2026-07-22, ticket #86): the token layer now also carries motion
 
 `design/tokens.json`/`app/theme.css` gained a `duration`/`easing` primitive+semantic tier alongside `color` (Sidebar's collapse-slide transition), synced through the exact same `pnpm sync:tokens` pipeline this ADR already describes generically ("tokens", not "colours"). Unlike colour, motion has **no Figma source at all** to sync from (see `docs/open-questions.md#sidebar-motion-timing-unsourced`) — the values are this codebase's own picks, which is a meaningfully different provenance than everything else this ADR covers. This note records that the mechanism absorbed it without a code change to the pipeline's shape; it does **not** decide whether motion deserves its own ADR versus living as a footnote here — that call is left to the user/architecture layer, not made unilaterally by the ticket that needed it.
