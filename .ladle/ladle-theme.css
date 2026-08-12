@@ -10,29 +10,33 @@
  * never reaches this outer chrome). See that plugin's header for why a plain
  * `appendToHead` string (the pre-#49 mechanism) doesn't survive `pnpm ladle:build`.
  *
- * Token mapping (issue #41):
- * - "surface/primary" (preview background)      -> --color-surface
- * - "color/secondary" (chrome text + icons)      -> --color-text-muted
+ * Token mapping (issue #41, names updated for #203's rename):
+ * - preview background   -> --color-surface-highlight-white  (was --color-surface)
+ * - chrome text + icons  -> --color-text-secondary           (was --color-text-muted)
  *   (icons are inline SVGs using stroke/fill="currentColor", so recoloring the text
  *   color that governs .ladle-aside / .ladle-markdown / .ladle-error-content also
  *   recolors the icons that inherit it.)
  *
- * Token gap: design/tokens.json has no literal `color-secondary` semantic token.
- * `--color-text-muted` is the nearest existing "secondary" text/icon color and is
- * reused here rather than inventing a new token or hardcoding a hex value.
+ * #203 renamed every semantic colour onto its Figma path but missed this file, so
+ * both `var()`s below pointed at variables that no longer existed and Ladle's chrome
+ * silently fell back to its own bundled defaults. These are the mechanical
+ * successors of the two original tokens — behaviour-preserving, not a re-pick.
+ * Open: the mapping was *described* as "surface/primary", but the token it actually
+ * read resolves to `color/surface/highlight/white/default`; if the intent really is
+ * "same backdrop as the app body", that is `--color-surface-primary` and it is a
+ * deliberate change, not a rename. Not decided here.
  *
- * Token gap: the design system has only one (light) palette today — no dark-mode
- * semantic tokens exist yet. Ladle's light/dark toggle keeps working (it still
- * flips `[data-theme]` and Ladle's own accent/secondary/hover vars), but the two
- * variables we override below intentionally resolve to the same values in both
- * modes, since there is no dark counterpart to fall back to. Revisit once dark
- * tokens land.
+ * Dark mode: since #204 every semantic colour has a real dark value and #206 wires
+ * the app to the OS. Both variables below therefore now resolve *through*
+ * `[data-theme="dark"]`'s overrides in app/theme.css on their own — the shared
+ * selector below is what makes Ladle's toggle follow, and no longer pins both modes
+ * to one palette the way it did when no dark counterpart existed.
  */
 @import "tailwindcss";
 @import "../app/theme.css";
 
 :root,
 [data-theme="dark"] {
-  --ladle-bg-color-primary: var(--color-surface);
-  --ladle-color-primary: var(--color-text-muted);
+  --ladle-bg-color-primary: var(--color-surface-highlight-white);
+  --ladle-color-primary: var(--color-text-secondary);
 }
