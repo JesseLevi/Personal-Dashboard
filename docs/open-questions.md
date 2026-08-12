@@ -10,6 +10,12 @@ This is the single canonical list. `docs/design-tokens.md` and `docs/HANDOFF.md`
 
 ## Design-system wide
 
+### transparent-binding-unverified
+
+`Atom/Button`'s Transparent style reads `surface-highlight-white-hover` / `-active` as of #204, on the strength of a subagent's report that it fetched Transparent's own variant nodes and found them bound there rather than to `surface-secondary/*`. That fetch cannot currently be repeated — Figma MCP is rate-limited on the Starter plan — so it is the one binding in the token migration that rests on a report rather than on a measurement anyone can redo.
+
+Contained, not urgent: in light mode both candidates resolve to the same pixels (stone-200 / stone-300), so nothing visible depends on it. They differ only in dark mode (`surface-highlight-white-hover` stone-500 vs `surface-secondary-hover` stone-700), and dark mode went live in #206. Re-measure when Figma access returns; if the binding turns out to be `surface-secondary/*`, only Transparent's dark hover/press shade changes.
+
 ### login-visual-has-no-dark-asset
 
 `app/login/page.tsx`'s right-hand panel is a static `<Image>` (`/login/login-visual-{mobile,desktop}.png`) — a light-mode render of the product. Since #206 the login page itself follows the OS theme, so on a dark system that light PNG now sits against a stone-900 page. The page's own tokens switch correctly; only the asset doesn't. A dark counterpart has to be exported from Figma — building one in code would be inventing UI the design doesn't have. Until then this is cosmetic and confined to `/login`.
