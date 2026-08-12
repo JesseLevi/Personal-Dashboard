@@ -5,12 +5,21 @@ every component's state colours follow, plus the concrete matrix behind it.
 
 History: ticket #52 introduced a three-state tier (Default/Hover/Selected).
 Ticket #56 superseded it — Figma added a fourth state and redistributed the
-values, and Selected stopped carrying any colour (text-only). **Ticket #204
-supersedes that in turn**: Figma's own variables prove Selected has a real
-fill/border on most styles after all — the earlier "no `role-selected`" reading
-came from a state-binding bug (see below), not from Figma's actual design.
-What follows is the current state of the world, on **variable names**, not hex
-— every value here traces to a `figmaVariableId` in `design/tokens.json`.
+values, and Selected stopped carrying any colour (text-only). Ticket #204
+believed Figma's own variables proved Selected had gained a real fill/border
+on White and Distructive too (Outline already had one, since #68) — **ticket
+#213 corrects that: #204 was itself the bug.** #204 assumed a ramp step's
+*name* (`default`/`selected`/`hover`/`active`) always matches the CSS *state*
+it renders in; true for Filled/Outline/Transparent, false for White and
+Distructive, whose Hover/Active nodes are genuinely bound to the `selected`/
+`hover` steps respectively (see "Ramp step name ≠ CSS state name" below).
+#204 "fixed" a shift that never existed and introduced a real one, which
+shipped past every gate — see `docs/incidents.md`'s corrected #204 entry.
+What follows is the current, #213-verified state of the world, on **variable
+names**, not hex — every value here traces to a `figmaVariableId` in
+`design/tokens.json`, and every White/Distructive binding below was measured
+per individual state node via the figma-console-mcp bridge (`figma.variables`
++ `boundVariables`), not read off a swatch order or a batch report.
 
 ## The convention
 
@@ -25,10 +34,15 @@ role-selected   — Selected  (persistently chosen, aria-pressed / :focus-within
 ```
 
 `role-selected` is real where Figma's variable graph defines one (see the
-matrix below); a style whose Selected state has no Figma variable of its own
-(Distructive's *text*, Transparent's fill) still gets no token invented for it
-— "no colour" is itself a fact worth modelling accurately, same as "has a
-colour."
+matrix below — today, only Outline's border); a style whose Selected state
+has no Figma variable of its own (White/Distructive's *fill*, as corrected by
+#213; Distructive's *text*; Transparent's fill) still gets no token invented
+for it — "no colour" is itself a fact worth modelling accurately, same as
+"has a colour." White and Distructive *do* still have dedicated
+`-hover`/`-active`/`-selected` tokens in `design/tokens.json` (added #204) —
+the `-selected` one is real, it's just that no CSS *state* on these two
+styles reads it as its own Selected fill; see "Ramp step name ≠ CSS state
+name" below for which state actually consumes it.
 
 How a component reads them:
 
@@ -39,46 +53,75 @@ How a component reads them:
   `aria-pressed:text-text-primary` (`Atom/Input-field` uses `:focus-within` in
   place of `aria-pressed` — see the matrix below)
 
+### Ramp step name ≠ CSS state name
+
+A Figma colour ramp's step names (`default`/`selected`/`hover`/`active`) are
+not guaranteed to line up with the CSS state that renders them. For Filled,
+Outline and Transparent they do — each state's fetched node binds the
+like-named step. **White and Distructive are the exception, confirmed
+#213 by fetching each state's own node and reading its `boundVariables`
+directly**, not inferred from position in a swatch strip or a batch report:
+their Selected node binds the `default` step (no colour change at all, same
+as every other state's Default), their **Hover** node binds the `selected`
+step, and their **Active** node binds the `hover` step. That is the one
+genuine offset in this file — every other role/style/state combination binds
+its own like-named variable.
+
+Because token *names* stay the Figma mirror (`docs/guides/ui-components.md`,
+#203 — never renamed to fake an alignment with the CSS state), the offset
+lives in the **consumer**: `Button.tsx`'s White/Distructive entries bind
+`hover:` to the `-selected` token and `active:` to the `-hover` token, with a
+comment pointing back here. Don't "fix" this into name-matches-state — that
+is exactly the mistake #204 made (see `docs/incidents.md`'s corrected entry)
+and #213 reverted.
+
 ### Selected must compose with Hover and Active
 
 A selected button still reacts to the pointer. This is a product requirement.
-Where Selected and Hover/Active touch **disjoint CSS properties** (Distructive's
-text, Transparent generally), no special handling is needed. Where Selected
-lands on the **same property** Hover/Active already use — `Atom/Button`'s
-Outline (`border-color`, since #68) and, as of #204, White and Distructive
-(`background-color`) — a plain `aria-pressed:bg-*`/`border-*` override is
-**not safe on its own**: verified against the compiled `pnpm ladle:build`
-stylesheet each time (not assumed), Tailwind emits that plain rule *after*
-the `hover:`/`active:` rules, and all three have equal specificity (one class
-+ one pseudo-class/attribute selector), so the later rule wins per the
-cascade — a selected control being hovered or pressed would silently lose its
-hover/active feedback. The fix is always the same two **compound variants**,
-firing only when Selected combines with Hover/Active — e.g. for White:
-`aria-pressed:hover:bg-surface-highlight-white-hover` and
-`aria-pressed:active:bg-surface-highlight-white-active`. Each compiles to a
+Where Selected and Hover/Active touch **disjoint CSS properties** — Distructive's
+text (unaffected by Hover/Active, which are background-only), Transparent
+generally, and, as of #213's correction above, White and Distructive too
+(neither has a Selected fill at all, so there is nothing on `background-color`
+to conflict with Hover/Active) — no special handling is needed. Where Selected
+lands on the **same property** Hover/Active already use — today that is only
+`Atom/Button`'s Outline (`border-color`, since #68) — a plain
+`aria-pressed:bg-*`/`border-*` override is **not safe on its own**: verified
+against the compiled `pnpm ladle:build` stylesheet each time (not assumed),
+Tailwind emits that plain rule *after* the `hover:`/`active:` rules, and all
+three have equal specificity (one class + one pseudo-class/attribute
+selector), so the later rule wins per the cascade — a selected control being
+hovered or pressed would silently lose its hover/active feedback. The fix is
+always the same two **compound variants**, firing only when Selected combines
+with Hover/Active — for Outline:
+`aria-pressed:hover:border-stroke-primary-hover` and
+`aria-pressed:active:border-stroke-secondary-active`. Each compiles to a
 selector with one extra pseudo-class/attribute term (three class-level terms
 vs two), giving it strictly higher specificity than the plain
 `aria-pressed:*` rule — so it wins **regardless of emission order**, a
 guarantee from CSS specificity rules rather than an assumption about
 Tailwind's internal variant sort. Grepped compiled selectors (`Atom/Button`
-White, #204 — Outline's border-color case from #68 follows the identical
-shape, just on `border-*`):
+Outline, re-verified #213 against the post-fix `pnpm ladle:build` output):
 
 ```
 # plain rules — hover:/active:/aria-pressed: emitted in that order, plain aria-pressed LAST, would win over hover/active:
-.hover\:bg-surface-highlight-white-hover:hover{background-color:var(--color-surface-highlight-white-hover)}
-.active\:bg-surface-highlight-white-active:active{background-color:var(--color-surface-highlight-white-active)}
-.aria-pressed\:bg-surface-highlight-white-selected[aria-pressed=true]{background-color:var(--color-surface-highlight-white-selected)}
+.hover\:border-stroke-primary-hover:hover{border-color:var(--color-stroke-primary-hover)}
+.active\:border-stroke-secondary-active:active{border-color:var(--color-stroke-secondary-active)}
+.aria-pressed\:border-stroke-primary-selected[aria-pressed=true]{border-color:var(--color-stroke-primary-selected)}
 
 # + compound variants — the two extra rules have higher specificity and win unconditionally:
-.aria-pressed\:hover\:bg-surface-highlight-white-hover[aria-pressed=true]:hover{background-color:var(--color-surface-highlight-white-hover)}
-.aria-pressed\:active\:bg-surface-highlight-white-active[aria-pressed=true]:active{background-color:var(--color-surface-highlight-white-active)}
+.aria-pressed\:hover\:border-stroke-primary-hover[aria-pressed=true]:hover{border-color:var(--color-stroke-primary-hover)}
+.aria-pressed\:active\:border-stroke-secondary-active[aria-pressed=true]:active{border-color:var(--color-stroke-secondary-active)}
 ```
 
-Any future component that gives Selected a colour on the same property Hover/
-Active already use must apply this same compound-variant pattern — don't
-assume Tailwind's variant order will save you; verify against the compiled
-stylesheet, per #204, #68 and #56 before them.
+**#204 believed White and Distructive needed this same pattern on
+`background-color` and shipped compound variants for them — #213 removed
+those**: their Selected state has no fill at all (see "Ramp step name ≠ CSS
+state name" above), so there was never a same-property conflict to guard
+against on those two styles. Any future component that gives Selected a
+colour on the same property Hover/Active already use must apply this
+compound-variant pattern — measured per state node, never assumed from a
+name match — and verify against the compiled stylesheet, per #213, #68 and
+#56 before them.
 
 ### `:active` vs `aria-pressed` — both, for different things
 
@@ -104,26 +147,47 @@ history as a ban on `:active`.
 - If Figma defines no variation for a role in some state, **don't invent one**.
   See Distructive's text below, which never changes.
 
-## The state matrix (`Atom/Button`, node 3623:4346, re-fetched 2026-08-11 for #204 — per-state node-by-node, not read off the component set as a whole)
+## The state matrix (`Atom/Button`, node 3623:4346, re-measured 2026-08-12 for #213 via the figma-console-mcp bridge — per-state node, not read off the component set as a whole or off a batch report)
 
 Named by Figma variable path (`design/tokens.json`'s `figma` field), not hex —
-resolve a name against that file for its current value.
+resolve a name against that file for its current value. Where a style's Hover/
+Active *state* binds a differently-named ramp *step* (White, Distructive —
+see "Ramp step name ≠ CSS state name" above), both are shown: `state ← step`.
 
 | Style | Default | Hover | Active | Selected |
 |---|---|---|---|---|
 | Filled | `surface/secondary/default` | `surface/secondary/hover` | `surface/secondary/active` | bg unchanged, text → `text/base/primary` |
-| White | `surface/highlight/white/default` | `surface/highlight/white/hover` | `surface/highlight/white/active` | bg → `surface/highlight/white/selected`, text → `text/base/primary` |
+| White | `surface/highlight/white/default` | Hover ← `.../selected` (stone-100) | Active ← `.../hover` (stone-200) | bg unchanged (reads `.../default`), text → `text/base/primary` |
 | Transparent | no fill | `surface/highlight/white/hover` | `surface/highlight/white/active` | no fill, text → `text/base/primary` |
 | Outline | `Stroke/primary/default` | `Stroke/primary/hover` | `Stroke/secondary/active` | border → `Stroke/primary/selected`, text → `text/base/primary` |
-| Distructive | `surface/highlight/red/default` | `surface/highlight/red/hover` | `surface/highlight/red/active` | bg → `surface/highlight/red/selected`, text unchanged |
+| Distructive | `surface/highlight/red/default` | Hover ← `.../selected` (red-100) | Active ← `.../hover` (red-200) | bg unchanged (reads `.../default`), text unchanged |
 
-**#204 (2026-08-11) — state-binding fix, supersedes #112's White/Distructive column.** #112 (and #107 before it) diffed a hex table read off the fetched component set as a whole and got White/Distructive's Hover/Active/Selected one column wrong: Figma's own per-node variable binding proves the ramp is `default -> selected -> hover -> active`, and the two mis-bound nodes were shifted — what #112 recorded as White's "Hover" (stone-100) is actually Figma's `selected` variable's value; what it recorded as "Active" (stone-200) is `hover`'s value. Confirmed per state, per style, by fetching each of the 8 individual `Style=X, State=Y` nodes with `get_variable_defs` rather than reading a batch hex table — see `design/notes/Button.md`'s #204 entry for the full node-by-node table and the cross-check against `design/figma-variables/`. White and Distructive both gain real dedicated Hover/Active/Selected tokens for the first time (`surface-highlight-white-hover/-active`, `surface-highlight-red-selected`/`priority-urgent-bg-selected`) instead of borrowing another role's token pixel-for-pixel — the borrowing is *why* the bug was invisible in light mode (the borrowed pixels happened to be numerically correct even though the wrong variable backed them; dark mode is where the borrow and the correct binding diverge, see `design/notes/Button.md`).
+**#213 (2026-08-12) — corrects #204's state-binding regression.** #204
+assumed a ramp step's name always equals the CSS state it's used in and
+"corrected" White/Distructive's Hover/Active/Selected onto that assumption —
+which was wrong. Re-measured per individual state node via the
+figma-console-mcp plugin bridge (`figma.variables` + `boundVariables`,
+WebSocket, local, no Starter-plan rate limit), not a swatch order or a
+report: White and Distructive's Selected node binds the **`default`** step
+(no fill change at all — identical to every other state's own Default), their
+Hover node binds the **`selected`** step, and their Active node binds the
+**`hover`** step. `git show 565a43d:components/atoms/Button.tsx` (pre-#204)
+already had this right; #204 shifted it and shipped the shift as a fix. Token
+*names* are unchanged from #204 (`surface-highlight-white-hover/-active/-selected`,
+`surface-highlight-red-hover/-active/-selected` all still exist, still trace
+to their own like-named Figma path) — only `Button.tsx`'s class list, which
+now binds `hover:` to the `-selected` token and `active:` to the `-hover`
+token for these two styles, changed. See `design/notes/Button.md`'s #213
+entry for the full node-by-node table and `docs/incidents.md`'s corrected
+#204 entry for why the original mistake shipped past every gate.
+
+**#204 (2026-08-11) — original (incorrect) state-binding change, historical context only.** #204 believed #112's (and #107's) hex table had misread a `default -> selected -> hover -> active` ramp as `default -> hover -> active`, and rebound White/Distructive's Hover/Active/Selected accordingly. It also added the dedicated `surface-highlight-white-hover/-active` and `surface-highlight-red-selected`/`priority-urgent-bg-selected` tokens, which #213 keeps (the tokens are real and correctly named — see the matrix above for which state now actually reads which one).
 
 **Transparent measured independently, not assumed from matching pixels**: its own fetched Hover/Active nodes are bound to the same `surface/highlight/white/hover|active` variables Button/White reads (not `surface/secondary/*`, which shares only the light-mode hex) — real rebind, dark values differ (`design/notes/Button.md`).
 
 Text is `text-secondary` in Default/Hover/Active for every style except Distructive
-(`priority-urgent` throughout, including Selected — its text never changes, only
-the fill is new as of #204).
+(`priority-urgent` throughout, including Selected — its text never changes,
+and, as corrected by #213, neither does its Selected fill).
 
 `Atom/Input-field`'s border ramp (node 3705:4402) — three of its four states are
 the exact same Figma variable as Button/Outline (confirmed #68, reconfirmed #204):

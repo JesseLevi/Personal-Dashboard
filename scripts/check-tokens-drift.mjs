@@ -19,6 +19,17 @@
 // check. Radius/spacing (#205) has no such escape hatch yet — none of that
 // collection shipped with a known deviation, so any drift there is a real
 // re-sync, not an open ticket.
+//
+// TICKET #213 added a third direction: everything above walks tokens.json
+// -> Figma (does a token this file already declares still match the
+// export?). That loop is structurally blind to a real Figma variable that
+// was never given a token at all — #213 found 19 of those this way while
+// the old gate reported "0 deviations". The bidirectional check at the
+// bottom of this file walks Figma -> tokens.json instead: every variable in
+// the committed export must either back a semantic.* token (by its `figma`
+// path) or be named on `design/tokens.json`'s top-level `$notMirrored` with
+// a reason. No escape hatch needed here — `$notMirrored` *is* the escape
+// hatch, and an empty/missing reason is itself an error.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -258,6 +269,59 @@ for (const [name, def] of Object.entries(tokens.semantic.spacing?.layout ?? {}))
   }
 }
 
+// --- Bidirectional coverage (#213) -----------------------------------------
+//
+// Figma -> tokens.json: every real variable in the committed export must
+// either back a semantic.* token (by `figma` path) or be named on
+// `$notMirrored` with a non-empty reason. Additive only — this never touches
+// a value, only whether a variable is accounted for at all.
+const notMirrored = tokens.$notMirrored ?? {};
+for (const [path, reason] of Object.entries(notMirrored)) {
+  if (path.startsWith("$")) continue;
+  if (typeof reason !== "string" || reason.trim() === "") {
+    errors.push(`$notMirrored["${path}"]: carries no reason string.`);
+  }
+}
+
+const mirroredColorPaths = new Set(
+  Object.values(tokens.semantic.color)
+    .map((def) => def.figma)
+    .filter((figma) => typeof figma === "string"),
+);
+for (const path of Object.keys(lightByPath)) {
+  if (mirroredColorPaths.has(path)) continue;
+  if (path in notMirrored) continue;
+  errors.push(
+    `${path}: real Figma color variable (Semantics / Style) has no semantic.color token and is not on $notMirrored.`,
+  );
+}
+
+const mirroredResponsivePaths = new Set();
+for (const def of Object.values(tokens.semantic.radius ?? {})) {
+  if (def && typeof def === "object" && typeof def.figma === "string") mirroredResponsivePaths.add(def.figma);
+}
+for (const groupName of ["component", "inline", "stack"]) {
+  for (const def of Object.values(tokens.semantic.spacing?.[groupName] ?? {})) {
+    if (typeof def.figma === "string") mirroredResponsivePaths.add(def.figma);
+  }
+}
+for (const def of Object.values(tokens.semantic.spacing?.layout ?? {})) {
+  if (typeof def.figma === "string") mirroredResponsivePaths.add(def.figma);
+}
+
+const responsivePaths = new Set([
+  ...Object.keys(radiusDesktopByPath),
+  ...Object.keys(spacingDesktopByPath),
+  ...Object.keys(flattenNumber(figmaResponsiveDesktop, "text")),
+]);
+for (const path of responsivePaths) {
+  if (mirroredResponsivePaths.has(path)) continue;
+  if (path in notMirrored) continue;
+  errors.push(
+    `${path}: real Figma Semantics / Responsive variable has no semantic.radius/spacing token and is not on $notMirrored.`,
+  );
+}
+
 for (const w of warnings) console.warn(`WARN: ${w}`);
 
 if (errors.length > 0) {
@@ -267,5 +331,5 @@ if (errors.length > 0) {
 }
 
 console.log(
-  `OK: design/tokens.json matches design/figma-variables/*.json — color (name + value, ${pendingCount} deviation(s) exempted via $pendingFigmaValue for #204) and Semantics / Responsive radius+spacing (name + value + mobile/desktop split, #205).`,
+  `OK: design/tokens.json matches design/figma-variables/*.json — color (name + value, ${pendingCount} deviation(s) exempted via $pendingFigmaValue for #204) and Semantics / Responsive radius+spacing (name + value + mobile/desktop split, #205), and is now bidirectional (#213): every export variable is either a token or an explained $notMirrored entry.`,
 );

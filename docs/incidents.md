@@ -2,13 +2,78 @@
 
 Append-only archive of per-ticket incident write-ups: defects that shipped past every CI gate, the merge-conflict resolutions for specific PRs, and the reasoning behind non-obvious fixes. These are moved here verbatim, not summarised, because the detail is the evidence base for why this project doesn't fully trust its CI gates. Nothing here is current status — entries are never updated once written. Read on demand when investigating a specific ticket, a recurring failure mode, or a past merge — never as part of session start.
 
-## 2026-08-11 — Reading Figma swatches in visual order, not by name, shifted Button/White and Button/Distructive's state columns by one (#204)
+## 2026-08-11/12 — #204 assumed a Figma ramp-step name always equals the CSS state it's used in; that assumption was itself wrong, and the resulting "fix" was the real regression (#204, corrected by #213)
 
-Every state-colour token in `design/tokens.json` before #203 was named and ordered from *measured hex values read off rendered swatches*, because `get_variable_defs` was believed to return resolved colour only, never the Figma variable name (see the `Token changes — #56 and #68` entry below, and ADR-0010's 2026-08-11 note). Figma's own state ramps run `Default → Selected → Hover → Active`; reading swatches left-to-right without names to anchor them, an earlier ticket recorded that sequence as `Default → Hover → Active`, silently dropping the Selected column and shifting every value after it one place to the left. Most components' Hover/Active happened to still read correctly because Selected either had no fill of its own (Filled, Outline — "Selected touches only text/border") or its fill matched an adjacent state closely enough not to look wrong. Button/White and Button/Distructive were the two components where Selected has a *real, distinct* fill, so the shift was live there: both stored Figma's Hover value under their own `-hover` token and Figma's Active value under `-active`, one column short of where Selected's real colour belonged, and neither had a `-selected` background token at all.
+**This entry originally described a bug that never existed.** It claimed an
+earlier ticket had misread Figma's swatches left-to-right, dropped the
+Selected column, and shifted Button/White and Button/Distructive's Hover/
+Active one place off — and that #204 fixed it. #213 re-measured every
+individual state node for both styles via the figma-console-mcp plugin
+bridge (`figma.variables`/`boundVariables`, a local WebSocket bridge with no
+Starter-plan rate limit, so the fetch is now repeatable rather than resting
+on a single report) and found the opposite: `git show
+565a43d:components/atoms/Button.tsx`, the code *before* #204, already had
+White's Hover reading `surface-highlight-white-selected` (stone-100),
+Distructive's Hover/Active reading `priority-urgent-bg-hover`/`-active`
+(then red-100/red-200 — pre-#204 values, since #204 also legitimately moved
+those two token's own values to red-200/red-300 to match Figma's real
+`.../hover`/`.../active` paths, a separate and correct fix), and both
+styles' Selected equal to Default — the right *shape*, even where the right
+*pixel* was reached by a coincidental borrow rather than a dedicated token:
+White's pre-#204 Active read `surface-secondary` (stone-200 in light mode,
+matching Figma's `.../hover` step by accident, but wrong in dark mode —
+stone-800 vs the `.../hover` step's real stone-500). There was no
+Default→Selected→Hover→Active shift to fix; #204 solved a real problem
+(giving White/Distructive dedicated, dark-mode-accurate Hover/Active/
+Selected tokens instead of pixel-coincidental borrows) and an imagined one
+(reassigning which CSS state reads which token) in the same ticket, and only
+the second part was wrong.
 
-**Why it wasn't caught earlier.** No CI gate can see "this hex is plausible but is actually the neighbouring state's value" — `check:server-only`'s hex grep, `lint`, `typecheck` and the visual-diff gate all compare rendered output to a checked-in baseline that was generated from the same mis-ordered reading, so a self-consistent wrong answer passes every one of them (the same blind-spot class as the `docs/incidents.md` screenshot-gate and Card-content entries below). It surfaced only once #203 made Figma variable *names* available and #204 fetched the 8 individual variant nodes directly instead of re-deriving order from a swatch strip — the fix is measured off named nodes, not inferred from position.
+**What actually happened.** Figma's state ramps for White and Distructive run
+`Default → Selected → Hover → Active`, and the ramp *step* names
+(`default`/`selected`/`hover`/`active`) do not line up with the CSS *state*
+each step renders in for these two styles specifically: the **Hover** state's
+node is bound to the **`selected`** step, and the **Active** state's node is
+bound to the **`hover`** step (Selected's own node is bound to `default` —
+no fill change at all). Every other style (Filled, Outline, Transparent)
+*does* have step-name-equals-state-name binding, and #204 generalised from
+those to assume White/Distructive worked the same way. Under that
+assumption, the pre-#204 code (Hover reading the `selected`-step token,
+Active reading the `hover`-step token) looked like a one-column error, and
+#204 "corrected" it to name-matches-state — which shifted both styles onto
+the *wrong* pixels for real, and added a Selected fill neither style's node
+actually has. That regression shipped to `main` and stayed there until
+#213.
 
-**What prevents it now.** `design/tokens.json` carries each semantic token's Figma path and `figmaVariableId` (#203), and `pnpm check:tokens-drift` (new CI gate) fails if a token's stored value stops matching the value at that named path in the committed `design/figma-variables/` export. A future re-read of the same node can no longer silently re-order states under existing names — a name/id mismatch is loud, not a quiet re-shuffle. Fixed in #204: White's hover moves stone-100→stone-200 and active stone-200→stone-300 with Selected gaining a real stone-100 fill; Distructive's hover moves red-100→red-200 and active red-200→red-300 with Selected gaining red-100.
+**Why it wasn't caught earlier.** Same blind-spot class as the screenshot-gate
+and Card-content entries below: every CI gate — `check:server-only`'s hex
+grep, `lint`, `typecheck`, and the visual-diff gate — compares rendered
+output to a checked-in baseline, and #204 regenerated that baseline from its
+own (wrong) reading, so the mistake was internally self-consistent and
+passed every one of them. `pnpm check:tokens-drift`, also new in this
+window, only checked that a token's *stored* value still matched its *named*
+Figma path — it had no way to know the wrong *token* had been wired to a
+given CSS *state* in `Button.tsx`, because that binding lives in component
+code, not in `design/tokens.json`. A batch report ("fetched all 8 nodes,
+here's the table") is exactly as capable of encoding this kind of
+self-consistent wrong answer as a swatch read is — the fix needed a
+repeatable, per-node measurement plus a name that could be checked against
+prior art (`565a43d`), not a faster or larger one-shot fetch.
+
+**What prevents it now.** `docs/design-tokens.md`'s "Ramp step name ≠ CSS
+state name" rule states the White/Distructive offset explicitly, as the
+documented exception to "step name equals state name" — so a future
+re-binding has a named prior fact to check itself against instead of
+re-deriving the assumption from scratch. `design/tokens.json`'s token
+*names* were never touched by #213 (`surface-highlight-white-hover` etc.
+still exist, still trace correctly to their own like-named Figma path) —
+only `Button.tsx`'s class list, which now binds `hover:`/`active:` to the
+token that the Hover/Active *node* actually uses rather than the
+identically-named token. `pnpm check:tokens-drift` still cannot see a
+consumer-side rebinding like this (it never inspects `.tsx` files); the
+guard is the documented rule plus the bridge's per-node repeatability, not a
+new automated gate. Full node-by-node measurement: `design/notes/Button.md`'s
+#213 entry.
 
 ## 2026-08-10 — Hand-rolled EXIF stripping dropped the Orientation tag, shipping sideways phone photos (#174/#171)
 
