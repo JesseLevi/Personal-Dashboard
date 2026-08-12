@@ -41,6 +41,33 @@
   --color-tag-highlight-bg: var(--color-surface-highlight-yellow);
   --duration-base: 200ms;
   --ease-base: cubic-bezier(0, 0, 0.2, 1);
+  --radius-control-inner: var(--radius-md);
+  --radius-control: var(--radius-lg);
+  --radius-control-outer: var(--radius-xl);
+  --radius-card-inner: var(--radius-sm);
+  --radius-card: var(--radius-xl);
+  --radius-container: var(--radius-3xl);
+  --spacing-component-xs: calc(var(--spacing) * 1);
+  --spacing-component-sm: calc(var(--spacing) * 2);
+  --spacing-component-md: calc(var(--spacing) * 3);
+  --spacing-component-lg: calc(var(--spacing) * 4);
+  --spacing-inline-xs: calc(var(--spacing) * 1);
+  --spacing-inline-sm: calc(var(--spacing) * 2);
+  --spacing-inline-md: calc(var(--spacing) * 3);
+  --spacing-inline-lg: calc(var(--spacing) * 4);
+  --spacing-inline-xl: calc(var(--spacing) * 5);
+  --spacing-stack-xs: calc(var(--spacing) * 1);
+  --spacing-stack-sm: calc(var(--spacing) * 2);
+  --spacing-stack-md: calc(var(--spacing) * 3);
+  --spacing-stack-lg: calc(var(--spacing) * 4);
+  --spacing-stack-xl: calc(var(--spacing) * 6);
+  --spacing-stack-xxl: calc(var(--spacing) * 12);
+  --spacing-page-top: calc(var(--spacing) * 4);
+  --spacing-page-bottom: calc(var(--spacing) * 20);
+  --spacing-page-left: calc(var(--spacing) * 4);
+  --spacing-page-right-equal: calc(var(--spacing) * 4);
+  --spacing-page-right-full: calc(var(--spacing) * 0);
+  --spacing-page-stack: calc(var(--spacing) * 6);
 }
 
 /* Dark-mode overrides: [data-theme="dark"] is set by @ladle/react's Light/Dark
@@ -70,4 +97,21 @@
   --color-surface-highlight-red-selected: var(--color-red-50);
   --color-surface-highlight-red-hover: var(--color-red-50);
   --color-surface-highlight-red-active: var(--color-red-50);
+}
+
+/* Responsive layout overrides (ticket #205, Semantics / Responsive): only
+   page-top/page-left/page-right-equal differ between Figma's Mobile and
+   Desktop modes — the @theme block above already carries the Mobile (base)
+   value, this raises it to Desktop past breakpoint/md (768px, same value as
+   Tailwind's own `md` breakpoint). Same unlayered-@media-on-:root trick as
+   the [data-theme="dark"] block above: Tailwind's @theme output compiles
+   into @layer theme, so an unlayered rule wins unconditionally past 768px
+   regardless of specificity or source order — no md: prefix needed on the
+   component utility classes that consume these vars. */
+@media (min-width: 768px) {
+  :root {
+    --spacing-page-top: calc(var(--spacing) * 20);
+    --spacing-page-left: calc(var(--spacing) * 32);
+    --spacing-page-right-equal: calc(var(--spacing) * 32);
+  }
 }
