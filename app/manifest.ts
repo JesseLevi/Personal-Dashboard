@@ -6,10 +6,14 @@ import type { MetadataRoute } from "next";
 // `app/layout.tsx`'s `metadata.title` already made (ADR-0007 covers UI
 // copy; a manifest's app identity is closer to a package name than
 // translatable text, and next-intl has no locale to key off here since this
-// route is static). `background_color`/`theme_color` reuse the exact hex
-// `app/layout.tsx`'s `viewport.themeColor` already uses — `stone-100` /
-// `surface-primary` in design/tokens.json. Icons: see design/notes/AppShell.md
-// for the Figma source (node 4055:14328) and the flatten-for-iOS call.
+// route is static). `background_color`/`theme_color` reuse the light-mode
+// hex `app/layout.tsx`'s `viewport.themeColor` also uses — `stone-100` /
+// `surface-primary` in design/tokens.json. #206: unlike that `<meta>` tag,
+// the manifest spec has no `media` variant for either field (single value
+// only, W3C manifest issue #975 still open) — deliberately kept light-only
+// rather than guessing a "more correct" single value; see design/notes/
+// AppShell.md. Icons: see design/notes/AppShell.md for the Figma source
+// (node 4055:14328) and the flatten-for-iOS call.
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
