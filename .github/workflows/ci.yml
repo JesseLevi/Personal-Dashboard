@@ -27,6 +27,8 @@ jobs:
       - run: pnpm test
       - name: Security greps (ADR-0002/0003/0010)
         run: pnpm check:server-only
+      - name: Raw radius/spacing utilities in components/ (flag or token, #218)
+        run: pnpm check:raw-spacing
       - name: Comment budget in components/ (one home per fact)
         run: pnpm check:comment-budget
       - run: pnpm build

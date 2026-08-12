@@ -67,6 +67,9 @@ export function RecipeIngredientRow({
   const selectOptions = unitOptions.map((option) => ({ value: option.code, label: option.label }));
 
   return (
+    // spacing-flag: `gap-2` — this component has no Figma node to bind
+    // against (see "Why no design/figma-map.json entry" in
+    // design/notes/RecipeIngredientRow.md).
     <div className={clsx("flex w-full items-start gap-2", className)}>
       <div className="w-full min-w-0 flex-1">
         {showLabels ? (
@@ -149,6 +152,8 @@ export function RecipeIngredientRow({
           the box's own height for `items-center` to centre in. Measured, not
           assumed: hard-coding the box height gets it 1px off, since the box's
           border-box includes its 1px border. */}
+      {/* spacing-flag: `gap-2` — same reasoning as the root row above (no
+          Figma node for this component). design/notes/RecipeIngredientRow.md. */}
       <div className="flex shrink-0 flex-col gap-2 self-stretch">
         {showLabels ? (
           <span aria-hidden="true" className="invisible text-base font-semibold">

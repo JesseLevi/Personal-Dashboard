@@ -140,6 +140,9 @@ export function Dropdown({
             {/* Trigger row: the chevron is Dropdown's own fixed trailing
                 column, never the trigger's. See design/notes/Dropdown.md. */}
             <div
+              // spacing-flag: `gap-3` trigger row — no measurable Figma
+              // node (Slot's own fetched children have no separate
+              // trigger+chevron wrapper frame to read). design/notes/Dropdown.md.
               className="flex w-full cursor-pointer items-center gap-3"
               onClick={() => setIsOpen((open) => !open)}
             >
@@ -168,6 +171,9 @@ export function Dropdown({
                   aria-hidden={!isOpen}
                   // `inert` is required alongside `aria-hidden`: aria-hidden alone doesn't remove focusable descendants from the tab order.
                   inert={!isOpen}
+                  // spacing-flag: `gap-1 pt-1` — same reasoning as the
+                  // trigger row's gap-3 above (no measurable Figma node).
+                  // design/notes/Dropdown.md.
                   className="flex flex-col gap-1 pt-1"
                 >
                   {restChildren}

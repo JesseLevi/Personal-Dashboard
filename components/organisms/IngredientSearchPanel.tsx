@@ -286,6 +286,8 @@ export function IngredientSearchPanel({
 
       {results !== null && !isSearching && results.length === 0 && (
         <Card>
+          {/* spacing-flag: `px-3 pb-2` no-results message — no analog on a
+              fetched node for this synthetic row. design/notes/IngredientSearchPanel.md. */}
           <p className="px-3 pb-2 text-base font-semibold text-text-secondary">
             {t("noResultsLabel", { query: trimmedQuery })}
           </p>
@@ -304,6 +306,8 @@ export function IngredientSearchPanel({
               list, not independently re-measured. See
               design/notes/IngredientSearchPanel.md. */}
           <div className="flex w-full items-center gap-inline-xl rounded-container pl-component-md pr-component-md py-component-md">
+            {/* spacing-flag: `gap-2` icon+label row — no fetched node for
+                this synthetic row (see the module header). design/notes/IngredientSearchPanel.md. */}
             <div className="flex w-full items-center gap-2">
               <Icon name="Plus" className="text-text-secondary" />
               <p className="text-base font-semibold text-text-primary">

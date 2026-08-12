@@ -101,3 +101,12 @@ fetched sample content — `Slot`'s Figma children are plain `Button/Default`
 instances with no separate "trigger + chevron" wrapper frame to measure, so
 there is no node whose `boundVariables` these could read. Not a value-match
 guess withheld; there is nothing to read.
+
+## TICKET #218 (2026-08-12): spacing gate
+
+`scripts/check-raw-spacing.sh` now enforces an explicit `spacing-flag:`
+marker on every raw radius/spacing utility. The trigger row's `gap-3` and
+`restChildren`'s `gap-1 pt-1` (both above) had no comment directly adjacent
+to the flagged line — the reasoning already recorded here just wasn't
+placed where the gate looks — so both got a short new pointer comment added
+at the actual `className` line. No binding or reasoning changed.

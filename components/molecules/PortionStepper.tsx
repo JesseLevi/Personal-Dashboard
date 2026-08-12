@@ -46,6 +46,9 @@ export function PortionStepper({
   return (
     <div
       className={clsx(
+        // spacing-flag: `gap-1` — Button's own root gap-1 is unbound in
+        // Figma (Alignment=Center); this component declares Filled-style
+        // equivalence, not an independent measurement. design/notes/PortionStepper.md.
         "inline-flex h-10 items-center gap-1 rounded-control bg-surface-secondary",
         className,
       )}

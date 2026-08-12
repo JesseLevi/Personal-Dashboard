@@ -42,3 +42,8 @@ ground truth). "Type" SLOT: `rounded-xl`→`rounded-card`
 **Left unconverted, flagged:** the title row's `gap-3` ("Title + Button"
 frame, itemSpacing 12px) has no bound variable in the fetched node — a real
 absence, not a missed lookup.
+
+## TICKET #218 (2026-08-12): spacing gate
+
+`scripts/check-raw-spacing.sh` now enforces an explicit `spacing-flag:`
+marker. Added to the existing comment above; no reasoning changed.

@@ -90,3 +90,12 @@ no-results message's `px-3 pb-2` — both belong to this same synthetic row
 and don't map cleanly onto any single measured node's binding; converting
 them would mean guessing from value alone, which this ticket's core rule
 forbids.
+
+## TICKET #218 (2026-08-12): spacing gate
+
+`scripts/check-raw-spacing.sh` now enforces an explicit `spacing-flag:`
+marker directly adjacent to the flagged line. Both exceptions above
+(`px-3 pb-2` and the inner icon+label `gap-2`) had no comment immediately
+next to their own `className` — the existing #205 paragraph covers the
+row as a whole from a few lines away — so each got its own short pointer
+comment at the actual line. No reasoning changed.

@@ -22,6 +22,7 @@
     "test:rls": "supabase test db",
     "check:rls-coverage": "bash scripts/check-rls-coverage.sh",
     "check:server-only": "bash scripts/check-server-only.sh",
+    "check:raw-spacing": "bash scripts/check-raw-spacing.sh",
     "check:comment-budget": "bash scripts/check-comment-budget.sh",
     "check:tokens-drift": "node scripts/check-tokens-drift.mjs"
   },

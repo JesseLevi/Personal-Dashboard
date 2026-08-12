@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
  * non-priority name, `highlight`. See design/notes/Tag.md.
  */
 const tagVariants = cva(
-  // `gap-2` stays raw (#205): the fetched node binds this itemSpacing to
+  // spacing-flag: `gap-2` stays raw (#205): the fetched node binds this itemSpacing to
   // `spacing/mini`, a Figma variable outside the Semantics/Responsive
   // collection this pipeline mirrors — no matching semantic token exists.
   // Value (8px) is never inferred onto `inline-sm`/`component-sm`, which

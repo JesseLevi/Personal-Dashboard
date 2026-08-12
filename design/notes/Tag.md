@@ -89,3 +89,8 @@ aliased onto either (#205's own core rule: read the binding, never the
 value) — `spacing/mini` is a distinct variable this pipeline doesn't mirror.
 Stays a raw `gap-2` until a future token-sync pass adds the variable or a
 designer rebinds it.
+
+## TICKET #218 (2026-08-12): spacing gate
+
+`scripts/check-raw-spacing.sh` now enforces an explicit `spacing-flag:`
+marker. Added to the existing comment above; no reasoning changed.

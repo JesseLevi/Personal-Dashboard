@@ -85,3 +85,12 @@ Not converted: `gap-1`'s literal Figma value on node 3953:9750 (itemSpacing
 24, unbound) does not match the rendered 4px — expected, not a discrepancy
 to chase, since the header comment already establishes this wrapper
 deliberately does not follow that node.
+
+## TICKET #218 (2026-08-12): spacing gate
+
+`scripts/check-raw-spacing.sh` now enforces an explicit `spacing-flag:`
+marker directly adjacent to the flagged line — the header doc above already
+carried this reasoning but sits too far from the `gap-1` class string
+(separated by the component's props/function code) for the gate to see, so
+a new short pointer comment was added at the actual `className` call
+instead. No reasoning changed.

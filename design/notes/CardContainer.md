@@ -53,3 +53,15 @@ matches this component having no `pt-` class at all). Header row: `gap-4`
 ("Info" child)→`gap-inline-lg`; action-button row `gap-2` ("Edit"
 child)→`gap-inline-sm`. Content slot `gap-2`→`gap-stack-sm`
 (`itemSpacing`→`spacing/stack/stack-sm`, VERTICAL).
+
+## TICKET #218 (2026-08-12): missed in #205 — header row's own `px-2`
+
+`#205` converted the header row's children (`gap-4`/`gap-2` above) but left
+the "Carousel details" row frame's *own* `px-2` raw — missed, not a
+deliberate exception. Re-measured via the figma-console-mcp bridge on that
+frame directly (not the root, not the children): `boundVariables.paddingLeft`
+and `.paddingRight` both bind `spacing/component/padding-sm`
+(`VariableID:3643:136`), the exact same token `Atom/Button`'s `size=default`
+already reads (`design/tokens.json`'s `component-sm` = 8px, byte-identical to
+the raw `px-2` it replaces). Converted to `px-component-sm`; pixel-identical
+by construction, no baseline regenerated.
