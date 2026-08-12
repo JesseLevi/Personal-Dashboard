@@ -20,11 +20,21 @@ import nl from "../messages/nl.json";
  *   why this Provider (reached by both paths) is the fix rather than another
  *   chrome-side tweak.
  *
- * Background reads the `surface` semantic token via the ordinary `bg-surface`
- * Tailwind utility (no hex, no `dark:` prefix) — this file already imports
- * `app/globals.css`, so `[data-theme="dark"]`'s override in `app/theme.css`
- * applies here exactly like it does in the real app, and Ladle's Light/Dark
- * toggle (which sets `data-theme` on the outer document) flips it.
+ * Background reads the semantic token via an ordinary Tailwind utility (no
+ * hex, no `dark:` prefix) — this file already imports `app/globals.css`, so
+ * `[data-theme="dark"]`'s override in `app/theme.css` applies here exactly
+ * like it does in the real app, and Ladle's Light/Dark toggle (which sets
+ * `data-theme` on the outer document) flips it.
+ *
+ * The utility is `bg-surface-highlight-white`, not `bg-surface`: #203 renamed
+ * that token onto its Figma path and missed this file, so from #203 until
+ * #213 the class named a token that no longer existed and Tailwind emitted no
+ * `.bg-surface` rule at all — the canvas silently reverted to the
+ * browser-default white this Provider was written to replace. In light mode
+ * that is the same white the token resolves to, which is why no baseline ever
+ * moved and nobody noticed; **in dark mode it meant the canvas stayed white**
+ * while the components on it switched, i.e. the toggle this comment describes
+ * had been dead for two tickets.
  *
  * Unlike the outer chrome's stylesheet injection (.ladle/vite.config.mjs, a
  * `pre`-order transformIndexHtml hook — needed because #49 found that a plain
@@ -44,6 +54,6 @@ import nl from "../messages/nl.json";
  */
 export const Provider: GlobalProvider = ({ children }) => (
   <NextIntlClientProvider locale="nl" messages={nl}>
-    <div className="min-h-screen bg-surface p-8">{children}</div>
+    <div className="min-h-screen bg-surface-highlight-white p-8">{children}</div>
   </NextIntlClientProvider>
 );
