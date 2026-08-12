@@ -30,6 +30,9 @@ test-results/
 tmp/
 /*.png
 
+# ad-hoc verification/debug screenshots — save here, not the repo root
+screenshots/
+
 # firecrawl CLI local cache
 .firecrawl/
 
