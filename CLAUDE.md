@@ -21,7 +21,7 @@ Session start: read **`docs/HANDOFF.md`** (state, next steps); keep accurate on 
 ## Non-negotiables (apply to every task)
 
 - **Not the architecture layer** — flag ADR/Figma-design-system conflicts, don't silently redesign.
-- **Never build UI absent from Figma** — fetch the dev-ready node via Figma MCP first; never guess from memory or a screenshot.
+- **Never build UI absent from Figma** — fetch the dev-ready node first; never guess from memory or a screenshot. For any *token binding*, use the `figma-console` bridge and read `boundVariables` off the node — a resolved value never identifies a token (`docs/guides/ui-components.md`).
 - **Tailwind v4 utilities + semantic tokens only** — no inline styles/raw hex in `components/` (incl. comments; `check:server-only` greps the file). Missing token → flag, never hardcode.
 - **All data access via Next.js server code** — browser never talks to Supabase directly; `service_role` never leaves server/worker modules (ADR-0002/0003).
 - **Every table**: `user_id` FK + RLS policy + an RLS test in `supabase/tests`, same PR (ADR-0009). Schema changes only via `supabase/migrations`.
@@ -45,6 +45,8 @@ When a ticket forces a trade-off, resolve it in this order:
 - No Docker, no standalone supabase CLI — `supabase` runs via `npx`; `pnpm db:reset` / `pnpm test:rls` are CI/server-only, absence isn't a failure.
 - `gh` installed and authenticated (incl. `project` scope) — board and PR commands work.
 - `.mcp.json` (Figma key) and `.env` are git-ignored on purpose; `.env.example` documents needed vars.
+- Figma: the hosted MCP is rate-limited (Starter plan, no full seat). The **`figma-console` MCP** reaches the file over a local WebSocket to the Desktop Bridge plugin — no limit, and it is the only route that exposes `boundVariables`. Needs Figma Desktop open with the plugin running; check with `figma_get_status` (`probe: true`).
+- Ad-hoc verification/debug screenshots (browser MCP, manual before/after captures) go in `screenshots/` (git-ignored), never the repo root.
 
 ## Commands
 
