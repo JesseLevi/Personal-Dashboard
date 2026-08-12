@@ -88,6 +88,9 @@ export type InputFieldProps =
   | (InputFieldBaseProps & { label: string; id: string })
   | (InputFieldBaseProps & { label?: never });
 
+// spacing-flag: p-0 resets native UA padding, not Figma-sourced. design/notes/InputField.md.
+const NATIVE_CONTROL_BASE = "border-0 bg-transparent p-0 text-base font-semibold text-text-primary";
+
 export function InputField({
   label,
   leadingIcon,
@@ -154,13 +157,13 @@ export function InputField({
               <textarea
                 id={id}
                 {...(props as Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "className">)}
-                className="h-full w-full resize-none border-0 bg-transparent p-0 text-base font-semibold text-text-primary placeholder:text-placeholder focus:outline-none"
+                className={`${NATIVE_CONTROL_BASE} h-full w-full resize-none placeholder:text-placeholder focus:outline-none`}
               />
             ) : options ? (
               <select
                 id={id}
                 {...(props as Omit<SelectHTMLAttributes<HTMLSelectElement>, "className">)}
-                className="w-full appearance-none border-0 bg-transparent p-0 text-base font-semibold text-text-primary focus:outline-none"
+                className={`${NATIVE_CONTROL_BASE} w-full appearance-none focus:outline-none`}
               >
                 {placeholderOption !== undefined ? (
                   <option value="" disabled hidden>
@@ -177,16 +180,18 @@ export function InputField({
               <input
                 id={id}
                 {...(props as Omit<InputHTMLAttributes<HTMLInputElement>, "className">)}
-                className="w-full border-0 bg-transparent p-0 text-base font-semibold text-text-primary placeholder:text-placeholder focus:outline-none"
+                className={`${NATIVE_CONTROL_BASE} w-full placeholder:text-placeholder focus:outline-none`}
               />
             )}
           </label>
+          {/* spacing-flag: gap-2 button row unbound in Figma. design/notes/InputField.md. */}
           {button ? <div className="flex flex-row gap-2">{button}</div> : null}
         </div>
 
         {trailingIcon ? (
           <label
             htmlFor={id}
+            // spacing-flag: gap-2 trailing-icon label unbound in Figma. design/notes/InputField.md.
             className="flex flex-row items-center gap-2 py-component-sm pr-component-sm"
           >
             <Icon name={trailingIcon} className="text-text-secondary" />

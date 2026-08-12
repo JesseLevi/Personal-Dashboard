@@ -144,3 +144,14 @@ a missed lookup. 16px also has no step in this pipeline's `radius` scale
 (4/6/8/12/24) regardless. The mobile-only safe-area `pb-[max(1rem,...)]`
 on the footer stays raw too, same reasoning as `Sidebar.tsx`'s own
 `pt-`/`pb-`.
+
+## TICKET #218 (2026-08-12): spacing gate — per-corner radius was the blind spot
+
+`scripts/check-raw-spacing.sh`'s first cut only matched plain `rounded-*`,
+missing the per-corner form (`rounded-tl-2xl`) entirely — exactly this
+file's own `#205`-documented exception above. Regex extended to
+`rounded-(t|b|l|r|tl|tr|bl|br)-{sm,md,lg,xl,2xl,3xl}` (and confirmed it
+still ignores `rounded-tr-control-outer`/`rounded-bl-control-outer` on the
+same lines, and `rounded-full` below, since none of those carry a size
+step). `rounded-tl-2xl` got the `spacing-flag:` marker added to its
+existing comment above; no reasoning or binding changed.

@@ -100,3 +100,17 @@ node, `itemSpacing`=8, no bound variable) and the trailing-icon label's own
 `gap-2` (`Trekking-icon-container`'s `itemSpacing`=8, likewise unbound).
 Both read as real gaps in the fetched node's `boundVariables` — not a
 missed lookup — so both stay raw pending a designer rebind.
+
+## TICKET #218 (2026-08-12): spacing gate — `p-0` is not a Figma concept
+
+`scripts/check-raw-spacing.sh` (#218) also caught the three native
+`<textarea>`/`<select>`/`<input>` elements' own `p-0`. These reset the
+browser's UA-stylesheet default padding to zero so the control's text sits
+flush inside the already-padded label box — the same reasoning as the
+adjacent `border-0 bg-transparent` on each element, neither of which is a
+Figma spacing/colour read either. There is no Figma node property this
+traces to (Figma text nodes carry no CSS padding), so nothing to convert or
+measure — flagged with `spacing-flag:` at each of the three sites rather
+than invented a "zero" token for a non-design value. The two genuinely
+Figma-sourced `gap-2` gaps above got the same `spacing-flag:` marker added,
+no reasoning change.

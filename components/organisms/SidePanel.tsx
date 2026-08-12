@@ -240,7 +240,7 @@ export function SidePanel({
           // has no step in `radius`'s scale (4/6/8/12/24) either way; a
           // genuine Figma authoring artifact, not a missed lookup. `-xl`
           // corners (12px) → `radius/control-outer`, confirmed on the
-          // fetched node. See design/notes/SidePanel.md.
+          // fetched node. spacing-flag: `rounded-tl-2xl`. See design/notes/SidePanel.md.
           "inset-x-0 bottom-0 max-h-[90vh] rounded-tl-2xl rounded-tr-control-outer",
           // `md:pt-` (#172): only the `md:` shape reaches the physical top
           // of the viewport (`md:inset-y-0`) — the mobile bottom sheet

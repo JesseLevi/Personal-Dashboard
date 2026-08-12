@@ -206,3 +206,10 @@ generalised from the Center variant alone and is wrong — corrected here after
 re-measuring the full set. Left on the record deliberately: it is the same
 sample-one-then-generalise mistake #213 exists to correct, arriving in the
 very ticket that documents it.
+
+## TICKET #218 (2026-08-12): spacing gate
+
+`scripts/check-raw-spacing.sh` now enforces that every raw radius/spacing
+utility in `components/` carries an explicit `spacing-flag:` marker. Root
+`gap-1`'s existing exception (above) got that marker added directly above
+the flagged line — no reasoning or binding changed.

@@ -31,7 +31,7 @@ export function Card({ title, settings, step, children, className }: CardProps) 
   return (
     <div className={clsx("flex w-full flex-col gap-stack-md", className)}>
       {title || settings ? (
-        // `gap-3` stays raw (#205): "Title + Button"'s itemSpacing (12px) has
+        // spacing-flag: `gap-3` stays raw (#205): "Title + Button"'s itemSpacing (12px) has
         // no bound variable in the fetched node — a real gap, not a missed
         // lookup. See design/notes/Card.md.
         <div className="flex w-full items-end justify-between gap-3">

@@ -15,3 +15,11 @@ Measured via `figma_execute`/`boundVariables` on the fetched node
 row's `gap-2` ("Slot", itemSpacing 8px) both read as genuinely unbound in
 the fetched node's `boundVariables` — no matching variable, not a missed
 lookup.
+
+## TICKET #218 (2026-08-12): spacing gate
+
+`scripts/check-raw-spacing.sh` now enforces an explicit `spacing-flag:`
+marker. Both exceptions above got the marker (the "Slot" one also gained an
+explicit `design/notes/` pointer it was missing, being a single-line
+comment with no room for the fuller prose the root `gap-4` has). No
+reasoning changed.

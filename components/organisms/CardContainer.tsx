@@ -56,7 +56,7 @@ export function CardContainer({
         className,
       )}
     >
-      <div className="flex items-center justify-between px-2">
+      <div className="flex items-center justify-between px-component-sm">
         <div className="flex h-12 items-center gap-inline-lg">
           <Icon name={icon} className="text-text-secondary" />
           <p className="text-base font-semibold text-text-primary">{name}</p>

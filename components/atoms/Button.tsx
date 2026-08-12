@@ -18,6 +18,10 @@ const buttonVariants = cva(
   // `chrome-touch` (#172, app/globals.css): every Button is a control, not
   // reading content — no long-press callout/selection on its label, no
   // double-tap-zoom delay. Never applied to actual content text elsewhere.
+  // spacing-flag: root `gap-1` is unbound on Alignment=Center, bound on
+  // Alignment=Left (Figma is internally inconsistent) — design decision,
+  // not a conversion call. design/notes/Button.md,
+  // docs/open-questions.md#button-root-gap-binding-split.
   "chrome-touch inline-flex shrink-0 items-center gap-1 rounded-control text-base font-semibold transition-colors",
   {
     variants: {

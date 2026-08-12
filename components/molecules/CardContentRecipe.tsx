@@ -49,7 +49,7 @@ export function CardContentRecipe({
       <div className="flex flex-1 flex-col justify-center gap-stack-sm">
         <p className="w-full text-base font-semibold text-text-primary">{name}</p>
         {duration && (
-          // `gap-2` stays raw (#205): "Time"'s itemSpacing (8px) has no
+          // spacing-flag: `gap-2` stays raw (#205): "Time"'s itemSpacing (8px) has no
           // bound variable in the fetched node. See design/notes/CardContentRecipe.md.
           <div className="flex items-center gap-2">
             <Icon name="Timer" className="text-text-secondary" />

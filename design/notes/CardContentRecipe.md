@@ -165,3 +165,8 @@ shape either way. "Name + time" `gap-2` (8px, VERTICAL) → `gap-stack-sm`
 
 **Left unconverted, flagged:** the duration row's `gap-2` ("Time" frame,
 itemSpacing 8px) has no bound variable in the fetched node.
+
+## TICKET #218 (2026-08-12): spacing gate
+
+`scripts/check-raw-spacing.sh` now enforces an explicit `spacing-flag:`
+marker. Added to the existing comment above; no reasoning changed.

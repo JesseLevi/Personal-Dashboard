@@ -3,6 +3,13 @@
 - **Code:** `components/molecules/RecipeIngredientRow.tsx` (+ `.stories.tsx`)
 - **Node IDs (reference only, no map entry):** `3717:2926`/`3717:2930`/`3717:2934` ("Rij" frames, `3717:2844`), each three separate `Input-field` instances — `3740:4266`/`3740:4257`/`3740:4275` (row 1, labelled) and the equivalent unlabelled triplets for rows 2/3.
 
+## TICKET #218 (2026-08-12): spacing gate
+
+`scripts/check-raw-spacing.sh` flagged this component's two raw `gap-2`s
+(root row, delete-button column). Both `spacing-flag:` comments point back
+to "Why no `design/figma-map.json` entry" below — there is no Figma node
+for this component at all, so there is nothing to measure or bind against.
+
 ## Why no `design/figma-map.json` entry
 
 Per #126's own instruction: Figma never models "a row" as one named component — it's three independent `Input-field` instances placed side by side, repeated three times with a `LINE` between. Turning that into one React component is this codebase's own reuse decision (three inline-repeated `InputField` triplets would have duplicated a nontrivial amount of markup three times over), not a Figma-sourced component boundary. It still gets a Ladle story, per the same instruction, since it's a real reusable part once built.
