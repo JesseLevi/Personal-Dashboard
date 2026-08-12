@@ -72,3 +72,20 @@ stories also render `variant="medium"` Tags, so their existing baselines
 now show a colour mismatch (blue vs. the old orange) next time
 `pnpm test:visual` runs full — not regenerated here per the ticket's scoped
 instruction, needs a follow-up pass.
+
+## TICKET #205 (2026-08-12): radius/spacing tokens
+
+Measured via `figma_execute`/`boundVariables` on each `Color=*` variant of
+the component set (3626:4515), not inferred from pixels. `px-3` (12px) →
+`px-component-md` (`paddingLeft`/`paddingRight` both bind
+`spacing/component/padding-md`). `rounded-lg` (8px) → `rounded-control`
+(`topLeftRadius` etc. bind `radius/control`).
+
+**Flagged gap, left unconverted:** `gap-2` (8px, `itemSpacing`) binds
+`spacing/mini` — a Figma variable with no counterpart anywhere in
+`design/tokens.json`'s Semantics/Responsive collection. Its value happens to
+equal both `inline-sm` and `component-sm`, which is exactly why it is NOT
+aliased onto either (#205's own core rule: read the binding, never the
+value) — `spacing/mini` is a distinct variable this pipeline doesn't mirror.
+Stays a raw `gap-2` until a future token-sync pass adds the variable or a
+designer rebinds it.

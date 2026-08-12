@@ -25,13 +25,13 @@ export function PageHeader({ title, titleAdornments, actions, className }: PageH
   return (
     <header
       className={clsx(
-        "sticky top-[env(safe-area-inset-top)] z-10 flex items-center justify-between bg-surface-primary pr-4 md:pr-32",
+        "sticky top-[env(safe-area-inset-top)] z-10 flex items-center justify-between bg-surface-primary pr-page-right-equal",
         // #172: header chrome, not reading content — see app/globals.css.
         "chrome-touch",
         className,
       )}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-inline-lg">
         <h1 className="text-xl font-semibold text-text-primary">{title}</h1>
         {titleAdornments}
       </div>

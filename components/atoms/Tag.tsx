@@ -12,7 +12,13 @@ import type { ReactNode } from "react";
  * non-priority name, `highlight`. See design/notes/Tag.md.
  */
 const tagVariants = cva(
-  "inline-flex items-center gap-2 px-3 h-10 rounded-lg text-base font-semibold",
+  // `gap-2` stays raw (#205): the fetched node binds this itemSpacing to
+  // `spacing/mini`, a Figma variable outside the Semantics/Responsive
+  // collection this pipeline mirrors — no matching semantic token exists.
+  // Value (8px) is never inferred onto `inline-sm`/`component-sm`, which
+  // share the same pixels but are genuinely different Figma variables. See
+  // design/notes/Tag.md.
+  "inline-flex items-center gap-2 px-component-md h-10 rounded-control text-base font-semibold",
   {
     variants: {
       variant: {

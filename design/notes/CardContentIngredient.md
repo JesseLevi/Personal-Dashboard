@@ -89,3 +89,41 @@ Ticket: *"Slide effect toegevoegd voor ReceptDetailPage om ingrediënt individue
 
 Visual baselines regenerated for stories that changed props/added a new export: `card-content-ingredient--playground`/`delete-label-nl`/`swipe-to-delete` (renamed prop, same rendered pixels — resting/closed state, unaffected by the rename itself) and the new `card-content-ingredient--swipe-to-cart`; `card--all-content-types` (`Card.stories.tsx`'s own swipe row).
 
+## TICKET #205 (2026-08-12): radius/spacing tokens
+
+Measured via `figma_execute`/`boundVariables` across every `State=*`
+variant of the component set (3727:4021): `Default,Checkbox=None/Unchecked/
+Checked` (3626:4552/3727:4309/3727:4022), `Active,Checkbox=Unchecked`
+(3727:4290, chrome lives on its child "Molecule/Ingredient" 3727:4404),
+`Cart,Checkbox=Unchecked` (its own "Molecule/Ingredient" 4050:11614). The
+row's `gap-5` → `gap-inline-xl` everywhere (`itemSpacing`→
+`spacing/inline/gap-xl` on every state, byte-identical). Padding: closed/
+default row `pl-3 pr-3 py-3` → `pl-component-md pr-component-md
+py-component-md` (Default state's own `padding*`→
+`spacing/component/padding-md` on all four sides). Swiped-open row's
+asymmetric `pl-3 py-3` / `pr-4` (vs. closed `pr-3`) → `pl-component-md
+py-component-md` / `pr-component-lg` (vs. `pr-component-md`) — Active's
+`paddingRight` genuinely binds the LARGER `spacing/component/padding-lg`
+(16px) while `paddingLeft/Top/Bottom` stay `padding-md` (12px), so the
+existing offset-dependent `pr-4`/`pr-3` split already tracked two real,
+distinct Figma states (Default's symmetric 12px vs. Active's asymmetric
+16px right edge) — not an arbitrary UI flourish, now expressed in tokens
+instead of raw steps.
+
+`rounded-3xl` (both the swipe wrapper and the row itself, every branch) →
+`rounded-container`. Directly measured on Active/Cart's "Molecule/
+Ingredient" frames (`topLeftRadius`→`radius/container`, 24px). The
+`Default` state's own sampled node shows NO radius at all (0, no
+`boundVariables` entry) — Figma's static Default sample apparently omits
+the swipe-reveal chrome. `rounded-3xl` was already applied uniformly across
+every state before this ticket (#166's own overflow-hidden/divider
+reasoning), a pre-existing, documented decision this ticket doesn't
+revisit — only retokenizes, since `radius-container` (24px) and the
+previous `rounded-3xl` (24px) compile to byte-identical CSS.
+
+**Left unconverted (no measurable node):** "Ingredient + quantity"'s 80px
+itemSpacing is unbound in Figma and isn't rendered via an explicit gap
+class in code anyway (`justify-between` handles it). `Tag`'s own
+`spacing/mini` gap is Tag.tsx's own flagged gap (see design/notes/Tag.md),
+not this component's to fix.
+

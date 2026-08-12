@@ -228,3 +228,24 @@ Supabase session this machine doesn't have):
   after the change: both render correctly, no clipping/misalignment — see
   the Ladle-decorator-padding note just above for why their pixel content
   isn't byte-identical to the pre-#110 baseline.
+
+## TICKET #205 (2026-08-12): radius/spacing tokens
+
+Measured via `figma_execute`/`boundVariables` on the fetched node
+(3670:1976). Root `gap-4`→`gap-inline-lg`
+(`itemSpacing`→`spacing/inline/gap-lg`, matches `Slot`'s own binding too).
+`pl-4 md:pl-32`/`pr-4 md:pr-32` (the #110 bleed idiom above) →
+`pl-page-left`/`pr-page-right-equal` — no node lookup needed here, per the
+ticket's own page-padding rule (unambiguous 16/128 split, already in
+`app/theme.css`'s `@media (min-width: 768px)` block). `-ml-4 md:-ml-32`
+stays raw: it is a negative-margin bleed trick, not itself a page-padding
+utility, and out of this ticket's explicit `pl-`/`pr-` scope.
+
+**Comment-shrink pass (unrelated to the token swap itself):** this file was
+already over `check:comment-budget`'s 30% cap on `main` (44.8%, pre-existing
+— unaffected by this ticket's own edit, which was net-neutral on the
+ratio). Since every fact in the three inline comment blocks (items-start/
+overflow-x-auto/no-w-full reasoning, `-ml-*`/`pl-*`/`pr-*` bleed mechanics,
+scrollbar hiding) already lives above in this file (#90/#110), the blocks
+were reduced to a single pointer line each rather than duplicating that
+record a second time in the component.

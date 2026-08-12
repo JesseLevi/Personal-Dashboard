@@ -234,15 +234,21 @@ export function SidePanel({
           level === 2 ? "z-[70]" : "z-50",
           // Corner radii are 16/12, not a uniform value on either shape —
           // Figma reports "16px 12px 0px 0px" (mobile) / "16px 0px 0px 12px"
-          // (desktop); see design/notes/SidePanel.md.
-          "inset-x-0 bottom-0 max-h-[90vh] rounded-tl-2xl rounded-tr-xl",
+          // (desktop). #205: `rounded-tl-2xl`/(desktop) stays raw — the
+          // fetched node's own `topLeftRadius` binds a SPACING variable
+          // (`spacing/component/padding-lg`), not a radius one, and 16px
+          // has no step in `radius`'s scale (4/6/8/12/24) either way; a
+          // genuine Figma authoring artifact, not a missed lookup. `-xl`
+          // corners (12px) → `radius/control-outer`, confirmed on the
+          // fetched node. See design/notes/SidePanel.md.
+          "inset-x-0 bottom-0 max-h-[90vh] rounded-tl-2xl rounded-tr-control-outer",
           // `md:pt-` (#172): only the `md:` shape reaches the physical top
           // of the viewport (`md:inset-y-0`) — the mobile bottom sheet
           // never does, so it's exempt. No `max()` needed (unlike Sidebar's
           // idiom): there's no base padding to protect, `env()` resolves to
           // 0 with no inset, and the close button already has its own
           // click target inside the h-14 handle strip below.
-          "md:inset-x-auto md:inset-y-0 md:right-0 md:h-full md:max-h-none md:w-[400px] md:rounded-tr-none md:rounded-bl-xl md:pt-[env(safe-area-inset-top)]",
+          "md:inset-x-auto md:inset-y-0 md:right-0 md:h-full md:max-h-none md:w-[400px] md:rounded-tr-none md:rounded-bl-control-outer md:pt-[env(safe-area-inset-top)]",
           open
             ? "translate-x-0 translate-y-0"
             : "translate-y-full md:translate-x-full md:translate-y-0",
@@ -253,7 +259,7 @@ export function SidePanel({
           {title}
         </h2>
         <div
-          className="relative flex h-14 shrink-0 touch-none items-center justify-end px-4 md:touch-auto"
+          className="relative flex h-14 shrink-0 touch-none items-center justify-end px-component-lg md:touch-auto"
           onPointerDown={handleHandlePointerDown}
           onPointerMove={handleHandlePointerMove}
           onPointerUp={(event) => endDrag(event, false)}
@@ -269,7 +275,7 @@ export function SidePanel({
           />
           <Button variant="filled" icon="X" aria-label={closeLabel} onClick={onClose} />
         </div>
-        <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-4 pb-4">
+        <div className="flex min-h-0 flex-1 flex-col gap-stack-xl overflow-y-auto px-component-lg pb-component-lg">
           {children}
         </div>
         {footer && (
@@ -288,7 +294,7 @@ export function SidePanel({
             // `max()` only ever adds space, never shrinks the existing
             // padding on devices with no inset. Unverified on a real device;
             // see design/notes/SidePanel.md.
-            className="flex shrink-0 flex-col gap-2 border-t border-stroke-primary bg-surface-highlight-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:border-t-0 md:bg-transparent md:pb-4"
+            className="flex shrink-0 flex-col gap-inline-sm border-t border-stroke-primary bg-surface-highlight-white p-component-lg pb-[max(1rem,env(safe-area-inset-bottom))] md:border-t-0 md:bg-transparent md:pb-component-lg"
           >
             {footer}
           </div>

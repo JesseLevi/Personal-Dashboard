@@ -32,7 +32,7 @@ export function CardContentRecipe({
   className,
 }: CardContentRecipeProps) {
   return (
-    <div className={clsx("flex w-full gap-4", className)}>
+    <div className={clsx("flex w-full gap-inline-lg", className)}>
       {imageUrl ? (
         <img
           src={imageUrl}
@@ -41,14 +41,16 @@ export function CardContentRecipe({
           height={96}
           loading="lazy"
           decoding="async"
-          className="h-24 w-24 shrink-0 rounded object-cover"
+          className="h-24 w-24 shrink-0 rounded-card-inner object-cover"
         />
       ) : (
-        <div aria-hidden="true" className="h-24 w-24 shrink-0 rounded bg-surface-primary" />
+        <div aria-hidden="true" className="h-24 w-24 shrink-0 rounded-card-inner bg-surface-primary" />
       )}
-      <div className="flex flex-1 flex-col justify-center gap-2">
+      <div className="flex flex-1 flex-col justify-center gap-stack-sm">
         <p className="w-full text-base font-semibold text-text-primary">{name}</p>
         {duration && (
+          // `gap-2` stays raw (#205): "Time"'s itemSpacing (8px) has no
+          // bound variable in the fetched node. See design/notes/CardContentRecipe.md.
           <div className="flex items-center gap-2">
             <Icon name="Timer" className="text-text-secondary" />
             <p className="text-sm font-semibold text-text-secondary">{duration}</p>

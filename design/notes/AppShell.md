@@ -250,3 +250,14 @@ but it's a deliberate call, not an oversight, and is flagged here per
   stone-100 → stone-900), it is only the PNG that doesn't. A dark counterpart
   has to come from design; inventing one here would be building UI Figma
   doesn't have. Tracked as `docs/open-questions.md#login-visual-has-no-dark-asset`.
+
+## TICKET #205 (2026-08-12): page-padding token
+
+`AppShellNav.tsx`'s `<main>`: `pl-4 md:pl-32`→`pl-page-left`. No node
+lookup needed — the ticket's own page-padding rule treats this split (16
+mobile / 128 desktop) as unambiguous, already backed by
+`app/theme.css`'s `@media (min-width: 768px)` override. `pt-[max(1rem,...)]`/
+`pb-20`/`md:pt-20`/`md:pb-20` stay raw, unchanged: they compose the
+safe-area idiom documented above, a different (and riskier to touch)
+concern than plain page padding, out of this ticket's explicit `pl-`/`pr-`
+scope.

@@ -28,8 +28,11 @@ export function CardContentTicket({
   className,
 }: CardContentTicketProps) {
   return (
-    <div className={clsx("flex w-full flex-col justify-center gap-4 p-3", className)}>
+    // `gap-4` stays raw (#205): root itemSpacing (16px) has no bound
+    // variable in the fetched node. See design/notes/CardContentTicket.md.
+    <div className={clsx("flex w-full flex-col justify-center gap-4 p-component-md", className)}>
       <p className="w-full text-base font-semibold text-text-primary">{title}</p>
+      {/* `gap-2` stays raw: "Slot"'s itemSpacing (8px) is likewise unbound. */}
       <div className="flex w-full flex-wrap gap-2">{children}</div>
     </div>
   );

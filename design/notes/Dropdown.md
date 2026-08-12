@@ -78,3 +78,26 @@ The panel now carries `transition-colors hover:border-border-hover active:border
 **Applied only when `label` is present.** Labelled Dropdown is a field; labelless Dropdown is a floating menu panel (`NutritionalDataRow`'s attribution popover, `PasAanPanel`'s unit menu, `TeDoenHeader`'s sort/board-switcher), where a hover border on the panel would fire whenever the pointer is anywhere inside it and fight the option rows' own hover feedback. The `label ? … : "gap-1"` branch already existed for the gap rule, so this added no new conditional.
 
 Measured in a real browser (Playwright against `pnpm ladle`, `dropdown--closed`, real mouse events with the 200ms transition allowed to settle, computed `border-top-color` compared against the resolved custom properties): rest `--color-border`, hover `--color-border-hover`, mousedown `--color-border-input-active`, Tab-to-trigger `--color-border-selected`. All four exact.
+
+## TICKET #205 (2026-08-12): radius/spacing tokens
+
+Measured via `figma_execute`/`boundVariables` on `Dropdown` (3705:4446,
+root) and its one real child, `Slot` (3705:4471). Root `gap-2` (8px,
+VERTICAL) → `gap-stack-sm` (`itemSpacing`→`spacing/stack/stack-sm`). Root's
+own `rounded-xl` (kept in sync with the panel's radius purely to fix the
+`shadow-sm` square-corner bug, per the comment above it) → matches `Slot`'s
+measured `topLeftRadius`→`radius/control-outer`, so it moves to
+`rounded-control-outer` too. `Slot`: `rounded-xl`→`rounded-control-outer`
+(12px), `p-1`(4px, all sides)→`p-component-xs`. Labelless branch's own
+`gap-1` (4px) → `gap-inline-xs` — `Slot`'s `itemSpacing` binds
+`spacing/inline/gap-xs` despite `Slot` being a VERTICAL frame, the same
+axis-crosses-binding pattern found in `InputField`'s `Container`: read
+binding wins over the axis heuristic.
+
+**Left unconverted (no measurable node):** the labelled trigger row's
+`gap-3`, the chevron's `mr-2`, and `restChildren`'s `gap-1 pt-1`. These are
+Dropdown's own composed layout around the SLOT, not part of `Slot`'s
+fetched sample content — `Slot`'s Figma children are plain `Button/Default`
+instances with no separate "trigger + chevron" wrapper frame to measure, so
+there is no node whose `boundVariables` these could read. Not a value-match
+guess withheld; there is nothing to read.

@@ -18,14 +18,14 @@ const buttonVariants = cva(
   // `chrome-touch` (#172, app/globals.css): every Button is a control, not
   // reading content — no long-press callout/selection on its label, no
   // double-tap-zoom delay. Never applied to actual content text elsewhere.
-  "chrome-touch inline-flex shrink-0 items-center gap-1 rounded-lg text-base font-semibold transition-colors",
+  "chrome-touch inline-flex shrink-0 items-center gap-1 rounded-control text-base font-semibold transition-colors",
   {
     variants: {
       // No Figma Size property — compact/iconOnlyDefault are structural
       // (size-N, width=height stated directly). iconOnlyDefault is
       // internal-only; see design/notes/Button.md.
       size: {
-        default: "h-10 px-2",
+        default: "h-10 px-component-sm",
         compact: "size-8 justify-center",
         iconOnlyDefault: "size-10 justify-center",
       },
@@ -118,8 +118,8 @@ export function Button({
       })}
       {...props}
     >
-      {/* Mirrors Figma's "Leading + Text" frame (row, gap-2 = 8px, #112) as the root's first slot. */}
-      <span className="flex items-center gap-2">
+      {/* Mirrors Figma's "Leading + Text" frame (row, gap-inline-sm = 8px, #112) as the root's first slot. */}
+      <span className="flex items-center gap-inline-sm">
         {icon && <Icon name={icon} />}
         {children}
       </span>

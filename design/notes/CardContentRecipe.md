@@ -152,3 +152,16 @@ not-yet-saved recipe's own freshly-picked photo) turned out not to need a
 URL of any kind: `ImageUploadField` only ever displays the picked file's
 *name*, never a rendered preview image, so there was nothing for a signed
 URL to back. Confirmed unused by a repo-wide grep before deletion.
+
+## TICKET #205 (2026-08-12): radius/spacing tokens
+
+Measured via `figma_execute`/`boundVariables` on the fetched node
+(3628:67). Root `gap-4` (16px, HORIZONTAL) → `gap-inline-lg`
+(`itemSpacing`→`spacing/inline/gap-lg`). Thumbnail's plain `rounded` (4px)
+→ `rounded-card-inner` (`topLeftRadius`→`radius/card-inner`) — applied to
+both the real `<img>` and the no-photo placeholder `<div>` above, same
+shape either way. "Name + time" `gap-2` (8px, VERTICAL) → `gap-stack-sm`
+(`itemSpacing`→`spacing/stack/stack-sm`).
+
+**Left unconverted, flagged:** the duration row's `gap-2` ("Time" frame,
+itemSpacing 8px) has no bound variable in the fetched node.

@@ -41,3 +41,15 @@ Re-fetched 3650:1297 (unchanged since #75 — still only Name/Hoeveelheid `compo
 **Empty-state width, flagged not touched:** 3878:10175's `Card-container` instances measure a fixed 312×160 (`layout_b7437a7a` in the fetched payload) — a third width, next to the filled state's 296 (mobile)/320 (desktop). Per `design/notes/Carousel.md`, the 280px column width is owned by `Carousel.tsx`'s wrapper div (`w-70 shrink-0`), not by `CardContainer` itself, and this ticket doesn't touch that division. Reporting the 312px measurement here since it's a real discrepancy against `Carousel.tsx`'s current fixed 280px — unresolved, for a future ticket that wires the empty state into `Carousel`.
 
 No new token gaps: the empty-state `Button` reuses the existing `variant="white"` styling verbatim (see `design/notes/Button.md`), no colour introduced by this ticket.
+
+## TICKET #205 (2026-08-12): radius/spacing tokens
+
+Measured via `figma_execute`/`boundVariables` on the fetched node
+(3650:1297). Root: `rounded-3xl`→`rounded-container`
+(`topLeftRadius`→`radius/container`), `px-3`→`px-component-md`
+(`paddingLeft/Right`→`spacing/component/padding-md`), `pb-3`→
+`pb-component-md` (`paddingBottom`, same token; `paddingTop` is unbound —
+matches this component having no `pt-` class at all). Header row: `gap-4`
+("Info" child)→`gap-inline-lg`; action-button row `gap-2` ("Edit"
+child)→`gap-inline-sm`. Content slot `gap-2`→`gap-stack-sm`
+(`itemSpacing`→`spacing/stack/stack-sm`, VERTICAL).

@@ -50,3 +50,14 @@ Passing `children` (even icon-only content) always routes through `Button`'s **l
 ## Verification
 
 `pnpm lint`/`typecheck`/`test`/`build`/`check:server-only`/`check:comment-budget`/`test:visual` (full suite, twice) all run clean. Verified live against the real hosted Supabase project (Playwright, `pnpm dev`, `/recepten/[recipeId]`, throwaway test user, deleted afterward): both the labelled header instance and the icon-only swipe-revealed instance correctly swap `Face`s on click (`aria-hidden` flips, classes swap between `translate-y-0`/`-translate-y-full`/`translate-y-full`) and revert on their own — measured against the then-current 1.5s timer, raised to 2s afterwards on user request without a fresh live run; `prefers-reduced-motion` (real `page.emulateMedia`, not a class toggle) makes `getComputedStyle(...).transitionProperty` read `"none"` on both `Face`s and the `Button` root. Full detail, including the one pre-existing hosted-schema gap this surfaced (unrelated to this component): `design/notes/RecipeDetailPage.md`'s own #179 part 2 entry.
+
+## TICKET #205 (2026-08-12): spacing token
+
+`Face`'s own `gap-2`→`gap-inline-sm`. Measured via `figma_execute`/
+`boundVariables` on the fetched frame (4051:12960): most of its "Leading +
+Text" children bind `spacing/inline/gap-sm` (a few sibling frames in the
+same animation set show no binding at all — an artifact of Figma's
+duplicate-for-each-animation-frame authoring, not a real divergence), and
+this token already matches `Atom/Button`'s own "Leading + Text" binding
+that `Face` recreates for the slide animation. No radius/other padding
+classes on this file — `Button` supplies its own chrome untouched.

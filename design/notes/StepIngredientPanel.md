@@ -38,3 +38,11 @@ User feedback: "Onderaan de opslaan button is platgedrukt. Heeft niet de juiste 
 ## Ladle stories
 
 `Empty` (no pre-selection), `WithSelection` (two of three real rows pre-checked), `Interactive` (stateful, exercises checkbox toggling + `onSave`'s payload via `console.log`). All three sample lists include one empty-name row to make the filter visible in the story fixture, not just asserted in code. Wrapped in `<div className="min-h-screen">` — `SidePanel.stories.tsx`'s own known trap (a bare static `SidePanel` story crops to a 1280x64 sliver).
+
+## TICKET #205 (2026-08-12): spacing token
+
+Footer `gap-2`→`gap-inline-sm`. Measured via `figma_execute`/
+`boundVariables` on "Pull-up panel" (3749:3241)'s own "Bottom" child
+(3749:3250): `itemSpacing`→`spacing/inline/gap-sm`. The panel's own
+chrome (padding/radius/root gap) lives in `SidePanel.tsx`, not here — see
+that component's own #205 entry.

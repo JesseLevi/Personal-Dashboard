@@ -63,3 +63,19 @@ all three states.
 Whether these segments should have *any* pointer affordance is a real open
 question, tracked at `docs/open-questions.md#no-pointer-affordance` — not
 answered here, and deliberately not invented.
+
+## TICKET #205 (2026-08-12): radius/spacing tokens
+
+Measured via `figma_execute`/`boundVariables` on `Button/Toggle` (3623:4345)
+directly, not its instances. Track root: `itemSpacing` (4px) →
+`spacing/inline/gap-xs` (`gap-1` → `gap-inline-xs`); `paddingLeft`/`Right`
+(4px) → `spacing/component/padding-xs` (`p-1` → `p-component-xs`);
+`topLeftRadius` (8px) → `radius/control` (`rounded-lg` → `rounded-control`).
+The sliding indicator (`Active`, node 3649:384, a RECTANGLE not a frame):
+`topLeftRadius` (6px) → `radius/control-inner` (`rounded-md` →
+`rounded-control-inner`). Its `top-1 left-1` inset — 4px, matching the
+track's own padding exactly, both by value and by role (it sits inset from
+the track edge by that padding) — moves to `top-component-xs
+left-component-xs`; `--spacing-component-xs` is emitted under the
+`--spacing-*` namespace like every step/component/inline/stack token, so it
+backs inset utilities the same way it backs `p-`/`gap-`.

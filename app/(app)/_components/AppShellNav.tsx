@@ -194,7 +194,7 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
           topmost on-screen chrome on a notched iPhone in standalone mode,
           so it needs the same `max()` safe-area idiom #113 used on
           Sidebar/SidePanel, or it renders partly under the status bar. */}
-      <main className="flex min-w-0 flex-1 flex-col gap-6 pt-[max(1rem,env(safe-area-inset-top))] pb-20 pl-4 md:pt-20 md:pb-20 md:pl-32">
+      <main className="flex min-w-0 flex-1 flex-col gap-6 pt-[max(1rem,env(safe-area-inset-top))] pb-20 pl-page-left md:pt-20 md:pb-20">
         <Button
           variant="filled"
           icon="PanelLeftOpen"

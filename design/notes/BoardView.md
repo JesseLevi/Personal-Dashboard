@@ -149,3 +149,11 @@ The ticket gave two mutually exclusive candidate causes and an explicit order: r
 By the ticket's own elimination (fast in Ladle → the hang is specific to `/te-doen`), the cause is the `moveCard()`/`router.refresh()` round trip in `app/(app)/te-doen/TeDoenBoard.tsx`, not this component — the fix lives entirely there. Full reasoning: `design/notes/TeDoenBoard.md`'s own `TICKET #114` section. Nothing in `BoardView.tsx` changed for #114.
 
 **Not verified against the real `/te-doen` route** — this worktree has no `.env` (Supabase credentials are git-ignored per `CLAUDE.md`, and this dev machine has no local Supabase/Docker), so the actual authenticated board couldn't be exercised end-to-end. The fix (removing `router.refresh()` from a successful drag-move, since `applyCardMove`'s optimistic result already is the correct end state and `moveCard` re-queries live sibling positions server-side on every call rather than trusting client-cached ones) is reasoned from reading `TeDoenBoard.tsx`/`actions.ts` directly, not from reproducing the 3s hang live.
+
+## TICKET #205 (2026-08-12): spacing token
+
+The sortable-cards wrapper's own `gap-2`→`gap-stack-sm`. Not independently
+re-measured (this wrapper exists only for `useDroppable`'s hit-test, per
+this file's own comment) — bound to the same token as `CardContainer`'s
+"Content" slot (`spacing/stack/stack-sm`, see design/notes/CardContainer.md's
+#205 entry), which this wrapper stands in for pixel-for-pixel.

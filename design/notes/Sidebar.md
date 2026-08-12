@@ -304,3 +304,13 @@ doesn't override" trap `CLAUDE.md` warns about — same specificity, unreliable
 win, not a safe fix from `className` alone. Judged an acceptable trade-off:
 a ~4-8px letter sliver against a "no text jump" fix that needs no client JS
 and touches no other file.
+
+## TICKET #205 (2026-08-12): radius/spacing tokens
+
+Measured via `figma_execute`/`boundVariables` on both `Collapsed=No`
+(3674:5665) and `Collapsed=Yes` (3632:460) — identical bindings. Root
+`gap-12`→`gap-stack-xxl` (`itemSpacing`→`spacing/stack/stack-xxl`), `p-4`→
+`p-component-lg` (`padding*`→`spacing/component/padding-lg`). Nav-item list
+`gap-3` ("Item container")→`gap-stack-md`. The `pt-[max(1rem,...)]`/
+`pb-[max(1rem,...)]` safe-area overrides on top of `p-4` stay raw — same
+reasoning as `AppShellNav.tsx`'s own `pt-`, out of this ticket's scope.

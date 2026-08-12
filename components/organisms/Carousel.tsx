@@ -28,22 +28,10 @@ export function Carousel({
     <div
       tabIndex={0}
       className={clsx(
-        // items-start hugs card count; overflow-x-auto is a GAP (no Figma
-        // scroll affordance) — see design/notes/Carousel.md. No `w-full`:
-        // the negative margin below needs an `auto` width to expand into
-        // (a fixed 100% would just translate the box, not widen it).
-        "flex items-start gap-4 overflow-x-auto",
-        // Bleeds past whatever left padding the caller's ancestor applies
-        // (`-ml-*` cancels it, `pl-*` restores the same visual card
-        // position) so this element's own box — the actual clip boundary
-        // for scrolled-away columns — reaches the true edge instead of
-        // stopping at that padding. `pr-*` is new: the matching end-of-row
-        // margin, kept inside the scrolling box so it survives a full
-        // scroll instead of only showing at rest.
-        "-ml-4 pl-4 pr-4 md:-ml-32 md:pl-32 md:pr-32",
-        // Scrollbar hidden, scrolling itself untouched — wheel/trackpad/
-        // shift-scroll/touch aren't scrollbar-dependent, and `tabIndex={0}`
-        // keeps the row keyboard-focusable so arrow keys still scroll it.
+        // items-start/overflow-x-auto/no-w-full/-ml-*/scrollbar-hiding: see
+        // design/notes/Carousel.md (#90, #110, #205).
+        "flex items-start gap-inline-lg overflow-x-auto",
+        "-ml-4 pl-page-left pr-page-right-equal md:-ml-32",
         "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         className,
       )}

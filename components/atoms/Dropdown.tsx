@@ -105,10 +105,13 @@ export function Dropdown({
 
   return (
     <div
-      // `rounded-xl` here, not just on the panel: without it a caller's
-      // `shadow-sm` paints square corners behind the rounded panel. See
-      // design/notes/Dropdown.md.
-      className={clsx("flex w-full flex-col gap-2 rounded-xl", className)}
+      // `rounded-control-outer` here, not just on the panel: without it a
+      // caller's `shadow-sm` paints square corners behind the rounded panel.
+      // See design/notes/Dropdown.md.
+      className={clsx(
+        "flex w-full flex-col gap-stack-sm rounded-control-outer",
+        className,
+      )}
       onKeyDown={label ? handleRootKeyDown : undefined}
     >
       {label ? (
@@ -125,10 +128,10 @@ export function Dropdown({
         // while labelless is a floating menu panel, where a hover border on
         // the panel would fight its option rows' own hover.
         className={clsx(
-          "flex w-full flex-col rounded-xl border border-stroke-primary bg-surface-highlight-white p-1",
+          "flex w-full flex-col rounded-control-outer border border-stroke-primary bg-surface-highlight-white p-component-xs",
           label
             ? "transition-colors hover:border-stroke-primary-hover active:border-stroke-primary-active focus-within:border-stroke-primary-selected"
-            : "gap-1",
+            : "gap-inline-xs",
         )}
         {...rest}
       >

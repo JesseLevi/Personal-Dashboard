@@ -290,7 +290,7 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
         // is full-width on mobile (Figma's Button carries its own
         // `alignSelf: stretch`) and hugs, centred, on desktop (no such
         // override there) -- `w-full md:w-fit` reproduces that split.
-        <div className="pr-4 md:pr-32">
+        <div className="pr-page-right-equal">
           <Card>
             <div className="flex w-full flex-col items-center justify-center gap-2 py-4">
               <p className="text-base font-semibold text-text-secondary">{t("emptyStateTitle")}</p>
@@ -305,7 +305,7 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
           </Card>
         </div>
       ) : (
-        <div className="flex w-full flex-col gap-6 pr-4 md:pr-32">
+        <div className="flex w-full flex-col gap-6 pr-page-right-equal">
           {groups.map((group) => (
             <Card key={group.key} title={group.label}>
               {group.items.map((item, index) => (

@@ -26,3 +26,19 @@ root (column, gap-3, hug height, contextual width -> w-full)
 ```
 
 Text style: `text-base/semibold` (Figma) -> `text-base font-semibold` per the typography map in design/tokens.json.
+
+## TICKET #205 (2026-08-12): radius/spacing tokens
+
+Measured via `figma_execute`/`boundVariables` on both `Title=No` (3624:4448)
+and `Title=Yes` (3997:25431) variants — identical bindings. Root `gap-3`
+(12px, VERTICAL) → `gap-stack-md` (`itemSpacing`→`spacing/stack/stack-md`).
+"Stap + Card" row `gap-3` → `gap-stack-md` too — this frame is HORIZONTAL
+but its `itemSpacing` binds the `stack` family regardless (read the
+binding, not the axis: the axis rule is a heuristic, the actual binding is
+ground truth). "Type" SLOT: `rounded-xl`→`rounded-card`
+(`topLeftRadius`→`radius/card`), `p-2`→`p-component-sm`
+(`padding*`→`spacing/component/padding-sm`).
+
+**Left unconverted, flagged:** the title row's `gap-3` ("Title + Button"
+frame, itemSpacing 12px) has no bound variable in the fetched node — a real
+absence, not a missed lookup.

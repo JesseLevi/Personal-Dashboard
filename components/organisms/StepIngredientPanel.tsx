@@ -91,7 +91,7 @@ export function StepIngredientPanel({
       // child collapses to ~0 height (basis-0 applies on the column axis
       // instead of a row's). See design/notes/StepIngredientPanel.md.
       footer={
-        <div className="flex gap-2">
+        <div className="flex gap-inline-sm">
           <Button variant="filled" icon="Save" className="grow basis-0" onClick={handleSave}>
             {t("saveLabel")}
           </Button>

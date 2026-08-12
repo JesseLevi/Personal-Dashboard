@@ -29,8 +29,11 @@ export interface CardProps {
 
 export function Card({ title, settings, step, children, className }: CardProps) {
   return (
-    <div className={clsx("flex w-full flex-col gap-3", className)}>
+    <div className={clsx("flex w-full flex-col gap-stack-md", className)}>
       {title || settings ? (
+        // `gap-3` stays raw (#205): "Title + Button"'s itemSpacing (12px) has
+        // no bound variable in the fetched node — a real gap, not a missed
+        // lookup. See design/notes/Card.md.
         <div className="flex w-full items-end justify-between gap-3">
           {title ? (
             <p className="text-base font-semibold text-text-primary">{title}</p>
@@ -40,9 +43,9 @@ export function Card({ title, settings, step, children, className }: CardProps) 
           {settings}
         </div>
       ) : null}
-      <div className="flex w-full items-center gap-3">
+      <div className="flex w-full items-center gap-stack-md">
         {step ? <Step>{step}</Step> : null}
-        <div className="flex w-full flex-col justify-center rounded-xl border border-stroke-primary bg-surface-highlight-white p-2">
+        <div className="flex w-full flex-col justify-center rounded-card border border-stroke-primary bg-surface-highlight-white p-component-sm">
           {children}
         </div>
       </div>

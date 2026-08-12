@@ -34,10 +34,10 @@ export function CardContentStep({
   className,
 }: CardContentStepProps) {
   return (
-    <div className={clsx("flex w-full flex-col items-stretch gap-4 p-3", className)}>
+    <div className={clsx("flex w-full flex-col items-stretch gap-stack-lg p-component-md", className)}>
       <p className="w-full text-sm font-semibold text-text-primary">{text}</p>
       {withIngredientTags && (
-        <div className="flex w-full flex-wrap gap-2">{children}</div>
+        <div className="flex w-full flex-wrap gap-inline-sm">{children}</div>
       )}
     </div>
   );
