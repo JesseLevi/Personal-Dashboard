@@ -10,6 +10,22 @@ This is the single canonical list. `docs/design-tokens.md` and `docs/HANDOFF.md`
 
 ## Design-system wide
 
+### button-root-gap-binding-split
+
+`Atom/Button`'s variant roots (`3623:4346`) disagree with each other about
+whether their 4px `itemSpacing` is a variable: every `Alignment=Left` variant
+binds `spacing/component/padding-xs`, every `Alignment=Center` variant leaves
+it unbound as a literal 4. Same pixel either way, and Alignment is not a
+property that should plausibly change a gap's *token status* — so this reads
+as authoring drift in Figma rather than intent.
+
+Nothing is broken: `Button.tsx` keeps `gap-1`, which is 4px in both cases, and
+#205 deliberately did not convert it (picking the majority binding would be
+exactly the kind of inference that ticket forbids). Needs a design call — bind
+it on all eight variants, or unbind it on all eight — after which the class can
+follow in one line. → `design/notes/Button.md`'s #205 entry for the measured
+table.
+
 ### figma-stroke-primary-2-malformed-name
 
 `design/figma-variables/Semantics _ Style_Light.tokens.json` carries a

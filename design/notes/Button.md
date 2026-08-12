@@ -177,18 +177,32 @@ The ticket's "Button is anders in design" pointed at node `4003:5441`, which no 
 ## TICKET #205 (2026-08-12): radius/spacing tokens
 
 Measured via `figma_execute`/`boundVariables` across the "Style=Filled,
-State=Default, Alignment=Center" variant (3623:4344) and its siblings — same
-bindings on every Style/State/Alignment combination, confirmed rather than
-assumed. Root `rounded-lg` (8px) → `rounded-control`
+State=Default, Alignment=Center" variant (3623:4344) and its siblings. Root
+`rounded-lg` (8px) → `rounded-control`
 (`topLeftRadius`→`radius/control`). `size=default`'s `px-2` (8px) →
 `px-component-sm` (`paddingLeft`/`Right`→`spacing/component/padding-sm`).
 The "Leading + Text" frame's `gap-2` (8px) → `gap-inline-sm`
 (`itemSpacing`→`spacing/inline/gap-sm`).
 
 **Left unconverted:** root `gap-1` (4px, the unconditional gap #112's own
-comment already documents). Figma's `itemSpacing` on the variant root is
-literally unbound (no variable at all) — not a value-matching guess withheld,
-a real absence confirmed by reading `boundVariables` and finding no
-`itemSpacing` key. Stays raw per the "no token → flag, don't invent" rule;
-nothing to flag beyond what #112 already recorded, since this was already
-known to be a Figma-authored constant, not a variable.
+comment already documents). Kept raw because **Figma is internally
+inconsistent here**, which is a design-side question rather than a conversion
+decision — re-measured across the whole component set (not one variant), the
+root `itemSpacing` splits by Alignment:
+
+| variant | root `itemSpacing` | value |
+|---|---|---|
+| `Alignment=Center` (all Styles/States) | **unbound** — no variable | 4 |
+| `Alignment=Left` (all Styles/States) | `spacing/component/padding-xs` | 4 |
+
+Both render 4px, so `gap-1` is pixel-correct either way and nothing here is a
+value-matching guess. But "half the set binds a token and half doesn't" is not
+something to resolve by picking the majority in a conversion ticket — flagged
+for design instead: `docs/open-questions.md#button-root-gap-binding-split`.
+
+An earlier revision of this note claimed the root `itemSpacing` was "literally
+unbound … same bindings on every Style/State/Alignment combination". That was
+generalised from the Center variant alone and is wrong — corrected here after
+re-measuring the full set. Left on the record deliberately: it is the same
+sample-one-then-generalise mistake #213 exists to correct, arriving in the
+very ticket that documents it.
