@@ -88,9 +88,19 @@ jobs:
         run: supabase test db
       - name: RLS coverage gate (ADR-0009)
         run: bash scripts/check-rls-coverage.sh
+      - name: Regenerate lib/database.types.ts (#190)
+        run: pnpm db:types
+      # Uploaded on every run, pass or fail, so a red diff below is
+      # recoverable without Docker: `gh run download <run> -n database-types`
+      # gives you the exact bytes to commit — never hand-edit the diff back
+      # in, that just reintroduces drift on the next CLI/schema change.
+      - name: Upload generated database.types.ts (#190)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-types
+          path: lib/database.types.ts
       - name: lib/database.types.ts matches the local schema, incl. reference (#190)
-        run: |
-          pnpm db:types
-          git diff --exit-code lib/database.types.ts
+        run: git diff --exit-code lib/database.types.ts
       - run: supabase stop
         if: always()
