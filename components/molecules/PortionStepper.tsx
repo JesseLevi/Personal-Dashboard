@@ -46,7 +46,7 @@ export function PortionStepper({
   return (
     <div
       className={clsx(
-        "inline-flex h-10 items-center gap-1 rounded-lg bg-surface-secondary",
+        "inline-flex h-10 items-center gap-1 rounded-control bg-surface-secondary",
         className,
       )}
     >

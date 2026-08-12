@@ -213,7 +213,7 @@ function BoardColumnView<TItem extends { id: string }>({
         // *this* wrapper from siblings (there are none), not the cards
         // inside it, since drag needs a real (non-`display:contents`) box
         // here for `useDroppable`'s bounding-rect hit-test to work at all.
-        <div ref={dropRef} className="flex w-full flex-col gap-2">
+        <div ref={dropRef} className="flex w-full flex-col gap-stack-sm">
           {items.map((item, index) => (
             <SortableCard
               key={item.id}

@@ -112,7 +112,7 @@ export function InputField({
   const hasButtonRow = Boolean(button);
 
   return (
-    <div className={clsx("flex w-full flex-col gap-2", className)}>
+    <div className={clsx("flex w-full flex-col gap-stack-sm", className)}>
       {label ? (
         <label htmlFor={id} className="text-base font-semibold text-text-secondary">
           {label}
@@ -122,7 +122,7 @@ export function InputField({
       {/* items-start, not items-center: keeps the leading+text row's top edge aligned instead of centering it inside the taller trailing-icon column. */}
       <div
         className={clsx(
-          "flex flex-row items-start justify-center gap-3 rounded-xl border border-stroke-primary bg-surface-highlight-white p-1 transition-colors hover:border-stroke-primary-hover active:border-stroke-primary-active focus-within:border-stroke-primary-selected",
+          "flex flex-row items-start justify-center gap-stack-md rounded-control-outer border border-stroke-primary bg-surface-highlight-white p-component-xs transition-colors hover:border-stroke-primary-hover active:border-stroke-primary-active focus-within:border-stroke-primary-selected",
           multiline && (hasButtonRow ? "h-[124px]" : "h-36"),
           boxClassName,
         )}
@@ -131,7 +131,7 @@ export function InputField({
             height (multiline) — gives the row below a real, definite height
             to flex against instead of `h-full` resolving against an
             indefinite (hug) parent. */}
-        <div className="flex flex-1 flex-col gap-3 self-stretch">
+        <div className="flex flex-1 flex-col gap-stack-md self-stretch">
           {/* A real `<label htmlFor={id}>`, not a `<div>` (#166): browsers
               natively delegate a click anywhere in this row — including the
               leading icon — to the control, and exclude the control's own
@@ -142,8 +142,8 @@ export function InputField({
           <label
             htmlFor={id}
             className={clsx(
-              "flex flex-row gap-2 self-stretch pl-2",
-              hasButtonRow ? "pt-2" : "py-2",
+              "flex flex-row gap-inline-sm self-stretch pl-component-sm",
+              hasButtonRow ? "pt-component-sm" : "py-component-sm",
               multiline ? "min-h-0 flex-1 items-start" : "items-center",
             )}
           >
@@ -187,7 +187,7 @@ export function InputField({
         {trailingIcon ? (
           <label
             htmlFor={id}
-            className="flex flex-row items-center gap-2 py-2 pr-2"
+            className="flex flex-row items-center gap-2 py-component-sm pr-component-sm"
           >
             <Icon name={trailingIcon} className="text-text-secondary" />
           </label>

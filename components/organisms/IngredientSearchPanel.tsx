@@ -242,7 +242,7 @@ export function IngredientSearchPanel({
       closeLabel={tSidePanel("closeLabel")}
       level={level}
       footer={
-        <div className="flex gap-2">
+        <div className="flex gap-inline-sm">
           <Button
             variant="filled"
             icon="Save"
@@ -296,7 +296,14 @@ export function IngredientSearchPanel({
               sourced structure. Checkbox stays the sole interactive
               control (never the whole row) to avoid nesting it inside
               another button. */}
-          <div className="flex w-full items-center gap-5 rounded-3xl pl-3 pr-3 py-3">
+          {/* #205: no fetched node for this row (see the module header) — gap/
+              radius/padding tokens borrowed from CardContentIngredient's own
+              measured default row (gap-inline-xl/rounded-container/
+              component-md), which this deliberately matches pixel-for-pixel
+              for visual consistency with its sibling rows in the same Card
+              list, not independently re-measured. See
+              design/notes/IngredientSearchPanel.md. */}
+          <div className="flex w-full items-center gap-inline-xl rounded-container pl-component-md pr-component-md py-component-md">
             <div className="flex w-full items-center gap-2">
               <Icon name="Plus" className="text-text-secondary" />
               <p className="text-base font-semibold text-text-primary">

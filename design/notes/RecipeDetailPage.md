@@ -221,3 +221,8 @@ No visual baseline change from the header button swap alone would be expected, b
 ## Hero thumbnail delivery (#171/#174, chunk 2) — moved to `design/notes/CardContentRecipe.md`
 
 The hero `<img>` now points at `/api/recipe-thumbnail/<recipeId>?size=full&v=<recipe.updated_at>` (LCP element: `loading="eager"`, `fetchPriority="high"`, explicit `1280×640`) instead of a server-resolved signed URL — `page.tsx` no longer calls `getRecipeThumbnailSignedUrl` for it. Full reasoning (two WebP variants, why not `next/image`, the route's cache headers, and — chunk 3 — why the singular signed-URL helper turned out not to be needed and was deleted) lives in `design/notes/CardContentRecipe.md`'s "Thumbnail delivery" section — one home for a fact shared with `ReceptenBoard.tsx`'s card thumbnails, not duplicated here.
+
+## TICKET #205 (2026-08-12): page-padding token
+
+Root wrapper: `pr-4 md:pr-32`→`pr-page-right-equal`. No node lookup needed,
+per the ticket's own page-padding rule.

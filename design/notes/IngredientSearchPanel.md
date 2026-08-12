@@ -71,3 +71,22 @@ are recorded above in this file.
 ## Ladle stories
 
 `Empty` (no search yet), `FilledResults` (mixed own+reference via `initialQuery="e"`), `ZeroResultsWithAddNew` (`initialQuery="Kaneel"`), `SomeRowsChecked` (same "e" results, Appel+Kipfilet pre-checked via `initialSelectedIds`). Mock `onSearch`/`onCreateOwnIngredient` never import the real action module, matching `CardDetailPanel.stories.tsx`'s precedent.
+
+## TICKET #205 (2026-08-12): radius/spacing tokens
+
+Footer `gap-2`→`gap-inline-sm` (same "Bottom" pattern as
+`StepIngredientPanel.tsx`/`RecipePanel.tsx`, `spacing/inline/gap-sm`). The
+zero-results "add new ingredient" row (no fetched node, per this file's own
+header comment — a deliberate Figma deviation) — `gap-5 rounded-3xl pl-3
+pr-3 py-3`→`gap-inline-xl rounded-container pl-component-md
+pr-component-md py-component-md`, borrowed from `CardContentIngredient`'s
+own measured default-row tokens (design/notes/CardContentIngredient.md's
+#205 entry) since this row deliberately matches those pixel-for-pixel to
+sit visually consistent among its sibling rows in the same `Card` list —
+not an independent Figma measurement, there is no node to measure.
+
+**Left unconverted (no analog):** the inner icon+label `gap-2` and the
+no-results message's `px-3 pb-2` — both belong to this same synthetic row
+and don't map cleanly onto any single measured node's binding; converting
+them would mean guessing from value alone, which this ticket's core rule
+forbids.

@@ -118,3 +118,29 @@ Not a z-index arms race against anything else in the app: `AppShellNav.tsx`'s mo
 ### Cross-ticket risk check (#101/#102 — fixed sidebar + mobile drawer, sticky header)
 
 `AppShellNav.tsx`'s mobile drawer (`fixed … transition-transform`, the one element in that file that could matter — `transform` on an ancestor breaks a `fixed` descendant's positioning) is a **sibling** of `main`/`children` in the returned tree, not an ancestor — `SidePanel` mounts somewhere under `main`, never under the drawer, so the drawer can never become its containing block regardless of open/closed state. `PageHeader.tsx` only uses `sticky` (no `transform`/`filter`/`contain`), which doesn't establish a containing block for `fixed` descendants at all. Confirmed by reading both files after rebasing onto `main`; **not** re-verified by rendering the actual `/te-doen` page inside the live app shell, since this dev machine has no Docker/Supabase and `/te-doen` needs a signed-in session — SidePanel's own `fixed` positioning and transitions were re-verified in isolation (Ladle) post-rebase instead, at both 402px and 1440px.
+
+## TICKET #205 (2026-08-12): radius/spacing tokens
+
+Measured via `figma_execute`/`boundVariables` on "Te doen/Mobile/AddItem"
+(3779:4846) and its "Pull-up panel" child (3779:4847). `rounded-tr-xl`
+(mobile) / `md:rounded-bl-xl` (desktop) → `rounded-tr-control-outer` /
+`md:rounded-bl-control-outer` (`topRightRadius`→`radius/control-outer` on
+the fetched mobile node; the desktop corner is this file's own
+already-documented "16px 0px 0px 12px" measurement, same 12px→
+control-outer reasoning applied consistently, not independently re-fetched
+this round). Fields column `gap-6`→`gap-stack-xl`
+(`itemSpacing`→`spacing/stack/stack-xl`, matches "Pull-up panel"'s own
+binding); its `px-4`/`pb-4`→`px-component-lg`/`pb-component-lg`
+(`paddingLeft/Right`→`spacing/component/padding-lg`). Handle-strip `px-4`→
+`px-component-lg` (same token family, same row). Footer `gap-2`→
+`gap-inline-sm`, `p-4`→`p-component-lg`, and its desktop-only `md:pb-4`→
+`md:pb-component-lg` (all from "Bottom", 3779:4858: `itemSpacing`→
+`spacing/inline/gap-sm`, `padding*`→`spacing/component/padding-lg`).
+
+**Left unconverted, flagged:** `rounded-tl-2xl` (mobile) — the fetched
+node's `topLeftRadius` (16px) binds `spacing/component/padding-lg`, a
+SPACING variable, not a radius one; a genuine Figma authoring artifact, not
+a missed lookup. 16px also has no step in this pipeline's `radius` scale
+(4/6/8/12/24) regardless. The mobile-only safe-area `pb-[max(1rem,...)]`
+on the footer stays raw too, same reasoning as `Sidebar.tsx`'s own
+`pt-`/`pb-`.

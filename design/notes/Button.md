@@ -173,3 +173,22 @@ The ticket's "Button is anders in design" pointed at node `4003:5441`, which no 
 ## Known gap: destructive dark mode
 
 **Superseded by #204.** All four Distructive states (default/selected/hover/active) now resolve to the same `red-50` in dark mode — sourced directly from Figma's `Semantics / Style, Dark` export, not a codebase pick, so this is a deliberately-accepted Figma fact rather than an unfixed gap: text stays legible, there's no hover/press/selected fill feedback. Previously (pre-#204) hover/active resolved to `red-950`, invisible for a different reason (this codebase's own pre-Figma-dark-data guess).
+
+## TICKET #205 (2026-08-12): radius/spacing tokens
+
+Measured via `figma_execute`/`boundVariables` across the "Style=Filled,
+State=Default, Alignment=Center" variant (3623:4344) and its siblings — same
+bindings on every Style/State/Alignment combination, confirmed rather than
+assumed. Root `rounded-lg` (8px) → `rounded-control`
+(`topLeftRadius`→`radius/control`). `size=default`'s `px-2` (8px) →
+`px-component-sm` (`paddingLeft`/`Right`→`spacing/component/padding-sm`).
+The "Leading + Text" frame's `gap-2` (8px) → `gap-inline-sm`
+(`itemSpacing`→`spacing/inline/gap-sm`).
+
+**Left unconverted:** root `gap-1` (4px, the unconditional gap #112's own
+comment already documents). Figma's `itemSpacing` on the variant root is
+literally unbound (no variable at all) — not a value-matching guess withheld,
+a real absence confirmed by reading `boundVariables` and finding no
+`itemSpacing` key. Stays raw per the "no token → flag, don't invent" rule;
+nothing to flag beyond what #112 already recorded, since this was already
+known to be a Figma-authored constant, not a variable.

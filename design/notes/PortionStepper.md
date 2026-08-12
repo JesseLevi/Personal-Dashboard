@@ -66,3 +66,22 @@ Only consumer, unchanged: `PasAanPanel.tsx` (no other call site — confirmed by
 ### Ladle story
 
 `components/molecules/PortionStepper.stories.tsx` demonstrates both breakpoints (a `w-[375px]`-constrained mobile wrapper and an unconstrained desktop-width wrapper — both fetched nodes are pixel-identical hug-sized rows, so "mobile vs desktop" here is about surrounding viewport, not a component-level variant) and representative portion values including the 1-vs-plural edge case (1, 2, 6, 12). The count label is resolved through the real `next-intl` ICU engine (`useTranslations`, inside Ladle's already-global `NextIntlClientProvider` — `.ladle/components.tsx`, added for #94) rather than hand-duplicating the plural logic in the story file, so the story can never silently drift from `messages/*.json`. The default Ladle provider is locale `nl`; the story nests its own `<NextIntlClientProvider locale="en" messages={en}>` for the explicit English demonstration story, which is valid provider nesting and needed no new dependency.
+
+## TICKET #205 (2026-08-12): radius token
+
+`rounded-lg` → `rounded-control`. Not sourced from the map's own registered
+node (3953:9750/3778:5596) — this file's own header comment already flags
+that the wrapper was deliberately restyled away from that sample to mirror
+`Atom/Button`'s Filled style exactly (`h-10`/`gap-1`/`px-2`/`rounded-lg`/
+`bg-surface-secondary`, verbatim). Since Button's own `rounded-lg` was
+independently measured and bound to `radius/control` (see
+design/notes/Button.md's #205 entry), and this component declares itself
+byte-for-byte the same style, the same token applies here by that stated
+equivalence, not a fresh measurement of 3953:9750. `gap-1` stays raw for
+the same reason: Button's own root `gap-1` is unbound in Figma (see
+Button.md), and this wrapper mirrors that exactly.
+
+Not converted: `gap-1`'s literal Figma value on node 3953:9750 (itemSpacing
+24, unbound) does not match the rendered 4px — expected, not a discrepancy
+to chase, since the header comment already establishes this wrapper
+deliberately does not follow that node.

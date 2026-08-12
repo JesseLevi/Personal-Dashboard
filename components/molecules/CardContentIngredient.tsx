@@ -153,7 +153,7 @@ export function CardContentIngredient({
     // would curve at the bottom corners to follow `rounded-3xl`.
     return (
       <div className={clsx("flex w-full flex-col", className)}>
-        <div className="relative w-full overflow-hidden rounded-3xl">
+        <div className="relative w-full overflow-hidden rounded-container">
           {/* Rests just past the right edge (clipped by overflow-hidden above)
               and slides in lockstep with the content div below; `+REVEAL_PX`
               cancels out at full-open. See design/notes/CardContentIngredient.md. */}
@@ -187,8 +187,10 @@ export function CardContentIngredient({
               Tailwind has no utility for it. See design/notes/CardContentIngredient.md. */}
           <div
             className={clsx(
-              "relative flex w-full touch-pan-y items-center gap-5 rounded-3xl py-3 pl-3 transition-transform",
-              offset < 0 ? "bg-surface-secondary pr-4" : "pr-3",
+              "relative flex w-full touch-pan-y items-center gap-inline-xl rounded-container py-component-md pl-component-md transition-transform",
+              offset < 0
+                ? "bg-surface-secondary pr-component-lg"
+                : "pr-component-md",
             )}
             style={{ transform: `translateX(${offset}px)` }}
             onPointerDown={handlePointerDown}
@@ -214,7 +216,7 @@ export function CardContentIngredient({
   // "de border-bottom loopt rond") even with no fill of its own to round.
   return (
     <div className={clsx("flex w-full flex-col", className)}>
-      <div className="flex w-full items-center gap-5 rounded-3xl pl-3 pr-3 py-3">
+      <div className="flex w-full items-center gap-inline-xl rounded-container pl-component-md pr-component-md py-component-md">
         {content}
         {checkbox}
       </div>

@@ -33,7 +33,7 @@ export function Checkbox({
       role="checkbox"
       aria-checked={checked}
       className={clsx(
-        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-stroke-primary bg-surface-highlight-white",
+        "flex h-8 w-8 shrink-0 items-center justify-center rounded-control border border-stroke-primary bg-surface-highlight-white",
         className,
       )}
       {...props}

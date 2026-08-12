@@ -145,3 +145,9 @@ An earlier version of this fix flipped which ancestor was the positioning contex
 | 430px | 207.05 / 247.05 | 207.05 / 416.05 | yes |
 
 **The 320px overflow is not caused by the anchor choice.** With the dropdown fully closed, `document.body.scrollWidth` is already `339px` at a `320px` viewport — the header's own content (title `"Winkelmand"` + icon-only Sort + `"Verwijder alles"`, no wrap, default flex-shrink blocked by each button's min-content width) doesn't fit in 320px regardless of any dropdown. Binary-searched live: the row needs `~339px` minimum, so anything narrower than that overflows horizontally with or without the panel open. The panel's own right edge (`338.96px`) lands almost exactly on top of the already-overflowing "Verwijder alles" button's right edge (`336.91px` at the same width) — the panel adds about 2px beyond a pre-existing overflow, not a new one. Confirmed this predates #182 and would have been *worse* on the old code: the pre-#182 mobile Sort button rendered full text ("Sorteer", not icon-only), which is wider than the icon-only button this ticket ships, so #182 shrinks the header's minimum content width rather than growing it. Flagged, not fixed here — out of this ticket's scope (button-row width, not dropdown alignment) — see `docs/open-questions.md#winkelmand-mobile-header-content-overflows-320px`.
+
+## TICKET #205 (2026-08-12): page-padding token
+
+`WinkelmandList.tsx`'s empty-state wrapper and its items-list wrapper:
+both `pr-4 md:pr-32`→`pr-page-right-equal`. No node lookup needed, per the
+ticket's own page-padding rule.

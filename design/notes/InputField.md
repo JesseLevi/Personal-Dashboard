@@ -71,3 +71,32 @@ User feedback: "Bij 'personen' input field is de chevron down niet klikbaar net 
 **Why two labels, not one wrapping the whole box.** The `button` slot (used by the recipe step field's "Ingrediënt" pill) is deliberately **excluded** from both labels — it renders as a plain sibling `<div>`, unchanged. Reasoning: a `<label>`'s accessible name is computed from its rendered text content, and while the label's *own* referenced control is correctly excluded from that computation (the standard recursion-safe rule the classic `<label>Text <input></label>` pattern already relies on — verified this still holds with a second, separate label pointing at the same id), a **different** interactive descendant nested inside the label — like the "Ingrediënt" `Button`, which has its own visible text — is NOT excluded and would leak into the field's accessible name (e.g. a step's textarea announcing "... Ingrediënt" appended). No caller currently exercises this with visible in-browser assistive-tech tooling, but the risk is structural, not hypothetical, so the two labels are scoped narrowly (content-row, trailing-icon column) rather than wrapping the container div that also holds `button`. A minor, accepted consequence: the outer box's own `p-1` padding and the small gap between the content column and the trailing-icon column (`gap-3`) are not, strictly, inside either label, so a click in that exact few-px margin does not delegate — negligible against the reported bugs (icon/chevron dead zones), which this fully fixes.
 
 **Multiple `<label>`s for one `id` is valid HTML** (a control may have any number of associated labels) — a labelled field now has three: the visible title label (unchanged), the content-row label, and the trailing-icon label, none nested inside another.
+
+## TICKET #205 (2026-08-12): radius/spacing tokens
+
+Measured via `figma_execute`/`boundVariables` on all four states
+(Default/Hover/Active/Selected, e.g. 3705:4386/3784:4736/3826:6708/3740:4576)
+— byte-identical bindings across all four, confirmed rather than assumed.
+Root `gap-2` (8px, VERTICAL) → `gap-stack-sm`
+(`itemSpacing`→`spacing/stack/stack-sm`). `Container` frame: `gap-3` (12px)
+→ `gap-stack-md`, `rounded-xl` (12px) → `rounded-control-outer`, `p-1` (4px,
+all sides) → `p-component-xs`. Note: `Container` is a HORIZONTAL auto-layout
+frame whose `itemSpacing` nonetheless binds `spacing/stack/stack-md`, not
+`inline/*` — the axis heuristic (`inline`=row, `stack`=column) is a rule of
+thumb, not a substitute for reading the actual binding; here Figma's own
+authoring crosses it, so the read binding wins. `Content` frame (genuinely
+VERTICAL): `gap-3` → `gap-stack-md`, consistent with the axis this time.
+`Leading + Text` frame: `gap-2` → `gap-inline-sm`, `pl-2`→`pl-component-sm`,
+and the conditional `pt-2`/`py-2`→`pt-component-sm`/`py-component-sm`
+(paddingRight/Bottom are unbound-zero in Figma; `py-component-sm`'s bottom
+half is this component's own pre-existing, documented deviation from the
+literal node — see the `#149` paragraph above — not something this ticket
+changes, only re-expresses in tokens). Trailing-icon label: `py-2 pr-2` →
+`py-component-sm pr-component-sm` (`Trekking-icon-container`'s
+paddingTop/Right/Bottom all bind `spacing/component/padding-sm`).
+
+**Left unconverted, flagged:** the button-row `gap-2` (Figma's `Slot`
+node, `itemSpacing`=8, no bound variable) and the trailing-icon label's own
+`gap-2` (`Trekking-icon-container`'s `itemSpacing`=8, likewise unbound).
+Both read as real gaps in the fetched node's `boundVariables` — not a
+missed lookup — so both stay raw pending a designer rebind.

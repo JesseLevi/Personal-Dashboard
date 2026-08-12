@@ -24,7 +24,7 @@ function Face({ icon, label, hidden }: { icon: IconName; label?: string; hidden:
     <span
       aria-hidden={hidden || undefined}
       className={clsx(
-        "col-start-1 row-start-1 flex items-center gap-2 transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+        "col-start-1 row-start-1 flex items-center gap-inline-sm transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
         icon === "Check"
           ? hidden
             ? "translate-y-full"

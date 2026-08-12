@@ -200,7 +200,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
   const nutritionPerPerson = computeRecipeNutritionPerPerson(nutritionInputs, recipe.servings);
 
   return (
-    <div className="flex w-full flex-col items-stretch gap-6 pr-4 md:pr-32">
+    <div className="flex w-full flex-col items-stretch gap-6 pr-page-right-equal">
       <div className="flex w-full items-center justify-between gap-4">
         <Button
           icon="ArrowLeft"

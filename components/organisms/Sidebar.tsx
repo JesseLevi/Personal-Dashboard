@@ -77,7 +77,7 @@ export function Sidebar({
         // duration-[var(--duration-base)] must stay arbitrary-value form
         // (bare `duration-base` compiles to nothing); GAP: value unsourced
         // from Figma, see docs/open-questions.md#sidebar-motion-timing-unsourced.
-        "flex h-full flex-col items-end gap-12 border-r border-stroke-primary bg-surface-primary p-4 transition-[width] duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+        "flex h-full flex-col items-end gap-stack-xxl border-r border-stroke-primary bg-surface-primary p-component-lg transition-[width] duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
         // pt-/pb- (#113): `max()` only ever adds space over the existing 16px,
         // so this is a no-op wherever there is no safe-area inset (desktop,
         // most phones) — only extends the top/bottom padding on notched /
@@ -96,7 +96,7 @@ export function Sidebar({
         aria-label={toggleLabel}
         onClick={onToggle}
       />
-      <div className="flex w-full flex-col gap-3">
+      <div className="flex w-full flex-col gap-stack-md">
         {NAV_ITEMS.map(({ id, icon }) => {
           const isActive = id === activeItem;
           const variant = isActive ? "filled" : "transparent";

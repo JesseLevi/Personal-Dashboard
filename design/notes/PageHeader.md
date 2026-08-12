@@ -153,3 +153,15 @@ header actually needs it. No `max()` wrapper needed either — unlike the
 padding idiom there's no base value to protect, `env()` alone resolves to 0
 with no inset. Unverified on real hardware. Full audit of every top-of-shell
 element: `design/notes/AppShell.md`.
+
+## TICKET #205 (2026-08-12): radius/spacing tokens
+
+`pr-4 md:pr-32`→`pr-page-right-equal`, per the ticket's own page-padding
+rule — no node lookup needed (the 16/128 split is unambiguous and already
+lives in `app/theme.css`). `gap-4` (title + adornments row) → `gap-inline-lg`,
+measured via `figma_execute`/`boundVariables` on the fetched node
+(3878:7959, "Onderwerp" child: `itemSpacing`→`spacing/inline/gap-lg`). The
+root frame's OWN `itemSpacing`/`paddingRight` are unbound in the fetched
+node (128px right padding has no Figma variable at that specific node) —
+irrelevant here since the page-padding tokens already supersede it per the
+ticket's own rule.
