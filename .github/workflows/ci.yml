@@ -73,6 +73,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -82,5 +88,9 @@ jobs:
         run: supabase test db
       - name: RLS coverage gate (ADR-0009)
         run: bash scripts/check-rls-coverage.sh
+      - name: lib/database.types.ts matches the local schema, incl. reference (#190)
+        run: |
+          pnpm db:types
+          git diff --exit-code lib/database.types.ts
       - run: supabase stop
         if: always()
