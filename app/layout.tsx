@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
+import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
 // #172: `appleWebApp` is what actually flips iOS from "Safari bookmark" to
@@ -36,14 +37,23 @@ export const metadata: Metadata = {
 // opt-in Safari requires before a page may extend under its translucent
 // chrome, so without it `env(safe-area-inset-*)` resolves to 0 and the
 // safe-area padding elsewhere (Sidebar, SidePanel) is inert. `themeColor` is
-// the literal hex a `<meta>` needs (no CSS var this early) — `stone-100` /
-// `surface-primary` in design/tokens.json, the value `<body>` already paints;
-// not under components/, so outside the raw-hex rule. Unverified on-device.
+// literal hex (no CSS var this early); not under components/, so outside the
+// raw-hex rule. Unverified on-device.
+//
+// #206: `themeColor` is now a light/dark pair — Next emits one `<meta
+// name="theme-color" media="...">` per entry (Safari 15+, Chrome 93+ on
+// installed PWAs read `media`; other browsers use the first). `#F5F5F4` /
+// `#1C1917` are `surface-primary`'s light/dark values (stone-100/stone-900),
+// both live in app/theme.css since #204; see design/notes/AppShell.md for why
+// `app/manifest.ts`'s `theme_color` stays single-valued.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#F5F5F4",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F5F5F4" },
+    { media: "(prefers-color-scheme: dark)", color: "#1C1917" },
+  ],
 };
 
 export default async function RootLayout({
@@ -51,9 +61,25 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const locale = await getLocale();
   return (
-    <html lang={locale}>
+    // #206: `suppressHydrationWarning` is next-themes' documented requirement
+    // — its inline script (first thing `ThemeProvider` renders, below) sets
+    // `data-theme`/`style="color-scheme:…"` on this element synchronously,
+    // before React hydrates, which would otherwise flag as a server/client
+    // mismatch. See design/notes/AppShell.md.
+    <html lang={locale} suppressHydrationWarning>
       <body className="bg-surface-primary text-text-primary antialiased">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        {/* #206: system preference only, no switch UI — not in Figma (docs/
+            guides/ui-components.md). `attribute="data-theme"` is the exact
+            selector app/theme.css's `[data-theme="dark"]` block and Ladle's
+            toggle already key off — nothing in components/ changes.
+            `enableColorScheme` (default true, left implicit) sets the CSS
+            `color-scheme` property alongside the attribute, which is what
+            flips native form controls/scrollbar. See design/notes/
+            AppShell.md for the shell-regression check on the blocking
+            inline script this renders. */}
+        <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
+          <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

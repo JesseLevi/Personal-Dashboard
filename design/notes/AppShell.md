@@ -161,3 +161,92 @@ package name) rather than translatable UI copy. `short_name: "Dashboard"` —
 label. ADR-0007 covers UI strings; this isn't read as being in scope for it,
 but it's a deliberate call, not an oversight, and is flagged here per
 `docs/guides/ui-components.md`'s convention for exactly this kind of call.
+
+## App-level dark mode: system preference only, no switch (#206)
+
+- **Code:** `app/layout.tsx` (`next-themes`' `ThemeProvider`, `<html
+  suppressHydrationWarning>`, `viewport.themeColor` array), `app/manifest.ts`
+  (comment only, value unchanged), `package.json` (`next-themes` dependency).
+- **Config:** `attribute="data-theme"`, `defaultTheme="system"`,
+  `enableSystem` — exactly the ticket's three props, nothing else passed.
+  `enableColorScheme` (default `true`) is left implicit rather than restated:
+  next-themes sets `document.documentElement.style.colorScheme` to the
+  resolved theme alongside the attribute, which is what flips native form
+  controls and the scrollbar — satisfies that DoD line with zero extra code.
+  No static `<meta name="color-scheme">` added: it would only assert "both
+  supported" before the dynamic value lands, and the inline script (below)
+  sets the real one before first paint anyway, so a static tag would be
+  redundant at best.
+- **No switch UI, deliberately**: not in Figma, and `docs/guides/
+  ui-components.md`/`CLAUDE.md` both forbid inventing UI absent from Figma.
+  `ThemeProvider` supports one without any change once a Figma node exists.
+- **No-flash mechanism, verified, not assumed**: next-themes renders an
+  inline, non-async `<script>` (`dangerouslySetInnerHTML`, no `defer`) as
+  the *first* child inside `ThemeProvider`'s own output — i.e. the first
+  thing inside `<body>`, ahead of `NextIntlClientProvider`/`children`. A
+  synchronous inline script blocks HTML parsing at that exact point, so it
+  always runs (reading `localStorage`, then `matchMedia('(prefers-color-
+  scheme: dark)')` when no stored value exists) and sets `data-theme` +
+  `style="color-scheme:…"` on `<html>` before the browser paints anything
+  after it — confirmed by reading `next-themes`' own `theme-script.md`/
+  `index.tsx` source via Context7, not assumed from the README description
+  alone. `suppressHydrationWarning` on `<html>` is required because of this:
+  the script mutates attributes React didn't render server-side, which
+  would otherwise log a hydration mismatch.
+- **Streaming shell (#170) — checked, not regressed**: the script is part of
+  the root layout's own (non-Suspense) HTML, which is exactly what #170
+  already flushes first, ahead of every route's `loading.tsx` skeleton and
+  the streamed board data. It adds no network request (bundled inline) and
+  is a handful of synchronous statements — `curl`'d the SSR'd `/te-doen` and
+  `/recepten` HTML directly: the script tag lands in the first flushed
+  chunk, before the `PageSkeleton` fallback markup, in both. Did not have an
+  authenticated browser session to capture a Lighthouse/TTFB trace against a
+  real login (see #185's standing gap) — the "no added network cost, no
+  added render-blocking work beyond one inline script" argument above is
+  reasoned from the source and the flushed-HTML order, not measured against
+  a live metric. Flagging rather than claiming a number.
+- **`viewport.themeColor` becomes a light/dark pair**: Next.js's
+  `themeColor` field accepts an array of `{ media, color }` and emits one
+  `<meta name="theme-color" media="…">` per entry — Safari 15+ and Chrome
+  93+ (installed PWAs) read `media`, everything else falls back to the
+  first entry (light). Dark value `#1C1917` is `surface-primary`'s upcoming
+  Figma dark value (stone-900, #204/PR #208 — not merged as of this
+  ticket) chosen so this doesn't need touching again once that token
+  lands; **until #204 merges, `<body>`'s actual background stays light in
+  dark mode** (`surface-primary` has no dark override in `app/theme.css`
+  yet) even though the address-bar chrome already switches — a real,
+  temporary, and expected mismatch, not a bug in this ticket's code.
+- **`app/manifest.ts`'s `theme_color`/`background_color` stay single-valued,
+  on purpose**: the Web App Manifest spec has no `media`-query equivalent
+  for either field (confirmed via W3C manifest issue #975, still open as a
+  proposal, not shipped) — unlike the `<meta>` tag above, there is no
+  dark-mode value to add. Kept at the existing light hex (`#F5F5F4`)
+  rather than switched to a dark guess, since these fields drive the
+  Android/desktop PWA splash screen and install chrome, which render before
+  any theme can be detected — a wrong dark guess would be visibly worse
+  than a correct, static light value. Revisit only if `user_preferences`
+  ships broadly, or per-mode manifest icons/colors become a real ticket.
+- **Playwright visual suite (#6/ADR-0010) stays light-only, deliberately**:
+  `tests/visual/ladle.visual.spec.ts` exists to catch pixel drift against
+  *fetched Figma nodes* (`docs/guides/ui-components.md`'s "pixel-parity is
+  verified, not assumed"). No Figma dark frames exist for any component to
+  diff a dark screenshot against, so a dark baseline would only be
+  checking "did this pixel change since last run" with no independent
+  source of truth — and would double the already-flaky baseline set (see
+  `docs/HANDOFF.md`'s visual-flake note) for a mode this ticket's own DoD
+  doesn't require baseline coverage of. Not run: no `dark` project/story
+  variant was added to `.ladle/components.tsx` or `playwright.config.ts`.
+  Ladle's existing Light/Dark toggle remains the way to eyeball a component
+  in dark mode by hand.
+- **Verification actually performed**: see the PR/commit description for
+  what was and wasn't confirmed against a real signed-in session versus
+  Ladle only — #185's "no authenticated run has ever happened" gap applies
+  here too and is not closed by this ticket.
+- **The login page's marketing visual stays light in dark mode**, and that is
+  an asset gap rather than a token bug: `app/login/page.tsx`'s right-hand panel
+  is a static `<Image>` (`/login/login-visual-{mobile,desktop}.png`), a
+  light-mode render of the product. Verified while confirming #206 — the
+  surrounding page does switch correctly (`data-theme="dark"`, body background
+  stone-100 → stone-900), it is only the PNG that doesn't. A dark counterpart
+  has to come from design; inventing one here would be building UI Figma
+  doesn't have. Tracked as `docs/open-questions.md#login-visual-has-no-dark-asset`.
