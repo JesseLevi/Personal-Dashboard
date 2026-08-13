@@ -167,3 +167,48 @@ Nothing else in the codebase references it (grepped `components/`, `app/`,
 CategoryPanel's picker offers a curated food set that never contained
 `Shirt`. Cost of keeping it is one lucide import that tree-shakes out of any
 route that doesn't render it.
+
+## TICKET #227 (2026-08-13): 20 EditingBar toolbar icons added
+
+`EditingBar`'s formatting toolbar (desktop `3978:14138`, mobile
+`3978:14870`) draws twenty icons not previously in `IconName`, measured via
+the `figma-console` bridge in the toolbar's own draw order: `Undo2`,
+`Redo2`, `Heading`, `List`, `TextQuote`, `Table`, `SquareCode`, `CodeXml`,
+`Bold`, `Italic`, `Strikethrough`, `Underline`, `Highlighter`, `Link`,
+`Superscript`, `Subscript`, `TextAlignStart`, `TextAlignCenter`,
+`TextAlignEnd`, `TextAlignJustify`.
+
+**Same no-Figma-vector situation as the food-beverage additions above, for a
+different reason**: the toolbar buttons and their icons are *detached
+frames* in Figma, not `Button`/`Icon` instances (see
+`docs/open-questions.md#notes-editingbar-detached-from-components`), so
+there is no `Icon/*` vector to shape-verify against, and no button carries a
+label to disambiguate against a same-named false friend either. Verification
+here is therefore presence-only, same rigor as the 66-icon addition:
+confirmed all twenty are real `lucide-react@1.25.0` exports via
+`Object.keys(require('lucide-react'))`, none guessed from the kebab-to-
+PascalCase convention alone. Worth flagging for the `EditingBar` ticket
+(#234) that actually wires these to TipTap commands: the alignment icons are
+`TextAlign*`, not the older `Align*` names — both exist in lucide, and the
+Figma layer name (`text-align-start`, etc.) is what's authoritative, not a
+guess at which is "more standard".
+
+This ticket adds union members and story coverage only — no toolbar, no
+editor, no TipTap wiring, per its own scope boundary.
+
+Union is now 134 names, counted directly from `IconName`'s union type (the
+#179 entry above said 113 after adding one name to a prior 112 — actually
+114, a pre-existing one-off drift in that count, not introduced here).
+
+**`Icon.stories.tsx` does not render the whole union, and did not before this
+ticket either.** Measured while verifying #227: `ICON_NAMES` in the story
+lists 127 of the 134 names; `ArrowRight`, `Coffee`, `Cookie`, `Image`,
+`Pizza`, `Save` and `Soup` have no story coverage and therefore no pixel in
+the `icon--all-icons` baseline. Exactly those same seven were missing on
+`main` before #227 (114-name union, 107-name story), so this is a
+pre-existing gap, not something this ticket introduced — all twenty new
+toolbar icons went into both. Left as-is deliberately: closing it moves the
+`icon--all-icons` baseline, which is a change to a shared visual gate and
+does not belong in a ticket scoped to "union members and story coverage" for
+the twenty. Whoever next touches this story should fold the seven in and
+regenerate in the same pass.

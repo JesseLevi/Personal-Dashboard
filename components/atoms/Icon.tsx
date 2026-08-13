@@ -115,6 +115,26 @@ import {
   WheatOff,
   Wine,
   WineOff,
+  Undo2,
+  Redo2,
+  Heading,
+  List,
+  TextQuote,
+  Table,
+  SquareCode,
+  CodeXml,
+  Bold,
+  Italic,
+  Strikethrough,
+  Underline,
+  Highlighter,
+  Link,
+  Superscript,
+  Subscript,
+  TextAlignStart,
+  TextAlignCenter,
+  TextAlignEnd,
+  TextAlignJustify,
   type LucideProps,
 } from "lucide-react";
 
@@ -256,7 +276,31 @@ export type IconName =
   | "Wheat"
   | "WheatOff"
   | "Wine"
-  | "WineOff";
+  | "WineOff"
+  // EditingBar toolbar (#227), desktop node 3978:14138 / mobile 3978:14870 —
+  // detached FRAMEs, not Icon/* instances (docs/open-questions.md#notes-editingbar-detached-from-components),
+  // so verified by lucide-react export presence only, same class as the
+  // food-beverage additions above. See design/notes/Icon.md.
+  | "Undo2"
+  | "Redo2"
+  | "Heading"
+  | "List"
+  | "TextQuote"
+  | "Table"
+  | "SquareCode"
+  | "CodeXml"
+  | "Bold"
+  | "Italic"
+  | "Strikethrough"
+  | "Underline"
+  | "Highlighter"
+  | "Link"
+  | "Superscript"
+  | "Subscript"
+  | "TextAlignStart"
+  | "TextAlignCenter"
+  | "TextAlignEnd"
+  | "TextAlignJustify";
 
 // Figma name -> lucide-react component.
 const ICONS: Record<IconName, ComponentType<LucideProps>> = {
@@ -374,6 +418,26 @@ const ICONS: Record<IconName, ComponentType<LucideProps>> = {
   WheatOff: WheatOff,
   Wine: Wine,
   WineOff: WineOff,
+  Undo2: Undo2,
+  Redo2: Redo2,
+  Heading: Heading,
+  List: List,
+  TextQuote: TextQuote,
+  Table: Table,
+  SquareCode: SquareCode,
+  CodeXml: CodeXml,
+  Bold: Bold,
+  Italic: Italic,
+  Strikethrough: Strikethrough,
+  Underline: Underline,
+  Highlighter: Highlighter,
+  Link: Link,
+  Superscript: Superscript,
+  Subscript: Subscript,
+  TextAlignStart: TextAlignStart,
+  TextAlignCenter: TextAlignCenter,
+  TextAlignEnd: TextAlignEnd,
+  TextAlignJustify: TextAlignJustify,
 };
 
 const ICON_NAMES = new Set<string>(Object.keys(ICONS));
