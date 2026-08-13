@@ -5,7 +5,7 @@ import type { IconName } from "../atoms/Icon";
 
 /**
  * Organism/Sidebar — Figma component set "Sidebar" (node-id 3674:5664).
- * Variant axis: `Collapsed` (No/Yes) -> `collapsed` prop. Six modules ->
+ * Variant axis: `Collapsed` (No/Yes) -> `collapsed` prop. Five modules ->
  * fixed `NAV_ITEMS` list. Active item -> Button's `Style=Filled,
  * State=Selected`. `bg-surface-primary` is Figma's fill; nav-item Buttons
  * render one element across both states (`overflow-hidden` clips the
@@ -17,7 +17,6 @@ export type SidebarItemId =
   | "notes"
   | "recipes"
   | "shopping"
-  | "clothes"
   | "assistant";
 
 const NAV_ITEMS: ReadonlyArray<{ id: SidebarItemId; icon: IconName }> = [
@@ -25,7 +24,6 @@ const NAV_ITEMS: ReadonlyArray<{ id: SidebarItemId; icon: IconName }> = [
   { id: "notes", icon: "Notebook" },
   { id: "recipes", icon: "FolderClosed" },
   { id: "shopping", icon: "ShoppingBasket" },
-  { id: "clothes", icon: "Shirt" },
   { id: "assistant", icon: "Astroid" },
 ];
 

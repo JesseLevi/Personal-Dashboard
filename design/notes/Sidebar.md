@@ -314,3 +314,28 @@ Measured via `figma_execute`/`boundVariables` on both `Collapsed=No`
 `gap-3` ("Item container")→`gap-stack-md`. The `pt-[max(1rem,...)]`/
 `pb-[max(1rem,...)]` safe-area overrides on top of `p-4` stay raw — same
 reasoning as `AppShellNav.tsx`'s own `pt-`, out of this ticket's scope.
+
+## TICKET #226 (2026-08-13): Kleding removed — five nav items
+
+`SidebarItemId` and `NAV_ITEMS` lost `"clothes"` (the `Shirt` item), so the
+rail renders five modules: Te doen, Notities, Recepten, Winkelmand,
+Assistent. This follows the design rather than anticipating it — read off
+the component set with the `figma-console` bridge on 2026-08-13: both
+variants' "Item container" holds exactly five `Button/Default` instances,
+with `Icon/Columns-3` / `Icon/Notebook` / `Icon/Folder-closed` /
+`Icon/Shopping-basket` / `Icon/Astroid` and the labels above. The user
+decision behind it is ADR-0016.
+
+Two things measured in passing, neither acted on:
+
+- `Collapsed=Yes`'s third item is still labelled **"Categorie"** where
+  `Collapsed=No` says "Recepten". The label is clipped to zero width in the
+  collapsed rail (see #112's sliver arithmetic above), so it renders
+  identically either way and the code takes its labels from
+  `messages/*.json` regardless — a Figma-side typo with no code consequence.
+- `Icon/Shirt` is **still in the Figma "Icons" frame** (`3760:6187`, 47
+  layers), which is why `IconName` keeps its `Shirt` entry — see
+  `design/notes/Icon.md`.
+
+Visual baselines regenerated for `sidebar--*` (one nav item fewer changes
+the rail's content height), then the full suite re-run.

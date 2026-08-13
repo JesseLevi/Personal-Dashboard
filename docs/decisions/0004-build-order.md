@@ -1,6 +1,6 @@
 # ADR-0004: Build order
 
-**Status**: Accepted
+**Status**: Accepted — phases 6–9 amended 2026-08-13. Kleding is out of the platform (ADR-0016); Notities became a full UI phase and Agenda moved to its own phase. The phase list below is the decision as taken; the current one lives in `Architecture.md` §10.
 
 ## Context
 
