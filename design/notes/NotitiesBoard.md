@@ -480,14 +480,19 @@ oversight.
 (not scoped) — see the PR for exact output. **Not run: a real authenticated
 `/notities` route in a browser, and no drag/sort/create-note flow against
 real data.** Per `CLAUDE.md` this dev machine has no Docker/local Supabase.
-Beyond that standing gap, this ticket sits on top of a schema that has
-**never been applied to the hosted database at all** — #225's
-`note_categories`/`notes` tables and #228's `move_note` RPC are committed
-migrations, not yet run via the `workflow_dispatch` deploy workflow
-(ADR-0012) or by hand. So unlike `ReceptenBoard.md`'s/`TeDoenBoard.md`'s own
-gap (real tables, just no local way to sign in), there is currently no
-environment anywhere, including production, where `/notities` could be
-opened against live rows even if this dev machine had Docker. Everything
+**Corrected 2026-08-13 (during #232):** this section originally claimed the
+schema had "never been applied to the hosted database at all". That was true
+when #230 was written and is now false — `deploy.yml` ran on the user's
+explicit approval (ADR-0012) later the same day and applied both
+`20260813000001_note_schema` and `20260813000002_move_note_rpc`, verified
+against the hosted `supabase_migrations.schema_migrations` rather than
+assumed. So the gap here is now exactly `ReceptenBoard.md`'s/
+`TeDoenBoard.md`'s standing one (real tables, no local way to sign in), not
+a stronger one. One thing that *will* look broken and is not:
+`seed_default_note_categories()` is an `after insert on auth.users` trigger,
+so it never fired for the two pre-existing accounts — they have zero
+`note_categories` rows, and `/notities` therefore renders with no columns
+until a category is created through #232's panel. Everything
 above is reasoned from reading `lib/notes/queries.ts`/`actions.ts` (#228,
 already merged) and typechecked/unit-tested against them — the query
 shapes, the RPC error-code mapping, and the optimistic-update math are

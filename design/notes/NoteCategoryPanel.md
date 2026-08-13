@@ -148,10 +148,19 @@ for why its own header trigger and column pencils share one `CategoryPanel`.
 ## Verification — what was and wasn't run
 
 Reasoned/typechecked, not run against a live route: this dev machine has no
-Docker/local Supabase (`CLAUDE.md`), and per `NotitiesBoard.md`'s own
-"Verification" section, Notities' schema (#225/#228) has never been applied
-to the hosted database either — so there is currently no environment,
-including production, where `/notities` could be opened against real
-category rows. `pnpm lint`/`typecheck`/`test`/`check:server-only`/
+Docker/local Supabase (`CLAUDE.md`), so create/rename/delete were verified
+by reading `app/(app)/notities/actions.ts` + `lib/notes/schemas.ts` and by
+typechecking against them, not by clicking through a running app. The
+schema itself **is** live: `20260813000001_note_schema` and
+`20260813000002_move_note_rpc` are both on hosted (verified against
+`supabase_migrations.schema_migrations` during this ticket) — an earlier
+draft of this file said otherwise, copying a claim in `NotitiesBoard.md`
+that was true when #230 was written and had gone stale by the time
+`deploy.yml` ran. Both files are corrected. Production is therefore a real
+environment where this panel can be exercised, and it is the first thing
+worth doing: the two pre-existing accounts have **zero** `note_categories`
+rows (`seed_default_note_categories()` is an `after insert on auth.users`
+trigger and never fired for them), so this panel is currently the only way
+`/notities` gets a column at all. `pnpm lint`/`typecheck`/`test`/`check:server-only`/
 `check:raw-spacing`/`check:comment-budget`/`build` and the scoped +
 full `pnpm test:visual` results are reported in the PR, not restated here.
