@@ -8,6 +8,7 @@
     }
   },
   "nav": {
+    "notes": "Notes",
     "recipes": "Recipes",
     "shopping": "Shopping basket"
   },
@@ -124,6 +125,9 @@
       "unauthenticated": "Sign in again to continue.",
       "not-found": "This item no longer exists or isn't yours.",
       "generic": "Something went wrong. Please try again."
+    },
+    "timestamp": {
+      "yesterday": "Yesterday"
     }
   },
   "components": {
@@ -185,6 +189,14 @@
       },
       "recipes": {
         "addCategoryLabel": "Category"
+      },
+      "notes": {
+        "addCategoryLabel": "Category",
+        "sortLabel": "Sort",
+        "sortOptions": {
+          "createdAt": "Creation date",
+          "alphabetical": "Alphabetical"
+        }
       }
     },
     "sidePanel": {

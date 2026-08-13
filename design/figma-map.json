@@ -44,6 +44,7 @@
     "Pages/Recepten/Breakpoints": { "path": "app/(app)/recepten/", "nodeId": "3761:5537" },
     "Pages/Recept_V2/Breakpoints": { "path": "app/(app)/recepten/[recipeId]/", "nodeId": "3997:14736" },
     "Pages/Winkelmand/Breakpoints": { "path": "app/(app)/winkelmand/", "nodeId": "3778:5816" },
+    "Pages/Notities/Breakpoints": { "path": "app/(app)/notities/", "nodeId": "3934:32790" },
     "Pages/Navigation": { "path": "app/(app)/_components/AppShellNav.tsx", "nodeId": "3889:16890" },
     "Pages/Login": { "path": "app/login/", "nodeId": "3929:25181" }
   }
