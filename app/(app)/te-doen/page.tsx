@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { TeDoenPageBody } from "./TeDoenPageBody";
 import { BoardSkeleton } from "../_components/PageSkeleton";
@@ -11,6 +12,15 @@ import { BoardSkeleton } from "../_components/PageSkeleton";
 // <Suspense> here, nested inside AppShellNav's already-painted sidebar/
 // header shell (app/(app)/layout.tsx doesn't await board data), so a board
 // fetch never blocks the chrome.
+//
+// #223 follow-up: page-level `manifest` metadata links this route's own
+// Web App Manifest (./manifest.webmanifest/route.ts) so "Add to Home
+// Screen" from here installs a Te-Doen-specific shortcut instead of
+// inheriting the root manifest. See design/notes/AppShell.md.
+export const metadata: Metadata = {
+  manifest: "/te-doen/manifest.webmanifest",
+};
+
 export default async function TeDoenPage({
   searchParams,
 }: {
