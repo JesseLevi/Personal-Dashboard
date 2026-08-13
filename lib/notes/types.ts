@@ -28,6 +28,8 @@ export type NoteSummaryRow = {
   id: string;
   category_id: string;
   title: string;
+  /** #230: added for the Sorteer dropdown's "Aanmaakdatum" option (lib/notes/sort.ts) -- not read by CardContentNote's timestamp, which uses `updated_at` instead (see lib/notes/timestamp.ts). */
+  created_at: string;
   updated_at: string;
   /** First `SNIPPET_MAX_LENGTH` characters of `content_text` (queries.ts), never the full text and never `content` jsonb. */
   snippet: string;

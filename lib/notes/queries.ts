@@ -43,6 +43,7 @@ interface RawNoteSummaryQueryRow {
   title: string;
   content_text: string;
   position: number;
+  created_at: string;
   updated_at: string;
 }
 interface RawCategoryQueryRow extends NoteCategoryRow {
@@ -70,7 +71,7 @@ export async function getNoteCategoriesWithNotes(): Promise<CategoryWithNotes[]>
       `
       id, user_id, name, icon, position, created_at, updated_at,
       notes (
-        id, category_id, title, content_text, position, updated_at
+        id, category_id, title, content_text, position, created_at, updated_at
       )
     `,
     )
@@ -95,6 +96,7 @@ export async function getNoteCategoriesWithNotes(): Promise<CategoryWithNotes[]>
           id: note.id,
           category_id: note.category_id,
           title: note.title,
+          created_at: note.created_at,
           updated_at: note.updated_at,
           snippet: snippetFrom(note.content_text),
         }),
@@ -146,6 +148,7 @@ interface RawNoteSearchRow {
   category_id: string;
   title: string;
   content_text: string;
+  created_at: string;
   updated_at: string;
 }
 
@@ -158,7 +161,10 @@ async function notesMatching(
 ) {
   return supabase
     .from("notes")
-    .select("id, category_id, title, content_text, updated_at")
+    // #230: `created_at` added purely to satisfy `NoteSummaryRow`'s shared
+    // shape (the board's Sorteer dropdown needs it) -- searchNotes itself
+    // still orders by `updated_at` only, unchanged.
+    .select("id, category_id, title, content_text, created_at, updated_at")
     .eq("user_id", userId)
     .ilike(column, pattern)
     .order("updated_at", { ascending: false })
