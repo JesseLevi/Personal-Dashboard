@@ -19,6 +19,7 @@
     "Card-content/Recipi": { "path": "components/molecules/CardContentRecipe.tsx", "nodeId": "3628:67" },
     "Card-content/Ingredient": { "path": "components/molecules/CardContentIngredient.tsx", "nodeId": "3727:4021" },
     "Card-content/Ticket": { "path": "components/molecules/CardContentTicket.tsx", "nodeId": "3670:1696" },
+    "Card-content/Note": { "path": "components/molecules/CardContentNote.tsx", "nodeId": "4067:18495" },
     "Card-content/Step": { "path": "components/molecules/CardContentStep.tsx", "nodeId": "3695:3941" },
     "Portion-stepper": { "path": "components/molecules/PortionStepper.tsx", "nodeId": "3953:9750" }
   },
