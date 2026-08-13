@@ -71,26 +71,25 @@ Dutch nav labels are pixel-perfect at 40px per row; English is not — "Shopping
 
 ### per-page-home-screen-icon-unverified
 
-#223 shipped a per-page **favicon** (`app/<route>/icon.png`, browser-tab
-chrome only) for Te-Doen, Recepten, Winkelmand and Notities, but
-deliberately did *not* give each page its own home-screen icon or "Add to
-Home Screen" shortcut destination — the two have to move together or the
-result is worse than today (an icon that visually promises one page but
-opens another). The blocker is iOS-specific and untestable here (no real
-device): a shared manifest's `start_url` overrides the current page when
-"Add to Home Screen" is used (real-world confirmed failure shape:
-[gitlab-org/gitlab#427560](https://gitlab.com/gitlab-org/gitlab/-/issues/427560)),
-which is this app's *current* behaviour on every route (one manifest,
-`start_url: "/te-doen"`, since #172). A per-page manifest (own
-`start_url`/`scope`/`id`, wired via `metadata.manifest` + a custom Route
-Handler — confirmed buildable in Next.js) is the candidate fix, and
-Safari 16.4's manifest `id` member was added specifically to let iOS tell
-apart multiple installs of one web app sharing an origin, which is
-suggestive it would work — but no source confirms this exact scenario (N
-manifests, one origin, N independently-routed iOS home-screen installs)
-actually behaves that way. Needs a real iPhone to verify before building
-it for real; see `design/notes/AppShell.md`'s "#223: per-page favicons"
-section for the full research trail.
+**Status: built, awaiting verification on a real device.** #223's first
+pass shipped only a per-page **favicon** (browser-tab chrome). The #223
+vervolg (2026-08-13) built the rest — a per-page `apple-icon.png` for all
+four pages, plus a per-page Web App Manifest (own `id`/`start_url`, shared
+`scope: "/"`, wired via `metadata.manifest` + a Route Handler) for Te-Doen,
+Recepten and Winkelmand — because the user has an iPhone and chose to build
+this for real and test it on the Vercel preview, rather than leave it
+blocked on research alone. What's still genuinely unverified, because it
+requires the one thing this dev machine doesn't have: whether iOS actually
+treats N manifests sharing an origin (each with its own `id`) as N
+independent, correctly-routed home-screen installs, the way Safari 16.4's
+manifest `id` member is documented to intend. If the on-device test in the
+PR body fails — e.g. all three shortcuts open the same page, or show the
+same icon — this part gets reverted; the favicons from #245 stay either
+way. See `design/notes/AppShell.md`'s "#223 vervolg" section for the full
+build, the `id`/`start_url`/`scope` table, and exactly what was and wasn't
+verifiable from this machine (no reachable Supabase project here either, so
+even the real authenticated page HTML couldn't be curled — only an isolated
+throwaway route proved the underlying Next.js mechanism).
 
 ## Recepten
 

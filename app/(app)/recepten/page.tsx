@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { getRecipeCategoriesWithRecipes } from "@/lib/recipes/queries";
@@ -38,6 +39,13 @@ async function ReceptenPageContent() {
     />
   );
 }
+
+// #223 follow-up: links this route's own Web App Manifest, same mechanism
+// as app/(app)/te-doen/page.tsx — see that file's comment and
+// design/notes/AppShell.md.
+export const metadata: Metadata = {
+  manifest: "/recepten/manifest.webmanifest",
+};
 
 export default function ReceptenPage() {
   return (
