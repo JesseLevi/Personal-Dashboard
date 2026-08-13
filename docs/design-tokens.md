@@ -147,7 +147,7 @@ history as a ban on `:active`.
 - If Figma defines no variation for a role in some state, **don't invent one**.
   See Distructive's text below, which never changes.
 
-## The state matrix (`Atom/Button`, node 3623:4346, re-measured 2026-08-12 for #213 via the figma-console-mcp bridge — per-state node, not read off the component set as a whole or off a batch report)
+## The state matrix (`Atom/Button`, node 3623:4346, re-measured 2026-08-12 for #213 and 2026-08-13 for #238 via the figma-console-mcp bridge — per-state node, not read off the component set as a whole or off a batch report)
 
 Named by Figma variable path (`design/tokens.json`'s `figma` field), not hex —
 resolve a name against that file for its current value. Where a style's Hover/
@@ -158,7 +158,7 @@ see "Ramp step name ≠ CSS state name" above), both are shown: `state ← step`
 |---|---|---|---|---|
 | Filled | `surface/secondary/default` | `surface/secondary/hover` | `surface/secondary/active` | bg unchanged, text → `text/base/primary` |
 | White | `surface/highlight/white/default` | Hover ← `.../selected` (stone-100) | Active ← `.../hover` (stone-200) | bg unchanged (reads `.../default`), text → `text/base/primary` |
-| Transparent | no fill | `surface/highlight/white/hover` | `surface/highlight/white/active` | no fill, text → `text/base/primary` |
+| Transparent | no fill | `surface/secondary/hover` | `surface/secondary/active` | no fill, text → `text/base/primary` |
 | Outline | `Stroke/primary/default` | `Stroke/primary/hover` | `Stroke/secondary/active` | border → `Stroke/primary/selected`, text → `text/base/primary` |
 | Distructive | `surface/highlight/red/default` | Hover ← `.../selected` (red-100) | Active ← `.../hover` (red-200) | bg unchanged (reads `.../default`), text unchanged |
 
@@ -183,7 +183,7 @@ entry for the full node-by-node table and `docs/incidents.md`'s corrected
 
 **#204 (2026-08-11) — original (incorrect) state-binding change, historical context only.** #204 believed #112's (and #107's) hex table had misread a `default -> selected -> hover -> active` ramp as `default -> hover -> active`, and rebound White/Distructive's Hover/Active/Selected accordingly. It also added the dedicated `surface-highlight-white-hover/-active` and `surface-highlight-red-selected`/`priority-urgent-bg-selected` tokens, which #213 keeps (the tokens are real and correctly named — see the matrix above for which state now actually reads which one).
 
-**Transparent measured independently, not assumed from matching pixels**: its own fetched Hover/Active nodes are bound to the same `surface/highlight/white/hover|active` variables Button/White reads (not `surface/secondary/*`, which shares only the light-mode hex) — real rebind, dark values differ (`design/notes/Button.md`).
+**Transparent's Hover/Active fill binding changed again in #238 (2026-08-13)** — the Figma authors rebound it a second time, off the White ramp #204 found and onto the Filled/`surface/secondary/hover|active` ramp instead (measured per-node via the figma-console-mcp bridge, not inferred from pixels — both light and dark values genuinely differ between the two ramps, confirmed against `design/tokens.json`, so this is a real visual change, not a no-op rename). Historical note, no longer current: #204 originally found Transparent's own fetched Hover/Active nodes bound to the same `surface/highlight/white/hover|active` variables Button/White reads (not `surface/secondary/*`, which back then shared only the light-mode hex) — that binding held through #213 and was superseded by #238. Full node table: `design/notes/Button.md`'s #238 entry.
 
 Text is `text-secondary` in Default/Hover/Active for every style except Distructive
 (`priority-urgent` throughout, including Selected — its text never changes,
