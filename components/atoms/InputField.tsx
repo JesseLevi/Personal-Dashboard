@@ -19,8 +19,9 @@ import { Icon, type IconName } from "./Icon";
  * States → CSS: Hover → `:hover`, Active → `:active`, Selected →
  * `:focus-within` (flagged for design confirmation); `stroke-primary-active`
  * diverges from Button/Outline on purpose — see open-questions.md.
- * `boxClassName`, and the content-row/trailing-icon `<label>`s that make the
- * whole box clickable — see their own doc comments below (#166).
+ * `boxClassName`/clickable `<label>`s — see their own doc comments (#166).
+ * `onTrailingIconClick` (#231) swaps the trailing `<label>` for a real
+ * `<button>` — see its own type comment below.
  */
 type InputFieldSharedProps = {
   /** Figma `Leading-icon` — icon rendered before the input. */
@@ -43,7 +44,14 @@ type InputFieldSharedProps = {
    * sibling instead (#166). Every other caller leaves this unset.
    */
   boxClassName?: string;
-};
+} & (
+  | { onTrailingIconClick?: undefined; trailingIconLabel?: undefined }
+  | {
+      /** #231: renders the trailing icon as a real `<button>` (its own accessible name via `trailingIconLabel`) instead of the plain click-to-focus `<label>` -- e.g. the search field's clear/X trigger, a distinct action from focusing the field. See design/notes/InputField.md. */
+      onTrailingIconClick: () => void;
+      trailingIconLabel: string;
+    }
+);
 
 type InputFieldSingleLineProps = InputFieldSharedProps &
   Omit<InputHTMLAttributes<HTMLInputElement>, "className"> & {
@@ -95,6 +103,8 @@ export function InputField({
   label,
   leadingIcon,
   trailingIcon,
+  onTrailingIconClick,
+  trailingIconLabel,
   button,
   className,
   boxClassName,
@@ -189,13 +199,25 @@ export function InputField({
         </div>
 
         {trailingIcon ? (
-          <label
-            htmlFor={id}
-            // spacing-flag: gap-2 trailing-icon label unbound in Figma. design/notes/InputField.md.
-            className="flex flex-row items-center gap-2 py-component-sm pr-component-sm"
-          >
-            <Icon name={trailingIcon} className="text-text-secondary" />
-          </label>
+          onTrailingIconClick ? (
+            <button
+              type="button"
+              onClick={onTrailingIconClick}
+              aria-label={trailingIconLabel}
+              // spacing-flag: gap-2 trailing-icon control unbound in Figma. design/notes/InputField.md.
+              className="chrome-touch flex flex-row items-center gap-2 rounded-control border-0 bg-transparent py-component-sm pr-component-sm transition-colors hover:bg-surface-secondary-hover active:bg-surface-secondary-active"
+            >
+              <Icon name={trailingIcon} className="text-text-secondary" />
+            </button>
+          ) : (
+            <label
+              htmlFor={id}
+              // spacing-flag: gap-2 trailing-icon label unbound in Figma. design/notes/InputField.md.
+              className="flex flex-row items-center gap-2 py-component-sm pr-component-sm"
+            >
+              <Icon name={trailingIcon} className="text-text-secondary" />
+            </label>
+          )
         ) : null}
       </div>
     </div>

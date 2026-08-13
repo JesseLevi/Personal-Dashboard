@@ -78,3 +78,23 @@ export const IconCombinations = () => (
     </div>
   </div>
 );
+
+// #231: the /notities search field's two real states -- empty (leading
+// Search icon only) and typed (a real, clickable trailing X button, hover
+// the second row). No design/notes onClick wiring here (Ladle is static) --
+// this only demonstrates the visual: chrome-touch + Button's own
+// transparent-variant hover/active tokens. See design/notes/InputField.md.
+export const ClearableSearch = () => (
+  <div className="flex w-72 flex-col gap-6">
+    <InputField id="clearable-empty" placeholder="Zoeken" leadingIcon="Search" />
+    <InputField
+      id="clearable-typed"
+      placeholder="Zoeken"
+      leadingIcon="Search"
+      defaultValue="Honden"
+      trailingIcon="X"
+      trailingIconLabel="Zoekopdracht wissen"
+      onTrailingIconClick={() => {}}
+    />
+  </div>
+);

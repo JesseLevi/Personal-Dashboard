@@ -101,6 +101,40 @@ node, `itemSpacing`=8, no bound variable) and the trailing-icon label's own
 Both read as real gaps in the fetched node's `boundVariables` — not a
 missed lookup — so both stay raw pending a designer rebind.
 
+## TICKET #231 (2026-08-13): `onTrailingIconClick` — a real clear button, not a click-to-focus label
+
+The `/notities` search bar (fetched mobile `4067:19525`, "Selected" state)
+draws a trailing `Icon/X` the ticket's own text calls an "Icon/X-**knop**"
+(button) — it clears the query, a distinct action from focusing the field,
+which the existing `#166` trailing-icon `<label htmlFor={id}>` cannot
+express (a label has no click handler of its own beyond native
+focus-delegation, and no accessible "button" semantics). Added a paired
+`onTrailingIconClick`/`trailingIconLabel` to `InputFieldSharedProps` (a
+small discriminated union, same shape the existing `label`/`id` pair
+already uses) — when set, the trailing slot renders a real
+`<button type="button">` instead of the `<label>`, with its own
+`aria-label` (`trailingIconLabel`). Every existing `trailingIcon` caller
+(the `options`-variant chevron, `IngredientSearchPanel`'s own search field)
+is unaffected — they pass neither prop, so they keep the plain `<label>`
+byte-for-byte.
+
+**Hover/active styling — flagged, not designed.** The ticket explicitly
+notes Figma draws no dedicated state for this trigger and says to "gebruik
+Button's bestaande states." No nested `Button` instance exists in the
+fetched node (`Icon/X` sits directly in `Trekking-icon-container`, no
+`Button/*` wrapper — confirmed via `figma_execute`, not assumed), so rather
+than instantiate `Button` inside `InputField` (a layering the atom doesn't
+otherwise need), the new `<button>` reuses Button's own **tokens**
+directly: `rounded-control` (Button's own root radius) plus
+`hover:bg-surface-secondary-hover active:bg-surface-secondary-active` —
+the exact pair Button's `transparent` variant already reads. `chrome-touch`
+is added too, matching every real `Button` control in this codebase. See
+`docs/open-questions.md#notes-search-clear-button-states-undesigned`.
+
+Same `spacing-flag: gap-2` marker as the `<label>` branch (unbound in
+Figma, unchanged reasoning) carries over onto the new `<button>`'s
+identical `gap-2`.
+
 ## TICKET #218 (2026-08-12): spacing gate — `p-0` is not a Figma concept
 
 `scripts/check-raw-spacing.sh` (#218) also caught the three native
