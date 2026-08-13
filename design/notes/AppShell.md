@@ -281,7 +281,17 @@ by measurement on hardware, and the *authenticated-HTML* half of item 2 folds
 back into the standing #185 gap where it belongs — it was never specific to
 this ticket.
 
-### Notities: favicon + apple-icon shipped, manifest wiring deferred to #232
+### Notities: favicon + apple-icon shipped, manifest wiring still unwired
+
+**Update (#230, 2026-08-13): `app/(app)/notities/page.tsx` now exists**, so
+the blocker described below — "there's nowhere to put a `metadata.manifest`
+export" — is gone. #230 deliberately did **not** wire it: adding a fourth
+manifest was outside that ticket's scope, and the icons were already inert
+either way. It is now a two-file copy of the other three (a
+`manifest.webmanifest/route.ts` plus one `metadata.manifest` export) that
+any Phase 6 ticket can pick up. The rest of this section is the original
+#223-vervolg reasoning, kept because it explains *why* nothing was
+scaffolded ahead of the page.
 
 `app/(app)/notities/` still has no `page.tsx` (#232), so `/notities`
 doesn't route. Its `icon.png` (#223 first pass) and new `apple-icon.png`
