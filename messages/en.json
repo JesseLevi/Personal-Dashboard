@@ -118,6 +118,14 @@
       "urgent": "Urgent"
     }
   },
+  "notes": {
+    "errors": {
+      "invalid-input": "Check the information you entered.",
+      "unauthenticated": "Sign in again to continue.",
+      "not-found": "This item no longer exists or isn't yours.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
   "components": {
     "buttonToggle": {
       "groupLabel": "Category filter",
