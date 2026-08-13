@@ -175,6 +175,16 @@ state.
 
 `EditingBar` (desktop `3978:14138`, mobile `3978:14870`) is not built from design-system components: every toolbar button is named `Button/Default` but is a detached `FRAME`, not a `Button` instance — each carries a placeholder text layer `"Categorie "` and a stray, invisible trailing `Icon/Plus` instance left over from wherever the frame was copied from. The twenty icons inside are likewise loose frames, not `Icon/*` instances. Measured 2026-08-13 via the `figma-console` bridge while adding the twenty icons to `IconName` for #227. Nothing to fix in code — #234 (EditingBar) builds on real `Button`/`Icon` components regardless, per this repo's normal convention — but the Figma file itself should eventually be rebuilt on real instances so a future re-measurement of this toolbar isn't reading detached frames again.
 
+### notes-category-panel-not-designed
+
+`Pages/Notities/Breakpoints` (`3934:32790`) contains only the seven overview/editor frames — no category-add/rename/delete panel of its own. #232 built `NoteCategoryPanel` by reusing `/recepten`'s `CategoryPanel` shape one-to-one (`design/notes/NoteCategoryPanel.md`) rather than inventing a new panel, but three sub-parts have no Figma source and were resolved by precedent, not design:
+
+- **Icon picker**: the 14-icon set offered (`NOTE_CATEGORY_ICONS`) is a codebase choice, not a Figma list — Figma only shows three seeded categories in use (`FolderClosed`/`Lightbulb`/`FolderClosed`). Reasoning and the full list: `design/notes/NoteCategoryPanel.md`.
+- **Delete confirmation**: no confirm dialog/step is designed anywhere in this file for any category panel (same gap `category-delete-no-confirm-designed`'s history already covers for `/recepten`, now resolved there by reuse). `NoteCategoryPanel` reuses `CategoryPanel.tsx`'s two-step confirm verbatim.
+- **Confirm wording vs. the cascade**: `notes.category_id` is `on delete cascade` (`20260813000001_note_schema.sql`), so deleting a category deletes its notes — the confirm text is generic ("Weet je het zeker?"), not cascade-specific, matching `/recepten`'s own generic wording rather than inventing a new sentence with no design source.
+
+Needs a real Figma frame (panel chrome, an icon set scoped to Notities, and a delete-confirmation state) before any of the three should be considered final.
+
 ---
 
 ## Resolved and removed

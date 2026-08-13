@@ -73,19 +73,23 @@ values above — both are real tokens already in `app/theme.css` (#205/#218
 already added `gap-inline-sm`/`gap-inline-xl`), so nothing needed a
 `spacing-flag`.
 
-## "Categorie" — a deliberate no-op, and so is the column pencil
+## "Categorie" and the column pencil — wired in #232
 
-The ticket allows wiring the header's Categorie button as a no-op "met een
-gemotiveerde keuze" until #232 (category management) lands. Rationale:
-`CategoryPanel`-equivalent UI does not exist for Notities yet, and inventing
-one here would mean freelancing #232's own scope. Same reasoning extends to
-every column's pencil button (`BoardView`'s `onEditColumn`) — left entirely
-unpassed (`undefined`), so `CardContainer` renders it as inert chrome (its
-`onEdit` prop is optional; see `CardContainer.tsx`), exactly the same
-"fixed chrome, no handler yet" shape `PageHeader.md` already documents for
-Te-Doen's pre-#95 Chevron/Star buttons. Both buttons carry real,
-translated `aria-label`s (`Categorie`) regardless — inert is not the same
-as inaccessible.
+Built #230 with the header's Categorie button and every column's pencil
+button (`BoardView`'s `onEditColumn`) deliberately left as no-ops "met een
+gemotiveerde keuze" (#230's own ticket text): `CategoryPanel`-equivalent UI
+did not exist for Notities yet, and inventing one in #230 would have meant
+freelancing #232's own scope.
+
+**#232 wired both** to one shared `NoteCategoryPanel`
+(`app/(app)/notities/NoteCategoryPanel.tsx` — a Notities-owned copy of
+`app/(app)/recepten/CategoryPanel.tsx`, not a generic shared component; full
+reasoning, icon set, delete-flow precedent: `design/notes/
+NoteCategoryPanel.md`). One `categoryPanel` state (`{ open, target }`) owns
+both triggers, same convention `ReceptenBoard.tsx`'s own `panel` state
+already uses for the identical two-trigger shape. Both buttons already
+carried real, translated `aria-label`s (`Categorie`) even while inert —
+that part is unchanged.
 
 ## Sort: `lib/notes/sort.ts`, two note-relevant options only
 

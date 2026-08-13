@@ -18,7 +18,8 @@ import { NOTE_SORT_OPTIONS, type NoteSortOption } from "@/lib/notes/sort";
 import { effectiveNotesSearchQuery, NOTES_SEARCH_DEBOUNCE_MS } from "@/lib/notes/search";
 import type { CategoryWithNotes, NoteSummaryRow } from "@/lib/notes/types";
 import type { NotitiesPageData } from "./notes-data";
-import { createNote, moveNote } from "./actions";
+import { NoteCategoryPanel, type NoteCategoryPanelTarget } from "./NoteCategoryPanel";
+import { createCategory, createNote, deleteCategory, moveNote, renameCategory } from "./actions";
 
 // Client wrapper around BoardView (#230) -- `renderItem` is a function prop
 // and can't cross the Server->Client boundary, so `page.tsx` stays a Server
@@ -27,13 +28,12 @@ import { createNote, moveNote } from "./actions";
 // start. Same split as app/(app)/recepten/ReceptenBoard.tsx /
 // te-doen/TeDoenBoard.tsx. Header + board live in one file, like
 // ReceptenBoard.tsx and unlike Te-Doen's TeDoenHeader/TeDoenBoard split --
-// that split exists there because BoardPanel/CardDetailPanel each own a
-// real, different entity; here the header's "Categorie" button and every
-// column's pencil button are BOTH still no-ops (#232 owns category
-// management), so there is no shared panel state to justify a second file
-// yet. #231 adds the search bar into this same file rather than a third one,
-// for the same reason -- it shares the header/PageHeader it's wired into.
-// Full reasoning for every decision below: design/notes/NotitiesBoard.md.
+// the header's "Categorie" trigger and every column's pencil button (#232)
+// target the same NoteCategoryPanel, so one shared `categoryPanel` state
+// needs one owner, same reasoning ReceptenBoard.md records for
+// CategoryPanel; #231's search bar sits in this same file for the same
+// reason -- it shares the PageHeader it's wired into. Full reasoning for
+// every decision below: design/notes/NotitiesBoard.md.
 export interface NotitiesBoardProps {
   /** #231: board (categories+sort) or search (query+results) -- server-decided in notes-data.ts, never branched on again in the client beyond which content to render. */
   data: NotitiesPageData;
@@ -239,6 +239,19 @@ export function NotitiesBoard({
   const sortMenuRef = useRef<HTMLDivElement>(null);
   useCloseOnOutsidePointerDown(sortMenuRef, sortMenuOpen, () => setSortMenuOpen(false));
 
+  // #232: header "Categorie" (create) and every column's pencil (edit) share
+  // one NoteCategoryPanel instance, same independent open/target convention
+  // as ReceptenBoard.tsx's own `panel` state -- closing (X/overlay/Escape)
+  // only flips `open`, leaving `target` in place so the close transition has
+  // real content to animate away from.
+  const [categoryPanel, setCategoryPanel] = useState<{
+    open: boolean;
+    target: NoteCategoryPanelTarget;
+  }>({
+    open: false,
+    target: { mode: "create" },
+  });
+
   function goWithSort(nextSort: NoteSortOption) {
     // Preserves `?q=` (if any) -- picking a sort option has no effect on an
     // active search (search results are always recency-ordered, never
@@ -375,15 +388,12 @@ export function NotitiesBoard({
                 </div>
               )}
             </div>
-            {/* "Categorie" -- deliberately a no-op. #232 (category
-                management) owns opening a real create panel here; wiring a
-                placeholder panel in this ticket would mean inventing #232's
-                UI un-briefed, so the button renders inert (with a real
-                aria-label from Figma's own "Categorie" text) rather than
-                nothing at all -- same "not invented here" scope-limit
-                PageHeader.md already records for Te-Doen's pre-#95 Chevron/
-                Star buttons. */}
-            <Button icon="Plus">{addCategoryLabel}</Button>
+            <Button
+              icon="Plus"
+              onClick={() => setCategoryPanel({ open: true, target: { mode: "create" } })}
+            >
+              {addCategoryLabel}
+            </Button>
             {/* #231: desktop's third "Knoppen" child (fetched node
                 4067:19270) -- the detached 4109:16063 frame's own Container
                 measured 240px wide (Tailwind's `w-60`, exact), so the width
@@ -454,6 +464,12 @@ export function NotitiesBoard({
               emptyLabel={t("addItemLabel")}
               onAddItem={handleAddNote}
               onItemClick={(note) => router.push(`/notities/${note.id}`)}
+              // #232: every column's pencil opens the same NoteCategoryPanel
+              // the header's "Categorie" trigger does, in edit mode.
+              onEditColumn={(columnId) => {
+                const category = localCategories.find((c) => c.id === columnId);
+                if (category) setCategoryPanel({ open: true, target: { mode: "edit", category } });
+              }}
               renderItem={(note) => (
                 <CardContentNote title={note.title} timestamp={formatTimestamp(note)} snippet={note.snippet} />
               )}
@@ -485,6 +501,18 @@ export function NotitiesBoard({
           </div>
         )}
       </div>
+      {/* #232: outside the #231 fade wrapper on purpose -- SidePanel is an
+          overlay with its own open/close transition, and it must not inherit
+          the search fade's opacity while a category is being edited. */}
+      <NoteCategoryPanel
+        open={categoryPanel.open}
+        onClose={() => setCategoryPanel((current) => ({ ...current, open: false }))}
+        target={categoryPanel.target}
+        onCreateCategory={createCategory}
+        onRenameCategory={renameCategory}
+        onDeleteCategory={deleteCategory}
+        onMutated={() => router.refresh()}
+      />
     </>
   );
 }
