@@ -497,10 +497,11 @@ above is reasoned from reading `lib/notes/queries.ts`/`actions.ts` (#228,
 already merged) and typechecked/unit-tested against them — the query
 shapes, the RPC error-code mapping, and the optimistic-update math are
 exercised by `tests/notes-sort.test.ts`/`tests/notes-timestamp.test.ts`/
-the existing `tests/notes-document.test.ts`, not by a live request. A future
-ticket that runs the migration workflow should re-verify this page exactly
-the way `BoardView.md`'s own device-verification entries describe: real
-drag, real sort navigation, real note creation, on real data.
+the existing `tests/notes-document.test.ts`, not by a live request. The
+migration workflow has since run, so what is owed is no longer a deploy but
+a **signed-in visit to production** — re-verify exactly the way
+`BoardView.md`'s own device-verification entries describe: real drag, real
+sort navigation, real note creation, on real data.
 
 **#231 adds the same gap for search, plus one of its own.** `pnpm lint`/
 `typecheck`/`test`/`check:server-only`/`check:raw-spacing`/
