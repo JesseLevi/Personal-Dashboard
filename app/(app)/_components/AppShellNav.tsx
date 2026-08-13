@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/atoms/Button";
 
 // Only the routes a ticket has actually built (#88, #177); ids without an
-// entry (notes, clothes, assistant) have no page yet, so clicking them is a
+// entry (notes, assistant) have no page yet, so clicking them is a
 // deliberate no-op rather than a link to a 404.
 const ROUTES: Partial<Record<SidebarItemId, string>> = {
   todo: "/te-doen",
@@ -60,7 +60,6 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
     notes: t("items.notes"),
     recipes: t("items.recipes"),
     shopping: t("items.shopping"),
-    clothes: t("items.clothes"),
     assistant: t("items.assistant"),
   };
   const toggleLabel = collapsed ? t("expandLabel") : t("collapseLabel");

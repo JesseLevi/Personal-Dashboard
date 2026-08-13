@@ -149,3 +149,21 @@ dev-mode cold start and is Next's documented default for this exact
 package), but it does not reduce the production bundle here. This is not
 the "tree-shaking fails" case the ticket anticipated — nothing failed, there
 was just nothing left to shake — so no follow-up ticket was opened.
+
+## TICKET #226 (2026-08-13): `Shirt` stays after the Kleding removal
+
+Kleding left the platform (ADR-0016) and `Sidebar.tsx` dropped its only
+consumer, so the ticket asked whether `Shirt` should leave `IconName` too.
+It stays, on the file's own contract: this union is *one entry per icon in
+the Figma "Icons" frame* (`3760:6187`), not "one entry per icon some
+component currently renders". Enumerated the frame's children with the
+`figma-console` bridge on 2026-08-13 — 47 layers, `Icon/Shirt` among them —
+so removing it would have made the union diverge from the frame it mirrors.
+
+Nothing else in the codebase references it (grepped `components/`, `app/`,
+`lib/`), and no database-stored icon name can break either way:
+`recipe_categories.icon` values pass through `isIconName()` with a
+`FolderClosed` fallback (`app/(app)/recepten/ReceptenBoard.tsx`), and
+CategoryPanel's picker offers a curated food set that never contained
+`Shirt`. Cost of keeping it is one lucide import that tree-shakes out of any
+route that doesn't render it.

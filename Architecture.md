@@ -94,11 +94,9 @@ When a component changes in Figma: look up its node-id in `design/figma-map.json
 
 **Agenda** (schema this round, UI later): `calendar_events` (title, starts_at, ends_at, all_day, location, description, `source` enum `manual|sync` — ADR-0005, `calendar_account_id` nullable, `external_id` nullable, unique on (calendar_account_id, external_id)), `calendar_accounts` (provider enum `google|caldav|ics`, display_name, `vault_secret_id` — credentials in Vault per ADR-0002 pattern, `sync_state jsonb`, last_synced_at).
 
-**Kleding** (schema this round, UI later): `clothing_items` (name, type, season, photo_path), `outfits`, `outfit_items`.
-
 **AI/infra**: `embeddings` (source_table, source_id, chunk_index, `content_hash`, `content_text`, `embedding vector(1024)` — bge-m3, ADR-0006), `jobs` (type, payload jsonb, status enum `pending|running|done|failed`, run_at, attempts, last_error), `agent_signals` (detector, message, payload jsonb, status enum `new|dismissed`), `user_ai_keys` → Vault-backed (ADR-0002).
 
-**Storage buckets** (private, RLS'd, path prefix = user_id): `recipe-thumbnails`, `clothing-photos`.
+**Storage buckets** (private, RLS'd, path prefix = user_id): `recipe-thumbnails`.
 
 ### 4.3 Search
 
@@ -131,7 +129,7 @@ Deliberately simple: no streaming, no agent frameworks, no LangChain. A queue ta
 - **Email delivery**: magic-link auth requires SMTP for self-hosted GoTrue — configure a transactional provider (e.g. Resend/Postmark free tier) in Phase 1; without it, half the login story silently doesn't work.
 - **Secrets**: `.env` files live outside git (repo ships `.env.example`); CI secrets in GitHub Actions; `service_role` key exists only in server/worker env, never in client bundles (`import "server-only"` + CI grep, ADR-0002). Per-user AI API keys and calendar credentials in Supabase Vault via server-side functions (ADR-0002).
 - **Content rendering**: TipTap documents render exclusively through TipTap's React renderer with a fixed extension whitelist — never `dangerouslySetInnerHTML` on stored content. Agent output renders as plain text (§5, item 5).
-- **Uploads**: clothing/recipe images are content-type- and size-validated server-side, **EXIF-stripped on upload** (clothing photos are taken at home — GPS metadata is a real leak), stored in private buckets, served via short-lived signed URLs.
+- **Uploads**: recipe images are content-type- and size-validated server-side, **EXIF-stripped on upload** (a photo taken in your own kitchen carries GPS metadata — a real leak), stored in private buckets, served via short-lived signed URLs.
 - **RLS everywhere**, verified by CI (ADR-0009).
 - **Supply chain / CI runner**: the self-hosted runner executes generated code on the machine that holds all data. Mitigations: runner under a dedicated non-admin macOS user; workflows run only from this repo's protected branches (no fork PRs); `pnpm install --frozen-lockfile` everywhere; Renovate/Dependabot with manual merge; `pnpm audit` in CI.
 - **Backups**: nightly `pg_dump` + Storage rsync, encrypted off-site copy (restic → any S3-compatible bucket); **the pgsodium/Vault root key is backed up separately from the dumps** (a dump alone restores Vault secrets as undecryptable blobs); restore drill onto staging monthly.
@@ -171,13 +169,13 @@ Dependencies: Login gates everything; Recepten → Boodschappenlijst is the only
 - **Phase 3 — Te-Doen (Kanban)**: schema + board UI (designed), dnd-kit, labels/filtering. Includes `source` column (ADR-0005).
 - **Phase 4 — Recepten**: schema + overview (category kanban), recipe detail, add-recipe flow incl. ingredients (all designed), thumbnails bucket.
 - **Phase 5 — Boodschappenlijst**: schema + Winkelmand UI (designed), "send ingredients to list" with portion scaling, sectie-grouping.
-- **Phase 6 — Backend-only schemas**: Notities, Agenda, Kleding tables + server actions + RLS tests. No UI (no designs; CLAUDE.md forbids invented UI).
-- **Phase 7 — AI pipeline**: jobs + worker + embeddings + triggers, semantic search over recipes (+ notes data if any exists via API), pg_trgm textual search.
-- **Phase 8 — AI-agent**: pg_cron detectors, agent job type, `agent_signals` + minimal surface.
-- **Phase 9 — Calendar sync (backend)**: provider abstraction, ics → caldav → google order, Vault credential flow, sync worker job.
+- **Phase 6 — Notities**: schema + overzicht (category kanban) + textual search + TipTap editor — a full UI phase since the designs landed (2026-08-13). Kleding was dropped from the platform in the same restructuring (ADR-0016).
+- **Phase 7 — Agenda**: `calendar_events`/`calendar_accounts` schema + agenda UI + the calendar-sync backend (provider abstraction, ics → caldav → google order, Vault credential flow, sync worker job).
+- **Phase 8 — AI pipeline**: jobs + worker + embeddings + triggers, semantic search over recipes and notes, pg_trgm textual search.
+- **Phase 9 — AI-agent**: pg_cron detectors, agent job type, `agent_signals` + minimal surface.
 
 Each phase must end shippable; later phases must not block earlier ones from deploying.
 
 ## 11. Deferred / future rounds
 
-Mail-integratie (the `source` field is its only present-day footprint — ADR-0005), Notities/Agenda/Kleding UI (awaiting Figma), two-way calendar sync, household sharing (requires migration under ADR-0001 — accepted trade-off), dashboard/agent surface design, weekmenu, native app, Home Assistant.
+Mail-integratie (the `source` field is its only present-day footprint — ADR-0005), Agenda UI (awaiting Figma), two-way calendar sync, household sharing (requires migration under ADR-0001 — accepted trade-off), dashboard/agent surface design, weekmenu, native app, Home Assistant.

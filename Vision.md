@@ -75,15 +75,6 @@ Boodschappenlijst
 	•	Items groeperen (bv. per supermarktsectie)
 	•	Raakt deze modules: Recepten (bron van items), Kanban (optioneel: een taak "boodschappen doen" als losse kaart — geen harde koppeling nodig).
 	•	Uitdrukkelijk buiten scope (voor nu): prijsvergelijking, supermarkt-API-integratie, thuisvoorraadbeheer/inventaris.
-Kleding
-	•	Doel: overzicht houden van de eigen garderobe.
-	•	Kernacties:
-	•	Kledingstuk toevoegen met foto
-	•	Categoriseren (type, seizoen)
-	•	Overzicht doorzoeken/filteren
-	•	Outfits samenstellen uit individuele items
-	•	Raakt deze modules: geen vastgestelde cross-links — dit is de minst uitgewerkte module tot nu toe. Voorstel: behandel als losstaand totdat er een concrete aanleiding is voor een koppeling (bv. agenda/weer), in plaats van er nu al een link bij te verzinnen.
-	•	Uitdrukkelijk buiten scope (voor nu): wasbeurt-tracking, uitgaven/budget-tracking, outfit-generator, weersgebaseerde suggesties.
 Mail-integratie
 	•	Status: toekomstig, geen tickets deze ronde. Hier opgenomen zodat de architectuur er nu al rekening mee kan houden — niet om nu te bouwen.
 	•	Doel: mail triagen en actiepunten/afspraken automatisch naar de rest van het platform laten doorstromen.
