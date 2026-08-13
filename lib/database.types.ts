@@ -721,6 +721,14 @@ export type Database = {
         Args: { p_card_id: string; p_column_id: string; p_target_index: number }
         Returns: number
       }
+      move_note: {
+        Args: {
+          p_category_id: string
+          p_note_id: string
+          p_target_index: number
+        }
+        Returns: number
+      }
       move_recipe: {
         Args: {
           p_category_id: string
