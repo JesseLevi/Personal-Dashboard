@@ -128,6 +128,9 @@
     },
     "timestamp": {
       "yesterday": "Yesterday"
+    },
+    "search": {
+      "noResults": "No results found"
     }
   },
   "components": {
@@ -196,7 +199,9 @@
         "sortOptions": {
           "createdAt": "Creation date",
           "alphabetical": "Alphabetical"
-        }
+        },
+        "searchPlaceholder": "Search",
+        "searchClearLabel": "Clear search"
       }
     },
     "sidePanel": {

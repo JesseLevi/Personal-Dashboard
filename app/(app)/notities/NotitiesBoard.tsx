@@ -1,42 +1,54 @@
 "use client";
 
-import { useEffect, useRef, useState, type RefObject } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useTransition, type RefObject } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import clsx from "clsx";
 import { PageHeader } from "@/components/organisms/PageHeader";
 import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
+import { InputField } from "@/components/atoms/InputField";
 import { BoardView, type BoardColumn } from "@/components/organisms/BoardView";
+import { Card } from "@/components/molecules/Card";
 import { CardContentNote } from "@/components/molecules/CardContentNote";
 import { isIconName, type IconName } from "@/components/atoms/Icon";
 import { applyItemMove, type CardMove } from "@/lib/boards/optimistic";
 import { formatNoteTimestamp } from "@/lib/notes/timestamp";
 import { NOTE_SORT_OPTIONS, type NoteSortOption } from "@/lib/notes/sort";
+import { effectiveNotesSearchQuery, NOTES_SEARCH_DEBOUNCE_MS } from "@/lib/notes/search";
 import type { CategoryWithNotes, NoteSummaryRow } from "@/lib/notes/types";
+import type { NotitiesPageData } from "./notes-data";
 import { createNote, moveNote } from "./actions";
 
 // Client wrapper around BoardView (#230) -- `renderItem` is a function prop
 // and can't cross the Server->Client boundary, so `page.tsx` stays a Server
-// Component that only fetches serialisable `CategoryWithNotes[]` (#228) and
-// this file is the lowest point the client boundary can start. Same split as
-// app/(app)/recepten/ReceptenBoard.tsx / te-doen/TeDoenBoard.tsx. Header +
-// board live in one file, like ReceptenBoard.tsx and unlike Te-Doen's
-// TeDoenHeader/TeDoenBoard split -- that split exists there because
-// BoardPanel/CardDetailPanel each own a real, different entity; here the
-// header's "Categorie" button and every column's pencil button are BOTH
-// still no-ops (#232 owns category management), so there is no shared panel
-// state to justify a second file yet. Full reasoning for every decision
-// below: design/notes/NotitiesBoard.md.
+// Component that only fetches serialisable data (`NotitiesPageData`,
+// notes-data.ts) and this file is the lowest point the client boundary can
+// start. Same split as app/(app)/recepten/ReceptenBoard.tsx /
+// te-doen/TeDoenBoard.tsx. Header + board live in one file, like
+// ReceptenBoard.tsx and unlike Te-Doen's TeDoenHeader/TeDoenBoard split --
+// that split exists there because BoardPanel/CardDetailPanel each own a
+// real, different entity; here the header's "Categorie" button and every
+// column's pencil button are BOTH still no-ops (#232 owns category
+// management), so there is no shared panel state to justify a second file
+// yet. #231 adds the search bar into this same file rather than a third one,
+// for the same reason -- it shares the header/PageHeader it's wired into.
+// Full reasoning for every decision below: design/notes/NotitiesBoard.md.
 export interface NotitiesBoardProps {
-  categories: CategoryWithNotes[];
-  /** #230: resolved server-side from `?sort=` (notes-data.ts) -- `null` means manual/position order. */
-  sort: NoteSortOption | null;
+  /** #231: board (categories+sort) or search (query+results) -- server-decided in notes-data.ts, never branched on again in the client beyond which content to render. */
+  data: NotitiesPageData;
   /** Notities page title (`nav.notes`) -- a fixed page label, not board data (no board switcher exists here), same reasoning PageHeader.md records for Recepten's title. */
   title: string;
   /** Header "Categorie" trigger label (`components.pageHeader.notes.addCategoryLabel`). */
   addCategoryLabel: string;
   /** Header "Sorteren" trigger label (`components.pageHeader.notes.sortLabel`) -- also the mobile icon-only button's `aria-label`. */
   sortLabel: string;
+  /** #231 search field placeholder ("Zoeken"). */
+  searchPlaceholder: string;
+  /** #231 accessible name for the search field's clear/X button. */
+  searchClearLabel: string;
+  /** #231 "Geen resultaten gevonden" message. */
+  noResultsLabel: string;
 }
 
 // note_categories.icon is free-text at the schema layer, same gap
@@ -75,24 +87,90 @@ function useCloseOnOutsidePointerDown(
   }, [active, ref, onClose]);
 }
 
-export function NotitiesBoard({ categories, sort, title, addCategoryLabel, sortLabel }: NotitiesBoardProps) {
+interface NotesSearchFieldProps {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  onClear: () => void;
+  placeholder: string;
+  clearLabel: string;
+  className?: string;
+}
+
+// #231: one component, two placements (desktop inside PageHeader's actions
+// row, mobile its own full-width row) -- built on `InputField` per the
+// ticket's own instruction, not a new Figma-mapped molecule (the search
+// field has no distinct Figma component; see design/notes/NotitiesBoard.md).
+// Two literal branches, not a conditionally-spread prop object, for the
+// same type-safety reason the Sorteer button below already needs two real
+// `Button` branches: InputField's onTrailingIconClick/trailingIconLabel are
+// a paired discriminated union (components/atoms/InputField.tsx), not two
+// independently-optional props.
+function NotesSearchField({
+  id,
+  value,
+  onChange,
+  onClear,
+  placeholder,
+  clearLabel,
+  className,
+}: NotesSearchFieldProps) {
+  return value ? (
+    <InputField
+      id={id}
+      className={className}
+      placeholder={placeholder}
+      leadingIcon="Search"
+      trailingIcon="X"
+      trailingIconLabel={clearLabel}
+      onTrailingIconClick={onClear}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  ) : (
+    <InputField
+      id={id}
+      className={className}
+      placeholder={placeholder}
+      leadingIcon="Search"
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  );
+}
+
+export function NotitiesBoard({
+  data,
+  title,
+  addCategoryLabel,
+  sortLabel,
+  searchPlaceholder,
+  searchClearLabel,
+  noResultsLabel,
+}: NotitiesBoardProps) {
   const t = useTranslations("components.cardContainer");
   const tSort = useTranslations("components.pageHeader.notes.sortOptions");
   const tTimestamp = useTranslations("notes.timestamp");
   const tErrors = useTranslations("notes.errors");
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // Local optimistic copy of `categories` (#230, same pattern #155 already
-  // established for ReceptenBoard.tsx -- see that file's own comment for the
-  // full Context7 citation). `pendingMoves` is a *count*, not a boolean, for
-  // the same reason: two quick drags queued must not have the first
-  // settling flip this back to "nothing pending" while the second is still
-  // outstanding.
-  const [localCategories, setLocalCategories] = useState(categories);
+  // Local optimistic copy of the board's categories (#230, same pattern #155
+  // already established for ReceptenBoard.tsx -- see that file's own comment
+  // for the full Context7 citation). Declared unconditionally (React hooks
+  // can't branch on `data.mode`, which changes across navigations) but only
+  // meaningful in board mode -- search results are never dragged/mutated.
+  // `pendingMoves` is a *count*, not a boolean, for the same reason: two
+  // quick drags queued must not have the first settling flip this back to
+  // "nothing pending" while the second is still outstanding.
+  const [localCategories, setLocalCategories] = useState<CategoryWithNotes[]>(
+    data.mode === "board" ? data.categories : [],
+  );
   const pendingMoves = useRef(0);
   useEffect(() => {
-    if (pendingMoves.current === 0) setLocalCategories(categories);
-  }, [categories]);
+    if (data.mode === "board" && pendingMoves.current === 0) setLocalCategories(data.categories);
+  }, [data]);
 
   // Serializes moveNote() calls one at a time -- same reasoning as
   // ReceptenBoard.tsx's `moveQueue`.
@@ -162,7 +240,13 @@ export function NotitiesBoard({ categories, sort, title, addCategoryLabel, sortL
   useCloseOnOutsidePointerDown(sortMenuRef, sortMenuOpen, () => setSortMenuOpen(false));
 
   function goWithSort(nextSort: NoteSortOption) {
-    router.push(`/notities?sort=${nextSort}`);
+    // Preserves `?q=` (if any) -- picking a sort option has no effect on an
+    // active search (search results are always recency-ordered, never
+    // grouped/sorted, see notes-data.ts), so it must not silently drop out
+    // of search mode as a side effect of an unrelated control.
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("sort", nextSort);
+    router.push(`${pathname}?${params.toString()}`);
   }
 
   function formatTimestamp(note: NoteSummaryRow): string {
@@ -175,6 +259,67 @@ export function NotitiesBoard({ categories, sort, title, addCategoryLabel, sortL
       case "older":
         return result.date;
     }
+  }
+
+  // #231: the query lives in `?q=` (URL searchparam), not local-only state
+  // -- deelbaar/server-renderbaar, consistent with `?sort=` above. See
+  // design/notes/NotitiesBoard.md for the full decision writeup, including
+  // why this stays a *client* debounce+transition rather than a form
+  // submit.
+  const committedQuery = data.mode === "search" ? data.query : "";
+  const [queryInput, setQueryInput] = useState(committedQuery);
+  // Resyncs the visible input whenever the server's committed query changes
+  // for a reason OTHER than our own debounced navigation (e.g. browser
+  // back/forward, or a shared link) -- a no-op when it fires right after our
+  // own navigation lands, since `queryInput` already equals `committedQuery`
+  // by construction at that point (see handleQueryChange below).
+  useEffect(() => {
+    setQueryInput(committedQuery);
+  }, [committedQuery]);
+
+  // `effectiveQuery` applies the same threshold `notes-data.ts` used
+  // server-side (lib/notes/search.ts, shared so the two sides can't
+  // disagree). `contentVisible` is the whole animation: true exactly when
+  // what's currently rendered (`committedQuery`, i.e. the server's actual
+  // last response) matches what the user's current typing *would* resolve
+  // to -- false the instant they type away from that (fade-out), true again
+  // once the debounced navigation's response lands and the two agree again
+  // (fade-in). No separate loading state is ever drawn; the previous
+  // content just stays mounted, invisible, until the new content matches.
+  const effectiveQuery = effectiveNotesSearchQuery(queryInput);
+  const contentVisible = effectiveQuery === committedQuery;
+
+  const [, startSearchTransition] = useTransition();
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(searchDebounceRef.current), []);
+
+  function navigateWithQuery(nextQuery: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextQuery) params.set("q", nextQuery);
+    else params.delete("q");
+    // `replace`, not `push` (unlike goWithSort above): every keystroke would
+    // otherwise spam browser history. `startTransition` is what keeps the
+    // OLD tree mounted (no Suspense fallback flash) while the server
+    // resolves the new one -- the ticket's own "geen laadtoestand" steer.
+    startSearchTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    });
+  }
+
+  function handleQueryChange(value: string) {
+    setQueryInput(value);
+    clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      const next = effectiveNotesSearchQuery(value);
+      if (next === committedQuery) return;
+      navigateWithQuery(next);
+    }, NOTES_SEARCH_DEBOUNCE_MS);
+  }
+
+  function handleClearQuery() {
+    setQueryInput("");
+    clearTimeout(searchDebounceRef.current);
+    if (committedQuery !== "") navigateWithQuery("");
   }
 
   return (
@@ -215,9 +360,9 @@ export function NotitiesBoard({ categories, sort, title, addCategoryLabel, sortL
                       <Button
                         key={option}
                         icon={SORT_ICONS[option]}
-                        variant={option === sort ? "filled" : "white"}
+                        variant={data.mode === "board" && option === data.sort ? "filled" : "white"}
                         align="left"
-                        aria-pressed={option === sort}
+                        aria-pressed={data.mode === "board" && option === data.sort}
                         onClick={() => {
                           setSortMenuOpen(false);
                           goWithSort(option);
@@ -239,31 +384,107 @@ export function NotitiesBoard({ categories, sort, title, addCategoryLabel, sortL
                 PageHeader.md already records for Te-Doen's pre-#95 Chevron/
                 Star buttons. */}
             <Button icon="Plus">{addCategoryLabel}</Button>
+            {/* #231: desktop's third "Knoppen" child (fetched node
+                4067:19270) -- the detached 4109:16063 frame's own Container
+                measured 240px wide (Tailwind's `w-60`, exact), so the width
+                lives on this wrapper rather than InputField's own `w-full`
+                root (avoids two conflicting width utilities landing on the
+                same element -- see design/notes/NotitiesBoard.md). */}
+            <div className="hidden md:block md:w-60 md:shrink-0">
+              <NotesSearchField
+                id="notes-search-desktop"
+                value={queryInput}
+                onChange={handleQueryChange}
+                onClear={handleClearQuery}
+                placeholder={searchPlaceholder}
+                clearLabel={searchClearLabel}
+              />
+            </div>
           </div>
         }
       />
-      {/* Drag-persist / create-note failure only -- same inline convention
-          as ReceptenBoard.tsx/TeDoenBoard.tsx (`notes.errors.*`, no toast
-          component exists in this design system yet). */}
-      {actionError && <p className="text-base font-semibold text-priority-urgent">{actionError}</p>}
-      <BoardView
-        columns={columns}
-        // #230: sorting is a VIEW choice (lib/notes/sort.ts) -- when active
-        // the on-screen order no longer matches `position`, so dragging is
-        // disabled rather than letting a drop write a misleading position
-        // against what the user actually sees. Same precedent design/notes/
-        // TeDoenBoard.md records for #95.
-        dragDisabled={sort !== null}
-        onMove={handleMove}
-        addLabel={t("addLabel")}
-        editLabel={t("editLabel")}
-        emptyLabel={t("addItemLabel")}
-        onAddItem={handleAddNote}
-        onItemClick={(note) => router.push(`/notities/${note.id}`)}
-        renderItem={(note) => (
-          <CardContentNote title={note.title} timestamp={formatTimestamp(note)} snippet={note.snippet} />
-        )}
+      {/* #231: mobile's own full-width row below the header (fetched node
+          4067:18157/4067:18163) -- same component as the desktop instance
+          above, just placed differently ("Eén component, twee plaatsingen",
+          the ticket's own instruction). `pr-page-right-equal` matches the
+          instance's own measured outer padding -- `main` (AppShellNav.tsx)
+          only ever supplies left padding, every full-width row supplies its
+          own right edge (PageHeader.tsx does the same). */}
+      <NotesSearchField
+        id="notes-search-mobile"
+        className="pr-page-right-equal md:hidden"
+        value={queryInput}
+        onChange={handleQueryChange}
+        onClear={handleClearQuery}
+        placeholder={searchPlaceholder}
+        clearLabel={searchClearLabel}
       />
+      {/* #231 animation: typing fades this whole block out (contentVisible
+          false the instant the typed query diverges from what's actually
+          rendered), then back in once the server's response matches again --
+          covers all three states (board/results/no-results) with one toggle
+          rather than a separate transition per state. prefers-reduced-motion
+          matches every other animated element in this codebase (BoardView.tsx,
+          Dropdown.tsx, SidePanel.tsx, ButtonToggle.tsx). */}
+      <div
+        className={clsx(
+          "flex flex-1 flex-col transition-opacity duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+          contentVisible ? "opacity-100" : "opacity-0",
+        )}
+      >
+        {data.mode === "board" ? (
+          <>
+            {/* Drag-persist / create-note failure only -- same inline
+                convention as ReceptenBoard.tsx/TeDoenBoard.tsx
+                (`notes.errors.*`, no toast component exists in this design
+                system yet). Board-only: search results have no drag/create
+                actions. */}
+            {actionError && <p className="text-base font-semibold text-priority-urgent">{actionError}</p>}
+            <BoardView
+              columns={columns}
+              // #230: sorting is a VIEW choice (lib/notes/sort.ts) -- when
+              // active the on-screen order no longer matches `position`, so
+              // dragging is disabled rather than letting a drop write a
+              // misleading position against what the user actually sees.
+              // Same precedent design/notes/TeDoenBoard.md records for #95.
+              dragDisabled={data.sort !== null}
+              onMove={handleMove}
+              addLabel={t("addLabel")}
+              editLabel={t("editLabel")}
+              emptyLabel={t("addItemLabel")}
+              onAddItem={handleAddNote}
+              onItemClick={(note) => router.push(`/notities/${note.id}`)}
+              renderItem={(note) => (
+                <CardContentNote title={note.title} timestamp={formatTimestamp(note)} snippet={note.snippet} />
+              )}
+            />
+          </>
+        ) : data.results.length > 0 ? (
+          // #231: a flat list, no category grouping/column headers/Carousel
+          // (Figma node 4067:19985, the ticket's own explicit instruction)
+          // -- the same Card + CardContentNote the board itself uses, just
+          // stacked directly instead of inside BoardView/CardContainer.
+          <div className="flex w-full flex-col gap-stack-sm">
+            {data.results.map((note) => (
+              <div key={note.id} onClick={() => router.push(`/notities/${note.id}`)} className="cursor-pointer">
+                <Card>
+                  <CardContentNote title={note.title} timestamp={formatTimestamp(note)} snippet={note.snippet} />
+                </Card>
+              </div>
+            ))}
+          </div>
+        ) : (
+          // #231: "Geen resultaten gevonden" (Figma node 4067:19998), no
+          // illustration/button. Centered via flex-1 within this already-flex
+          // wrapper, matching CardContainer's own empty-column treatment
+          // (design/notes/NotitiesBoard.md's "Empty state" section) rather
+          // than the fetched static frame's own fixed pixel position -- see
+          // design/notes/NotitiesBoard.md for why.
+          <div className="flex flex-1 items-center justify-center">
+            <p className="text-base font-semibold text-text-secondary">{noResultsLabel}</p>
+          </div>
+        )}
+      </div>
     </>
   );
 }

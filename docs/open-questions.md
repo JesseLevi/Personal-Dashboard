@@ -128,6 +128,49 @@ or content between the two). Same class of gap #124 already flagged and
 closed for Recepten's un-renamed 4th column. Not built; needs no design
 action beyond eventually deleting the duplicate frame in Figma.
 
+### notes-desktop-searchfield-detached
+
+The desktop search bar (`4109:16063`, a `FRAME` named "Container") is
+**not** an `Input-field` instance — it's hand-rebuilt from the component's
+own anatomy (`Container` → `Content` → `Leading + Text` → `Slot` →
+`Trekking-icon-container`), copy-paste residue like `notes-overview-
+duplicate-mobile-frame` and `notes-editingbar-detached-from-components`
+below. Measured 2026-08-13 (#231) via `figma_execute`/`boundVariables`
+alongside the real mobile instance (`4067:18163`) before trusting anything
+from it, per the ticket's own instruction: every token binding on the
+detached `Container` (`gap-stack-md`, `p-component-xs` all sides,
+`rounded-control-outer`, `surface-highlight-white` fill, `stroke-primary`
+default/selected stroke) is **byte-identical** to the real mobile
+instance's own `Container` node — so this frame is a faithful (if
+detached) manual rebuild, not a stale/divergent one, and its Container-level
+styling was safe to treat as confirmation of `InputField.tsx`'s own already-
+correct tokens (no code change needed there). The one number taken from
+this frame that has no mobile equivalent to cross-check is its own width
+(240px, `FIXED` sizing → Tailwind's exact `w-60`) — mobile's field is
+full-width by design (no fixed-width case exists to compare against), so
+that specific measurement rests on the detached frame alone. Also
+confirmed, structurally: the frame's own `Slot` (hidden, `visible: false`)
+still nests a leftover "Categorie" `Button/Default` instance —
+`design/notes/NotitiesBoard.md`'s "Search bar" section had already flagged
+this as "likely copy-paste residue, not this ticket's to resolve" and that
+reading holds: it is invisible in the fetched node, never rendered, not a
+real third Categorie trigger.
+
+### notes-search-clear-button-states-undesigned
+
+The `/notities` search field's clear/X button (`components/atoms/
+InputField.tsx`'s new `onTrailingIconClick`, #231) has no fetched hover/
+active state of its own — Figma draws no separate `Button` instance behind
+`Icon/X` (confirmed: it's the icon directly inside `Trekking-icon-
+container`, no `Button/*` wrapper), so there is no state row to fetch.
+Built per the ticket's own steer ("gebruik Button's bestaande states"):
+reuses Button's `rounded-control` radius and its `transparent` variant's
+`hover:bg-surface-secondary-hover`/`active:bg-surface-secondary-active`
+tokens directly, rather than leaving the trigger with zero affordance or
+inventing a new one-off pair. See `design/notes/InputField.md`'s #231
+entry. Needs design confirmation once/if this trigger gets its own Figma
+state.
+
 ### notes-editingbar-detached-from-components
 
 `EditingBar` (desktop `3978:14138`, mobile `3978:14870`) is not built from design-system components: every toolbar button is named `Button/Default` but is a detached `FRAME`, not a `Button` instance — each carries a placeholder text layer `"Categorie "` and a stray, invisible trailing `Icon/Plus` instance left over from wherever the frame was copied from. The twenty icons inside are likewise loose frames, not `Icon/*` instances. Measured 2026-08-13 via the `figma-console` bridge while adding the twenty icons to `IconName` for #227. Nothing to fix in code — #234 (EditingBar) builds on real `Button`/`Icon` components regardless, per this repo's normal convention — but the Figma file itself should eventually be rebuilt on real instances so a future re-measurement of this toolbar isn't reading detached frames again.

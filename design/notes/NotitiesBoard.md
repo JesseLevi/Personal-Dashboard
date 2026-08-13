@@ -1,10 +1,11 @@
 # /notities page (`page.tsx` + `NotitiesBoard.tsx`)
 
-- **Code:** `app/(app)/notities/page.tsx` (Server Component, fetch + sort
-  searchParam), `notes-data.ts` (server-only sort/data resolution),
-  `NotitiesBoard.tsx` (`"use client"`, owns `renderItem`/header/navigation/
-  drag), `loading.tsx` (Suspense fallback), `lib/notes/timestamp.ts` +
-  `lib/notes/sort.ts` (pure helpers).
+- **Code:** `app/(app)/notities/page.tsx` (Server Component, fetch + sort/q
+  searchParams), `notes-data.ts` (server-only data resolution, board OR
+  search), `NotitiesBoard.tsx` (`"use client"`, owns `renderItem`/header/
+  navigation/drag/search), `loading.tsx` (Suspense fallback),
+  `lib/notes/timestamp.ts` + `lib/notes/sort.ts` + `lib/notes/search.ts`
+  (pure helpers).
 - **Node IDs (fetched via the `figma-console` bridge, `figma_execute` +
   `getVariableByIdAsync` for every binding — never inferred from a resolved
   value):** section `3934:32790` (map entry, the stable anchor), desktop
@@ -13,7 +14,8 @@
   mobile), mobile sidebar-open button `4067:18159`. `BoardView`/
   `CardContainer`/`Card` node ids already live in their own files, not
   repeated here. `Card-content/Note` (`4067:18495`) is #229's, documented in
-  `design/notes/CardContentNote.md`.
+  `design/notes/CardContentNote.md`. #231's own search nodes are listed in
+  that section below, not repeated here.
 
 Built #230. Not a new organism: composes the existing `BoardView`
 (`components/organisms/BoardView.tsx`) with `renderItem` -> `CardContentNote`
@@ -233,39 +235,203 @@ Tests: `tests/notes-timestamp.test.ts` (today, yesterday, older, both
 calendar-day boundaries, a month rollover, a year rollover, single-digit
 padding).
 
-## Search bar — confirmed present in Figma, `#231`'s to build, room left per the ticket
+## Search bar — built #231
 
-Both fetched header frames genuinely include a search element **in the same
-header zone** the ticket says to plan for:
+Confirmed both fetched header frames genuinely include a search element in
+the header zone #230 left room for:
 
 - **Desktop** (`4067:19270`): the third child of "Knoppen," a 240×48
-  "Container" node — an `Input-field`-shaped assembly (`Icon/Search` +
-  placeholder "Zoeken") whose own `Slot` nests **a second, distinct Button/
-  Default instance also reading "Categorie"** (125×40). This second
-  Categorie button is very likely further copy-paste residue (the same class
-  of artifact `notes-overview-duplicate-mobile-frame` and Recepten's un-
-  renamed 4th column already are) rather than an intentional third
-  "Categorie" trigger — but confirming that one way or the other is a call
-  for whoever builds #231 against the search node directly (measuring
-  annotations, not just geometry), not this ticket's to resolve or silently
-  drop.
-- **Mobile** (`4067:18157`): a separate, full-width `Input-field` instance
-  (`4067:18163`, "Zoeken" placeholder) sits as its own row between the
-  header and the `Carousel`, not nested inside the button group the way
-  desktop's is.
+  "Container" node — a detached, hand-rebuilt `Input-field`-shaped assembly
+  (`Icon/Search` + placeholder "Zoeken"), NOT a real component instance.
+  Its own `Slot` nests a second, hidden (`visible: false`) "Categorie"
+  `Button/Default` instance — confirmed leftover copy-paste residue, never
+  rendered, not a real third trigger. Full measurement writeup:
+  `docs/open-questions.md#notes-desktop-searchfield-detached`.
+- **Mobile** (`4067:18157`): a separate, full-width real `Input-field`
+  instance (`4067:18163`, "Zoeken" placeholder, `Title:false` — no visible
+  field label) sits as its own row between the header and the board content,
+  not nested inside the button group the way desktop's is. Its "Selected"
+  variant (`4067:19525`, sample content "Honden") is the state the
+  SearchResults/NoResults mock frames actually show while a query is typed:
+  leading `Icon/Search` unchanged, a real trailing `Icon/X` appears (hidden
+  entirely, not just swapped, when `Trailing-icon:false` — confirmed via
+  `componentProperties`, not inferred from a resolved boolean).
 
-**Nothing from either search node is rendered by this ticket** — no
-placeholder `<input>`, no reserved empty box. Building any part of a search
-field now would mean guessing at behaviour (`#231`'s own scope: live query,
-debounce, results list shape, the flat-list-no-grouping read
-`lib/notes/queries.ts`'s `searchNotes` already implements) ahead of that
-ticket. What *is* already true, and is what "leave room for it" means in
-practice: the header's `actions` slot is a plain flex row
-(`PageHeader.tsx`'s existing `actions` prop, untouched), so #231 can add a
-third flex child (desktop) or its own full-width row below the header
-(mobile, matching the measured Figma position) without restructuring
-anything this ticket built. No layout decision here is load-bearing against
-a specific search-bar width or position — the row simply has space.
+**Node measurements (2026-08-13, `figma-console` bridge, `boundVariables`
++ `componentProperties` on every node below — never inferred from a
+resolved value):**
+
+| Node | What | Confirms |
+| --- | --- | --- |
+| `4067:18163` | mobile empty field | `Container` gap-stack-md/p-component-xs/rounded-control-outer/surface-highlight-white/stroke-primary-default — same tokens `InputField.tsx` already uses. `Trailing-icon:false` hides the whole `Trekking-icon-container`, not just the icon. |
+| `4067:19525` | mobile "Selected" field | Same Container tokens, stroke swaps to `stroke-primary-selected`. `Trailing-icon:true`, swapped to `Icon/X`. |
+| `4109:16063` | desktop detached frame | Container tokens byte-identical to the mobile instance (see open-questions slug) — the ONE number with no mobile equivalent to cross-check is its own 240px width (`w-60`, exact Tailwind step). |
+| `4067:19985` | `SearchResults` list | `FILL` width, `HUG` height, `gap-stack-sm` (8px) between two `Card` instances — no `CardContainer`, no column chrome, confirming the ticket's "platte lijst" instruction structurally, not just by reading the ticket text. |
+| `4067:19998` | "Geen resultaten gevonden" text | `text-base font-semibold text-text-secondary` (fontSize `font/size/base`, weight `font/weight/semibold`, fill `color/text/base/secondary`) — a direct Tailwind-native pairing, no custom styling. |
+| `4067:19901`/`4067:19900` | NoResults "Main" frame | Confirms the full `PageHeader` (title + Sorteer + Categorie) AND the search field both stay mounted/visible during search — only the body content below switches. Its own `itemSpacing` (24, between header/field/message) is genuinely **unbound** in this specific node — see "Vertical spacing" below for why that's not a `spacing-flag` case. |
+
+**Vertical spacing reuses `main`'s existing `gap-page-stack`, not a new
+token.** The NoResults "Main" frame's own 24px gap between its stacked
+children (sidebar-button+header row, search field, message) has no bound
+variable on THIS node — but `AppShellNav.tsx`'s `<main className="... gap-
+page-stack ...">` already puts that exact 24px gap between every one of
+its own direct children (`PageHeader`, and now this ticket's mobile search
+row and content wrapper are further direct children of the same `main`,
+via `NotitiesBoard`'s returned fragment). Reusing the app's own existing
+layout-level gap for a layout-level concern the fetched node's raw geometry
+also happens to match is not the same class of inference the "resolved
+value never identifies a token" rule warns against (that rule is about a
+*component's own* Figma-bound styling, e.g. reading `border-input-hover`
+off a pixel match) — this is "don't add a redundant new gap when the page
+shell already produces the right one," and it means zero new spacing
+classes/tokens were needed for the vertical rhythm between the header, the
+mobile search row, and the content block below.
+
+## Data: `NotitiesPageData`, one loader, not two
+
+`notes-data.ts`'s `loadNotitiesPageData` (unchanged name, extended
+signature: `(sortParam, queryParam)`) now returns a discriminated union,
+`{ mode: "board"; categories; sort } | { mode: "search"; query; results }`.
+Chosen over the ticket's other offered option (a second, parallel loader)
+because `?q=` and `?sort=` are resolved at the exact same call site
+(`page.tsx`) from the exact same `searchParams` object — splitting into two
+functions would just relocate the `if` into `page.tsx` instead of removing
+it, and `page.tsx` would still need to pick which loader to call based on
+the same `q` check either way. `?q=` wins outright once it clears
+`lib/notes/search.ts`'s `effectiveNotesSearchQuery` threshold: `sort` is
+not read at all in the search branch (not silently dropped — structurally
+absent from that branch's return type), because search results are always
+recency-ordered (`searchNotes`' own `updated_at` ordering,
+`lib/notes/queries.ts`, unchanged since #228) with no category grouping to
+sort within.
+
+`NotitiesBoard.tsx` receives this union as a single `data` prop rather than
+the previous `categories`/`sort` pair — React hooks can't conditionally
+call `useState`/`useEffect` based on `data.mode` (it changes across
+navigations, same component instance), so the board-only local state
+(`localCategories`, `pendingMoves`, `moveQueue`) is still declared
+unconditionally, just initialized/synced from `data.categories` only when
+`data.mode === "board"` (an empty array the rest of the time, unused since
+`BoardView` isn't rendered in search mode).
+
+## Search: query lives in `?q=`, debounce + `useTransition`, no new loading state
+
+**Decisions, as the ticket asked to make and motivate:**
+
+- **`?q=` is a URL searchparam**, exactly like the existing `?sort=` — not
+  local-only client state. Same reasoning `?sort=` already has: shareable,
+  server-renderable, and it lets `searchNotes` (already built by #228,
+  `lib/notes/queries.ts`, no `"use server"` wrapper) be called directly from
+  `notes-data.ts` server-side, rather than needing a new server action +
+  client fetch round trip the way `IngredientSearchPanel.tsx`'s panel-local
+  search does (a deliberately different shape there — a transient panel, not
+  a page's own primary view).
+- **Minimum query length: 2** (`lib/notes/search.ts`'s
+  `NOTES_SEARCH_MIN_QUERY_LENGTH`). A single character against
+  `ilike '%x%'` over every note's title + content_text returns near-random
+  matches for almost no typed intent; 2 already narrows meaningfully and
+  still feels instant. No design source — the ticket left this number to
+  this ticket's own call. Below the threshold the page behaves exactly as
+  if there were no query at all (board stays/reappears, no navigation is
+  even scheduled once the debounce fires and finds the effective query
+  unchanged from what's already committed — see `handleQueryChange`).
+- **Debounce: 300ms** (`NOTES_SEARCH_DEBOUNCE_MS`), the same codebase
+  default `IngredientSearchPanel.tsx`'s `SEARCH_DEBOUNCE_MS` already uses
+  (no design source there either — reused for consistency, not re-derived).
+- **No new loading state, per the ticket's own steer** ("het ontwerp toont
+  geen laadtoestand"). `router.replace` is wrapped in `startTransition`
+  (`useTransition`), which is what keeps the PREVIOUS server-rendered tree
+  mounted (no Suspense-fallback flash back to `BoardSkeleton`) while the new
+  `?q=` response streams in — the standard Next.js App Router pattern for
+  search-as-you-type over server data. `replace`, not `push`: every
+  keystroke would otherwise spam browser history the way `goWithSort`'s
+  explicit `push` intentionally does for a real sort choice.
+- **`goWithSort` now preserves `?q=`** (merges into the current
+  `useSearchParams()` instead of hardcoding a bare `?sort=` string) — a
+  small, ticket-motivated fix: without it, picking a sort option while a
+  search is active would silently wipe `?q=` and dump the user out of
+  search, even though `sort` has zero effect on search-mode rendering
+  (see "Data" above). Harmless to keep both params present simultaneously;
+  `sort` simply sits inert in the URL until the user clears the search.
+
+**Animation.** One CSS crossfade (`transition-opacity duration-[var(--
+duration-base)] ease-base motion-reduce:transition-none` — the exact class
+string `BoardView.tsx`/`Dropdown.tsx`/`SidePanel.tsx`/
+`AnimatedAddToBasketButton.tsx`/`ButtonToggle.tsx` already use, confirming
+`prefers-reduced-motion` is respected the same way everywhere else in this
+codebase) wraps whichever content is currently rendering (board, results,
+or no-results — one toggle covers all three, not three separate
+transitions). Driven entirely by derived state, no manual
+setTimeout-choreographed fade sequence:
+
+```
+committedQuery = data.mode === "search" ? data.query : ""   // what the server actually rendered
+effectiveQuery = effectiveNotesSearchQuery(queryInput)        // what's currently typed, thresholded
+contentVisible = effectiveQuery === committedQuery
+```
+
+The instant a keystroke makes `effectiveQuery` diverge from `committedQuery`
+(including "typed something too short to search" only if that also changes
+the effective value — e.g. going from a committed 3-char query back to 1
+character DOES diverge, since the effective value drops to `""`), the
+wrapper's opacity drops to 0 — the fade-out fires on the very first
+keystroke that would actually change what's showing, matching the ticket's
+"iemand begint met typen > carousel fade uit." It stays invisible (old
+content still mounted underneath, not blanked) for however long the
+debounce + server round trip takes — no spinner is ever drawn in that gap,
+per the ticket's own instruction. Once the response lands and
+`committedQuery` updates to match, `contentVisible` flips back to `true`
+purely because the two values now agree again — the fade-in requires no
+separate "did new data arrive" bookkeeping. Clearing via the X button sets
+`queryInput` to `""` immediately (diverges from a non-empty
+`committedQuery` → fade-out) and skips scheduling if there's nothing to
+clear; the subsequent navigation removes `?q=` entirely, `committedQuery`
+becomes `""` too, and the board fades back in — exactly the ticket's third
+beat.
+
+**One deliberate deviation from the ticket's literal storyboard**: a
+single keystroke that stays below `NOTES_SEARCH_MIN_QUERY_LENGTH` while the
+board is already showing does **not** fade anything (both `effectiveQuery`
+and `committedQuery` are `""`) — the fade cascade is gated on a genuine
+search-state transition, not on the raw act of typing. This was chosen
+over fading on every keystroke unconditionally because the latter would
+flicker the board for up to a full debounce window on nearly every attempt
+to start a real search, with nothing yet to show for it.
+
+## Scope boundary: textual search only
+
+`searchNotes` is `ilike`/`pg_trgm`-based text matching over `notes.title` +
+`notes.content_text` (#228, unchanged by this ticket). Semantic search via
+pgvector is explicitly **Phase 8** (#31) — already-assigned future work,
+not an open question this ticket leaves behind.
+
+## Search field: `NotesSearchField`, one component two placements, built on `InputField`
+
+Private (unexported) component inside `NotitiesBoard.tsx` — not a new
+`components/atoms|molecules` entry, since the search bar has no distinct
+Figma component of its own (both fetched nodes are either a detached frame
+or a plain `Input-field` instance override, see "Search bar" above); same
+"page-specific composition stays local" precedent `NotitiesBoard.tsx`'s own
+Sorteer-dropdown markup already sets. Rendered twice — desktop (wrapped in
+a `hidden md:block md:w-60 md:shrink-0` sizing div, since `InputField`'s
+own root hardcodes `w-full` and a caller-supplied `w-60` on the SAME
+element would create two conflicting width utilities with no guaranteed
+winner; wrapping avoids that entirely) inside `PageHeader`'s `actions`, and
+mobile (`className="pr-page-right-equal md:hidden"`, matching the fetched
+instance's own measured outer padding — `main` only supplies left padding,
+every full-width row supplies its own right edge, same as `PageHeader.tsx`
+itself) as its own row directly below `PageHeader`. Two literal JSX
+branches (query present vs. not) rather than a conditionally-spread prop
+object, for the same reason the Sorteer button above already needs two real
+`Button` branches: `InputField`'s `onTrailingIconClick`/`trailingIconLabel`
+are a paired discriminated union (see `design/notes/InputField.md`'s #231
+entry), not two independently-optional props a ternary-spread could satisfy
+cleanly.
+
+No visible `label` is passed to `InputField` (placeholder-only, matching
+the fetched node's own `Title:false` and this exact codebase's own
+precedent, `IngredientSearchPanel.tsx`'s identically-placeholder-only
+search field).
 
 ## i18n
 
@@ -278,6 +444,11 @@ names are `note_categories.name` **data**, never translation strings — same
 reasoning `TeDoenBoard.md`/`ReceptenBoard.md` already document for
 `board_columns.name`/`recipe_categories.name`. `addLabel`/`editLabel`/
 `addItemLabel` are reused verbatim from `components.cardContainer.*`.
+
+**#231 additions**: `components.pageHeader.notes.searchPlaceholder`
+("Zoeken"/"Search"), `components.pageHeader.notes.searchClearLabel` (the
+clear/X button's `aria-label`), `notes.search.noResults` ("Geen resultaten
+gevonden"/"No results found").
 
 ## Sidebar
 
@@ -321,3 +492,23 @@ the existing `tests/notes-document.test.ts`, not by a live request. A future
 ticket that runs the migration workflow should re-verify this page exactly
 the way `BoardView.md`'s own device-verification entries describe: real
 drag, real sort navigation, real note creation, on real data.
+
+**#231 adds the same gap for search, plus one of its own.** `pnpm lint`/
+`typecheck`/`test`/`check:server-only`/`check:raw-spacing`/
+`check:comment-budget`/`build` all run and green (see the PR for exact
+output) — real search, the debounce timing, and the fade animation were
+never exercised in a live browser against real rows, same standing gap as
+above. **New this ticket**: `NotitiesBoard.tsx` (like `ReceptenBoard.tsx`/
+`TeDoenBoard.tsx` before it) has no Ladle story of its own — it's a client
+component requiring `next/navigation`'s router/searchParams hooks, which
+Ladle's plain-React preview can't provide. The three search UI states are
+therefore only *partially* covered by `pnpm test:visual`: `InputField`'s
+updated/expanded story (`ClearableSearch`) baselines the field itself
+(empty + typed-with-clear-button, including the new hover/active tokens),
+and `Card`/`CardContentNote`'s existing stories already baseline the
+results-row look (byte-identical composition, just stacked flat instead of
+inside a column). The assembled page states (search results list live
+alongside the real header, and the no-results message) are verified by
+reading `NotitiesBoard.tsx` + running the full gate suite, not by an
+independent screenshot baseline — flagged here rather than silently
+claimed as fully visually verified.
