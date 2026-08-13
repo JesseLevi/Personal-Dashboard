@@ -89,7 +89,7 @@ function BoardPanelForm({
       // own cross-axis stretch regardless, so every footer call site reads
       // the same way at a glance.
       footer={
-        <div className="flex gap-2">
+        <div className="flex gap-inline-sm">
           <Button
             variant="filled"
             icon="Save"

@@ -261,3 +261,61 @@ mobile / 128 desktop) as unambiguous, already backed by
 safe-area idiom documented above, a different (and riskier to touch)
 concern than plain page padding, out of this ticket's explicit `pl-`/`pr-`
 scope.
+
+## #219
+
+`AppShellNav.tsx:197` (`<main>`), measured against `Pages/Navigation`
+(`3889:16890`) → `Mobile/Navigation/01` (`3889:15957`) and
+`Desktop/Navigation/01` (`3889:17167`), specifically each frame's `Main`
+child (`3889:15958` mobile, `3889:17169` desktop):
+
+| old utility | new utility | node-id | `boundVariables` key | variable |
+| --- | --- | --- | --- | --- |
+| `gap-6` | `gap-page-stack` | `3889:15958` / `3889:17169` | `itemSpacing` | `spacing/layout/page-stack` (24px both) |
+| `pb-20 md:pb-20` | `pb-page-bottom` | `3889:15958` / `3889:17169` | `paddingBottom` | `spacing/layout/page-padding-bottom` (80px both) |
+
+`pl-page-left` was already correct (pre-existing, #205) — re-confirmed
+against the same nodes' `paddingLeft` → `spacing/layout/page-padding-left`
+(16→128, self-switching).
+
+**Left raw and flagged**: `pt-[max(1rem,env(safe-area-inset-top))] md:pt-20`.
+`paddingTop` on both measured `Main` nodes is bound to
+`spacing/layout/page-padding-top` (16 mobile → 80 desktop, self-switching
+via `app/theme.css`'s unlayered `@media` block — one of the three bold
+tokens in the shared briefing's vocabulary table). That token alone,
+`pt-page-top`, would reproduce the *numbers* exactly, but not the
+*behaviour*: the mobile branch is deliberately `max(1rem,
+env(safe-area-inset-top))`, not a flat `1rem`, to clear a notch/home-
+indicator in standalone iOS (#172, see the ticket log above). Two ways to
+fold it in were considered and rejected:
+
+- `pt-page-top` (drop `max()` entirely) — would silently regress #172's
+  fix on notched devices. Ruled out by this ticket's own "never drop the
+  safe-area behaviour" instruction.
+- `pt-[max(1rem,env(safe-area-inset-top))] md:pt-page-top` — forbidden
+  outright by the ticket brief: `page-top` already switches itself past
+  768px via the CSS-level media query, so an explicit `md:` prefix on it
+  is exactly the double-application the brief calls out by name.
+
+A `pt-[max(var(--spacing-page-top),env(safe-area-inset-top))]` single
+arbitrary-value utility (referencing the token's own CSS variable) was
+considered as a third option — it would preserve the safe-area guard at
+*every* breakpoint, including desktop, where the current code
+deliberately does not apply it (`md:pt-20` is a flat value; the file's own
+comment says "`md:pt-20` already clears any real inset"). That's a
+behaviour change, not a refactor — extending safe-area handling to
+desktop is a design/product call, not something to slip in silently while
+converting a spacing utility. **Flagged for a decision rather than
+applied** — see "Open question" below.
+
+### Open question — should desktop `pt-` also carry the safe-area `max()`?
+
+`md:pt-20` is currently a flat value with no `env()` guard, on the stated
+assumption that 80px of padding already clears any real safe-area inset
+on desktop form factors. That assumption predates this ticket and wasn't
+re-verified here (no on-device signal, same caveat as this file's #172
+entries generally). If a future device combines a wide/desktop-width
+viewport with a nonzero top inset (e.g. a landscape foldable), `md:pt-20`
+would not compensate. Worth a real design decision before folding `pt-`
+into a single token-driven `max()` expression — not decided unilaterally
+in this ticket.

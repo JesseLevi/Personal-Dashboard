@@ -86,7 +86,7 @@ export function PasAanPanel({ open, onClose, portions, unitSystem, onApply }: Pa
           the same bordered slot every other Card uses — reused directly
           rather than hand-rolling the box. */}
       <Card title={t("ingredientsCardTitle")}>
-        <div className="flex w-full items-center justify-between gap-5 border-b border-stroke-lines py-3 pl-3 pr-3">
+        <div className="flex w-full items-center justify-between gap-inline-xl border-b border-stroke-lines py-component-md pl-component-md pr-component-md">
           <p className="text-base font-semibold text-text-primary">{t("personenLabel")}</p>
           <PortionStepper
             portions={draftPortions}
@@ -96,7 +96,7 @@ export function PasAanPanel({ open, onClose, portions, unitSystem, onApply }: Pa
             onChange={setDraftPortions}
           />
         </div>
-        <div ref={unitMenuRef} className="relative flex w-full items-center justify-between gap-5 py-3 pl-3 pr-3">
+        <div ref={unitMenuRef} className="relative flex w-full items-center justify-between gap-inline-xl py-component-md pl-component-md pr-component-md">
           <p className="text-base font-semibold text-text-primary">{t("eenheidLabel")}</p>
           <Button
             trailingIcon="ChevronDown"
@@ -106,6 +106,7 @@ export function PasAanPanel({ open, onClose, portions, unitSystem, onApply }: Pa
             {unitOptionLabel}
           </Button>
           {unitMenuOpen && (
+            // spacing-flag: unit-selector dropdown offset has no Figma node (collapsed-only state in the fetched Dropdown frame) — design/notes/PasAanPanel.md
             <div className="absolute top-full right-0 z-[999] mt-2 w-40">
               <Dropdown className="shadow-sm">
                 <Button

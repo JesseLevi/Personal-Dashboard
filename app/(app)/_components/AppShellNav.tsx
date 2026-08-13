@@ -194,7 +194,16 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
           topmost on-screen chrome on a notched iPhone in standalone mode,
           so it needs the same `max()` safe-area idiom #113 used on
           Sidebar/SidePanel, or it renders partly under the status bar. */}
-      <main className="flex min-w-0 flex-1 flex-col gap-6 pt-[max(1rem,env(safe-area-inset-top))] pb-20 pl-page-left md:pt-20 md:pb-20">
+      {/* spacing-flag: pt-[max(1rem,env(safe-area-inset-top))] md:pt-20 —
+          Navigation/Main's paddingTop is bound spacing/layout/page-padding-
+          top (16→80, self-switching), but folding it into `pt-page-top`
+          either drops the safe-area max() everywhere or needs
+          `md:pt-page-top`, which the token forbids since it already
+          switches itself past 768px; keeping the mobile max() and the
+          flat desktop value raw is the least-bad option — no behaviour
+          change to #172's fix without a design call — design/notes/
+          AppShell.md. */}
+      <main className="flex min-w-0 flex-1 flex-col gap-page-stack pt-[max(1rem,env(safe-area-inset-top))] pb-page-bottom pl-page-left md:pt-20">
         <Button
           variant="filled"
           icon="PanelLeftOpen"

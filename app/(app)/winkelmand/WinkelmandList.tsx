@@ -230,7 +230,7 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
             // the button that opened it, rather than the far side of the
             // whole group, per user decision. Geometry re-verified in a real
             // browser at 320/375/390/430px, see design/notes/WinkelmandPage.md#182.
-            <div className="flex items-center gap-2 md:gap-5">
+            <div className="flex items-center gap-inline-sm md:gap-inline-xl">
               <div ref={sortMenuRef} className="relative">
                 <Button
                   icon="ArrowUpDown"
@@ -292,6 +292,16 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
         // override there) -- `w-full md:w-fit` reproduces that split.
         <div className="pr-page-right-equal">
           <Card>
+            {/* spacing-flag: gap-2 py-4 (8px / 16px) — measured the fetched
+                EmptyState Card (4049:11174 mobile, 4050:11597 desktop):
+                its "Type" slot (padding bound spacing/component/padding-sm)
+                holds "EmptyText" (own paddingTop/Bottom bound
+                spacing/component/padding-lg, itemSpacing to the sibling
+                Button unbound at 0) plus a Step-number badge this page
+                doesn't render — no boundVariables entry wraps a title+CTA
+                group the way this div does, so the 16px here isn't the
+                same padding as the measured one even though the number
+                matches — design/notes/WinkelmandPage.md#219. */}
             <div className="flex w-full flex-col items-center justify-center gap-2 py-4">
               <p className="text-base font-semibold text-text-secondary">{t("emptyStateTitle")}</p>
               <Button
@@ -305,6 +315,12 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
           </Card>
         </div>
       ) : (
+        // spacing-flag: gap-6 (24px) — measured the fetched Default frames'
+        // "Ingredients" wrapper (4051:13534 mobile, 4051:13056 desktop):
+        // itemSpacing is 24 but carries no boundVariables entry at all (an
+        // unbound/detached value in Figma itself) — 24 coincides with both
+        // page-stack and stack-xl, exactly the ambiguity this ticket
+        // forbids guessing through — design/notes/WinkelmandPage.md#219.
         <div className="flex w-full flex-col gap-6 pr-page-right-equal">
           {groups.map((group) => (
             <Card key={group.key} title={group.label}>

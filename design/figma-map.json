@@ -36,5 +36,14 @@
     "$comment": "Not a distinct Figma component (no separate componentId) -- a specific Atom/Input-field (3705:4402) instance reused inside a page frame. nodeId points at that instance, per component/README's 'fetched node' convention.",
     "Add recipi/Image-field": { "path": "components/molecules/ImageUploadField.tsx", "nodeId": "3968:11192" },
     "AddToBasketAnimation": { "path": "components/molecules/AnimatedAddToBasketButton.tsx", "nodeId": "4051:12960" }
+  },
+  "pages": {
+    "$comment": "Page-level Figma frames (#219). nodeId is the Breakpoints SECTION, which holds that page's Mobile and Desktop frames side by side -- that is the stable anchor to fetch from. The individual Mobile/Desktop container node-ids and the token binding measured on each live in design/notes/<Component>.md, not here, so this file stays a lookup. Two page frames are ALREADY mapped under organisms above and deliberately get no second entry: 'Te doen/Desktop/Filled' (3680:1442) = BoardView, 'Te doen/Mobile/AddItem' (3779:4846) = SidePanel -- some page frames simply are an organism.",
+    "Pages/Te-Doen/Breakpoints": { "path": "app/(app)/te-doen/", "nodeId": "3779:4280" },
+    "Pages/Recepten/Breakpoints": { "path": "app/(app)/recepten/", "nodeId": "3761:5537" },
+    "Pages/Recept_V2/Breakpoints": { "path": "app/(app)/recepten/[recipeId]/", "nodeId": "3997:14736" },
+    "Pages/Winkelmand/Breakpoints": { "path": "app/(app)/winkelmand/", "nodeId": "3778:5816" },
+    "Pages/Navigation": { "path": "app/(app)/_components/AppShellNav.tsx", "nodeId": "3889:16890" },
+    "Pages/Login": { "path": "app/login/", "nodeId": "3929:25181" }
   }
 }

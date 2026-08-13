@@ -151,3 +151,49 @@ An earlier version of this fix flipped which ancestor was the positioning contex
 `WinkelmandList.tsx`'s empty-state wrapper and its items-list wrapper:
 both `pr-4 md:pr-32`→`pr-page-right-equal`. No node lookup needed, per the
 ticket's own page-padding rule.
+
+## #219
+
+Measured against `Pages/Winkelmand/Breakpoints` (`3778:5816`) →
+`Mobile/Default` (`4051:13040`), `Desktop/Default` (`4051:13049`),
+`Mobile/EmptyState` (`4049:11167`), `Desktop/EmptyState` (`4049:11175`).
+
+### Converted
+
+`WinkelmandList.tsx:233` — the Sort/Verwijder-alles actions row, `gap-2
+md:gap-5`→`gap-inline-sm md:gap-inline-xl`, measured off the "Knoppen"
+frame:
+
+| old utility | new utility | node-id | `boundVariables` key | variable |
+| --- | --- | --- | --- | --- |
+| `gap-2` | `gap-inline-sm` | `4051:13045` (mobile Knoppen) | `itemSpacing` | `spacing/inline/gap-sm` (8px) |
+| `md:gap-5` | `md:gap-inline-xl` | `4051:13054` (desktop Knoppen) | `itemSpacing` | `spacing/inline/gap-xl` (20px) |
+
+`inline-sm`/`inline-xl` don't self-switch (unlike the three bold `page/*`
+tokens), so the `md:` prefix stays — dropping it would apply `inline-xl`
+at every breakpoint instead of only ≥768px.
+
+### Flagged
+
+`WinkelmandList.tsx:295` — the empty-state Card's title+CTA wrapper
+(`gap-2 py-4`). Measured the fetched EmptyState `Card` instance
+(`4049:11174` mobile / `4050:11597` desktop): its actual children are a
+"Step" number-badge instance and a "Type" slot (padding bound
+`spacing/component/padding-sm` on all sides) holding an "EmptyText" text
+frame (own `paddingTop`/`paddingBottom` bound `spacing/component/
+padding-lg` = 16px) and a "Button" instance, with `itemSpacing: 0` between
+them and **no `boundVariables` entry at all** for that `itemSpacing`. No
+node in this subtree binds a gap or a padding around a title+CTA *group*
+the way the code's wrapper does — the 16px that exists in Figma belongs
+to the text node's own padding, a different box than the code's outer
+`py-4`. Converting either number would be matching a coincidence, not a
+measurement — stays raw.
+
+`WinkelmandList.tsx:308` — the non-empty items-list wrapper (`gap-6`).
+Measured the fetched Default frames' "Ingredients" wrapper (`4051:13534`
+mobile / `4051:13056` desktop, parent of the per-group `Card` instances):
+`itemSpacing: 24` but **no `boundVariables` entry** — an unbound/detached
+value in Figma itself. 24px coincides with both `spacing/page/stack` and
+`spacing/stack/stack-xl`; with no binding to disambiguate, picking either
+would be exactly the value-matching this ticket exists to forbid. Stays
+raw.

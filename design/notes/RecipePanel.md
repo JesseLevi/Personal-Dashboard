@@ -118,3 +118,46 @@ Aantal width and the missing row-1 delete Button (`design/notes/RecipeIngredient
 ## Ladle stories
 
 `Empty` (create mode, one empty ingredient row, one empty step), `Filled` (edit mode, three ingredient rows incl. one with and one without `ingredientId`, two steps). Mock `onCreateRecipe`/`onUpdateRecipe`/`onDeleteRecipe`/`onSearchIngredients`/`onCreateOwnIngredient`/`onUploadThumbnail` (#149) never import the real action module, matching `CardDetailPanel.stories.tsx`'s precedent. `Filled`'s sample recipe now seeds `steps[0].ingredientIds` with two of its ingredient rows' ids (#149), exercising `stepRowsFromRecipe`'s `sourceId → localId` reload path rather than always starting from an empty selection. Wrapped in `<div className="min-h-screen">` — `SidePanel.stories.tsx`'s known trap (a bare static `SidePanel` story crops to a 1280x64 sliver).
+
+## #219
+
+Raw radius/spacing utilities converted onto `Semantics / Responsive` tokens,
+each verified against a real Figma `boundVariables` read (the "measure, don't
+infer from the number" rule this ticket exists to enforce) — bridge reads
+against `3717:2844`/`3717:2493` ("Add recipi" Mobile/Desktop, this file's own
+cited nodes) and their `3717:2925`/`3957:11670` "Ingredienten" child.
+
+**Footer button rows (lines 383, 404), `gap-2` → `gap-inline-sm`:** same
+`SidePanel.tsx` "Bottom" footer template (`3779:4858` mobile / `3779:4950`
+desktop, `itemSpacing: 8` → `spacing/inline/gap-sm`) already cited by
+`CardDetailPanel.md`, `BoardPanel.md`, `IngredientSearchPanel.md`,
+`StepIngredientPanel.md` and this ticket's own `CategoryPanel.md#219` entry
+— one shared structural node, reused by every `SidePanel` composer's footer
+row regardless of button count. Row 383 is the delete-confirming state
+(`Annuleren`/`Verwijderen`), row 404 is the default state
+(`Verwijderen`/`Opslaan`).
+
+**Ingredienten wrapper (line 513) and per-row wrapper (line 515), `gap-4` →
+`gap-stack-lg`:** both measured against the same "Ingredienten" node
+(`3717:2925` mobile / `3957:11670` desktop) — `layoutMode: VERTICAL`,
+`itemSpacing: 16`, `boundVariables.itemSpacing` → `spacing/stack/stack-lg`.
+Figma's own node is a *flat* list of children (`Rij`, `Line`, `Rij`, `Line`,
+`Rij`, …) with that single 16px `itemSpacing` applying uniformly between
+every sibling pair. The code introduces one extra nesting level Figma
+doesn't have — each row's own `<div key={row.localId} className="flex
+flex-col gap-stack-lg">` groups a conditional divider with its
+`RecipeIngredientRow` — but the 16px value it reuses is the exact same
+binding both between groups (outer wrapper) and between a divider and its
+row (inner wrapper), since Figma's flat list spaces divider→row and
+row→row identically. One measured node, applied at both nesting levels
+rather than two separate reads. Column axis in both code (`flex-col`) and
+Figma (`layoutMode: VERTICAL`) → `stack/*`, per the axis rule.
+
+**Stappen list (line ~553), `gap-4` left unconverted, `spacing-flag`:**
+carried over verbatim from the previous agent's own in-line comment — no
+Figma node exists for a Stappen (steps) list in either `3717:2844` or
+`3717:2493`; both "Add recipi" pull-up panels only draw Titel/Personen/Tijd
+fields, Ingredienten, and the footer. Converting this would be a
+guess-from-matching-number (4 also appears in `component/*`), not a
+measurement, so it stays raw with the flag pointing here. No Figma frame to
+cite for this one — that is the finding.

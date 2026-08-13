@@ -235,3 +235,52 @@ run:** a real authenticated `/recepten` route in a browser, and `pnpm
 db:reset`/`test:rls`/`check:rls-coverage` — same standing Docker/Supabase gap
 every Phase 3/4 ticket hits on this dev machine (`CLAUDE.md`), unchanged by
 this ticket (no new table, no migration).
+
+## #219
+
+Raw radius/spacing utilities in this file converted onto `Semantics /
+Responsive` tokens, each verified by reading a real Figma node's
+`boundVariables` (never inferred from a matching px value — the rule this
+ticket exists to enforce, per its own briefing). Both nodes fetched fresh:
+`3891:17997` ("Add column/Mobile") and `3957:11537` ("Pull-up panel",
+desktop) — same pair `Node IDs` already names at the top of this file.
+
+**Footer button rows (lines 235, 256), `gap-2` → `gap-inline-sm`:**
+`SidePanel.tsx`'s "Bottom" footer template (`3779:4858` mobile /
+`3779:4950` desktop, `layoutMode: HORIZONTAL`, `itemSpacing: 8`,
+`boundVariables.itemSpacing` → `spacing/inline/gap-sm`) is the same shared
+structural node `CardDetailPanel.md` (line 165), `BoardPanel.md`,
+`IngredientSearchPanel.md` and `StepIngredientPanel.md` all already cite for
+their own footer button rows — Figma models one canonical footer per
+`SidePanel`, not a per-composer duplicate, and every composer's footer row
+reuses that same 8px/`inline-sm` binding regardless of button count. Applies
+identically to both of this file's footer rows: the delete-confirming state
+(line 235, `Cancel`/`Ja, verwijderen`) and the default state (line 256,
+`Verwijderen`/`Opslaan`) — same node, same axis (horizontal row → `inline`),
+same value on both breakpoints, no `md:` split needed.
+
+**Label+row wrapper (line 299), `gap-2` → `gap-stack-sm`:** re-measured via
+the `figma-console` bridge rather than relying on the existing "Pixel-parity
+check" section's prose value alone (that section names the 8px value but no
+node-id). The wrapper is Figma's own "Icons" frame — mobile `3957:11251`,
+desktop `3957:11542` — `layoutMode: VERTICAL`, `itemSpacing: 8`,
+`boundVariables.itemSpacing` → `spacing/stack/stack-sm`. Column axis in both
+Figma and code (`flex-col`), so `stack/*` per the axis rule, not `inline/*`
+— confirms the existing "Icons frame: gap 8px" note was pixel-correct, now
+backed by an actual `boundVariables` read.
+
+**Icon list (line 307), `gap-3` → `gap-x-inline-md gap-y-stack-md`:** the
+axis split the previous agent already made and commented in-line (node
+`3891:18524` mobile / `3957:11544` desktop). Re-confirmed via the same
+bridge call: `layoutMode: HORIZONTAL`, `itemSpacing: 12` →
+`spacing/inline/gap-md` (row axis), `counterAxisSpacing: 12` →
+`spacing/stack/stack-md` (wrap/column axis). Both resolve to 12px today —
+a flat `gap-3` was pixel-identical — but Figma genuinely binds two distinct
+variables to the two axes, so the axis rule calls for `gap-x-*`/`gap-y-*`
+rather than one token, exactly as the in-line comment already explains.
+
+No new flags in this file for #219 — the two previously-unflagged raw
+utilities (lines 235/256's `gap-2`, plus the axis-split `gap-3`) all had a
+Figma binding to measure. The delete-step/name-validation gap and the
+Selected-state gap this file already flags predate #219 and are unrelated
+(no spacing/radius involved).

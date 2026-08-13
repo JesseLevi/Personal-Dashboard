@@ -31,12 +31,13 @@
 #
 #   // spacing-flag: <short reason> — design/notes/<Component>.md
 #
-# `*.stories.tsx` is out of scope (demo scaffolding, no Figma node, #218).
-# `app/` is out of scope for #218 (its own ticket covers it) — ROOTS below
-# is the only line to touch to bring it in later, no other rewrite needed.
+# `*.stories.tsx` is out of scope (demo scaffolding, no Figma node, #218) —
+# that exclusion is in the `find` below, so it covers every root.
+# `app/` joined ROOTS in #219, once the page frames were measured against
+# Figma and every remaining raw utility there carried a spacing-flag.
 set -euo pipefail
 
-ROOTS=(components)
+ROOTS=(components app)
 
 # Candidate utility regex, extended-ERE, with hand-rolled word boundaries
 # (awk's ERE has no \b): the char before/after the match must not be an
@@ -97,8 +98,8 @@ done <<< "$files"
 
 if [[ $fail -eq 1 ]]; then
   echo "" >&2
-  echo "FAIL: raw radius/spacing utility in components/ with no semantic token and no spacing-flag (ADR-0010, #218)." >&2
+  echo "FAIL: raw radius/spacing utility in ${ROOTS[*]}/ with no semantic token and no spacing-flag (ADR-0010, #218/#219)." >&2
   echo "Use a token, or flag it: // spacing-flag: <reason> -- design/notes/<Component>.md" >&2
   exit 1
 fi
-echo "OK: no unflagged raw radius/spacing utilities in components/."
+echo "OK: no unflagged raw radius/spacing utilities in ${ROOTS[*]}/."

@@ -323,3 +323,50 @@ repo. Not deleted here (`design/tokens.json`'s scale is a token-layer
 decision, out of scope for a page-level ticket per `CLAUDE.md`'s
 architecture-layer boundary) — flagged in `docs/HANDOFF.md` for the
 architecture layer to retire when convenient.
+
+## #219
+
+Measured against `Pages/Login` (`3929:25181`) → `LogIn/Mobile`
+(`3929:25182`), `LogIn/Desktop` (`3929:25202`), and the Step-03/Error
+variant (`3991:13224`) the file header above already anchors this
+component to.
+
+### Converted (`app/login/page.tsx`)
+
+`page.tsx:36` — the top-level `<main>`: `p-4`→`p-component-lg`,
+`lg:gap-6`→`lg:gap-page-stack`:
+
+| old utility | new utility | node-id | `boundVariables` key | variable |
+| --- | --- | --- | --- | --- |
+| `p-4` | `p-component-lg` | `3929:25182` / `3929:25202` | `paddingTop/Right/Bottom/Left` | `spacing/component/padding-lg` (16px, all sides, both frames) |
+| `lg:gap-6` | `lg:gap-page-stack` | `3929:25202` (Desktop, `layoutMode: HORIZONTAL`) | `itemSpacing` | `spacing/layout/page-stack` (24px) |
+
+**Axis discrepancy, reported not silently fixed**: `LogIn/Desktop`'s own
+`layoutMode` is `HORIZONTAL` (the login column and the image pane sit in a
+row, matching `lg:flex-row` in code), yet its `itemSpacing` is bound to
+`spacing/layout/page-stack` — a token named for the vertical/page-stack
+family, used here as a row gap. This is precisely the "Figma binds a
+stack-family token to a horizontal auto-layout" case the shared briefing
+calls out: the fix is to use the token as measured, not to "correct" it to
+an `inline/*` token that seems more axis-appropriate. Flagging here per
+that instruction; no code change beyond using the bound token as-is.
+`LogIn/Mobile`'s own `itemSpacing` is `0` (no gap, `layoutMode: VERTICAL`)
+— consistent with the code having no unprefixed `gap-*` at all, only
+`lg:gap-*`.
+
+`page.tsx:53` — the image pane: `rounded-3xl`→`rounded-container`,
+confirmed off `boundVariables`, not inferred from the resolved 24px value:
+
+| old utility | new utility | node-id | `boundVariables` key | variable |
+| --- | --- | --- | --- | --- |
+| `rounded-3xl` | `rounded-container` | `3932:26125` (mobile "Image") / `3930:25483` (desktop "Image") | `topLeftRadius`/`topRightRadius`/`bottomLeftRadius`/`bottomRightRadius` | `radius/container` (24px, all four corners, both frames) |
+
+### Flagged (`app/login/LoginForm.tsx`)
+
+`LoginForm.tsx:201` — the Terug/Inloggen button row (`gap-2`). Measured
+the fetched "Frame 3" node itself (`3991:13289`, the node this file's own
+header comment already names for its 153/151px hug-artefact width call):
+`itemSpacing: 8` but **no `boundVariables` entry** — unbound in Figma. 8px
+coincides with both `spacing/inline/gap-sm` and `spacing/component/
+padding-sm`; with no binding to disambiguate, stays raw rather than
+guessed.
