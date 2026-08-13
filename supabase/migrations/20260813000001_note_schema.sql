@@ -1,9 +1,9 @@
 -- Phase 6 (#225): note schema — note_categories, notes.
 -- Conventions per Architecture §4.1 / ADR-0001 / ADR-0009, same house style
 -- as 20260720000001_profiles.sql / 20260723000001_kanban_schema.sql /
--- 20260730000002_recipe_schema.sql. This is a schema-only ticket (Phase 6
--- per Architecture §174: "Backend-only schemas ... No UI"); the Notities
--- overview/editor pages are later tickets (#228+).
+-- 20260730000002_recipe_schema.sql. This ticket is schema-only because it is
+-- wave 1 of Phase 6 (Notities) -- the overview/editor pages are later
+-- tickets in the same phase (#228+), not because the phase itself has no UI.
 --
 -- Engineering calls made in this migration, and why:
 --
