@@ -73,19 +73,23 @@ values above — both are real tokens already in `app/theme.css` (#205/#218
 already added `gap-inline-sm`/`gap-inline-xl`), so nothing needed a
 `spacing-flag`.
 
-## "Categorie" — a deliberate no-op, and so is the column pencil
+## "Categorie" and the column pencil — wired in #232
 
-The ticket allows wiring the header's Categorie button as a no-op "met een
-gemotiveerde keuze" until #232 (category management) lands. Rationale:
-`CategoryPanel`-equivalent UI does not exist for Notities yet, and inventing
-one here would mean freelancing #232's own scope. Same reasoning extends to
-every column's pencil button (`BoardView`'s `onEditColumn`) — left entirely
-unpassed (`undefined`), so `CardContainer` renders it as inert chrome (its
-`onEdit` prop is optional; see `CardContainer.tsx`), exactly the same
-"fixed chrome, no handler yet" shape `PageHeader.md` already documents for
-Te-Doen's pre-#95 Chevron/Star buttons. Both buttons carry real,
-translated `aria-label`s (`Categorie`) regardless — inert is not the same
-as inaccessible.
+Built #230 with the header's Categorie button and every column's pencil
+button (`BoardView`'s `onEditColumn`) deliberately left as no-ops "met een
+gemotiveerde keuze" (#230's own ticket text): `CategoryPanel`-equivalent UI
+did not exist for Notities yet, and inventing one in #230 would have meant
+freelancing #232's own scope.
+
+**#232 wired both** to one shared `NoteCategoryPanel`
+(`app/(app)/notities/NoteCategoryPanel.tsx` — a Notities-owned copy of
+`app/(app)/recepten/CategoryPanel.tsx`, not a generic shared component; full
+reasoning, icon set, delete-flow precedent: `design/notes/
+NoteCategoryPanel.md`). One `categoryPanel` state (`{ open, target }`) owns
+both triggers, same convention `ReceptenBoard.tsx`'s own `panel` state
+already uses for the identical two-trigger shape. Both buttons already
+carried real, translated `aria-label`s (`Categorie`) even while inert —
+that part is unchanged.
 
 ## Sort: `lib/notes/sort.ts`, two note-relevant options only
 
@@ -476,22 +480,28 @@ oversight.
 (not scoped) — see the PR for exact output. **Not run: a real authenticated
 `/notities` route in a browser, and no drag/sort/create-note flow against
 real data.** Per `CLAUDE.md` this dev machine has no Docker/local Supabase.
-Beyond that standing gap, this ticket sits on top of a schema that has
-**never been applied to the hosted database at all** — #225's
-`note_categories`/`notes` tables and #228's `move_note` RPC are committed
-migrations, not yet run via the `workflow_dispatch` deploy workflow
-(ADR-0012) or by hand. So unlike `ReceptenBoard.md`'s/`TeDoenBoard.md`'s own
-gap (real tables, just no local way to sign in), there is currently no
-environment anywhere, including production, where `/notities` could be
-opened against live rows even if this dev machine had Docker. Everything
+**Corrected 2026-08-13 (during #232):** this section originally claimed the
+schema had "never been applied to the hosted database at all". That was true
+when #230 was written and is now false — `deploy.yml` ran on the user's
+explicit approval (ADR-0012) later the same day and applied both
+`20260813000001_note_schema` and `20260813000002_move_note_rpc`, verified
+against the hosted `supabase_migrations.schema_migrations` rather than
+assumed. So the gap here is now exactly `ReceptenBoard.md`'s/
+`TeDoenBoard.md`'s standing one (real tables, no local way to sign in), not
+a stronger one. One thing that *will* look broken and is not:
+`seed_default_note_categories()` is an `after insert on auth.users` trigger,
+so it never fired for the two pre-existing accounts — they have zero
+`note_categories` rows, and `/notities` therefore renders with no columns
+until a category is created through #232's panel. Everything
 above is reasoned from reading `lib/notes/queries.ts`/`actions.ts` (#228,
 already merged) and typechecked/unit-tested against them — the query
 shapes, the RPC error-code mapping, and the optimistic-update math are
 exercised by `tests/notes-sort.test.ts`/`tests/notes-timestamp.test.ts`/
-the existing `tests/notes-document.test.ts`, not by a live request. A future
-ticket that runs the migration workflow should re-verify this page exactly
-the way `BoardView.md`'s own device-verification entries describe: real
-drag, real sort navigation, real note creation, on real data.
+the existing `tests/notes-document.test.ts`, not by a live request. The
+migration workflow has since run, so what is owed is no longer a deploy but
+a **signed-in visit to production** — re-verify exactly the way
+`BoardView.md`'s own device-verification entries describe: real drag, real
+sort navigation, real note creation, on real data.
 
 **#231 adds the same gap for search, plus one of its own.** `pnpm lint`/
 `typecheck`/`test`/`check:server-only`/`check:raw-spacing`/

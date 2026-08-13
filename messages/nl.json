@@ -328,6 +328,37 @@
         "WineOff": "Alcoholvrij (wijn)"
       }
     },
+    "noteCategoryPanel": {
+      "addTitle": "Categorie toevoegen",
+      "editTitle": "Categorie hernoemen",
+      "fields": {
+        "nameLabel": "Naam",
+        "iconLabel": "Icoon"
+      },
+      "saveLabel": "Opslaan",
+      "savingLabel": "Opslaan...",
+      "deleteLabel": "Verwijderen",
+      "deleteConfirmLabel": "Weet je het zeker?",
+      "deleteConfirmButtonLabel": "Ja, verwijderen",
+      "deletingLabel": "Verwijderen...",
+      "cancelLabel": "Annuleren",
+      "iconLabels": {
+        "FolderClosed": "Map",
+        "Notebook": "Notitieboek",
+        "Lightbulb": "Idee",
+        "Scroll": "Document",
+        "Star": "Favoriet",
+        "Calendar": "Kalender",
+        "Timer": "Timer",
+        "AlarmClockCheck": "Herinnering",
+        "CircleCheck": "Afgerond",
+        "ShoppingBasket": "Boodschappen",
+        "BicepsFlexed": "Sport",
+        "User": "Persoonlijk",
+        "Shirt": "Kleding",
+        "Image": "Media"
+      }
+    },
     "ingredientSearchPanel": {
       "title": "Ingrediënt zoeken",
       "searchPlaceholder": "Zoeken",

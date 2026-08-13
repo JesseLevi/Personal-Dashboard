@@ -328,6 +328,37 @@
         "WineOff": "Alcohol-free (wine)"
       }
     },
+    "noteCategoryPanel": {
+      "addTitle": "Add category",
+      "editTitle": "Rename category",
+      "fields": {
+        "nameLabel": "Name",
+        "iconLabel": "Icon"
+      },
+      "saveLabel": "Save",
+      "savingLabel": "Saving...",
+      "deleteLabel": "Delete",
+      "deleteConfirmLabel": "Are you sure?",
+      "deleteConfirmButtonLabel": "Yes, delete",
+      "deletingLabel": "Deleting...",
+      "cancelLabel": "Cancel",
+      "iconLabels": {
+        "FolderClosed": "Folder",
+        "Notebook": "Notebook",
+        "Lightbulb": "Idea",
+        "Scroll": "Document",
+        "Star": "Favorite",
+        "Calendar": "Calendar",
+        "Timer": "Timer",
+        "AlarmClockCheck": "Reminder",
+        "CircleCheck": "Completed",
+        "ShoppingBasket": "Shopping",
+        "BicepsFlexed": "Fitness",
+        "User": "Personal",
+        "Shirt": "Clothing",
+        "Image": "Media"
+      }
+    },
     "ingredientSearchPanel": {
       "title": "Search ingredient",
       "searchPlaceholder": "Search",
