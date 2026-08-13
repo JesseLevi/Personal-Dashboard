@@ -5,6 +5,53 @@
 
 CVA variant=filled|outline|white|transparent|destructive (Figma 'Distructive'); Hover/Selected are CSS states. 'Selected' was renamed from 'Active' in Figma 2026-07-20 (ticket #42, mis-naming corrected upstream) — re-fetched node confirms every style's State enum is now Default/Hover/Selected, same fills/text as before the rename, no pixel change. Modelled via `aria-pressed:` (not `active:` — CSS :active means 'being pressed', a different, non-persistent thing), same idiom as Atom/Button-Toggle; caller sets the standard `aria-pressed` attribute, not a new prop. 'With icon'/'With text' modelled as presence of the `icon`/`children` props; icon-only requires aria-label (type-enforced). Figma's Filled/Selected instance has drifted padding (uniform 8px vs 4px/8px elsewhere) — treated as auto-layout drift, not modelled. Hover fill/stroke use the dedicated surface-hover / border-hover semantic tokens (added 2026-07-20; same stone-300/stone-500 primitives, named for their role). Dark mode (ticket #42): surface-raised/surface-hover/surface/border/border-hover/text/text-muted/priority-urgent-bg now carry a dark override in design/tokens.json → emitted as a `[data-theme="dark"]` block in app/theme.css by `pnpm sync:tokens` (that attribute is what @ladle/react's Light/Dark toggle sets on <html>). No Figma dark-mode frames exist for this node, so the dark shades (stone-700/800/900/400, red-950 — all newly added stock-Tailwind primitives, no one-off hex) are this fix's own pick, not a Figma-sourced value; component classes needed zero changes (no `dark:` utilities) since they were already semantic-token-only — the bug was entirely in the token pipeline, which previously emitted no dark values and no dark selector at all.
 
+## TICKET #238 (2026-08-13) — Transparent's Hover/Active fill rebound in Figma, onto the Filled ramp
+
+**Ticket premise, verified not assumed.** "Button component updated transparent hover and active color" — re-measured all 5 styles × 4 states (Alignment=Center, `3623:4346`) via the figma-console-mcp bridge (`figma_get_status probe:true` confirmed "Notion - V2" connected), reading `boundVariables.fills[0]`/`.strokes[0]` off each state node plus the fill on its TEXT child, resolved through `figma.variables.getVariableByIdAsync()` — never inferred from a resolved hex, per the standing #204/#213 lesson.
+
+| Style | State | Node | Bound fill/stroke variable | Bound text variable |
+|---|---|---|---|---|
+| Filled | Default | `3623:4344` | `color/surface/secondary/default` | `color/text/base/secondary` |
+| Filled | Hover | `3674:6522` | `color/surface/secondary/hover` | `color/text/base/secondary` |
+| Filled | Active | `3782:4800` | `color/surface/secondary/active` | `color/text/base/secondary` |
+| Filled | Selected | `3822:6637` | `color/surface/secondary/default` (unchanged) | `color/text/base/primary` |
+| White | Default | `3674:6515` | `color/surface/highlight/white/default` | `color/text/base/secondary` |
+| White | Hover | `3784:4076` | `color/surface/highlight/white/**selected**` | `color/text/base/secondary` |
+| White | Active | `3782:4908` | `color/surface/highlight/white/**hover**` | `color/text/base/secondary` |
+| White | Selected | `3822:6642` | `color/surface/highlight/white/default` (unchanged) | `color/text/base/primary` |
+| **Transparent** | Default | `3782:4793` | no fill | `color/text/base/secondary` |
+| **Transparent** | **Hover** | `3784:4081` | **`color/surface/secondary/hover`** (was `color/surface/highlight/white/hover`, #204) | `color/text/base/secondary` |
+| **Transparent** | **Active** | `3782:4913` | **`color/surface/secondary/active`** (was `color/surface/highlight/white/active`, #204) | `color/text/base/secondary` |
+| Transparent | Selected | `3822:6652` | no fill (unchanged) | `color/text/base/primary` |
+| Outline | Default | `3782:4154` | stroke `color/Stroke/primary/default` | `color/text/base/secondary` |
+| Outline | Hover | `3784:4086` | stroke `color/Stroke/primary/hover` | `color/text/base/secondary` |
+| Outline | Active | `3782:4918` | stroke `color/Stroke/secondary/active` | `color/text/base/secondary` |
+| Outline | Selected | `3822:6647` | stroke `color/Stroke/primary/selected` | `color/text/base/primary` |
+| Destructive | Default | `3693:3386` | `color/surface/highlight/red/default` | `color/text/highlight/red` |
+| Destructive | Hover | `3784:4091` | `color/surface/highlight/red/**selected**` | `color/text/highlight/red` |
+| Destructive | Active | `3782:4923` | `color/surface/highlight/red/**hover**` | `color/text/highlight/red` |
+| Destructive | Selected | `3822:6657` | `color/surface/highlight/red/default` (unchanged) | `color/text/highlight/red` |
+
+Transparent's Hover/Active nodes were spot-checked on `Alignment=Left` too (`3917:24944`/`3917:24936`) — same `surface/secondary/hover`/`surface/secondary/active` bind, confirming this is a Style-level rebind, not per-alignment drift.
+
+**Result: only Transparent's Hover/Active fill changed.** Every other style/state binding is byte-identical to #213's table above — White/Distructive's Hover←`selected`-step/Active←`hover`-step offset is unaffected and still holds; Filled and Outline are unaffected, as they have been since #204/#107. Transparent's fill moved off the White ramp (`surface/highlight/white/hover|active`, bound since #204) onto the same ramp Filled's Hover/Active already use (`surface/secondary/hover|active`) — same variable IDs (`VariableID:3815:6611`/`VariableID:3815:6612`) as Filled's own Hover/Active, confirmed by comparing the two styles' `boundVariables` side by side, not by name alone.
+
+**Variable *values* did not change — this is a pure rebind.** Resolved `valuesByMode` for every touched variable, cross-checked against `design/tokens.json`:
+
+| Variable | Light | Dark | Matches `design/tokens.json`? |
+|---|---|---|---|
+| `surface/secondary/hover` | stone-300 | stone-700 | yes — `surface-secondary-hover`, no drift |
+| `surface/secondary/active` | stone-400 | stone-600 | yes — `surface-secondary-active`, no drift |
+| `surface/highlight/white/hover` | stone-200 | stone-500 | yes — `surface-highlight-white-hover`, no drift |
+| `surface/highlight/white/active` | stone-300 | stone-400 | yes — `surface-highlight-white-active`, no drift |
+| `surface/highlight/white/selected` | stone-100 | stone-600 | yes — `surface-highlight-white-selected`, no drift |
+
+No token value in `design/tokens.json` needed a change and `pnpm sync:tokens` was not run — this is purely a consumer-side rebind in `Button.tsx`, exactly the class of fix #213 made for White/Distructive, just triggered by a real Figma rebind this time rather than a mismeasurement. `surface-secondary-hover`/`-active` already existed (Filled's own tokens) so no new token was added; `surface-highlight-white-hover`/`-active` are unchanged and stay in `design/tokens.json` (still real, Figma-sourced, `text.test.ts`-covered) — `surface-highlight-white-active` now has no component consumer (White's Active reads `-hover` per the ramp-step offset, and Transparent no longer reads `-active`), which is not a reason to delete a token that still traces to a live Figma variable.
+
+**The fix.** `buttonVariants`' `transparent` entry: `hover:bg-surface-highlight-white-hover active:bg-surface-highlight-white-active` → `hover:bg-surface-secondary-hover active:bg-surface-secondary-active`. `docs/design-tokens.md`'s state matrix row for Transparent updated to match.
+
+**Ladle stories affected (pixel change).** `Button.stories.tsx` currently exports `StateMatrix`, `WithAndWithoutText`, `WithAndWithoutIcon`, `TrailingIcon`, `Alignment` — only `StateMatrix` iterates all 5 variants (including `transparent`) via its `VARIANTS` array; every other story renders the default (`filled`) variant. So exactly one story moves: **`button--state-matrix`**, specifically the Transparent row's "Hover / Active (hover and hold)" and "Selected (+ hover / hold)" columns (the Selected column also composes with hover/active on this row). No other Button story, and no `ButtonToggle`/`Dropdown`/`CardDetailPanel` story, is affected — none of those use `variant="transparent"` (`ButtonToggle.tsx`'s segments do, but its local `hover:bg-transparent! active:bg-transparent!` override makes it variant-value-independent, re-verified live at #112).
+
 ## TICKET #213 (2026-08-12) — #204's state-binding "fix" was itself the bug; reverted at the consumer, not the token names
 
 **Measurement method, repeatable a third time.** Figma MCP is still rate-limited (Starter plan). The figma-console-mcp plugin bridge — a local WebSocket connection into a running Figma plugin session, no Starter-plan limit — was used instead to run `figma.variables.getVariableByIdAsync`/`node.boundVariables` directly against each of the 8 individual `Style=X, State=Y` variant nodes under `3623:4346` (same 8 nodes #204 fetched, same technique in spirit — `get_metadata`-then-`get_variable_defs` — just over a different transport). This is the same class of measurement #204 already did; #213 is not a new method, it's a repeat of #204's own method that reached a different, correct conclusion.
