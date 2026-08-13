@@ -1,18 +1,149 @@
-# AppShell (iOS standalone PWA — #172)
+# AppShell (iOS standalone PWA — #172, #223)
 
-- **Code:** `app/manifest.ts`, `app/layout.tsx` (`appleWebApp`/`manifest`),
-  `app/icon.png`, `app/apple-icon.png`, `public/icons/icon-192.png`,
-  `public/icons/icon-512.png`, `app/globals.css` (touch polish), plus the
-  safe-area changes to `components/organisms/Sidebar.tsx`,
-  `components/organisms/SidePanel.tsx`, `components/organisms/PageHeader.tsx`,
+- **Code (#172):** `app/manifest.ts`, `app/layout.tsx` (`appleWebApp`/
+  `manifest`), `app/icon.png`, `app/apple-icon.png`,
+  `public/icons/icon-192.png`, `public/icons/icon-512.png`,
+  `app/globals.css` (touch polish), plus the safe-area changes to
+  `components/organisms/Sidebar.tsx`, `components/organisms/SidePanel.tsx`,
+  `components/organisms/PageHeader.tsx`,
   `app/(app)/_components/AppShellNav.tsx`, `components/atoms/Button.tsx`.
-- **Node ID:** `4055:14328` ("App icons" section, file `PE9Tc5r8ybDZWVrJrQPqXi`,
-  "Notion - V2"), four `IMAGE-SVG` children: `Icon_180x180` (`4055:14318`),
-  `Icon_128x128` (`4055:15336`), `Icon_64x64` (`4055:15346`), `Icon_16x16`
-  (`4055:15356`). Not a Component/ComponentSet — plain frames, one per export
-  size, each a rounded square (`fill_aa157800` = `#F5F5F4`) containing
-  lucide's `Loader` glyph (`#79716B`, `opacity: 0.9`, 8 spokes), radius
-  scaling proportionally with size (32px at 180, down to ~2.8px at 16).
+- **Code (#223):** `app/(app)/te-doen/icon.png`,
+  `app/(app)/recepten/icon.png`, `app/(app)/winkelmand/icon.png`,
+  `app/(app)/notities/icon.png` — file-convention favicons only, no `.tsx`
+  changes anywhere (see "#223: per-page favicons" below).
+- **Node ID (root, #172):** `4055:14328` ("App icons" section, file
+  `QwWEkv3z4DKsipNQVrMIyQ`, "Notion - V2"). As of #223 this section holds
+  **four icon sets of four sizes each (16 frames)**, not the original single
+  set — see the table below. The frames #172 used are still there
+  (`Icon_TeDoen_*`, same node-ids as before) but their *content* changed:
+  each is now a rounded square (`fill` bound to `color/surface/primary/
+  default`, resolves `#F5F5F4`) containing an **`Icon/*` component
+  instance** (lucide glyph rendered as strokes on
+  `color/text/base/secondary` → `#79716B`, `opacity: 1`), not the bare
+  8-spoke `Loader` vector at `opacity: 0.9` this file previously described.
+  Root `app/icon.png`/`app/apple-icon.png`/`public/icons/*` were **not**
+  regenerated in #223 — they still show that already-shipped TeDoen render;
+  see the per-page decision below for why they were deliberately left
+  alone rather than re-rendered to match the new instance-based source.
+
+## #223: per-page favicons (2026-08-13)
+
+### Figma: four icon sets, 16 frames, all measured via `figma-console`
+
+`4055:14328` ("App icons", *Development* page) now contains one frame per
+page × size. Measured directly (`figma.getNodeByIdAsync` +
+`boundVariables`, not inferred from resolved colour) — every frame shares
+the same fill/stroke binding, only the glyph instance differs:
+
+| Page | Glyph (`Icon/*` instance) | 180×180 | 128×128 | 64×64 | 16×16 |
+| --- | --- | --- | --- | --- | --- |
+| Te-Doen | `Columns-3` | `4055:14318` | `4055:15336` | `4055:15346` | `4055:15356` |
+| Notities | `Notebook` | `4078:20071` | `4078:20073` | `4078:20075` | `4078:20077` |
+| Recepten | `Folder-closed` | `4078:20115` | `4078:20117` | `4078:20119` | `4078:20121` |
+| Winkelmanden | `Shopping-basket` | `4124:16787` | `4124:16789` | `4124:16791` | `4124:16793` |
+
+Every frame: `cornerRadius` 32 at 180 (proportional at smaller sizes, same
+scaling as #172), fill → `color/surface/primary/default` (`#F5F5F4`),
+glyph drawn as **strokes** (not fills) → `color/text/base/secondary`
+(`#79716B`), `stroke-width` 10.667 at 180 scaling proportionally,
+`opacity: 1` throughout (the old Loader-glyph note's `opacity: 0.9` doesn't
+apply to any of these). Only the 180×180 and 64×64 frames were exported —
+same precedent as #172 (128/16 exist in Figma but aren't part of the used
+export set).
+
+Export note: the Figma REST route (`GET .../images/<key>?ids=...`) worked
+for this session despite a mid-task warning that its token had expired —
+every SVG it returned was cross-checked byte-for-byte against
+`figma.getNodeByIdAsync(id).exportAsync({format:'SVG'})` run through the
+`figma-console` bridge (all four 64×64 exports matched exactly, glyph paths
+included), so the asset content itself is not in question either way.
+
+### Decision: favicon per page ships; home-screen icon/manifest does not
+
+The ticket asked for two things — a per-page **favicon** and a per-page
+**home-screen icon + shortcut that opens that page**. Only the first ships
+here.
+
+**Favicon (`app/<route>/icon.png`) — shipped, all four pages.** Purely
+file-convention: Next.js's icon collector runs for every route segment
+(`collectIconModuleIfExists('icon')`, unconditional — confirmed reading
+`next/src/build/webpack/loaders/metadata/discover.ts`), and a leaf
+segment's static icon overrides its parent's via `unshift` at render time
+(`next/src/lib/metadata/resolve-metadata.ts`) — so a more specific route's
+`icon.png` wins over the root's with zero code, zero risk to any other
+route. `pnpm build` confirms it: `/te-doen/icon-*.png`,
+`/recepten/icon-*.png`, `/winkelmand/icon-*.png` and `/notities/icon-*.png`
+(inert until #232 adds a page there) all appear as distinct generated
+routes; root `/icon.png` is unchanged. A favicon has no bearing on PWA
+install identity — it's browser-tab/bookmark chrome only — so this is safe
+in isolation.
+
+**Home-screen icon (`apple-icon.png`) + shortcut destination — not
+shipped, deliberately.** These two have to move together or not at all:
+shipping a route-specific `apple-icon.png` alone would show (say) the
+Recepten glyph on the home-screen icon while the shortcut still opens
+`/te-doen` — worse than today's single consistent icon, not better,
+because it actively misrepresents where the shortcut goes. Whether the
+*destination* can be made per-page turns on how iOS resolves
+`start_url` from a linked Web App Manifest, and here's what research
+turned up, sourced rather than guessed:
+
+- **iOS honours the manifest's `start_url` over the current URL, not the
+  other way round, once a manifest is linked and `apple-mobile-web-app-
+  capable` is present** — this app already has both, globally, from
+  `app/layout.tsx`/`app/manifest.ts` (#172). Real-world confirmation:
+  [gitlab-org/gitlab#427560](https://gitlab.com/gitlab-org/gitlab/-/issues/427560)
+  documents the exact failure shape — adding GitLab's To-do List page to
+  the iOS home screen opens Explore Projects instead, because the single
+  shared manifest hardcodes that `start_url`. That is the bug this
+  ticket's request is implicitly asking not to have; it is *also*,
+  unavoidably, this app's current behaviour on every route today (one
+  manifest, `start_url: "/te-doen"`, since #172).
+- **`apple-touch-icon` (i.e. `apple-icon.png`) already takes precedence
+  over manifest icons on iOS**, and — same mechanism as the favicon above
+  — Next.js would happily serve a different one per route. That part is
+  low-risk on its own; it's only risky *paired with* an unfixed shared
+  `start_url`.
+- **A technically real fix exists but is unverified on iOS specifically:**
+  Next.js's `manifest.ts` file convention is root-only by construction
+  (`isRootLayoutOrRootPage` gate, confirmed in
+  `next/src/build/webpack/loaders/metadata/discover.ts` — a nested
+  `app/te-doen/manifest.ts` is never picked up). The supported alternative
+  is `metadata.manifest: "<url>"` in any layout/page pointing at a custom
+  Route Handler (confirmed in `next/src/lib/metadata/metadata.tsx`), so a
+  per-page manifest (own `start_url`, `scope`, `id`) is buildable. Safari
+  16.4 (March 2023) added the manifest `id` member specifically to let iOS
+  tell apart "multiple installs of the same web app" sharing an origin —
+  which is suggestive that per-page manifests *could* resolve to
+  independent, correctly-routed home-screen installs. No source found,
+  however, confirms this exact scenario (N manifests, one origin, N
+  independent iOS installs) actually behaves that way, and the one
+  concrete real-world data point available (the GitLab issue above) only
+  demonstrates the *failure* mode of a single shared manifest, not that
+  the multi-manifest fix generalises safely. This cannot be tested here —
+  no iOS hardware — and a wrong guess ships a broken or merged PWA
+  identity, worse than the current one. Per this ticket's own fallback
+  instruction, that's a "can't reliably substantiate it" case: conservative
+  choice taken. Tracked as
+  `docs/open-questions.md#per-page-home-screen-icon-unverified` for a
+  follow-up ticket that *can* be checked against a real device.
+
+Root `app/apple-icon.png`, `public/icons/*`, and `app/manifest.ts` are
+therefore **untouched** by #223 — every route's home-screen representation
+stays exactly what #172 shipped (single icon, `start_url: "/te-doen"`).
+
+### Notities: assets shipped, wiring deferred to #232
+
+`app/(app)/notities/` has no `page.tsx` yet (#232), so `/notities` doesn't
+route and `app/(app)/notities/icon.png` is inert today — but Next's icon
+file convention needs nothing beyond the file's presence at that path, so
+the moment #232 adds `page.tsx` the favicon starts working with **no
+further code change**. No `layout.tsx` was added speculatively: a bare
+pass-through layout whose only job is scaffolding for a not-yet-written
+page risks colliding with whatever #232 actually needs there, for a
+saving of one file #232 can add itself in a few seconds. Same call as the
+apple-icon/manifest question above — Notities gets no home-screen-icon
+route wiring either, for the same reasons.
 
 ## Action required after this deploys
 
