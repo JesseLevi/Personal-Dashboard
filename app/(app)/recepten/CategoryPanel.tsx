@@ -232,7 +232,7 @@ export function CategoryPanel({
     target.mode === "edit" && deleteConfirming ? (
       <>
         <p className="text-base font-semibold text-text-primary">{t("deleteConfirmLabel")}</p>
-        <div className="flex gap-2">
+        <div className="flex gap-inline-sm">
           <Button
             variant="outline"
             className="grow basis-0"
@@ -253,7 +253,7 @@ export function CategoryPanel({
         </div>
       </>
     ) : (
-      <div className="flex gap-2">
+      <div className="flex gap-inline-sm">
         {target.mode === "edit" && (
           <Button
             variant="destructive"
@@ -296,9 +296,15 @@ export function CategoryPanel({
           gap 8px between them, row itself gap 12px — no dedicated molecule,
           InputField's own label styling (text-base font-semibold
           text-text-secondary) reused directly since it's the same visual role. */}
-      <div className="flex w-full flex-col gap-2">
+      <div className="flex w-full flex-col gap-stack-sm">
         <p className="text-base font-semibold text-text-secondary">{t("fields.iconLabel")}</p>
-        <div className="flex w-full flex-wrap gap-3">
+        {/* Icon list (node 3891:18524 mobile / 3957:11544 desktop) binds two
+            different tokens per axis: itemSpacing (row) -> spacing/inline/
+            gap-md, counterAxisSpacing (wrap/column gap) -> spacing/stack/
+            stack-md. Both resolve to 12px today, so a flat gap-3 was
+            pixel-identical, but the axis rule calls for two distinct tokens
+            here, not one — design/notes/CategoryPanel.md#219. */}
+        <div className="flex w-full flex-wrap gap-x-inline-md gap-y-stack-md">
           {CATEGORY_ICONS.map((iconName) => (
             // No Selected state is drawn in Figma (every one of the 8
             // instances is the same Style=Filled, State=Default) — see

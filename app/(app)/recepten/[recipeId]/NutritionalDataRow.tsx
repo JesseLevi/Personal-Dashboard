@@ -124,7 +124,7 @@ export function NutritionalDataRow({
   return (
     <div
       ref={rowRef}
-      className="flex w-full flex-wrap items-center justify-center gap-3 md:w-fit md:flex-nowrap md:justify-start"
+      className="flex w-full flex-wrap items-center justify-center gap-inline-md md:w-fit md:flex-nowrap md:justify-start"
     >
       {items.map((item) => (
         <div key={item.key} className="relative">
@@ -141,6 +141,7 @@ export function NutritionalDataRow({
               className={`absolute top-full left-1/2 z-[999] mt-2 -translate-x-1/2 ${item.isNevoData ? "w-64" : "w-40"}`}
             >
               <Dropdown className="shadow-sm">
+                {/* spacing-flag: same — no Figma node for this popover's content padding — design/notes/NutritionalDataRow.md */}
                 <p className="px-2 py-1 text-base font-semibold text-text-secondary">{item.fullLabel}</p>
                 {/* ADR-0013 §2: NEVO's licence prescribes this exact English
                     string ("...and other data sources", since this row also
@@ -149,6 +150,7 @@ export function NutritionalDataRow({
                     both catalogs with an identical, unlocalised value rather
                     than translated (design/notes/RecipeDetailPage.md). */}
                 {item.isNevoData && (
+                  // spacing-flag: same — no Figma node for this popover's content padding — design/notes/NutritionalDataRow.md
                   <p className="px-2 pb-1 text-xs font-normal text-text-secondary">{t("nevoAttribution")}</p>
                 )}
               </Dropdown>

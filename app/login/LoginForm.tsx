@@ -198,6 +198,12 @@ export function LoginForm({
               {/* Frame 3 (3991:13289) — Figma draws 153/151px, a hug/
                   rounding artefact (see design/notes/LoginForm.md); equal
                   flex-1 halves is the correct read. */}
+              {/* spacing-flag: gap-2 (8px) — measured the fetched "Frame 3"
+                  node itself (3991:13289, the Terug/Inloggen row): itemSpacing
+                  is 8 but carries no boundVariables entry at all (unbound in
+                  Figma) — coincides with both inline-sm and component-sm,
+                  exactly the ambiguity this ticket forbids guessing through —
+                  design/notes/LoginForm.md#219. */}
               <div className="mt-4 flex gap-2">
                 <Button
                   type="button"

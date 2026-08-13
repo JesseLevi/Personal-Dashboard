@@ -226,3 +226,80 @@ The hero `<img>` now points at `/api/recipe-thumbnail/<recipeId>?size=full&v=<re
 
 Root wrapper: `pr-4 md:pr-32`→`pr-page-right-equal`. No node lookup needed,
 per the ticket's own page-padding rule.
+
+## #219 (2026-08-12): radius/spacing token migration
+
+Measured via the `figma-console` bridge (`figma.getNodeByIdAsync` +
+`boundVariables`, never inferred from a resolved value) against
+`Recept/Mobile` (`3997:14737`) and `Recept/Desktop` (`3997:15171`).
+
+### Converted
+
+| Line | Old | New | Node(s) | `boundVariables` key | Figma variable |
+|---|---|---|---|---|---|
+| 206 | `gap-6` (outer wrapper) | `gap-page-stack` | `3997:14738`/`3997:15173` ("Main") | `itemSpacing` | `spacing/layout/page-stack` |
+| 252 | `gap-5` (Bewerken/Verwijderen) | `gap-inline-xl` | `3997:14742`/`3997:15176` ("Knoppen") | `itemSpacing` | `spacing/inline/gap-xl` |
+| 331 | `py-4` (Title frame) | `py-component-lg` | `3997:15946`/`3997:15181` ("Title") | `paddingTop`/`paddingBottom` | `spacing/component/padding-lg` |
+| 381 | `gap-6` (Steps wrapper) | `gap-page-stack` | `3997:14738`/`3997:15173` ("Main", Step Cards are its direct children) | `itemSpacing` | `spacing/layout/page-stack` |
+
+### Flagged
+
+- **Header row `gap-4`** (line 208, back-arrow + right actions): Header
+  (`3997:14740`/`3997:15174`) has `itemSpacing: 16` but an **empty**
+  `boundVariables` — `primaryAxisAlignItems: SPACE_BETWEEN`, so Figma never
+  binds a spacing token here (the layout computes gaps automatically). The
+  raw value is a leftover, not a design token. Left as `gap-4`.
+- **Delete-confirm row `gap-4`/`gap-2`** (lines 217/220): no Figma node
+  models the "Weet je het zeker?" confirm state at all — searched both
+  `Recept/Mobile` and `Recept/Desktop` for the confirm/cancel copy
+  (`Weet je het zeker`, `Annuleren`, `Ja, verwijderen`), zero matches. Same
+  precedent as the delete-confirm UI itself (no Figma source, `#94`
+  pattern).
+- **"Voeg toe aan mand" + Bewerken/Verwijderen outer `gap-4`** (line 240):
+  real discrepancy, not a plain gap. Desktop's flat "Knoppen" row
+  (`3997:15176`) spaces **all three** buttons (`Voeg toe aan mand`,
+  `Bewerken`, `Verwijderen`) uniformly at `itemSpacing: 20`
+  (`spacing/inline/gap-xl`). The code nests these as
+  `AnimatedAddToBasketButton` + a separate `[Bewerken, Verwijderen]` group,
+  giving an outer gap of 16 and an inner gap of 20 — Figma wants 20
+  everywhere. Converting the outer gap to `gap-inline-xl` would change the
+  rendered gap from 16px to 20px, which the pixel-identical rule forbids.
+  Flagged instead of "fixed." Worth a design call: either the nesting
+  should go away (flatten to one row, one gap) or Figma should show the
+  16/20 split explicitly.
+- **Mobile Ellipsis overflow `mt-2`** (line 273): the overflow menu itself
+  is an undesigned node (pre-existing comment, `#94`/`TeDoenHeader.tsx`
+  precedent) — no Figma node, so no binding to measure.
+- **Thumbnail/placeholder `rounded-xl`** (lines 326, 330): "image 63"
+  (`3997:14745`/`3997:15180`, a plain `RECTANGLE`) has `cornerRadius: 12`
+  on all four corners but an **empty** `boundVariables` — unbound in
+  Figma, despite 12px exactly matching `radius/card`. This is precisely
+  the "don't infer from the value" trap the ticket calls out — not
+  converted.
+- **Title-frame `gap-6`** (line 331, h1-to-NutritionalDataRow gap):
+  `3997:15946`/`3997:15181` ("Title") has `itemSpacing: 24` but its
+  `boundVariables` only carries `paddingTop`/`paddingBottom` — `itemSpacing`
+  itself is unbound (confirmed via a direct raw `boundVariables` read, not
+  just the filtered walk), despite 24px matching both `stack/xl` and
+  `page-stack`. Left as `gap-6`.
+- **Ingredient-cards row `gap-6 md:flex-row`** (line 348): the fetched
+  design only ever shows **one** ingredient-group `Card` per breakpoint
+  (`Settings#3997:5: true` appears on exactly one Card instance in both
+  `Recept/Mobile` and `Recept/Desktop`) — Figma keeps all Cards as flat
+  vertical siblings of "Main," governed by `page-stack` (24px), and never
+  designs a side-by-side desktop row for multiple groups. This is the
+  axis-rule case the briefing calls out by name: a stack-family value
+  (24, which has no `inline/*` equivalent — that scale tops out at 20)
+  reused as a row-axis gap on `md:flex-row` with no Figma-confirmed
+  binding for that specific relationship. Flagged rather than silently
+  applying `gap-stack-xl`/`gap-page-stack` to the row case.
+
+### Structural note (not a spacing issue, no action taken)
+
+`Main` (`3997:14738`) has both a bare top-level `Button/Default`
+(`3997:14739`, the back arrow, `x:16,y:16`) **and** a `Header` frame
+(`3997:14740`) that separately contains its own `Button/Default`
+(`3997:14741`) + `Knoppen`. This looks like a leftover/duplicate layer in
+the Figma file rather than a real second header — didn't change any
+conversion above (the values used come from `Header`/`Knoppen`, which is
+what's actually visible), but worth a design-file cleanup pass someday.

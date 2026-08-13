@@ -15,7 +15,12 @@ export default function AppError({ reset }: { error: Error & { digest?: string }
   const t = useTranslations("common.errorBoundary");
 
   return (
+    // spacing-flag: gap-4 (16px) — no Figma error state exists for this
+    // route-group error boundary (see the file header above); nothing to
+    // measure a boundVariables entry against — design/notes/AppError.md.
     <div className="flex w-full flex-col items-start gap-4">
+      {/* spacing-flag: gap-2 (8px) — same reasoning as the outer wrapper:
+          no Figma node for this error state — design/notes/AppError.md. */}
       <div className="flex flex-col gap-2">
         <p className="text-xl font-semibold text-text-primary">{t("title")}</p>
         <p className="text-base text-priority-urgent">{t("body")}</p>

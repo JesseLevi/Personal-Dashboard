@@ -380,7 +380,7 @@ export function RecipePanel({
     target.mode === "edit" && deleteConfirming ? (
       <>
         <p className="text-base font-semibold text-text-primary">{t("deleteConfirmLabel")}</p>
-        <div className="flex gap-2">
+        <div className="flex gap-inline-sm">
           <Button
             variant="outline"
             className="grow basis-0"
@@ -401,7 +401,7 @@ export function RecipePanel({
         </div>
       </>
     ) : (
-      <div className="flex gap-2">
+      <div className="flex gap-inline-sm">
         {target.mode === "edit" && (
           <Button
             variant="destructive"
@@ -510,9 +510,9 @@ export function RecipePanel({
           }}
         />
 
-        <div className="flex w-full flex-col items-stretch gap-4">
+        <div className="flex w-full flex-col items-stretch gap-stack-lg">
           {ingredients.map((row, index) => (
-            <div key={row.localId} className="flex w-full flex-col gap-4">
+            <div key={row.localId} className="flex w-full flex-col gap-stack-lg">
               {index > 0 && <div className="h-px w-full bg-stroke-primary" aria-hidden="true" />}
               <RecipeIngredientRow
                 id={row.localId}
@@ -543,6 +543,13 @@ export function RecipePanel({
           {t("addRowLabel")}
         </Button>
 
+        {/* spacing-flag: gap-4 — Stappen has no Figma node in either
+            "Add recipi" frame (3717:2844 mobile / 3717:2493 desktop); their
+            Pull-up panel lists Titel/Personen/Tijd fields, Ingredienten, and
+            the footer only — no Stappen list — so unlike the Ingredienten
+            wrapper just above (measured, node 3717:2925/3957:11670,
+            spacing/stack/stack-lg), this value would be a guess-from-number,
+            not a measurement — design/notes/RecipePanel.md#219. */}
         <div className="flex w-full flex-col items-stretch gap-4">
           {steps.map((row) => (
             <InputField

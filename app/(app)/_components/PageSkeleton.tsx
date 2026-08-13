@@ -36,6 +36,11 @@ const SKELETON_CARDS_PER_COLUMN = 2;
 export async function BoardSkeleton() {
   const t = await getTranslations("common");
   return (
+    // spacing-flag: gap-6 (24px) — no Figma node exists for a loading
+    // skeleton (#170, docs/open-questions.md#loading-skeleton-undesigned),
+    // so there is nothing to measure a boundVariables entry against; this
+    // wrapper is invented chrome, not a page instance — design/notes/
+    // PageSkeleton.md.
     <div className="flex w-full flex-col gap-6">
       <LoadingStatus label={t("loading")} />
       {/* `inert` alongside aria-hidden: CardContainer renders two real
@@ -47,9 +52,24 @@ export async function BoardSkeleton() {
         <Carousel columnWidthClassName="w-74 md:w-80">
           {Array.from({ length: SKELETON_COLUMNS }, (_, columnIndex) => (
             <CardContainer key={columnIndex} name="" count="" addLabel={t("loading")} editLabel={t("loading")}>
+              {/* spacing-flag: gap-2 (8px) — this div plays the same
+                  structural role as BoardView.tsx's real card-list wrapper,
+                  which is measured and bound to `gap-stack-sm`
+                  (components/organisms/BoardView.tsx, "Owns its own gap-2"
+                  comment there). That binding belongs to BoardView's real
+                  Figma-backed Card list, not to this invented skeleton
+                  wrapper — no Figma skeleton node exists to read a
+                  boundVariables entry from here, so matching by structural/
+                  value coincidence is exactly what this ticket forbids.
+                  Stays raw — design/notes/PageSkeleton.md. */}
               <div className="flex w-full flex-col gap-2">
                 {Array.from({ length: SKELETON_CARDS_PER_COLUMN }, (_, cardIndex) => (
                   <Card key={cardIndex}>
+                    {/* spacing-flag: gap-2 py-1 (8px / 4px) — stands in for
+                        a real `Card-content/*` molecule's content, which
+                        doesn't exist in code yet and has no fetched Figma
+                        node here either; invented placeholder layout,
+                        nothing to measure — design/notes/PageSkeleton.md. */}
                     <div className="flex w-full flex-col gap-2 py-1">
                       <PlaceholderBar className="h-4 w-3/4" />
                       <PlaceholderBar className="h-4 w-1/2" />
@@ -73,11 +93,25 @@ const SKELETON_DETAIL_CARDS = 3;
 export async function RecipeDetailSkeleton() {
   const t = await getTranslations("common");
   return (
+    // spacing-flag: gap-6 (24px) — same reasoning as BoardSkeleton's own
+    // outer wrapper above: no Figma node exists for a loading skeleton
+    // (#170, docs/open-questions.md#loading-skeleton-undesigned), nothing
+    // to measure a boundVariables entry against — design/notes/
+    // PageSkeleton.md.
     <div className="flex w-full flex-col gap-6">
       <LoadingStatus label={t("loading")} />
+      {/* spacing-flag: gap-2 (8px) — stands in for a stacked-Card list
+          wrapper; no Figma skeleton node exists to read a boundVariables
+          entry from here, same as BoardSkeleton's own card-list wrapper —
+          design/notes/PageSkeleton.md. */}
       <div aria-hidden="true" className="flex w-full flex-col gap-2">
         {Array.from({ length: SKELETON_DETAIL_CARDS }, (_, index) => (
           <Card key={index}>
+            {/* spacing-flag: gap-2 py-1 (8px / 4px) — invented placeholder
+                content layout, same reasoning as BoardSkeleton's own
+                Card-content stand-in: no real Card-content molecule or
+                Figma node exists here to measure — design/notes/
+                PageSkeleton.md. */}
             <div className="flex w-full flex-col gap-2 py-1">
               <PlaceholderBar className="h-4 w-2/3" />
               <PlaceholderBar className="h-4 w-1/3" />

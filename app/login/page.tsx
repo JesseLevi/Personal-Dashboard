@@ -33,7 +33,9 @@ export default async function LoginPage() {
     // `min-height` alone leaves that ancestor height indefinite even once
     // painted, and `h-full` silently collapses to 0 (confirmed empirically,
     // not assumed — see design/notes/LoginForm.md).
-    <main className="flex h-screen flex-col p-4 lg:flex-row lg:gap-6">
+    // `lg:gap-page-stack` is a stack-family token on a row axis: that is how
+    // the Figma node binds it, not a slip — see design/notes/LoginForm.md.
+    <main className="flex h-screen flex-col p-component-lg lg:flex-row lg:gap-page-stack">
       <div className="flex flex-1 flex-col items-center justify-center">
         <LoginForm
           signInWithPasswordAction={signInWithPassword}
@@ -50,7 +52,7 @@ export default async function LoginPage() {
           always fills the available square exactly instead of following
           whatever width `flex-1` happens to leave it — see
           design/notes/LoginForm.md for the bug this replaced. */}
-      <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-3xl bg-surface-secondary lg:h-full lg:w-auto">
+      <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-container bg-surface-secondary lg:h-full lg:w-auto">
         <Image
           src="/login/login-visual-mobile.png"
           alt=""

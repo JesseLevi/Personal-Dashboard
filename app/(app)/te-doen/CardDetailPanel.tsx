@@ -235,7 +235,7 @@ export function CardDetailPanel({
     target.mode === "edit" && deleteConfirming ? (
       <>
         <p className="text-base font-semibold text-text-primary">{t("deleteConfirmLabel")}</p>
-        <div className="flex gap-2">
+        <div className="flex gap-inline-sm">
           <Button
             variant="outline"
             className="grow basis-0"
@@ -256,7 +256,7 @@ export function CardDetailPanel({
         </div>
       </>
     ) : (
-      <div className="flex gap-2">
+      <div className="flex gap-inline-sm">
         {target.mode === "edit" && (
           <Button
             variant="destructive"
@@ -337,6 +337,11 @@ export function CardDetailPanel({
             aria-controls/onClick onto it and renders its own trailing
             chevron alongside it (#112), rather than wrapping it in a second
             <button>. */}
+        {/* spacing-flag: rounded-lg — this wrapper is a code-only click
+            target (no Figma node of its own); it hugs Tag exactly, and
+            Tag's own rounded-lg is measured `radius/control` (node
+            3626:4515, design/notes/Tag.md #205), but that is Tag's binding,
+            not this button's — design/notes/CardDetailPanel.md #219. */}
         <button type="button" className="inline-flex w-fit items-center rounded-lg">
           <Tag variant={priority}>{tPriority(priority)}</Tag>
         </button>
@@ -345,6 +350,8 @@ export function CardDetailPanel({
             key={value}
             type="button"
             onClick={() => setPriority(value)}
+            // spacing-flag: rounded-lg — same wrapper pattern, see the flag
+            // above — design/notes/CardDetailPanel.md#219.
             className="flex w-full rounded-lg text-left transition-colors hover:bg-surface-highlight-white-selected"
           >
             <Tag variant={value}>{tPriority(value)}</Tag>
@@ -358,6 +365,8 @@ export function CardDetailPanel({
         defaultOpen={false}
       >
         {/* Same trigger pattern as Prioriteit above — see that comment. */}
+        {/* spacing-flag: rounded-lg — same wrapper pattern as the Priority
+            trigger above — design/notes/CardDetailPanel.md#219. */}
         <button type="button" className="inline-flex w-fit items-center rounded-lg">
           <Tag variant="neutral">{size ? size.toUpperCase() : t("fields.sizePlaceholder")}</Tag>
         </button>
@@ -366,6 +375,8 @@ export function CardDetailPanel({
             key={value ?? "none"}
             type="button"
             onClick={() => setSize(value)}
+            // spacing-flag: rounded-lg — same wrapper pattern, see the flag
+            // above — design/notes/CardDetailPanel.md#219.
             className="flex w-full rounded-lg text-left transition-colors hover:bg-surface-highlight-white-selected"
           >
             <Tag variant="neutral">{value ? value.toUpperCase() : t("fields.sizePlaceholder")}</Tag>

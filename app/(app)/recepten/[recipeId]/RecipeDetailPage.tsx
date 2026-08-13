@@ -200,7 +200,8 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
   const nutritionPerPerson = computeRecipeNutritionPerPerson(nutritionInputs, recipe.servings);
 
   return (
-    <div className="flex w-full flex-col items-stretch gap-6 pr-page-right-equal">
+    <div className="flex w-full flex-col items-stretch gap-page-stack pr-page-right-equal">
+      {/* spacing-flag: Header's itemSpacing (16) has no bound Figma variable — SPACE_BETWEEN layout, gap is a code-only fallback — design/notes/RecipeDetailPage.md */}
       <div className="flex w-full items-center justify-between gap-4">
         <Button
           icon="ArrowLeft"
@@ -209,8 +210,10 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
         />
 
         {deleteConfirming ? (
+          // spacing-flag: delete-confirm row is a transient interaction state with no Figma node in either Recept frame — design/notes/RecipeDetailPage.md
           <div className="flex flex-wrap items-center justify-end gap-4">
             <p className="text-base font-semibold text-text-primary">{t("deleteConfirmLabel")}</p>
+            {/* spacing-flag: same transient delete-confirm state, no Figma node — design/notes/RecipeDetailPage.md */}
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -230,6 +233,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
             </div>
           </div>
         ) : (
+          // spacing-flag: Figma's Desktop "Knoppen" row (3997:15176) spaces all three buttons uniformly at itemSpacing 20 (inline/gap-xl) — this outer wrapper's nested split (16 here, 20 on the inner group below) has no matching Figma node; converting would change the rendered px — design/notes/RecipeDetailPage.md
           <div className="flex flex-wrap items-center justify-end gap-4">
             {/* #178 wires the real handler; #179 adds the AddToBasket ->
                 Toegevoegd slide animation -- see
@@ -242,7 +246,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
               disabled={sendPending}
             />
 
-            <div className="hidden items-center gap-5 md:flex">
+            <div className="hidden items-center gap-inline-xl md:flex">
               <Button variant="filled" icon="Pencil" onClick={() => setEditOpen(true)}>
                 {t("editLabel")}
               </Button>
@@ -262,6 +266,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
                 onClick={() => setOverflowOpen((open) => !open)}
               />
               {overflowOpen && (
+                // spacing-flag: overflow popover offset has no Figma node (undesigned menu, see comment above) — design/notes/RecipeDetailPage.md
                 <div className="absolute top-full right-0 z-[999] mt-2 w-[209px]">
                   <Dropdown className="shadow-sm">
                     <Button
@@ -314,13 +319,16 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
           height={640}
           loading="eager"
           fetchPriority="high"
+          // spacing-flag: "image 63" rectangle (node 3997:14745 Mobile / 3997:15180 Desktop) has cornerRadius 12 with an empty boundVariables — unbound in Figma despite matching radius/card's value — design/notes/RecipeDetailPage.md
           className="aspect-[2/1] w-full rounded-xl object-cover"
         />
       ) : (
+        // spacing-flag: same unbound "image 63" radius as the thumbnail above — design/notes/RecipeDetailPage.md
         <div aria-hidden="true" className="aspect-[2/1] w-full rounded-xl bg-surface-primary" />
       )}
 
-      <div className="flex w-full flex-col items-center gap-6 py-4">
+      {/* spacing-flag: Title frame (node 3997:15946 Mobile / 3997:15181 Desktop) itemSpacing is 24 but not present in its boundVariables — unbound, despite matching stack/xl and page-stack's value — design/notes/RecipeDetailPage.md */}
+      <div className="flex w-full flex-col items-center gap-6 py-component-lg">
         <h1 className="w-full text-center text-4xl font-semibold text-text-primary">{recipe.title}</h1>
         <NutritionalDataRow
           timeMinutes={recipe.time_minutes}
@@ -333,6 +341,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
         />
       </div>
 
+      {/* spacing-flag: Figma's "Main" frame keeps ingredient-group Cards as flat vertical siblings (page-stack=24, node 3997:14738/3997:15173) — only one ingredient-group Card exists in the fetched design, so no bound relationship covers this wrapper's md:flex-row (row-axis) gap — design/notes/RecipeDetailPage.md */}
       <div className="flex w-full flex-col gap-6 md:flex-row">
         {ingredientGroups.map((group, groupIndex) => (
           <Card
@@ -369,7 +378,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
         ))}
       </div>
 
-      <div className="flex w-full flex-col gap-6">
+      <div className="flex w-full flex-col gap-page-stack">
         {steps.map((step, index) => {
           const stepIngredients = step.ingredientIds
             .map((id) => ingredientsById.get(id))
