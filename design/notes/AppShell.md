@@ -267,6 +267,20 @@ checking, and only one of them could be:
    user tests the Vercel preview build on their iPhone — see the PR body's
    test protocol.
 
+**Verified on a real iPhone, 2026-08-13 — it works as designed.** The user
+ran the PR body's protocol: adding Te-Doen, Recepten and Winkelmand to the
+home screen produces **three distinct icons that each open their own page**.
+So iOS does honour the manifest `id` member as N independent installs on one
+origin, and the hashed nested-icon paths (`/te-doen/apple-icon-1nbzid.png`)
+are what iOS actually fetches — the 404 on the unhashed path was the red
+herring the build record already predicted it would be. Nothing is reverted;
+the whole vervolg stands as shipped. `docs/open-questions.md`'s
+`per-page-home-screen-icon-unverified` is resolved and removed. Item 1 above
+(the mechanism) was already verified from this machine; item 2 is now closed
+by measurement on hardware, and the *authenticated-HTML* half of item 2 folds
+back into the standing #185 gap where it belongs — it was never specific to
+this ticket.
+
 ### Notities: favicon + apple-icon shipped, manifest wiring deferred to #232
 
 `app/(app)/notities/` still has no `page.tsx` (#232), so `/notities`

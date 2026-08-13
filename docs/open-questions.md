@@ -67,30 +67,6 @@ Dutch nav labels are pixel-perfect at 40px per row; English is not — "Shopping
 
 #108's feedback asked that the whole Status/Prioriteit/Grootte row open, not just the pill. Only the pill is a click target; the chevron is a decorative sibling, matching Figma's own structure. Making the row clickable needs either `<button>`-in-`<button>` or a `role="button"` wrapper around a real button — both documented ARIA anti-patterns. Needs a product call: accept the pill-only target, or restructure so the pill becomes non-interactive and `Dropdown` owns the one real button.
 
-## AppShell
-
-### per-page-home-screen-icon-unverified
-
-**Status: built, awaiting verification on a real device.** #223's first
-pass shipped only a per-page **favicon** (browser-tab chrome). The #223
-vervolg (2026-08-13) built the rest — a per-page `apple-icon.png` for all
-four pages, plus a per-page Web App Manifest (own `id`/`start_url`, shared
-`scope: "/"`, wired via `metadata.manifest` + a Route Handler) for Te-Doen,
-Recepten and Winkelmand — because the user has an iPhone and chose to build
-this for real and test it on the Vercel preview, rather than leave it
-blocked on research alone. What's still genuinely unverified, because it
-requires the one thing this dev machine doesn't have: whether iOS actually
-treats N manifests sharing an origin (each with its own `id`) as N
-independent, correctly-routed home-screen installs, the way Safari 16.4's
-manifest `id` member is documented to intend. If the on-device test in the
-PR body fails — e.g. all three shortcuts open the same page, or show the
-same icon — this part gets reverted; the favicons from #245 stay either
-way. See `design/notes/AppShell.md`'s "#223 vervolg" section for the full
-build, the `id`/`start_url`/`scope` table, and exactly what was and wasn't
-verifiable from this machine (no reachable Supabase project here either, so
-even the real authenticated page HTML couldn't be curled — only an isolated
-throwaway route proved the underlying Next.js mechanism).
-
 ## Recepten
 
 ### step-rows-no-delete-reorder
@@ -153,7 +129,7 @@ Independent of the dropdown: at a 320px viewport (dropdown closed), the header r
 
 These were open questions that the shipped build now answers. The deviation and its reasoning live in the component's own `design/notes/<Component>.md`; an old `#slug` link that lands here was one of them.
 
-**Decided by the user or by measurement** — `touch-hold-duration-deviates-from-figma` (750ms, chosen after real-device testing showed Figma's 2s felt broken), `unit-dropdown-list-not-drawn` and `recipe-panel-unit-list-etc-unsourced` (the 17-code `UNIT_CODES` list is a user decision, 2026-07-29), `ios-safari-fixed-viewport-unverified` (now tracked as a verification ticket, not a design gap), `button-vs-input-active-border` (#204, 2026-08-11: fetched both nodes' Active state side by side — `Stroke/secondary/active` for Button/Outline, `Stroke/primary/active` for Input-field, two distinct correctly-bound Figma variables, never a divergence to reconcile; `stroke-primary-active` keeps its own name), `token-names-are-hex-derived` (#203, 2026-08-11: the premise was simply wrong — `get_variable_defs` does return variable names, verified on 3623:4346 and 3705:4402. Every semantic token now carries its real Figma variable path and id, `design/figma-variables/` holds the exported collections, and `pnpm check:tokens-drift` keeps the two in step), `dark-mode-is-placeholder-only` (#204 narrowed this 2026-08-11, #206 closes it 2026-08-12: real Figma dark frames/variables back every semantic colour token's dark value as of #204 — two deliberately-accepted quirks remain (Distructive hover/press/selected collapsing to one red-50, White's Active reading lighter than Hover), not flagged for a fix. The one part this slug's own text still called open — "only Ladle sets `data-theme`, an app-level theme switch is a separate architectural decision" — is what #206 resolves: `next-themes` now sets `data-theme` from system preference app-wide, no switch UI (not in Figma, not built). Full reasoning in `design/notes/AppShell.md`), `transparent-binding-unverified` (#213, 2026-08-12: re-measured via the figma-console-mcp plugin bridge — `figma.variables`/`boundVariables` read directly on Transparent's own Hover/Active nodes, a WebSocket bridge with no Starter-plan rate limit, so the fetch is now repeatable by anyone rather than resting on a single subagent's report. Confirms exactly what the report claimed: `surface-highlight-white-hover`/`-active`, not `surface-secondary/*`. Nothing changed — the binding was already right — only the method is now reproducible; see `design/notes/Button.md`'s #213 entry).
+**Decided by the user or by measurement** — `touch-hold-duration-deviates-from-figma` (750ms, chosen after real-device testing showed Figma's 2s felt broken), `unit-dropdown-list-not-drawn` and `recipe-panel-unit-list-etc-unsourced` (the 17-code `UNIT_CODES` list is a user decision, 2026-07-29), `ios-safari-fixed-viewport-unverified` (now tracked as a verification ticket, not a design gap), `button-vs-input-active-border` (#204, 2026-08-11: fetched both nodes' Active state side by side — `Stroke/secondary/active` for Button/Outline, `Stroke/primary/active` for Input-field, two distinct correctly-bound Figma variables, never a divergence to reconcile; `stroke-primary-active` keeps its own name), `token-names-are-hex-derived` (#203, 2026-08-11: the premise was simply wrong — `get_variable_defs` does return variable names, verified on 3623:4346 and 3705:4402. Every semantic token now carries its real Figma variable path and id, `design/figma-variables/` holds the exported collections, and `pnpm check:tokens-drift` keeps the two in step), `dark-mode-is-placeholder-only` (#204 narrowed this 2026-08-11, #206 closes it 2026-08-12: real Figma dark frames/variables back every semantic colour token's dark value as of #204 — two deliberately-accepted quirks remain (Distructive hover/press/selected collapsing to one red-50, White's Active reading lighter than Hover), not flagged for a fix. The one part this slug's own text still called open — "only Ladle sets `data-theme`, an app-level theme switch is a separate architectural decision" — is what #206 resolves: `next-themes` now sets `data-theme` from system preference app-wide, no switch UI (not in Figma, not built). Full reasoning in `design/notes/AppShell.md`), `transparent-binding-unverified` (#213, 2026-08-12: re-measured via the figma-console-mcp plugin bridge — `figma.variables`/`boundVariables` read directly on Transparent's own Hover/Active nodes, a WebSocket bridge with no Starter-plan rate limit, so the fetch is now repeatable by anyone rather than resting on a single subagent's report. Confirms exactly what the report claimed: `surface-highlight-white-hover`/`-active`, not `surface-secondary/*`. Nothing changed — the binding was already right — only the method is now reproducible; see `design/notes/Button.md`'s #213 entry), `per-page-home-screen-icon-unverified` (#223, 2026-08-13: the one thing this dev machine could not answer — whether iOS treats N manifests sharing an origin, each with its own `id`, as N independently-routed home-screen installs — the user verified on their own iPhone. It does: adding Te-Doen, Recepten and Winkelmand to the home screen gives three distinct icons that each open their own page, exactly as designed. Nothing is reverted; the build stands as shipped. Full build record in `design/notes/AppShell.md`'s "#223 vervolg" section).
 
 **Figma authoring artifacts, built the sensible way** — `portion-stepper-figma-draws-plus-twice` (both stepper nodes draw `Icon/Plus` twice; code renders `Minus` on decrement), `recipe-name-field-swap-icon-unusual` (`Icon/Arrow-right-left` for "open a picker", built as specified), `recipe-image-field-no-filled-state`, `input-field-text-boolean`, `checkbox-delete-state`.
 
