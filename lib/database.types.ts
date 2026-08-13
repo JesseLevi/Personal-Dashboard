@@ -278,6 +278,80 @@ export type Database = {
           },
         ]
       }
+      note_categories: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          name: string
+          position: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          icon: string
+          id?: string
+          name: string
+          position: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
+          position?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notes: {
+        Row: {
+          category_id: string
+          content: Json
+          content_text: string
+          created_at: string
+          id: string
+          position: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          content?: Json
+          content_text?: string
+          created_at?: string
+          id?: string
+          position: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          content?: Json
+          content_text?: string
+          created_at?: string
+          id?: string
+          position?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "note_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

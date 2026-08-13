@@ -113,6 +113,12 @@ Independent of the dropdown: at a 320px viewport (dropdown closed), the header r
 
 #179 groups by source recipe *and* merges same-name/same-unit lines; the two rules collide and Figma answers neither. A merged line carries one `recipe_id`, so adding "Banaan 2 stuk" from recipe A then B sums onto A's row — B's card never shows an ingredient the user did add from it. The two code paths also disagree: swipe-to-cart (`addIngredientToShoppingList`) merges into an **existing** DB row, whole-recipe send (`sendRecipeToShoppingList`) merges only within its own batch. So sending A then B leaves two "Banaan" lines, but swiping twice leaves one. Options: don't merge across recipes; merge and show the line under every contributing recipe (needs a join table); or drop `recipe_id` on merge and send the line to "Overig".
 
+## Notities
+
+### notes-tagging-not-designed
+
+`Vision.md` names "Taggen" as a core Notities action, and an earlier draft of #30 described `tags` + `note_tags` for it. #225 (schema-only, Phase 6) deliberately shipped `public.notes`/`public.note_categories` **without** any tagging table, not even an empty `note_tags` — user decision 2026-08-13, because no Figma frame yet designs what tagging a note looks like (picker, chip rendering, filter-by-tag surface). `public.tags` already exists (added ahead of schedule by `20260730000002_recipe_schema.sql` for the recipe add-flow) and is deliberately generic — no recipe-specific column — precisely so a future `note_tags` join table can reuse it without a migration conflict. Needs a real design before that join table gets built.
+
 ---
 
 ## Resolved and removed
