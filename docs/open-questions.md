@@ -119,6 +119,10 @@ Independent of the dropdown: at a 320px viewport (dropdown closed), the header r
 
 `Vision.md` names "Taggen" as a core Notities action, and an earlier draft of #30 described `tags` + `note_tags` for it. #225 (schema-only, Phase 6) deliberately shipped `public.notes`/`public.note_categories` **without** any tagging table, not even an empty `note_tags` — user decision 2026-08-13, because no Figma frame yet designs what tagging a note looks like (picker, chip rendering, filter-by-tag surface). `public.tags` already exists (added ahead of schedule by `20260730000002_recipe_schema.sql` for the recipe add-flow) and is deliberately generic — no recipe-specific column — precisely so a future `note_tags` join table can reuse it without a migration conflict. Needs a real design before that join table gets built.
 
+### notes-editingbar-detached-from-components
+
+`EditingBar` (desktop `3978:14138`, mobile `3978:14870`) is not built from design-system components: every toolbar button is named `Button/Default` but is a detached `FRAME`, not a `Button` instance — each carries a placeholder text layer `"Categorie "` and a stray, invisible trailing `Icon/Plus` instance left over from wherever the frame was copied from. The twenty icons inside are likewise loose frames, not `Icon/*` instances. Measured 2026-08-13 via the `figma-console` bridge while adding the twenty icons to `IconName` for #227. Nothing to fix in code — #234 (EditingBar) builds on real `Button`/`Icon` components regardless, per this repo's normal convention — but the Figma file itself should eventually be rebuilt on real instances so a future re-measurement of this toolbar isn't reading detached frames again.
+
 ---
 
 ## Resolved and removed
