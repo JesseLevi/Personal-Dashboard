@@ -12,7 +12,12 @@ export default defineConfig({
   testDir: "./tests/visual",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
+  // Was `process.env.CI ? 1 : 0` — the retry was masking exactly the flake
+  // described in the `maxDiffPixels` comment below (the ±1px antialiasing
+  // noise "was previously hidden by CI retries"). `maxDiffPixels: 16` now
+  // absorbs that noise directly, so a retry only doubles the cost of a run
+  // and hides genuine flake behind a silent second attempt (#259). Always 0.
+  retries: 0,
   // Single worker: story pages mount into a shared Ladle SPA shell, and
   // running many story navigations at full concurrency against one preview
   // server buys nothing on a component workbench this small while adding
