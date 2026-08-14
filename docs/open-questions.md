@@ -185,6 +185,10 @@ state.
 
 Needs a real Figma frame (panel chrome, an icon set scoped to Notities, and a delete-confirmation state) before any of the three should be considered final.
 
+### notes-delete-has-no-confirmation
+
+`/notities/[noteId]`'s "Verwijderen" button (`3978:14809` desktop, `3978:14839` mobile) has no confirmation step drawn anywhere in `Pages/Notities/Breakpoints` — same absence `notes-category-panel-not-designed` already documents for the category panel. #233 reused the existing two-step confirm pattern verbatim (`RecipeDetailPage.tsx`'s own in-place button-row swap, itself the same shape `NoteCategoryPanel.tsx`/`CategoryPanel.tsx` already use): deleting a note is irreversible, and the app already has one established confirm idiom rather than inventing a second. Needs a real Figma confirmation state before this is considered final.
+
 ---
 
 ## Resolved and removed

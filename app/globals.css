@@ -41,3 +41,18 @@ html {
     touch-action: manipulation;
   }
 }
+
+/* #233: TipTap's Placeholder extension (@tiptap/extensions) marks the empty
+   first block with `.is-editor-empty` and a `data-placeholder` attribute --
+   it renders no DOM text node of its own, only this CSS pseudo-element (the
+   documented mechanism, no Tailwind utility covers `content: attr(...)`).
+   Color reads the same semantic token the fetched Figma node binds
+   (`color/text/base/placeholder`, node 4067:20021) -- see
+   design/notes/NoteEditor.md. */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--color-text-placeholder);
+}
