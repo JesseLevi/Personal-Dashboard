@@ -1,0 +1,63 @@
+name: CI DB
+
+# Split out of ci.yml (#259) so this job can carry its own `paths:` filter —
+# a single workflow can only be skipped or run as a whole, not per job.
+#
+# PR-only (#259): a push to `main` re-ran the whole suite a second time on
+# the merge commit even though squash-merge only happens after the PR run
+# is already green, so `push: [main]` was ~50% wasted minutes. `main` never
+# needs its own CI run as a result. `workflow_dispatch` is kept so this job
+# can still be run by hand against a branch.
+on:
+  pull_request:
+    # Only run when the schema, the RLS coverage gate, or the generated
+    # types file (all of which this job exercises or regenerates) changed —
+    # 13% of commits. Nothing else in the repo can move a migration, a pgTAP
+    # test, or database.types.ts.
+    paths:
+      - 'supabase/**'
+      - 'scripts/check-rls-coverage.sh'
+      - 'lib/database.types.ts'
+      - '.github/workflows/ci-db.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  db:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start local Supabase (applies migrations)
+        run: supabase start
+      - name: RLS test suite (pgTAP)
+        run: supabase test db
+      - name: RLS coverage gate (ADR-0009)
+        run: bash scripts/check-rls-coverage.sh
+      - name: Regenerate lib/database.types.ts (#190)
+        run: pnpm db:types
+      # Uploaded on every run, pass or fail, so a red diff below is
+      # recoverable without Docker: `gh run download <run> -n database-types`
+      # gives you the exact bytes to commit — never hand-edit the diff back
+      # in, that just reintroduces drift on the next CLI/schema change.
+      - name: Upload generated database.types.ts (#190)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-types
+          path: lib/database.types.ts
+      - name: lib/database.types.ts matches the local schema, incl. reference (#190)
+        run: git diff --exit-code lib/database.types.ts
+      - run: supabase stop
+        if: always()

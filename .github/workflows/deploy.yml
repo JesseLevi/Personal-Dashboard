@@ -5,9 +5,10 @@ name: Deploy (migrate + production)
 # workflow no longer runs on every push to `main`. The user promotes a
 # specific, already-built Vercel deployment to production themselves (Vercel
 # dashboard or `vercel promote`) once they've confirmed it's good, instead of
-# every merge going live automatically. `vercel.json`'s `ignoreCommand` still
-# skips Vercel's own Git-triggered production build either way, so nothing
-# reaches production without a deliberate action.
+# every merge going live automatically. `vercel.json`'s `"github": {
+# "autoAlias": false }` still stops Vercel's own Git-triggered build from
+# being auto-promoted/aliased to production either way, so nothing reaches
+# production without a deliberate action.
 #
 # This workflow is now an on-demand tool: `workflow_dispatch` only, run by
 # hand when the user wants CI to apply pending migrations and/or push a
