@@ -185,6 +185,29 @@ state.
 
 Needs a real Figma frame (panel chrome, an icon set scoped to Notities, and a delete-confirmation state) before any of the three should be considered final.
 
+### notes-editingbar-link-no-url-input-designed
+
+`EditingBar`'s link button (#234, `Icon/Link`, position 14) has no URL-input
+UI designed anywhere in `Pages/Notities/Breakpoints` — no modal, no inline
+field, nothing between clicking the button and TipTap's `setLink({href})`
+needing a real URL. Built as a native `window.prompt()` (browser chrome, not
+a custom Figma-absent dialog) as the least-invention stand-in: clicking while
+a link mark is active unsets it, otherwise a prompt asks for a URL and
+`toggleLink`-equivalent logic applies it. See `design/notes/EditingBar.md`.
+Needs a real designed link-input surface before this is considered final.
+
+### notes-editingbar-mobile-image-button-out-of-scope
+
+Mobile `EditingBar` (`3978:14870`) carries a 21st element after a 6th
+separator line that desktop doesn't have: `3978:15082`, a real `Button/
+Default` **instance** (not a detached frame like the other twenty), 133px
+wide, with a visible text label "Afbeelding" and `Icon/Image`. No TipTap
+image extension is installed in `lib/notes/extensions.ts` and none was added
+for #234 — image insertion is out of scope for this ticket, per direct user
+instruction. Needs a real ticket (extension install, upload/insert flow) before
+this button is built; not counted among the 20 mapped commands in
+`design/notes/EditingBar.md`.
+
 ### notes-delete-has-no-confirmation
 
 `/notities/[noteId]`'s "Verwijderen" button (`3978:14809` desktop, `3978:14839` mobile) has no confirmation step drawn anywhere in `Pages/Notities/Breakpoints` — same absence `notes-category-panel-not-designed` already documents for the category panel. #233 reused the existing two-step confirm pattern verbatim (`RecipeDetailPage.tsx`'s own in-place button-row swap, itself the same shape `NoteCategoryPanel.tsx`/`CategoryPanel.tsx` already use): deleting a note is irreversible, and the app already has one established confirm idiom rather than inventing a second. Needs a real Figma confirmation state before this is considered final.
