@@ -47,14 +47,21 @@ jobs:
   # (`threshold: 0.2`) silently blinds this gate to grey-on-grey token
   # regressions, which is this project's most common visual defect.
   #
-  # KNOWN GAP 2 (platform, see ticket #6 report): the baselines committed in
-  # tests/visual/**/*-darwin.png were captured on the (Docker-less) macOS dev
-  # machine, not in this container, so this job's Linux run has no matching
-  # `-linux.png` baselines yet and is expected to fail until those are
-  # generated inside this same container image. `continue-on-error: true`
-  # keeps that failure visible without blocking unrelated PRs in the
-  # meantime — remove it once real Linux baselines are committed.
-  # → tracked by #260, which makes this gate real (Linux baselines).
+  # KNOWN GAP 2 (platform) — RESOLVED in #260. Baselines are per-platform:
+  # Playwright's default `snapshotPathTemplate` suffixes each one with the OS
+  # (`-darwin.png` / `-linux.png`) precisely so a mismatched environment fails
+  # loudly instead of silently diffing unrelated pixels. Until #260 only the
+  # 111 `-darwin.png` baselines (captured on the Docker-less macOS dev machine)
+  # existed, so every story here failed "no baseline found" and
+  # `continue-on-error: true` swallowed it — the job reported green while
+  # seeing nothing, the exact failure mode playwright.config.ts warns about.
+  #
+  # Both sets are now committed, 111 each: the `-linux.png` ones were generated
+  # inside THIS image tag via visual-baselines.yml and are what this job
+  # compares against; the `-darwin.png` ones serve local `pnpm test:visual` on
+  # the macOS dev machine. Keep both. Regenerate the Linux set only through
+  # visual-baselines.yml (never a developer machine), and bump that workflow's
+  # image tag together with this one whenever @playwright/test moves.
   visual:
     runs-on: ubuntu-latest
     container:
@@ -67,16 +74,5 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # TEMPORARY (#260): one-off generation pass. Reverted in the next commit
-      # on this branch — do not merge this state. `continue-on-error` stays for
-      # this pass only, so the run reaches the upload step below instead of
-      # aborting on the "no baseline found" failures it is here to fix.
       - name: Ladle story screenshot baselines
-        run: pnpm exec playwright test --update-snapshots
-        continue-on-error: true
-      - name: Upload generated Linux baselines (#260)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-visual-baselines
-          path: tests/visual/ladle.visual.spec.ts-snapshots/**/*-linux.png
+        run: pnpm test:visual
