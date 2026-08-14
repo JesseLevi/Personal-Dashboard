@@ -1,0 +1,43 @@
+name: Visual Baselines
+
+# Regenerates the Linux screenshot baselines consumed by ci-visual.yml's
+# `visual` job (#260). This is the ONLY supported way to (re)generate
+# tests/visual/ladle.visual.spec.ts-snapshots/**/*-linux.png: baselines are
+# only valid within the exact browser+OS build that captured them, so this
+# workflow mirrors that job's container and setup steps exactly (same image
+# tag, same pnpm/node steps) rather than running on a developer's machine or
+# a differently-configured runner.
+#
+# `workflow_dispatch`-only, by design: this is a rare, deliberate action
+# (a real visual change was made, or the Playwright/container version was
+# bumped), not something that should run on every push.
+#
+# The container image tag below MUST be bumped in lockstep with
+# `@playwright/test` in package.json (currently 1.61.1) — a mismatch means
+# any freshly generated baseline is invalid the moment it's captured, and
+# ci-visual.yml's `visual` job (which uses the same tag) would compare
+# against baselines from a different browser build.
+on:
+  workflow_dispatch:
+
+jobs:
+  update-baselines:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Regenerate Ladle story screenshot baselines
+        run: pnpm exec playwright test --update-snapshots
+      - name: Upload Linux baselines
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-visual-baselines
+          path: tests/visual/ladle.visual.spec.ts-snapshots/**/*-linux.png
