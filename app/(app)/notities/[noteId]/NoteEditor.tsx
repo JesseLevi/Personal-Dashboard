@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { Placeholder } from "@tiptap/extensions";
 import { Button } from "@/components/atoms/Button";
+import { EditingBar } from "@/components/organisms/EditingBar";
 import { noteExtensions } from "@/lib/notes/extensions";
 import type { NoteRow } from "@/lib/notes/types";
 import { deleteNote, updateNoteContent } from "../actions";
@@ -161,16 +162,20 @@ export function NoteEditor({ note }: NoteEditorProps) {
       {deleteError && <p className="text-base font-semibold text-priority-urgent">{deleteError}</p>}
       {saveError && <p className="text-base font-semibold text-priority-urgent">{t("saveErrorLabel")}</p>}
 
-      {/* EditingBar slot (#234) -- not built here, see design/notes/NoteEditor.md. */}
+      {/* Desktop: in-flow, directly under the header (EditingBar.tsx's own
+          `md:static`). Mobile: EditingBar.tsx renders it `fixed` to the
+          viewport bottom regardless of where it sits in this tree -- see
+          design/notes/EditingBar.md. */}
+      <EditingBar editor={editor} />
 
       {/* spacing-flag: pb-[calc(4rem+env(safe-area-inset-bottom))] reserves
-          room for #234's not-yet-built fixed-bottom EditingBar on mobile
-          (Figma node 3978:14870 measures 48px tall) plus the safe-area inset
-          -- a code-only reservation, not a Figma value, since the bar itself
-          isn't rendered by this ticket. md:py-2 mirrors the desktop Content
-          frame's own itemSpacing/paddingY (node 4067:20020, 8px), a real
-          measured value that Figma leaves unbound -- design/notes/
-          NoteEditor.md */}
+          mobile clearance for EditingBar.tsx's own fixed-bottom bar (48px
+          measured, Figma node 3978:14870) -- #234 positions that bar at
+          `bottom-[env(safe-area-inset-bottom)]` itself, so this reservation
+          only needs to clear the bar's own height, not double-add the inset
+          again. md:py-2 mirrors the desktop Content frame's own itemSpacing/
+          paddingY (node 4067:20020, 8px), a real measured value that Figma
+          leaves unbound -- design/notes/NoteEditor.md */}
       <div className="pb-[calc(4rem+env(safe-area-inset-bottom))] md:py-2">
         <EditorContent editor={editor} />
       </div>

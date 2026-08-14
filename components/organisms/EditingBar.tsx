@@ -1,0 +1,270 @@
+"use client";
+
+import { useCallback, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
+import { useTranslations } from "next-intl";
+import { useEditorState, type Editor } from "@tiptap/react";
+import clsx from "clsx";
+import { Button } from "@/components/atoms/Button";
+import type { IconName } from "@/components/atoms/Icon";
+
+// figma: node-id=3978:14138
+/**
+ * Organism/EditingBar — Figma "EditingBar" (desktop 3978:14138, mobile
+ * 3978:14870, detached frames — docs/open-questions.md#notes-editingbar-
+ * detached-from-components). Twenty icon-only `Button variant="transparent"`
+ * instances (fills=[] on every measured Default node — the only variant
+ * whose own Default has no background) in five groups of 2/6/6/2/4,
+ * separated by `bg-stroke-lines` dividers. Full command mapping, every
+ * measurement and every deviation: design/notes/EditingBar.md.
+ */
+export interface EditingBarProps {
+  editor: Editor | null;
+  className?: string;
+}
+
+interface EditingBarCommand {
+  id: string;
+  icon: IconName;
+  isActive?: (editor: Editor) => boolean;
+  run: (editor: Editor, ctx: { promptLinkUrl: () => string | null }) => void;
+}
+
+// Grouped 2/6/6/2/4 — Figma's own separator split (Line 2-5), identical on
+// both breakpoints. Order is the ticket's own left-to-right command list,
+// paired 1:1 with the measured glyph order; text-quote/square-code/code-xml
+// are resolved by POSITION, not by icon-name judgement — see
+// design/notes/EditingBar.md.
+const GROUPS: EditingBarCommand[][] = [
+  [
+    { id: "undo", icon: "Undo2", run: (editor) => editor.chain().focus().undo().run() },
+    { id: "redo", icon: "Redo2", run: (editor) => editor.chain().focus().redo().run() },
+  ],
+  [
+    {
+      id: "heading",
+      icon: "Heading",
+      isActive: (editor) => editor.isActive("heading", { level: 1 }),
+      run: (editor) => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+    },
+    {
+      id: "list",
+      icon: "List",
+      isActive: (editor) => editor.isActive("bulletList"),
+      run: (editor) => editor.chain().focus().toggleBulletList().run(),
+    },
+    {
+      id: "blockquote",
+      icon: "TextQuote",
+      isActive: (editor) => editor.isActive("blockquote"),
+      run: (editor) => editor.chain().focus().toggleBlockquote().run(),
+    },
+    {
+      id: "table",
+      icon: "Table",
+      run: (editor) => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
+    },
+    {
+      id: "codeBlock",
+      icon: "SquareCode",
+      isActive: (editor) => editor.isActive("codeBlock"),
+      run: (editor) => editor.chain().focus().toggleCodeBlock().run(),
+    },
+    {
+      id: "code",
+      icon: "CodeXml",
+      isActive: (editor) => editor.isActive("code"),
+      run: (editor) => editor.chain().focus().toggleCode().run(),
+    },
+  ],
+  [
+    {
+      id: "bold",
+      icon: "Bold",
+      isActive: (editor) => editor.isActive("bold"),
+      run: (editor) => editor.chain().focus().toggleBold().run(),
+    },
+    {
+      id: "italic",
+      icon: "Italic",
+      isActive: (editor) => editor.isActive("italic"),
+      run: (editor) => editor.chain().focus().toggleItalic().run(),
+    },
+    {
+      id: "strikethrough",
+      icon: "Strikethrough",
+      isActive: (editor) => editor.isActive("strike"),
+      run: (editor) => editor.chain().focus().toggleStrike().run(),
+    },
+    {
+      id: "underline",
+      icon: "Underline",
+      isActive: (editor) => editor.isActive("underline"),
+      run: (editor) => editor.chain().focus().toggleUnderline().run(),
+    },
+    {
+      id: "highlight",
+      icon: "Highlighter",
+      isActive: (editor) => editor.isActive("highlight"),
+      run: (editor) => editor.chain().focus().toggleHighlight().run(),
+    },
+    {
+      id: "link",
+      icon: "Link",
+      isActive: (editor) => editor.isActive("link"),
+      // No link-input UI exists anywhere in Figma for this file (docs/open-
+      // questions.md#notes-editingbar-link-no-url-input-designed) — a native
+      // window.prompt is the least-invention stand-in, not a custom dialog.
+      run: (editor, { promptLinkUrl }) => {
+        if (editor.isActive("link")) {
+          editor.chain().focus().unsetLink().run();
+          return;
+        }
+        const url = promptLinkUrl();
+        if (!url) return;
+        editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+      },
+    },
+  ],
+  [
+    {
+      id: "superscript",
+      icon: "Superscript",
+      isActive: (editor) => editor.isActive("superscript"),
+      run: (editor) => editor.chain().focus().toggleSuperscript().run(),
+    },
+    {
+      id: "subscript",
+      icon: "Subscript",
+      isActive: (editor) => editor.isActive("subscript"),
+      run: (editor) => editor.chain().focus().toggleSubscript().run(),
+    },
+  ],
+  [
+    {
+      id: "alignLeft",
+      icon: "TextAlignStart",
+      isActive: (editor) => editor.isActive({ textAlign: "left" }),
+      run: (editor) => editor.chain().focus().setTextAlign("left").run(),
+    },
+    {
+      id: "alignCenter",
+      icon: "TextAlignCenter",
+      isActive: (editor) => editor.isActive({ textAlign: "center" }),
+      run: (editor) => editor.chain().focus().setTextAlign("center").run(),
+    },
+    {
+      id: "alignRight",
+      icon: "TextAlignEnd",
+      isActive: (editor) => editor.isActive({ textAlign: "right" }),
+      run: (editor) => editor.chain().focus().setTextAlign("right").run(),
+    },
+    {
+      id: "alignJustify",
+      icon: "TextAlignJustify",
+      isActive: (editor) => editor.isActive({ textAlign: "justify" }),
+      run: (editor) => editor.chain().focus().setTextAlign("justify").run(),
+    },
+  ],
+];
+
+const ALL_COMMANDS = GROUPS.flat();
+
+// Flattened once at module scope into Figma's own flat child order (buttons
+// and separator LINEs alternating as direct siblings, one shared
+// itemSpacing) rather than nesting a wrapper div per group — that would add
+// a DOM level Figma doesn't have and double the unbound-gap spacing-flag
+// for no visual difference. See design/notes/EditingBar.md.
+type BarItem =
+  | { type: "separator"; key: string }
+  | { type: "button"; command: EditingBarCommand; index: number };
+
+const BAR_ITEMS: BarItem[] = GROUPS.reduce<{ items: BarItem[]; index: number }>(
+  (acc, group, groupIndex) => {
+    if (groupIndex > 0) acc.items.push({ type: "separator", key: `separator-${groupIndex}` });
+    for (const command of group) {
+      acc.items.push({ type: "button", command, index: acc.index });
+      acc.index += 1;
+    }
+    return acc;
+  },
+  { items: [], index: 0 },
+).items;
+
+export function EditingBar({ editor, className }: EditingBarProps) {
+  const t = useTranslations("components.editingBar");
+  const containerRef = useRef<HTMLDivElement>(null);
+  // Roving tabindex (ARIA APG toolbar pattern, see design/notes/EditingBar.md
+  // for why this was chosen over a plain button row): one tab stop for the
+  // whole bar, Left/Right/Home/End move focus among the 20 buttons.
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const activeState = useEditorState({
+    editor,
+    selector: ({ editor: current }) => {
+      if (!current) return null;
+      const state: Record<string, boolean> = {};
+      for (const command of ALL_COMMANDS) {
+        if (command.isActive) state[command.id] = command.isActive(current);
+      }
+      return state;
+    },
+  });
+
+  const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+    const count = ALL_COMMANDS.length;
+    let nextIndex: number | null = null;
+    if (event.key === "ArrowRight") nextIndex = (activeIndex + 1) % count;
+    else if (event.key === "ArrowLeft") nextIndex = (activeIndex - 1 + count) % count;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = count - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    setActiveIndex(nextIndex);
+    const buttons = containerRef.current?.querySelectorAll<HTMLButtonElement>("button");
+    buttons?.[nextIndex]?.focus();
+  }, [activeIndex]);
+
+  if (!editor) return null;
+
+  return (
+    <div
+      ref={containerRef}
+      role="toolbar"
+      aria-label={t("label")}
+      aria-orientation="horizontal"
+      onKeyDown={handleKeyDown}
+      className={clsx(
+        // spacing-flag: py-1 (4px) and gap-2 (8px) — EditingBar's own
+        // vertical padding and its itemSpacing between buttons/dividers are
+        // both unbound on 3978:14138/3978:14870 (paddingLeft/Right and the
+        // corner radius ARE bound, see the token classes below) —
+        // design/notes/EditingBar.md
+        "flex items-center gap-2 overflow-x-auto rounded-card bg-surface-highlight-white px-component-xs py-1",
+        "fixed bottom-[env(safe-area-inset-bottom)] left-page-left right-page-right-equal z-10",
+        "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "md:static md:inset-auto",
+        className,
+      )}
+    >
+      {BAR_ITEMS.map((item) =>
+        item.type === "separator" ? (
+          <div key={item.key} aria-hidden="true" className="h-6 w-px shrink-0 bg-stroke-lines" />
+        ) : (
+          <Button
+            key={item.command.id}
+            variant="transparent"
+            icon={item.command.icon}
+            aria-label={t(`${item.command.id}Label`)}
+            aria-pressed={item.command.isActive ? activeState?.[item.command.id] : undefined}
+            tabIndex={item.index === activeIndex ? 0 : -1}
+            onFocus={() => setActiveIndex(item.index)}
+            onClick={() =>
+              item.command.run(editor, { promptLinkUrl: () => window.prompt(t("linkPromptLabel")) })
+            }
+          />
+        ),
+      )}
+    </div>
+  );
+}

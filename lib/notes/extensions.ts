@@ -3,6 +3,7 @@ import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
 import Superscript from "@tiptap/extension-superscript";
 import Subscript from "@tiptap/extension-subscript";
+import { TableKit } from "@tiptap/extension-table";
 import type { AnyExtension } from "@tiptap/react";
 
 // The fixed TipTap extension whitelist Architecture §133 requires (#233):
@@ -27,6 +28,17 @@ import type { AnyExtension } from "@tiptap/react";
 // Only four marks/nodes the ticket names (uitlijning, markeerstift,
 // super-/subscript) are genuinely absent from StarterKit and installed
 // separately: TextAlign, Highlight, Superscript, Subscript.
+//
+// #234 pulls one slice of #235 forward on direct user instruction: the
+// EditingBar's table button is wired to `insertTable`, not left disabled.
+// `TableKit` (`@tiptap/extension-table` 3.30 -- one package in v3, unlike
+// v2's four separate `extension-table`/`-row`/`-cell`/`-header` packages,
+// confirmed against the installed package's own dist/exports) registers
+// Table/TableRow/TableCell/TableHeader with its own defaults --
+// `resizable: false` is the default and is left as-is deliberately: cell/
+// column resize controls are #235's UI, out of scope here. `TextAlign`'s
+// `types` stays `["paragraph","heading"]` for the same reason -- extending
+// it to `tableCell`/`tableHeader` is #235's own edit, not this one's.
 export const noteExtensions: AnyExtension[] = [
   StarterKit,
   // `types` must be listed explicitly (TipTap has no default) -- paragraph
@@ -37,4 +49,5 @@ export const noteExtensions: AnyExtension[] = [
   Highlight,
   Superscript,
   Subscript,
+  TableKit,
 ];
