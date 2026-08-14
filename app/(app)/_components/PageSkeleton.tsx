@@ -122,3 +122,28 @@ export async function RecipeDetailSkeleton() {
     </div>
   );
 }
+
+const SKELETON_TEXT_LINES = 4;
+
+/** Note-editor skeleton (#233) — no Card list here (the real page is a bare
+ * text editor, not a card stack), so this stands in with a back-button-sized
+ * bar plus a handful of text-line bars instead of reusing Card. Same "no
+ * Figma skeleton node exists" reasoning as the two skeletons above. */
+export async function NoteEditorSkeleton() {
+  const t = await getTranslations("common");
+  return (
+    <div className="flex w-full flex-col gap-page-stack">
+      <LoadingStatus label={t("loading")} />
+      <div aria-hidden="true" className="flex w-full items-center justify-between">
+        <PlaceholderBar className="h-10 w-10 rounded-control" />
+      </div>
+      {/* spacing-flag: gap-3 (12px) — invented placeholder line spacing, no
+          Figma skeleton node exists here — design/notes/PageSkeleton.md. */}
+      <div aria-hidden="true" className="flex w-full flex-col gap-3">
+        {Array.from({ length: SKELETON_TEXT_LINES }, (_, index) => (
+          <PlaceholderBar key={index} className="h-4 w-full last:w-2/3" />
+        ))}
+      </div>
+    </div>
+  );
+}

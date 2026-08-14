@@ -359,6 +359,16 @@
         "Image": "Media"
       }
     },
+    "noteEditor": {
+      "backLabel": "Back to notes",
+      "placeholder": "Start typing...",
+      "deleteLabel": "Delete",
+      "deleteConfirmLabel": "Are you sure?",
+      "deleteConfirmButtonLabel": "Yes, delete",
+      "deletingLabel": "Deleting...",
+      "cancelLabel": "Cancel",
+      "saveErrorLabel": "Saving failed. Your changes were not saved."
+    },
     "ingredientSearchPanel": {
       "title": "Search ingredient",
       "searchPlaceholder": "Search",
