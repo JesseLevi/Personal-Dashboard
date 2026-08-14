@@ -67,6 +67,16 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # TEMPORARY (#260): one-off generation pass. Reverted in the next commit
+      # on this branch — do not merge this state. `continue-on-error` stays for
+      # this pass only, so the run reaches the upload step below instead of
+      # aborting on the "no baseline found" failures it is here to fix.
       - name: Ladle story screenshot baselines
-        run: pnpm test:visual
+        run: pnpm exec playwright test --update-snapshots
         continue-on-error: true
+      - name: Upload generated Linux baselines (#260)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-visual-baselines
+          path: tests/visual/ladle.visual.spec.ts-snapshots/**/*-linux.png
