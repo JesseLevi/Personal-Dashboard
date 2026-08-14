@@ -113,11 +113,17 @@ reproduced; the button renders as a direct child of the header row.
 No confirmation state is drawn for either delete button anywhere in
 `Pages/Notities/Breakpoints`. Per the ticket's own instruction, reused the
 existing two-step confirm pattern verbatim — the same in-place button-row
-swap `RecipeDetailPage.tsx`'s header already uses (cancel + destructive
-confirm replace the single delete button; `isPending` disables both and
-swaps the confirm button's label to `"Verwijderen..."`), itself the same
-shape `NoteCategoryPanel.tsx`/`CategoryPanel.tsx` use for their own
-delete step. Filed: `docs/open-questions.md#notes-delete-has-no-confirmation`.
+swap `RecipeDetailPage.tsx`'s header already uses (the
+`components.noteEditor.deleteConfirmLabel` question line + cancel +
+destructive confirm replace the single delete button; `isPending` disables
+both buttons and swaps the confirm button's label to `"Verwijderen..."`),
+itself the same shape `NoteCategoryPanel.tsx`/`CategoryPanel.tsx` use for
+their own delete step. **The question line is part of the pattern, not
+decoration** — every one of the five existing confirm rows in this codebase
+renders it, and it is the only thing that names *what* is about to be
+deleted irreversibly; a first draft of this file shipped the button row
+without it and left the (already translated) key unused in both catalogs.
+Filed: `docs/open-questions.md#notes-delete-has-no-confirmation`.
 
 ## Token bindings measured (figma-console bridge, `boundVariables`)
 
@@ -144,9 +150,11 @@ measurement.
    same finding `CardContentNote.md` already recorded) — same exact
    situation and same code-only fallback `RecipeDetailPage.tsx`'s own header
    already carries.
-2. **Delete-confirm row `gap-2`** — transient interaction state, no Figma
-   node anywhere draws it (same precedent as `RecipeDetailPage.tsx`/
-   `NoteCategoryPanel.tsx`'s own confirm rows).
+2. **Delete-confirm row `gap-4` (outer, question line ↔ buttons) and `gap-2`
+   (inner, cancel ↔ confirm)** — transient interaction state, no Figma
+   node anywhere draws it; both values copied from `RecipeDetailPage.tsx`'s
+   own confirm row rather than re-picked (same precedent as
+   `NoteCategoryPanel.tsx`).
 3. **`pb-[calc(4rem+env(safe-area-inset-bottom))] md:py-2`** on the content
    wrapper — two distinct reasons on one line:
    - `pb-[calc(4rem+env(safe-area-inset-bottom))]` (mobile only) is a

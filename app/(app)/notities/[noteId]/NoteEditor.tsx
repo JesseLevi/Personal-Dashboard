@@ -135,16 +135,21 @@ export function NoteEditor({ note }: NoteEditorProps) {
         <Button icon="ArrowLeft" aria-label={t("backLabel")} onClick={() => router.push("/notities")} />
 
         {deleteConfirming ? (
-          // spacing-flag: gap-2 -- transient confirm-row state, no Figma node
+          // spacing-flag: gap-4 -- transient confirm-row state, no Figma node
           // for it (same precedent as RecipeDetailPage.tsx/
           // NoteCategoryPanel.tsx) -- design/notes/NoteEditor.md
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setDeleteConfirming(false)} disabled={isPending}>
-              {t("cancelLabel")}
-            </Button>
-            <Button variant="destructive" icon="Trash" onClick={handleDelete} disabled={isPending}>
-              {isPending ? t("deletingLabel") : t("deleteConfirmButtonLabel")}
-            </Button>
+          <div className="flex flex-wrap items-center justify-end gap-4">
+            <p className="text-base font-semibold text-text-primary">{t("deleteConfirmLabel")}</p>
+            {/* spacing-flag: gap-2 -- same transient confirm-row state --
+                design/notes/NoteEditor.md */}
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => setDeleteConfirming(false)} disabled={isPending}>
+                {t("cancelLabel")}
+              </Button>
+              <Button variant="destructive" icon="Trash" onClick={handleDelete} disabled={isPending}>
+                {isPending ? t("deletingLabel") : t("deleteConfirmButtonLabel")}
+              </Button>
+            </div>
           </div>
         ) : (
           <Button variant="destructive" icon="Trash" onClick={() => setDeleteConfirming(true)}>
