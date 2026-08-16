@@ -129,6 +129,18 @@ export const DeleteLabelNl = () => (
   </div>
 );
 
+// #222: an extremely long name must wrap onto multiple lines while the Tag
+// stays on its own single line at its natural width — see
+// design/notes/CardContentIngredient.md for the flex-shrink root cause.
+export const LongNameWrap = () => (
+  <div className="w-96">
+    <CardContentIngredient
+      name="Extra fijngesneden biologische roodlof met een vleugje truffelolie"
+      quantity="300 gr"
+    />
+  </div>
+);
+
 // #179: State=Cart (node 4050:11613, annotation "When sliding" on
 // 4050:11614) is the same swipe gesture, revealing a `filled`/basket
 // AnimatedAddToBasketButton instead of the destructive Trash Button —

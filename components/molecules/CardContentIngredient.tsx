@@ -93,8 +93,17 @@ export function CardContentIngredient({
         checked && "opacity-40",
       )}
     >
-      <p className="text-base font-semibold text-text-primary">{name}</p>
-      {quantity !== undefined && <Tag variant="neutral">{quantity}</Tag>}
+      {/* #222: `min-w-0` + Tag's `shrink-0` — a bare flex row shrinks both
+          children by their content basis, so a long name stole width off
+          the Tag until its own text wrapped. name absorbs the deficit
+          (wraps) instead; Tag stays one line at its natural width. See
+          design/notes/CardContentIngredient.md. */}
+      <p className="min-w-0 text-base font-semibold text-text-primary">{name}</p>
+      {quantity !== undefined && (
+        <Tag variant="neutral" className="shrink-0">
+          {quantity}
+        </Tag>
+      )}
     </div>
   );
 
@@ -113,6 +122,9 @@ export function CardContentIngredient({
   // computed dragPx from a stale dragStartX and shifted the row. See
   // design/notes/CardContentIngredient.md.
   const dragging = useRef(false);
+  // #222: whether setPointerCapture has already been taken for this press —
+  // see handlePointerMove below for why capture itself is deferred.
+  const captured = useRef(false);
 
   if (swipeAction) {
     const offset = Math.min(0, Math.max(-REVEAL_PX, (open ? -REVEAL_PX : 0) + dragPx));
@@ -120,15 +132,29 @@ export function CardContentIngredient({
     function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
       dragStartX.current = event.clientX;
       dragging.current = true;
-      event.currentTarget.setPointerCapture(event.pointerId);
     }
     function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
       if (!dragging.current) return;
-      setDragPx(event.clientX - dragStartX.current);
+      const dx = event.clientX - dragStartX.current;
+      // #222: capture is taken lazily, only once movement actually crosses
+      // TAP_SLOP_PX, not unconditionally on pointerdown — capturing eagerly
+      // retargeted the browser's subsequent `click` to this row div,
+      // silently swallowing every desktop click on the nested
+      // Checkbox/Trash-Button. Below the slop (a plain click, or the mouse
+      // jitter every real click has) no capture is ever taken and the click
+      // reaches its real target natively; touch is unaffected — it already
+      // has implicit capture on the real target. Measured, not guessed —
+      // see design/notes/CardContentIngredient.md.
+      if (!captured.current && Math.abs(dx) >= TAP_SLOP_PX) {
+        captured.current = true;
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
+      setDragPx(dx);
     }
     function handlePointerEnd() {
       if (!dragging.current) return;
       dragging.current = false;
+      captured.current = false;
       const delta = dragPx;
       setDragPx(0);
       if (Math.abs(delta) < TAP_SLOP_PX) {

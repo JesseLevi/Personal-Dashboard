@@ -127,3 +127,90 @@ class in code anyway (`justify-between` handles it). `Tag`'s own
 `spacing/mini` gap is Tag.tsx's own flagged gap (see design/notes/Tag.md),
 not this component's to fix.
 
+## TICKET #222 part 2 (2026-08-16) — desktop checkbox click swallowed by pointer capture
+
+Measured, not guessed, per the ticket's own instruction: built a standalone
+diagnostic (a bare HTML page with a div wrapping a button, run through a
+dedicated Playwright script — the shared `figma-console`/Playwright-MCP
+browser was locked by another concurrent session, so a fresh
+`@playwright/test` `chromium.launch()` instance was used instead) that
+confirmed `event.currentTarget.setPointerCapture(pointerId)`, called
+unconditionally in `handlePointerDown`, retargets the browser's subsequent
+`click` to the *capturing* element (the row div) rather than the actual
+element under the cursor — a real, trusted mouse click on a nested `<button>`
+never reaches its own `onClick` once its ancestor has taken capture.
+Re-confirmed against the real component (not just the toy page), via
+`pnpm ladle`: a mouse click on the swipe branch's rendered `Checkbox` fired
+on the row div pre-fix and on `BUTTON[role=checkbox]` post-fix.
+
+Two candidate fixes named in the ticket brief, both measured rather than
+picked by inspection:
+
+1. **Release capture on `pointerup`, before `click` fires.** Measured NOT to
+   work: by the time the release call runs inside the `pointerup` handler,
+   Chromium has already retargeted the compatibility `mouseup`/`click` pair
+   to the captured element. Rejected.
+2. **Take capture lazily — only once real movement crosses `TAP_SLOP_PX`, in
+   `pointermove` rather than `pointerdown`.** Measured to work: a plain
+   click has zero movement or sub-slop jitter, so no `pointermove` fires (or
+   the one that does is gated out) before `pointerup`, capture is never
+   taken, and `click` reaches its real target natively. Implemented.
+
+**Why touch already worked, and still does.** Touch pointers get *implicit*
+pointer capture from the browser at `pointerdown`, on whatever element is
+actually under the finger, independent of any JS call — this component's
+explicit call was never what kept a touch drag tracking outside the row's
+bounds. Re-verified post-fix with trusted CDP touch injection
+(`Input.dispatchTouchEvent`, not a synthetic `new PointerEvent()` +
+`dispatchEvent`, which throws `InvalidStateError` from `setPointerCapture` on
+untrusted events and is not a valid test for this): a touch tap on the
+Checkbox still fires nativntely, and a touch drag still reveals the Trash/
+AddToBasket button (the revealed button's wrapper `transform` measured going
+from `translateX(48px)` at rest to `translateX(0px)` fully open).
+
+Also re-verified unaffected, since neither depends on pointer capture:
+tap-to-close (tapping the open row's content, not the revealed button) and
+the #177 keyboard Tab-reveal path (still lands on the Trash button before the
+Checkbox — the pre-existing, documented DOM-order trade-off, unchanged).
+
+New `captured` ref (same reasoning as the existing `dragging` ref: read
+synchronously inside the handlers that set it, no render needs to observe
+it) tracks whether capture has already been taken for the current press, so
+it's requested at most once per gesture, not repeatedly on every move past
+the threshold.
+
+No visual baseline change: the fix touches only `handlePointerDown`/
+`handlePointerMove` logic, not markup, classes, or styles.
+
+## TICKET #222 point 6 (2026-08-16) — Tag no longer wraps under a long name
+
+`content`'s `flex w-full items-center justify-between` row left both the
+name `<p>` and the `Tag` at the flex default (`shrink: 1`, no basis
+override); with neither protected, a long name's larger content-basis pulled
+width away from the Tag until the Tag's own text wrapped inside its fixed
+`h-10` — the reported two-line tag.
+
+Fixed in this molecule, not `Atom/Tag`: measured via the atom's other real
+consumers before touching anything (see design/notes/Tag.md's mirrored
+entry) — `CardContentTicket.tsx` and `CardContentStep.tsx` both stack their
+Tag(s) on their own `flex-wrap` row *below* the text (`flex-col` + gap),
+never sharing a horizontal flex row with growing text the way this
+component's `content` div does. The squeeze is unique to this layout, not a
+property of the atom, so `Tag.tsx` stays untouched.
+
+Two additions to the `content` div: `<Tag className="shrink-0">` (never
+shrinks below its natural single-line width) and `<p className="min-w-0">`
+(explicitly allowed to shrink below its own min-content width so it absorbs
+the deficit by wrapping). Standard flex "long text wraps, fixed sibling
+holds its width" pairing — no new token, no spacing change.
+
+Verified with a new Ladle story (`LongNameWrap`, an extreme-length Dutch
+name) measured via Playwright: the Tag's rendered height stayed 40px
+(`h-10`, one line) while the name `<p>` measured 48px (two lines at
+`text-base`'s line-height) — screenshotted for a visual check too.
+
+The new story shifts the baseline set on the next full `pnpm test:visual`
+run (a new story, not a regenerate of an existing one) — left for the
+orchestrator's centralized run per this session's scope change, not
+regenerated here.
+

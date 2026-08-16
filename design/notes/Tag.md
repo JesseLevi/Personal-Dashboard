@@ -94,3 +94,17 @@ designer rebinds it.
 
 `scripts/check-raw-spacing.sh` now enforces an explicit `spacing-flag:`
 marker. Added to the existing comment above; no reasoning changed.
+
+## TICKET #222 point 6 (2026-08-16): consumer-owned `shrink-0`, atom untouched
+
+`CardContentIngredient.tsx`'s content row shares one horizontal flex line
+between the ingredient name and this atom; with neither protected, a long
+name's larger content-basis squeezed the Tag until its own text wrapped
+inside its fixed `h-10` — reported as a two-line Tag. Fixed at the call site
+(`<Tag className="shrink-0">` + `min-w-0` on the sibling `<p>`), not here,
+after checking this atom's other real consumers first: `CardContentTicket.tsx`
+and `CardContentStep.tsx` both stack their Tag(s) on their own `flex-wrap`
+row *below* the text (`flex-col` + gap), never sharing a horizontal flex row
+with growing text the way `CardContentIngredient.tsx` does. The squeeze is a
+property of that one layout, not of this atom, so no base class changed here.
+Full reasoning in `design/notes/CardContentIngredient.md`.
