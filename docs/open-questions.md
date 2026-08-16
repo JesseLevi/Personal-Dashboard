@@ -79,10 +79,6 @@ The image-upload field's bound Title text reads "Personen" in both frames (`3968
 
 ## Winkelmand
 
-### winkelmand-no-manual-add-entry-point
-
-`Vision.md` says the list is filled "handmatig of vanuit recepten", but no fetched Winkelmand node contains any add-item control — no input, no "+". `addShoppingListItem` (#176) is built and tested at the data layer and has **zero UI consumers**. Needs a designed entry point.
-
 ### winkelmand-no-section-grouping
 
 `shopping_list_items.section` (#175) exists in the schema and is round-tripped by `addShoppingListItem`, but no query or component reads it — dead weight until a grouping consumes it. #179 shipped two *other* groupings (by source recipe, by NEVO food group). See `winkelmand-gangpad-grouping-not-built` for why a real aisle grouping is the larger piece.
@@ -107,7 +103,7 @@ Mobile/Sort (`4052:13689`) draws the Sort button icon-only but has no Dropdown c
 
 ### winkelmand-mobile-header-content-overflows-320px
 
-Independent of the dropdown: at a 320px viewport (dropdown closed), the header row's own content — title `"Winkelmand"` + icon-only Sort button + `"Verwijder alles"` — already exceeds the viewport width (`document.body.scrollWidth` measures `339px` against a `320px` viewport), causing horizontal scroll. No wrap is applied and neither button shrinks below its min-content width. Predates #182 (the old full-text mobile Sort button would have made it worse, not better) and is unrelated to the Sort dropdown's anchor — flagged here rather than fixed, since a real fix (wrap, truncate, icon-only "Verwijder alles" on mobile, or a narrower minimum supported width) is a design call, not a page-ticket's to invent. See `design/notes/WinkelmandPage.md#182` for the measured thresholds.
+Independent of the dropdown: at a 320px viewport (dropdown closed), the header row's own content — title `"Winkelmand"` + icon-only Sort button + `"Verwijder alles"` — already exceeds the viewport width (`document.body.scrollWidth` measures `339px` against a `320px` viewport), causing horizontal scroll. No wrap is applied and neither button shrinks below its min-content width. Predates #182 (the old full-text mobile Sort button would have made it worse, not better) and is unrelated to the Sort dropdown's anchor — flagged here rather than fixed, since a real fix (wrap, truncate, icon-only "Verwijder alles" on mobile, or a narrower minimum supported width) is a design call, not a page-ticket's to invent. See `design/notes/WinkelmandPage.md#182` for the measured thresholds. **#222 pt.4 adds a fourth control (an icon-only "+ Item" button, leading the row) to the same fetched mobile `Knoppen` frame** — Figma's own node draws it icon-only there too, so the row's minimum content width grows again, not shrinks. Not re-measured against a real viewport this ticket (same "flag, don't invent a fix" call as before); worth a real pixel re-check whenever this question is finally resolved.
 
 ### winkelmand-merged-line-keeps-first-recipes-group
 

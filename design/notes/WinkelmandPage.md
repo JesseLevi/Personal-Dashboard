@@ -187,7 +187,10 @@ node in this subtree binds a gap or a padding around a title+CTA *group*
 the way the code's wrapper does — the 16px that exists in Figma belongs
 to the text node's own padding, a different box than the code's outer
 `py-4`. Converting either number would be matching a coincidence, not a
-measurement — stays raw.
+measurement — stays raw. **Superseded by #222 pt.5 below — this call
+compared the wrapper against the wrong box; both the padding and the gap
+turned out to be real, boundVariables-backed measurements once read on
+the right node.**
 
 `WinkelmandList.tsx:308` — the non-empty items-list wrapper (`gap-6`).
 Measured the fetched Default frames' "Ingredients" wrapper (`4051:13534`
@@ -197,3 +200,167 @@ value in Figma itself. 24px coincides with both `spacing/page/stack` and
 `spacing/stack/stack-xl`; with no binding to disambiguate, picking either
 would be exactly the value-matching this ticket exists to forbid. Stays
 raw.
+
+## #222 (2026-08-16) — mobile "Leeg mand"→"Leeg", "+ Item" header button, EmptyState card margin
+
+Three of #222's seven points. Node ids all re-verified live via the
+`figma-console` bridge (`figma_execute`, `boundVariables` read through
+`figma.variables.getVariableByIdAsync()`), not re-used from memory.
+
+### pt.1 — "Leeg mand" is desktop-only, "Leeg" on mobile
+
+Fetched `4053:14285` (desktop): `Text#3632:5` = `"Leeg mand"`. Fetched
+`4053:14274` (mobile): `Text#3632:5` = `"Leeg "` (trailing space in Figma,
+trimmed in code, per the ticket's own instruction). Both `Style: Destructive`.
+New key `shopping.page.clearAllLabelShort` (nl `"Leeg"`, en `"Empty"` —
+the first word of the existing `clearAllLabel` value, same "short variant"
+relationship `recipes.unitsShort` already has to `recipes.units`).
+`clearAllLabel` itself is unchanged (still the desktop text, "Leeg mand"/
+"Empty basket" — #179's own user-instructed deviation from Figma's stale
+"Verwijder alles"/"Alles verwijderen " text stays in force here too).
+
+Built as two `<span>`s inside the Button (`md:hidden` / `hidden md:inline`),
+same two-span shape the Sort button already established for its own
+icon-only-mobile case (#182) — no bare `hidden` on the `Button` root itself
+(the #263 trap: `Button`'s own `cva` base is `inline-flex`, which loses to a
+bare `hidden` in the compiled stylesheet's cascade order; `md:` variants
+land later and do win). Since a text span is always visible at every
+breakpoint here (unlike Sort, which is icon-only below `md`), no separate
+`aria-label` was needed — the visible span already carries the accessible
+name.
+
+### pt.4 — "+ Item" button opens the existing `IngredientSearchPanel`
+
+Fetched mobile `Knoppen` (`4051:13045`, `itemSpacing` bound
+`spacing/inline/gap-sm`) and desktop `Knoppen` (`4051:13054`, bound
+`spacing/inline/gap-xl`) — both list their children in this order: Plus →
+Sort → Destructive. Plus button: mobile `4109:15948` (`Style: Filled`,
+`With text#3674:3: false`, 40×40, icon-only) / desktop `4052:13677`
+(`Style: Filled`, `With text: true`, `Text: "Item"`, `Icon#3632:0` instance
+key `3629:149` = `Icon/Plus`, resolved by name, not guessed from the icon
+slot's visual). Built leading (before Sort), `variant="filled"` (Button's
+own default, matching Figma's `Style: Filled`), same icon-only-mobile /
+labelled-desktop span pattern as Sort and the Destructive button above, with
+a permanent `aria-label` (not swapped per breakpoint — same reasoning #182
+already gives for Sort's own aria-label).
+
+New key `shopping.page.addItemLabel` — `"Item"` in both catalogs (an
+English loanword already standard in this codebase's Dutch UI; not a
+translation gap, same as e.g. a bare `"OK"` would be).
+
+**No new panel built.** The ticket's own "ingredientList" screen is
+`components/organisms/IngredientSearchPanel.tsx` (Figma "Add recipi/
+ingredientList/Mobile", `3957:10309`/panel `3957:10337`) — already built for
+#131/RecipePanel.tsx, reused here exactly as `RecipePanel.tsx` itself
+reuses it (`open`/`onClose`/`onSearch`/`onCreateOwnIngredient`/`onSave`,
+default `level={1}` since Winkelmand isn't nested inside another panel).
+
+- `onSearch`/`onCreateOwnIngredient`: imported straight from
+  `app/(app)/recepten/actions.ts` (`searchIngredients`,
+  `createOwnIngredient`) into `WinkelmandList.tsx` — no re-export file.
+  Precedent checked both directions before choosing this: `ReceptenBoard.tsx`
+  ("use client") already imports its own folder's server actions directly
+  and passes them as props into `RecipePanel.tsx`; `RecipeDetailPage.tsx`
+  (recepten) already imports `app/(app)/winkelmand/actions.ts`'s
+  `addIngredientToShoppingList`/`sendRecipeToShoppingList` the *other*
+  direction. A Server Action is a global RPC reference, not folder-scoped —
+  a re-export shim in `winkelmand/actions.ts` would have added an indirection
+  with no behavioural difference, so skipped (the ticket left this as a
+  judgment call, "as netter" — the existing precedent already answers it).
+- `onSave`: `handleAddIngredients` calls the existing `addShoppingListItem`
+  (`app/(app)/winkelmand/actions.ts`, unchanged) once per returned
+  `IngredientRow`, **sequentially awaited**, not `Promise.all`.
+  `addShoppingListItem` computes its own `position` by reading the current
+  last row server-side on each call; firing several in parallel risks two
+  calls reading the same "last position" and colliding. Sequential-await is
+  not an invented safeguard — it's the same shape
+  `IngredientSearchPanel.tsx`'s own `handleSave` already uses for its
+  `onCreateOwnIngredient` calls, for the identical reason. No new action was
+  written.
+- No optimistic `localItems` mutation on add — unlike toggle/delete/clear,
+  there's no cheap client-side row to synthesize (recipe/category grouping
+  is resolved server-side by `getShoppingListItems`), so the new row simply
+  appears once `addShoppingListItem`'s `revalidatePath("/winkelmand")`
+  refreshes the `items` prop. A real failure sets `actionError` via the same
+  `shopping.errors.*` catalog every other action here uses — no invented
+  success indicator. This is a deliberate contrast with
+  `AnimatedAddToBasketButton` (see `RecipeDetailPage.md`), which plays its
+  "Toegevoegd" animation unconditionally; that gap is accepted and
+  documented there, but not repeated here since this ticket explicitly
+  named it as a precedent to avoid.
+- **Tag omission after adding is expected, not a bug.** The ticket calls
+  this out directly: a freshly added ingredient has `quantity: null`
+  (`addShoppingListItemSchema` defaults `quantity`/`unit`/`section` to
+  `null`), so `quantityLabel()` returns `undefined` and
+  `CardContentIngredient` renders no Tag — the same path any manually-typed,
+  quantity-less row already takes (`design/notes/WinkelmandPage.md`'s own
+  Quantity Tag section above). Nothing to fix.
+
+**EmptyState header actions — corrects #179.** Re-fetching the EmptyState
+frames' own `Knoppen` sub-frame (not the Card content — a different part of
+the same page) found `4050:11567` (mobile, inside `4049:11167`) and
+`4050:11581` (desktop, inside `4049:11175`) each hold **one** child:
+`Button/Default`, `Style: Destructive`, `Text: "Alles verwijderen "` (a
+third, independently-stale copy of the same button — `4053:14274`/
+`4053:14285` already carry a *different* stale string, "Verwijder alles",
+per #179's own note two sections up; neither matches the current
+user-instructed "Leeg mand"/"Leeg" copy). #179 recorded this frame as
+carrying **no** buttons at all ("`Knoppen` frame present but empty in both
+fetches") — that was true of an earlier state of the file; it no longer is.
+Built to match what's fetched now: `PageHeader`'s `actions` slot renders the
+same `clearAllButton` (the pt.1 two-span Destructive button, current copy,
+not the stale Figma string — consistent with #179's own established
+"user-instructed copy wins over a stale node" call) whether the list is
+empty or not; only the Plus/Sort pair is conditional on `!isEmpty`, since
+the EmptyState `Knoppen` frame draws exactly one child, not three. Clicking
+Clear-all on an empty list is a harmless no-op (`clearShoppingList()` simply
+matches zero rows) — not a functional concern, just an odd-looking but
+Figma-drawn affordance, recorded here rather than silently removed.
+
+### pt.5 — EmptyState Card margin under "Ga naar recepten"
+
+Re-measured `4049:11174` (mobile) and `4050:11597` (desktop) live, drilling
+into `"Stap + Card"` → `"Type"` (the SLOT `Card.tsx` already renders as its
+own `p-component-sm` content wrapper):
+
+| node | property | value | `boundVariables` |
+| --- | --- | --- | --- |
+| `Type` SLOT (both breakpoints) | padding, all sides | 8px | `paddingLeft/Top/Right/Bottom` → `spacing/component/padding-sm` |
+| `Type` SLOT (both breakpoints) | `itemSpacing` | 0 | *(no entry — 0 needs none)* |
+| `EmptyText` (both breakpoints) | `paddingTop`/`paddingBottom` | 16px | → `spacing/component/padding-lg` |
+| `EmptyText` (both breakpoints) | `paddingLeft`/`paddingRight` | 0 | *(unbound — 0)* |
+| `EmptyText` text node | `textAlignHorizontal` | `CENTER` | — |
+| `Button` (mobile, `4049:11508`) | `layoutAlign` | `STRETCH` | already built (`w-full`) |
+| `Button` (desktop, `4050:11596`) | `layoutAlign` | `INHERIT` (hugs) | already built (`md:w-fit`) |
+
+8 (slot top) + 56 (EmptyText: 16+24+16) + 0 (itemSpacing) + 40 (Button) + 8
+(slot bottom) = 112, matching both fetched Cards' own measured height —
+confirms the reading. The 8px slot padding is **already** supplied by
+`Card.tsx`'s own `p-component-sm` (unrelated to this file); the fix is
+entirely inside `WinkelmandList.tsx`'s own wrapper `div`:
+
+- Dropped `gap-2` (itemSpacing between EmptyText and Button measures 0 —
+  the visual gap in the old build was an unmeasured guess that happened to
+  read as plausible spacing, not a real one).
+- Dropped `py-4` on the wrapper (that padding belongs to nothing in the
+  fetched tree at the wrapper's own level — see the now-superseded #219
+  entry above).
+- Added `py-component-lg` (bound `spacing/component/padding-lg`, 16px) to
+  the `<p>` itself, reproducing `EmptyText`'s own paddingTop/Bottom on the
+  node that actually carries it.
+- Added `text-center` + `w-full` to the `<p>`, matching the measured
+  `textAlignHorizontal: CENTER` + `layoutAlign: STRETCH` — a cosmetic no-op
+  for this short, single-line title today (the parent's `items-center` and
+  the hugging default already centred it), but now structurally faithful
+  instead of coincidentally correct, so it won't silently break if the copy
+  ever grows to two lines.
+
+No breakpoint difference in the Type-slot/EmptyText geometry (only the
+Button's own `layoutAlign` differs, already built before this ticket).
+
+### Verification
+
+`pnpm lint`/`typecheck`/`test` (417 passed, 3 skipped, incl.
+`messages-key-parity`)/`check:raw-spacing`/`check:server-only`/
+`check:comment-budget` all green. `pnpm test:visual` run — see the PR body
+for the exact result and any regenerated baselines.
