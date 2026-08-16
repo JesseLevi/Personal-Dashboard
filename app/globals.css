@@ -89,9 +89,14 @@ html {
   font-size: 1rem;
 }
 
+/* `inline-*`, not `stack-*`: this is an inline-axis property. Both groups
+   resolve to the same 16px today, so the two are pixel-identical and a
+   `stack-` token would look correct forever while meaning the wrong axis --
+   the exact class of error #219 found on CategoryPanel's wrap container
+   (docs/HANDOFF.md). */
 .tiptap ul,
 .tiptap ol {
-  padding-inline-start: var(--spacing-stack-lg);
+  padding-inline-start: var(--spacing-inline-lg);
 }
 .tiptap ul {
   list-style: disc;
@@ -107,7 +112,8 @@ html {
      here is the same class of native/structural value, not a design-scale
      pick. design/notes/NoteEditor.md */
   border-inline-start: 2px solid var(--color-stroke-primary);
-  padding-inline-start: var(--spacing-stack-md);
+  /* inline-axis token, same reasoning as the list padding above. */
+  padding-inline-start: var(--spacing-inline-md);
 }
 
 .tiptap pre {

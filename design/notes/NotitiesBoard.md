@@ -95,6 +95,15 @@ write-up: `docs/incidents.md`'s 2026-08-16 entry — this is a general `cva`
 trap, not specific to this button, so the fuller reasoning lives there
 rather than being duplicated per-component.
 
+One consequence of the wrapper worth carrying: `shrink-0` came free while
+the `Button` *was* the flex child of the header's actions row (it is in
+`Button.tsx`'s own base class). The `span` is now that flex child, so it has
+to re-declare `shrink-0` — without it the header can squeeze the sort button
+on a narrow viewport, the same failure mode
+`docs/open-questions.md#winkelmand-mobile-header-content-overflows-320px`
+already records for another header. This applies to *any* wrapper added to
+work around the `cva` trap above, not just this one.
+
 ## "Categorie" and the column pencil — wired in #232
 
 Built #230 with the header's Categorie button and every column's pencil

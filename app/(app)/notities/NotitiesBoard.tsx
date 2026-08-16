@@ -352,9 +352,11 @@ export function NotitiesBoard({
                   considered). Visibility lives on a wrapper `span`, not on
                   the Button itself -- Button's own base class already
                   carries `inline-flex` (#263), so a bare `hidden` on the
-                  same element loses to it on CSS specificity order; see
+                  same element loses to it on CSS specificity order. The
+                  wrapper also has to re-carry `shrink-0`, which used to sit
+                  on the Button as a direct flex child of this row; see
                   design/notes/NotitiesBoard.md. */}
-              <span className="md:hidden">
+              <span className="shrink-0 md:hidden">
                 <Button
                   icon="ArrowUpDown"
                   aria-label={sortLabel}
@@ -362,7 +364,7 @@ export function NotitiesBoard({
                   onClick={() => setSortMenuOpen((open) => !open)}
                 />
               </span>
-              <span className="hidden md:inline">
+              <span className="hidden shrink-0 md:inline">
                 <Button
                   icon="ArrowUpDown"
                   align="left"
