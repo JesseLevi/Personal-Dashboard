@@ -533,13 +533,13 @@ export async function searchIngredientLibrary(
   }
   // Sorted by name_nl regardless of viewer locale -- deliberately not made
   // locale-aware here (#161/ADR-0013 §6, which only sourced the display
-  // name in IngredientSearchPanel.tsx). i18n/request.ts hardcodes "nl" for
-  // every request today, so any locale this Server Action read would still
-  // resolve to "nl" -- there is no observable behaviour to gain yet, and
-  // next-intl's own guidance is to pass a locale explicitly into a Server
-  // Action rather than infer one, which would mean widening
-  // searchIngredients' input contract (actions.ts) for a change with zero
-  // effect until #162 lands. Revisit alongside that ticket instead.
+  // name in IngredientSearchPanel.tsx). #162 landed and i18n/request.ts now
+  // reads the real profiles.locale, but this Server Action still has no
+  // locale of its own to sort by -- next-intl's guidance is to pass a
+  // locale explicitly into a Server Action rather than infer one, which
+  // would mean widening searchIngredients' input contract (actions.ts) for
+  // a sort-order-only change. Left as-is; revisit if locale-aware sort
+  // order is ever actually requested.
   const reference = [...referenceById.values()].sort((a, b) =>
     a.name_nl.localeCompare(b.name_nl),
   );
