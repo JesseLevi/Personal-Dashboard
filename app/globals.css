@@ -56,3 +56,94 @@ html {
   pointer-events: none;
   color: var(--color-text-placeholder);
 }
+
+/* #263: TipTap content typography. Tailwind's preflight resets h1-h6 to
+   `inherit` and strips ul/ol's list-style + padding, and NoteEditor.tsx's
+   editor root applies `text-base font-semibold` uniformly (a measured Figma
+   value for note body text, not a bug) -- so every block type rendered
+   identically to a plain paragraph until this rule filled the gap. Kept
+   next to the placeholder rule above: one place for all editor-content CSS,
+   since neither can be expressed as a Tailwind utility class on the
+   generated JSON content itself. Minimal, token-bound set only, per user
+   decision -- no richer treatment, no table rule (that's #235's, landing in
+   its own PR on this same block). No Figma source exists for prose
+   typography: design/notes/NoteEditor.md,
+   docs/open-questions.md#notes-prose-typography-not-designed. */
+.tiptap h1,
+.tiptap h2,
+.tiptap h3 {
+  /* spacing-flag: app/theme.css has no font-size token (only
+     spacing/radius/color are generated) -- these three rem values are
+     Tailwind's own text-xl/text-lg/text-base steps, not invented numbers;
+     1.25rem matches PageHeader.tsx's own `<h1 className="text-xl ...">`
+     exactly. design/notes/NoteEditor.md */
+  font-weight: inherit;
+}
+.tiptap h1 {
+  font-size: 1.25rem;
+}
+.tiptap h2 {
+  font-size: 1.125rem;
+}
+.tiptap h3 {
+  font-size: 1rem;
+}
+
+.tiptap ul,
+.tiptap ol {
+  padding-inline-start: var(--spacing-stack-lg);
+}
+.tiptap ul {
+  list-style: disc;
+}
+.tiptap ol {
+  list-style: decimal;
+}
+
+.tiptap blockquote {
+  /* spacing-flag: border-width is not a spacing/radius token concept in
+     this codebase -- every existing `border` utility (Button.tsx,
+     InputField.tsx) is Tailwind's own bare 1px default, un-tokenized; 2px
+     here is the same class of native/structural value, not a design-scale
+     pick. design/notes/NoteEditor.md */
+  border-inline-start: 2px solid var(--color-stroke-primary);
+  padding-inline-start: var(--spacing-stack-md);
+}
+
+.tiptap pre {
+  background-color: var(--color-surface-secondary);
+  border-radius: var(--radius-card-inner);
+  padding: var(--spacing-component-sm) var(--spacing-component-md);
+  /* Tailwind's own built-in `--font-mono` (emitted by `@import "tailwindcss"`
+     itself, not generated into app/theme.css) -- the same stack `font-mono`
+     would apply as a utility class; a `var()` reference, not a hardcoded
+     stack. design/notes/NoteEditor.md */
+  font-family: var(--font-mono, ui-monospace, monospace);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.tiptap code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+.tiptap a {
+  text-decoration: underline;
+}
+
+/* Highlight extension's browser default is a raw yellow -- binding it to
+   the existing highlight-yellow tokens is removing a raw value, not adding
+   a new treatment. */
+.tiptap mark {
+  background-color: var(--color-surface-highlight-yellow);
+  color: var(--color-text-highlight-yellow);
+}
+
+.tiptap hr {
+  border: none;
+  border-top: 1px solid var(--color-stroke-lines);
+}
+
+.tiptap > * + * {
+  margin-top: var(--spacing-stack-md);
+}

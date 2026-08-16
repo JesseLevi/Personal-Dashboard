@@ -349,23 +349,29 @@ export function NotitiesBoard({
                   with its own layout, and Button.tsx's own icon-only vs.
                   labelled branches already model that distinction (see
                   design/notes/NotitiesBoard.md for the alternative
-                  considered). */}
-              <Button
-                icon="ArrowUpDown"
-                aria-label={sortLabel}
-                aria-expanded={sortMenuOpen}
-                onClick={() => setSortMenuOpen((open) => !open)}
-                className="md:hidden"
-              />
-              <Button
-                icon="ArrowUpDown"
-                align="left"
-                aria-expanded={sortMenuOpen}
-                onClick={() => setSortMenuOpen((open) => !open)}
-                className="hidden md:inline-flex"
-              >
-                {sortLabel}
-              </Button>
+                  considered). Visibility lives on a wrapper `span`, not on
+                  the Button itself -- Button's own base class already
+                  carries `inline-flex` (#263), so a bare `hidden` on the
+                  same element loses to it on CSS specificity order; see
+                  design/notes/NotitiesBoard.md. */}
+              <span className="md:hidden">
+                <Button
+                  icon="ArrowUpDown"
+                  aria-label={sortLabel}
+                  aria-expanded={sortMenuOpen}
+                  onClick={() => setSortMenuOpen((open) => !open)}
+                />
+              </span>
+              <span className="hidden md:inline">
+                <Button
+                  icon="ArrowUpDown"
+                  align="left"
+                  aria-expanded={sortMenuOpen}
+                  onClick={() => setSortMenuOpen((open) => !open)}
+                >
+                  {sortLabel}
+                </Button>
+              </span>
               {sortMenuOpen && (
                 <div className="absolute top-full right-0 z-[999] mt-2 w-[209px]">
                   <Dropdown className="shadow-sm">

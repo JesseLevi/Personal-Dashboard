@@ -231,6 +231,68 @@ Carousel.md`, #24/#110):
   say EditingBar now positions itself with the inset rather than being a
   not-yet-built placeholder.
 
+## #263 — keyboard inset (mobile bar disappearing behind the software keyboard)
+
+Feedback: on mobile, `EditingBar` (positioned `fixed bottom-[env(safe-area-
+inset-bottom)]`, see "Mobile" above) stayed visually anchored to the bottom
+of the *screen* while typing, but the iOS software keyboard covers that same
+region — the bar was rendering underneath it, invisible during exactly the
+moment it's needed.
+
+**Root cause.** `position: fixed` anchors to the browser's *layout* viewport
+(the full document area, unaffected by an on-screen keyboard). iOS Safari's
+software keyboard shrinks only the *visual* viewport — `window.innerHeight`
+and the layout viewport stay the same size throughout, so nothing about
+`fixed`'s own positioning model reacts to the keyboard at all. This is a
+well-known iOS Safari gap, not a bug in this component's original
+positioning logic (`bottom-[env(safe-area-inset-bottom)]` is still correct
+for the no-keyboard case, unchanged).
+
+**Fix — `useKeyboardInset()`, a small hook local to `EditingBar.tsx`** (no
+new dependency, no new file — this is pure UI behaviour with nothing else to
+share it with). Reads `window.visualViewport`'s own geometry and derives how
+far the bar must lift to clear the keyboard:
+
+```
+inset = max(0, window.innerHeight - (visualViewport.height + visualViewport.offsetTop))
+```
+
+`innerHeight` stays fixed (layout viewport); `visualViewport.height` shrinks
+and `.offsetTop` can shift as the keyboard opens and the visible viewport
+scrolls — subtracting both from `innerHeight` gives exactly the gap the
+keyboard (plus any scroll offset) has opened up. SSR-safe: state initializes
+to `0`, all reads happen inside a `useEffect`, and `window.visualViewport`
+can be `undefined` (older browsers, non-browser environments) — guarded with
+an early return that leaves the inset at 0. Listens on both `resize` **and**
+`scroll` on `visualViewport` — iOS moves `offsetTop` on scroll independently
+of a `resize` event, so `resize`-only would miss inset changes mid-scroll.
+Both listeners are removed in the effect's cleanup.
+
+**Applied without touching the desktop layout.** The bar is `md:static`; a
+`transform` on a statically-positioned element would move it there too if
+applied unconditionally. The breakpoint split stays in Tailwind, not JS: the
+measured inset is written as a CSS custom property via an inline `style`
+(`style={{ "--keyboard-inset": \`${keyboardInset}px\` }}`), and the
+className reads it back with `translate-y-[calc(var(--keyboard-inset,0px)*-1)]
+md:translate-y-0` — `md:translate-y-0` unconditionally zeroes the transform
+at the desktop breakpoint regardless of what the custom property holds, so
+the JS-measured value can never leak into the desktop layout. This inline
+`style` is runtime geometry, not styling (colour/spacing) — the same
+exception `CardContentIngredient.tsx:162`'s swipe-offset `style={{ transform:
+... }}` already uses, and `CLAUDE.md`'s "no inline styles" rule is about
+styling values, not measured positions. On desktop (and in every
+`test:visual` Playwright run, Chromium desktop-viewport) `visualViewport`
+either matches the layout viewport exactly or the effect never observes a
+keyboard, so `keyboardInset` stays `0` and `translate-y-[calc(0px*-1)]`
+resolves to no visible movement — no baseline needed regenerating for this
+change, confirmed by running the full suite, not assumed.
+
+**Not verified on this machine** — same standing gap as the rest of this
+file's "What could not be verified" section below: no physical iOS device,
+so the actual on-keyboard-open animation feel (timing, whether `scroll`
+firing mid-transition ever produces a visible jitter) is reasoned from the
+documented `visualViewport` API, not observed.
+
 ## What could not be verified on this machine
 
 Per the standing #185–#187 verification gap (`docs/HANDOFF.md`): real iOS
