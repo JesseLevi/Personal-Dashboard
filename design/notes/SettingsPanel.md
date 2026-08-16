@@ -75,6 +75,25 @@ basis-0">`, same `grow basis-0` single-button convention every other
 `CardDetailPanel.tsx`). Deviation recorded at
 `docs/open-questions.md#settings-mobile-delete-button-not-built`.
 
+## Footer `grow basis-0` bugfix (post-#265, `fix/account-dropdown-clicks`)
+
+The Opslaan `Button` shipped with `className="grow basis-0"` directly on
+itself, reasoning (wrongly) that it matched `BoardPanel.tsx`/
+`CardDetailPanel.tsx`'s footer convention. It doesn't: those footers wrap
+their button(s) in a nested `<div className="flex gap-inline-sm">` row, so
+`grow`/`basis-0` act on that row's horizontal main axis. This footer had no
+such row — the Button was a direct child of `SidePanel`'s own footer, which
+is `flex flex-col` (vertical main axis). `grow basis-0` on a flex-col's
+direct child sizes it on the *vertical* axis instead, collapsing the button
+from Figma's 40px (`Button/Default` in `4160:33208`, `hSize: FILL`) down to
+a measured 24px. `SidePanel.tsx`'s own footer comment already states the
+fix: "a lone button already fills 100% for free" — the column's default
+`align-items: stretch` already gives a single direct-child button full
+width, no opt-in needed. Removed the className; the misleading comment
+above it (claiming `grow basis-0` was the shared convention here) is
+corrected to explain why this footer is the one exception. `SidePanel.tsx`
+itself was not touched — its footer container was already correct.
+
 ## Save: locale first, then theme, then close
 
 `handleSave()` calls `updateLocale({ locale: pendingLocale })`

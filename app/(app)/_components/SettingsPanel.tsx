@@ -121,14 +121,18 @@ export function SettingsPanel({ open, onClose, currentLocale }: SettingsPanelPro
         // the mobile node's second "Verwijderen" button is unbuilt residue,
         // see design/notes/SettingsPanel.md and
         // docs/open-questions.md#settings-mobile-delete-button-not-built).
-        // `grow basis-0` matches every other single/multi-button SidePanel
-        // footer's own convention (CardDetailPanel.tsx, BoardPanel.tsx).
+        // No `grow basis-0` here: unlike BoardPanel.tsx/CardDetailPanel.tsx,
+        // this Button is a direct child of SidePanel's column footer, not
+        // nested in its own `flex gap-inline-sm` row — `grow`/`basis-0` on a
+        // flex-col's direct child act on the vertical axis (SidePanel.tsx's
+        // own footer comment says it plainly: "a lone button already fills
+        // 100% for free"), which collapsed this button to 24px tall instead
+        // of Figma's 40px. See design/notes/SettingsPanel.md.
         <Button
           variant="filled"
           icon="Save"
           onClick={handleSave}
           disabled={isPending}
-          className="grow basis-0"
         >
           {isPending ? t("savingLabel") : t("saveLabel")}
         </Button>

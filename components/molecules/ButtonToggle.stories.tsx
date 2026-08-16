@@ -17,31 +17,43 @@ const themeItemsEn: readonly ButtonToggleItem[] = [
   { value: "dark", icon: "Moon", label: en.components.settingsPanel.themeOptions.dark },
 ];
 
-// `items-start` guards the same flex-col stretch trap every hug-width story
-// in this codebase documents (see e.g. PortionStepper.stories.tsx) — a
-// default `stretch` cross-axis would otherwise force the track full-width.
+// This molecule is FILL-designed (Figma `layoutGrow: 1`/`hSize: FILL` on the
+// component root and its track, see design/notes/ButtonToggle.md) — it
+// stretches to whatever width its parent gives it, matching the real caller
+// (SettingsPanel.tsx's 368px-wide panel content column). A bare flex-col
+// wrapper with no width constraint would let it stretch to the whole story
+// canvas, which doesn't demonstrate anything; `w-[368px]` on each wrapper
+// reproduces the real container width instead.
 export const WithTitle = () => (
-  <div className="flex flex-col items-start gap-8">
-    <ButtonToggle
-      title={nl.components.settingsPanel.themeLabel}
-      items={themeItems}
-      defaultValue="system"
-    />
-    <ButtonToggle
-      title={en.components.settingsPanel.themeLabel}
-      items={themeItemsEn}
-      defaultValue="dark"
-    />
+  <div className="flex flex-col gap-8">
+    <div className="w-[368px]">
+      <ButtonToggle
+        title={nl.components.settingsPanel.themeLabel}
+        items={themeItems}
+        defaultValue="system"
+      />
+    </div>
+    <div className="w-[368px]">
+      <ButtonToggle
+        title={en.components.settingsPanel.themeLabel}
+        items={themeItemsEn}
+        defaultValue="dark"
+      />
+    </div>
   </div>
 );
 
 // No visible title — `aria-label` alone (TeDoenHeader-style toolbar usage).
 export const WithoutTitle = () => (
-  <ButtonToggle items={themeItems} defaultValue="light" aria-label={nl.components.settingsPanel.themeLabel} />
+  <div className="w-[368px]">
+    <ButtonToggle items={themeItems} defaultValue="light" aria-label={nl.components.settingsPanel.themeLabel} />
+  </div>
 );
 
 // Unequal label widths, the actual reason this molecule measures the
-// indicator at runtime instead of reusing the old atom's fixed step table.
+// indicator at runtime instead of reusing the old atom's fixed step table —
+// still equal-width segments (`grow basis-0`), so the longer label proves
+// the indicator scales, not the segment itself.
 const mixedWidthItems: readonly ButtonToggleItem[] = [
   { value: "a", icon: "Sun", label: "A" },
   { value: "b", icon: "Moon", label: "A much longer label" },
@@ -49,5 +61,7 @@ const mixedWidthItems: readonly ButtonToggleItem[] = [
 ];
 
 export const VariableWidthSegments = () => (
-  <ButtonToggle items={mixedWidthItems} defaultValue="b" aria-label="Variable width demo" />
+  <div className="w-[368px]">
+    <ButtonToggle items={mixedWidthItems} defaultValue="b" aria-label="Variable width demo" />
+  </div>
 );

@@ -432,12 +432,37 @@ already established for its own two header dropdowns (board switcher, sort)
 — mirrored vertically (`bottom-full`/`mb-2` instead of `top-full`/`mt-2`)
 since this trigger sits at the bottom of the rail instead of the top of a
 header. Outside-click-to-close is NOT implemented inside this file (Sidebar
-stays presentational/stateless) — it lives in `AppShellNav.tsx`, reusing the
-exact `useCloseOnOutsidePointerDown` hook `TeDoenHeader.tsx` already defines,
-keyed off the existing desktop-wrapper/mobile-drawer refs rather than a new
-ref threaded into this atom (Sidebar isn't `forwardRef`, matching the old
+stays presentational/stateless) — it lives in `AppShellNav.tsx`, keyed off
+the existing desktop-wrapper/mobile-drawer refs rather than a new ref
+threaded into this atom (Sidebar isn't `forwardRef`, matching the old
 `ButtonToggle` atom's own stated reason for walking the DOM by role instead
 of a ref).
+
+**Bugfix, same ticket: one combined outside-check, not one listener per
+wrapper.** The first pass called `AppShellNav.tsx`'s
+`useCloseOnOutsidePointerDown` once per wrapper (desktop, drawer), each
+registering its own `document`-level `pointerdown` listener, on the wrong
+assumption that "whichever wrapper is hidden never receives a pointerdown."
+That's not how a document-level listener works: a click on the desktop
+dropdown's own Settings/Logout button lands inside `desktopWrapperRef` but
+outside `drawerRef` (a hidden, unrelated subtree), so the *drawer's*
+listener saw it as outside and closed the menu on `pointerdown`, unmounting
+the panel before the button's own `onClick` could fire — Settings/Logout
+looked completely unresponsive. Fixed by checking containment against BOTH
+wrappers in one listener (`isOutsideAllContainers`,
+`lib/dom/outside-pointer.ts`, unit-tested in
+`tests/outside-pointer.test.ts`) — it closes only when the pointerdown is
+outside every container, not just the one a given listener happened to own.
+`TeDoenHeader.tsx`'s own `useCloseOnOutsidePointerDown` is unaffected: its
+two menus (board switcher, sort) are independent, one ref each, no combined
+check needed there.
+
+**Also fixed: `accountMenuId` collision.** Both `<Sidebar>` instances
+(desktop fixed + mobile drawer, #101) render the dropdown panel whenever
+`accountMenuOpen` is true, so a single shared id put two elements with the
+same DOM `id` in the page at once and left `aria-controls` pointing at
+whichever came first. `AppShellNav.tsx` now passes
+`sidebar-account-menu-desktop` / `sidebar-account-menu-mobile`.
 
 **The account `Dropdown` (`components/atoms/Dropdown.tsx`) is used
 labelless** (Figma's `Name`/`Title` child is `visible: false` on both
