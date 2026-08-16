@@ -11,6 +11,9 @@ import {
   type SidebarItemId,
 } from "@/components/organisms/Sidebar";
 import { Button } from "@/components/atoms/Button";
+import { signOut } from "@/app/login/actions";
+import type { Locale } from "@/lib/profile/types";
+import { SettingsPanel } from "./SettingsPanel";
 
 // Only the routes a ticket has actually built (#88, #177, #230); ids without
 // an entry (assistant) have no page yet, so clicking them is a deliberate
@@ -42,16 +45,54 @@ function getFocusable(root: HTMLElement | null): HTMLElement[] {
   return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
 }
 
+// #265: closes the account dropdown on an outside pointerdown — same
+// reasoning/shape as `TeDoenHeader.tsx`'s own `useCloseOnOutsidePointerDown`
+// (reimplemented here, not imported/shared: two near-identical 10-line
+// hooks in two files with a single caller each isn't worth a shared module
+// yet, same "wait for a third consumer" call this codebase already made for
+// Sidebar's own focus-trap duplication, see design/notes/Sidebar.md's #101
+// entry). `ref` is the EXISTING desktop-wrapper/mobile-drawer container —
+// the account trigger + its dropdown are both rendered inside `Sidebar`,
+// which isn't `forwardRef`, so this checks "was the click inside this
+// whole Sidebar subtree" rather than needing a ref threaded into the atom.
+function useCloseOnOutsidePointerDown(
+  ref: React.RefObject<HTMLElement | null>,
+  active: boolean,
+  onClose: () => void,
+) {
+  useEffect(() => {
+    if (!active) return;
+    function handlePointerDown(event: PointerEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) onClose();
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [active, ref, onClose]);
+}
+
+export interface AppShellNavProps {
+  children: React.ReactNode;
+  /** #265: `profiles.display_name`, resolved server-side (`getProfileForNav`) — null falls back to a generic translated label. */
+  displayName: string | null;
+  /** #265: `profiles.avatar_url` — null renders the Sidebar's initials fallback. No upload UI yet. */
+  avatarUrl: string | null;
+  /** #265: current locale, seeds SettingsPanel's Taal field. */
+  locale: Locale;
+}
+
 // Client wrapper: owns the collapse toggle (client-side, expanded by default
 // — the fetched desktop frames disagree on Collapsed, see design/notes/
 // Sidebar.md), the mobile drawer's open state (#101 — the drawer #88 left
-// for later), and derives the active item from the route. Sidebar has no
-// directive of its own, so importing it here pulls it into the client
-// bundle — the boundary stops at this file, which is why the layout above
-// stays a Server Component and does the Supabase call.
-export function AppShellNav({ children }: { children: React.ReactNode }) {
+// for later), the account dropdown + Settings panel state (#265), and
+// derives the active item from the route. Sidebar has no directive of its
+// own, so importing it here pulls it into the client bundle — the boundary
+// stops at this file, which is why the layout above stays a Server
+// Component and does the Supabase call.
+export function AppShellNav({ children, displayName, avatarUrl, locale }: AppShellNavProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations("components.sidebar");
@@ -64,6 +105,8 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
     assistant: t("items.assistant"),
   };
   const toggleLabel = collapsed ? t("expandLabel") : t("collapseLabel");
+  const accountName = displayName ?? t("accountFallbackName");
+  const accountMenuId = "sidebar-account-menu";
 
   function handleNavigate(item: SidebarItemId) {
     const href = ROUTES[item];
@@ -87,6 +130,7 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   const drawerRef = useRef<HTMLDivElement>(null);
+  const desktopWrapperRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -122,6 +166,36 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
     }
   }
 
+  function closeAccountMenu() {
+    setAccountMenuOpen(false);
+  }
+  // Both wrappers are checked — only one is ever visible/interactive at a
+  // given viewport (the other is `display:none` via `hidden md:flex` /
+  // `md:hidden`), so whichever is currently hidden simply never receives a
+  // pointerdown and its listener is a no-op.
+  useCloseOnOutsidePointerDown(desktopWrapperRef, accountMenuOpen, closeAccountMenu);
+  useCloseOnOutsidePointerDown(drawerRef, accountMenuOpen, closeAccountMenu);
+
+  // #265: clicking Settings closes the mobile drawer FIRST (the ticket's own
+  // body text) before sliding in the panel — desktop has no drawer to close,
+  // the rail stays put.
+  function openSettingsFromMobile() {
+    setAccountMenuOpen(false);
+    setMobileOpen(false);
+    setSettingsOpen(true);
+  }
+  function openSettingsFromDesktop() {
+    setAccountMenuOpen(false);
+    setSettingsOpen(true);
+  }
+
+  function handleLogout() {
+    setAccountMenuOpen(false);
+    // signOut() (app/login/actions.ts) redirects internally — no local
+    // pending state needed, the navigation itself is the feedback.
+    void signOut();
+  }
+
   return (
     <div className="flex min-h-screen items-stretch bg-surface-primary">
       {/* Desktop: Sidebar itself renders `fixed` below (stays put while
@@ -136,7 +210,10 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
           collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH,
         )}
       />
-      <div className="hidden md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex">
+      <div
+        ref={desktopWrapperRef}
+        className="hidden md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex"
+      >
         <Sidebar
           collapsed={collapsed}
           navLabel={t("navLabel")}
@@ -146,6 +223,15 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
           labels={labels}
           onNavigate={handleNavigate}
           onItemHover={handleItemHover}
+          accountName={accountName}
+          accountAvatarUrl={avatarUrl}
+          accountMenuOpen={accountMenuOpen}
+          accountMenuId={accountMenuId}
+          onAccountMenuToggle={() => setAccountMenuOpen((open) => !open)}
+          settingsLabel={t("settingsLabel")}
+          onSettingsClick={openSettingsFromDesktop}
+          logoutLabel={t("logoutLabel")}
+          onLogoutClick={handleLogout}
         />
       </div>
 
@@ -183,6 +269,15 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
           labels={labels}
           onNavigate={handleNavigate}
           onItemHover={handleItemHover}
+          accountName={accountName}
+          accountAvatarUrl={avatarUrl}
+          accountMenuOpen={accountMenuOpen}
+          accountMenuId={accountMenuId}
+          onAccountMenuToggle={() => setAccountMenuOpen((open) => !open)}
+          settingsLabel={t("settingsLabel")}
+          onSettingsClick={openSettingsFromMobile}
+          logoutLabel={t("logoutLabel")}
+          onLogoutClick={handleLogout}
         />
       </div>
 
@@ -213,6 +308,12 @@ export function AppShellNav({ children }: { children: React.ReactNode }) {
         />
         {children}
       </main>
+
+      <SettingsPanel
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        currentLocale={locale}
+      />
     </div>
   );
 }

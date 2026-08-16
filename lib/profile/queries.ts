@@ -40,3 +40,40 @@ export const getUserLocale = cache(async (): Promise<Locale> => {
   const locale = data.locale;
   return (LOCALES as readonly string[]).includes(locale) ? (locale as Locale) : "nl";
 });
+
+/** #265: the three columns the app shell needs for the Sidebar account row
+ * + SettingsPanel — one query instead of three, since all three columns
+ * live on the same `profiles` row anyway. Argument-free + `cache()`'d, same
+ * shape as `getUserLocale` above: `AppLayout` (Server Component) already
+ * guards on `getAuthenticatedUserId()` before rendering `AppShellNav`, but
+ * this stays defensive (never throws, sensible fallbacks) so it's safe to
+ * call from anywhere, not just that one guarded call site. */
+export interface NavProfile {
+  displayName: string | null;
+  avatarUrl: string | null;
+  locale: Locale;
+}
+
+export const getProfileForNav = cache(async (): Promise<NavProfile> => {
+  const fallback: NavProfile = { displayName: null, avatarUrl: null, locale: "nl" };
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return fallback;
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("display_name, avatar_url, locale")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[profile] getProfileForNav failed:", error.code, error.message);
+    return fallback;
+  }
+  if (!data) return fallback;
+
+  const locale = (LOCALES as readonly string[]).includes(data.locale)
+    ? (data.locale as Locale)
+    : "nl";
+  return { displayName: data.display_name, avatarUrl: data.avatar_url, locale };
+});
