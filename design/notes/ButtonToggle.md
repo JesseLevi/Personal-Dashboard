@@ -83,6 +83,33 @@ generates its own id via `useId()`, radiogroup gets `aria-labelledby`) XOR
 component still needs a no-title path (matches the old atom's own
 `aria-label`-only story precedent, `TeDoenHeader`-style toolbar usage).
 
+**Full-width/equal-segment bugfix (post-#265, `fix/account-dropdown-clicks`).**
+Shipped with the old atom's `w-fit self-start` reasoning left on the root and
+`role="radiogroup"` container, plus no width rule on the segments — measured
+in the running app (SettingsPanel, 400px panel/368px content column): the
+track rendered 318px against the `InputField` below it at 368px, and the
+three segments were unequal (114/86/103px, i.e. hug-width per label). Root
+cause: `4160:33335` is a genuinely different component from the retired
+`3623:4345` — `boundVariables` confirmed the component root is
+`layoutSizingHorizontal: FIXED` w=368 with `layoutGrow: 1`, `Container` (the
+track) is `hSize: FILL`/`layoutAlign: STRETCH`, and each of the three
+`Button/Default` segments in the Slot is `layoutGrow: 1`, rendering exactly
+117px regardless of label length — same values confirmed on both panel
+instances (`4160:33400` in `4160:33196`, `4160:34265` in `4160:34064`). Fix:
+root and track both go `w-full` (track also drops `inline-flex`/`self-start`
+for plain `flex`), each segment gets `grow basis-0`. `grow`/`basis-0` were
+chosen over the shorthand `flex-1` specifically to avoid contesting
+`Button.tsx`'s own `shrink-0` (#80) — same shorthand-vs-longhand
+emission-order hazard `docs/guides/ticket-workflow.md` records for
+`px-3`/`pr-4`, sidestepped entirely since neither `grow` nor `basis-0`
+touches `flex-shrink`. Re-measured after the fix in the running app: track
+368px (matches `InputField`), all three segments 117.33px (three equal
+thirds after the 2×4px inline gap), indicator still lands exactly on the
+active segment. `ButtonToggle.stories.tsx` wraps each story in a
+`w-[368px]` box (the real caller's content width) instead of a bare
+`items-start` flex-col, since a FILL-designed component stretching to an
+unconstrained canvas width demonstrates nothing.
+
 **New Ladle story, new baselines.** `ButtonToggle.stories.tsx`:
 `WithTitle` (NL+EN, real `settingsPanel` catalog strings — the real
 Kleurenthema caller), `WithoutTitle` (aria-label only), and

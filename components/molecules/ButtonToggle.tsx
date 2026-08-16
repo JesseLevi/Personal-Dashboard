@@ -136,7 +136,7 @@ export function ButtonToggle({
   }
 
   return (
-    <div className={clsx("flex w-fit flex-col gap-stack-sm", className)}>
+    <div className={clsx("flex w-full flex-col gap-stack-sm", className)}>
       {title ? (
         <span id={titleId} className="text-base font-semibold text-text-secondary">
           {title}
@@ -147,10 +147,10 @@ export function ButtonToggle({
         role="radiogroup"
         aria-label={ariaLabel}
         aria-labelledby={title ? titleId : undefined}
-        // w-fit + self-start: guards the same stretch-cross-axis trap the
-        // old atom's note documented — a flex-col parent otherwise stretches
-        // this track full-width.
-        className="relative inline-flex w-fit items-stretch gap-inline-xs self-start rounded-card bg-surface-highlight-white p-component-xs"
+        // Full width, not hug: Figma's `Container` is `hSize: FILL` (the
+        // retired atom's `w-fit self-start` was hug-width reasoning that
+        // doesn't apply here). See design/notes/ButtonToggle.md.
+        className="relative flex w-full items-stretch gap-inline-xs rounded-card bg-surface-highlight-white p-component-xs"
       >
         <span
           ref={indicatorRef}
@@ -164,10 +164,11 @@ export function ButtonToggle({
           className="pointer-events-none absolute top-0 left-0 rounded-control bg-surface-secondary transition-[transform,width,height] duration-200 ease-out motion-reduce:transition-none"
         />
         {items.map((item, index) => (
-          // `relative` stacks each segment above the absolutely-positioned
-          // indicator (paint order), and segments must stay fill-less in
-          // every state for the same reason the old atom's note recorded —
-          // any segment background would paint over the indicator.
+          // `relative` stacks each segment above the indicator; fill-less in
+          // every state so no segment background paints over it. `grow
+          // basis-0` (not `flex-1`) splits the track evenly without
+          // contesting Button.tsx's own `shrink-0` (#80) — longhand
+          // utilities, no emission-order race. See design/notes/ButtonToggle.md.
           <Button
             key={item.value}
             type="button"
@@ -178,7 +179,7 @@ export function ButtonToggle({
             tabIndex={item.value === value ? 0 : -1}
             onClick={() => select(item.value)}
             onKeyDown={(event) => handleKeyDown(event, index)}
-            className="relative hover:bg-transparent! active:bg-transparent!"
+            className="relative grow basis-0 hover:bg-transparent! active:bg-transparent!"
           >
             {item.label}
           </Button>
