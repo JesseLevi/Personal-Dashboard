@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import clsx from "clsx";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -12,6 +12,7 @@ import {
 } from "@/components/organisms/Sidebar";
 import { Button } from "@/components/atoms/Button";
 import { signOut } from "@/app/login/actions";
+import { isOutsideAllContainers } from "@/lib/dom/outside-pointer";
 import type { Locale } from "@/lib/profile/types";
 import { SettingsPanel } from "./SettingsPanel";
 
@@ -45,29 +46,31 @@ function getFocusable(root: HTMLElement | null): HTMLElement[] {
   return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
 }
 
-// #265: closes the account dropdown on an outside pointerdown — same
-// reasoning/shape as `TeDoenHeader.tsx`'s own `useCloseOnOutsidePointerDown`
-// (reimplemented here, not imported/shared: two near-identical 10-line
-// hooks in two files with a single caller each isn't worth a shared module
-// yet, same "wait for a third consumer" call this codebase already made for
-// Sidebar's own focus-trap duplication, see design/notes/Sidebar.md's #101
-// entry). `ref` is the EXISTING desktop-wrapper/mobile-drawer container —
-// the account trigger + its dropdown are both rendered inside `Sidebar`,
-// which isn't `forwardRef`, so this checks "was the click inside this
-// whole Sidebar subtree" rather than needing a ref threaded into the atom.
+// #265: closes the account dropdown on a pointerdown outside BOTH the
+// desktop wrapper and the mobile drawer — the account trigger + its dropdown
+// render inside `Sidebar`, which isn't `forwardRef`, so this walks the two
+// EXISTING wrapper refs instead of one threaded into the atom. One combined
+// check across both containers, not one listener per container: a click on
+// the desktop dropdown's own Settings/Logout button lands inside
+// `desktopWrapperRef` but outside the (hidden) `drawerRef`, so a per-container
+// listener would close the menu on that pointerdown, before `onClick` ever
+// fires — see design/notes/Sidebar.md's #265 entry.
 function useCloseOnOutsidePointerDown(
-  ref: React.RefObject<HTMLElement | null>,
+  refA: React.RefObject<HTMLElement | null>,
+  refB: React.RefObject<HTMLElement | null>,
   active: boolean,
   onClose: () => void,
 ) {
   useEffect(() => {
     if (!active) return;
     function handlePointerDown(event: PointerEvent) {
-      if (ref.current && !ref.current.contains(event.target as Node)) onClose();
+      if (isOutsideAllContainers(event.target as Node, [refA.current, refB.current])) {
+        onClose();
+      }
     }
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [active, ref, onClose]);
+  }, [refA, refB, active, onClose]);
 }
 
 export interface AppShellNavProps {
@@ -106,7 +109,12 @@ export function AppShellNav({ children, displayName, avatarUrl, locale }: AppShe
   };
   const toggleLabel = collapsed ? t("expandLabel") : t("collapseLabel");
   const accountName = displayName ?? t("accountFallbackName");
-  const accountMenuId = "sidebar-account-menu";
+  // Separate ids: both wrappers render a `<Sidebar>` at once (desktop fixed +
+  // mobile drawer, #101), so one shared id would put two elements with the
+  // same DOM id on the page and leave `aria-controls` pointing at whichever
+  // happened to come first.
+  const desktopAccountMenuId = "sidebar-account-menu-desktop";
+  const mobileAccountMenuId = "sidebar-account-menu-mobile";
 
   function handleNavigate(item: SidebarItemId) {
     const href = ROUTES[item];
@@ -166,15 +174,10 @@ export function AppShellNav({ children, displayName, avatarUrl, locale }: AppShe
     }
   }
 
-  function closeAccountMenu() {
-    setAccountMenuOpen(false);
-  }
-  // Both wrappers are checked — only one is ever visible/interactive at a
-  // given viewport (the other is `display:none` via `hidden md:flex` /
-  // `md:hidden`), so whichever is currently hidden simply never receives a
-  // pointerdown and its listener is a no-op.
-  useCloseOnOutsidePointerDown(desktopWrapperRef, accountMenuOpen, closeAccountMenu);
-  useCloseOnOutsidePointerDown(drawerRef, accountMenuOpen, closeAccountMenu);
+  // Stable identity: kept out of the effect's deps churning on every render
+  // (see the hook above).
+  const closeAccountMenu = useCallback(() => setAccountMenuOpen(false), []);
+  useCloseOnOutsidePointerDown(desktopWrapperRef, drawerRef, accountMenuOpen, closeAccountMenu);
 
   // #265: clicking Settings closes the mobile drawer FIRST (the ticket's own
   // body text) before sliding in the panel — desktop has no drawer to close,
@@ -226,7 +229,7 @@ export function AppShellNav({ children, displayName, avatarUrl, locale }: AppShe
           accountName={accountName}
           accountAvatarUrl={avatarUrl}
           accountMenuOpen={accountMenuOpen}
-          accountMenuId={accountMenuId}
+          accountMenuId={desktopAccountMenuId}
           onAccountMenuToggle={() => setAccountMenuOpen((open) => !open)}
           settingsLabel={t("settingsLabel")}
           onSettingsClick={openSettingsFromDesktop}
@@ -272,7 +275,7 @@ export function AppShellNav({ children, displayName, avatarUrl, locale }: AppShe
           accountName={accountName}
           accountAvatarUrl={avatarUrl}
           accountMenuOpen={accountMenuOpen}
-          accountMenuId={accountMenuId}
+          accountMenuId={mobileAccountMenuId}
           onAccountMenuToggle={() => setAccountMenuOpen((open) => !open)}
           settingsLabel={t("settingsLabel")}
           onSettingsClick={openSettingsFromMobile}
