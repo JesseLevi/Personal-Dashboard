@@ -176,13 +176,17 @@ describe("token → theme pipeline (ADR-0010)", () => {
       }
     });
 
-    it("surface-hover is retired (#204): no longer a token, no CSS var, no figma:null exception left", () => {
+    it("surface-hover is retired (#204): no longer a token, no CSS var", () => {
       expect(tokens.semantic.color).not.toHaveProperty("surface-hover");
       const css = generateTheme(tokens);
       expect(css).not.toContain("--color-surface-hover:");
-      for (const def of Object.values<{ figma: string | null }>(tokens.semantic.color)) {
-        expect(def.figma).not.toBeNull();
-      }
+    });
+
+    it("the only current figma:null exception is `overlay` (#222 — a codebase-only scrim token with no Figma counterpart, same documented shape as the historical surface-hover)", () => {
+      const nullFigma = Object.entries<{ figma: string | null }>(tokens.semantic.color).filter(
+        ([, def]) => def.figma === null,
+      );
+      expect(nullFigma.map(([name]) => name)).toEqual(["overlay"]);
     });
 
     it("accent is retired: no primitive, no semantic entry, no CSS var", () => {
@@ -248,11 +252,14 @@ describe("token → theme pipeline (ADR-0010)", () => {
       expect(dark).toContain("--color-surface-highlight-red:");
     });
 
-    it("$pendingFigmaValue is fully resolved (#204): zero tokens still carry the escape hatch", () => {
+    it("$pendingFigmaValue: #204's batch is fully resolved; #222 later added one permanent, user-accepted deviation (stroke-primary's dark value)", () => {
       const stillPending = Object.entries(tokens.semantic.color).filter(
         ([, def]) => (def as { $pendingFigmaValue?: unknown }).$pendingFigmaValue,
       );
-      expect(stillPending).toEqual([]);
+      expect(stillPending.map(([name]) => name)).toEqual(["stroke-primary"]);
+      const [, def] = stillPending[0] as [string, { $pendingFigmaValue?: { dark?: string } }];
+      // Only the dark mode is deviating — light was left untouched by #222.
+      expect(def.$pendingFigmaValue).toEqual({ dark: "#44403B" });
     });
   });
 
