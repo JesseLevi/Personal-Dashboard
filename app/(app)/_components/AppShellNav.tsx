@@ -247,7 +247,7 @@ export function AppShellNav({ children, displayName, avatarUrl, locale }: AppShe
         // `opacity-0`, the prime suspect for a stale-tinted iOS status bar
         // after close (unverified on-device, see design/notes/Sidebar.md).
         className={clsx(
-          "fixed inset-0 z-40 bg-text-primary/60 transition-[opacity,visibility] transition-discrete duration-[var(--duration-base)] ease-base motion-reduce:transition-none md:hidden",
+          "fixed inset-0 z-40 bg-overlay/60 transition-[opacity,visibility] transition-discrete duration-[var(--duration-base)] ease-base motion-reduce:transition-none md:hidden",
           mobileOpen ? "visible opacity-100" : "invisible pointer-events-none opacity-0",
         )}
       />

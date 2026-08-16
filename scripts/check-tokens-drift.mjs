@@ -13,12 +13,17 @@
 //      that variable, and nothing says that's expected.
 //
 // The one sanctioned way to have color VALUE drift is `$pendingFigmaValue`
-// (#203's escape hatch for the 13 dark + 2 light deviations ticket #204
-// owns) — a token carrying `$pendingFigmaValue.light` / `.dark` is exempted
-// from the VALUE check on exactly the modes it names, never from the NAME
-// check. Radius/spacing (#205) has no such escape hatch yet — none of that
-// collection shipped with a known deviation, so any drift there is a real
-// re-sync, not an open ticket.
+// (#203's escape hatch, originally covering the 13 dark + 2 light deviations
+// ticket #204 resolved) — a token carrying `$pendingFigmaValue.light` /
+// `.dark` is exempted from the VALUE check on exactly the modes it names,
+// never from the NAME check. NOT every occurrence is an open re-sync item
+// waiting on a future ticket, though: #222 added one (`stroke-primary`'s
+// dark value) that is a permanent, user-accepted departure from Figma, kept
+// on this same field so the gate stays quiet about it — read each token's
+// own `$comment` for which kind it is rather than assuming #204. Radius/
+// spacing (#205) has no such escape hatch yet — none of that collection
+// shipped with a known deviation, so any drift there is a real re-sync, not
+// an open ticket.
 //
 // TICKET #213 added a third direction: everything above walks tokens.json
 // -> Figma (does a token this file already declares still match the
@@ -138,7 +143,7 @@ for (const def of Object.values(tokens.semantic.color)) {
   if (def.$pendingFigmaValue) pendingCount += 1;
 }
 if (pendingCount > 0) {
-  warnings.push(`${pendingCount} token(s) carry $pendingFigmaValue (ticket #204 to resolve) — drift-checked on name/id, exempted on the marked value(s) only.`);
+  warnings.push(`${pendingCount} token(s) carry $pendingFigmaValue — drift-checked on name/id, exempted on the marked value(s) only. Some are open re-sync items, some (see each token's own $comment) are permanent accepted deviations; this count doesn't distinguish the two.`);
 }
 
 // --- Semantics / Responsive (radius + spacing), ticket #205 ---------------
@@ -331,5 +336,5 @@ if (errors.length > 0) {
 }
 
 console.log(
-  `OK: design/tokens.json matches design/figma-variables/*.json — color (name + value, ${pendingCount} deviation(s) exempted via $pendingFigmaValue for #204) and Semantics / Responsive radius+spacing (name + value + mobile/desktop split, #205), and is now bidirectional (#213): every export variable is either a token or an explained $notMirrored entry.`,
+  `OK: design/tokens.json matches design/figma-variables/*.json — color (name + value, ${pendingCount} deviation(s) exempted via $pendingFigmaValue — open re-sync items and permanent accepted deviations alike, see each token's own $comment) and Semantics / Responsive radius+spacing (name + value + mobile/desktop split, #205), and is now bidirectional (#213): every export variable is either a token or an explained $notMirrored entry.`,
 );

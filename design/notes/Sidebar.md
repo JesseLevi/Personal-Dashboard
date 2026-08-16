@@ -340,6 +340,32 @@ Two things measured in passing, neither acted on:
 Visual baselines regenerated for `sidebar--*` (one nav item fewer changes
 the rail's content height), then the full suite re-run.
 
+## TICKET #222 point 7 (2026-08-16): mobile drawer overlay was white in dark mode
+
+`AppShellNav.tsx`'s mobile drawer scrim (this file's own #101 entry above
+calls it out as "pixel-for-pixel the fetched scrim... `bg-text/60`") inverted
+to a light wash in dark mode once #206 wired up the real theme switch:
+`text-primary` (the renamed `text` token from #203 onward) flips from
+stone-950 (light) to stone-50 (dark), which is correct for text but wrong for
+a scrim meant to stay dark in both themes. The ticket asked to keep the
+light-mode overlay colour in dark mode too.
+
+Fixed at the token level, not the component: a new `overlay` semantic token
+(`design/tokens.json`) pinned to `stone-950` in both `light`/`dark` — see
+`design/notes/SidePanel.md`'s own #222 entry for the full token reasoning,
+since `SidePanel.tsx`'s scrim had the exact same bug from the exact same
+`bg-text-primary/60` class and both are fixed by the same token. This file's
+only change is that one class, now `bg-overlay/60`; the "same scrim SidePanel
+already uses" cross-reference in the #101 entry above still holds, just under
+the new class/token name.
+
+**Not independently screenshotted**: `AppShellNav.tsx` has no Ladle story
+(it's wired to real routing/session, not story-able in isolation) — verified
+instead by inspecting the generated `app/theme.css` (`--color-overlay` present
+and identical in both the base `@theme` block and the `[data-theme="dark"]`
+block) and by screenshotting `SidePanel`'s own scrim, which shares the
+identical class and token, in both themes via a real browser.
+
 ## TICKET #265 (2026-08-16): account row + Settings/Logout dropdown
 
 Re-fetched the Sidebar component set (`3674:5664`) via the `figma-console`

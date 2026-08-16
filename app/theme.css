@@ -15,6 +15,7 @@
   --color-stroke-primary-selected: var(--color-stone-400);
   --color-stroke-primary-active: var(--color-stone-600);
   --color-text-primary: var(--color-stone-950);
+  --color-overlay: var(--color-stone-950);
   --color-text-secondary: var(--color-stone-500);
   --color-text-placeholder: var(--color-stone-300);
   --color-text-highlight-red: var(--color-red-400);
@@ -85,13 +86,14 @@
   --color-surface-secondary: var(--color-stone-800);
   --color-surface-secondary-hover: var(--color-stone-700);
   --color-surface-secondary-active: var(--color-stone-600);
-  --color-stroke-primary: var(--color-stone-700);
+  --color-stroke-primary: var(--color-stone-600);
   --color-stroke-lines: var(--color-stone-400);
   --color-stroke-primary-hover: var(--color-stone-500);
   --color-stroke-secondary-active: var(--color-stone-100);
   --color-stroke-primary-selected: var(--color-stone-600);
   --color-stroke-primary-active: var(--color-stone-400);
   --color-text-primary: var(--color-stone-50);
+  --color-overlay: var(--color-stone-950);
   --color-text-secondary: var(--color-stone-400);
   --color-surface-highlight-red: var(--color-red-50);
   --color-surface-highlight-red-selected: var(--color-red-50);

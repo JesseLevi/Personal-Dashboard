@@ -9,6 +9,36 @@ Checked=No/Yes prop; fetched node has no 'delete' state — needs triage before 
 
 flex-shrink defence added. Measured in a real browser (Playwright against `pnpm ladle`): inside CardContentIngredient's width-constrained row this atom's stated h-8 w-8 (32x32) rendered as narrow as 27.5x32, a flex item defaulting to flex-shrink:1 with nothing here opting out — same failure class as the Trash Button squash recorded in Atom/Button's own note this ticket. `shrink-0` added to this atom's base classes so it defends its own square footprint regardless of caller layout.
 
+## TICKET #222 point 3 (2026-08-16): checkbox invisible in dark mode
+
+Reported: in dark mode the checkbox's border was indistinguishable from its
+surroundings. Root cause is not in this file — `Checkbox.tsx`'s
+`border border-stroke-primary bg-surface-highlight-white` classes were never
+touched, and were never wrong on their own; the shared `stroke-primary`
+token's dark value (`design/tokens.json`) was too close to the surrounding
+dark surface to read as a visible border. The user made the token-level call
+directly rather than asking for a component-scoped fix: change
+`stroke-primary`'s `dark` ref from `stone-700` to `stone-600`, leave `light`
+(`stone-300`) untouched. Figma's own dark data still says `stone-700`
+(`#44403B`) — this is a deliberate, permanent departure, recorded on the
+token via `$pendingFigmaValue.dark` + a `$comment`, not a re-sync item for a
+future ticket to "fix" back. See `docs/design-tokens.md`'s dark-mode rule and
+`design/tokens.json`'s `stroke-primary` entry for the full reasoning.
+
+**Blast radius, accepted knowingly, not this file's problem to solve:**
+`stroke-primary` is the single shared border-role token — Card, Button/
+Outline, and InputField all read it too, so all of them get the same,
+slightly lighter dark border as a side effect. No component code changed
+anywhere; only the one token value did.
+
+**Verification:** visual suite renders light-mode only (0 dark baselines
+exist), so it cannot see this change and stayed green with zero regenerated
+baselines — expected, not a gap in coverage for this particular fix. Checked
+directly instead: real browser (`pnpm ladle`, Playwright) against
+`checkbox--states`, `data-theme="dark"` set on `<html>` — both boxes' borders
+are now visibly a lighter stone against the dark surface, where before the
+border and surface were close enough to read as borderless.
+
 ## TICKET #205 (2026-08-12): radius token
 
 `rounded-lg` (8px) → `rounded-control`. Measured via `figma_execute` on both

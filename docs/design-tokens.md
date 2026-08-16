@@ -143,7 +143,16 @@ history as a ban on `:active`.
   produces something that looks wrong (a state collapsing to its Default, an
   escalation reading backwards), that's Figma's fact, not this codebase's —
   see `docs/open-questions.md#dark-mode-is-placeholder-only` for the two
-  currently-accepted cases.
+  currently-accepted cases. **One user-directed exception, #222:**
+  `stroke-primary`'s dark value deliberately overrides Figma's own stone-700
+  with stone-600 (Checkbox's border was invisible against its dark surface),
+  recorded via `$pendingFigmaValue.dark` + a `$comment` on the token itself —
+  a permanent departure, not an open re-sync item. See
+  `design/notes/Checkbox.md`'s #222 entry. Separately, #222 also added
+  `overlay` — a codebase-only scrim token (`figma: null`, no per-state
+  variation) backing `SidePanel`/`AppShellNav`'s dark scrims; out of this
+  file's per-state scope, see `design/notes/SidePanel.md` and
+  `design/notes/Sidebar.md`'s own #222 entries.
 - If Figma defines no variation for a role in some state, **don't invent one**.
   See Distructive's text below, which never changes.
 

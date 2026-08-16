@@ -201,10 +201,10 @@ export function SidePanel({
 
   return (
     <>
-      {/* GAP: reuses `text-primary` (stone-950, matches Figma's rgba(12,10,9,0.6)
-          exactly in light mode) since no dedicated scrim token exists —
-          flagged, not invented. `text-primary` flips to white in dark mode,
-          which would invert this to a light scrim; see design/notes/SidePanel.md. */}
+      {/* #222: was `bg-text-primary/60` — matched Figma in light mode but
+          inverted to a light scrim in dark mode (text-primary flips to
+          stone-50 there). Now `overlay`, a codebase-only token pinned to
+          stone-950 in both modes; see design/notes/SidePanel.md. */}
       <div
         aria-hidden="true"
         onClick={onClose}
@@ -216,7 +216,7 @@ export function SidePanel({
         // allow-discrete`) defers the `visibility` flip to hidden until the
         // opacity transition finishes, so the fade-out still plays.
         className={clsx(
-          "fixed inset-0 bg-text-primary/60 transition-[opacity,visibility] transition-discrete duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+          "fixed inset-0 bg-overlay/60 transition-[opacity,visibility] transition-discrete duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
           level === 2 ? "z-[60]" : "z-40",
           open ? "visible opacity-100" : "invisible pointer-events-none opacity-0",
         )}

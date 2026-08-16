@@ -10,7 +10,40 @@ Built #89. Single organism, both shapes from one markup via `md:`-prefixed Tailw
 
 ## Measurements (fetched node, not assumed)
 
-- Overlay fill: `rgba(12, 10, 9, 0.6)` on both nodes — `#0C0A09` at 60% alpha. `#0C0A09` is exactly the `stone-950` primitive that backs the `text` semantic token (light value). **No dedicated scrim/backdrop token exists in `design/tokens.json`**, so the component reuses `bg-text/60` (Tailwind v4's `/60` opacity modifier on the existing `--color-text` custom property) — correct pixels in light mode, per the "reuse existing token, flag the gap" rule (`docs/guides/ui-components.md`). **Flagged gap**: `text`'s dark-mode value is `#FFFFFF` (see `app/theme.css`'s `[data-theme="dark"]` block), so in dark mode this scrim would invert to a *light* 60%-opacity overlay instead of staying dark — visually wrong, but no Next.js app code sets `data-theme` yet (`docs/open-questions.md#dark-mode-is-placeholder-only`), so this is a low-impact, deferred gap consistent with the rest of the codebase's dark-mode state. A real fix needs a theme-invariant scrim token, which is a token-scale decision, not a component-level guess.
+- Overlay fill: `rgba(12, 10, 9, 0.6)` on both nodes — `#0C0A09` at 60% alpha. `#0C0A09` is exactly the `stone-950` primitive. Originally modelled by reusing `bg-text-primary/60` (correct pixels in light mode, since `text-primary`'s light value is also stone-950), with a flagged gap that dark mode would invert it to a light wash (`text-primary` flips to stone-50 in dark mode) — **resolved by #222 below**, which gives the scrim its own theme-invariant token instead.
+
+## TICKET #222 point 7 (2026-08-16): overlay was white in dark mode
+
+The flagged gap directly above was reported for real once dark mode actually
+shipped a switch (#206, after this file's original gap note was written):
+`bg-text-primary/60` inverted to a light wash whenever `data-theme="dark"`,
+since `text-primary` itself flips from stone-950 (light) to stone-50 (dark)
+— by design, for text, but wrong for a scrim that's supposed to stay dark in
+both themes. The ticket's instruction was explicit: keep the light-mode
+overlay's colour in dark mode too, don't invert it.
+
+Fixed with a new codebase-only semantic token, `overlay` (`design/tokens.json`),
+pinned to `stone-950` in **both** `light` and `dark` — deliberately not
+theme-reactive, same shape as `text-primary`'s own light value, so nothing
+about the rendered scrim pixel changes between light and dark. `figma: null`
+(no Figma variable backs it; same documented-exception shape as the historical
+`surface-hover`, #203/#204) plus a `$comment` explaining why, which is what
+satisfies `scripts/check-tokens-drift.mjs`'s null-figma branch. This file's
+scrim class changed from `bg-text-primary/60` to `bg-overlay/60` — same `/60`
+opacity modifier, only the underlying token changed.
+
+**Same fix applied to `AppShellNav.tsx`'s mobile drawer scrim** (one bug
+class, one token, two call sites — see `design/notes/Sidebar.md`'s own #222
+entry). Both scrims used the identical `bg-text-primary/60` class before this
+ticket; both now read `bg-overlay/60`.
+
+**Verified in a real browser** (`pnpm ladle`, Playwright, `side-panel--add-item`
+story, `data-theme` toggled on `<html>`): light mode renders the same dark
+grey scrim as before (byte-identical token value); dark mode now renders the
+same dark scrim too, instead of inverting to a light wash. The mobile drawer
+(`AppShellNav.tsx`) has no Ladle story of its own (requires session/router
+context) — not independently screenshotted, but it shares the exact same
+token and class, applied identically.
 - Panel fill: both nodes `#F5F5F4` = `stone-100` = the existing `surface-muted` semantic token (`design/tokens.json`), no gap.
 - Mobile panel border-radius: `16px 12px 0px 0px` (top-left/top-right/bottom-right/bottom-left) — genuinely asymmetric (16 vs 12), not a rounding artifact; both values land exactly on Tailwind's scale (`rounded-2xl`=16px, `rounded-xl`=12px), so modelled per-corner: `rounded-tl-2xl rounded-tr-xl` rather than a single `rounded-t-*` utility.
 - Desktop panel border-radius: `16px 0px 0px 12px` — top-left 16, bottom-left 12, both right corners square (flush with the viewport edge). Modelled per-corner too, overriding only what changes from the mobile base: `md:rounded-tr-none md:rounded-bl-xl` (top-left's `rounded-tl-2xl` carries over unchanged from the base classes; bottom-right was never rounded on either shape). Verified by measuring `getComputedStyle(dialog).borderRadius` in a real browser at both 402px (`16px 16px 0px 0px` — Tailwind normalizes equal TL/TR into a 2-value shorthand, but computed TL=16/TR=16 do differ from Figma's TR=12; see the second measurement below) and 1440px.
