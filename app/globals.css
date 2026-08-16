@@ -153,3 +153,76 @@ html {
 .tiptap > * + * {
   margin-top: var(--spacing-stack-md);
 }
+
+/* #235: table CSS, on the same .tiptap block #263 built (that ticket's own
+   "explicitly out of scope" note pointed here). `TableKit` is already wired
+   (#234, pulled forward from this ticket) -- this is only the rendering.
+   Per user decision, kept minimal and token-bound, same as #263: every
+   value below is a real var(--color-…)/var(--spacing-…) from app/theme.css,
+   no raw hex, no raw px-spacing. No Figma source exists for any of it --
+   Pages/Notities/Breakpoints draws one toolbar button with a table icon and
+   no actual table -- see docs/open-questions.md#notes-table-ui-not-designed
+   and this ticket's own section in design/notes/NoteEditor.md. */
+.tiptap table {
+  border-collapse: collapse;
+  width: 100%;
+  /* No margin declared here on purpose, even though the surrounding block
+     is `table`: TipTap's editor NodeView (verified against the installed
+     @tiptap/extension-table's own dist, not a doc example) always wraps the
+     rendered table in `div.tableWrapper`, which is the actual direct child
+     of .tiptap and already gets `margin-top` for free from the `> * + *`
+     rule above -- exactly like every other block type in this file (h1/ul/
+     blockquote/pre/hr declare no margin of their own either). Adding a
+     second margin here on `table` itself would land on the *wrong* box:
+     `.tableWrapper` below needs `overflow-x: auto` for the mobile-overflow
+     requirement, and any non-`visible` overflow value establishes a new
+     block formatting context, which stops a child's margin from collapsing
+     into its parent's -- so a margin declared here would get trapped
+     inside the scrollable wrapper instead of producing visible spacing
+     before/after the table. design/notes/NoteEditor.md records this as a
+     deliberate deviation from a literal "margin on `table`" reading. */
+}
+
+/* TipTap's TableView always renders this exact wrapper div around the
+   table in the editor (checked against @tiptap/extension-table@3.30's own
+   dist/index.js, not the docs site) -- overflow-x: auto here, not on
+   `table` itself, is what lets a wide table scroll horizontally on mobile
+   instead of blowing out the page width. */
+.tiptap .tableWrapper {
+  overflow-x: auto;
+}
+
+.tiptap td,
+.tiptap th {
+  border: 1px solid var(--color-stroke-lines);
+  /* Block/inline split, not top/bottom/left/right: `--spacing-stack-*` is
+     the vertical-axis group, `--spacing-inline-*` the horizontal one --
+     both resolve to the same pixels today, so a swapped axis here would be
+     pixel-identical and silently wrong (#263 already corrected this exact
+     mistake once, see app/globals.css's own history and docs/HANDOFF.md). */
+  padding: var(--spacing-stack-xs) var(--spacing-inline-sm);
+  vertical-align: top;
+}
+
+/* Goes one step past "minimal", deliberately: without its own background a
+   header row is visually identical to a body row, which makes the toolbar
+   button's `withHeaderRow: true` (EditingBar.tsx) silently pointless -- the
+   exact bug class #263 point 3 fixed for heading/list/blockquote/code (state
+   correct, nothing on screen showed it). One existing token, no new design.
+   design/notes/NoteEditor.md records this as a flagged deviation. */
+.tiptap th {
+  background-color: var(--color-surface-secondary);
+}
+
+/* prosemirror-tables' own cell-selection plugin decorates each selected
+   cell with this exact class (checked against the installed
+   prosemirror-tables@1.8.5's own dist/index.js, not assumed) -- not a
+   selection mechanism invented here. `.tiptap .selectedCell` (two classes)
+   outranks `.tiptap th` (one class, one type) on specificity alone, so a
+   selected header cell shows the selection tint regardless of source
+   order. Reuses the existing "selected" surface token
+   (surface-highlight-white-selected) rather than a colour-coded highlight
+   token (blue/red/yellow already carry other meanings elsewhere). */
+.tiptap .selectedCell {
+  background-color: var(--color-surface-highlight-white-selected);
+}

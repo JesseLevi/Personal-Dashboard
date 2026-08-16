@@ -76,6 +76,55 @@ describe("toPlainText", () => {
     const document = doc({ type: "codeBlock", content: [text("const a = 1;\nconst b = 2;")] });
     expect(toPlainText(document)).toBe("const a = 1;\nconst b = 2;");
   });
+
+  // #235: the two toPlainText table cases the ticket names that weren't
+  // already covered above -- a header row (tableHeader, not just tableCell)
+  // and empty cells (no blank/doubled lines from a cell with no content).
+  it("flattens a table's header row like any other row of cells", () => {
+    const document = doc({
+      type: "table",
+      content: [
+        {
+          type: "tableRow",
+          content: [
+            { type: "tableHeader", content: [paragraph(text("Naam"))] },
+            { type: "tableHeader", content: [paragraph(text("Leeftijd"))] },
+          ],
+        },
+        {
+          type: "tableRow",
+          content: [
+            { type: "tableCell", content: [paragraph(text("Anna"))] },
+            { type: "tableCell", content: [paragraph(text("34"))] },
+          ],
+        },
+      ],
+    });
+    expect(toPlainText(document)).toBe("Naam\nLeeftijd\nAnna\n34");
+  });
+
+  it("drops empty table cells without leaving blank or doubled newlines", () => {
+    const document = doc({
+      type: "table",
+      content: [
+        {
+          type: "tableRow",
+          content: [
+            { type: "tableCell", content: [paragraph(text("Naam"))] },
+            { type: "tableCell", content: [paragraph()] },
+          ],
+        },
+        {
+          type: "tableRow",
+          content: [
+            { type: "tableCell", content: [paragraph()] },
+            { type: "tableCell", content: [paragraph(text("34"))] },
+          ],
+        },
+      ],
+    });
+    expect(toPlainText(document)).toBe("Naam\n34");
+  });
 });
 
 describe("deriveTitle", () => {

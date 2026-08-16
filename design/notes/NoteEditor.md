@@ -329,6 +329,93 @@ no frame shows a heading, list, quote or code block actually rendered
 inside a note. Filed: `docs/open-questions.md#notes-prose-typography-not-
 designed`.
 
+## #235 — table CSS (on the same `.tiptap` block)
+
+`TableKit` was already wired into `lib/notes/extensions.ts` and the
+`EditingBar` table button already calls `insertTable({ rows: 3, cols: 3,
+withHeaderRow: true })` (both pulled forward by #234). This ticket adds
+only the rendering: table/`td`/`th`/wrapper/selection rules, appended
+directly below the `.tiptap > * + *` rule #263 left this block ending on —
+one `.tiptap` block, not a second, competing one. Per user decision, kept
+**minimal and token-bound**, same instruction #263 already followed. Every
+rule reads a real token from `app/theme.css` — no raw hex, no raw px
+spacing, including in comments (`pnpm check:raw-spacing` only scans `.tsx`
+under `components/`/`app/`, not this CSS file — the ticket's own warning,
+not a loophole used here).
+
+- **`.tiptap table`**: `border-collapse: collapse`, `width: 100%`. **No
+  margin declared here**, a deliberate deviation from a literal reading of
+  "vertical margin on `table`": TipTap's editor `TableView` (verified
+  against the installed `@tiptap/extension-table@3.30`'s own
+  `dist/index.js`, not the docs site — `this.dom.className =
+  "tableWrapper"`, `addNodeView()` returns this view unconditionally) always
+  wraps the rendered `<table>` in `div.tableWrapper`, which is the real
+  direct child of `.tiptap`. That wrapper already inherits `margin-top` for
+  free from `.tiptap > * + *`, the same way `h1`/`ul`/`blockquote`/`pre`/`hr`
+  above it do — none of those declare their own margin either. Giving
+  `table` its own margin on top of that would land inside a box that's
+  about to get `overflow-x: auto` (below), and any non-`visible` overflow
+  value creates a new block formatting context — which stops a child's
+  margin from collapsing into its parent, so the declared margin would
+  either double the visible gap (if it could still escape) or get trapped
+  inside the scrollable wrapper and produce no spacing at all (it can't
+  escape). Either way, wrong. Reasoned from the CSS box-model spec
+  (parent/child margin collapsing + the overflow/BFC interaction), not
+  guessed — this is standard, documented CSS behaviour, unlike the
+  library-specific class names below, which *were* checked against the
+  installed `dist` rather than reasoned.
+- **`.tiptap .tableWrapper { overflow-x: auto; }`** — the mobile-overflow
+  requirement: a table wider than the viewport scrolls horizontally instead
+  of blowing out the page width. Targets the wrapper, not `table`, for the
+  same reason as above.
+- **`.tiptap td, .tiptap th`**: `border: 1px solid var(--color-stroke-lines)`,
+  `padding: var(--spacing-stack-xs) var(--spacing-inline-sm)`,
+  `vertical-align: top`. Padding is axis-correct on purpose:
+  `--spacing-stack-*` (block/vertical) for the shorthand's top/bottom slot,
+  `--spacing-inline-*` (inline/horizontal) for its left/right slot — both
+  groups resolve to the same pixel values today, so a swapped axis would be
+  pixel-identical and silently wrong, exactly the mistake #263 already
+  found and fixed once on this same file (`docs/HANDOFF.md`) — not repeated
+  here.
+- **`.tiptap th { background-color: var(--color-surface-secondary); }`** —
+  **one deliberate step past "minimal"**, flagged as such rather than
+  silently added: without its own background a header row is visually
+  identical to a body row, which makes `insertTable`'s
+  `withHeaderRow: true` silently pointless — the exact "state is correct,
+  nothing on screen shows it" bug class #263 point 3 fixed for
+  heading/list/blockquote/code. One existing semantic token
+  (`surface-secondary`), no new token invented, no new design.
+- **`.tiptap .selectedCell`** — the selected-cell background. Class name
+  verified against the installed `prosemirror-tables@1.8.5`'s own
+  `dist/index.js` (`Decoration.node(pos, pos + node.nodeSize, { class:
+  "selectedCell" })`, applied directly to the selected `td`/`th`), not
+  assumed from a doc example. Reuses `--color-surface-highlight-white-
+  selected` — the token already named for a persistent "selected" surface
+  state elsewhere (`Button.tsx`'s toggled variant), not one of the
+  colour-coded highlight tokens (blue/red/yellow), which already carry
+  other product meaning (mark highlight, priority). `.selectedCell` (two
+  classes) naturally outranks `.tiptap th` (one class, one type) on CSS
+  specificity, so a selected header cell still shows the selection tint.
+- **`resizable: false`** (TableKit's own default) is kept, not turned on —
+  recorded explicitly rather than left as a silent default: column resize
+  needs visible drag handles, and no such control is drawn anywhere in
+  `Pages/Notities/Breakpoints`.
+- **Row/column editing has no UI at all** — only TipTap's own
+  keyboard/ProseMirror behaviour (e.g. Tab in the last cell adds a row;
+  the standard table keymap TableKit registers for navigation/selection).
+  No add/remove-row/column control, no drag-to-reorder, no cell context
+  menu — none of that is designed. Filed:
+  `docs/open-questions.md#notes-table-ui-not-designed`, asking for a design
+  pass over the row/column controls specifically.
+- **No zebra striping, no resize handles, no per-cell menu** — all
+  considered and rejected per the same "smallest defensible surface"
+  instruction the ticket gave, same reasoning as the two points above.
+
+**No Figma source for any of this.** Same gap as the rest of this file's
+prose-typography section, restated for tables specifically:
+`Pages/Notities/Breakpoints` draws one toolbar button with a table icon and
+no table anywhere.
+
 ## Verification — what was and wasn't run
 
 `pnpm lint`/`typecheck`/`test`/`check:server-only`/`check:raw-spacing`/
