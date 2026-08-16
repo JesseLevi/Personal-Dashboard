@@ -135,6 +135,12 @@ import {
   TextAlignCenter,
   TextAlignEnd,
   TextAlignJustify,
+  Settings,
+  LogOut,
+  Sun,
+  Moon,
+  SunMoon,
+  EllipsisVertical,
   type LucideProps,
 } from "lucide-react";
 
@@ -300,10 +306,37 @@ export type IconName =
   | "TextAlignStart"
   | "TextAlignCenter"
   | "TextAlignEnd"
-  | "TextAlignJustify";
+  | "TextAlignJustify"
+  // #265 Settings/account menu (node 4159:28770/71/72, 4160:33397/98/99):
+  // all five shape-verified path-for-path against the installed
+  // lucide-react@1.25.0 exports (Figma's C-curve export vs. lucide's `a`/`t`
+  // arc notation — same non-difference class as prior entries in this file).
+  // Settings' gear is the smooth-scallop redesign, NOT `Cog`/`Settings2` —
+  // both were rendered and ruled out. See design/notes/Icon.md.
+  | "Settings"
+  | "LogOut"
+  | "Sun"
+  | "Moon"
+  | "SunMoon"
+  | "EllipsisVertical"
+  // #265 Taal field (node 4160:34392/93): flags, not lucide exports — the
+  // first non-lucide entries in this union. Rendered via a separate
+  // `public/flags/*.svg` branch in the Icon atom below, never inlined here
+  // (their brand hex would fail check:server-only). See design/notes/Icon.md.
+  | "NL"
+  | "UK";
 
-// Figma name -> lucide-react component.
-const ICONS: Record<IconName, ComponentType<LucideProps>> = {
+// `NL`/`UK` have no lucide equivalent — real flag artwork lives in
+// public/flags/*.svg (exported from Figma nodes 4160:34392/4160:34393) and
+// is rendered through a plain <img>, not the lucide lookup table below.
+const FLAG_ICONS: Partial<Record<IconName, string>> = {
+  NL: "/flags/nl.svg",
+  UK: "/flags/uk.svg",
+};
+
+// Figma name -> lucide-react component. NL/UK are excluded — they're flags,
+// not lucide exports — see FLAG_ICONS above and Icon() below.
+const ICONS: Record<Exclude<IconName, "NL" | "UK">, ComponentType<LucideProps>> = {
   PanelLeftClose: PanelLeftClose,
   PanelLeftOpen: PanelLeftOpen,
   ShoppingBasket: ShoppingBasket,
@@ -438,9 +471,17 @@ const ICONS: Record<IconName, ComponentType<LucideProps>> = {
   TextAlignCenter: TextAlignCenter,
   TextAlignEnd: TextAlignEnd,
   TextAlignJustify: TextAlignJustify,
+  Settings: Settings,
+  LogOut: LogOut,
+  Sun: Sun,
+  Moon: Moon,
+  SunMoon: SunMoon,
+  EllipsisVertical: EllipsisVertical,
 };
 
-const ICON_NAMES = new Set<string>(Object.keys(ICONS));
+// ICON_NAMES/isIconName cover the FLAG_ICONS entries too — Icon.tsx's own
+// union is the vocabulary, not just this lucide lookup table.
+const ICON_NAMES = new Set<string>([...Object.keys(ICONS), ...Object.keys(FLAG_ICONS)]);
 
 /** Runtime guard for a DB-sourced icon string (e.g. `board_columns.icon`,
  * free-text at the schema layer per lib/boards/schemas.ts) before it's
@@ -460,8 +501,30 @@ export interface IconProps {
   className?: string;
 }
 
-/** Single wrapper atom around lucide-react (see `design/figma-map.json` -> `Icon/*`). */
+/**
+ * Single wrapper atom around lucide-react (see `design/figma-map.json` ->
+ * `Icon/*`). NL/UK are the one exception — real flag artwork (brand hex, so
+ * it can't live inline in a `components/` file per check:server-only) served
+ * from `public/flags/*.svg` via a plain `<img>`, not lucide. `strokeWidth`
+ * has no effect on a flag (filled artwork, no stroke); every caller passes a
+ * lucide name in that case anyway, so this is a silent no-op, not a trap.
+ */
 export function Icon({ name, size = 24, strokeWidth = 2, className }: IconProps) {
-  const IconComponent = ICONS[name];
+  const flagSrc = FLAG_ICONS[name];
+  if (flagSrc) {
+    return (
+      <img
+        src={flagSrc}
+        alt=""
+        aria-hidden="true"
+        width={size}
+        height={size}
+        className={className}
+      />
+    );
+  }
+  // Safe: the flagSrc branch above already returned for the only two
+  // IconName members ICONS doesn't cover (NL/UK).
+  const IconComponent = ICONS[name as Exclude<IconName, "NL" | "UK">];
   return <IconComponent size={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" />;
 }
