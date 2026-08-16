@@ -339,3 +339,92 @@ Two things measured in passing, neither acted on:
 
 Visual baselines regenerated for `sidebar--*` (one nav item fewer changes
 the rail's content height), then the full suite re-run.
+
+## TICKET #265 (2026-08-16): account row + Settings/Logout dropdown
+
+Re-fetched the Sidebar component set (`3674:5664`) via the `figma-console`
+bridge — it now has a real `Account` frame at the bottom of both variants
+(`4160:31007` expanded / `4160:32663` collapsed), and the root's own
+`primaryAxisAlignItems` is now `SPACE_BETWEEN`, not the flat fixed gap #205
+measured. So the root layout genuinely changed, not just gained a new child:
+`Sidebar.tsx` now nests the toggle+nav-items block in its own wrapper div
+(`gap-stack-xxl`, the same token the root itself used to bind — moved down
+one level, same value) and lets the root's `justify-between` push `Account`
+to the bottom, matching Figma's own two-child `space-between` reading
+exactly rather than approximating it with a bigger fixed gap.
+
+**Account row measurements** (`4160:31007`, `figma_execute`/`boundVariables`):
+root `HORIZONTAL`, `itemSpacing` 8 → `gap-inline-sm` (`spacing/inline/gap-sm`),
+`cornerRadius` 8 → `rounded-control` (`radius/control`) — bound despite the
+static frame carrying no fill/stroke of its own (no Figma hover state
+sampled either; the hover fill this ticket added is a codebase decision,
+flagged in the component). Two children: `Thumbnail` (40×40 FRAME,
+`cornerRadius` 6 → `rounded-control-inner`, unbound solid fill
+`rgb(214,211,209)`/`#D6D3D1` — an **exact** match for the existing
+`surface-secondary-hover` token, stone-300, reused for the initials-fallback
+background) and `Name + icon` (89×16 FRAME, hug-sized, zero `itemSpacing`
+— confirmed 73px text + 16px icon = 89 exactly, no gap between them —
+containing a `TEXT` ("Youri Tukker", `text-xs/semibold`, fill `#0C0A09` =
+stone-950 = `text-primary`) and `Icon/Ellipsis-vertical` INSTANCE at 16×16,
+smaller than this atom's 24px default). **Collapsed variant confirmation**
+(`4160:32663`): root is 40×40 with `clipsContent: true`; `Name + icon`
+still reports its own natural 89px width at `x:48` — i.e. genuinely clipped
+by the parent's overflow, not resized. `Sidebar.tsx` reproduces this with
+the exact same mechanism `NAV_ITEMS` already uses (`overflow-hidden` on the
+outer control, the label kept at its natural/`shrink-0` width rather than
+allowed to flex-shrink) rather than inventing a second clipping idiom.
+
+**The whole row is one plain `<button>`, not an `Atom/Button` instance** —
+Figma's `Account` frame is not a `Button/Default` instance (unlike the
+dropdown's own two menu items, which are), so wrapping it in the `Button`
+atom would fight that atom's own height/padding assumptions (built for a
+40px-tall pill, not a row containing a 40×40 avatar image). No `aria-label`:
+same "children already supply the accessible name" reasoning as the
+`NAV_ITEMS` lesson above (avatar `alt=""`, ellipsis icon already
+`aria-hidden` inside the `Icon` atom) — the visible name text is the
+button's accessible name, and `aria-haspopup="menu"`/`aria-expanded` supply
+the rest.
+
+**Initials fallback and avatar image are #265's own reading of the brief**,
+not sourced from Figma (the fetched `Thumbnail` is a flat, unbound fill with
+no text layer sampled at all — no initials treatment to copy). `initialsFor()`
+is a plain, Figma-free helper (first letter of the first two words). No
+upload UI exists (`avatar_url` stays `null` for every account until a future
+ticket adds one) — `<img>` is used over `next/image` for the same reasoning
+`Icon.md`'s flag entry gives: a fixed small size, no responsive `srcset`
+need, and this codebase's own precedent (`RecipeDetailPage.tsx`,
+`CardContentRecipe.tsx`).
+
+**The dropdown opens upward (`bottom-full`), not downward.** Measured
+directly, not guessed: the fetched frame places the `Dropdown` instance
+(`4160:33132` mobile / `4160:33165` desktop) at `y:718` in an 874-tall
+canvas, `height 92` — its own bottom edge (`718+92=810`) sits 8px above
+where `Account`'s own top edge lands in that same frame (`874-16-40=818`),
+an 8px gap matching `gap-inline-sm`. Positioning follows the exact
+`relative` trigger + `absolute ... z-[999]` shape `TeDoenHeader.tsx`
+already established for its own two header dropdowns (board switcher, sort)
+— mirrored vertically (`bottom-full`/`mb-2` instead of `top-full`/`mt-2`)
+since this trigger sits at the bottom of the rail instead of the top of a
+header. Outside-click-to-close is NOT implemented inside this file (Sidebar
+stays presentational/stateless) — it lives in `AppShellNav.tsx`, reusing the
+exact `useCloseOnOutsidePointerDown` hook `TeDoenHeader.tsx` already defines,
+keyed off the existing desktop-wrapper/mobile-drawer refs rather than a new
+ref threaded into this atom (Sidebar isn't `forwardRef`, matching the old
+`ButtonToggle` atom's own stated reason for walking the DOM by role instead
+of a ref).
+
+**The account `Dropdown` (`components/atoms/Dropdown.tsx`) is used
+labelless** (Figma's `Name`/`Title` child is `visible: false` on both
+`4160:33132`/`4160:33165`) — same mode `TeDoenHeader.tsx`'s board-switcher
+and sort menus already use, so no new Dropdown behaviour was needed. Its two
+`Slot` children are real `Button/Default` instances, verified via
+`componentProperties`: `Settings` (`Style=Transparent`, icon `Icon/Settings`
+node `4159:28770`, text "Settings") and `Logout` (`Style=Destructive`, icon
+`Icon/Log-out` node `4159:28771`, text "Logout") — `Sidebar.tsx` renders
+exactly those two `Button` variants/icons, composer-supplied Dutch/English
+text via `settingsLabel`/`logoutLabel`.
+
+**Not built: a visible hover/focus state on the dropdown's own trigger
+button beyond the codebase-decision fill above** — Figma's Account frame
+samples no interaction states at all (a single static frame, no Hover/Active
+variant the way `Atom/Button` has), so nothing further was invented.
