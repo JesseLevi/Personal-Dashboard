@@ -200,6 +200,58 @@ Union is now 134 names, counted directly from `IconName`'s union type (the
 #179 entry above said 113 after adding one name to a prior 112 — actually
 114, a pre-existing one-off drift in that count, not introduced here).
 
+## #265 (2026-08-16): account menu / Settings icons, and the first non-lucide entries
+
+Six lucide icons for the account dropdown and Kleurenthema toggle, all
+downloaded fresh via the `figma-console` bridge (`node.exportAsync({format:
+"SVG_STRING"})`) and shape-verified path-for-path against the installed
+`lucide-react@1.25.0` exports (`renderToStaticMarkup`), not matched by name:
+`Settings` (node `4159:28770`, account dropdown) is the smooth 8-scallop gear
+redesign — rendered `Cog` and `Settings2` alongside it specifically to rule
+out both false friends (`Cog` is a spoked-wheel glyph with 12 straight
+ticks, visibly different; `Settings2` is the two-slider icon already mapped
+for #160's Pas-aan trigger, wrong shape entirely) before confirming `Settings`
+matches anchor-for-anchor (`9.671,4.136` start point, `14.33,4.136` after the
+first curve, circle `r=3` — identical in both). `LogOut` (`4159:28771`,
+Logout item) is the door+arrow glyph, exact match. `EllipsisVertical`
+(`4159:28772`, the sidebar account row's trigger icon — rendered at 16px in
+this context, an instance override, not a new default) is three dots at
+`(12,12)/(12,5)/(12,19)`, exact — a distinct lucide export from `MoreVertical`
+(both exist; the Figma layer name `Icon/Ellipsis-vertical` matches this
+codebase's existing `Ellipsis` naming convention). `SunMoon`/`Sun`/`Moon`
+(`4160:33399`/`4160:33397`/`4160:33398`, the new `ButtonToggle` molecule's
+Kleurenthema segments) all matched anchor-for-anchor on first try, no false
+friend candidates existed for any of the three. Union is now 140 names.
+
+**`NL`/`UK` (nodes `4160:34392`/`4160:34393`, the Taal field's leading icon)
+are the first non-lucide entries this atom has ever needed** — flags, not
+glyphs, so no lucide export could ever match. Exported as real SVG
+(`exportAsync({format:"SVG_STRING"})`) and committed as static assets under
+`public/flags/{nl,uk}.svg` rather than inlined into `Icon.tsx`: both carry
+brand hex (`#A1292A`/`#264387` for NL red/blue; `#071B65`/`#B92932` for UK's
+navy/red) that `check:server-only` greps every `.tsx` file in `components/`
+for, ticket-number false-positives aside (see `design/notes/Sidebar.md`'s
+#101 entry for that specific regex history) — a flag's fill genuinely *is* a
+colour literal, not a token gap to flag, so inlining it would be a real
+violation, not a false one. `Icon.tsx` gained a `FLAG_ICONS` lookup
+(`IconName -> /flags/*.svg` path) checked *before* the lucide `ICONS` table;
+when it matches, `Icon()` renders a plain `<img src=... alt="" aria-hidden
+width={size} height={size} />` instead of a lucide component. **`<img>` over
+`next/image`**: matches the precedent `RecipeDetailPage.tsx`/
+`CardContentRecipe.tsx` already set (`@next/next/no-img-element` is a
+lint warning, not a build error), and `next/image` buys nothing for a static
+SVG at a fixed small size — no responsive `srcset`, no raster re-encode, and
+Next doesn't optimize SVGs by default anyway; a plain tag is simpler for the
+one asset type in this codebase that's genuinely just "serve this exact
+file." `ICONS`'s type narrows to `Record<Exclude<IconName, "NL"|"UK">,
+ComponentType<LucideProps>>` (was `Record<IconName, ...>`) so the two flags
+can't silently end up `undefined` in the lucide table — `ICON_NAMES` (backing
+`isIconName()`) unions both tables' keys so the runtime guard still covers
+every `IconName` member. `strokeWidth` is accepted but has no effect on a
+flag (filled artwork has no stroke to width) — every caller passes it
+expecting a lucide icon in the first place, so this is an inert default, not
+a trap. Union is now 142 names (140 + the two flags).
+
 **`Icon.stories.tsx` does not render the whole union, and did not before this
 ticket either.** Measured while verifying #227: `ICON_NAMES` in the story
 lists 127 of the 134 names; `ArrowRight`, `Coffee`, `Cookie`, `Image`,

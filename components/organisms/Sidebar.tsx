@@ -1,7 +1,8 @@
 // figma: node-id=3674:5664
 import clsx from "clsx";
 import { Button } from "../atoms/Button";
-import type { IconName } from "../atoms/Icon";
+import { Dropdown } from "../atoms/Dropdown";
+import { Icon, type IconName } from "../atoms/Icon";
 
 /**
  * Organism/Sidebar — Figma component set "Sidebar" (node-id 3674:5664).
@@ -9,8 +10,10 @@ import type { IconName } from "../atoms/Icon";
  * fixed `NAV_ITEMS` list. Active item -> Button's `Style=Filled,
  * State=Selected`. `bg-surface-primary` is Figma's fill; nav-item Buttons
  * render one element across both states (`overflow-hidden` clips the
- * label as the rail shrinks). Full rationale + measurements: design/notes/
- * Sidebar.md.
+ * label as the rail shrinks). #265 added the bottom account row (node
+ * `4160:31007`/`4160:32663`) — root layout is now `justify-between`
+ * (Figma's own `primaryAxisAlignItems`), not a flat fixed gap. Full
+ * rationale + measurements: design/notes/Sidebar.md.
  */
 export type SidebarItemId =
   | "todo"
@@ -33,6 +36,14 @@ const NAV_ITEMS: ReadonlyArray<{ id: SidebarItemId; icon: IconName }> = [
 export const SIDEBAR_EXPANDED_WIDTH = "w-[198px]";
 export const SIDEBAR_COLLAPSED_WIDTH = "w-[73px]";
 
+// First letter of the first two words — not Figma-sourced (no initials
+// treatment in the fetched node). See design/notes/Sidebar.md.
+function initialsFor(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "";
+  return (parts[0][0] + (parts[1]?.[0] ?? "")).toUpperCase();
+}
+
 export interface SidebarProps {
   /** Figma `Collapsed` variant axis (No/Yes). Defaults to expanded (`No`). */
   collapsed?: boolean;
@@ -51,12 +62,28 @@ export interface SidebarProps {
   /** #170: fired on `pointerenter`/`focus` — composer's hook for
    * `router.prefetch(href)` ahead of the click, not a Figma-driven prop. */
   onItemHover?: (item: SidebarItemId) => void;
+  /** #265: the signed-in user's display name (composer resolves the null-`display_name` fallback, e.g. `components.sidebar.accountFallbackName`). */
+  accountName: string;
+  /** #265: public avatar URL, when set. Renders an initials fallback when null/undefined — no upload UI exists yet (out of scope), so this stays null until a future ticket adds one. */
+  accountAvatarUrl?: string | null;
+  /** #265: whether the account dropdown (Settings/Logout) is open. Composer-owned — the row itself is stateless, same split as `onToggle`/`collapsed`. */
+  accountMenuOpen: boolean;
+  /** #265: id pair wiring the trigger to its dropdown panel (`aria-controls` / the panel's own `id`). */
+  accountMenuId: string;
+  /** #265: fired when the account row itself is clicked. */
+  onAccountMenuToggle?: () => void;
+  /** #265: Settings dropdown item text + handler (Transparent, per Figma). */
+  settingsLabel: string;
+  onSettingsClick?: () => void;
+  /** #265: Logout dropdown item text + handler (Destructive, per Figma). */
+  logoutLabel: string;
+  onLogoutClick?: () => void;
   className?: string;
 }
 
-// Server Component: `collapsed` stays a plain prop, not internal state —
-// where it's persisted (cookie/localStorage/URL) varies by caller, same
-// reasoning as Atom/Checkbox's `checked`.
+// Server Component: `collapsed`/`accountMenuOpen` stay plain composer-owned
+// props (AppShellNav), same reasoning as Atom/Checkbox's `checked` —
+// importing `Dropdown` doesn't require owning state here.
 export function Sidebar({
   collapsed = false,
   navLabel,
@@ -66,21 +93,26 @@ export function Sidebar({
   labels,
   onNavigate,
   onItemHover,
+  accountName,
+  accountAvatarUrl,
+  accountMenuOpen,
+  accountMenuId,
+  onAccountMenuToggle,
+  settingsLabel,
+  onSettingsClick,
+  logoutLabel,
+  onLogoutClick,
   className,
 }: SidebarProps) {
   return (
     <nav
       aria-label={navLabel}
       className={clsx(
-        // duration-[var(--duration-base)] must stay arbitrary-value form
-        // (bare `duration-base` compiles to nothing); GAP: value unsourced
-        // from Figma, see docs/open-questions.md#sidebar-motion-timing-unsourced.
-        "flex h-full flex-col items-end gap-stack-xxl border-r border-stroke-primary bg-surface-primary p-component-lg transition-[width] duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
-        // pt-/pb- (#113): `max()` only ever adds space over the existing 16px,
-        // so this is a no-op wherever there is no safe-area inset (desktop,
-        // most phones) — only extends the top/bottom padding on notched /
-        // home-indicator devices when this atom fills the mobile drawer
-        // edge-to-edge. Unverified on-device; see design/notes/Sidebar.md.
+        // GAP: duration unsourced, docs/open-questions.md#sidebar-motion-timing-unsourced.
+        // justify-between (#265): Figma root is now SPACE_BETWEEN, not a
+        // flat gap — see design/notes/Sidebar.md.
+        "flex h-full flex-col items-end justify-between border-r border-stroke-primary bg-surface-primary p-component-lg transition-[width] duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+        // pt-/pb- (#113): safe-area padding, no-op without a notch/inset. See design/notes/Sidebar.md.
         "pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]",
         // #172: nav chrome, not content — see app/globals.css.
         "chrome-touch",
@@ -88,40 +120,102 @@ export function Sidebar({
         className,
       )}
     >
-      <Button
-        variant="filled"
-        icon={collapsed ? "PanelLeftOpen" : "PanelLeftClose"}
-        aria-label={toggleLabel}
-        onClick={onToggle}
-      />
-      <div className="flex w-full flex-col gap-stack-md">
-        {NAV_ITEMS.map(({ id, icon }) => {
-          const isActive = id === activeItem;
-          const variant = isActive ? "filled" : "transparent";
-          const label = labels[id];
-          const handleClick = onNavigate ? () => onNavigate(id) : undefined;
-          const handleHover = onItemHover ? () => onItemHover(id) : undefined;
+      {/* Figma "Icon + items" (4160:30312) — see design/notes/Sidebar.md. */}
+      <div className="flex w-full flex-col items-end gap-stack-xxl">
+        <Button
+          variant="filled"
+          icon={collapsed ? "PanelLeftOpen" : "PanelLeftClose"}
+          aria-label={toggleLabel}
+          onClick={onToggle}
+        />
+        <div className="flex w-full flex-col gap-stack-md">
+          {NAV_ITEMS.map(({ id, icon }) => {
+            const isActive = id === activeItem;
+            const variant = isActive ? "filled" : "transparent";
+            const label = labels[id];
+            const handleClick = onNavigate ? () => onNavigate(id) : undefined;
+            const handleHover = onItemHover ? () => onItemHover(id) : undefined;
 
-          // One Button element in both states — `overflow-hidden` clips
-          // `children` visually but keeps it (and its accessible name) in
-          // the DOM, instead of swapping icon-only/labelled Buttons.
-          return (
-            <Button
-              key={id}
-              variant={variant}
-              icon={icon}
-              align="left"
-              aria-current={isActive ? "page" : undefined}
-              aria-pressed={isActive || undefined}
-              onClick={handleClick}
-              onPointerEnter={handleHover}
-              onFocus={handleHover}
-              className="overflow-hidden whitespace-nowrap"
+            // One Button element in both states — `overflow-hidden` clips
+            // `children` visually but keeps it (and its accessible name) in
+            // the DOM, instead of swapping icon-only/labelled Buttons.
+            return (
+              <Button
+                key={id}
+                variant={variant}
+                icon={icon}
+                align="left"
+                aria-current={isActive ? "page" : undefined}
+                aria-pressed={isActive || undefined}
+                onClick={handleClick}
+                onPointerEnter={handleHover}
+                onFocus={handleHover}
+                className="overflow-hidden whitespace-nowrap"
+              >
+                {label}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Figma "Account" (4160:31007/4160:32663) — see design/notes/Sidebar.md. */}
+      <div className="relative w-full">
+        <button
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={accountMenuOpen}
+          aria-controls={accountMenuId}
+          onClick={onAccountMenuToggle}
+          // No aria-label (visible name supplies it, same NAV_ITEMS lesson).
+          // Hover fill is a codebase decision, not Figma-sampled.
+          // spacing-flag: p-0 resets native UA button padding, not Figma-sourced. design/notes/Sidebar.md.
+          className="chrome-touch flex w-full items-center gap-inline-sm overflow-hidden rounded-control p-0 text-left transition-colors hover:bg-surface-secondary"
+        >
+          {accountAvatarUrl ? (
+            <img
+              src={accountAvatarUrl}
+              alt=""
+              width={40}
+              height={40}
+              loading="lazy"
+              className="size-10 shrink-0 rounded-control-inner object-cover"
+            />
+          ) : (
+            // Exact unbound match for surface-secondary-hover — design/notes/Sidebar.md.
+            <span
+              aria-hidden="true"
+              className="flex size-10 shrink-0 items-center justify-center rounded-control-inner bg-surface-secondary-hover text-xs font-semibold text-text-secondary"
             >
-              {label}
-            </Button>
-          );
-        })}
+              {initialsFor(accountName)}
+            </span>
+          )}
+          {/* Figma "Name + icon" (4160:31009): hug-width, zero internal gap — design/notes/Sidebar.md. */}
+          <span className="inline-flex shrink-0 items-center">
+            <span className="whitespace-nowrap text-xs font-semibold text-text-primary">
+              {accountName}
+            </span>
+            <Icon name="EllipsisVertical" size={16} className="text-text-secondary" />
+          </span>
+        </button>
+
+        {accountMenuOpen ? (
+          // Opens upward (bottom-full) — measured, see design/notes/Sidebar.md.
+          // Same relative/absolute z-[999] shape as TeDoenHeader.tsx's dropdowns.
+          <div
+            id={accountMenuId}
+            className="absolute inset-x-0 bottom-full z-[999] mb-2 w-[209px]"
+          >
+            <Dropdown className="shadow-sm">
+              <Button variant="transparent" icon="Settings" align="left" onClick={onSettingsClick}>
+                {settingsLabel}
+              </Button>
+              <Button variant="destructive" icon="LogOut" align="left" onClick={onLogoutClick}>
+                {logoutLabel}
+              </Button>
+            </Dropdown>
+          </div>
+        ) : null}
       </div>
     </nav>
   );

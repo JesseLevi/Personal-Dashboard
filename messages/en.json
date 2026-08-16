@@ -133,17 +133,14 @@
       "noResults": "No results found"
     }
   },
+  "profile": {
+    "errors": {
+      "invalid-input": "Check the information you entered.",
+      "unauthenticated": "Sign in again to continue.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
   "components": {
-    "buttonToggle": {
-      "groupLabel": "Category filter",
-      "categories": {
-        "all": "All",
-        "breakfast": "Breakfast",
-        "lunch": "Lunch",
-        "vegetable": "Vegetable",
-        "dessert": "Dessert"
-      }
-    },
     "cardContentIngredient": {
       "deleteLabel": "Delete ingredient",
       "addToCartLabel": "Add ingredient to basket"
@@ -172,7 +169,10 @@
         "shopping": "Shopping basket",
         "clothes": "Clothes",
         "assistant": "Assistant"
-      }
+      },
+      "accountFallbackName": "Account",
+      "settingsLabel": "Settings",
+      "logoutLabel": "Log out"
     },
     "pageHeader": {
       "todo": {
@@ -206,6 +206,22 @@
     },
     "sidePanel": {
       "closeLabel": "Close panel"
+    },
+    "settingsPanel": {
+      "title": "Settings",
+      "themeLabel": "Color theme",
+      "themeOptions": {
+        "system": "System",
+        "light": "Light",
+        "dark": "Dark"
+      },
+      "languageLabel": "Language",
+      "languageOptions": {
+        "nl": "Dutch",
+        "en": "English"
+      },
+      "saveLabel": "Save",
+      "savingLabel": "Saving..."
     },
     "boardPanel": {
       "addTitle": "Add board",
