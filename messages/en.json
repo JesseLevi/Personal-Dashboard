@@ -94,8 +94,10 @@
     },
     "page": {
       "clearAllLabel": "Empty basket",
+      "clearAllLabelShort": "Empty",
       "deleteItemLabel": "Delete {name}",
       "sortLabel": "Sort",
+      "addItemLabel": "Item",
       "sortOptions": {
         "recipe": "Recipe",
         "foodGroup": "Food group"

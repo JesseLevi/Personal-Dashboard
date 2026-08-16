@@ -94,8 +94,10 @@
     },
     "page": {
       "clearAllLabel": "Leeg mand",
+      "clearAllLabelShort": "Leeg",
       "deleteItemLabel": "Verwijder {name}",
       "sortLabel": "Sorteer",
+      "addItemLabel": "Item",
       "sortOptions": {
         "recipe": "Recept",
         "foodGroup": "Voedingsgroep"

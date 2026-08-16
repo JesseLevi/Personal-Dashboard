@@ -9,9 +9,17 @@ import { Dropdown } from "@/components/atoms/Dropdown";
 import type { IconName } from "@/components/atoms/Icon";
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
+import { IngredientSearchPanel } from "@/components/organisms/IngredientSearchPanel";
 import { formatQuantity } from "@/lib/recipes/units";
 import { formatQuantityFraction } from "@/lib/recipes/kitchen-units";
-import { toggleShoppingListItem, deleteShoppingListItem, clearShoppingList } from "./actions";
+import { toggleShoppingListItem, deleteShoppingListItem, clearShoppingList, addShoppingListItem } from "./actions";
+// #222 pt.4: reuses RecipePanel.tsx's own ingredient search/create actions
+// rather than duplicating them -- same cross-route-group import direction
+// RecipeDetailPage.tsx already uses for winkelmand/actions.ts (imports go
+// both ways in this codebase, a Server Action is a global RPC endpoint, not
+// folder-scoped). See design/notes/WinkelmandPage.md#222.
+import { searchIngredients, createOwnIngredient } from "@/app/(app)/recepten/actions";
+import type { IngredientRow } from "@/lib/recipes/types";
 import type { ActionResult, ShoppingListItemWithGroupInfo } from "@/lib/shopping/types";
 
 // Client owner of row interactions (#177), same split as ReceptenBoard.tsx.
@@ -141,6 +149,7 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   useCloseOnOutsidePointerDown(sortMenuRef, sortMenuOpen, () => setSortMenuOpen(false));
+  const [addItemPanelOpen, setAddItemPanelOpen] = useState(false);
 
   function quantityLabel(item: ShoppingListItemWithGroupInfo): string | undefined {
     if (item.quantity === null) return undefined;
@@ -195,28 +204,67 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
     runAction(() => [], () => clearShoppingList());
   }
 
+  // #222 pt.4: sequential, awaited (not Promise.all) -- addShoppingListItem
+  // computes its own `position` by reading the current last row server-side
+  // per call, the same "no move queue" file only holds for id-targeted
+  // actions with no shared computed value; awaiting each call in turn avoids
+  // two saves racing onto the same position. Mirrors
+  // IngredientSearchPanel.tsx's own handleSave, which already awaits its
+  // onCreateOwnIngredient calls in a for-of loop for the same reason. No
+  // optimistic localItems mutation -- there's no client-side row to
+  // synthesize (group/recipe info is server-resolved) -- a real failure
+  // surfaces via actionError, never an invented success. See
+  // design/notes/WinkelmandPage.md#222.
+  async function handleAddIngredients(ingredients: IngredientRow[]) {
+    setActionError(null);
+    try {
+      for (const ingredient of ingredients) {
+        const result = await addShoppingListItem({ name: ingredient.name });
+        if (!result.success) {
+          setActionError(tErrors(result.error));
+          return;
+        }
+      }
+    } catch {
+      setActionError(tErrors("generic"));
+    }
+  }
+
   const isEmpty = localItems.length === 0;
   const groups = isEmpty ? [] : buildGroups(localItems, sortBy, locale, t("otherGroupLabel"));
+
+  // Shared by both PageHeader states below (#222 pt.4's own fetch found the
+  // EmptyState "Knoppen" frame is NOT action-less as #179 recorded -- it
+  // carries this one Destructive button, both breakpoints, measured live via
+  // the figma-console bridge, not assumed from that older note. See
+  // design/notes/WinkelmandPage.md#222.
+  const clearAllButton = (
+    <Button variant="destructive" icon="Trash" onClick={handleClearAll}>
+      <span className="md:hidden">{t("clearAllLabelShort")}</span>
+      <span className="hidden md:inline">{t("clearAllLabel")}</span>
+    </Button>
+  );
 
   return (
     <>
       <PageHeader
         title={title}
-        // Figma's EmptyState header ("Knoppen" frame) carries no action
-        // buttons at all -- verified against the fetched empty-state nodes
-        // (4049:11175/4049:11167), not assumed. See
-        // design/notes/WinkelmandPage.md.
+        // #222 pt.4: the EmptyState "Knoppen" frame is not action-less --
+        // it carries the same Destructive button below, both breakpoints
+        // (corrects #179's "no action buttons at all" read, see
+        // design/notes/WinkelmandPage.md#222). The non-empty frame gained a
+        // third, leading button (+ Item, Filled, icon Plus) ahead of Sort --
+        // same fetched "Knoppen" order both breakpoints.
         actions={
-          isEmpty ? undefined : (
+          isEmpty ? (
+            clearAllButton
+          ) : (
             // #182: a single flex wrapper mirroring Figma's own "Knoppen"
-            // frame (row, gap 8px mobile / 20px desktop) -- both buttons
-            // must be ONE child of PageHeader's actions slot, not two.
-            // PageHeader's <header> is itself `justify-between` between
-            // title and actions; passing the two buttons as Fragment
-            // siblings made them three separate flex children of <header>,
-            // so the header's own space-between spread Sort away from
-            // Verwijder-alles instead of grouping them. See
-            // design/notes/WinkelmandPage.md#182.
+            // frame (row, gap 8px mobile / 20px desktop) -- every button
+            // must be ONE child of PageHeader's actions slot, not siblings
+            // (a Fragment's children render as flat siblings of <header>,
+            // which is itself `justify-between` -- see
+            // design/notes/WinkelmandPage.md#182).
             // #182: the Sort wrapper is the positioning context at every
             // breakpoint -- no relative/static flip. Only the panel's
             // horizontal anchor switches per breakpoint: left-anchored to
@@ -231,6 +279,19 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
             // whole group, per user decision. Geometry re-verified in a real
             // browser at 320/375/390/430px, see design/notes/WinkelmandPage.md#182.
             <div className="flex items-center gap-inline-sm md:gap-inline-xl">
+              <Button
+                icon="Plus"
+                // #222 pt.4: icon-only on mobile, "Item" text from md up --
+                // same span-hide + permanent aria-label pattern as Sort
+                // below, not swapped children (fetched Mobile node draws
+                // "With text: false", Desktop draws "Item"). Opens the
+                // existing IngredientSearchPanel organism, no new panel
+                // built -- see design/notes/WinkelmandPage.md#222.
+                aria-label={t("addItemLabel")}
+                onClick={() => setAddItemPanelOpen(true)}
+              >
+                <span className="hidden md:inline">{t("addItemLabel")}</span>
+              </Button>
               <div ref={sortMenuRef} className="relative">
                 <Button
                   icon="ArrowUpDown"
@@ -274,9 +335,7 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
                   </div>
                 )}
               </div>
-              <Button variant="destructive" icon="Trash" onClick={handleClearAll}>
-                {t("clearAllLabel")}
-              </Button>
+              {clearAllButton}
             </div>
           )
         }
@@ -292,18 +351,18 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
         // override there) -- `w-full md:w-fit` reproduces that split.
         <div className="pr-page-right-equal">
           <Card>
-            {/* spacing-flag: gap-2 py-4 (8px / 16px) — measured the fetched
-                EmptyState Card (4049:11174 mobile, 4050:11597 desktop):
-                its "Type" slot (padding bound spacing/component/padding-sm)
-                holds "EmptyText" (own paddingTop/Bottom bound
-                spacing/component/padding-lg, itemSpacing to the sibling
-                Button unbound at 0) plus a Step-number badge this page
-                doesn't render — no boundVariables entry wraps a title+CTA
-                group the way this div does, so the 16px here isn't the
-                same padding as the measured one even though the number
-                matches — design/notes/WinkelmandPage.md#219. */}
-            <div className="flex w-full flex-col items-center justify-center gap-2 py-4">
-              <p className="text-base font-semibold text-text-secondary">{t("emptyStateTitle")}</p>
+            {/* #222 pt.5: re-measured "Stap + Card" (4049:11174 mobile,
+                4050:11597 desktop) via the bridge -- the Card's own p-
+                component-sm (Card.tsx) already reproduces the "Type" slot's
+                8px, itemSpacing between EmptyText/Button is 0 (no gap), and
+                EmptyText's paddingTop/Bottom (bound spacing/component/
+                padding-lg = 16px) is the TEXT's own padding, not a wrapper
+                gap. Corrects #219's "stays raw" call, which compared this
+                wrapper against the wrong box. design/notes/WinkelmandPage.md#222. */}
+            <div className="flex w-full flex-col items-center justify-center">
+              <p className="w-full py-component-lg text-center text-base font-semibold text-text-secondary">
+                {t("emptyStateTitle")}
+              </p>
               <Button
                 trailingIcon="ArrowRight"
                 className="w-full md:w-fit"
@@ -341,6 +400,18 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
           ))}
         </div>
       )}
+      {/* #222 pt.4: the ticket's own "ingredientList" screen is this
+          existing organism, reused as-is (onSave rows carry no quantity, so
+          CardContentIngredient's Tag stays hidden -- expected, not a bug,
+          quantityLabel() above already returns undefined for a null
+          quantity). See design/notes/WinkelmandPage.md#222. */}
+      <IngredientSearchPanel
+        open={addItemPanelOpen}
+        onClose={() => setAddItemPanelOpen(false)}
+        onSearch={searchIngredients}
+        onCreateOwnIngredient={createOwnIngredient}
+        onSave={handleAddIngredients}
+      />
     </>
   );
 }
