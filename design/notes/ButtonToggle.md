@@ -1,7 +1,111 @@
 # Button/Toggle
 
-- **Code:** `components/atoms/ButtonToggle.tsx`
-- **Node ID:** `3623:4345`
+- **Code:** `components/molecules/ButtonToggle.tsx` (moved from `components/atoms/`, #265)
+- **Node ID:** `4160:33335` (moved from `3623:4345`, #265 — the old node is now orphaned in Figma, no parent)
+
+## TICKET #265 (2026-08-16): rebuilt from scratch as a molecule
+
+The ticket was explicit: **do not reuse or adapt the old atom** (below,
+history kept for the record). New Figma node `4160:33335`
+(Development > Molecules > Toggles) is a different component: an optional
+`Titel#4160:0` boolean + a `Container` holding an `ActiveBackground`
+rectangle and a `Slot` of nested `Button` instances that carry **visible
+text labels** (`Systeem`/`Licht`/`Donker`, the real Kleurenthema caller —
+`SettingsPanel.tsx`), not the old atom's icon-only, uniform-32px segments.
+That single fact invalidates the old mechanism: variable-width text segments
+mean the indicator's per-step offset can't be a static lookup table anymore
+(there is no fixed step size), so it's measured off the DOM at runtime
+instead — `containerRef`/`indicatorRef`, `useLayoutEffect` (not a plain
+effect, so the first position is computed before paint, no flash-at-0×0),
+plus a `ResizeObserver` on the row for reflows the value/items effect
+wouldn't catch (font load, a responsive parent resize). Both the indicator's
+position (`transform: translate(x, y)`) and its size (`width`/`height`) are
+written imperatively via `indicatorRef.current.style.*` — the same pattern
+`SidePanel.tsx`'s drag-to-close already uses for a genuinely continuous,
+Tailwind-JIT-unrepresentable value (arbitrary runtime pixels can't be a
+static class string), not a new exception to the "Tailwind utilities only"
+house style.
+
+**Measured via `figma_execute`/`boundVariables`, not the hosted MCP** (rate-limited, per `docs/guides/ui-components.md`):
+
+| Element | Node | Binding | Class |
+|---|---|---|---|
+| Root gap (Titel → Container) | `4160:33335` | `itemSpacing` → `spacing/stack/stack-sm` | `gap-stack-sm` |
+| Container padding/gap | `4160:33296` | `padding*`/`itemSpacing` → `spacing/component/padding-xs` | `p-component-xs` (gap: see below) |
+| Container radius | `4160:33296` | `topLeftRadius` etc → `radius/card` | `rounded-card` (**not** `radius/control-outer` — different token, same 12px value; verified per-node, not inferred, per the "two pairs alias the same primitive" trap `docs/design-tokens.md` already documents) |
+| Container fill | `4160:33296` | `fills` → `color/surface/highlight/white/default` | `bg-surface-highlight-white` |
+| ActiveBackground radius | `4160:33297` | `topLeftRadius` etc → `radius/control` | `rounded-control` |
+| ActiveBackground fill | `4160:33297` | **unbound** — `rgb(217,217,217)` / `#D9D9D9` | `bg-surface-secondary` (flagged, see below) |
+| Title text style | `4160:33295` | `text-base/semibold`, fill `#79716B` (stone-500) | `text-base font-semibold text-text-secondary` (matches `InputField`/`Dropdown`'s own label styling) |
+
+**ActiveBackground's fill is a flagged gap, not a Figma design decision.**
+`rgb(217,217,217)`/`#D9D9D9` binds no variable and matches no Tailwind stone
+step (`stone-200` is `#E7E5E4`, `stone-300` is `#D6D3D1` — neither is exact).
+`#D9D9D9` is Figma's own default fill for a newly drawn shape with no
+style/variable ever applied — strong circumstantial evidence this rectangle
+was never actually styled, not that grey is the deliberate design. Reused
+`surface-secondary` (stone-200) as the nearest existing "static neutral
+surface" role token per the "correct-pixels-or-flag, never invent" rule —
+close enough visually (a few percent off per channel) that the difference
+would not be noticed without a colour picker, and semantically the right
+role (a static, non-hover, non-selected background) versus the pixel-closer
+but role-mismatched `surface-secondary-hover` (stone-300, a hover-state
+token with no business backing a permanently-rendered element). Flag stands
+until Figma applies a real fill.
+
+**The Slot's own inter-segment gap (4px, x-positions 0/121.33/242.67 in the
+one measured instance) has no bound Figma variable either** — the Slot is
+`layoutMode: NONE` (children manually positioned, not itemSpacing-driven),
+so there is no node whose `boundVariables` this could read. Modelled as a
+real flex `gap-inline-xs` (4px) between `Button` instances so segments lay
+out and reflow like actual flex children (required for variable-width
+labels) rather than Figma's static absolute positions.
+
+**Accessibility unchanged from the old atom**: `role="radiogroup"` +
+`role="radio"`/`aria-checked` with roving `tabIndex` and Left/Right/Up/Down/
+Home/End arrow-key selection (WAI-ARIA Radio Group pattern,
+https://www.w3.org/WAI/ARIA/apg/patterns/radio/) — still "exactly one of N",
+still not the `aria-pressed`/toolbar idiom. `defaultValue` is still required
+(no Figma sample shows an all-unselected track). Segments still render
+`variant="transparent"` with the same `hover:bg-transparent!
+active:bg-transparent!` suppression and the same reasoning as the old atom's
+#107 entry below (segments must stay fill-less so they never paint over the
+indicator) — Figma's new node still gives segments no State axis of their
+own (`Style=Transparent, State=Default` on every sampled instance, no
+hover/active override visible), so the same suppression trap applies
+unchanged. `motion-reduce:transition-none` on the indicator's
+transform/width/height transition, same precedent.
+
+**Title is optional, type-coupled to the accessible name** — same
+required-one-of idiom as `Dropdown`'s `label`/`id`: `title` (visible,
+generates its own id via `useId()`, radiogroup gets `aria-labelledby`) XOR
+`aria-label` (no visible title). Figma's `Titel` boolean defaults on but the
+component still needs a no-title path (matches the old atom's own
+`aria-label`-only story precedent, `TeDoenHeader`-style toolbar usage).
+
+**New Ladle story, new baselines.** `ButtonToggle.stories.tsx`:
+`WithTitle` (NL+EN, real `settingsPanel` catalog strings — the real
+Kleurenthema caller), `WithoutTitle` (aria-label only), and
+`VariableWidthSegments` (deliberately mismatched label lengths — the concrete
+proof the runtime-measured indicator actually scales per segment, which a
+uniform demo wouldn't exercise). Old story (`CategoryFilter`, the food-icon
+demo) and its one baseline are deleted, not renamed — the new molecule has
+zero real callers that need that exact demo shape, and it duplicated the
+new story's `WithTitle` coverage anyway.
+
+**`design/figma-map.json`**: `Button/Toggle` moved from `atoms` to
+`molecules`, node-id `4160:33335`. `components/atoms/ButtonToggle.tsx`, its
+story, and its baseline are deleted — zero consumers outside its own story
+(grepped before deleting), and node `3623:4345` is now orphaned in the
+Figma file (no parent, confirmed via the bridge).
+
+---
+
+## History (pre-#265, `components/atoms/ButtonToggle.tsx`, node `3623:4345`)
+
+The sections below are the old atom's full ticket history, carried forward
+per the ticket's own instruction not to lose the record even though the code
+itself is gone.
 
 REBUILT #60 2026-07-20, retiring #35's 'grouped composition not modelled' flag. Re-fetching 3623:4345 (plus Atom/Button, 3623:4346) confirmed the ticket's premise: this node IS the whole track, not one segment — a single root frame (row, 4px padding, 4px gap, fill stone-200/surface-raised, radius 8) containing one 'Active' rectangle (32x32, white/surface, radius 6, inset 4px, painted behind everything else) plus five fixed-32-wide, transparent, icon-only Atom/Button instances (Infinity/Croissant/Sandwich/Broccoli/Cake-slice). Per CLAUDE.md ('mirror Figma's own nesting') this file is now the track itself: a role=radiogroup composing real Button instances as segments, with one shared absolutely-positioned indicator that slides between them (translate-x, 44px per step = the segment's actual rendered width + the 4px gap; capped lookup table of 8 literal Tailwind classes since no inline style is allowed — see the component's own doc comment for the full reasoning).
 

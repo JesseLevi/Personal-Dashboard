@@ -133,17 +133,14 @@
       "noResults": "Geen resultaten gevonden"
     }
   },
+  "profile": {
+    "errors": {
+      "invalid-input": "Controleer de ingevoerde gegevens.",
+      "unauthenticated": "Log opnieuw in om door te gaan.",
+      "generic": "Er ging iets mis. Probeer het opnieuw."
+    }
+  },
   "components": {
-    "buttonToggle": {
-      "groupLabel": "Categoriefilter",
-      "categories": {
-        "all": "Alles",
-        "breakfast": "Ontbijt",
-        "lunch": "Lunch",
-        "vegetable": "Groente",
-        "dessert": "Toetje"
-      }
-    },
     "cardContentIngredient": {
       "deleteLabel": "Ingrediënt verwijderen",
       "addToCartLabel": "Voeg ingrediënt toe aan mand"
@@ -172,7 +169,10 @@
         "shopping": "Winkelmand",
         "clothes": "Kleren",
         "assistant": "Assistent"
-      }
+      },
+      "accountFallbackName": "Account",
+      "settingsLabel": "Instellingen",
+      "logoutLabel": "Uitloggen"
     },
     "pageHeader": {
       "todo": {
@@ -206,6 +206,22 @@
     },
     "sidePanel": {
       "closeLabel": "Paneel sluiten"
+    },
+    "settingsPanel": {
+      "title": "Instellingen",
+      "themeLabel": "Kleurenthema",
+      "themeOptions": {
+        "system": "Systeem",
+        "light": "Licht",
+        "dark": "Donker"
+      },
+      "languageLabel": "Taal",
+      "languageOptions": {
+        "nl": "Nederlands",
+        "en": "Engels"
+      },
+      "saveLabel": "Opslaan",
+      "savingLabel": "Opslaan..."
     },
     "boardPanel": {
       "addTitle": "Bord toevoegen",
