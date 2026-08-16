@@ -230,6 +230,28 @@ reasoning. Needs a real design pass over prose typography (are these the
 right sizes/weights, does a real content-heavy note need more than this)
 before the current CSS should be treated as final.
 
+### notes-table-ui-not-designed
+
+`Pages/Notities/Breakpoints` (`3934:32790`) draws no table anywhere — the
+only table-related node in the whole section is `EditingBar`'s own toolbar
+button with a table icon (`4067:20040`). Not designed: how a rendered table
+should look (border weight/colour, whether the header row is visually
+distinguished, cell padding, zebra striping or not, how it behaves when
+wider than the viewport on mobile), any UI to add or remove a row/column
+(TipTap ships the commands, not a control surface), whether columns should
+be user-resizable, or a cell's selection/focus treatment. #235 built the
+smallest defensible surface on top of this gap: `.tiptap table`/`td`/`th`
+rules in `app/globals.css`, entirely on existing semantic tokens (no new
+token, no raw hex/px), with the header row given `surface-secondary` as a
+background so `withHeaderRow: true` isn't visually silent (recorded as a
+deliberate one-token deviation from "minimal" in `design/notes/
+NoteEditor.md`'s table section) — and `TableKit.resizable` left at its
+`false` default, since resize handles need a design that doesn't exist.
+Row/column editing has no UI at all: only TipTap's own keyboard/ProseMirror
+behaviour (e.g. Tab in the last cell adds a row). Needs a real design pass
+for the row/column controls, and ideally a Figma frame that actually draws
+a table, before any of the current CSS should be treated as final.
+
 ---
 
 ## Resolved and removed

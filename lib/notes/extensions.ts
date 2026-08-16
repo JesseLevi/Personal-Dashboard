@@ -29,23 +29,23 @@ import type { AnyExtension } from "@tiptap/react";
 // super-/subscript) are genuinely absent from StarterKit and installed
 // separately: TextAlign, Highlight, Superscript, Subscript.
 //
-// #234 pulls one slice of #235 forward on direct user instruction: the
+// #234 pulled one slice of #235 forward on direct user instruction: the
 // EditingBar's table button is wired to `insertTable`, not left disabled.
 // `TableKit` (`@tiptap/extension-table` 3.30 -- one package in v3, unlike
 // v2's four separate `extension-table`/`-row`/`-cell`/`-header` packages,
 // confirmed against the installed package's own dist/exports) registers
-// Table/TableRow/TableCell/TableHeader with its own defaults --
-// `resizable: false` is the default and is left as-is deliberately: cell/
-// column resize controls are #235's UI, out of scope here. `TextAlign`'s
-// `types` stays `["paragraph","heading"]` for the same reason -- extending
-// it to `tableCell`/`tableHeader` is #235's own edit, not this one's.
+// Table/TableRow/TableCell/TableHeader with its own defaults. #235 (this
+// ticket) confirmed `resizable: false` (the default) stays as-is: cell/
+// column resize needs visible handles, and those aren't designed anywhere
+// in Pages/Notities/Breakpoints -- see docs/open-questions.md#notes-table-
+// ui-not-designed and design/notes/NoteEditor.md's table section.
 export const noteExtensions: AnyExtension[] = [
   StarterKit,
   // `types` must be listed explicitly (TipTap has no default) -- paragraph
-  // and heading are the only block types StarterKit registers today. #235
-  // adds `tableCell`/`tableHeader` here when tables land, not a second
-  // TextAlign instance.
-  TextAlign.configure({ types: ["paragraph", "heading"] }),
+  // and heading are the block types StarterKit registers; `tableCell`/
+  // `tableHeader` are #235's own addition so alignment set inside a cell
+  // survives, same as any other block.
+  TextAlign.configure({ types: ["paragraph", "heading", "tableCell", "tableHeader"] }),
   Highlight,
   Superscript,
   Subscript,
