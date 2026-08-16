@@ -192,7 +192,7 @@ export function Sidebar({
           )}
           {/* Figma "Name + icon" (4160:31009): hug-width, zero internal gap — design/notes/Sidebar.md. */}
           <span className="inline-flex shrink-0 items-center">
-            <span className="truncate text-xs font-semibold text-text-primary">
+            <span className="whitespace-nowrap text-xs font-semibold text-text-primary">
               {accountName}
             </span>
             <Icon name="EllipsisVertical" size={16} className="text-text-secondary" />
