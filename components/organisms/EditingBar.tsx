@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import type { KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { CSSProperties, KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useEditorState, type Editor } from "@tiptap/react";
 import clsx from "clsx";
@@ -191,9 +191,38 @@ const BAR_ITEMS: BarItem[] = GROUPS.reduce<{ items: BarItem[]; index: number }>(
   { items: [], index: 0 },
 ).items;
 
+// #263: `fixed` anchors to the *layout* viewport, but iOS Safari's software
+// keyboard only shrinks the *visual* viewport -- a `fixed bottom-0` bar stays
+// put while the keyboard covers it. Reads `visualViewport`'s own geometry to
+// derive how far the bar needs to lift; SSR-safe (0 until the effect runs,
+// `window.visualViewport` can be undefined) and listens on both `resize` and
+// `scroll` (iOS moves the visual viewport's offset on scroll too, not just on
+// resize). See design/notes/EditingBar.md.
+function useKeyboardInset() {
+  const [inset, setInset] = useState(0);
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    function update() {
+      const vv = window.visualViewport;
+      if (!vv) return;
+      setInset(Math.max(0, window.innerHeight - (vv.height + vv.offsetTop)));
+    }
+    update();
+    viewport.addEventListener("resize", update);
+    viewport.addEventListener("scroll", update);
+    return () => {
+      viewport.removeEventListener("resize", update);
+      viewport.removeEventListener("scroll", update);
+    };
+  }, []);
+  return inset;
+}
+
 export function EditingBar({ editor, className }: EditingBarProps) {
   const t = useTranslations("components.editingBar");
   const containerRef = useRef<HTMLDivElement>(null);
+  const keyboardInset = useKeyboardInset();
   // Roving tabindex (ARIA APG toolbar pattern, see design/notes/EditingBar.md
   // for why this was chosen over a plain button row): one tab stop for the
   // whole bar, Left/Right/Home/End move focus among the 20 buttons.
@@ -234,6 +263,11 @@ export function EditingBar({ editor, className }: EditingBarProps) {
       aria-label={t("label")}
       aria-orientation="horizontal"
       onKeyDown={handleKeyDown}
+      // #263: runtime geometry, not styling (colour/spacing) -- same
+      // exception CardContentIngredient.tsx's swipe-offset transform already
+      // uses. Kept as a CSS custom property so the breakpoint split stays in
+      // Tailwind (`md:translate-y-0`) rather than needing a JS media check.
+      style={{ "--keyboard-inset": `${keyboardInset}px` } as CSSProperties}
       className={clsx(
         // spacing-flag: py-1 (4px) and gap-2 (8px) — EditingBar's own
         // vertical padding and its itemSpacing between buttons/dividers are
@@ -242,8 +276,9 @@ export function EditingBar({ editor, className }: EditingBarProps) {
         // design/notes/EditingBar.md
         "flex items-center gap-2 overflow-x-auto rounded-card bg-surface-highlight-white px-component-xs py-1",
         "fixed bottom-[env(safe-area-inset-bottom)] left-page-left right-page-right-equal z-10",
+        "translate-y-[calc(var(--keyboard-inset,0px)*-1)] transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
         "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-        "md:static md:inset-auto",
+        "md:static md:inset-auto md:translate-y-0",
         className,
       )}
     >

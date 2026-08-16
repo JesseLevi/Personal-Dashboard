@@ -2,6 +2,39 @@
 
 Append-only archive of per-ticket incident write-ups: defects that shipped past every CI gate, the merge-conflict resolutions for specific PRs, and the reasoning behind non-obvious fixes. These are moved here verbatim, not summarised, because the detail is the evidence base for why this project doesn't fully trust its CI gates. Nothing here is current status — entries are never updated once written. Read on demand when investigating a specific ticket, a recurring failure mode, or a past merge — never as part of session start.
 
+## 2026-08-16 — `cva`'s base class silently beats a caller's bare `hidden`, because `cva` never merges classes (#263)
+
+`NotitiesBoard.tsx`'s mobile Sorteer button rendered twice on mobile — once
+icon-only, once with its label — even though the labelled instance carried
+`className="hidden md:inline-flex"`. The bug was never in the responsive
+logic; it was in where the visibility class landed.
+
+`components/atoms/Button.tsx`'s `cva()` base class hardcodes `inline-flex`
+(line 25 of the variant definition). `cva` does not do any form of
+class-conflict resolution (it is not `tailwind-merge` and was never meant to
+be) — it concatenates its own generated classes with whatever `className` the
+caller passes, in source order, and lets the compiled stylesheet's own rule
+order break the tie. Measured directly in `.next/static/css/*.css`: `.flex`
+at offset 13458, `.hidden` at 13496, `.inline-flex` at 13540 — `.inline-flex`
+is declared *after* `.hidden` in the emitted sheet, so on any element
+carrying both classes, `.inline-flex` wins regardless of source-order intent.
+`md:hidden` was unaffected because Tailwind emits media-query variants in
+their own later block, past the bare utilities entirely — which is exactly
+why this bug was invisible on desktop and only ever showed on mobile.
+
+**The general trap, not just this button:** any `Button` (or any other `cva`
+component whose base class carries its own `display` utility) that receives
+a bare `hidden`/`block`/`flex` in its caller-supplied `className` is silently
+broken the same way, with no lint/build error — `cva`'s job stops at string
+concatenation. **Fix pattern**: put the visibility utility on a wrapping
+element instead of on the `cva` component itself (`<span className="md:hidden">
+<Button .../></span>`), never on the same element as a `cva` base class's own
+display utility. `NotitiesBoard.tsx` already had one working precedent one
+component away (`<div className="hidden md:block md:w-60 md:shrink-0">`
+wrapping `NotesSearchField`, not applied to a `cva` component's own
+className) — the Sorteer button just hadn't followed it. See
+`design/notes/NotitiesBoard.md`'s updated "Header: two real buttons" section.
+
 ## 2026-08-11/12 — #204 assumed a Figma ramp-step name always equals the CSS state it's used in; that assumption was itself wrong, and the resulting "fix" was the real regression (#204, corrected by #213)
 
 **This entry originally described a bug that never existed.** It claimed an

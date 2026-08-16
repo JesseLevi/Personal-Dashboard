@@ -212,6 +212,24 @@ this button is built; not counted among the 20 mapped commands in
 
 `/notities/[noteId]`'s "Verwijderen" button (`3978:14809` desktop, `3978:14839` mobile) has no confirmation step drawn anywhere in `Pages/Notities/Breakpoints` — same absence `notes-category-panel-not-designed` already documents for the category panel. #233 reused the existing two-step confirm pattern verbatim (`RecipeDetailPage.tsx`'s own in-place button-row swap, itself the same shape `NoteCategoryPanel.tsx`/`CategoryPanel.tsx` already use): deleting a note is irreversible, and the app already has one established confirm idiom rather than inventing a second. Needs a real Figma confirmation state before this is considered final.
 
+### notes-prose-typography-not-designed
+
+`Pages/Notities/Breakpoints`' only editor frames (`3934:32790`) draw the
+toolbar and an empty/placeholder editor body — no frame anywhere shows a
+heading, a list, a block quote or a code block actually rendered inside a
+note. #263 (a feedback ticket: those four EditingBar buttons visibly "did
+nothing" because `app/globals.css` had zero CSS for TipTap's generated
+content, on top of Tailwind's preflight stripping heading sizes and list
+markers) added a minimal, token-bound `.tiptap` content block to fix the
+visible bug, per explicit user instruction to keep it minimal rather than
+invent a richer treatment. Every value used a real token from
+`app/theme.css` except heading font-size (no such token exists at all;
+`h1` matches `PageHeader.tsx`'s own `text-xl`) — see
+`design/notes/NoteEditor.md`'s `#263` section for the full per-rule
+reasoning. Needs a real design pass over prose typography (are these the
+right sizes/weights, does a real content-heavy note need more than this)
+before the current CSS should be treated as final.
+
 ---
 
 ## Resolved and removed

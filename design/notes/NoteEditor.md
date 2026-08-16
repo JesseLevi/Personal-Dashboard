@@ -230,6 +230,105 @@ measurement.
   so the "used by the editor and any future renderer" framing in the file's
   own header isn't mistaken for something already wired up twice.
 
+## #263 — `.tiptap` content CSS (heading/list/blockquote/code-block "did nothing")
+
+Feedback: toggling heading, list, block-quote or code-block from `EditingBar`
+appeared to do nothing, while bold/italic/highlight visibly worked.
+
+**Confirmed before building anything** (per the ticket's own instruction):
+`lib/notes/extensions.ts` loads `StarterKit`, which registers heading,
+bulletList/orderedList/listItem, blockquote and codeBlock/code out of the
+box, and `EditingBar.tsx`'s command table calls the right TipTap commands
+(`toggleHeading`, `toggleBulletList`, `toggleBlockquote`, `toggleCodeBlock`)
+against them. Toggling each and reading `editor.isActive(...)` confirms the
+document model genuinely changes — the marks/nodes apply correctly. **No
+extension was broken, missing, or mis-wired.** The actual gap: `app/
+globals.css` had exactly one rule for editor content (the `#233`
+placeholder pseudo-element) and nothing else — Tailwind's preflight resets
+every heading to `inherit` font-size and strips `ul`/`ol`'s `list-style` and
+padding, and this page's own editor root (`text-base font-semibold
+text-text-primary`, above) applies one flat size/weight to the whole
+document regardless of node type. A toggled `<h1>`, `<li>`, `<blockquote>`
+and `<pre>` all rendered pixel-identical to a plain `<p>` — the state was
+right, nothing on screen showed it. Bold/italic/underline/highlight are
+unaffected because those are inline marks TipTap renders as `<strong>`/
+`<em>`/`<u>`/`<mark>`, which either carry their own native default styling
+(`<strong>`/`<em>`) or get one explicit rule already (`<mark>` — see below) —
+they were never silent.
+
+**Fix: one `.tiptap` block added to `app/globals.css`**, directly below the
+`#233` placeholder rule — kept there rather than a separate file/`@layer`
+because that's already this codebase's one home for editor-content CSS that
+can't be expressed as a utility class on generated TipTap HTML (the
+placeholder rule couldn't be either, for the same reason: `content:
+attr(...)` has no Tailwind utility). Per explicit user decision, kept
+**minimal and token-bound** — not the richer alternative considered (e.g. a
+tinted `<code>` background) — so every ruling below states the token used
+and, where none exists, why:
+
+- **`h1`/`h2`/`h3` — distinguished by size only**, not weight: the editor
+  root is already `font-semibold`, so re-bolding headings would add nothing.
+  `h1: 1.25rem` deliberately matches `PageHeader.tsx`'s own `<h1
+  className="text-xl ...">` — the one heading size already established
+  elsewhere in this app. `h2`/`h3` step down (`1.125rem`/`1rem`, Tailwind's
+  own `text-lg`/`text-base` values). **`app/theme.css` has no font-size
+  token at all** (only colour/spacing/radius are generated) — these three
+  values are Tailwind's own scale steps, not invented numbers, flagged
+  inline with `spacing-flag` + this file, per `docs/guides/ui-components.md`'s
+  escape-hatch convention (this marker isn't mechanically gated here —
+  `check:raw-spacing` only scans `.tsx` under `components/`/`app/`, not CSS,
+  per the ticket's own warning not to be lulled by that — but the same
+  documented-exception shape was used anyway for consistency).
+- **`ul`/`ol`**: `list-style: disc`/`decimal` restores what preflight
+  strips; `padding-inline-start: var(--spacing-stack-lg)` (16px) gives the
+  markers room without reproducing the browser's much wider 40px UA default.
+  The toolbar's list button stays `toggleBulletList` — per the ticket's own
+  confirmation, no separate ordered-list button was added; `ol` styling
+  exists only for pasted/loaded content that already contains one.
+- **`blockquote`**: `border-inline-start: 2px solid
+  var(--color-stroke-primary)` + `padding-inline-start:
+  var(--spacing-stack-md)` (12px). The `2px` border-width is **not** treated
+  as a spacing-scale value needing a token — no border-width token exists
+  anywhere in this codebase (`Button.tsx`/`InputField.tsx` both just use
+  Tailwind's bare `border` utility, an untokenized 1px default); 2px is the
+  same class of native/structural choice, flagged the same way as the
+  heading sizes above.
+- **`pre` (codeBlock)**: `background-color: var(--color-surface-secondary)`,
+  `border-radius: var(--radius-card-inner)`, `padding:
+  var(--spacing-component-sm) var(--spacing-component-md)`, monospace via
+  `var(--font-mono, ui-monospace, monospace)` (Tailwind v4's own built-in
+  `--font-mono`, emitted by `@import "tailwindcss"` itself — not a project
+  token from `app/theme.css`, but a `var()` reference to the same value the
+  `font-mono` utility class would apply, not a hardcoded stack), `white-space:
+  pre-wrap` + `overflow-x: auto` so a long unwrapped line scrolls instead of
+  blowing out the page width.
+- **inline `code`**: monospace only, **no background** — the richer option
+  considered (and rejected, per user decision) would have given it its own
+  tinted background the way `pre` has; inline code stays visually quiet.
+- **`a`**: `text-decoration: underline`, no colour — Link is already
+  installed (StarterKit, v3) but no link colour is invented here (would need
+  a design source this file doesn't have).
+- **`mark` (Highlight)**: bound to `var(--color-surface-highlight-yellow)` /
+  `var(--color-text-highlight-yellow)` — the browser's unstyled `<mark>`
+  default is a raw, non-token yellow, so this rule is *removing* a raw value
+  already present by default, not adding new styling.
+- **`hr`**: `border-top: 1px solid var(--color-stroke-lines)`, no fill.
+- **Inter-block spacing**: `.tiptap > * + * { margin-top:
+  var(--spacing-stack-md); }` — top-level siblings only (deliberately not a
+  descendant selector), so nested content (e.g. a `<p>` inside a
+  `<blockquote>`) doesn't pick up extra spacing it wasn't asked for.
+
+**Explicitly out of scope**: no `table`/`th`/`td`/`.tableWrapper` rules —
+`TableKit` is already wired (`#234`, pulled forward from `#235`), but the
+CSS for rendering a table is `#235`'s own ticket, landing in a follow-up PR
+on this exact same `.tiptap` block.
+
+**No Figma source for any of this.** `Pages/Notities/Breakpoints`
+(`3934:32790`) draws the toolbar and an empty/placeholder editor body only —
+no frame shows a heading, list, quote or code block actually rendered
+inside a note. Filed: `docs/open-questions.md#notes-prose-typography-not-
+designed`.
+
 ## Verification — what was and wasn't run
 
 `pnpm lint`/`typecheck`/`test`/`check:server-only`/`check:raw-spacing`/
