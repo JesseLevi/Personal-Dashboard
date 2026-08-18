@@ -218,10 +218,12 @@ export function Sidebar({
 
         {accountMenuOpen ? (
           // Opens upward, left-anchored — measured, see design/notes/Sidebar.md.
-          // Same z-[999] shape as TeDoenHeader.tsx's dropdowns. `style` here
-          // is a computed geometry offset (left/top only, from
-          // usePopoverPosition), not styling — no token exists for a
-          // viewport-clamped position, same allowance CLAUDE.md gives.
+          // Same z-[999] shape as TeDoenHeader.tsx's dropdowns. The inline
+          // `style` is a deliberate, flagged deviation from CLAUDE.md's
+          // no-inline-styles-in-components/ rule: it carries left/top only,
+          // computed at runtime by usePopoverPosition. A viewport-clamped
+          // position is not expressible as a token or a utility — it depends
+          // on where the trigger actually lands. See design/notes/Sidebar.md.
           <div
             ref={accountPopoverRef}
             id={accountMenuId}
