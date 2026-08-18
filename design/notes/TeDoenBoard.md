@@ -383,6 +383,22 @@ Reading `handleMove` (above): the optimistic apply (`setLocalBoard(applyCardMove
 
 **Verification:** `pnpm test`/`typecheck`/`lint`/`build` all green, `tests/boards-optimistic.test.ts` (unchanged, still 8 passing) covers `applyCardMove` itself. **Not verified against the real authenticated `/te-doen` route** — this worktree has no `.env` (no Supabase credentials, no Docker on this dev machine per `CLAUDE.md`), so the actual reported 3s stall could not be reproduced or timed live; the fix is reasoned from reading `handleMove`/`moveCard` directly (above), not from watching the hang disappear. A future ticket with a real dev Supabase connection should time a drop on `/te-doen` the same way `BoardView.md` timed the Ladle one, to confirm this closes the gap completely rather than just removing the one redundant network dependency found by inspection.
 
+## 2026-08-18 — both `TeDoenHeader.tsx` dropdowns moved onto the shared popover positioner
+
+Two of the seven call sites of `lib/dom/use-popover-position.ts` — not
+either of the two reported off-screen bugs, converted alongside them since
+it's the same hand-rolled pattern. Board switcher: `top-full left-0 mt-2` →
+the hook, `anchor="left"` (still the same left anchor as before — the
+ticket's own descoped "prefer right, fall back to left" collision avoidance
+noted above is **not** what this adds; that would need a different designed
+anchor, a product call, not a mechanical one), `prefer="below"`. What the
+hook *does* add for free: the left-anchored panel now clamps into the
+viewport instead of being able to run off the right edge on a very narrow
+screen, closing the specific failure mode (not the originally-descoped
+feature) with no new positioning logic written for it. Sort menu:
+`top-full right-0 mt-2` → `anchor="right"`, `prefer="below"`, unchanged
+designed placement. Full mechanism: `docs/incidents.md` (2026-08-18).
+
 ## #219 — raw radius/spacing audit: zero found in this file's group
 
 `app/` joined `pnpm check:raw-spacing`'s scope this ticket. Grepped `TeDoenBoard.tsx`, `TeDoenHeader.tsx`, `TeDoenPageBody.tsx`, `page.tsx`, `loading.tsx`, `[boardId]/page.tsx`, `[boardId]/loading.tsx` against the gate's own candidate regex (`rounded-{sm,md,lg,xl,2xl,3xl}`, `gap-N`, `space-{x,y}-N`, `p{,x,y,l,r,t,b}-N`) — none matched. `TeDoenHeader.tsx`'s `mt-2` (two dropdown-menu positioning divs) is a margin utility, outside the gate's pattern (margin isn't gated, only padding/gap/rounded), so it's untouched and out of scope, not a miss. Nothing to convert or flag in this group; `CardDetailPanel.tsx` (6 raw utilities) and `BoardPanel.tsx` (1) carried this ticket's actual conversions — see `design/notes/CardDetailPanel.md`'s and `design/notes/BoardPanel.md`'s own `#219` entries.

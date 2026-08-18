@@ -553,3 +553,12 @@ alongside the real header, and the no-results message) are verified by
 reading `NotitiesBoard.tsx` + running the full gate suite, not by an
 independent screenshot baseline — flagged here rather than silently
 claimed as fully visually verified.
+
+## 2026-08-18 — Sorteer dropdown moved onto the shared popover positioner
+
+One of the seven call sites of `lib/dom/use-popover-position.ts` — not
+either of the two reported off-screen bugs, converted alongside them since
+it's the same hand-rolled pattern as `WinkelmandList.tsx`'s Sort menu.
+`top-full right-0 mt-2` → the hook, `anchor="right"`, `prefer="below"`,
+unchanged designed placement. Full mechanism: `docs/incidents.md`
+(2026-08-18).

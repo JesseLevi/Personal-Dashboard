@@ -7,6 +7,7 @@ import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { Card } from "@/components/molecules/Card";
 import { PortionStepper } from "@/components/molecules/PortionStepper";
+import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import type { UnitSystem } from "@/lib/recipes/units";
 
 // #160 — Figma "Recept/Mobile/PasAan/Dropdown" (pull-up panel 3998:10701) /
@@ -38,6 +39,7 @@ export function PasAanPanel({ open, onClose, portions, unitSystem, onApply }: Pa
   const [draftUnitSystem, setDraftUnitSystem] = useState(unitSystem);
   const [unitMenuOpen, setUnitMenuOpen] = useState(false);
   const unitMenuRef = useRef<HTMLDivElement>(null);
+  const unitPopoverRef = useRef<HTMLDivElement>(null);
 
   // Reset the draft to the applied values on every open, so a prior
   // open-then-close-without-saving (X / overlay / Escape / mobile
@@ -61,6 +63,15 @@ export function PasAanPanel({ open, onClose, portions, unitSystem, onApply }: Pa
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [unitMenuOpen]);
+
+  // Viewport-aware placement (docs/incidents.md, 2026-08-18) — right-anchored
+  // below by design, flips above on SidePanel's mobile sheet where this is
+  // the last row and there's no room under it. design/notes/PasAanPanel.md.
+  const unitPopover = usePopoverPosition(unitMenuRef, unitPopoverRef, {
+    open: unitMenuOpen,
+    anchor: "right",
+    prefer: "below",
+  });
 
   const unitOptionLabel = draftUnitSystem === "us" ? t("usOption") : t("metricOption");
 
@@ -106,8 +117,7 @@ export function PasAanPanel({ open, onClose, portions, unitSystem, onApply }: Pa
             {unitOptionLabel}
           </Button>
           {unitMenuOpen && (
-            // spacing-flag: unit-selector dropdown offset has no Figma node (collapsed-only state in the fetched Dropdown frame) — design/notes/PasAanPanel.md
-            <div className="absolute top-full right-0 z-[999] mt-2 w-40">
+            <div ref={unitPopoverRef} className="absolute z-[999] w-40" style={unitPopover.style}>
               <Dropdown className="shadow-sm">
                 <Button
                   variant={draftUnitSystem === "us" ? "filled" : "white"}

@@ -47,6 +47,32 @@ instances.
   frames only show the collapsed `Eenheid` button ("Amerikaans" label), no
   expanded/open state. No binding to measure.
 
+## 2026-08-18 — Eenheid dropdown rendered off-screen on mobile; now flips up
+
+Full mechanism (why, and the `translate`-creates-a-containing-block finding
+that ruled out `position: fixed`): `docs/incidents.md` (2026-08-18).
+
+On mobile, `SidePanel`'s bottom sheet (`inset-x-0 bottom-0 max-h-[90vh]`)
+hugs its content — "Eenheid" is the last row, so the popover's old fixed
+`mt-2` offset landed past the visible sheet, behind the Opslaan footer.
+Desktop was never affected (`md:h-full` leaves room below). The dropdown
+now goes through `lib/dom/use-popover-position.ts` (shared across all seven
+hand-rolled popovers in this codebase) with `anchor="right"`,
+`prefer="below"` — its designed placement — and flips to `above` only when
+`below` doesn't fit inside `SidePanel`'s scrolling children container.
+
+Re-measured live (Chromium, real compiled CSS, the actual `SidePanel` +
+`Card` + row markup) at 320/375/390/430px, viewport height 800: the popover
+(94px tall) now flips to `above` at every width, landing fully inside the
+scroll area's bounds (e.g. at 390px: popover `top 536 / bottom 630` vs.
+bounds `top 528 / bottom 727`). Also confirmed stable at shorter real mobile
+heights (390×667, 390×812) — same flip, same containment. The pre-fix
+markup (`top-full right-0 mt-2`, no clamp/flip) was reproduced in the same
+harness and does overflow, at every width tested: popover bottom `804px`
+vs. the panel's own bottom `800px` and the scroll area's bottom `727px` —
+outside both the panel and the scrollable region, i.e. exactly the
+"behind the footer" symptom reported.
+
 ### Off-topic finding (not fixed, noted for the record)
 
 The reused "Card" instance's own title text reads "Dry" (leftover from

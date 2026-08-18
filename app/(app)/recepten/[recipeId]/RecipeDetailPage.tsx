@@ -10,6 +10,7 @@ import { AnimatedAddToBasketButton } from "@/components/molecules/AnimatedAddToB
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
 import { CardContentStep } from "@/components/molecules/CardContentStep";
+import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import { formatQuantityFraction } from "@/lib/recipes/kitchen-units";
 import { computeRecipeNutritionPerPerson, type RecipeIngredientNutritionInput } from "@/lib/recipes/nutrition";
 import { scaleIngredientRows } from "@/lib/recipes/scaling";
@@ -111,6 +112,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
   // Same click-outside-closes convention as TeDoenHeader.tsx's board-
   // switcher/sort dropdowns — reused for the mobile Ellipsis overflow menu.
   const overflowRef = useRef<HTMLDivElement>(null);
+  const overflowPopoverRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!overflowOpen) return;
     function handlePointerDown(event: PointerEvent) {
@@ -121,6 +123,13 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [overflowOpen]);
+
+  // Right-anchored below by design — docs/incidents.md, 2026-08-18.
+  const overflowPopover = usePopoverPosition(overflowRef, overflowPopoverRef, {
+    open: overflowOpen,
+    anchor: "right",
+    prefer: "below",
+  });
 
   function handleDelete() {
     setDeleteError(null);
@@ -266,8 +275,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
                 onClick={() => setOverflowOpen((open) => !open)}
               />
               {overflowOpen && (
-                // spacing-flag: overflow popover offset has no Figma node (undesigned menu, see comment above) — design/notes/RecipeDetailPage.md
-                <div className="absolute top-full right-0 z-[999] mt-2 w-[209px]">
+                <div ref={overflowPopoverRef} className="absolute z-[999] w-[209px]" style={overflowPopover.style}>
                   <Dropdown className="shadow-sm">
                     <Button
                       variant="white"
