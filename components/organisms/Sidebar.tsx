@@ -1,8 +1,12 @@
+"use client";
+
 // figma: node-id=3674:5664
 import clsx from "clsx";
+import { useRef } from "react";
 import { Button } from "../atoms/Button";
 import { Dropdown } from "../atoms/Dropdown";
 import { Icon, type IconName } from "../atoms/Icon";
+import { usePopoverPosition } from "../../lib/dom/use-popover-position";
 
 /**
  * Organism/Sidebar — Figma component set "Sidebar" (node-id 3674:5664).
@@ -12,8 +16,11 @@ import { Icon, type IconName } from "../atoms/Icon";
  * render one element across both states (`overflow-hidden` clips the
  * label as the rail shrinks). #265 added the bottom account row (node
  * `4160:31007`/`4160:32663`) — root layout is now `justify-between`
- * (Figma's own `primaryAxisAlignItems`), not a flat fixed gap. Full
- * rationale + measurements: design/notes/Sidebar.md.
+ * (Figma's own `primaryAxisAlignItems`), not a flat fixed gap. `"use
+ * client"` since 2026-08-18: the account dropdown now measures its own
+ * placement via `usePopoverPosition`, which needs hooks even though
+ * `accountMenuOpen` itself stays composer-owned — see
+ * docs/incidents.md. Full rationale + measurements: design/notes/Sidebar.md.
  */
 export type SidebarItemId =
   | "todo"
@@ -81,9 +88,10 @@ export interface SidebarProps {
   className?: string;
 }
 
-// Server Component: `collapsed`/`accountMenuOpen` stay plain composer-owned
-// props (AppShellNav), same reasoning as Atom/Checkbox's `checked` —
-// importing `Dropdown` doesn't require owning state here.
+// `collapsed`/`accountMenuOpen` stay plain composer-owned props (AppShellNav),
+// same reasoning as Atom/Checkbox's `checked` — importing `Dropdown` doesn't
+// require owning that state here. Only the account popover's own on-screen
+// position is local, via `usePopoverPosition` below.
 export function Sidebar({
   collapsed = false,
   navLabel,
@@ -104,6 +112,15 @@ export function Sidebar({
   onLogoutClick,
   className,
 }: SidebarProps) {
+  const accountRef = useRef<HTMLDivElement>(null);
+  const accountPopoverRef = useRef<HTMLDivElement>(null);
+  // Opens upward by design (bottom-full) — docs/incidents.md, 2026-08-18.
+  const accountPopover = usePopoverPosition(accountRef, accountPopoverRef, {
+    open: accountMenuOpen,
+    anchor: "left",
+    prefer: "above",
+  });
+
   return (
     <nav
       aria-label={navLabel}
@@ -160,7 +177,7 @@ export function Sidebar({
       </div>
 
       {/* Figma "Account" (4160:31007/4160:32663) — see design/notes/Sidebar.md. */}
-      <div className="relative w-full">
+      <div ref={accountRef} className="relative w-full">
         <button
           type="button"
           aria-haspopup="menu"
@@ -200,11 +217,18 @@ export function Sidebar({
         </button>
 
         {accountMenuOpen ? (
-          // Opens upward (bottom-full) — measured, see design/notes/Sidebar.md.
-          // Same relative/absolute z-[999] shape as TeDoenHeader.tsx's dropdowns.
+          // Opens upward, left-anchored — measured, see design/notes/Sidebar.md.
+          // Same z-[999] shape as TeDoenHeader.tsx's dropdowns. The inline
+          // `style` is a deliberate, flagged deviation from CLAUDE.md's
+          // no-inline-styles-in-components/ rule: it carries left/top only,
+          // computed at runtime by usePopoverPosition. A viewport-clamped
+          // position is not expressible as a token or a utility — it depends
+          // on where the trigger actually lands. See design/notes/Sidebar.md.
           <div
+            ref={accountPopoverRef}
             id={accountMenuId}
-            className="absolute inset-x-0 bottom-full z-[999] mb-2 w-[209px]"
+            className="absolute z-[999] w-[209px]"
+            style={accountPopover.style}
           >
             <Dropdown className="shadow-sm">
               <Button variant="transparent" icon="Settings" align="left" onClick={onSettingsClick}>

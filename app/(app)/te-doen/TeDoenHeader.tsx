@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/organisms/PageHeader";
 import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import type { IconName } from "@/components/atoms/Icon";
+import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import { SORT_OPTIONS, type SortOption } from "@/lib/boards/sort";
 import type { ActionResult, BoardRow, BoardWithColumns } from "@/lib/boards/types";
 import { BoardPanel, type BoardPanelTarget } from "./BoardPanel";
@@ -78,9 +79,23 @@ export function TeDoenHeader({
   });
 
   const boardMenuRef = useRef<HTMLDivElement>(null);
+  const boardPopoverRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
+  const sortPopoverRef = useRef<HTMLDivElement>(null);
   useCloseOnOutsidePointerDown(boardMenuRef, boardMenuOpen, () => setBoardMenuOpen(false));
   useCloseOnOutsidePointerDown(sortMenuRef, sortMenuOpen, () => setSortMenuOpen(false));
+
+  // Left/right-anchored below by design — docs/incidents.md, 2026-08-18.
+  const boardPopover = usePopoverPosition(boardMenuRef, boardPopoverRef, {
+    open: boardMenuOpen,
+    anchor: "left",
+    prefer: "below",
+  });
+  const sortPopover = usePopoverPosition(sortMenuRef, sortPopoverRef, {
+    open: sortMenuOpen,
+    anchor: "right",
+    prefer: "below",
+  });
 
   // Board is in the URL (ticket's own "shareable/bookmarkable" requirement),
   // never client state — both navigations below preserve the current sort so
@@ -116,13 +131,11 @@ export function TeDoenHeader({
               {boardMenuOpen && (
                 // Left-aligned to the chevron, matching the fetched
                 // SwitchBoard node's own position (near the title/chevron
-                // cluster at the header's left side). The ticket's mobile
-                // "prefer right, fall back to left if it can't fit" collision
-                // avoidance needs measuring available viewport space at
-                // runtime — descoped (flagged in design/notes/TeDoenBoard.md)
-                // rather than adding new positioning logic beyond reusing
-                // Dropdown/Button as-is.
-                <div className="absolute top-full left-0 z-[999] mt-2 w-[209px]">
+                // cluster at the header's left side); now clamp-protected by
+                // the shared positioner rather than the fixed offset the
+                // comment above used to describe — see
+                // design/notes/TeDoenBoard.md.
+                <div ref={boardPopoverRef} className="absolute z-[999] w-[209px]" style={boardPopover.style}>
                   <Dropdown className="shadow-sm">
                     {boards.map((b) => (
                       <Button
@@ -182,7 +195,7 @@ export function TeDoenHeader({
               // Right-aligned to the Sort button — matches the fetched
               // SortOnClick node (the button sits at the header's far right
               // edge, so a right-aligned 209px panel never overflows).
-              <div className="absolute top-full right-0 z-[999] mt-2 w-[209px]">
+              <div ref={sortPopoverRef} className="absolute z-[999] w-[209px]" style={sortPopover.style}>
                 <Dropdown className="shadow-sm">
                   {SORT_OPTIONS.map((option) => (
                     <Button

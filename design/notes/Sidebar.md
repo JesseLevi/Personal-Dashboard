@@ -479,3 +479,28 @@ text via `settingsLabel`/`logoutLabel`.
 button beyond the codebase-decision fill above** — Figma's Account frame
 samples no interaction states at all (a single static frame, no Hover/Active
 variant the way `Atom/Button` has), so nothing further was invented.
+
+## 2026-08-18 — account dropdown moved onto the shared popover positioner; `Sidebar.tsx` is now `"use client"`
+
+One of the seven call sites of `lib/dom/use-popover-position.ts` — not one
+of the two reported off-screen bugs (this dropdown opens upward with the
+whole viewport below it, so it rarely runs out of room), converted alongside
+them since it's the same hand-rolled pattern. `inset-x-0 bottom-full mb-2
+w-[209px]` → the hook, `anchor="left"`, `prefer="above"` (unchanged designed
+direction). The `inset-x-0` was dropped — it was already a no-op once
+combined with the explicit `w-[209px]` (CSS drops the redundant `right`
+when `left` + an explicit `width` are both set), so nothing visually
+changes.
+
+**`Sidebar.tsx` gained `"use client"`.** It didn't need one before — Figma
+component state (`collapsed`, `accountMenuOpen`) stays composer-owned, same
+precedent as `Atom/Checkbox`'s `checked` — but `usePopoverPosition` is a
+hook, and hooks require a Client Component regardless of who owns the
+*product* state. The popover's on-screen position is genuinely local to
+this component (identical behaviour for every caller), which is what the
+existing `"use client"` precedent asks for; `collapsed`/`accountMenuOpen`
+themselves are untouched. The account popover's `style` prop (computed
+`left`/`top` only) is a geometry offset, not styling — commented in place
+per `docs/guides/ui-components.md`'s inline-style rule, since there is no
+token for a viewport-clamped position. Full mechanism:
+`docs/incidents.md` (2026-08-18).

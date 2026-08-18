@@ -62,3 +62,16 @@ None of the three popover flags are new open questions — the popover's
 undesigned state was already known (`item.fullLabel`/attribution content
 itself is unaffected); this section exists to record why the spacing
 specifically stays raw and where each flag now lives.
+
+## 2026-08-18 — moved onto the shared popover positioner
+
+Not one of the two off-screen bugs reported (this row's own popovers were
+fine — `SidePanel` isn't its ancestor and centring under a mid-row icon
+button rarely runs off either edge), but converted anyway as one of the
+seven call sites of the same hand-rolled pattern. `mt-2 left-1/2
+-translate-x-1/2` → `lib/dom/use-popover-position.ts`, `anchor="center"`,
+`prefer="below"`. The `-translate-x-1/2` trick is gone — the hook's
+computed `left` already centres the popover, clamped into the viewport if
+it ever gets close to an edge. Both widths (`w-64` NEVO / `w-40` non-NEVO)
+stay real Tailwind classes and are measured live by the hook, not assumed —
+see `docs/incidents.md` (2026-08-18) for the full mechanism.

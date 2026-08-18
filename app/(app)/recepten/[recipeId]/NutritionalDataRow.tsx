@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import type { IconName } from "@/components/atoms/Icon";
+import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import { roundMacroForDisplay } from "@/lib/recipes/nutrition";
 import { formatQuantity } from "@/lib/recipes/units";
 
@@ -40,6 +41,16 @@ export function NutritionalDataRow({
   const t = useTranslations("components.recipeDetailPage.nutrition");
   const [openKey, setOpenKey] = useState<NutritionKey | null>(null);
   const rowRef = useRef<HTMLDivElement>(null);
+  // One ref pair shared by all six triggers -- only one popover is ever
+  // open, so it's attached to whichever item's wrapper is currently open
+  // (below). Centre-anchored below by design; docs/incidents.md, 2026-08-18.
+  const openWrapperRef = useRef<HTMLDivElement>(null);
+  const openPopoverRef = useRef<HTMLDivElement>(null);
+  const popover = usePopoverPosition(openWrapperRef, openPopoverRef, {
+    open: openKey !== null,
+    anchor: "center",
+    prefer: "below",
+  });
 
   // Same click-outside-closes convention as RecipeDetailPage.tsx's own
   // overflow menu / TeDoenHeader.tsx's dropdowns — one shared ref for the
@@ -127,7 +138,7 @@ export function NutritionalDataRow({
       className="flex w-full flex-wrap items-center justify-center gap-inline-md md:w-fit md:flex-nowrap md:justify-start"
     >
       {items.map((item) => (
-        <div key={item.key} className="relative">
+        <div key={item.key} ref={item.key === openKey ? openWrapperRef : undefined} className="relative">
           <Button
             variant="filled"
             icon={item.icon}
@@ -138,7 +149,9 @@ export function NutritionalDataRow({
           </Button>
           {openKey === item.key && (
             <div
-              className={`absolute top-full left-1/2 z-[999] mt-2 -translate-x-1/2 ${item.isNevoData ? "w-64" : "w-40"}`}
+              ref={openPopoverRef}
+              className={`absolute z-[999] ${item.isNevoData ? "w-64" : "w-40"}`}
+              style={popover.style}
             >
               <Dropdown className="shadow-sm">
                 {/* spacing-flag: same — no Figma node for this popover's content padding — design/notes/NutritionalDataRow.md */}

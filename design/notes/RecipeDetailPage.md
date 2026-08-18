@@ -303,3 +303,12 @@ Measured via the `figma-console` bridge (`figma.getNodeByIdAsync` +
 the Figma file rather than a real second header — didn't change any
 conversion above (the values used come from `Header`/`Knoppen`, which is
 what's actually visible), but worth a design-file cleanup pass someday.
+
+## 2026-08-18 — mobile Ellipsis overflow menu moved onto the shared popover positioner
+
+One of the seven call sites of the shared `lib/dom/use-popover-position.ts`
+positioner — not one of the two reported off-screen bugs itself, converted
+alongside them since it's the same hand-rolled pattern. `top-full right-0
+mt-2` → the hook, `anchor="right"`, `prefer="below"` (unchanged designed
+placement — this popover always had room below on the pages it appears on).
+Full mechanism: `docs/incidents.md` (2026-08-18).

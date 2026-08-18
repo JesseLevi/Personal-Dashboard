@@ -10,6 +10,7 @@ import type { IconName } from "@/components/atoms/Icon";
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
 import { IngredientSearchPanel } from "@/components/organisms/IngredientSearchPanel";
+import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import { formatQuantity } from "@/lib/recipes/units";
 import { formatQuantityFraction } from "@/lib/recipes/kitchen-units";
 import { toggleShoppingListItem, deleteShoppingListItem, clearShoppingList, addShoppingListItem } from "./actions";
@@ -148,8 +149,21 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
   const [sortBy, setSortBy] = useState<SortBy>("recipe");
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const sortMenuRef = useRef<HTMLDivElement>(null);
+  const sortPopoverRef = useRef<HTMLDivElement>(null);
   useCloseOnOutsidePointerDown(sortMenuRef, sortMenuOpen, () => setSortMenuOpen(false));
   const [addItemPanelOpen, setAddItemPanelOpen] = useState(false);
+
+  // #182's left-anchor-to-the-trigger decision stands (user call, see
+  // docs/open-questions.md#winkelmand-mobile-sort-dropdown-anchor-undesigned)
+  // — now clamp-protected instead of measurement-dependent, which is what
+  // broke when #222 shortened the trailing button's label and moved this
+  // trigger right (docs/incidents.md, 2026-08-18). Desktop's right anchor
+  // stays pixel-verified against Figma. design/notes/WinkelmandPage.md#182.
+  const sortPopover = usePopoverPosition(sortMenuRef, sortPopoverRef, {
+    open: sortMenuOpen,
+    anchor: { base: "left", md: "right" },
+    prefer: "below",
+  });
 
   function quantityLabel(item: ShoppingListItemWithGroupInfo): string | undefined {
     if (item.quantity === null) return undefined;
@@ -314,7 +328,7 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
                   // #DropdownActive ... z-index: 999. Click outside to
                   // disappear") points at the exact same mechanism
                   // TeDoenHeader.tsx's sort menu already implements.
-                  <div className="absolute top-full left-0 z-[999] mt-2 w-[209px] md:left-auto md:right-0">
+                  <div ref={sortPopoverRef} className="absolute z-[999] w-[209px]" style={sortPopover.style}>
                     <Dropdown className="shadow-sm">
                       {SORT_OPTIONS.map((option) => (
                         <Button

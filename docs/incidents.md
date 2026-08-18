@@ -2,6 +2,65 @@
 
 Append-only archive of per-ticket incident write-ups: defects that shipped past every CI gate, the merge-conflict resolutions for specific PRs, and the reasoning behind non-obvious fixes. These are moved here verbatim, not summarised, because the detail is the evidence base for why this project doesn't fully trust its CI gates. Nothing here is current status — entries are never updated once written. Read on demand when investigating a specific ticket, a recurring failure mode, or a past merge — never as part of session start.
 
+## 2026-08-18 — A popover anchor verified by measuring one layout silently expires when a sibling's label changes; two mobile dropdowns rendered off-screen
+
+Two hand-rolled `absolute top-full …` popovers (`PasAanPanel.tsx`'s Eenheid
+dropdown, `WinkelmandList.tsx`'s Sorteer dropdown) rendered off-screen on
+mobile — different root causes, same shape: a fixed Tailwind offset with no
+runtime awareness of the viewport or its own trigger's position.
+
+**The generalisable lesson**: a popover anchor pixel-verified by measuring
+one specific layout is not a permanent fact about that layout — it's a
+snapshot that expires the moment anything upstream of the trigger's position
+changes, even a change that has nothing to do with positioning. #182
+measured the Winkelmand Sorteer panel fitting at 375/390/430px while the
+trailing button read `"Verwijder alles"` (recorded verbatim in
+`design/notes/WinkelmandPage.md#182`, now annotated as stale). #222 pt.4
+later shortened that button to the short mobile label `"Leeg"`
+(`shopping.page.clearAllLabelShort`) for an unrelated reason — the row was
+too wide — which moved the Sort button ~80px to the right. Nothing about the
+dropdown itself changed, and no gate could see it: `check:raw-spacing`
+doesn't know what "off-screen" means, and the visual baseline suite doesn't
+render an open dropdown state at all (same shape as #238's "no story renders
+a `:hover` state" finding). The panel's `left-0 w-[209px]` anchor, still
+literally true to the code that wrote it, silently stopped fitting.
+`PasAanPanel.tsx`'s bug had an unrelated cause but the same shape: `mt-2`
+assumed room below the row, true only because `SidePanel`'s desktop shape
+(`md:h-full`) leaves slack — the mobile bottom sheet (`inset-x-0 bottom-0
+max-h-[90vh]`) hugs its content, so "Eenheid" is the last row and `top-full`
+lands past the visible sheet, behind the Opslaan footer.
+
+**The fix**: a shared, viewport-aware positioner
+(`lib/dom/popover-position.ts` — pure, rect-in/rect-out, unit-tested per
+`tests/popover-position.test.ts`; `lib/dom/use-popover-position.ts` — the
+`"use client"` hook that measures and applies it) replacing all seven
+hand-rolled call sites. It keeps each site's *designed* anchor/direction as
+input and only shifts when the trigger's real, current position requires
+it — clamped horizontally into the nearest clipping ancestor, flipped
+vertically only when the preferred side doesn't fit and the other one does.
+A measurement is a snapshot; a clamp is an invariant. Verified in a real
+Chromium (compiled Tailwind CSS, real DOM structure copied from the actual
+components) at 320/375/390/430px — see `design/notes/WinkelmandPage.md#182`
+for the re-measured table and `design/notes/PasAanPanel.md` for the flip
+confirmation.
+
+**`position: fixed` was considered and rejected for the hook**, worth
+recording since it's the obvious first idea and doesn't work here:
+`SidePanel.tsx`'s panel root sets `translate-x-0 translate-y-0` when open (a
+Tailwind `translate` utility, not `transform`, but computationally the same
+CSS property). Per the CSS spec, any element with a computed `translate`
+(or `transform`, `perspective`, `filter`, …) other than `none` becomes the
+containing block for its `fixed`-positioned descendants — so a `position:
+fixed` popover inside an open `SidePanel` would resolve against the panel,
+not the viewport, *and* still get clipped by the panel's own
+`overflow-hidden`. Neither surprising once stated, but easy to reach for
+`fixed` as "the escape hatch" and only discover this by testing it. Staying
+`position: absolute` inside the existing `relative` wrapper (with the hook
+supplying computed `left`/`top`) sidesteps this entirely and keeps every
+existing a11y behaviour intact — no portal, so `SidePanel`'s focus trap
+(`getFocusable(panelRef)`) and its outside-pointerdown containment checks
+never lose track of the popover's buttons.
+
 ## 2026-08-16 — `cva`'s base class silently beats a caller's bare `hidden`, because `cva` never merges classes (#263)
 
 `NotitiesBoard.tsx`'s mobile Sorteer button rendered twice on mobile — once

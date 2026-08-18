@@ -13,6 +13,7 @@ import { Card } from "@/components/molecules/Card";
 import { CardContentNote } from "@/components/molecules/CardContentNote";
 import { isIconName, type IconName } from "@/components/atoms/Icon";
 import { applyItemMove, type CardMove } from "@/lib/boards/optimistic";
+import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import { formatNoteTimestamp } from "@/lib/notes/timestamp";
 import { NOTE_SORT_OPTIONS, type NoteSortOption } from "@/lib/notes/sort";
 import { effectiveNotesSearchQuery, NOTES_SEARCH_DEBOUNCE_MS } from "@/lib/notes/search";
@@ -237,7 +238,14 @@ export function NotitiesBoard({
 
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const sortMenuRef = useRef<HTMLDivElement>(null);
+  const sortPopoverRef = useRef<HTMLDivElement>(null);
   useCloseOnOutsidePointerDown(sortMenuRef, sortMenuOpen, () => setSortMenuOpen(false));
+  // Right-anchored below by design — docs/incidents.md, 2026-08-18.
+  const sortPopover = usePopoverPosition(sortMenuRef, sortPopoverRef, {
+    open: sortMenuOpen,
+    anchor: "right",
+    prefer: "below",
+  });
 
   // #232: header "Categorie" (create) and every column's pencil (edit) share
   // one NoteCategoryPanel instance, same independent open/target convention
@@ -375,7 +383,7 @@ export function NotitiesBoard({
                 </Button>
               </span>
               {sortMenuOpen && (
-                <div className="absolute top-full right-0 z-[999] mt-2 w-[209px]">
+                <div ref={sortPopoverRef} className="absolute z-[999] w-[209px]" style={sortPopover.style}>
                   <Dropdown className="shadow-sm">
                     {NOTE_SORT_OPTIONS.map((option) => (
                       <Button

@@ -137,6 +137,8 @@ An earlier version of this fix flipped which ancestor was the positioning contex
 
 **Geometry, measured live (Playwright, `pnpm dev`, the seeded 9-item preview route), panel vs. viewport:**
 
+> **STALE as of 2026-08-18 — do not trust these numbers for the current code.** This table was measured while the trailing button read `"Verwijder alles"` at every breakpoint. #222 pt.4 shortened it to `"Leeg"` on mobile, which moved the Sort button (and this table's left/right pair) ~80px to the right — the actual regression that shipped as a result, and the reason the anchor is now clamp-protected instead of measurement-dependent. See `docs/incidents.md` (2026-08-18) for the general lesson and the `#182` entry below this table for the re-measured numbers.
+
 | viewport | Sort button left/right | panel left/right (209px wide) | fits? |
 | --- | --- | --- | --- |
 | 320px | 129.96 / 169.96 | 129.96 / 338.96 | **no** — panel right edge overflows by ~19px |
@@ -364,3 +366,45 @@ Button's own `layoutAlign` differs, already built before this ticket).
 `messages-key-parity`)/`check:raw-spacing`/`check:server-only`/
 `check:comment-budget` all green. `pnpm test:visual` run — see the PR body
 for the exact result and any regenerated baselines.
+
+## 2026-08-18 — Sort dropdown regression: shared popover positioner replaces the fixed offset
+
+Full mechanism + root cause: `docs/incidents.md` (2026-08-18) — one-line
+version, the `#182` measurement above went stale the moment #222 pt.4
+shortened the trailing button's mobile label, and nothing could see it
+because no gate exercises an open dropdown state.
+
+`WinkelmandList.tsx`'s Sorteer dropdown now goes through
+`lib/dom/use-popover-position.ts` (shared across all seven hand-rolled
+popovers in this codebase). The `left-0`-on-mobile decision from `#182`
+**still stands** — same trigger-attached anchor, same user call, see
+`docs/open-questions.md#winkelmand-mobile-sort-dropdown-anchor-undesigned`
+— it's just clamp-protected now instead of measurement-dependent: the
+anchor is `{ base: "left", md: "right" }`, resolved via `matchMedia` inside
+the hook's measure effect (not at render, same precedent
+`SidePanel.tsx`'s own header comment states for its drag gesture). Desktop's
+`right`-anchor-to-the-Sort-button pixel verification from `#182` is
+unaffected — confirmed still flush (0.00px diff) at 1440px in the
+re-verification below.
+
+**Re-measured live (Chromium, real compiled CSS, real DOM structure), panel
+vs. viewport, with the current `"Leeg"` mobile label:**
+
+| viewport | Sort button left/right | panel left/right (209px wide) | fits? |
+| --- | --- | --- | --- |
+| 320px | 189.25 / 218.66 | 103.00 / 312.00 | yes |
+| 375px | 244.25 / 273.66 | 158.00 / 367.00 | yes |
+| 390px | 259.25 / 288.66 | 173.00 / 382.00 | yes |
+| 430px | 299.25 / 328.66 | 213.00 / 422.00 | yes |
+
+(The trigger positions differ from the stale table above precisely because
+the mobile label moved — that's the whole finding. Icon glyphs in this
+verification harness are plain placeholder spans, not real lucide SVGs, so
+absolute px will differ slightly from a real render; the containment result
+does not depend on that.)
+
+The pre-existing, separately-flagged 320px **header row** overflow
+(`docs/open-questions.md#winkelmand-mobile-header-content-overflows-320px`)
+is unrelated to the dropdown anchor and was not re-verified here with real
+icons — don't read the 320px "fits" row above as a claim that issue is
+closed.
