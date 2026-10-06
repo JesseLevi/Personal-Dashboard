@@ -107,7 +107,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
   // list and deleting the recipe are mutually exclusive user actions
   // rendered in different branches below, so sharing one pending flag would
   // only couple their disabled states for no reason.
-  const [sendPending, startSendTransition] = useTransition();
+  const [sendPending, setSendPending] = useState(false);
 
   // Same click-outside-closes convention as TeDoenHeader.tsx's board-
   // switcher/sort dropdowns — reused for the mobile Ellipsis overflow menu.
@@ -146,23 +146,23 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
 
   // #178: sends the whole recipe, scaled to the page's current session
   // `portions` (#128/#160 -- display-only, never `recipe.servings` itself).
-  // No success/failure feedback is rendered -- see
-  // docs/open-questions.md#winkelmand-send-no-success-feedback.
-  function handleSendToList() {
-    startSendTransition(async () => {
-      await sendRecipeToShoppingList({ recipeId: recipe.id, targetPortions: portions });
-    });
+  // #290: the real `ActionResult` is returned so AnimatedAddToBasketButton
+  // plays "Toegevoegd" only on success; the failure display itself is
+  // undesigned -- see docs/open-questions.md#winkelmand-send-no-success-feedback.
+  async function handleSendToList() {
+    setSendPending(true);
+    try {
+      return await sendRecipeToShoppingList({ recipeId: recipe.id, targetPortions: portions });
+    } finally {
+      setSendPending(false);
+    }
   }
 
   // #179 part 2: the per-row swipe-to-cart action -- one ingredient instead
-  // of the whole recipe, same session `portions`. Fire-and-forget, same as
-  // handleSendToList above -- the "Toegevoegd" animation plays
-  // optimistically regardless of the actual result, matching the already-
-  // accepted docs/open-questions.md#winkelmand-send-no-success-feedback gap
-  // rather than inventing failure UI this ticket doesn't ask for. See
-  // design/notes/AnimatedAddToBasketButton.md.
-  async function handleAddIngredientToCart(ingredientId: string) {
-    await addIngredientToShoppingList({ recipeId: recipe.id, ingredientId, targetPortions: portions });
+  // of the whole recipe, same session `portions`. Returns the real result
+  // too (#290), see handleSendToList above.
+  function handleAddIngredientToCart(ingredientId: string) {
+    return addIngredientToShoppingList({ recipeId: recipe.id, ingredientId, targetPortions: portions });
   }
 
   // #128/#160/#164/#157: one shared scaled-and-converted list feeds both the
