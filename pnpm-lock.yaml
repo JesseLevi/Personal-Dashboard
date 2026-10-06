@@ -118,7 +118,7 @@ importers:
         specifier: ^8.5.0
         version: 8.5.19
       supabase:
-        specifier: ^2.30.0
+        specifier: ^2.109.1
         version: 2.109.1
       tailwindcss:
         specifier: ^4.1.0
@@ -2735,6 +2735,7 @@ packages:
   eslint@9.39.5:
     resolution: {integrity: sha512-DgZS62aPLXKlnxILS/AYCoRvHaZeXceIzlXPkkGGzJWSow1aEk0lbTlxUSlyjC8jcaKxAdOnTDz+o1JFSBsyjw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
