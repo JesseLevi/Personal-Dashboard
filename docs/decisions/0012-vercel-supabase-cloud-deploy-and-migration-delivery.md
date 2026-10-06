@@ -94,6 +94,14 @@ Three options were considered:
 
 **What does not change:** the `migrate`/`deploy` job structure and split, the trigger restrictions, the credential-scoping rationale aside from the Vercel-token correction above, and §5's manual routes as a fallback for any migration Claude Code judges destructive or the user prefers to run themselves.
 
+### Amendment (2026-10-06): `deploy.yml` gets a `target` input -- PROPOSAL
+
+**Status: proposed (#280), pending user approval on the PR.** Not yet the architecture layer's decision; Claude Code only drafted it.
+
+- **Problem:** `deploy` has `needs: migrate`, so a dispatch meant only to apply migrations also promotes `main` to production.
+- **Proposal:** `workflow_dispatch` input `target: both | migrate | deploy` (default `both`, identical to today). `migrate` job runs for `migrate`/`both`; `deploy` job runs for `deploy`/`both`. `deploy` keeps `needs: migrate` but is gated on `!cancelled() && migrate.result in (success, skipped)`, so a skipped migrate does not skip it while a failed migrate still blocks it.
+- **Unchanged:** manual-only trigger, no `--force`/`db reset`, no `continue-on-error`, environment scoping. `target=deploy` skips the migration-before-promotion ordering of section 3, so it is only safe when no migrations are pending; that is the dispatcher's responsibility.
+
 ### 4. Security trade-off: CI now has write access to the production schema
 
 Giving a GitHub Actions job `SUPABASE_ACCESS_TOKEN` + `SUPABASE_DB_PASSWORD` for the hosted project means **anyone who can get a workflow run of `deploy.yml` executed can alter the production schema** (and, via `vercel deploy`, replace the production app). This is a materially higher-privilege CI job than anything else in this repo's CI, so:

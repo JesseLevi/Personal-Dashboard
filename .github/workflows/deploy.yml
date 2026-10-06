@@ -28,8 +28,22 @@ name: Deploy (migrate + production)
 #     mask a non-zero exit. A failed migration must fail the workflow and
 #     block the deploy job below, not continue past it.
 
+# `target` (#280, ADR-0012 proposed amendment 2026-10-06) picks what a dispatch
+# does: `migrate` applies migrations only and never touches Vercel, `deploy`
+# promotes to production only, `both` (default) is the original behaviour. A
+# FAILED migrate still blocks deploy; only a *skipped* migrate lets it run.
+
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: "What to run: migrate only, deploy only, or both (migrate first)"
+        type: choice
+        options:
+          - both
+          - migrate
+          - deploy
+        default: both
 
 concurrency:
   group: production-deploy
@@ -38,6 +52,7 @@ concurrency:
 jobs:
   migrate:
     name: Apply migrations to hosted Supabase
+    if: ${{ inputs.target == 'migrate' || inputs.target == 'both' }}
     runs-on: ubuntu-latest
     environment: supabase-production
     steps:
@@ -71,6 +86,10 @@ jobs:
   deploy:
     name: Deploy to Vercel production
     needs: migrate
+    # `!cancelled()` stops the implicit success() so a skipped migrate (target
+    # `deploy`) doesn't skip this job; the result check keeps a failed migrate
+    # blocking it.
+    if: ${{ !cancelled() && (needs.migrate.result == 'success' || needs.migrate.result == 'skipped') && (inputs.target == 'deploy' || inputs.target == 'both') }}
     runs-on: ubuntu-latest
     environment: vercel-production
     env:
