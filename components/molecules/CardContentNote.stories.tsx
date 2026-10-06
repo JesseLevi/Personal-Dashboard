@@ -30,15 +30,14 @@ export const TimestampForms = () => (
   </div>
 );
 
-// Fetched node has textTruncation DISABLED on both title and snippet — long
-// text wraps onto extra lines (growing the card) rather than being clipped
-// or ellipsized; no line-clamp exists in the design. This story shows that.
+// Title wraps (Figma: no truncation); snippet is clamped to 2 lines with an
+// ellipsis per product decision #307 — see design/notes/CardContentNote.md.
 export const LongTitleAndSnippet = () => (
   <div className="w-72">
     <CardContentNote
       title="A note title that is much longer than the sample and has to wrap"
       timestamp="10-03-2026"
-      snippet="A much longer snippet of note text that keeps going well past what fits on a single line, to show it wraps instead of truncating."
+      snippet="A much longer snippet of note text that keeps going well past what fits on a single line, to show the 2-line clamp."
     />
   </div>
 );

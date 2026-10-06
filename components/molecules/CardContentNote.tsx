@@ -10,6 +10,7 @@ import clsx from "clsx";
  * `title`/`timestamp`/`snippet` are all caller-supplied, already-formatted
  * strings — no date logic here (ADR-0007, i18n belongs to the caller). See
  * design/notes/CardContentNote.md.
+ * Snippet is clamped to 2 lines (product decision #307, deviates from Figma).
  */
 export interface CardContentNoteProps {
   /** Figma TEXT "Note title" — note title (first line of the document). */
@@ -33,7 +34,7 @@ export function CardContentNote({
         <p className="min-w-0 flex-1 text-base font-semibold text-text-primary">{title}</p>
         <p className="shrink-0 text-xs font-semibold text-text-secondary">{timestamp}</p>
       </div>
-      <p className="w-full text-sm font-medium text-text-secondary">{snippet}</p>
+      <p className="line-clamp-2 w-full text-sm font-medium text-text-secondary">{snippet}</p>
     </div>
   );
 }
