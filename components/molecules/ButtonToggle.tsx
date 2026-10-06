@@ -1,7 +1,7 @@
 "use client";
 
 // figma: node-id=4160:33335
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "../atoms/Button";
 import type { IconName } from "../atoms/Icon";
@@ -136,7 +136,7 @@ export function ButtonToggle({
   }
 
   return (
-    <div className={clsx("flex w-full flex-col gap-stack-sm", className)}>
+    <div className={cn("flex w-full flex-col gap-stack-sm", className)}>
       {title ? (
         <span id={titleId} className="text-base font-semibold text-text-secondary">
           {title}

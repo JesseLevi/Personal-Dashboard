@@ -1,7 +1,7 @@
 "use client";
 
 // figma: node-id=4051:12960
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import { useEffect, useRef, useState, type ButtonHTMLAttributes } from "react";
 import { Button } from "../atoms/Button";
 import { Icon, type IconName } from "../atoms/Icon";
@@ -25,7 +25,7 @@ function Face({ icon, label, hidden }: { icon: IconName; label?: string; hidden:
   return (
     <span
       aria-hidden={hidden || undefined}
-      className={clsx(
+      className={cn(
         "col-start-1 row-start-1 flex items-center gap-inline-sm transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
         icon === "Check"
           ? hidden
@@ -93,7 +93,7 @@ export function AnimatedAddToBasketButton({
     <Button
       variant="filled"
       onClick={handleClick}
-      className={clsx(
+      className={cn(
         // `!`: Button's own base class already sets `transition-colors` --
         // two plain `transition-*` utilities both set the single
         // non-additive `transition-property`, so the winner would depend on

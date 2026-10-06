@@ -1,4 +1,5 @@
 // figma: node-id=3626:4515
+import { cn } from "@/lib/ui/cn";
 import { cva, type VariantProps } from "class-variance-authority";
 import type { ReactNode } from "react";
 
@@ -42,6 +43,6 @@ export interface TagProps extends VariantProps<typeof tagVariants> {
 
 export function Tag({ variant, children, className }: TagProps) {
   return (
-    <span className={tagVariants({ variant, className })}>{children}</span>
+    <span className={cn(tagVariants({ variant }), className)}>{children}</span>
   );
 }

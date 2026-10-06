@@ -93,7 +93,7 @@ why this bug was invisible on desktop and only ever showed on mobile.
 component whose base class carries its own `display` utility) that receives
 a bare `hidden`/`block`/`flex` in its caller-supplied `className` is silently
 broken the same way, with no lint/build error — `cva`'s job stops at string
-concatenation. **Fix pattern**: put the visibility utility on a wrapping
+concatenation. **Resolved by #289:** `cn()` (clsx + tailwind-merge, `lib/ui/cn.ts`) now merges every cva component's `className`, so a caller's `hidden` wins and wrappers are no longer needed. The original workaround, kept for history: put the visibility utility on a wrapping
 element instead of on the `cva` component itself (`<span className="md:hidden">
 <Button .../></span>`), never on the same element as a `cva` base class's own
 display utility. `NotitiesBoard.tsx` already had one working precedent one

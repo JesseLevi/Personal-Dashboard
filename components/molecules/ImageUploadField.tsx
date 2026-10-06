@@ -5,7 +5,7 @@
 // mapped, node-id=3705:4402), not a distinct Figma component: this file
 // wraps that atom with real file-picking behaviour rather than duplicating
 // its visual shell. Full record: design/notes/ImageUploadField.md.
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import { useState, type ChangeEvent } from "react";
 import { InputField } from "../atoms/InputField";
 
@@ -56,7 +56,7 @@ export function ImageUploadField({
   }
 
   return (
-    <div className={clsx("group relative", className)}>
+    <div className={cn("group relative", className)}>
       {/* `group` on this wrapper (not `peer` on the input): InputField's
           bordered box is a grandchild of this div, not a sibling of the file
           input, so `peer-*`'s sibling combinator can't reach it -- `group-*`'s

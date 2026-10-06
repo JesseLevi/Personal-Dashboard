@@ -1,5 +1,5 @@
 // figma: node-id=3878:7959
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import type { ReactNode } from "react";
 
 /**
@@ -24,7 +24,7 @@ export interface PageHeaderProps {
 export function PageHeader({ title, titleAdornments, actions, className }: PageHeaderProps) {
   return (
     <header
-      className={clsx(
+      className={cn(
         "sticky top-[env(safe-area-inset-top)] z-10 flex items-center justify-between bg-surface-primary pr-page-right-equal",
         // #172: header chrome, not reading content — see app/globals.css.
         "chrome-touch",

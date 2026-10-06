@@ -1,7 +1,7 @@
 "use client";
 
 // figma: node-id=3779:4846
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import {
   useEffect,
   useId,
@@ -215,7 +215,7 @@ export function SidePanel({
         // `transition-discrete` (Tailwind's `transition-behavior:
         // allow-discrete`) defers the `visibility` flip to hidden until the
         // opacity transition finishes, so the fade-out still plays.
-        className={clsx(
+        className={cn(
           "fixed inset-0 bg-overlay/60 transition-[opacity,visibility] transition-discrete duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
           level === 2 ? "z-[60]" : "z-40",
           open ? "visible opacity-100" : "invisible pointer-events-none opacity-0",
@@ -229,7 +229,7 @@ export function SidePanel({
         aria-hidden={!open}
         inert={!open}
         onKeyDown={handleKeyDown}
-        className={clsx(
+        className={cn(
           "fixed flex flex-col overflow-hidden bg-surface-primary transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
           level === 2 ? "z-[70]" : "z-50",
           // Corner radii are 16/12, not a uniform value on either shape —

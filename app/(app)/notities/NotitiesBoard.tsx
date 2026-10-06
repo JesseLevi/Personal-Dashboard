@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition, type RefObject } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import { PageHeader } from "@/components/organisms/PageHeader";
 import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
@@ -358,31 +358,25 @@ export function NotitiesBoard({
                   with its own layout, and Button.tsx's own icon-only vs.
                   labelled branches already model that distinction (see
                   design/notes/NotitiesBoard.md for the alternative
-                  considered). Visibility lives on a wrapper `span`, not on
-                  the Button itself -- Button's own base class already
-                  carries `inline-flex` (#263), so a bare `hidden` on the
-                  same element loses to it on CSS specificity order. The
-                  wrapper also has to re-carry `shrink-0`, which used to sit
-                  on the Button as a direct flex child of this row; see
-                  design/notes/NotitiesBoard.md. */}
-              <span className="shrink-0 md:hidden">
-                <Button
-                  icon="ArrowUpDown"
-                  aria-label={sortLabel}
-                  aria-expanded={sortMenuOpen}
-                  onClick={() => setSortMenuOpen((open) => !open)}
-                />
-              </span>
-              <span className="hidden shrink-0 md:inline">
-                <Button
-                  icon="ArrowUpDown"
-                  align="left"
-                  aria-expanded={sortMenuOpen}
-                  onClick={() => setSortMenuOpen((open) => !open)}
-                >
-                  {sortLabel}
-                </Button>
-              </span>
+                  considered). Visibility is a plain className on each Button:
+                  `cn()` (tailwind-merge, #289) lets `hidden` beat the base
+                  `inline-flex`. */}
+              <Button
+                icon="ArrowUpDown"
+                aria-label={sortLabel}
+                aria-expanded={sortMenuOpen}
+                className="md:hidden"
+                onClick={() => setSortMenuOpen((open) => !open)}
+              />
+              <Button
+                icon="ArrowUpDown"
+                align="left"
+                aria-expanded={sortMenuOpen}
+                className="hidden md:inline-flex"
+                onClick={() => setSortMenuOpen((open) => !open)}
+              >
+                {sortLabel}
+              </Button>
               {sortMenuOpen && (
                 <div ref={sortPopoverRef} className="absolute z-[999] w-[209px]" style={sortPopover.style}>
                   <Dropdown className="shadow-sm">
@@ -454,7 +448,7 @@ export function NotitiesBoard({
           matches every other animated element in this codebase (BoardView.tsx,
           Dropdown.tsx, SidePanel.tsx, ButtonToggle.tsx). */}
       <div
-        className={clsx(
+        className={cn(
           "flex flex-1 flex-col transition-opacity duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
           contentVisible ? "opacity-100" : "opacity-0",
         )}

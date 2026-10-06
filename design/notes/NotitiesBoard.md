@@ -72,37 +72,7 @@ values above — both are real tokens already in `app/theme.css` (#205/#218
 already added `gap-inline-sm`/`gap-inline-xl`), so nothing needed a
 `spacing-flag`.
 
-**#263 fix — visibility moved off the `Button` onto a wrapping `span`.** The
-original build put `className="md:hidden"` / `className="hidden
-md:inline-flex"` directly on each `Button`, and on mobile *both* rendered:
-`Button.tsx`'s `cva` base class hardcodes `inline-flex` (line 25), and `cva`
-only concatenates classes — it never merges/dedupes conflicting utilities the
-way `tailwind-merge` would. In the compiled stylesheet `.inline-flex` is
-declared after the bare `.hidden` (measured offsets in
-`.next/static/css/*.css`: `.hidden` 13496, `.inline-flex` 13540), so on any
-single element carrying both, `.inline-flex` always won — the labelled
-button never actually hid on mobile. `md:hidden` on the icon-only branch was
-unaffected, since Tailwind emits `md:` variants in a later block entirely,
-past the bare-utility ties — which is exactly why only the *labelled*
-button leaked through, not both, and why this only showed on mobile.
-Fixed by wrapping each `Button` in its own `<span className="md:hidden">` /
-`<span className="hidden md:inline">` and dropping the `className` from the
-`Button` itself — same precedent this file's own "Search bar" section
-already uses one component over (`<div className="hidden md:block
-md:w-60 md:shrink-0">` wrapping `NotesSearchField`, never landing the
-visibility class on the wrapped component's own props). Full incident
-write-up: `docs/incidents.md`'s 2026-08-16 entry — this is a general `cva`
-trap, not specific to this button, so the fuller reasoning lives there
-rather than being duplicated per-component.
-
-One consequence of the wrapper worth carrying: `shrink-0` came free while
-the `Button` *was* the flex child of the header's actions row (it is in
-`Button.tsx`'s own base class). The `span` is now that flex child, so it has
-to re-declare `shrink-0` — without it the header can squeeze the sort button
-on a narrow viewport, the same failure mode
-`docs/open-questions.md#winkelmand-mobile-header-content-overflows-320px`
-already records for another header. This applies to *any* wrapper added to
-work around the `cva` trap above, not just this one.
+**#263 fix, then #289 — visibility is a plain className on each `Button` again.** #263 found that `cva` never merges, so a bare `hidden` lost to the base `inline-flex` (labelled button leaked onto mobile) and wrapped each `Button` in a visibility `span`. #289 added `cn()` (`lib/ui/cn.ts`, clsx + tailwind-merge) to `Button`, so `className="md:hidden"` / `className="hidden md:inline-flex"` sit on the `Button` itself and the wrappers (and their re-declared `shrink-0`) are gone. Incident: `docs/incidents.md` 2026-08-16.
 
 ## "Categorie" and the column pencil — wired in #232
 
