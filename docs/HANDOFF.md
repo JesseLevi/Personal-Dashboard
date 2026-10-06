@@ -4,43 +4,41 @@
 
 **Truth sources**: tickets → the board (`gh project item-list 1 --owner JesseLevi`); colours → `docs/design-tokens.md`; component↔node-id → `design/figma-map.json`; design gaps → `docs/open-questions.md`; infra per phase → `docs/phase-log.md`; per-component record → `design/notes/`.
 
-**Keeping this file**: replace stale bullets, never append dated sections or per-ticket narrative. A fact about one component belongs in that component's note; a durable rule in a guide. Hard budget: ≤ 6KB.
+**Keeping this file**: replace stale bullets, never append dated sections or per-ticket narrative. Anything that has a ticket lives on the ticket, not here. A fact about one component belongs in its note. Budget: ≤ 6KB.
 
-## State (2026-08-18)
+## State (2026-10-06)
 
-- `main` is green after #277. Per-ticket status lives on the board, never here.
-- Phases 0–3 are done. Phases 4 (Recepten) and 5 (Boodschappenlijst) are mid-flight per the board.
-- Phase 6 (Notities) is code-complete (#225–#235, #263). What remains is a design round (rendered table, prose typography, row/column controls: `notes-table-ui-not-designed`, `notes-prose-typography-not-designed`) and a signed-in visit to `/notities`.
-- Phase 7+ (Agenda, AI pipeline/agent) is backlog. Server-side tickets #1–#5, #9–#11 need real accounts: don't start unprompted.
-- Open `[OPT]` tickets (tooling, test gaps, refactors, owed ADRs) are on the board: search for `[OPT]`.
-
-## Pending hosted actions
-
-- Migration-ledger version fix for `profiles_avatar_url` (applied via the Supabase MCP, so the ledger row has the wrong version): see the `[OPT]` ticket. Must be done before the next `deploy.yml` run, and only with the user's explicit go.
+- `main` is green after #277. Per-ticket status lives on the board.
+- Phases 0–3 done. Phases 4 (Recepten) and 5 (Boodschappenlijst) mid-flight per the board.
+- Phase 6 (Notities) is code-complete (#225–#235, #263). Left: a **design round** (rendered table, prose typography, row/column controls — `notes-table-ui-not-designed`, `notes-prose-typography-not-designed`; plus #265's two undesigned values in `design/notes/ButtonToggle.md`, `Sidebar.md`). Treat that shipped CSS as provisional.
+- Phase 7+ (Agenda, AI) is backlog. #1–#5, #9–#11 need real accounts: don't start unprompted.
+- Tooling, test-gap, refactor and owed-ADR work is on the board as `[OPT]` tickets (#279–#295).
 
 ## Next
 
-1. **#185 signed-in run** (nothing has ever run authenticated against live Supabase). Cover: a drag/move (the `move_*` RPCs), `/notities` (an empty board is expected: seed triggers never fired for the 2 pre-existing accounts; the "Categorie" button creates one; no backfill), a real locale save (re-renders the whole tree), the theme toggle persisting, and dark mode by eye: checkbox border, sidebar overlay, SidePanel scrim.
-2. The `[OPT]` tickets.
-3. Phase 4/5 remainder, per the board.
-4. Design round for Phase 6 (see State). Treat the shipped table/prose CSS as provisional until then.
+1. **#185** — first signed-in run against hosted Supabase; nothing has ever run authenticated (incl. the perf round's auth rewrite). Beyond the ticket, cover: a drag (`move_*` RPCs), `/notities` (empty board expected — seed triggers never fired for existing accounts, #293; "Categorie" creates one, no backfill), a real locale save, theme persisting, sign-out redirect, and dark mode by eye (checkbox border, sidebar overlay, SidePanel scrim).
+2. **#279 before any `deploy.yml` run** (ledger version fix; needs the user's explicit go).
+3. The `[OPT]` tickets, then Phase 4/5 remainder per the board.
 
-## Unverified against reality
+## Traps that have already cost a session
 
-The hosted schema was audited 2026-08-13: RLS on every table, `move_*`/`replace_recipe_contents` are `security invoker` with `search_path=''`, ledger matches the repo. What is untested is **behaviour**.
+- **Committing a migration does not apply it.** `deploy.yml` is `workflow_dispatch`-only and also promotes `main` to production (ADR-0012) — confirm with the user first. Check `supabase_migrations.schema_migrations` on hosted before debugging a data-shaped bug.
+- **A migration applied by hand or via the Supabase MCP gets that route's timestamp as version**, not the filename; fix the ledger row or `db push` refuses.
+- **Never batch a migration across parallel agents** (raced 250 duplicate rows on #161).
+- **Two CI `db` jobs can't run concurrently** (fixed ports: `failed to bind host port`). Wait, then `gh run rerun <id> --failed`.
+- **Visual flake**: run the FULL suite twice before believing a failure; never bisect, never overlap runs. Lone failures up to ~22px have been noise. `threshold` stays 0.
+- **A green visual suite says nothing about hover/active, dark mode or `.tiptap` content** — none is rendered (#281–#283).
+- **`middleware.ts` only refreshes tokens**; the auth redirect lives in `app/(app)/layout.tsx`. `getClaims()` verifies locally, so a revoked session lives until token expiry (deliberate, #168).
+- **Verify a ticket's Figma nodes still exist**, and check which environment a recorded blocker was measured in, before planning around either.
+- **iOS reads manifest/`appleWebApp` metadata only when an icon is added** — an old home-screen icon must be re-added.
 
-- **#185** — no authenticated run against live Supabase; queries, actions and storage cleanup are reasoned-only. Includes the perf round (#168–#170, #173), which rewrote the auth path.
-- **#186** — drag persistence (#96) and drop-hover (#114) never run in a real browser.
-- **#187** — iOS Safari viewport fixes (#113), 750ms touch-hold (#118), hidden scrollbar (#110) never run on hardware.
-- **#188** — visual gate is macOS-only (no `-linux.png`), so CI's `visual` job is `continue-on-error`.
-- **#189** — Supabase advisors: 11 WARN; five `security definer` functions callable by `anon` and `authenticated` (`handle_new_user`, `rls_auto_enable`, `seed_default_*` ×3), plus leaked-password protection off. Every new seed function adds two more.
-- **#191** — `BoardPanel.tsx` has no Ladle story.
-- **Gate blind spots**: no baseline renders hover/active states, dark mode, or `.tiptap` content, so a green suite says nothing about them → `[OPT]` tickets.
-- **Settings surface (#265)**: account dropdown and panel exercised once; locale save and the sign-out *redirect* are not. Two undesigned values flagged: `ButtonToggle`'s `ActiveBackground` (stand-in `surface-secondary`) and the account row's hover fill → `design/notes/ButtonToggle.md`, `Sidebar.md`.
-- **Production promotion is manual** (ADR-0012): `workflow_dispatch` of `deploy.yml` or `vercel promote`. Migration rules → `docs/guides/data-layer.md`.
+## Constraints
+
+- `public.recipe_unit` is the one unit enum — reuse, never redeclare.
+- `lib/database.types.ts` is generated (CI gate) — never hand-edit. → `docs/guides/data-layer.md`
+- NEVO: `NULL` = unknown, never `0`; licence line is mandatory (ADR-0013); partial volume↔mass coverage is by design (ADR-0014).
 
 ## Environment still to set up (outside this repo)
 
-- **Mac mini (#1–#5)**: Docker plus two Supabase stacks on 127.0.0.1 (`scripts/check-localhost-binding.sh`); `cloudflared` + Cloudflare Access; Ollama (`OLLAMA_HOST=127.0.0.1`, `bge-m3` plus a chat model sized to RAM); a hardened self-hosted runner; restic backups incl. a separately-backed-up Vault root key.
-- **Accounts (free tier)**: Cloudflare; SMTP (Resend, magic links); Healthchecks.io; an S3-compatible bucket (e.g. Backblaze B2).
-- **Any new dev machine**: `gh` authenticated with `project` scope; the `figma-console` bridge (Figma Desktop + Desktop Bridge plugin); `.mcp.json` and `.env` (see `.env.example`).
+- **Mac mini (#1–#5)**: Docker + two Supabase stacks on 127.0.0.1 (`scripts/check-localhost-binding.sh`); `cloudflared` + Access; Ollama (`OLLAMA_HOST=127.0.0.1`, `bge-m3` + a chat model); hardened self-hosted runner; restic backups incl. Vault root key.
+- **Accounts (free tier)**: Cloudflare; SMTP (Resend); Healthchecks.io; S3-compatible bucket (e.g. B2).
