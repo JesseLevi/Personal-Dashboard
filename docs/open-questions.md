@@ -173,10 +173,10 @@ state.
 
 ### notes-category-panel-not-designed
 
-`Pages/Notities/Breakpoints` (`3934:32790`) contains only the seven overview/editor frames — no category-add/rename/delete panel of its own. #232 built `NoteCategoryPanel` by reusing `/recepten`'s `CategoryPanel` shape one-to-one (`design/notes/NoteCategoryPanel.md`) rather than inventing a new panel, but three sub-parts have no Figma source and were resolved by precedent, not design:
+`Pages/Notities/Breakpoints` (`3934:32790`) contains only the seven overview/editor frames — no category-add/rename/delete panel of its own. #232 built the Notities category panel by reusing `/recepten`'s panel shape one-to-one (one shared `CategoryPanel` since #287) (`design/notes/CategoryPanel.md`) rather than inventing a new panel, but three sub-parts have no Figma source and were resolved by precedent, not design:
 
-- **Icon picker**: the 14-icon set offered (`NOTE_CATEGORY_ICONS`) is a codebase choice, not a Figma list — Figma only shows three seeded categories in use (`FolderClosed`/`Lightbulb`/`FolderClosed`). Reasoning and the full list: `design/notes/NoteCategoryPanel.md`.
-- **Delete confirmation**: no confirm dialog/step is designed anywhere in this file for any category panel (same gap `category-delete-no-confirm-designed`'s history already covers for `/recepten`, now resolved there by reuse). `NoteCategoryPanel` reuses `CategoryPanel.tsx`'s two-step confirm verbatim.
+- **Icon picker**: the 14-icon set offered (`NOTE_CATEGORY_ICONS`) is a codebase choice, not a Figma list — Figma only shows three seeded categories in use (`FolderClosed`/`Lightbulb`/`FolderClosed`). Reasoning and the full list: `design/notes/CategoryPanel.md`.
+- **Delete confirmation**: no confirm dialog/step is designed anywhere in this file for any category panel (same gap `category-delete-no-confirm-designed`'s history already covers for `/recepten`, now resolved there by reuse). the Notities panel reuses `CategoryPanel.tsx`'s two-step confirm verbatim.
 - **Confirm wording vs. the cascade**: `notes.category_id` is `on delete cascade` (`20260813000001_note_schema.sql`), so deleting a category deletes its notes — the confirm text is generic ("Weet je het zeker?"), not cascade-specific, matching `/recepten`'s own generic wording rather than inventing a new sentence with no design source.
 
 Needs a real Figma frame (panel chrome, an icon set scoped to Notities, and a delete-confirmation state) before any of the three should be considered final.

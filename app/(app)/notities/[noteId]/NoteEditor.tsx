@@ -14,7 +14,7 @@ import { deleteNote, updateNoteContent } from "../actions";
 // #233 note-editor page body — Figma "Desktop/Notes/Edit" (3934:33463) /
 // "Mobile/Notes/Edit" (3934:33422). One client component for the whole page
 // body (same precedent as RecipeDetailPage.tsx): back button, "Verwijderen"
-// (two-step confirm reused from RecipeDetailPage.tsx/NoteCategoryPanel.tsx,
+// (two-step confirm reused from RecipeDetailPage.tsx/CategoryPanel.tsx,
 // #233's own choice — see design/notes/NoteEditor.md), the TipTap editor
 // itself, and a reserved-but-unbuilt EditingBar slot (#234). No title field,
 // no save button, no category picker — Figma draws none, ticket confirms it.
@@ -138,7 +138,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
         {deleteConfirming ? (
           // spacing-flag: gap-4 -- transient confirm-row state, no Figma node
           // for it (same precedent as RecipeDetailPage.tsx/
-          // NoteCategoryPanel.tsx) -- design/notes/NoteEditor.md
+          // CategoryPanel.tsx) -- design/notes/NoteEditor.md
           <div className="flex flex-wrap items-center justify-end gap-4">
             <p className="text-base font-semibold text-text-primary">{t("deleteConfirmLabel")}</p>
             {/* spacing-flag: gap-2 -- same transient confirm-row state --

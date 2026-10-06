@@ -117,7 +117,7 @@ swap `RecipeDetailPage.tsx`'s header already uses (the
 `components.noteEditor.deleteConfirmLabel` question line + cancel +
 destructive confirm replace the single delete button; `isPending` disables
 both buttons and swaps the confirm button's label to `"Verwijderen..."`),
-itself the same shape `NoteCategoryPanel.tsx`/`CategoryPanel.tsx` use for
+itself the same shape `CategoryPanel.tsx` use for
 their own delete step. **The question line is part of the pattern, not
 decoration** — every one of the five existing confirm rows in this codebase
 renders it, and it is the only thing that names *what* is about to be
@@ -154,7 +154,7 @@ measurement.
    (inner, cancel ↔ confirm)** — transient interaction state, no Figma
    node anywhere draws it; both values copied from `RecipeDetailPage.tsx`'s
    own confirm row rather than re-picked (same precedent as
-   `NoteCategoryPanel.tsx`).
+   `CategoryPanel.tsx`).
 3. **`pb-[calc(4rem+env(safe-area-inset-bottom))] md:py-2`** on the content
    wrapper — two distinct reasons on one line:
    - `pb-[calc(4rem+env(safe-area-inset-bottom))]` (mobile only) is a

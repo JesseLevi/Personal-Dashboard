@@ -112,11 +112,12 @@ gemotiveerde keuze" (#230's own ticket text): `CategoryPanel`-equivalent UI
 did not exist for Notities yet, and inventing one in #230 would have meant
 freelancing #232's own scope.
 
-**#232 wired both** to one shared `NoteCategoryPanel`
-(`app/(app)/notities/NoteCategoryPanel.tsx` — a Notities-owned copy of
-`app/(app)/recepten/CategoryPanel.tsx`, not a generic shared component; full
-reasoning, icon set, delete-flow precedent: `design/notes/
-NoteCategoryPanel.md`). One `categoryPanel` state (`{ open, target }`) owns
+**#232 wired both** to one category panel (a Notities-owned copy of
+`/recepten`'s panel at the time; since #287 the shared
+`components/organisms/CategoryPanel.tsx` configured with
+`NOTE_CATEGORY_ICONS` and the `components.noteCategoryPanel`/`notes.errors`
+namespaces; full reasoning, icon set, delete-flow precedent:
+`design/notes/CategoryPanel.md`). One `categoryPanel` state (`{ open, target }`) owns
 both triggers, same convention `ReceptenBoard.tsx`'s own `panel` state
 already uses for the identical two-trigger shape. Both buttons already
 carried real, translated `aria-label`s (`Categorie`) even while inert —

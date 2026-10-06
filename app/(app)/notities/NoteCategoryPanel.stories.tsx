@@ -1,11 +1,12 @@
-// No figma node — see NoteCategoryPanel.tsx's own header comment and
-// design/notes/NoteCategoryPanel.md (reuses CategoryPanel.tsx's shape 1:1).
+// No figma node of its own — the shared components/organisms/CategoryPanel.tsx
+// configured for /notities (note icons, notes namespaces); design/notes/CategoryPanel.md.
 import { useState } from "react";
-import { NoteCategoryPanel, type NoteCategoryPanelTarget } from "./NoteCategoryPanel";
+import { CategoryPanel, type CategoryPanelTarget } from "@/components/organisms/CategoryPanel";
+import { NOTE_CATEGORY_ICONS } from "./category-icons";
 import type { ActionResult, NoteCategoryRow } from "@/lib/notes/types";
 
-// Dev-only mock actions — NoteCategoryPanel never imports the real
-// "use server" module itself (design/notes/NoteCategoryPanel.md), so these
+// Dev-only mock actions — the shared CategoryPanel never imports the real
+// "use server" module itself (design/notes/CategoryPanel.md), so these
 // stand in for createCategory/renameCategory/deleteCategory without needing
 // Supabase/Next's request context, same precedent as CategoryPanel.stories.tsx.
 async function mockCreateCategory(input: unknown): Promise<ActionResult<NoteCategoryRow>> {
@@ -41,12 +42,15 @@ const sampleCategory: NoteCategoryRow = {
 // Delete button absent (nothing to delete yet).
 export const CreateCategory = () => (
   <div className="min-h-screen">
-    <NoteCategoryPanel
+    <CategoryPanel
       open
       onClose={() => {}}
       target={{ mode: "create" }}
       onCreateCategory={mockCreateCategory}
-      onRenameCategory={mockRenameCategory}
+      icons={NOTE_CATEGORY_ICONS}
+      translationNamespace="components.noteCategoryPanel"
+      errorsNamespace="notes.errors"
+      onUpdateCategory={mockRenameCategory}
       onDeleteCategory={mockDeleteCategory}
     />
   </div>
@@ -57,12 +61,15 @@ export const CreateCategory = () => (
 // delete confirm.
 export const EditCategory = () => (
   <div className="min-h-screen">
-    <NoteCategoryPanel
+    <CategoryPanel
       open
       onClose={() => {}}
       target={{ mode: "edit", category: sampleCategory }}
       onCreateCategory={mockCreateCategory}
-      onRenameCategory={mockRenameCategory}
+      icons={NOTE_CATEGORY_ICONS}
+      translationNamespace="components.noteCategoryPanel"
+      errorsNamespace="notes.errors"
+      onUpdateCategory={mockRenameCategory}
       onDeleteCategory={mockDeleteCategory}
     />
   </div>
@@ -72,7 +79,7 @@ export const EditCategory = () => (
 // the reset-on-open path this component uses. Not screenshot-stable by
 // design (starts closed).
 export const Interactive = () => {
-  const [state, setState] = useState<{ open: boolean; target: NoteCategoryPanelTarget }>({
+  const [state, setState] = useState<{ open: boolean; target: CategoryPanelTarget }>({
     open: false,
     target: { mode: "create" },
   });
@@ -93,12 +100,15 @@ export const Interactive = () => {
       >
         Bewerk Werk
       </button>
-      <NoteCategoryPanel
+      <CategoryPanel
         open={state.open}
         onClose={() => setState((current) => ({ ...current, open: false }))}
         target={state.target}
         onCreateCategory={mockCreateCategory}
-        onRenameCategory={mockRenameCategory}
+        icons={NOTE_CATEGORY_ICONS}
+      translationNamespace="components.noteCategoryPanel"
+      errorsNamespace="notes.errors"
+      onUpdateCategory={mockRenameCategory}
         onDeleteCategory={mockDeleteCategory}
       />
     </div>
