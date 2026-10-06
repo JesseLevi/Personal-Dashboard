@@ -12,7 +12,7 @@
 - Phases 0–3 done. Phases 4 (Recepten) and 5 (Boodschappenlijst) mid-flight per the board.
 - Phase 6 (Notities) is code-complete (#225–#235, #263). Left: a **design round** (rendered table, prose typography, row/column controls — `notes-table-ui-not-designed`, `notes-prose-typography-not-designed`; plus #265's two undesigned values in `design/notes/ButtonToggle.md`, `Sidebar.md`). Treat that shipped CSS as provisional.
 - Phase 7+ (Agenda, AI) is backlog. #1–#5, #9–#11 need real accounts: don't start unprompted.
-- Tooling, test-gap, refactor and owed-ADR work is on the board as `[OPT]` tickets (#279–#295).
+- Tooling, test-gap, refactor and owed-ADR work is on the board as `[OPT]` tickets (#279–#304; #280–#283, #287 in review).
 
 ## Next
 
@@ -26,8 +26,9 @@
 - **A migration applied by hand or via the Supabase MCP gets that route's timestamp as version**, not the filename; fix the ledger row or `db push` refuses.
 - **Never batch a migration across parallel agents** (raced 250 duplicate rows on #161).
 - **Two CI `db` jobs can't run concurrently** (fixed ports: `failed to bind host port`). Wait, then `gh run rerun <id> --failed`.
-- **Visual flake**: run the FULL suite twice before believing a failure; never bisect, never overlap runs. Lone failures up to ~22px have been noise. `threshold` stays 0.
-- **A green visual suite says nothing about hover/active, dark mode or `.tiptap` content** — none is rendered (#281–#283).
+- **Visual flake**: run the FULL suite twice before believing a failure; never bisect, never overlap runs. Lone failures up to ~22px have been noise. `threshold` stays 0. **As of 2026-10-06 the same 103/118 light baselines fail on this Mac on plain `main` too** (text-antialiasing diffs) — environmental, not code; compare against a `main` control run. The #281/#282/#283 baselines were generated in that state.
+- **Parallel agents share Playwright port 4310** (`reuseExistingServer`): one agent silently screenshots another's server. Serialize visual runs (lock dir) when delegating.
+- **The visual suite renders Button hover/active/focus (#282), a dark subset (#281) and `.tiptap` prose (#283)** — other components' states and dark variants are still unseen.
 - **`middleware.ts` only refreshes tokens**; the auth redirect lives in `app/(app)/layout.tsx`. `getClaims()` verifies locally, so a revoked session lives until token expiry (deliberate, #168).
 - **Verify a ticket's Figma nodes still exist**, and check which environment a recorded blocker was measured in, before planning around either.
 - **iOS reads manifest/`appleWebApp` metadata only when an icon is added** — an old home-screen icon must be re-added.
