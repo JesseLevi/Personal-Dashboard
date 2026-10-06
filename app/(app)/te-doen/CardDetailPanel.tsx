@@ -7,6 +7,7 @@ import { InputField } from "@/components/atoms/InputField";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { Tag } from "@/components/atoms/Tag";
 import { Button } from "@/components/atoms/Button";
+import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import type { IconName } from "@/components/atoms/Icon";
 import { PRIORITIES, SIZES, isPriority, isSize, type Size } from "@/lib/boards/enums";
 import type { ActionResult, CardRow, CardWithLabels } from "@/lib/boards/types";
@@ -89,7 +90,7 @@ export function CardDetailPanel({
         })
       : "",
   );
-  const [deleteConfirming, setDeleteConfirming] = useState(false);
+  const { confirming: deleteConfirming, ask: askDelete, cancel: cancelDelete } = useDeleteConfirm();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -146,7 +147,7 @@ export function CardDetailPanel({
             })
           : "",
       );
-      setDeleteConfirming(false);
+      cancelDelete();
       setError(null);
     }
   }
@@ -207,7 +208,7 @@ export function CardDetailPanel({
       const result = await onDeleteCard({ cardId: card.id });
       if (!result.success) {
         setError(tErrors(result.error));
-        setDeleteConfirming(false);
+        cancelDelete();
         return;
       }
       onMutated?.();
@@ -233,28 +234,13 @@ export function CardDetailPanel({
   // 100/n" per the ticket, so the text doesn't count as a column.
   const footer =
     target.mode === "edit" && deleteConfirming ? (
-      <>
-        <p className="text-base font-semibold text-text-primary">{t("deleteConfirmLabel")}</p>
-        <div className="flex gap-inline-sm">
-          <Button
-            variant="outline"
-            className="grow basis-0"
-            onClick={() => setDeleteConfirming(false)}
-            disabled={isPending}
-          >
-            {t("cancelLabel")}
-          </Button>
-          <Button
-            variant="destructive"
-            icon="Trash"
-            className="grow basis-0"
-            onClick={handleDelete}
-            disabled={isPending}
-          >
-            {isPending ? t("deletingLabel") : t("deleteConfirmButtonLabel")}
-          </Button>
-        </div>
-      </>
+      <DeleteConfirm
+        layout="stacked"
+        isPending={isPending}
+        onCancel={cancelDelete}
+        onConfirm={handleDelete}
+        labels={{ prompt: t("deleteConfirmLabel"), cancel: t("cancelLabel"), confirm: t("deleteConfirmButtonLabel"), deleting: t("deletingLabel") }}
+      />
     ) : (
       <div className="flex gap-inline-sm">
         {target.mode === "edit" && (
@@ -262,7 +248,7 @@ export function CardDetailPanel({
             variant="destructive"
             icon="Trash"
             className="grow basis-0"
-            onClick={() => setDeleteConfirming(true)}
+            onClick={() => askDelete()}
             disabled={isPending}
           >
             {t("deleteLabel")}
