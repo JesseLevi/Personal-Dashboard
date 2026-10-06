@@ -744,10 +744,7 @@ export type Database = {
         Args: { p_ingredients: Json; p_recipe_id: string; p_steps: Json }
         Returns: undefined
       }
-      toggle_board_favorite: {
-        Args: { p_board_id: string }
-        Returns: boolean
-      }
+      toggle_board_favorite: { Args: { p_board_id: string }; Returns: boolean }
     }
     Enums: {
       recipe_unit:
