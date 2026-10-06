@@ -144,199 +144,18 @@ import {
   type LucideProps,
 } from "lucide-react";
 
-/**
- * Stable, dashboard-facing icon vocabulary — one entry per icon in the Figma
- * "Icons" frame (node-id 3760:6187). `IconName` is a literal PascalCase of
- * the Figma layer name, kept identical to the matching lucide-react export
- * (spelling-corrected per Figma name, e.g. `Calendar` not `Calandar`), so
- * adding an icon is a direct lookup. Full mapping history, including every
- * name-vs-shape mismatch caught so far: `design/notes/Icon.md`.
- *
- * Every mapping is verified against the actual rendered SVG (element count +
- * path bounding boxes), never assumed from the name alone — same-named
- * lucide exports can still be the wrong glyph.
- */
-export type IconName =
-  | "PanelLeftClose"
-  | "PanelLeftOpen"
-  | "ShoppingBasket"
-  | "Lightbulb"
-  | "AlarmClockCheck"
-  | "Loader"
-  | "Broccoli"
-  | "CakeSlice"
-  | "Infinity"
-  | "Croissant"
-  | "Scroll"
-  | "Plus"
-  | "Image"
-  | "Pencil"
-  | "FolderClosed"
-  | "Shirt"
-  | "ArrowLeft"
-  | "ArrowRight"
-  | "ArrowUpDown"
-  | "Sandwich"
-  | "Columns3"
-  | "ChevronDown"
-  | "Trash"
-  | "Ellipsis"
-  | "Calendar"
-  | "X"
-  | "Notebook"
-  | "Star"
-  | "Check"
-  | "Timer"
-  | "Astroid"
-  | "CircleCheck"
-  | "StarPlus"
-  | "Save"
-  | "WeightTilde"
-  | "AArrowDown"
-  | "Search"
-  | "ArrowRightLeft"
-  | "Minus"
-  | "Coffee"
-  | "Soup"
-  | "Pizza"
-  | "Cookie"
-  // Recept/Mobile+Desktop's NutritionalData row (#160, node 3997:15948/
-  // 3997:15543): Flame/BicepsFlexed/Droplet/User verified path-for-path
-  // against the fetched Icon/Flame|Biceps-flexed|Droplet|User vectors
-  // (3997:15930/3997:15932/3997:15931/3997:25587); Settings2 (Icon/
-  // Settings-2, 3997:16080, the Pas-aan trigger) likewise. See design/notes/Icon.md.
-  | "Flame"
-  | "BicepsFlexed"
-  | "Droplet"
-  | "User"
-  | "Settings2"
-  // The 66 below are lucide's full "Food & beverage" category (74 total
-  // with the 8 above), added on direct user instruction (2026-08-01) for
-  // CategoryPanel's icon picker (#125 follow-up) — not sourced from a
-  // Figma frame like every entry above. Names/count verified against
-  // lucide-icons/lucide's own per-icon `categories` metadata (GitHub API),
-  // never guessed from lucide.dev's page text, which doesn't render the
-  // list server-side. Full reasoning: design/notes/Icon.md.
-  | "Amphora"
-  | "Apple"
-  | "Banana"
-  | "Barrel"
-  | "Bean"
-  | "BeanOff"
-  | "Beef"
-  | "BeefOff"
-  | "Beer"
-  | "BeerOff"
-  | "Blender"
-  | "BottleWine"
-  | "Cake"
-  | "Candy"
-  | "CandyCane"
-  | "CandyOff"
-  | "Carrot"
-  | "ChefHat"
-  | "Cherry"
-  | "Citrus"
-  | "CookingPot"
-  | "Cuboid"
-  | "CupSoda"
-  | "Dessert"
-  | "DnaOff"
-  | "Donut"
-  | "Drumstick"
-  | "Egg"
-  | "EggFried"
-  | "EggOff"
-  | "Fish"
-  | "FishOff"
-  | "FishSymbol"
-  | "GlassWater"
-  | "Grape"
-  | "Ham"
-  | "Hamburger"
-  | "HandPlatter"
-  | "Hop"
-  | "HopOff"
-  | "IceCreamBowl"
-  | "IceCreamCone"
-  | "LeafyGreen"
-  | "Lollipop"
-  | "Martini"
-  | "Microwave"
-  | "Milk"
-  | "MilkOff"
-  | "Nut"
-  | "NutOff"
-  | "PaperBag"
-  | "Popcorn"
-  | "Popsicle"
-  | "Refrigerator"
-  | "Salad"
-  | "Shell"
-  | "Snail"
-  | "Torus"
-  | "Tractor"
-  | "Utensils"
-  | "UtensilsCrossed"
-  | "Vegan"
-  | "Wheat"
-  | "WheatOff"
-  | "Wine"
-  | "WineOff"
-  // EditingBar toolbar (#227), desktop node 3978:14138 / mobile 3978:14870 —
-  // detached FRAMEs, not Icon/* instances (docs/open-questions.md#notes-editingbar-detached-from-components),
-  // so verified by lucide-react export presence only, same class as the
-  // food-beverage additions above. See design/notes/Icon.md.
-  | "Undo2"
-  | "Redo2"
-  | "Heading"
-  | "List"
-  | "TextQuote"
-  | "Table"
-  | "SquareCode"
-  | "CodeXml"
-  | "Bold"
-  | "Italic"
-  | "Strikethrough"
-  | "Underline"
-  | "Highlighter"
-  | "Link"
-  | "Superscript"
-  | "Subscript"
-  | "TextAlignStart"
-  | "TextAlignCenter"
-  | "TextAlignEnd"
-  | "TextAlignJustify"
-  // #265 Settings/account menu (node 4159:28770/71/72, 4160:33397/98/99):
-  // all five shape-verified path-for-path against the installed
-  // lucide-react@1.25.0 exports (Figma's C-curve export vs. lucide's `a`/`t`
-  // arc notation — same non-difference class as prior entries in this file).
-  // Settings' gear is the smooth-scallop redesign, NOT `Cog`/`Settings2` —
-  // both were rendered and ruled out. See design/notes/Icon.md.
-  | "Settings"
-  | "LogOut"
-  | "Sun"
-  | "Moon"
-  | "SunMoon"
-  | "EllipsisVertical"
-  // #265 Taal field (node 4160:34392/93): flags, not lucide exports — the
-  // first non-lucide entries in this union. Rendered via a separate
-  // `public/flags/*.svg` branch in the Icon atom below, never inlined here
-  // (their brand hex would fail check:server-only). See design/notes/Icon.md.
-  | "NL"
-  | "UK";
-
 // `NL`/`UK` have no lucide equivalent — real flag artwork lives in
 // public/flags/*.svg (exported from Figma nodes 4160:34392/4160:34393) and
 // is rendered through a plain <img>, not the lucide lookup table below.
-const FLAG_ICONS: Partial<Record<IconName, string>> = {
+const FLAG_ICONS = {
   NL: "/flags/nl.svg",
   UK: "/flags/uk.svg",
-};
+} as const satisfies Record<string, string>;
 
 // Figma name -> lucide-react component. NL/UK are excluded — they're flags,
-// not lucide exports — see FLAG_ICONS above and Icon() below.
-const ICONS: Record<Exclude<IconName, "NL" | "UK">, ComponentType<LucideProps>> = {
+// not lucide exports — see FLAG_ICONS above and Icon() below. This table and
+// FLAG_ICONS are the single source of `IconName`: add an icon here only.
+const ICONS = {
   PanelLeftClose: PanelLeftClose,
   PanelLeftOpen: PanelLeftOpen,
   ShoppingBasket: ShoppingBasket,
@@ -477,11 +296,21 @@ const ICONS: Record<Exclude<IconName, "NL" | "UK">, ComponentType<LucideProps>> 
   Moon: Moon,
   SunMoon: SunMoon,
   EllipsisVertical: EllipsisVertical,
-};
+} as const satisfies Record<string, ComponentType<LucideProps>>;
 
-// ICON_NAMES/isIconName cover the FLAG_ICONS entries too — Icon.tsx's own
-// union is the vocabulary, not just this lucide lookup table.
-const ICON_NAMES = new Set<string>([...Object.keys(ICONS), ...Object.keys(FLAG_ICONS)]);
+/**
+ * Stable, dashboard-facing icon vocabulary — one entry per icon in the Figma
+ * "Icons" frame (node-id 3760:6187), derived from `ICONS` + `FLAG_ICONS` so
+ * the union, the runtime guard and the story can't drift. Keys are the
+ * PascalCase Figma layer name, identical to the lucide-react export. Mapping
+ * history and name-vs-shape mismatches: `design/notes/Icon.md`.
+ */
+export type IconName = keyof typeof ICONS | keyof typeof FLAG_ICONS;
+
+/** Every `IconName` (lucide first, then flags) — the Ladle story renders this. */
+export const ALL_ICON_NAMES = [...Object.keys(ICONS), ...Object.keys(FLAG_ICONS)] as IconName[];
+
+const ICON_NAMES = new Set<string>(ALL_ICON_NAMES);
 
 /** Runtime guard for a DB-sourced icon string (e.g. `board_columns.icon`,
  * free-text at the schema layer per lib/boards/schemas.ts) before it's
@@ -510,8 +339,8 @@ export interface IconProps {
  * lucide name in that case anyway, so this is a silent no-op, not a trap.
  */
 export function Icon({ name, size = 24, strokeWidth = 2, className }: IconProps) {
-  const flagSrc = FLAG_ICONS[name];
-  if (flagSrc) {
+  if (name in FLAG_ICONS) {
+    const flagSrc = FLAG_ICONS[name as keyof typeof FLAG_ICONS];
     return (
       <img
         src={flagSrc}
@@ -523,8 +352,6 @@ export function Icon({ name, size = 24, strokeWidth = 2, className }: IconProps)
       />
     );
   }
-  // Safe: the flagSrc branch above already returned for the only two
-  // IconName members ICONS doesn't cover (NL/UK).
-  const IconComponent = ICONS[name as Exclude<IconName, "NL" | "UK">];
+  const IconComponent = ICONS[name as keyof typeof ICONS];
   return <IconComponent size={size} strokeWidth={strokeWidth} className={className} aria-hidden="true" />;
 }
