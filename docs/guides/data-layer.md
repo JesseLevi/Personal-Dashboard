@@ -39,7 +39,7 @@ A non-`public` schema must also be exposed on the Data API, and that setting is 
 - `middleware.ts` only refreshes session tokens — **it is not a route guard.** The single unauthenticated redirect lives in `app/(app)/layout.tsx`; don't add a competing one.
 - `getClaims()` verifies the JWT locally (deliberate, #168): a revoked session stays accepted until the access token expires.
 - **Never catch `DYNAMIC_SERVER_USAGE` in a try/catch** — reading cookies/locale makes `next build` throw it to signal "not static"; swallowing it hides the bailout and spams build logs. Rethrow it untouched (see `i18n/request.ts`); other errors may fall back to `"nl"`.
-- Seed functions (`seed_default_*`) are `after insert on auth.users` triggers: they never fire for pre-existing accounts, and are `security definer`; since #304 neither `anon` nor `authenticated` can call them.
+- Seed functions (`seed_default_*`) are `after insert on auth.users` triggers (`security definer`; neither `anon` nor `authenticated` can call them, #304) and thin wrappers around `apply_seed()`. Pre-existing accounts are seeded lazily by `ensure_user_defaults()` (called in `app/(app)/layout.tsx`, marker table `user_seeds`, ADR-0017). New seed = key in `seed_keys()` + `seed_*_for` body + `case` in `apply_seed`; never grant EXECUTE on user-id-taking helpers.
 - RPC form for atomic multi-statement writes (ADR-0015 precedent: `move_card`): `security invoker`, `search_path=''`, `revoke from public`, grants only to `authenticated`/`service_role`, pgTAP test. anon gets no implicit EXECUTE on new functions (default privileges revoked, #304); `rls-function-execute-grants.sql` fails if one slips through.
 
 ## Constraints
