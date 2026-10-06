@@ -27,21 +27,15 @@
  * ticket #6 report for the open question this raises for CI.
  */
 import { test, expect } from "@playwright/test";
-import { readFileSync } from "node:fs";
 import path from "node:path";
+import { loadStoryIds } from "./story-ids";
 
 // Playwright compiles this config as CommonJS (the project's package.json has
 // no "type": "module"), so __dirname is available and preferred over
 // `import.meta.url` here.
 const stylePath = path.join(__dirname, "screenshot-override.css");
 
-interface LadleMeta {
-  stories: Record<string, { name: string; filePath: string }>;
-}
-
-const metaPath = path.join(process.cwd(), "build", "meta.json");
-const meta = JSON.parse(readFileSync(metaPath, "utf-8")) as LadleMeta;
-const storyIds = Object.keys(meta.stories).sort();
+const storyIds = loadStoryIds();
 
 test.describe("Ladle story visual baselines", () => {
   // Fails loudly (rather than reporting a silent "0 tests passed") if the
