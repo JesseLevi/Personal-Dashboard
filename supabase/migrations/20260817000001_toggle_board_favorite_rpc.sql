@@ -19,8 +19,9 @@
 --
 -- Returns the board's new is_favorite value.
 --
--- Reaches the hosted database only via the workflow_dispatch-only deploy
--- workflow (ADR-0012 amendment 2) -- merging does not push it by itself.
+-- Reaches the hosted database only via deploy.yml (workflow_dispatch) or a
+-- user-confirmed apply (ADR-0012, 2026-08-02 amendments) -- merging does not
+-- push it by itself.
 create function public.toggle_board_favorite(p_board_id uuid)
 returns boolean
 language plpgsql
