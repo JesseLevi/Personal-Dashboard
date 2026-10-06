@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
+import { ensureUserDefaults } from "@/lib/defaults/ensure";
 import { getProfileForNav } from "@/lib/profile/queries";
 import { AppShellNav } from "./_components/AppShellNav";
 
@@ -22,6 +23,10 @@ export default async function AppLayout({
 }) {
   const userId = await getAuthenticatedUserId();
   if (!userId) redirect("/login");
+
+  // #293: lazy, idempotent seeding for accounts the signup triggers never
+  // reached (ADR-0017). Steady state = one indexed count in SQL.
+  await ensureUserDefaults();
 
   const profile = await getProfileForNav();
 
