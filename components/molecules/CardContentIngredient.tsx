@@ -7,6 +7,7 @@ import { AnimatedAddToBasketButton } from "./AnimatedAddToBasketButton";
 import { Button } from "../atoms/Button";
 import { Checkbox } from "../atoms/Checkbox";
 import { Tag } from "../atoms/Tag";
+import type { ActionResult } from "@/lib/shopping/types";
 
 /**
  * Molecule/Card-content/Ingredient — Figma component set "Card-content/Ingredient"
@@ -58,7 +59,7 @@ export type CardContentIngredientProps =
     })
   | (CardContentIngredientBaseProps & {
       swipeAction: "cart";
-      onAddToCart: () => void;
+      onAddToCart: () => Promise<ActionResult>;
       addToCartLabel: string;
       onDelete?: undefined;
       deleteLabel?: never;

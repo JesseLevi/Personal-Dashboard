@@ -152,7 +152,7 @@ export const SwipeToCart = () => (
       name="Banana"
       quantity="300 gr"
       checked={false}
-      onAddToCart={() => {}}
+      onAddToCart={async () => ({ success: true, data: undefined })}
       addToCartLabel={en.components.cardContentIngredient.addToCartLabel}
       swipeAction="cart"
     />

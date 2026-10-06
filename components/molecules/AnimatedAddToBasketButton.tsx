@@ -5,6 +5,8 @@ import clsx from "clsx";
 import { useEffect, useRef, useState, type ButtonHTMLAttributes } from "react";
 import { Button } from "../atoms/Button";
 import { Icon, type IconName } from "../atoms/Icon";
+import { playsAddedFace } from "@/lib/ui/add-to-basket";
+import type { ActionResult } from "@/lib/shopping/types";
 
 /**
  * Molecule/AnimatedAddToBasketButton — Figma frame "AddToBasketAnimation"
@@ -44,8 +46,8 @@ type AnimatedAddToBasketButtonBaseProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
   "children" | "onClick" | "type"
 > & {
-  /** Fired on click, before the "added" face plays -- see the module's own doc comment for why a failed result still plays the animation. */
-  onAddToBasket: () => void | Promise<void>;
+  /** Fired on click. The "added" face plays only once this resolves with `success: true`; a failure leaves the button at rest (#290, design/notes/AnimatedAddToBasketButton.md). */
+  onAddToBasket: () => Promise<ActionResult>;
 };
 
 export type AnimatedAddToBasketButtonProps =
@@ -74,8 +76,14 @@ export function AnimatedAddToBasketButton({
     if (revertTimer.current) clearTimeout(revertTimer.current);
   }, []);
 
-  function handleClick() {
-    void onAddToBasket();
+  const pending = useRef(false);
+
+  async function handleClick() {
+    if (pending.current) return;
+    pending.current = true;
+    const played = await playsAddedFace(onAddToBasket);
+    pending.current = false;
+    if (!played) return;
     setAdded(true);
     if (revertTimer.current) clearTimeout(revertTimer.current);
     revertTimer.current = setTimeout(() => setAdded(false), REVERT_MS);

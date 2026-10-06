@@ -95,7 +95,7 @@ A real aisle layer needs a curated 27-group→aisle map **plus** name-pattern ov
 
 ### winkelmand-send-no-success-feedback
 
-No fetched node shows any acknowledgement that a send succeeded — no toast, badge, or checkmark swap. **This has already cost real time**: `AnimatedAddToBasketButton` plays its "Toegevoegd" animation regardless of the `ActionResult`, so a completely broken insert path (a migration that never reached hosted) looked like success for an entire ticket. A UI that always shows success cannot surface a broken server action. Needs a real decision: toast, inline confirmation, Winkelmand badge count, or an explicit ratification that silence is correct.
+No fetched node shows any acknowledgement that a send succeeded — no toast, badge, or checkmark swap. **This has already cost real time**: `AnimatedAddToBasketButton` plays its "Toegevoegd" animation regardless of the `ActionResult`, so a completely broken insert path (a migration that never reached hosted) looked like success for an entire ticket. A UI that always shows success cannot surface a broken server action. Needs a real decision: toast, inline confirmation, Winkelmand badge count, or an explicit ratification that silence is correct. **#290:** `AnimatedAddToBasketButton` now plays "Toegevoegd" only on `success: true`; on failure it silently returns to rest, so the add-to-basket failure state (button/row/toast) has no design either and the user currently gets no signal that the add failed.
 
 ### winkelmand-mobile-sort-dropdown-anchor-undesigned
 
