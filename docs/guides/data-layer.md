@@ -25,7 +25,7 @@ Fundamentals (multi-user + RLS, NL/EN i18n, security-by-design) are decided in `
 
 A non-`public` schema must also be exposed on the Data API, and that setting is **not in this repo**: `supabase/config.toml` `[api].schemas` is local only; hosted is a dashboard setting (Exposed schemas), so a migrated, granted, RLS'd schema can still return `PGRST106` in production.
 
-**Hosted state for `reference`**: exposed via `alter role authenticator set pgrst.db_schemas = 'public, graphql_public, reference'` (+ `notify pgrst, 'reload schema'`), nowhere in version control. It shadows the dashboard toggle (UI changes do nothing) and `supabase gen types` against hosted omits `reference` and the `public.ingredients.reference_id` FK. End state: set it in the dashboard, drop the override (tracked by an `[OPT]` ticket).
+**Hosted state for `reference`**: exposed through the dashboard (Settings → Data API → Exposed schemas = `public, graphql_public, reference`) with **no** `authenticator` role override. Never `alter role authenticator set pgrst.db_schemas`: it shadows the dashboard setting (UI changes then do nothing) and lives outside version control. Check with `scripts/check-reference-exposed.sh` (fails on `PGRST106`). `supabase gen types --linked` includes `reference` and the `public.ingredients.reference_id` FK.
 
 ## Generated types (`lib/database.types.ts`)
 
