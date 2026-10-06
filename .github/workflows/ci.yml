@@ -48,6 +48,8 @@ jobs:
         run: pnpm check:server-only
       - name: Raw radius/spacing utilities in components/ (flag or token, #218)
         run: pnpm check:raw-spacing
+      - name: Retired token names anywhere in the repo, incl. .ladle/ + configs (#285)
+        run: pnpm check:retired-tokens
       - name: Comment budget in components/ (one home per fact)
         run: pnpm check:comment-budget
       # `pnpm build` removed (#259): Vercel already builds a Preview on every

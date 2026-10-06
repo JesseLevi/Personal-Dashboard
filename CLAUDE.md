@@ -56,4 +56,4 @@ When a ticket forces a trade-off, resolve it in this order:
 - `pnpm test:visual` / `pnpm test:visual:update` — Playwright screenshot baselines; run before every component PR (CI's job is non-blocking until Linux baselines exist)
 - `pnpm worker` — job queue consumer (needs `.env` with service_role)
 - `pnpm db:reset` / `pnpm test:rls` / `pnpm db:types` — Supabase (needs Docker: CI or the server, not this dev machine)
-- `pnpm check:rls-coverage` / `pnpm check:server-only` / `pnpm check:raw-spacing` / `pnpm check:comment-budget` — CI gates, also runnable locally
+- `pnpm check:rls-coverage` / `pnpm check:server-only` / `pnpm check:raw-spacing` / `pnpm check:comment-budget` / `pnpm check:retired-tokens` — CI gates, also runnable locally

@@ -11,8 +11,8 @@
  * `appendToHead` string (the pre-#49 mechanism) doesn't survive `pnpm ladle:build`.
  *
  * Token mapping (issue #41, names updated for #203's rename):
- * - preview background   -> --color-surface-highlight-white  (was --color-surface)
- * - chrome text + icons  -> --color-text-secondary           (was --color-text-muted)
+ * - preview background   -> --color-surface-highlight-white  (pre-#203 name retired)
+ * - chrome text + icons  -> --color-text-secondary           (pre-#203 name retired)
  *   (icons are inline SVGs using stroke/fill="currentColor", so recoloring the text
  *   color that governs .ladle-aside / .ladle-markdown / .ladle-error-content also
  *   recolors the icons that inherit it.)

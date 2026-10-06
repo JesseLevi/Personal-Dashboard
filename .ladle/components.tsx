@@ -26,10 +26,10 @@ import nl from "../messages/nl.json";
  * like it does in the real app, and Ladle's Light/Dark toggle (which sets
  * `data-theme` on the outer document) flips it.
  *
- * The utility is `bg-surface-highlight-white`, not `bg-surface`: #203 renamed
+ * The utility is `bg-surface-highlight-white`, not its pre-#203 name: #203 renamed
  * that token onto its Figma path and missed this file, so from #203 until
  * #213 the class named a token that no longer existed and Tailwind emitted no
- * `.bg-surface` rule at all — the canvas silently reverted to the
+ * rule for it at all — the canvas silently reverted to the
  * browser-default white this Provider was written to replace. In light mode
  * that is the same white the token resolves to, which is why no baseline ever
  * moved and nobody noticed; **in dark mode it meant the canvas stayed white**

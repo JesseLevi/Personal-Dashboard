@@ -1,0 +1,23 @@
+{
+  "$description": "Semantic colour tokens that no longer exist in app/theme.css. Single source for `pnpm check:retired-tokens` (#285). Names are without the `--color-` prefix. Add a name here whenever a token is renamed/removed.",
+  "$source": "Derived from the `--color-*` diff of app/theme.css before vs after #203 (565a43d~1..565a43d), plus `surface-hover` (dropped in the same migration, absent from theme.css since).",
+  "retired": [
+    "accent",
+    "border",
+    "border-active",
+    "border-hover",
+    "border-input-active",
+    "border-muted",
+    "border-selected",
+    "purple-figma",
+    "surface",
+    "surface-active",
+    "surface-hover",
+    "surface-muted",
+    "surface-raised",
+    "surface-raised-active",
+    "surface-raised-hover",
+    "text",
+    "text-muted"
+  ]
+}
