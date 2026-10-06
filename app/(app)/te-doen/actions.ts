@@ -186,54 +186,25 @@ export async function toggleBoardFavorite(
   const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
-  const { data: board, error: fetchError } = await supabase
-    .from("boards")
-    .select("id, is_favorite")
-    .eq("id", parsed.data.boardId)
-    .eq("user_id", auth.userId)
-    .maybeSingle();
+  // One atomic RPC (#286, public.toggle_board_favorite): reads the current
+  // state, clears the previous favorite when switching on (the
+  // boards_one_favorite_per_user partial unique index allows one true row per
+  // user) and sets the new value in a single transaction. security invoker,
+  // so RLS plus the function's own user_id check govern ownership; MV404 =
+  // board not found or not owned by this user.
+  const { data: isFavorite, error } = await supabase.rpc("toggle_board_favorite", {
+    p_board_id: parsed.data.boardId,
+  });
 
-  if (fetchError) {
-    logDbError("toggleBoardFavorite", fetchError);
+  if (error) {
+    logDbError("toggleBoardFavorite", error);
+    if (error.code === "MV404") return { success: false, error: "not-found" };
     return { success: false, error: "generic" };
   }
-  if (!board) return { success: false, error: "not-found" };
-
-  const nextFavorite = !board.is_favorite;
-
-  if (nextFavorite) {
-    // boards_one_favorite_per_user (partial unique index on is_favorite=true)
-    // allows at most one true row per user, so the previous favorite must be
-    // cleared before this one is set — see the migration's own note that
-    // this is an app-layer responsibility, not enforced by a DB trigger.
-    // Two sequential statements, not a single transaction (no RPC exists for
-    // this yet): a failure between them can transiently leave zero
-    // favorites, never two — the unique index still guarantees that half —
-    // and the next toggle self-heals it.
-    const { error: clearError } = await supabase
-      .from("boards")
-      .update({ is_favorite: false })
-      .eq("user_id", auth.userId)
-      .eq("is_favorite", true);
-    if (clearError) {
-      logDbError("toggleBoardFavorite/clear", clearError);
-      return { success: false, error: "generic" };
-    }
-  }
-
-  const { error: updateError } = await supabase
-    .from("boards")
-    .update({ is_favorite: nextFavorite })
-    .eq("id", board.id)
-    .eq("user_id", auth.userId);
-
-  if (updateError) {
-    logDbError("toggleBoardFavorite/set", updateError);
-    return { success: false, error: "generic" };
-  }
+  if (isFavorite === null) return { success: false, error: "generic" };
 
   revalidatePath("/te-doen", "layout");
-  return { success: true, data: { isFavorite: nextFavorite } };
+  return { success: true, data: { isFavorite } };
 }
 
 export async function createColumn(
