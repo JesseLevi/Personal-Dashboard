@@ -14,7 +14,7 @@ create temporary view own_public_functions as
   from pg_proc p
   join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public'
-    and p.proowner = 'postgres'::regrole
+    and pg_get_userbyid(p.proowner) = 'postgres'
     and not exists (
       select 1 from pg_depend d
       where d.classid = 'pg_proc'::regclass and d.objid = p.oid and d.deptype = 'e'
