@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
+import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { Tag } from "@/components/atoms/Tag";
 import { AnimatedAddToBasketButton } from "@/components/molecules/AnimatedAddToBasketButton";
@@ -100,7 +101,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
   const [panelOpen, setPanelOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [overflowOpen, setOverflowOpen] = useState(false);
-  const [deleteConfirming, setDeleteConfirming] = useState(false);
+  const { confirming: deleteConfirming, ask: askDelete, cancel: cancelDelete } = useDeleteConfirm();
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   // #178: own transition, independent of handleDelete's -- sending to the
@@ -137,7 +138,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
       const result = await deleteRecipe({ recipeId: recipe.id });
       if (!result.success) {
         setDeleteError(tErrors(result.error));
-        setDeleteConfirming(false);
+        cancelDelete();
         return;
       }
       router.push("/recepten");
@@ -219,28 +220,13 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
         />
 
         {deleteConfirming ? (
-          // spacing-flag: delete-confirm row is a transient interaction state with no Figma node in either Recept frame — design/notes/RecipeDetailPage.md
-          <div className="flex flex-wrap items-center justify-end gap-4">
-            <p className="text-base font-semibold text-text-primary">{t("deleteConfirmLabel")}</p>
-            {/* spacing-flag: same transient delete-confirm state, no Figma node — design/notes/RecipeDetailPage.md */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setDeleteConfirming(false)}
-                disabled={isPending}
-              >
-                {t("cancelLabel")}
-              </Button>
-              <Button
-                variant="destructive"
-                icon="Trash"
-                onClick={handleDelete}
-                disabled={isPending}
-              >
-                {isPending ? t("deletingLabel") : t("deleteConfirmButtonLabel")}
-              </Button>
-            </div>
-          </div>
+          <DeleteConfirm
+            layout="inline"
+            isPending={isPending}
+            onCancel={cancelDelete}
+            onConfirm={handleDelete}
+            labels={{ prompt: t("deleteConfirmLabel"), cancel: t("cancelLabel"), confirm: t("deleteConfirmButtonLabel"), deleting: t("deletingLabel") }}
+          />
         ) : (
           // spacing-flag: Figma's Desktop "Knoppen" row (3997:15176) spaces all three buttons uniformly at itemSpacing 20 (inline/gap-xl) — this outer wrapper's nested split (16 here, 20 on the inner group below) has no matching Figma node; converting would change the rendered px — design/notes/RecipeDetailPage.md
           <div className="flex flex-wrap items-center justify-end gap-4">
@@ -259,7 +245,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
               <Button variant="filled" icon="Pencil" onClick={() => setEditOpen(true)}>
                 {t("editLabel")}
               </Button>
-              <Button variant="destructive" icon="Trash" onClick={() => setDeleteConfirming(true)}>
+              <Button variant="destructive" icon="Trash" onClick={() => askDelete()}>
                 {t("deleteLabel")}
               </Button>
             </div>
@@ -294,7 +280,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
                       icon="Trash"
                       onClick={() => {
                         setOverflowOpen(false);
-                        setDeleteConfirming(true);
+                        askDelete();
                       }}
                     >
                       {t("deleteLabel")}

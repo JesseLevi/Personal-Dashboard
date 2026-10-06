@@ -8,6 +8,7 @@ import { StepIngredientPanel } from "@/components/organisms/StepIngredientPanel"
 import { InputField } from "@/components/atoms/InputField";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { Button } from "@/components/atoms/Button";
+import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import { ImageUploadField } from "@/components/molecules/ImageUploadField";
 import { RecipeIngredientRow } from "@/components/molecules/RecipeIngredientRow";
 import { isIconName } from "@/components/atoms/Icon";
@@ -195,7 +196,7 @@ export function RecipePanel({
     open: boolean;
     stepLocalId: string | null;
   }>({ open: false, stepLocalId: null });
-  const [deleteConfirming, setDeleteConfirming] = useState(false);
+  const { confirming: deleteConfirming, ask: askDelete, cancel: cancelDelete } = useDeleteConfirm();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -221,7 +222,7 @@ export function RecipePanel({
       setSteps(recipe ? stepRowsFromRecipe(recipe, nextIngredients) : [emptyStepRow()]);
       setIngredientSearch({ open: false, rowLocalId: null });
       setStepIngredientPanel({ open: false, stepLocalId: null });
-      setDeleteConfirming(false);
+      cancelDelete();
       setError(null);
     }
   }
@@ -354,7 +355,7 @@ export function RecipePanel({
       const result = await onDeleteRecipe({ recipeId: target.recipe.id });
       if (!result.success) {
         setError(tErrors(result.error));
-        setDeleteConfirming(false);
+        cancelDelete();
         return;
       }
       onMutated?.();
@@ -378,28 +379,13 @@ export function RecipePanel({
   // codebase never showing a delete affordance on its create branch.
   const footer =
     target.mode === "edit" && deleteConfirming ? (
-      <>
-        <p className="text-base font-semibold text-text-primary">{t("deleteConfirmLabel")}</p>
-        <div className="flex gap-inline-sm">
-          <Button
-            variant="outline"
-            className="grow basis-0"
-            onClick={() => setDeleteConfirming(false)}
-            disabled={isPending}
-          >
-            {t("cancelLabel")}
-          </Button>
-          <Button
-            variant="destructive"
-            icon="Trash"
-            className="grow basis-0"
-            onClick={handleDelete}
-            disabled={isPending}
-          >
-            {isPending ? t("deletingLabel") : t("deleteConfirmButtonLabel")}
-          </Button>
-        </div>
-      </>
+      <DeleteConfirm
+        layout="stacked"
+        isPending={isPending}
+        onCancel={cancelDelete}
+        onConfirm={handleDelete}
+        labels={{ prompt: t("deleteConfirmLabel"), cancel: t("cancelLabel"), confirm: t("deleteConfirmButtonLabel"), deleting: t("deletingLabel") }}
+      />
     ) : (
       <div className="flex gap-inline-sm">
         {target.mode === "edit" && (
@@ -407,7 +393,7 @@ export function RecipePanel({
             variant="destructive"
             icon="Trash"
             className="grow basis-0"
-            onClick={() => setDeleteConfirming(true)}
+            onClick={() => askDelete()}
             disabled={isPending}
           >
             {t("deleteLabel")}

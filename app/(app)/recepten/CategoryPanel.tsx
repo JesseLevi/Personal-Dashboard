@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { SidePanel } from "@/components/organisms/SidePanel";
 import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
+import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import type { IconName } from "@/components/atoms/Icon";
 import type { ActionResult, RecipeCategoryRow } from "@/lib/recipes/types";
 
@@ -151,7 +152,7 @@ export function CategoryPanel({
 
   const [name, setName] = useState(category?.name ?? "");
   const [icon, setIcon] = useState<IconName>(defaultIcon);
-  const [deleteConfirming, setDeleteConfirming] = useState(false);
+  const { confirming: deleteConfirming, ask: askDelete, cancel: cancelDelete } = useDeleteConfirm();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -175,7 +176,7 @@ export function CategoryPanel({
     if (shouldReset) {
       setName(category?.name ?? "");
       setIcon(defaultIcon);
-      setDeleteConfirming(false);
+      cancelDelete();
       setError(null);
     }
   }
@@ -213,7 +214,7 @@ export function CategoryPanel({
       const result = await onDeleteCategory({ categoryId: category.id });
       if (!result.success) {
         setError(tErrors(result.error));
-        setDeleteConfirming(false);
+        cancelDelete();
         return;
       }
       onMutated?.();
@@ -230,28 +231,13 @@ export function CategoryPanel({
   // fields.
   const footer =
     target.mode === "edit" && deleteConfirming ? (
-      <>
-        <p className="text-base font-semibold text-text-primary">{t("deleteConfirmLabel")}</p>
-        <div className="flex gap-inline-sm">
-          <Button
-            variant="outline"
-            className="grow basis-0"
-            onClick={() => setDeleteConfirming(false)}
-            disabled={isPending}
-          >
-            {t("cancelLabel")}
-          </Button>
-          <Button
-            variant="destructive"
-            icon="Trash"
-            className="grow basis-0"
-            onClick={handleDelete}
-            disabled={isPending}
-          >
-            {isPending ? t("deletingLabel") : t("deleteConfirmButtonLabel")}
-          </Button>
-        </div>
-      </>
+      <DeleteConfirm
+        layout="stacked"
+        isPending={isPending}
+        onCancel={cancelDelete}
+        onConfirm={handleDelete}
+        labels={{ prompt: t("deleteConfirmLabel"), cancel: t("cancelLabel"), confirm: t("deleteConfirmButtonLabel"), deleting: t("deletingLabel") }}
+      />
     ) : (
       <div className="flex gap-inline-sm">
         {target.mode === "edit" && (
@@ -259,7 +245,7 @@ export function CategoryPanel({
             variant="destructive"
             icon="Trash"
             className="grow basis-0"
-            onClick={() => setDeleteConfirming(true)}
+            onClick={() => askDelete()}
             disabled={isPending}
           >
             {t("deleteLabel")}
