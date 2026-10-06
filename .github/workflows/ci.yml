@@ -52,6 +52,8 @@ jobs:
         run: pnpm check:retired-tokens
       - name: Comment budget in components/ (one home per fact)
         run: pnpm check:comment-budget
+      - name: Size budget for HANDOFF.md and guides (#295)
+        run: pnpm check:doc-budget
       # `pnpm build` removed (#259): Vercel already builds a Preview on every
       # push and reports it as a commit status ("Vercel — success"), so
       # building again here duplicates that work on GitHub's metered
