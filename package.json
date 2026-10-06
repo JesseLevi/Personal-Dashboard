@@ -24,6 +24,7 @@
     "check:server-only": "bash scripts/check-server-only.sh",
     "check:raw-spacing": "bash scripts/check-raw-spacing.sh",
     "check:comment-budget": "bash scripts/check-comment-budget.sh",
+    "check:doc-budget": "bash scripts/check-doc-budget.sh",
     "check:tokens-drift": "node scripts/check-tokens-drift.mjs",
     "check:retired-tokens": "node scripts/check-retired-tokens.mjs"
   },
