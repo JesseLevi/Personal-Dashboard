@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { Placeholder } from "@tiptap/extensions";
 import { Button } from "@/components/atoms/Button";
+import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import { EditingBar } from "@/components/organisms/EditingBar";
 import { noteExtensions } from "@/lib/notes/extensions";
 import type { NoteRow } from "@/lib/notes/types";
@@ -36,7 +37,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
   const tErrors = useTranslations("notes.errors");
   const router = useRouter();
 
-  const [deleteConfirming, setDeleteConfirming] = useState(false);
+  const { confirming: deleteConfirming, ask: askDelete, cancel: cancelDelete } = useDeleteConfirm();
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -120,7 +121,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
       const result = await deleteNote({ noteId: note.id });
       if (!result.success) {
         setDeleteError(tErrors(result.error));
-        setDeleteConfirming(false);
+        cancelDelete();
         return;
       }
       router.push("/notities");
@@ -136,24 +137,15 @@ export function NoteEditor({ note }: NoteEditorProps) {
         <Button icon="ArrowLeft" aria-label={t("backLabel")} onClick={() => router.push("/notities")} />
 
         {deleteConfirming ? (
-          // spacing-flag: gap-4 -- transient confirm-row state, no Figma node
-          // for it (same precedent as RecipeDetailPage.tsx/
-          // CategoryPanel.tsx) -- design/notes/NoteEditor.md
-          <div className="flex flex-wrap items-center justify-end gap-4">
-            <p className="text-base font-semibold text-text-primary">{t("deleteConfirmLabel")}</p>
-            {/* spacing-flag: gap-2 -- same transient confirm-row state --
-                design/notes/NoteEditor.md */}
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => setDeleteConfirming(false)} disabled={isPending}>
-                {t("cancelLabel")}
-              </Button>
-              <Button variant="destructive" icon="Trash" onClick={handleDelete} disabled={isPending}>
-                {isPending ? t("deletingLabel") : t("deleteConfirmButtonLabel")}
-              </Button>
-            </div>
-          </div>
+          <DeleteConfirm
+            layout="inline"
+            isPending={isPending}
+            onCancel={cancelDelete}
+            onConfirm={handleDelete}
+            labels={{ prompt: t("deleteConfirmLabel"), cancel: t("cancelLabel"), confirm: t("deleteConfirmButtonLabel"), deleting: t("deletingLabel") }}
+          />
         ) : (
-          <Button variant="destructive" icon="Trash" onClick={() => setDeleteConfirming(true)}>
+          <Button variant="destructive" icon="Trash" onClick={() => askDelete()}>
             {t("deleteLabel")}
           </Button>
         )}

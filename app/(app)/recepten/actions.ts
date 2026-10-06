@@ -65,8 +65,7 @@ import type { Database } from "@/lib/database.types";
 // supabase-js only reaches a real Postgres transaction via an RPC function,
 // and #122's stated file list didn't include one, so the old
 // replaceRecipeIngredients/replaceRecipeSteps did delete-then-insert as two
-// sequential statements (the same accepted trade-off toggleBoardFavorite's
-// clear-then-set already ships). #149 closes that gap: the user
+// sequential statements. #149 closes that gap: the user
 // (2026-08-01) approved this repo's first RPC,
 // public.replace_recipe_contents (20260802000001_recipe_step_ingredients.sql),
 // and replaceRecipeContents below is one supabase.rpc(...) call — the
