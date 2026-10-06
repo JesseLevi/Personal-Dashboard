@@ -12,13 +12,13 @@
 - Phases 0–3 done. Phases 4 (Recepten) and 5 (Boodschappenlijst) mid-flight per the board.
 - Phase 6 (Notities) is code-complete (#225–#235, #263). Left: a **design round** (rendered table, prose typography, row/column controls — `notes-table-ui-not-designed`, `notes-prose-typography-not-designed`; plus #265's two undesigned values in `design/notes/ButtonToggle.md`, `Sidebar.md`). Treat that shipped CSS as provisional.
 - Phase 7+ (Agenda, AI) is backlog. #1–#5, #9–#11 need real accounts: don't start unprompted.
-- Tooling, test-gap, refactor and owed-ADR work is on the board as `[OPT]` tickets (#279–#304; #280–#283, #287 in review).
+- `[OPT]` round (#279–#304): all merged or in review except the hosted tickets #279 and #291.
 
 ## Next
 
-1. **#185** — first signed-in run against hosted Supabase; nothing has ever run authenticated (incl. the perf round's auth rewrite). Beyond the ticket, cover: a drag (`move_*` RPCs), `/notities` (empty board expected — seed triggers never fired for existing accounts, #293; "Categorie" creates one, no backfill), a real locale save, theme persisting, sign-out redirect, and dark mode by eye (checkbox border, sidebar overlay, SidePanel scrim).
-2. **#279 before any `deploy.yml` run** (ledger version fix; needs the user's explicit go).
-3. The `[OPT]` tickets, then Phase 4/5 remainder per the board.
+1. **#185** — first signed-in run against hosted Supabase; nothing has ever run authenticated (incl. the perf round's auth rewrite). Beyond the ticket, cover: a drag (`move_*` RPCs), `/notities` (after the next deploy, `ensure_user_defaults()` seeds missing defaults once on first load — #293/ADR-0017; one refresh may be needed), a real locale save, theme persisting, sign-out redirect, and dark mode by eye (checkbox border, sidebar overlay, SidePanel scrim).
+2. **#279 before any `deploy.yml` run** (ledger version fix), and **#291** (reference-schema exposure) — both hosted writes the user must run or explicitly authorise per action. The next deploy also ships #293's migration; afterwards `pnpm db:types` and drop the cast in `lib/defaults/ensure.ts`.
+3. Phase 4/5 remainder per the board.
 
 ## Traps that have already cost a session
 
