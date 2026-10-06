@@ -52,7 +52,7 @@ The full component update loop (node-id → fetch → update → Ladle diff → 
 
 ## Design tokens (ADR-0010)
 
-Pipeline: Figma variables → `design/tokens.json` (`pnpm sync:tokens`) → generated `app/theme.css` (Tailwind v4 `@theme`) → utilities (`Architecture.md` §3.2). Never hand-edit generated theme files; `pnpm check:tokens-drift` checks the mirror against `design/figma-variables/`.
+Pipeline: Figma variables → `design/tokens.json` (`pnpm sync:tokens`) → generated `app/theme.css` (Tailwind v4 `@theme`) → utilities (`Architecture.md` §3.2). Never hand-edit generated theme files; `pnpm check:tokens-drift` checks the mirror against `design/figma-variables/`. Renamed/removed tokens go in `design/retired-tokens.json`; `pnpm check:retired-tokens` (#285) fails on their `--color-*`/utility forms anywhere in the repo, `.ladle/` and configs included.
 
 - **Figma text styles are Tailwind-native**: `text-xl/semibold` → `text-xl font-semibold`.
 - **The token scale is closed.** A Figma value with no scale/semantic equivalent: ask the user before inventing a one-off.
