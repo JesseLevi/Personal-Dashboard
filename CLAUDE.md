@@ -16,7 +16,7 @@ Load only the guide your task touches — each is authoritative for its area; do
 | Figma is missing something the ticket assumes | `docs/open-questions.md` — reference by slug, never by number |
 | Why a past ticket went wrong, or why a token has its value | `docs/incidents.md` — on demand only |
 
-Session start: read **`docs/HANDOFF.md`** (state, next steps); keep accurate on finish — replace stale bullets, don't append dated sections; `git log`/`docs/incidents.md`/`design/notes/` carry history. `docs/phase-log.md` = infra per phase, read on demand, update when a phase item lands. Per-ticket status → **board**, not these files.
+Session start: read **`docs/HANDOFF.md`** (state, next steps; ≤ 6KB). On finish replace stale bullets, never append dated or per-ticket sections. History → `git log` / `docs/incidents.md` / `design/notes/`; ticket status → the **board**. `docs/phase-log.md` = infra per phase, on demand, updated when a phase item lands.
 
 ## Non-negotiables (apply to every task)
 
@@ -40,13 +40,12 @@ When a ticket forces a trade-off, resolve it in this order:
 5. LLM-readable by design (predictable structure, canonical text columns, semantic tokens)
 6. Readable for humans — clear file and folder structure
 
-## This dev machine
+## Tooling
 
-- No Docker, no standalone supabase CLI — `supabase` runs via `npx`; `pnpm db:reset` / `pnpm test:rls` are CI/server-only, absence isn't a failure.
-- `gh` installed and authenticated (incl. `project` scope) — board and PR commands work.
-- `.mcp.json` (Figma key) and `.env` are git-ignored on purpose; `.env.example` documents needed vars.
-- Figma: the hosted MCP is rate-limited (Starter plan, no full seat). The **`figma-console` MCP** reaches the file over a local WebSocket to the Desktop Bridge plugin — no limit, and it is the only route that exposes `boundVariables`. Needs Figma Desktop open with the plugin running; check with `figma_get_status` (`probe: true`).
-- Ad-hoc verification/debug screenshots (browser MCP, manual before/after captures) go in `screenshots/` (git-ignored), never the repo root.
+- `gh` with `project` scope is required for board/PR commands. No Docker locally: `pnpm db:reset` / `test:rls` / `db:types` are CI-only (absence isn't a failure); `supabase` runs via `npx`.
+- `.mcp.json` (Figma key) and `.env` are git-ignored; `.env.example` documents the vars.
+- Figma: the **`figma-console` bridge** (Figma Desktop + Desktop Bridge plugin; check `figma_get_status` with `probe: true`) is the only route to `boundVariables`; the hosted Figma MCP is rate-limited.
+- Ad-hoc verification screenshots go in `screenshots/` (git-ignored), never the repo root.
 
 ## Commands
 

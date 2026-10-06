@@ -2,6 +2,14 @@
 
 Append-only archive of per-ticket incident write-ups: defects that shipped past every CI gate, the merge-conflict resolutions for specific PRs, and the reasoning behind non-obvious fixes. These are moved here verbatim, not summarised, because the detail is the evidence base for why this project doesn't fully trust its CI gates. Nothing here is current status — entries are never updated once written. Read on demand when investigating a specific ticket, a recurring failure mode, or a past merge — never as part of session start.
 
+## 2026-08-14 — #203's token rename missed `.ladle/`; a rename gate that only checks `design/` and `components/` cannot see config directories (#214)
+
+`.ladle/ladle-theme.css` and `components.tsx` still used the retired `--color-surface`/`bg-surface`, so Tailwind emitted nothing and Ladle fell back to its defaults. Light mode was pixel-identical (same white), so it survived two tickets; dark mode's canvas stayed white. Grep the whole repo (config dirs included) for retired token names after any rename.
+
+## Ticket premise: a recorded blocker carries the environment it was measured in (#190)
+
+#190 sat parked as "blocked on the `reference` schema" for several sessions; the observation was true for the *hosted* project only. CI's local stack was never affected and the gate was ~13 lines. Before planning around a documented constraint, ask which environment produced it.
+
 ## 2026-08-18 — A popover anchor verified by measuring one layout silently expires when a sibling's label changes; two mobile dropdowns rendered off-screen
 
 Two hand-rolled `absolute top-full …` popovers (`PasAanPanel.tsx`'s Eenheid
