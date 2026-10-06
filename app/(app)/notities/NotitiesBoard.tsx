@@ -19,7 +19,8 @@ import { NOTE_SORT_OPTIONS, type NoteSortOption } from "@/lib/notes/sort";
 import { effectiveNotesSearchQuery, NOTES_SEARCH_DEBOUNCE_MS } from "@/lib/notes/search";
 import type { CategoryWithNotes, NoteSummaryRow } from "@/lib/notes/types";
 import type { NotitiesPageData } from "./notes-data";
-import { NoteCategoryPanel, type NoteCategoryPanelTarget } from "./NoteCategoryPanel";
+import { CategoryPanel, type CategoryPanelTarget } from "@/components/organisms/CategoryPanel";
+import { NOTE_CATEGORY_ICONS } from "./category-icons";
 import { createCategory, createNote, deleteCategory, moveNote, renameCategory } from "./actions";
 
 // Client wrapper around BoardView (#230) -- `renderItem` is a function prop
@@ -30,7 +31,7 @@ import { createCategory, createNote, deleteCategory, moveNote, renameCategory } 
 // te-doen/TeDoenBoard.tsx. Header + board live in one file, like
 // ReceptenBoard.tsx and unlike Te-Doen's TeDoenHeader/TeDoenBoard split --
 // the header's "Categorie" trigger and every column's pencil button (#232)
-// target the same NoteCategoryPanel, so one shared `categoryPanel` state
+// target the same CategoryPanel, so one shared `categoryPanel` state
 // needs one owner, same reasoning ReceptenBoard.md records for
 // CategoryPanel; #231's search bar sits in this same file for the same
 // reason -- it shares the PageHeader it's wired into. Full reasoning for
@@ -248,13 +249,13 @@ export function NotitiesBoard({
   });
 
   // #232: header "Categorie" (create) and every column's pencil (edit) share
-  // one NoteCategoryPanel instance, same independent open/target convention
+  // one CategoryPanel instance, same independent open/target convention
   // as ReceptenBoard.tsx's own `panel` state -- closing (X/overlay/Escape)
   // only flips `open`, leaving `target` in place so the close transition has
   // real content to animate away from.
   const [categoryPanel, setCategoryPanel] = useState<{
     open: boolean;
-    target: NoteCategoryPanelTarget;
+    target: CategoryPanelTarget;
   }>({
     open: false,
     target: { mode: "create" },
@@ -480,7 +481,7 @@ export function NotitiesBoard({
               emptyLabel={t("addItemLabel")}
               onAddItem={handleAddNote}
               onItemClick={(note) => router.push(`/notities/${note.id}`)}
-              // #232: every column's pencil opens the same NoteCategoryPanel
+              // #232: every column's pencil opens the same CategoryPanel
               // the header's "Categorie" trigger does, in edit mode.
               onEditColumn={(columnId) => {
                 const category = localCategories.find((c) => c.id === columnId);
@@ -520,12 +521,15 @@ export function NotitiesBoard({
       {/* #232: outside the #231 fade wrapper on purpose -- SidePanel is an
           overlay with its own open/close transition, and it must not inherit
           the search fade's opacity while a category is being edited. */}
-      <NoteCategoryPanel
+      <CategoryPanel
         open={categoryPanel.open}
         onClose={() => setCategoryPanel((current) => ({ ...current, open: false }))}
         target={categoryPanel.target}
+        icons={NOTE_CATEGORY_ICONS}
+        translationNamespace="components.noteCategoryPanel"
+        errorsNamespace="notes.errors"
         onCreateCategory={createCategory}
-        onRenameCategory={renameCategory}
+        onUpdateCategory={renameCategory}
         onDeleteCategory={deleteCategory}
         onMutated={() => router.refresh()}
       />

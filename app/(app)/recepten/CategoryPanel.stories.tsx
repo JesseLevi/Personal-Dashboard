@@ -1,9 +1,10 @@
 // figma: node-id=3891:17997 (+3957:11537 desktop)
 import { useState } from "react";
-import { CategoryPanel, type CategoryPanelTarget } from "./CategoryPanel";
+import { CategoryPanel, type CategoryPanelTarget } from "@/components/organisms/CategoryPanel";
+import { CATEGORY_ICONS } from "./category-icons";
 import type { ActionResult, RecipeCategoryRow } from "@/lib/recipes/types";
 
-// Dev-only mock actions — CategoryPanel never imports the real "use server"
+// Dev-only mock actions — the shared CategoryPanel never imports the real "use server"
 // module itself (design/notes/CategoryPanel.md), so these stand in for
 // createCategory/updateCategory/deleteCategory without needing Supabase/
 // Next's request context, same precedent as CardDetailPanel.stories.tsx.
@@ -47,6 +48,9 @@ export const CreateCategory = () => (
       onClose={() => {}}
       target={{ mode: "create" }}
       onCreateCategory={mockCreateCategory}
+      icons={CATEGORY_ICONS}
+      translationNamespace="components.categoryPanel"
+      errorsNamespace="recipes.errors"
       onUpdateCategory={mockUpdateCategory}
       onDeleteCategory={mockDeleteCategory}
     />
@@ -64,6 +68,9 @@ export const EditCategory = () => (
       onClose={() => {}}
       target={{ mode: "edit", category: sampleCategory }}
       onCreateCategory={mockCreateCategory}
+      icons={CATEGORY_ICONS}
+      translationNamespace="components.categoryPanel"
+      errorsNamespace="recipes.errors"
       onUpdateCategory={mockUpdateCategory}
       onDeleteCategory={mockDeleteCategory}
     />
@@ -101,7 +108,10 @@ export const Interactive = () => {
         onClose={() => setState((current) => ({ ...current, open: false }))}
         target={state.target}
         onCreateCategory={mockCreateCategory}
-        onUpdateCategory={mockUpdateCategory}
+        icons={CATEGORY_ICONS}
+      translationNamespace="components.categoryPanel"
+      errorsNamespace="recipes.errors"
+      onUpdateCategory={mockUpdateCategory}
         onDeleteCategory={mockDeleteCategory}
       />
     </div>

@@ -6,7 +6,6 @@ import { SidePanel } from "@/components/organisms/SidePanel";
 import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
 import type { IconName } from "@/components/atoms/Icon";
-import type { ActionResult, RecipeCategoryRow } from "@/lib/recipes/types";
 
 // Add/rename-category SidePanel content (#125) — Figma "Add column/Mobile"
 // (3891:17997) + desktop pair (3957:11537, panel node — 3957:11962 on the
@@ -19,108 +18,38 @@ import type { ActionResult, RecipeCategoryRow } from "@/lib/recipes/types";
 // target-changing SidePanel). Never imports "use server" code itself — the
 // composer passes real actions as props so Ladle can mock them. Icon-picker
 // curation, delete-confirm and validation decisions: design/notes/CategoryPanel.md.
+// Shared by /recepten and /notities (#287): the icon set, i18n namespaces and
+// server actions are props, everything else is identical for both callers.
 
-// The 8-slot "Icon list" (3891:18524 mobile / 3957:11544 desktop) renders
-// the SAME Icon/Sandwich placeholder in all 8 button instances — Figma
-// specifies a slot count, not which icons. First pass shipped a curated
-// 8-icon set for exactly that reason (see design/notes/CategoryPanel.md).
-// Superseded 2026-08-01 by direct user
-// instruction: show all 74 of lucide's "Food & beverage" category, not a
-// curation. The 66 added beyond the original 8 are listed in Icon.tsx and
-// were pulled from lucide-icons/lucide's own per-icon `categories`
-// metadata via the GitHub API — lucide.dev's category page doesn't render
-// its icon grid server-side, so the list was never guessed from the page
-// text. `SidePanel`'s content area already scrolls (`overflow-y-auto`,
-// footer pinned outside it) so 74 wrapped icon buttons need no new layout
-// decision. See design/notes/CategoryPanel.md and design/notes/Icon.md.
-export const CATEGORY_ICONS: IconName[] = [
-  "Sandwich",
-  "Croissant",
-  "CakeSlice",
-  "Broccoli",
-  "Coffee",
-  "Soup",
-  "Pizza",
-  "Cookie",
-  "Amphora",
-  "Apple",
-  "Banana",
-  "Barrel",
-  "Bean",
-  "BeanOff",
-  "Beef",
-  "BeefOff",
-  "Beer",
-  "BeerOff",
-  "Blender",
-  "BottleWine",
-  "Cake",
-  "Candy",
-  "CandyCane",
-  "CandyOff",
-  "Carrot",
-  "ChefHat",
-  "Cherry",
-  "Citrus",
-  "CookingPot",
-  "Cuboid",
-  "CupSoda",
-  "Dessert",
-  "DnaOff",
-  "Donut",
-  "Drumstick",
-  "Egg",
-  "EggFried",
-  "EggOff",
-  "Fish",
-  "FishOff",
-  "FishSymbol",
-  "GlassWater",
-  "Grape",
-  "Ham",
-  "Hamburger",
-  "HandPlatter",
-  "Hop",
-  "HopOff",
-  "IceCreamBowl",
-  "IceCreamCone",
-  "LeafyGreen",
-  "Lollipop",
-  "Martini",
-  "Microwave",
-  "Milk",
-  "MilkOff",
-  "Nut",
-  "NutOff",
-  "PaperBag",
-  "Popcorn",
-  "Popsicle",
-  "Refrigerator",
-  "Salad",
-  "Shell",
-  "Snail",
-  "Torus",
-  "Tractor",
-  "Utensils",
-  "UtensilsCrossed",
-  "Vegan",
-  "Wheat",
-  "WheatOff",
-  "Wine",
-  "WineOff",
-];
+// Structural subset of recipe_categories / note_categories rows.
+export interface CategoryPanelCategory {
+  id: string;
+  name: string;
+  icon: string;
+}
+
+// Structural subset of both domains' ActionResult.
+export type CategoryPanelActionResult<T = undefined> =
+  | { success: true; data: T }
+  | { success: false; error: string };
 
 export type CategoryPanelTarget =
   | { mode: "create" }
-  | { mode: "edit"; category: RecipeCategoryRow };
+  | { mode: "edit"; category: CategoryPanelCategory };
 
 export interface CategoryPanelProps {
   open: boolean;
   onClose: () => void;
   target: CategoryPanelTarget;
-  onCreateCategory: (input: unknown) => Promise<ActionResult<RecipeCategoryRow>>;
-  onUpdateCategory: (input: unknown) => Promise<ActionResult>;
-  onDeleteCategory: (input: unknown) => Promise<ActionResult>;
+  /** Icons offered in the picker; the first is the create-mode default and fallback. */
+  icons: IconName[];
+  /** next-intl namespace holding this panel's strings and `iconLabels.*`. */
+  translationNamespace: string;
+  /** next-intl namespace holding the domain's action error codes. */
+  errorsNamespace: string;
+  onCreateCategory: (input: unknown) => Promise<CategoryPanelActionResult<unknown>>;
+  onUpdateCategory: (input: unknown) => Promise<CategoryPanelActionResult>;
+  onDeleteCategory: (input: unknown) => Promise<CategoryPanelActionResult>;
   /** Fired after a successful create/rename/delete, before `onClose`. */
   onMutated?: () => void;
 }
@@ -129,25 +58,28 @@ export function CategoryPanel({
   open,
   onClose,
   target,
+  icons,
+  translationNamespace,
+  errorsNamespace,
   onCreateCategory,
   onUpdateCategory,
   onDeleteCategory,
   onMutated,
 }: CategoryPanelProps) {
-  const t = useTranslations("components.categoryPanel");
-  const tIconLabel = useTranslations("components.categoryPanel.iconLabels");
+  const t = useTranslations(translationNamespace);
+  const tIconLabel = useTranslations(`${translationNamespace}.iconLabels`);
   const tSidePanel = useTranslations("components.sidePanel");
-  const tErrors = useTranslations("recipes.errors");
+  const tErrors = useTranslations(errorsNamespace);
 
   const category = target.mode === "edit" ? target.category : null;
   // Falls back to the curated list's first icon when a category's stored
-  // icon isn't one of the 8 offered here (e.g. a future non-curated value) —
+  // icon isn't one of the offered ones here (e.g. a future non-curated value) —
   // same "sane default over a blank/broken control" reasoning
   // ReceptenBoard.tsx's own isIconName fallback already uses.
   const defaultIcon =
-    category && CATEGORY_ICONS.includes(category.icon as IconName)
+    category && icons.includes(category.icon as IconName)
       ? (category.icon as IconName)
-      : CATEGORY_ICONS[0];
+      : icons[0];
 
   const [name, setName] = useState(category?.name ?? "");
   const [icon, setIcon] = useState<IconName>(defaultIcon);
@@ -225,7 +157,7 @@ export function CategoryPanel({
   // design/notes/CategoryPanel.md) — reuses CardDetailPanel.tsx's
   // #94 two-step confirm precedent verbatim, and gates Save on a non-empty
   // trimmed name (createCategorySchema/updateCategorySchema's own
-  // `min(1).max(200)`, lib/recipes/schemas.ts), the same minimal client-side
+  // `min(1).max(200)`, lib/{recipes,notes}/schemas.ts), the same minimal client-side
   // mirror BoardPanel.tsx/CardDetailPanel.tsx already use for their own name
   // fields.
   const footer =
@@ -305,7 +237,7 @@ export function CategoryPanel({
             pixel-identical, but the axis rule calls for two distinct tokens
             here, not one — design/notes/CategoryPanel.md#219. */}
         <div className="flex w-full flex-wrap gap-x-inline-md gap-y-stack-md">
-          {CATEGORY_ICONS.map((iconName) => (
+          {icons.map((iconName) => (
             // No Selected state is drawn in Figma (every one of the 8
             // instances is the same Style=Filled, State=Default) — see
             // design/notes/CategoryPanel.md. Reuses
