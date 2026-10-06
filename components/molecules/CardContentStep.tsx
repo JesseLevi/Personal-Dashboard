@@ -1,5 +1,5 @@
 // figma: node-id=3695:3941
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import type { ReactNode } from "react";
 
 /**
@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
  * (node-id 3695:3941, Molecules section).
  * TEXT -> `text`; boolean "Ingrediënten tags" -> `withIngredientTags?`
  * (default `true`, gates SLOT visibility); SLOT "Slot" -> `children`.
- * No variant/state axis; `clsx` merges className.
+ * No variant/state axis; `cn` merges className.
  * Step *number* badge is NOT rendered here — it's `Card`'s own `step` prop
  * (see design/notes/Card.md), composed side by side with this molecule.
  * — see design/notes/CardContentStep.md
@@ -34,7 +34,7 @@ export function CardContentStep({
   className,
 }: CardContentStepProps) {
   return (
-    <div className={clsx("flex w-full flex-col items-stretch gap-stack-lg p-component-md", className)}>
+    <div className={cn("flex w-full flex-col items-stretch gap-stack-lg p-component-md", className)}>
       <p className="w-full text-sm font-semibold text-text-primary">{text}</p>
       {withIngredientTags && (
         <div className="flex w-full flex-wrap gap-inline-sm">{children}</div>

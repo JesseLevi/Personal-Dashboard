@@ -2,7 +2,7 @@
 
 // figma: node-id=3680:1442 (+3680:1435 mobile, 3878:10175 empty; drag
 // annotations on I3881:13243/3882:14844/3882:14424/3882:14855)
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DragDropProvider, useDroppable } from "@dnd-kit/react";
 import { useSortable, isSortable } from "@dnd-kit/react/sortable";
@@ -126,7 +126,7 @@ function SortableCard({
     <div
       ref={ref}
       onClick={onClick}
-      className={clsx(
+      className={cn(
         "transition-opacity duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
         // #116: coarse pointers only, `touch-manipulation` not `touch-none`
         // — panning must work again (a scrolled column was the #115

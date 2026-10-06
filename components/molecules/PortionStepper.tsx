@@ -2,7 +2,7 @@
 // restyled per the Pas-aan panel's own Personen row, node-id=3999:11007
 // (desktop) / 3998:10928 (mobile), which models this control as ONE filled
 // Button pill.
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import { Button } from "../atoms/Button";
 
 /**
@@ -45,7 +45,7 @@ export function PortionStepper({
   const atMin = portions <= min;
   return (
     <div
-      className={clsx(
+      className={cn(
         // spacing-flag: `gap-1` — Button's own root gap-1 is unbound in
         // Figma (Alignment=Center); this component declares Filled-style
         // equivalence, not an independent measurement. design/notes/PortionStepper.md.

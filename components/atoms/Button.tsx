@@ -1,4 +1,5 @@
 // figma: node-id=3623:4346
+import { cn } from "@/lib/ui/cn";
 import { cva, type VariantProps } from "class-variance-authority";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { Icon, type IconName } from "./Icon";
@@ -114,12 +115,10 @@ export function Button({
   return (
     <button
       type={type}
-      className={buttonVariants({
-        variant,
-        size: resolvedSize,
-        align: resolvedAlign,
+      className={cn(
+        buttonVariants({ variant, size: resolvedSize, align: resolvedAlign }),
         className,
-      })}
+      )}
       {...props}
     >
       {/* Mirrors Figma's "Leading + Text" frame (row, gap-inline-sm = 8px, #112) as the root's first slot. */}

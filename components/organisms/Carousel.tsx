@@ -1,5 +1,5 @@
 // figma: node-id=3670:1976
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import { Children } from "react";
 import type { ReactNode } from "react";
 
@@ -27,7 +27,7 @@ export function Carousel({
   return (
     <div
       tabIndex={0}
-      className={clsx(
+      className={cn(
         // items-start/overflow-x-auto/no-w-full/-ml-*/scrollbar-hiding: see
         // design/notes/Carousel.md (#90, #110, #205).
         "flex items-start gap-inline-lg overflow-x-auto",
@@ -37,7 +37,7 @@ export function Carousel({
       )}
     >
       {Children.map(children, (child, index) => (
-        <div key={index} className={clsx(columnWidthClassName, "shrink-0")}>
+        <div key={index} className={cn(columnWidthClassName, "shrink-0")}>
           {child}
         </div>
       ))}

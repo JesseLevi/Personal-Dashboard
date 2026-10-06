@@ -1,5 +1,5 @@
 // figma: node-id=3727:4084
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import type { ButtonHTMLAttributes } from "react";
 import { Icon } from "./Icon";
 
@@ -32,7 +32,7 @@ export function Checkbox({
       type={type}
       role="checkbox"
       aria-checked={checked}
-      className={clsx(
+      className={cn(
         "flex h-8 w-8 shrink-0 items-center justify-center rounded-control border border-stroke-primary bg-surface-highlight-white",
         className,
       )}

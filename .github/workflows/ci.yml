@@ -38,7 +38,7 @@ jobs:
       - name: Tokens in sync (generated theme matches tokens.json)
         run: |
           pnpm sync:tokens
-          git diff --exit-code app/theme.css
+          git diff --exit-code app/theme.css lib/ui/token-scales.generated.ts
       - name: Tokens match Figma export (name + value, #204-pending exempted) (#203)
         run: pnpm check:tokens-drift
       - run: pnpm lint

@@ -1,4 +1,4 @@
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import { Button } from "../atoms/Button";
 import { InputField } from "../atoms/InputField";
 import type { UnitCode } from "@/lib/recipes/units";
@@ -70,7 +70,7 @@ export function RecipeIngredientRow({
     // spacing-flag: `gap-2` — this component has no Figma node to bind
     // against (see "Why no design/figma-map.json entry" in
     // design/notes/RecipeIngredientRow.md).
-    <div className={clsx("flex w-full items-start gap-2", className)}>
+    <div className={cn("flex w-full items-start gap-2", className)}>
       <div className="w-full min-w-0 flex-1">
         {showLabels ? (
           <InputField

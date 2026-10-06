@@ -1,5 +1,5 @@
 // figma: node-id=3650:1297
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import type { ReactNode } from "react";
 import { Icon, type IconName } from "../atoms/Icon";
 import { Button } from "../atoms/Button";
@@ -12,7 +12,7 @@ import { Button } from "../atoms/Button";
  * see design/notes/CardContainer.md) above SLOT "Content" -> `children`
  * (real `Card` instances) or, when the column has none, `emptyState`
  * (Figma "EmptyState" frame, node 3878:10175). No CVA — no variant/state
- * axis, `clsx` merges the caller's `className`.
+ * axis, `cn` merges the caller's `className`.
  * Full Figma structure, colours, history: design/notes/CardContainer.md.
  */
 export interface CardContainerProps {
@@ -51,7 +51,7 @@ export function CardContainer({
 }: CardContainerProps) {
   return (
     <div
-      className={clsx(
+      className={cn(
         "flex w-full flex-col rounded-container bg-surface-secondary px-component-md pb-component-md",
         className,
       )}
@@ -84,7 +84,7 @@ export function CardContainer({
           state's stretch, node 3878:10175) — only added when emptyState
           is in play so the card-list layout is untouched. */}
       <div
-        className={clsx(
+        className={cn(
           "flex flex-1 flex-col justify-center gap-stack-sm",
           emptyState && "items-center",
         )}
