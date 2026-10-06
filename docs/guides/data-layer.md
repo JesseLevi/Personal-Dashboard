@@ -16,7 +16,7 @@ Fundamentals (multi-user + RLS, NL/EN i18n, security-by-design) are decided in `
 ## Migrations reach hosted only via `deploy.yml` (ADR-0012)
 
 - **Committing a migration does not apply it.** `deploy.yml` is `workflow_dispatch`-only (amended 2026-08-02): a push to `main` migrates nothing. Check `supabase_migrations.schema_migrations` on hosted *before* debugging a data-shaped bug.
-- **Migrate and promote are coupled**: the `deploy` job has `needs: migrate`, so applying a migration also promotes `main` to production. Confirm with the user before dispatching. Studio/psql edits against hosted stay forbidden (ADR-0009; one-time exception in ADR-0012 §5).
+- **Migrate and promote are coupled by default**: `deploy.yml` takes a `target` input (`both` default, `migrate`, `deploy`); `both` runs `deploy` after `migrate`, so it also promotes `main` to production. Use `target=migrate` to apply migrations only (Vercel untouched; per the 2026-10-06 ADR-0012 amendment, *proposed* until the user approves it). Confirm with the user before dispatching. Studio/psql edits against hosted stay forbidden (ADR-0009; one-time exception in ADR-0012 §5).
 - **A migration applied by hand or via the Supabase MCP gets that route's own timestamp as its version**, not the filename, and the next `db push` then fails ("already exists"). Correct the ledger row every time.
 - **Never batch a migration across parallel agents** — that raced two writers into 250 duplicate `reference.ingredients` rows (#161). One sequential call.
 - **Two `db` CI jobs cannot run concurrently** (fixed Supabase ports; `failed to bind host port … 54324`, reads like a broken migration). Wait, then `gh run rerun <id> --failed`.
