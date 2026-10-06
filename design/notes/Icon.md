@@ -264,3 +264,15 @@ toolbar icons went into both. Left as-is deliberately: closing it moves the
 does not belong in a ticket scoped to "union members and story coverage" for
 the twenty. Whoever next touches this story should fold the seven in and
 regenerate in the same pass.
+
+## #284 (2026-10-06) — story renders every `IconName`, union derived
+
+The #265 gap above is closed. `IconName` is no longer a hand-written union:
+`ICONS` (lucide) and `FLAG_ICONS` are `as const satisfies` tables and
+`IconName = keyof typeof ICONS | keyof typeof FLAG_ICONS`. `Icon.tsx` exports
+`ALL_ICON_NAMES`, which `isIconName()` and `Icon.stories.tsx` both use, so a
+new icon needs one edit (the table) and appears in the story and the guard
+automatically. Flags stay in the same grid (last two cells): same atom, same
+size, and a separate section would add markup for no reader benefit. The
+`icon--all-icons` baseline grows from 127 to 142 cells and must be
+regenerated.
