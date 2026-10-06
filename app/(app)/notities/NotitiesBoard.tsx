@@ -19,7 +19,7 @@ import { NOTE_SORT_OPTIONS, type NoteSortOption } from "@/lib/notes/sort";
 import { effectiveNotesSearchQuery, NOTES_SEARCH_DEBOUNCE_MS } from "@/lib/notes/search";
 import type { CategoryWithNotes, NoteSummaryRow } from "@/lib/notes/types";
 import type { NotitiesPageData } from "./notes-data";
-import { CategoryPanel, type CategoryPanelTarget } from "@/components/organisms/CategoryPanel";
+import { CategoryPanel, type CategoryPanelTarget } from "@/app/(app)/_components/CategoryPanel";
 import { NOTE_CATEGORY_ICONS } from "./category-icons";
 import { createCategory, createNote, deleteCategory, moveNote, renameCategory } from "./actions";
 

@@ -1,6 +1,6 @@
 # CategoryPanel
 
-- **Code:** `components/organisms/CategoryPanel.tsx` (shared since #287; `app/(app)/recepten/category-icons.ts` + `app/(app)/notities/category-icons.ts` hold the icon sets; stories: `app/(app)/recepten/CategoryPanel.stories.tsx`, `app/(app)/notities/NoteCategoryPanel.stories.tsx`)
+- **Code:** `app/(app)/_components/CategoryPanel.tsx` (shared since #287; `app/(app)/recepten/category-icons.ts` + `app/(app)/notities/category-icons.ts` hold the icon sets; stories: `app/(app)/recepten/CategoryPanel.stories.tsx`, `app/(app)/notities/NoteCategoryPanel.stories.tsx`)
 - **Node IDs:** `3891:17997` ("Add column/Mobile"), `3957:11537` ("Pull-up
   panel", desktop). Both fetched fresh for #125 (first tool call, per the
   ticket's own constraint). Not added to `design/figma-map.json` — this is a
@@ -288,9 +288,10 @@ Selected-state gap this file already flags predate #219 and are unrelated
 ## #287 — one shared component, Notities history merged in
 
 #287 merged the Notities-owned copy (#232, `NoteCategoryPanel.tsx`, 243 lines)
-into this component and moved it to `components/organisms/CategoryPanel.tsx`
-(it is built only from `SidePanel`/`InputField`/`Button`, so it is an
-organism and may not import from `app/`). Pure refactor: zero baseline
+into this component and moved it to `app/(app)/_components/CategoryPanel.tsx`
+(first placed in `components/organisms/`, moved after merging #288 because it
+uses `app/(app)/_components/DeleteConfirm.tsx` and organisms may not import
+from `app/`). Pure refactor: zero baseline
 movement, no key changes in `messages/{nl,en}.json`. What became props:
 
 - `icons` — `CATEGORY_ICONS` (`app/(app)/recepten/category-icons.ts`, the 74

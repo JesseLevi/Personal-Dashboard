@@ -1,6 +1,6 @@
 // figma: node-id=3891:17997 (+3957:11537 desktop)
 import { useState } from "react";
-import { CategoryPanel, type CategoryPanelTarget } from "@/components/organisms/CategoryPanel";
+import { CategoryPanel, type CategoryPanelTarget } from "@/app/(app)/_components/CategoryPanel";
 import { CATEGORY_ICONS } from "./category-icons";
 import type { ActionResult, RecipeCategoryRow } from "@/lib/recipes/types";
 

@@ -114,7 +114,7 @@ freelancing #232's own scope.
 
 **#232 wired both** to one category panel (a Notities-owned copy of
 `/recepten`'s panel at the time; since #287 the shared
-`components/organisms/CategoryPanel.tsx` configured with
+`app/(app)/_components/CategoryPanel.tsx` configured with
 `NOTE_CATEGORY_ICONS` and the `components.noteCategoryPanel`/`notes.errors`
 namespaces; full reasoning, icon set, delete-flow precedent:
 `design/notes/CategoryPanel.md`). One `categoryPanel` state (`{ open, target }`) owns

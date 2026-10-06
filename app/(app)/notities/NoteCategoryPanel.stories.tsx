@@ -1,7 +1,7 @@
-// No figma node of its own — the shared components/organisms/CategoryPanel.tsx
+// No figma node of its own — the shared app/(app)/_components/CategoryPanel.tsx
 // configured for /notities (note icons, notes namespaces); design/notes/CategoryPanel.md.
 import { useState } from "react";
-import { CategoryPanel, type CategoryPanelTarget } from "@/components/organisms/CategoryPanel";
+import { CategoryPanel, type CategoryPanelTarget } from "@/app/(app)/_components/CategoryPanel";
 import { NOTE_CATEGORY_ICONS } from "./category-icons";
 import type { ActionResult, NoteCategoryRow } from "@/lib/notes/types";
 

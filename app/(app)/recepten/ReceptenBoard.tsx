@@ -10,7 +10,7 @@ import { CardContentRecipe } from "@/components/molecules/CardContentRecipe";
 import { isIconName } from "@/components/atoms/Icon";
 import { applyItemMove, type CardMove } from "@/lib/boards/optimistic";
 import type { CategoryWithRecipes, RecipeRow } from "@/lib/recipes/types";
-import { CategoryPanel, type CategoryPanelTarget } from "@/components/organisms/CategoryPanel";
+import { CategoryPanel, type CategoryPanelTarget } from "@/app/(app)/_components/CategoryPanel";
 import { CATEGORY_ICONS } from "./category-icons";
 import { RecipePanel, type RecipePanelTarget } from "./RecipePanel";
 import {
