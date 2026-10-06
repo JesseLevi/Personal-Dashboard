@@ -1,7 +1,7 @@
 "use client";
 
 // figma: node-id=3727:4021
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { AnimatedAddToBasketButton } from "./AnimatedAddToBasketButton";
 import { Button } from "../atoms/Button";
@@ -89,7 +89,7 @@ export function CardContentIngredient({
 }: CardContentIngredientProps) {
   const content = (
     <div
-      className={clsx(
+      className={cn(
         "flex w-full items-center justify-between",
         checked && "opacity-40",
       )}
@@ -179,7 +179,7 @@ export function CardContentIngredient({
     // the same reason as the default row below — a lone `border-b` here
     // would curve at the bottom corners to follow `rounded-3xl`.
     return (
-      <div className={clsx("flex w-full flex-col", className)}>
+      <div className={cn("flex w-full flex-col", className)}>
         <div className="relative w-full overflow-hidden rounded-container">
           {/* Rests just past the right edge (clipped by overflow-hidden above)
               and slides in lockstep with the content div below; `+REVEAL_PX`
@@ -213,7 +213,7 @@ export function CardContentIngredient({
           {/* Inline `transform`: a live drag offset, not a design value —
               Tailwind has no utility for it. See design/notes/CardContentIngredient.md. */}
           <div
-            className={clsx(
+            className={cn(
               "relative flex w-full touch-pan-y items-center gap-inline-xl rounded-container py-component-md pl-component-md transition-transform",
               offset < 0
                 ? "bg-surface-secondary pr-component-lg"
@@ -242,7 +242,7 @@ export function CardContentIngredient({
   // curves at both bottom corners to follow `border-radius` (the #166 bug —
   // "de border-bottom loopt rond") even with no fill of its own to round.
   return (
-    <div className={clsx("flex w-full flex-col", className)}>
+    <div className={cn("flex w-full flex-col", className)}>
       <div className="flex w-full items-center gap-inline-xl rounded-container pl-component-md pr-component-md py-component-md">
         {content}
         {checkbox}

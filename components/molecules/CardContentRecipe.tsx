@@ -1,5 +1,5 @@
 // figma: node-id=3628:67
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import { Icon } from "../atoms/Icon";
 
 /**
@@ -8,7 +8,7 @@ import { Icon } from "../atoms/Icon";
  * corrected to "Recipe" in code).
  * Thumbnail IMAGE fill -> `imageUrl`/`imageAlt`; TEXT "Amandel Pasta" -> `name`;
  * TEXT "20 min" -> `duration`. No Tag instance in this node (Icon-only).
- * No variant/state axis; `clsx` merges className.
+ * No variant/state axis; `cn` merges className.
  * DEVIATION: rendered at natural width, not Figma's fixed 92px on "20 min".
  * — see design/notes/CardContentRecipe.md
  */
@@ -32,7 +32,7 @@ export function CardContentRecipe({
   className,
 }: CardContentRecipeProps) {
   return (
-    <div className={clsx("flex w-full gap-inline-lg", className)}>
+    <div className={cn("flex w-full gap-inline-lg", className)}>
       {imageUrl ? (
         <img
           src={imageUrl}

@@ -1,5 +1,5 @@
 // figma: node-id=3997:25430
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import type { ReactNode } from "react";
 import { Step } from "../atoms/Step";
 
@@ -12,7 +12,7 @@ import { Step } from "../atoms/Step";
  * so an untitled group card can still carry the trigger (see
  * design/notes/Card.md); `Step` bool -> `step?: ReactNode` (composed via the
  * `Step` atom); SLOT "Type" -> required `children`. No state axis on this
- * node; `clsx` merges className. — see design/notes/Card.md for structure,
+ * node; `cn` merges className. — see design/notes/Card.md for structure,
  * token, and story history.
  */
 export interface CardProps {
@@ -29,7 +29,7 @@ export interface CardProps {
 
 export function Card({ title, settings, step, children, className }: CardProps) {
   return (
-    <div className={clsx("flex w-full flex-col gap-stack-md", className)}>
+    <div className={cn("flex w-full flex-col gap-stack-md", className)}>
       {title || settings ? (
         // spacing-flag: `gap-3` stays raw (#205): "Title + Button"'s itemSpacing (12px) has
         // no bound variable in the fetched node — a real gap, not a missed

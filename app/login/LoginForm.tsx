@@ -9,7 +9,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import { useTranslations } from "next-intl";
 import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
@@ -142,7 +142,7 @@ export function LoginForm({
 
       <div className="mt-6 w-[312px] overflow-hidden">
         <div
-          className={clsx(
+          className={cn(
             "flex transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
             // 357px — see the header comment above (StepAnimation rail shift).
             step === "password" && "-translate-x-[357px]",
@@ -255,7 +255,7 @@ export function LoginForm({
 function ErrorLine({ id, message }: { id: string; message: string | null }) {
   return (
     <div
-      className={clsx(
+      className={cn(
         "grid transition-[grid-template-rows] duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
         message ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
       )}
@@ -264,7 +264,7 @@ function ErrorLine({ id, message }: { id: string; message: string | null }) {
         <p
           id={id}
           role="alert"
-          className={clsx(
+          className={cn(
             "mt-4 text-center text-base font-semibold text-priority-urgent transition-opacity duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
             message ? "opacity-100" : "opacity-0",
           )}

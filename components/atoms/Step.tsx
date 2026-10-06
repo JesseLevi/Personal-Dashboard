@@ -1,5 +1,5 @@
 // figma: node-id=3727:3208
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import type { HTMLAttributes, ReactNode } from "react";
 
 export interface StepProps extends HTMLAttributes<HTMLSpanElement> {
@@ -16,7 +16,7 @@ export function Step({ children, className, ...props }: StepProps) {
   return (
     <span
       {...props}
-      className={clsx(
+      className={cn(
         "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-sm font-semibold text-text-secondary",
         className,
       )}

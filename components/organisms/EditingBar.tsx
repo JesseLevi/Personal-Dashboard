@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useEditorState, type Editor } from "@tiptap/react";
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import { Button } from "@/components/atoms/Button";
 import type { IconName } from "@/components/atoms/Icon";
 
@@ -268,7 +268,7 @@ export function EditingBar({ editor, className }: EditingBarProps) {
       // uses. Kept as a CSS custom property so the breakpoint split stays in
       // Tailwind (`md:translate-y-0`) rather than needing a JS media check.
       style={{ "--keyboard-inset": `${keyboardInset}px` } as CSSProperties}
-      className={clsx(
+      className={cn(
         // spacing-flag: py-1 (4px) and gap-2 (8px) — EditingBar's own
         // vertical padding and its itemSpacing between buttons/dividers are
         // both unbound on 3978:14138/3978:14870 (paddingLeft/Right and the

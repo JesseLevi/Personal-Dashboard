@@ -1,5 +1,5 @@
 // figma: node-id=3705:4402
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import type {
   InputHTMLAttributes,
   ReactNode,
@@ -125,7 +125,7 @@ export function InputField({
   const hasButtonRow = Boolean(button);
 
   return (
-    <div className={clsx("flex w-full flex-col gap-stack-sm", className)}>
+    <div className={cn("flex w-full flex-col gap-stack-sm", className)}>
       {label ? (
         <label htmlFor={id} className="text-base font-semibold text-text-secondary">
           {label}
@@ -134,7 +134,7 @@ export function InputField({
 
       {/* items-start, not items-center: keeps the leading+text row's top edge aligned instead of centering it inside the taller trailing-icon column. */}
       <div
-        className={clsx(
+        className={cn(
           "flex flex-row items-start justify-center gap-stack-md rounded-control-outer border border-stroke-primary bg-surface-highlight-white p-component-xs transition-colors hover:border-stroke-primary-hover active:border-stroke-primary-active focus-within:border-stroke-primary-selected",
           multiline && (hasButtonRow ? "h-[124px]" : "h-36"),
           boxClassName,
@@ -154,7 +154,7 @@ export function InputField({
               so that slot's own text never leaks into this label's name. */}
           <label
             htmlFor={id}
-            className={clsx(
+            className={cn(
               "flex flex-row gap-inline-sm self-stretch pl-component-sm",
               hasButtonRow ? "pt-component-sm" : "py-component-sm",
               multiline ? "min-h-0 flex-1 items-start" : "items-center",

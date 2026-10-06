@@ -1,7 +1,7 @@
 "use client";
 
 // figma: node-id=3705:4446
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import {
   Children,
   cloneElement,
@@ -108,7 +108,7 @@ export function Dropdown({
       // `rounded-control-outer` here, not just on the panel: without it a
       // caller's `shadow-sm` paints square corners behind the rounded panel.
       // See design/notes/Dropdown.md.
-      className={clsx(
+      className={cn(
         "flex w-full flex-col gap-stack-sm rounded-control-outer",
         className,
       )}
@@ -127,7 +127,7 @@ export function Dropdown({
         // field (user-reported, must match InputField's own ramp and tokens),
         // while labelless is a floating menu panel, where a hover border on
         // the panel would fight its option rows' own hover.
-        className={clsx(
+        className={cn(
           "flex w-full flex-col rounded-control-outer border border-stroke-primary bg-surface-highlight-white p-component-xs",
           label
             ? "transition-colors hover:border-stroke-primary-hover active:border-stroke-primary-active focus-within:border-stroke-primary-selected"
@@ -149,7 +149,7 @@ export function Dropdown({
               <div className="min-w-0 flex-1">{trigger}</div>
               <Icon
                 name="ChevronDown"
-                className={clsx(
+                className={cn(
                   "mr-2 shrink-0 text-text-secondary transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
                   isOpen && "rotate-180",
                 )}
@@ -161,7 +161,7 @@ export function Dropdown({
               // `self-stretch` is a no-op today but kept explicit: the option
               // rows are Figma fill and must not start hugging if the panel's
               // default alignment ever changes.
-              className={clsx(
+              className={cn(
                 "grid self-stretch transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
                 isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
               )}

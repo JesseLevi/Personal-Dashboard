@@ -1,7 +1,7 @@
 "use client";
 
 // figma: node-id=3674:5664
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import { useRef } from "react";
 import { Button } from "../atoms/Button";
 import { Dropdown } from "../atoms/Dropdown";
@@ -124,7 +124,7 @@ export function Sidebar({
   return (
     <nav
       aria-label={navLabel}
-      className={clsx(
+      className={cn(
         // GAP: duration unsourced, docs/open-questions.md#sidebar-motion-timing-unsourced.
         // justify-between (#265): Figma root is now SPACE_BETWEEN, not a
         // flat gap — see design/notes/Sidebar.md.

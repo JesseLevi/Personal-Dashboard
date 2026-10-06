@@ -1,5 +1,5 @@
 // figma: node-id=4067:18495
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 
 /**
  * Molecule/Card-content/Note — Figma component "Card-content/Note"
@@ -28,7 +28,7 @@ export function CardContentNote({
   className,
 }: CardContentNoteProps) {
   return (
-    <div className={clsx("flex w-full flex-col gap-stack-xs p-component-sm", className)}>
+    <div className={cn("flex w-full flex-col gap-stack-xs p-component-sm", className)}>
       <div className="flex w-full items-center justify-between">
         <p className="min-w-0 flex-1 text-base font-semibold text-text-primary">{title}</p>
         <p className="shrink-0 text-xs font-semibold text-text-secondary">{timestamp}</p>

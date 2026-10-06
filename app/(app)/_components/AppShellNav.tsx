@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import clsx from "clsx";
+import { cn } from "@/lib/ui/cn";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -208,7 +208,7 @@ export function AppShellNav({ children, displayName, avatarUrl, locale }: AppShe
           never lags behind the rail. */}
       <div
         aria-hidden="true"
-        className={clsx(
+        className={cn(
           "hidden shrink-0 transition-[width] duration-[var(--duration-base)] ease-base motion-reduce:transition-none md:block",
           collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH,
         )}
@@ -249,7 +249,7 @@ export function AppShellNav({ children, displayName, avatarUrl, locale }: AppShe
         // (#113) — opacity alone left this mounted and composited at
         // `opacity-0`, the prime suspect for a stale-tinted iOS status bar
         // after close (unverified on-device, see design/notes/Sidebar.md).
-        className={clsx(
+        className={cn(
           "fixed inset-0 z-40 bg-overlay/60 transition-[opacity,visibility] transition-discrete duration-[var(--duration-base)] ease-base motion-reduce:transition-none md:hidden",
           mobileOpen ? "visible opacity-100" : "invisible pointer-events-none opacity-0",
         )}
@@ -259,7 +259,7 @@ export function AppShellNav({ children, displayName, avatarUrl, locale }: AppShe
         inert={!mobileOpen}
         aria-hidden={!mobileOpen}
         onKeyDown={handleDrawerKeyDown}
-        className={clsx(
+        className={cn(
           "fixed inset-y-0 left-0 z-50 transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none md:hidden",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
