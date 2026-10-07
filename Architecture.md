@@ -116,13 +116,15 @@ One generic pipeline; no module-specific embedding code.
 4. **AI-agent**: `pg_cron` runs SQL detectors (e.g. cards stale in a column > N days, overdue due_at, recurring themes via vector neighbors) → inserts candidate rows into `jobs` (`agent`) → worker assembles context (signal + related content via vector search) → **one** Ollama chat call → stores the natural-language result in `agent_signals`. Surfaced via an API endpoint + minimal list UI; a designed dashboard surface is a later round (needs Figma).
 5. **Prompt-injection containment**: user content (notes, recipes, sync'd event titles) flows into LLM prompts. The agent therefore has **no tools and no write access to anything but its own `agent_signals` row**, and agent output is rendered as plain text (never markdown-to-HTML). Worst case for an injected note is a misleading message, never an action.
 
+**Recipe import (ADR-0019, #309)** is the first `lib/ai/` consumer: deterministic extraction/parsing/matching first, one Claude Haiku 4.5 call only to fill gaps, run via `after()`.
+
 Deliberately simple: no streaming, no agent frameworks, no LangChain. A queue table, a poller, and two inference calls (embed + chat) behind `lib/ai/`.
 
 ## 6. External calendar sync (ADR-0008)
 
 **This round: read-only import.** Provider abstraction with three implementations, cheapest first: `ics` (public/secret ICS URL — no OAuth), `caldav` (`tsdav`, MIT), `google` (OAuth offline refresh token). Credentials/tokens stored via the Vault pattern (ADR-0002). Worker job `calendar:sync` per account on an interval: incremental where supported (Google syncToken, CalDAV ctag/etag) → upsert `calendar_events` with `source='sync'`. Sync'd events are read-only in the UI. Two-way sync is explicitly a later round.
 
-- **SSRF guard (mandatory)**: user-supplied URLs (ICS/CalDAV, recipe pages for #309) are fetched server-side, where internal and cloud-metadata endpoints must stay unreachable. Fetches must be https-only, resolve DNS first and reject private/loopback/link-local ranges, cap redirects (re-validating each hop), and enforce response size/time limits. This ships in the same ticket as the first provider, not later.
+- **SSRF guard (mandatory)**: user-supplied URLs (ICS/CalDAV, recipe pages for #309, ADR-0019) are fetched server-side, where internal and cloud-metadata endpoints must stay unreachable. Fetches must be https-only, resolve DNS first and reject private/loopback/link-local ranges, cap redirects (re-validating each hop), and enforce response size/time limits. This ships in the same ticket as the first provider, not later.
 - **Recurring events**: expanded into concrete event instances at sync time within a rolling window (e.g. −30d/+400d); no RRULE storage or evaluation in-app this round. Manual events have no recurrence yet (not in Vision scope).
 - All timestamps `timestamptz`; all-day events flagged, not midnight-encoded.
 
