@@ -65,7 +65,8 @@ Recepten
 	•	Automatische portie-schaling
 	•	Data die het aanraakt/produceert: recipes (titel, categorie, ingrediënten, tags)
 	•	Raakt deze modules: Boodschappenlijst (ingrediënten worden hieraan toegevoegd).
-	•	Uitdrukkelijk buiten scope (voor nu): weekmenu-planning/kalenderkoppeling, voedingswaarde-informatie, importeren/scrapen van externe recepten.
+	•	Uitdrukkelijk buiten scope (voor nu): weekmenu-planning/kalenderkoppeling, voedingswaarde-informatie.
+	•	Recept importeren via URL (in scope, ADR-0019): URL plakken → opgeslagen recept; deterministisch eerst (JSON-LD/parser), LLM alleen voor gaten.
 Boodschappenlijst
 	•	Doel: een lopende boodschappenlijst bijhouden, handmatig of vanuit recepten gevuld.
 	•	Kernacties:
