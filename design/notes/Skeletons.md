@@ -17,7 +17,7 @@ Not a new component: the real page compositions with data hidden. Fetched via th
 - **Te-doen / Notities** have no frame: same board skeleton, route-specific header (todo: board name hidden, chevron/star/sort visible; notes: title, sort, category, search visible) and that route's own card-content molecule hidden.
 - **Recipe detail:** header row mirrors `RecipeDetailPage` (basket label, desktop edit/delete, mobile ellipsis); hero is 2:1 `surface-secondary` radius 12 (unbound in Figma, spacing-flagged); title one hidden `text-4xl` line; stepper row as drawn (Minus left, Plus right, as `PortionStepper.md` decides); Wet 4 / Dry 7 ingredient rows, two steps (second with 3 tags). `Title=No` cards as drawn (see `skeleton-predates-recipe-page-v2`).
 - **Note editor:** only the back-button row (`note-editor-skeleton-undesigned`).
-- **Breathing:** `--animate-breathe` (2.4s, opacity 1 -> 0.55 -> 1, ease-in-out, infinite) via `@theme` in `app/globals.css`, `motion-reduce:animate-none`. Applied to column containers, hero, ingredient/step cards only; chrome stays still. No gradient, no translate. Unsourced: `skeleton-breathe-timing-unsourced`.
+- **Breathing:** `--animate-breathe` (1.6s, opacity 1 -> 0.4 -> 1, ease-in-out, infinite; tuned from 2.4s/0.55 because short loads made that cycle invisible on the stone-100 page bg) via `@theme` in `app/globals.css`, `motion-reduce:animate-none`. Applied to column containers, hero, ingredient/step cards only; chrome stays still. No gradient, no translate. Unsourced: `skeleton-breathe-timing-unsourced`.
 
 ## Measurements (Ladle, 402 and 1440px)
 

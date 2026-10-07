@@ -46,7 +46,7 @@ guesses at what it's for — tracked meanwhile on `design/tokens.json`'s
 
 ### skeleton-breathe-timing-unsourced
 
-The loading skeletons "breathe" (opacity 1 -> 0.55 -> 1, 2.4s ease-in-out, infinite; `--animate-breathe` in `app/globals.css`, off under `prefers-reduced-motion`). The frames (4164:25190/25197/26042/26088) carry no motion spec, so duration and depth are this codebase's own picks, and unlike `semantic.duration.base` they are not a token (`--duration-*` is no Tailwind namespace). Needs ratification, like `sidebar-motion-timing-unsourced`.
+The loading skeletons "breathe" (opacity 1 -> 0.4 -> 1, 1.6s ease-in-out, infinite, tuned from 2.4s/0.55 because short loads made that cycle invisible on the stone-100 page bg; `--animate-breathe` in `app/globals.css`, off under `prefers-reduced-motion`). The frames (4164:25190/25197/26042/26088) carry no motion spec, so duration and depth are this codebase's own picks, and unlike `semantic.duration.base` they are not a token (`--duration-*` is no Tailwind namespace). Needs ratification, like `sidebar-motion-timing-unsourced`.
 
 ### skeleton-column-header-desktop-visible
 
