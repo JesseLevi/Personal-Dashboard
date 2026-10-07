@@ -29,6 +29,7 @@
     "check:retired-tokens": "node scripts/check-retired-tokens.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
     "@dnd-kit/abstract": "^0.5.0",
     "@dnd-kit/dom": "^0.5.0",
     "@dnd-kit/helpers": "^0.5.0",
