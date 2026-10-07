@@ -116,7 +116,7 @@ One generic pipeline; no module-specific embedding code.
 4. **AI-agent**: `pg_cron` runs SQL detectors (e.g. cards stale in a column > N days, overdue due_at, recurring themes via vector neighbors) → inserts candidate rows into `jobs` (`agent`) → worker assembles context (signal + related content via vector search) → **one** Ollama chat call → stores the natural-language result in `agent_signals`. Surfaced via an API endpoint + minimal list UI; a designed dashboard surface is a later round (needs Figma).
 5. **Prompt-injection containment**: user content (notes, recipes, sync'd event titles) flows into LLM prompts. The agent therefore has **no tools and no write access to anything but its own `agent_signals` row**, and agent output is rendered as plain text (never markdown-to-HTML). Worst case for an injected note is a misleading message, never an action.
 
-**Recipe import (ADR-0019, #309)** is the first `lib/ai/` consumer: deterministic extraction/parsing/matching first, one Claude Haiku 4.5 call only to fill gaps, run via `after()`.
+**Recipe import (ADR-0019, #309)** is the first `lib/ai/` consumer: deterministic extraction/parsing/matching first, two Claude Haiku 5.5 calls (search terms/translation, then NEVO linking and grams), run via `after()`.
 
 Deliberately simple: no streaming, no agent frameworks, no LangChain. A queue table, a poller, and two inference calls (embed + chat) behind `lib/ai/`.
 

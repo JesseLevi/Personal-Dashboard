@@ -5,12 +5,27 @@ import type { Database } from "@/lib/database.types";
 import { SafeFetchError, safeFetch } from "@/lib/net/safe-fetch";
 import { replaceRecipeContents, type IngredientLine, type StepLine } from "@/lib/recipes/contents";
 import { type ImportErrorCode } from "@/lib/recipes/enums";
-import { ImportAiError, extractRecipeFromText, fillGaps } from "@/lib/recipes/import/ai-fill";
+import {
+  ImportAiError,
+  asksGrams,
+  extractRecipeFromText,
+  linkIngredients,
+  prepareRecipe,
+  type FilledLine,
+} from "@/lib/recipes/import/ai-fill";
 import { ExtractError, extractRecipe, type ExtractedRecipe } from "@/lib/recipes/import/extract";
-import { MAX_MATCH_LINES, matchIngredients, resolveIngredientId } from "@/lib/recipes/import/match-ingredients";
+import {
+  MAX_MATCH_LINES,
+  matchIngredients,
+  resolveIngredientId,
+  widenMatches,
+} from "@/lib/recipes/import/match-ingredients";
 import { parseIngredientLine, type ParsedIngredient } from "@/lib/recipes/import/parse-ingredient";
 import { ImportRateLimitError } from "@/lib/recipes/import/rate-limit";
+import { loadUnitGrams, type UnitGramsLookup } from "@/lib/recipes/import/unit-grams";
 import { hostOf } from "@/lib/recipes/import/url";
+import { magnitudeOf } from "@/lib/recipes/units";
+import type { Locale } from "@/lib/profile/types";
 import { storeRecipeThumbnail } from "@/lib/recipes/thumbnails";
 import { MAX_THUMBNAIL_BYTES, isAllowedThumbnailMimeType } from "@/lib/recipes/thumbnail-validation";
 
@@ -21,7 +36,9 @@ import { MAX_THUMBNAIL_BYTES, isAllowedThumbnailMimeType } from "@/lib/recipes/t
 // start.ts); nothing here reaches for service_role or for request cookies.
 //
 //   safeFetch -> extractRecipe -> (text page: extractRecipeFromText) ->
-//   parse lines -> matchIngredients -> fillGaps -> resolve ingredient ids ->
+//   parse lines -> matchIngredients -> prepareRecipe (search terms,
+//   translation) -> widenMatches -> linkIngredients (choice, grams, step
+//   refs) -> resolve ingredient ids -> grams for counts ->
 //   replace_recipe_contents (the manual write path) -> thumbnail -> done.
 //
 // Everything that can fail runs before the first write; a typed error ends in
@@ -30,7 +47,8 @@ import { MAX_THUMBNAIL_BYTES, isAllowedThumbnailMimeType } from "@/lib/recipes/t
 
 type Client = SupabaseClient<Database>;
 
-export type ImportJob = { supabase: Client; userId: string; recipeId: string; url: string };
+/** `locale` is the user's UI language: a recipe in another language is translated into it. */
+export type ImportJob = { supabase: Client; userId: string; recipeId: string; url: string; locale: Locale };
 export type PipelineDeps = { safeFetch?: typeof safeFetch };
 
 const MAX_TITLE = 200;
@@ -85,52 +103,98 @@ async function fetchThumbnailPath(job: ImportJob, imageUrl: string, fetchPage: t
   }
 }
 
+/** Grams with one decimal below 10 g, whole grams above. */
+function roundGrams(grams: number): number {
+  return grams >= 10 ? Math.round(grams) : Math.round(grams * 10) / 10;
+}
+
+/**
+ * Grams to save instead of the parsed amount, or null to keep it. Only for a
+ * linked line whose amount the nutrition calculator could not weigh: a count
+ * ("1 ui") or an unmapped measure word ("2 teentjes"), or a volume the
+ * ingredient has no mass for. NEVO's own measured weight per piece wins over
+ * the LLM estimate (user decision 2026-10-07).
+ */
+export function gramsInstead(line: FilledLine, ingredientId: string | null, unitGrams: UnitGramsLookup): number | null {
+  const { quantity, unit } = line.parsed;
+  if (!ingredientId || quantity === null || !asksGrams(line.parsed)) return null;
+  const perUnit = unit ? unitGrams(ingredientId, unit) : null;
+  if (perUnit !== null && unit !== null && magnitudeOf(unit) === "volume") return null;
+  const grams = perUnit !== null ? quantity * perUnit : line.gramsEstimate;
+  return grams !== null && grams > 0 ? roundGrams(grams) : null;
+}
+
 async function run(job: ImportJob, deps: PipelineDeps): Promise<void> {
-  const { supabase, userId, recipeId, url } = job;
+  const { supabase, userId, recipeId, url, locale } = job;
   const fetchPage = deps.safeFetch ?? safeFetch;
 
   const recipe = await loadRecipe(url, fetchPage);
   const entries = parseLines(recipe.recipeIngredient);
 
-  const matches = await matchIngredients(
+  const firstPass = await matchIngredients(
     supabase,
     userId,
     entries.map((entry) => entry.parsed.name),
   );
-  const filled = await fillGaps(
+  const prepared = await prepareRecipe(
+    entries.map((entry) => entry.parsed),
+    { name: recipe.name, steps: recipe.steps },
+    locale,
+  );
+  const matches = await widenMatches(
     supabase,
     userId,
-    entries.map((entry, i) => ({ parsed: entry.parsed, match: matches[i]! })),
-    recipe.steps,
+    firstPass,
+    prepared.lines.map((line, i) => {
+      const renamed = line.parsed.name !== entries[i]!.parsed.name ? [line.parsed.name] : [];
+      return [...new Set([...renamed, ...line.searchTerms])];
+    }),
+  );
+  const steps = prepared.translation?.steps ?? recipe.steps;
+  const linked = await linkIngredients(
+    prepared.lines.map((line, i) => ({ parsed: line.parsed, match: matches[i]! })),
+    steps,
+    locale,
+  );
+
+  const ingredientIds: Array<string | null> = [];
+  for (const line of linked.lines) {
+    ingredientIds.push(line.match.chosen ? await resolveIngredientId(supabase, userId, line.match.chosen) : null);
+  }
+  const unitGrams = await loadUnitGrams(
+    supabase,
+    userId,
+    ingredientIds.filter((id): id is string => id !== null),
   );
 
   const ingredients: IngredientLine[] = [];
   for (const [i, entry] of entries.entries()) {
-    const line = filled.lines[i]!;
+    const line = linked.lines[i]!;
+    const ingredientId = ingredientIds[i] ?? null;
+    const grams = gramsInstead(line, ingredientId, unitGrams);
     const unitMissing = line.parsed.unit === null;
-    const ingredientId = line.match.chosen
-      ? await resolveIngredientId(supabase, userId, line.match.chosen)
-      : null;
-    // recipe_ingredients has no note column: an unmapped measure word ("teentje")
-    // stays readable in the name instead of being dropped (ADR-0019 §8).
-    const label = unitMissing && line.parsed.note ? `${line.parsed.name} (${line.parsed.note})` : line.parsed.name;
-    const quantity = line.parsed.quantity;
+    // recipe_ingredients has no note column: the stated amount of a grams
+    // conversion ("1 stuk"), or an unmapped measure word ("teentje"), stays
+    // readable in the name instead of being dropped (ADR-0019 §8).
+    const aside = grams !== null ? line.amount : unitMissing ? line.parsed.note : null;
+    const label = aside ? `${line.parsed.name} (${aside})` : line.parsed.name;
+    const quantity = grams ?? line.parsed.quantity;
     ingredients.push({
       name: (label.trim() || line.parsed.raw).slice(0, MAX_TITLE),
       quantity: quantity !== null && Number.isFinite(quantity) && quantity > 0 ? quantity : null,
-      unit: line.parsed.unit ?? PLACEHOLDER_UNIT,
+      unit: grams !== null ? "gram" : (line.parsed.unit ?? PLACEHOLDER_UNIT),
       ingredientId,
       groupLabel: entry.groupLabel,
-      needsReview: line.needsReview || unitMissing || ingredientId === null,
+      needsReview: ingredientId === null || (grams === null && (line.needsReview || unitMissing)),
     });
   }
 
-  const steps: StepLine[] = recipe.steps.map((instruction, i) => ({
+  const recipeSteps: StepLine[] = steps.map((instruction, i) => ({
     instruction: instruction.slice(0, MAX_INSTRUCTION),
-    ingredientRefs: (filled.stepIngredientRefs[i] ?? []).filter((ref) => ref < ingredients.length),
+    ingredientRefs: (linked.stepIngredientRefs[i] ?? []).filter((ref) => ref < ingredients.length),
   }));
 
-  const contents = await replaceRecipeContents(supabase, userId, recipeId, ingredients, steps);
+  const contents = await replaceRecipeContents(supabase, userId, recipeId, ingredients, recipeSteps);
   if (!contents.ok) throw new Error("Failed to save the imported recipe contents");
 
   const thumbnailPath = recipe.image ? await fetchThumbnailPath(job, recipe.image, fetchPage) : null;
@@ -138,7 +202,7 @@ async function run(job: ImportJob, deps: PipelineDeps): Promise<void> {
   const { error } = await supabase
     .from("recipes")
     .update({
-      title: recipe.name.trim().slice(0, MAX_TITLE) || hostOf(url) || url.slice(0, MAX_TITLE),
+      title: (prepared.translation?.title ?? recipe.name).trim().slice(0, MAX_TITLE) || hostOf(url) || url.slice(0, MAX_TITLE),
       servings: recipe.servings ?? DEFAULT_SERVINGS,
       time_minutes: recipe.timeMinutes,
       ...(thumbnailPath ? { thumbnail_path: thumbnailPath } : {}),

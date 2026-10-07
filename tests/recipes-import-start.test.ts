@@ -79,7 +79,7 @@ describe("startImport", () => {
   it("inserts an importing row (host as title, source_url, top of the column) and schedules the job", async () => {
     const { supabase, calls } = fakeClient({ firstPosition: 1000, insertedId: "r9" });
     const schedule = vi.fn();
-    const result = await startImport(supabase, "u1", { categoryId: CATEGORY, url: "https://www.example.com/pasta" }, schedule);
+    const result = await startImport(supabase, "u1", { categoryId: CATEGORY, url: "https://www.example.com/pasta", locale: "nl" }, schedule);
     expect(result).toEqual({ ok: true, recipeId: "r9" });
     expect(insertPayload(calls)).toEqual({
       user_id: "u1",
@@ -89,19 +89,19 @@ describe("startImport", () => {
       import_status: "importing",
       position: 500, // nextPosition(null, 1000): above the current first card
     });
-    expect(schedule).toHaveBeenCalledWith({ supabase, userId: "u1", recipeId: "r9", url: "https://www.example.com/pasta" });
+    expect(schedule).toHaveBeenCalledWith({ supabase, userId: "u1", recipeId: "r9", url: "https://www.example.com/pasta", locale: "nl" });
   });
 
   it("an empty category gets the first position", async () => {
     const { supabase, calls } = fakeClient({ firstPosition: null });
-    await startImport(supabase, "u1", { categoryId: CATEGORY, url: "https://a.nl" }, vi.fn());
+    await startImport(supabase, "u1", { categoryId: CATEGORY, url: "https://a.nl", locale: "nl" }, vi.fn());
     expect(insertPayload(calls).position).toBe(1000);
   });
 
   it("refuses the 21st import in an hour: no insert, nothing scheduled", async () => {
     const { supabase, calls } = fakeClient({ rateCount: IMPORTS_PER_HOUR });
     const schedule = vi.fn();
-    const result = await startImport(supabase, "u1", { categoryId: CATEGORY, url: "https://a.nl" }, schedule);
+    const result = await startImport(supabase, "u1", { categoryId: CATEGORY, url: "https://a.nl", locale: "nl" }, schedule);
     expect(result).toEqual({ ok: false, error: "rate-limited" });
     expect(calls.some((c) => c.op === "insert")).toBe(false);
     expect(schedule).not.toHaveBeenCalled();
@@ -109,7 +109,7 @@ describe("startImport", () => {
 
   it("rejects a category that is not the caller's", async () => {
     const { supabase, calls } = fakeClient({ category: null });
-    const result = await startImport(supabase, "u1", { categoryId: CATEGORY, url: "https://a.nl" }, vi.fn());
+    const result = await startImport(supabase, "u1", { categoryId: CATEGORY, url: "https://a.nl", locale: "nl" }, vi.fn());
     expect(result).toEqual({ ok: false, error: "not-found" });
     expect(calls.some((c) => c.op === "insert")).toBe(false);
   });
@@ -122,17 +122,18 @@ describe("retryImport", () => {
       insertedId: "fresh",
     });
     const schedule = vi.fn();
-    const result = await retryImport(supabase, "u1", "old", schedule);
+    const result = await retryImport(supabase, "u1", "old", "nl", schedule);
     expect(result).toEqual({ ok: true, recipeId: "fresh" });
     expect(insertPayload(calls)).toMatchObject({ source_url: "https://a.nl/x", category_id: CATEGORY, import_status: "importing" });
     expect(calls.some((c) => c.table === "recipes" && c.op === "select" && c.args[1] !== undefined)).toBe(true); // count query ran
     expect(calls.some((c) => c.op === "delete")).toBe(true);
     expect(schedule).toHaveBeenCalledTimes(1);
+    expect(schedule.mock.calls[0]![0]).toMatchObject({ url: "https://a.nl/x", locale: "nl" });
   });
 
   it("only a failed import with a source_url can be retried", async () => {
     const { supabase } = fakeClient({ failed: { id: "r", category_id: CATEGORY, source_url: null, import_status: "done" } });
-    expect(await retryImport(supabase, "u1", "r", vi.fn())).toEqual({ ok: false, error: "not-found" });
+    expect(await retryImport(supabase, "u1", "r", "nl", vi.fn())).toEqual({ ok: false, error: "not-found" });
   });
 
   it("a rate-limited retry keeps the failed card", async () => {
@@ -140,7 +141,7 @@ describe("retryImport", () => {
       rateCount: IMPORTS_PER_HOUR,
       failed: { id: "old", category_id: CATEGORY, source_url: "https://a.nl/x", import_status: "failed" },
     });
-    expect(await retryImport(supabase, "u1", "old", vi.fn())).toEqual({ ok: false, error: "rate-limited" });
+    expect(await retryImport(supabase, "u1", "old", "nl", vi.fn())).toEqual({ ok: false, error: "rate-limited" });
     expect(calls.some((c) => c.op === "delete")).toBe(false);
   });
 });

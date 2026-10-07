@@ -6,6 +6,7 @@ import { embeddedCounts } from "@/lib/ui/embedded-counts";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import {
   EMPTY_BRIDGE_UNIT_GRAMS,
+  bridgeUnitGramsFrom,
   resolveMassWithBridge,
   type BridgeUnitGrams,
 } from "@/lib/recipes/mass-resolution";
@@ -127,28 +128,6 @@ export async function getRecipeCategoriesWithRecipes(): Promise<CategoryWithReci
  * see the guard below) — its numbers exist but aren't per-100g, so they're
  * unknown to this per-100g pipeline rather than silently misread.
  */
-/**
- * Builds one ownership layer's `BridgeUnitGrams` (mass-resolution.ts) from
- * a `unit -> grams` lookup already fetched for one ingredient — shared by
- * `nutritionInputsForIngredients`' batched map lookup and
- * `resolveIngredientUnitMass`'s single-ingredient row list below. Only
- * `milliliter`/`eetlepel`/`theelepel` are ever populated here
- * (`tablespoon`/`teaspoon` stay `null`): this app's recipes are authored
- * in Dutch `eetlepel`/`theelepel`, not US `tablespoon`/`teaspoon`, so
- * fetching those two extra units for every ingredient would be dead
- * weight — `resolveMassWithBridge` itself stays fully bidirectional for
- * tests/future callers, this is just what the two query sites below
- * choose to feed it.
- */
-function bridgeUnitGramsFrom(gramsForUnit: (unit: string) => number | null): BridgeUnitGrams {
-  return {
-    milliliter: gramsForUnit("milliliter"),
-    eetlepel: gramsForUnit("eetlepel"),
-    theelepel: gramsForUnit("theelepel"),
-    tablespoon: null,
-    teaspoon: null,
-  };
-}
 
 // #164/#157 slice 2: grams-per-cup/tablespoon/teaspoon/fluid_ounce for one
 // ingredient, resolved via the exact same resolveMassWithBridge/userBridge/
