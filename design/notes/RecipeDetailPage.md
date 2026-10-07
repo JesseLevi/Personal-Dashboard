@@ -312,3 +312,8 @@ alongside them since it's the same hand-rolled pattern. `top-full right-0
 mt-2` → the hook, `anchor="right"`, `prefer="below"` (unchanged designed
 placement — this popover always had room below on the pages it appears on).
 Full mechanism: `docs/incidents.md` (2026-08-18).
+
+## Import additions (#318)
+
+- "Bron" source link (`SourceLink.tsx`, Claude-designed on request): `text-base font-semibold text-text-secondary` line under the nutrition row, host as plain text, `target="_blank" rel="noopener noreferrer"`, shown only for a stored https URL. Story `SourceLink`.
+- Ingredient rows with `needs_review` get the "controleren" marker (see `CardContentIngredient.md`).

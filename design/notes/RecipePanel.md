@@ -161,3 +161,7 @@ fields, Ingredienten, and the footer. Converting this would be a
 guess-from-matching-number (4 also appears in `component/*`), not a
 measurement, so it stays raw with the flag pointing here. No Figma frame to
 cite for this one — that is the finding.
+
+## Import additions (#318)
+
+- Edit form carries `groupLabel` and `needsReview` per line (`lib/recipes/panel-payload.ts`): a save clears `needs_review` only on a line whose name, quantity, unit or ingredient link the user changed, or that was confirmed through the picker (`confirmIngredientMatch`, which also saves an alias). Untouched flagged lines keep the flag.

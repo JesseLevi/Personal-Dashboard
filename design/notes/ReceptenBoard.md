@@ -232,3 +232,8 @@ covering `lib/recipes/queries.ts`). The empty-category-column and drag-
 disabled-cursor behaviours are inherited, unit-tested code paths from
 `BoardView.tsx` (`design/notes/BoardView.md`) — nothing in this ticket
 touched `BoardView.tsx` itself.
+
+## Import additions (#318)
+
+- Plus button gets a `relative` wrapper and an optional `addMenu` slot (`BoardView.renderAddMenu`) for the "Via link / Handmatig" menu (`AddRecipeMenu.md`).
+- Cards render by `import_status`: `done` the normal card, `importing` `CardContentRecipeSkeleton`, `failed` `CardContentRecipeFailed`. Only `done` cards open the detail page. The board polls `router.refresh()` every 2.5 s only while a card is importing and the tab is visible (`lib/recipes/import/polling.ts`); the lazy sweep (`lib/recipes/import/sweep.ts`) runs on each board load.
