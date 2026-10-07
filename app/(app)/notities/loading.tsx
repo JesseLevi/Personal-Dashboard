@@ -1,8 +1,7 @@
-import { BoardSkeleton } from "../_components/PageSkeleton";
+import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 
-// #230: same route-segment Suspense fallback story as app/(app)/recepten/
-// loading.tsx / te-doen/loading.tsx -- see those files' comments and
-// PageSkeleton.tsx.
+// Route-segment Suspense fallback — see recepten/loading.tsx and
+// design/notes/Skeletons.md.
 export default function Loading() {
-  return <BoardSkeleton />;
+  return <BoardSkeleton variant="notes" />;
 }

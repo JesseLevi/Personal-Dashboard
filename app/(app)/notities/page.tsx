@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { loadNotitiesPageData } from "./notes-data";
 import { NotitiesBoard } from "./NotitiesBoard";
-import { BoardSkeleton } from "../_components/PageSkeleton";
+import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 
 // #230/#231: categorie-kanban + zoeken uit de database, exact zoals
 // /recepten (#124) en /te-doen (#93) dat opzetten. `BoardView`'s
@@ -45,7 +45,7 @@ export default async function NotitiesPage({
 }) {
   const { sort, q } = await searchParams;
   return (
-    <Suspense fallback={<BoardSkeleton />}>
+    <Suspense fallback={<BoardSkeleton variant="notes" />}>
       <NotitiesPageContent sortParam={sort} queryParam={q} />
     </Suspense>
   );

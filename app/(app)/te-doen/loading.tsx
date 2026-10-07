@@ -1,10 +1,8 @@
-import { BoardSkeleton } from "../_components/PageSkeleton";
+import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 
-// #170: automatic Suspense boundary for this route segment — shown while
-// TeDoenPageBody's fetch is in flight on a hard navigation. The explicit
-// <Suspense> around <TeDoenPageBody> (page.tsx) usually catches the
-// suspension first on client transitions; this file covers the segment-level
-// case Next's file convention expects regardless. See PageSkeleton.tsx.
+// Route-segment Suspense fallback, covering a hard navigation while
+// TeDoenPageBody's fetch is in flight; the explicit <Suspense> in page.tsx
+// usually catches client transitions first. See design/notes/Skeletons.md.
 export default function Loading() {
-  return <BoardSkeleton />;
+  return <BoardSkeleton variant="todo" />;
 }

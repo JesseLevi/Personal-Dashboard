@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { getRecipeCategoriesWithRecipes } from "@/lib/recipes/queries";
 import { ReceptenBoard } from "./ReceptenBoard";
-import { BoardSkeleton } from "../_components/PageSkeleton";
+import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 
 // #124: real categorie-kanban, replacing the #28 stub. `BoardView`'s
 // `renderItem` can't cross the Server->Client boundary, so this stays a thin
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
 
 export default function ReceptenPage() {
   return (
-    <Suspense fallback={<BoardSkeleton />}>
+    <Suspense fallback={<BoardSkeleton variant="recipes" />}>
       <ReceptenPageContent />
     </Suspense>
   );
