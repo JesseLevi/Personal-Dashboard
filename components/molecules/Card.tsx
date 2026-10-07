@@ -24,10 +24,12 @@ export interface CardProps {
   step?: ReactNode;
   /** Figma SLOT "Type" — the card's content, typically a `Card-content/*` molecule. */
   children: ReactNode;
+  /** Overrides the Type slot's surface (default `bg-surface-highlight-white`) — the loading skeletons bind `surface-primary`/`surface-secondary` here. See design/notes/Card.md. */
+  contentClassName?: string;
   className?: string;
 }
 
-export function Card({ title, settings, step, children, className }: CardProps) {
+export function Card({ title, settings, step, children, className, contentClassName }: CardProps) {
   return (
     <div className={cn("flex w-full flex-col gap-stack-md", className)}>
       {title || settings ? (
@@ -45,7 +47,12 @@ export function Card({ title, settings, step, children, className }: CardProps) 
       ) : null}
       <div className="flex w-full items-center gap-stack-md">
         {step ? <Step>{step}</Step> : null}
-        <div className="flex w-full flex-col justify-center rounded-card border border-stroke-primary bg-surface-highlight-white p-component-sm">
+        <div
+          className={cn(
+            "flex w-full flex-col justify-center rounded-card border border-stroke-primary bg-surface-highlight-white p-component-sm",
+            contentClassName,
+          )}
+        >
           {children}
         </div>
       </div>

@@ -47,3 +47,7 @@ absence, not a missed lookup.
 
 `scripts/check-raw-spacing.sh` now enforces an explicit `spacing-flag:`
 marker. Added to the existing comment above; no reasoning changed.
+
+## `contentClassName` (loading skeletons)
+
+Optional, cn-merged onto the Type slot so a caller can swap its surface (default `bg-surface-highlight-white`). The skeletons bind `bg-surface-primary` (board) / `bg-surface-secondary` (recipe detail), as the frames 4164:25190/26042 do. Story `SurfaceOverride`. See `design/notes/Skeletons.md`.

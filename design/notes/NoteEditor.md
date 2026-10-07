@@ -2,7 +2,7 @@
 
 - **Code:** `page.tsx` (Server Component, `getNote(noteId)`), `NoteEditor.tsx`
   (`"use client"`, the whole page body), `loading.tsx` (Suspense fallback,
-  `PageSkeleton.tsx`'s new `NoteEditorSkeleton`), `lib/notes/extensions.ts`
+  `skeletons/NoteEditorSkeleton.tsx`), `lib/notes/extensions.ts`
   (the fixed TipTap extension whitelist, Architecture §133), a small
   `.tiptap p.is-editor-empty:first-child::before` rule in `app/globals.css`
   (Placeholder's own documented CSS mechanism — no Tailwind utility covers

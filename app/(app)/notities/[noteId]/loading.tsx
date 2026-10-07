@@ -1,8 +1,7 @@
-import { NoteEditorSkeleton } from "../../_components/PageSkeleton";
+import { NoteEditorSkeleton } from "../../_components/skeletons/NoteEditorSkeleton";
 
-// #233: route-segment Suspense fallback for the note editor page — same
-// shape as app/(app)/recepten/[recipeId]/loading.tsx, see that file's
-// comment and PageSkeleton.tsx.
+// Route-segment Suspense fallback for the note editor page —
+// docs/open-questions.md#note-editor-skeleton-undesigned.
 export default function Loading() {
   return <NoteEditorSkeleton />;
 }

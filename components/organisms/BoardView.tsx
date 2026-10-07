@@ -9,7 +9,7 @@ import { useSortable, isSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
 import { CollisionPriority } from "@dnd-kit/abstract";
 import { PointerSensor, PointerActivationConstraints } from "@dnd-kit/dom";
-import { Carousel } from "./Carousel";
+import { Carousel, BOARD_COLUMN_WIDTH } from "./Carousel";
 import { CardContainer } from "./CardContainer";
 import { Card } from "../molecules/Card";
 import { Button } from "../atoms/Button";
@@ -56,11 +56,6 @@ export interface BoardViewProps<TItem extends { id: string }> {
   dragDisabled?: boolean;
   className?: string;
 }
-
-// Board columns measure 296px (mobile) / 320px (desktop) in the fetched
-// nodes — a different fixed width than Carousel's own Recipe-sourced 280px
-// default, hence the explicit override. See design/notes/Carousel.md.
-const BOARD_COLUMN_WIDTH = "w-74 md:w-80";
 
 // #115: dnd-kit calls this fresh on every pointerdown with the real event,
 // so branching on `event.pointerType` — not a device-wide `matchMedia` read
