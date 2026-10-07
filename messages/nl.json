@@ -44,7 +44,8 @@
       "invalid-file-type": "Kies een JPEG-, PNG- of WebP-afbeelding.",
       "file-too-large": "Deze afbeelding is te groot (max 10 MB).",
       "upload-failed": "De afbeelding kon niet worden geüpload. Probeer het opnieuw.",
-      "invalid-image": "Deze afbeelding kon niet worden verwerkt. Probeer een andere foto."
+      "invalid-image": "Deze afbeelding kon niet worden verwerkt. Probeer een andere foto.",
+      "rate-limited": "Je hebt het maximum van 20 imports per uur bereikt. Probeer het later opnieuw."
     },
     "units": {
       "gram": "Gram",
@@ -83,6 +84,23 @@
       "snufje": "snufje",
       "scoop": "scoop",
       "naar_smaak": "naar smaak"
+    },
+    "import": {
+      "errors": {
+        "timeout": "Het importeren duurde te lang.",
+        "no_content": "Op deze pagina is geen tekst gevonden.",
+        "ai_unavailable": "De slimme import is niet beschikbaar voor deze pagina.",
+        "ai_failed": "Het uitlezen van de pagina is niet gelukt.",
+        "no_recipe_found": "Op deze pagina is geen recept gevonden.",
+        "rate_limited": "Je hebt het maximum aantal imports per uur bereikt.",
+        "invalid_url": "Deze link kon niet worden geopend.",
+        "blocked_address": "Deze link is niet toegestaan.",
+        "too_large": "Deze pagina is te groot om te importeren.",
+        "bad_content_type": "Deze link verwijst niet naar een webpagina.",
+        "too_many_redirects": "Deze link stuurt te vaak door.",
+        "http_error": "De website gaf een foutmelding.",
+        "import_failed": "Het importeren is niet gelukt."
+      }
     }
   },
   "shopping": {
@@ -475,7 +493,8 @@
         "ingredientUnitPlaceholder": "Kies eenheid",
         "removeIngredientLabel": "Verwijder ingrediënt",
         "stepLabel": "Stap {number}",
-        "stepPlaceholder": "Typ hier een instructie..."
+        "stepPlaceholder": "Typ hier een instructie...",
+        "needsReviewLabel": "controleren"
       },
       "addRowLabel": "Voeg toe",
       "stepIngredientPillLabel": "Ingrediënt",
@@ -523,7 +542,9 @@
         "fiberUnit": "gr.",
         "servingsUnit": "pers.",
         "nevoAttribution": "Based on data from NEVO online version 2025/9.0, RIVM, Bilthoven and other data sources"
-      }
+      },
+      "needsReviewLabel": "controleren",
+      "sourceLabel": "Bron:"
     },
     "pasAanPanel": {
       "title": "Pas aan",
@@ -536,6 +557,28 @@
     },
     "imageUploadField": {
       "selectImage": "Selecteer afbeelding"
+    },
+    "recipeImport": {
+      "menu": {
+        "viaLinkLabel": "Via link",
+        "manualLabel": "Handmatig"
+      },
+      "linkPanel": {
+        "title": "Recept toevoegen via link",
+        "linkLabel": "Link",
+        "linkPlaceholder": "Voeg een receptpagina toe",
+        "saveLabel": "Opslaan",
+        "savingLabel": "Bezig met opslaan...",
+        "invalidUrl": "Voer een geldige link in die met https begint."
+      },
+      "skeleton": {
+        "loadingLabel": "Recept wordt geïmporteerd..."
+      },
+      "failed": {
+        "title": "Import mislukt",
+        "retryLabel": "Opnieuw proberen",
+        "deleteLabel": "Verwijderen"
+      }
     }
   }
 }

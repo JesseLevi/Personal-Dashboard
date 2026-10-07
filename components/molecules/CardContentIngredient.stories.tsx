@@ -158,3 +158,16 @@ export const SwipeToCart = () => (
     />
   </div>
 );
+
+// #318 (Claude-designed on request): imported line the importer was unsure about,
+// "controleren" Tag under the name. Pressing it is the caller's hook (edit panel).
+export const NeedsReview = () => (
+  <div className="w-96">
+    <CardContentIngredient
+      name="Knoflook (teentje)"
+      quantity="1 stuk"
+      reviewLabel={nl.components.recipeDetailPage.needsReviewLabel}
+      onReviewClick={() => {}}
+    />
+  </div>
+);

@@ -26,6 +26,8 @@ export interface CardContainerProps {
   addLabel: string;
   /** Forwarded to the add button's `onClick`. */
   onAdd?: () => void;
+  /** Popover rendered inside the Plus button's `relative` wrapper (#318: the "Via link / Handmatig" menu). The composer owns open state and positioning. */
+  addMenu?: ReactNode;
   /** Accessible label for the always-visible icon-only edit button (composer-supplied, from next-intl). */
   editLabel: string;
   /** Forwarded to the edit button's `onClick`. */
@@ -43,6 +45,7 @@ export function CardContainer({
   icon = "Croissant",
   addLabel,
   onAdd,
+  addMenu,
   editLabel,
   onEdit,
   children,
@@ -66,12 +69,17 @@ export function CardContainer({
           {/* Button's icon-only size="default" already matches Figma's
               40x40 structurally (#75, fixed in Button.tsx) — no local size
               override needed here. */}
-          <Button
-            variant="filled"
-            icon="Plus"
-            aria-label={addLabel}
-            onClick={onAdd}
-          />
+          {/* `relative` anchors the optional add menu (#318, Figma dropdown
+              4164:23627) to the Plus button; without `addMenu` it is inert. */}
+          <div className="relative">
+            <Button
+              variant="filled"
+              icon="Plus"
+              aria-label={addLabel}
+              onClick={onAdd}
+            />
+            {addMenu}
+          </div>
           <Button
             variant="filled"
             icon="Pencil"

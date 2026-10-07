@@ -51,6 +51,8 @@ export interface BoardViewProps<TItem extends { id: string }> {
   emptyLabel: string;
   /** Fired with a column id from that column's add button (header, or its empty-state button). */
   onAddItem?: (columnId: string) => void;
+  /** #318: a popover (e.g. the recipe "Via link / Handmatig" menu) rendered inside that column's Plus-button wrapper. */
+  renderAddMenu?: (columnId: string) => ReactNode;
   onEditColumn?: (columnId: string) => void;
   /** Muted (30% opacity + line-through) card, decided per item against the column it currently sits in (live, so also mid-drag). See design/notes/BoardView.md. */
   isItemMuted?: (item: TItem, columnId: string) => boolean;
@@ -161,11 +163,13 @@ function BoardColumnView<TItem extends { id: string }>({
   emptyLabel,
   dragDisabled,
   onAddItem,
+  renderAddMenu,
   onEditColumn,
   onItemClick,
   isItemMuted,
 }: {
   column: BoardColumn<TItem>;
+  renderAddMenu?: (columnId: string) => ReactNode;
   items: TItem[];
   renderItem: (item: TItem) => ReactNode;
   addLabel: string;
@@ -194,6 +198,7 @@ function BoardColumnView<TItem extends { id: string }>({
       addLabel={addLabel}
       editLabel={editLabel}
       onAdd={handleAdd}
+      addMenu={renderAddMenu?.(column.id)}
       onEdit={onEditColumn ? () => onEditColumn(column.id) : undefined}
       emptyState={
         isEmpty ? (
@@ -244,6 +249,7 @@ export function BoardView<TItem extends { id: string }>({
   emptyLabel,
   dragDisabled,
   onAddItem,
+  renderAddMenu,
   onEditColumn,
   onItemClick,
   isItemMuted,
@@ -310,6 +316,7 @@ export function BoardView<TItem extends { id: string }>({
             emptyLabel={emptyLabel}
             dragDisabled={dragDisabled}
             onAddItem={onAddItem}
+            renderAddMenu={renderAddMenu}
             onEditColumn={onEditColumn}
             onItemClick={onItemClick}
             isItemMuted={isItemMuted}
