@@ -37,7 +37,7 @@ Title's `layoutSizingHorizontal` is `FILL` inside a `HORIZONTAL` auto-layout row
 
 ## Long-text behaviour (checked on node `4067:19048`, the four-timestamp-form instance column)
 
-`textTruncation` is `DISABLED` and `textAutoResize` is `HEIGHT` on both the title and snippet TEXT layers, in every one of the four sampled instances (timestamps `12:24`, `Gisteren`, `12-03-2026`, `10-03-2026`). There is no `line-clamp`/ellipsis anywhere in the fetched node. The design's actual overflow behaviour is: text wraps onto additional lines at its layout width, growing the row/card's height (root is `HUG` on the vertical axis) — never truncated, never clipped. `CardContentNote.stories.tsx`'s `LongTitleAndSnippet` story demonstrates this with a title and snippet well past the sample length; no `line-clamp-*` utility was added to the component, matching what Figma actually does.
+Figma: `textTruncation` is `DISABLED` and `textAutoResize` is `HEIGHT` on both title and snippet in every sampled instance — no truncation; text wraps and the `HUG` card grows. **Deviation, by user decision (#307, 2026-10-06):** the snippet is clamped to 2 lines with an ellipsis in code (`line-clamp-2`); the title still wraps unclamped, as in Figma. The `LongTitleAndSnippet` story shows both. The snippet string itself is capped at 200 chars in `lib/notes/queries.ts` (`snippetFrom`), newlines preserved.
 
 All four sampled instances use the identical short title/snippet — the fetched column only varies the timestamp, not text length — so it does not itself exercise a genuine title-wrap case; the wrap behaviour above follows from the `textAutoResize`/`textTruncation` properties directly, not from an eyeballed screenshot.
 
