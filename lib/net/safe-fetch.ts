@@ -142,7 +142,8 @@ function defaultTransport(req: TransportRequest): Promise<TransportResponse> {
         port: 443,
         path: req.url.pathname + req.url.search,
         method: "GET",
-        servername: req.url.hostname,
+        // RFC 6066: SNI carries hostnames only, never an IP literal.
+        servername: isIP(req.url.hostname.replace(/^\[|\]$/g, "")) ? undefined : req.url.hostname,
         headers: { ...req.headers, Host: req.url.host },
         signal: req.signal,
       },
