@@ -93,6 +93,9 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
   servings: 4,
   thumbnail_path: null,
   time_minutes: 25,
+  source_url: null,
+  import_status: "done",
+  import_error: null,
   position: 1000,
   created_at: "2026-07-01T00:00:00.000Z",
   updated_at: "2026-07-01T00:00:00.000Z",
@@ -107,6 +110,7 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
       unit: "gram",
       position: 1000,
       group_label: null,
+      needs_review: false,
       // #160: all-null today, same as the seeded data (no licensed
       // nutrition import has run, ADR-0011 §5).
       nutrients: EMPTY_NUTRIENTS,
@@ -126,6 +130,7 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
       unit: "scoop",
       position: 2000,
       group_label: null,
+      needs_review: false,
       nutrients: EMPTY_NUTRIENTS,
       unitMassGrams: null,
       kitchenUnitMasses: EMPTY_KITCHEN_UNIT_MASSES,
@@ -143,6 +148,7 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
       unit: "stuk",
       position: 3000,
       group_label: null,
+      needs_review: false,
       nutrients: EMPTY_NUTRIENTS,
       unitMassGrams: null,
       kitchenUnitMasses: EMPTY_KITCHEN_UNIT_MASSES,
