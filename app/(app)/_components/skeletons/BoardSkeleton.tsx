@@ -10,20 +10,17 @@ import { Card } from "@/components/molecules/Card";
 import { CardContainer } from "@/components/organisms/CardContainer";
 import { BOARD_COLUMN_WIDTH, Carousel } from "@/components/organisms/Carousel";
 import { PageHeader } from "@/components/organisms/PageHeader";
-import { cn } from "@/lib/ui/cn";
 import { LoadingStatus, SKELETON_BREATHE } from "./skeleton-parts";
 
 /**
  * Loading skeleton for the three kanban pages (/recepten, /te-doen, /notities).
  * Mirrors the real page composition with the data hidden (`invisible` = the
  * Figma frames' opacity 0, keeping each element's own height), so nothing
- * jumps when the content arrives. Decisions, measurements, the opacity-0
- * mapping: design/notes/Skeletons.md.
+ * jumps when the content arrives. `counts` = cards per real column (from the
+ * pages' count loaders); omitted = header only, no guessed columns.
+ * Decisions, measurements, the opacity-0 mapping: design/notes/Skeletons.md.
  */
 export type BoardSkeletonVariant = "recipes" | "todo" | "notes";
-
-// Column card counts as drawn in the frames (4, 3, 2).
-const CARDS_PER_COLUMN = [4, 3, 2];
 
 function SkeletonHeader({ variant }: { variant: BoardSkeletonVariant }) {
   const t = useTranslations();
@@ -92,7 +89,13 @@ function HiddenCardContent({ variant }: { variant: BoardSkeletonVariant }) {
   return <CardContentNote className="invisible" title={filler} timestamp={filler} snippet={filler} />;
 }
 
-export function BoardSkeleton({ variant }: { variant: BoardSkeletonVariant }) {
+export function BoardSkeleton({
+  variant,
+  counts,
+}: {
+  variant: BoardSkeletonVariant;
+  counts?: number[];
+}) {
   const t = useTranslations("common");
   const tNotesHeader = useTranslations("components.pageHeader.notes");
   return (
@@ -108,27 +111,42 @@ export function BoardSkeleton({ variant }: { variant: BoardSkeletonVariant }) {
             leadingIcon="Search"
           />
         )}
-        <Carousel columnWidthClassName={BOARD_COLUMN_WIDTH}>
-          {CARDS_PER_COLUMN.map((cardCount, columnIndex) => (
-            <CardContainer
-              key={columnIndex}
-              name=""
-              count=""
-              addLabel={t("loading")}
-              editLabel={t("loading")}
-              // Column header (icon, name, count, buttons) is data: hidden, height kept.
-              className={cn(SKELETON_BREATHE, "[&>:first-child]:invisible")}
-            >
-              <div className="flex w-full flex-col gap-stack-sm">
-                {Array.from({ length: cardCount }, (_, cardIndex) => (
-                  <Card key={cardIndex} contentClassName="bg-surface-primary">
-                    <HiddenCardContent variant={variant} />
-                  </Card>
-                ))}
-              </div>
-            </CardContainer>
-          ))}
-        </Carousel>
+        {counts && (
+          <Carousel columnWidthClassName={BOARD_COLUMN_WIDTH}>
+            {counts.map((cardCount, columnIndex) => (
+              <CardContainer
+                key={columnIndex}
+                name=""
+                count=""
+                addLabel={t("loading")}
+                editLabel={t("loading")}
+                // Column header (icon, name, count, buttons) is data: hidden, height kept.
+                className="[&>:first-child]:invisible"
+                emptyState={
+                  cardCount === 0 ? (
+                    <div className="flex w-full flex-1 items-center justify-center">
+                      <Button variant="white" icon="Plus" className="invisible">
+                        {t("loading")}
+                      </Button>
+                    </div>
+                  ) : undefined
+                }
+              >
+                <div className="flex w-full flex-col gap-stack-sm">
+                  {Array.from({ length: cardCount }, (_, cardIndex) => (
+                    <Card
+                      key={cardIndex}
+                      className={SKELETON_BREATHE}
+                      contentClassName="bg-surface-primary"
+                    >
+                      <HiddenCardContent variant={variant} />
+                    </Card>
+                  ))}
+                </div>
+              </CardContainer>
+            ))}
+          </Carousel>
+        )}
       </div>
     </>
   );

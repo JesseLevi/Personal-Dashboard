@@ -1,5 +1,5 @@
 import "server-only";
-import { getBoardsForUser, getBoardWithColumns } from "@/lib/boards/queries";
+import { getBoardColumnCardCounts, getBoardsForUser, getBoardWithColumns } from "@/lib/boards/queries";
 import { isSortOption, sortCardsForView, type SortOption } from "@/lib/boards/sort";
 import type { BoardRow, BoardWithColumns } from "@/lib/boards/types";
 
@@ -69,4 +69,16 @@ export async function loadTeDoenPageData(
   }
 
   return { boards, board, sort };
+}
+
+// Skeleton stage: same board resolution as loadTeDoenPageData (explicit id if
+// it is one of the user's boards, else the favourite), but only column card
+// counts are fetched.
+export async function loadTeDoenColumnCounts(boardId: string | undefined): Promise<number[]> {
+  const boards = await getBoardsForUser();
+  if (boards.length === 0) return [];
+  const resolved =
+    (boardId && boards.find((b) => b.id === boardId)?.id) ??
+    (boards.find((b) => b.is_favorite)?.id ?? boards[0].id);
+  return getBoardColumnCardCounts(resolved);
 }

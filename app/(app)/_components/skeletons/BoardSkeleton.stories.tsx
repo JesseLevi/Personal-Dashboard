@@ -10,18 +10,30 @@ const Page = ({ children }: { children: ReactNode }) => (
 
 export const Recipes = () => (
   <Page>
-    <BoardSkeleton variant="recipes" />
+    <BoardSkeleton variant="recipes" counts={[4, 3, 2]} />
   </Page>
 );
 
 export const Todo = () => (
   <Page>
-    <BoardSkeleton variant="todo" />
+    <BoardSkeleton variant="todo" counts={[4, 3, 2]} />
   </Page>
 );
 
 export const Notes = () => (
   <Page>
-    <BoardSkeleton variant="notes" />
+    <BoardSkeleton variant="notes" counts={[4, 3, 2]} />
+  </Page>
+);
+
+export const RecipesMixedCounts = () => (
+  <Page>
+    <BoardSkeleton variant="recipes" counts={[4, 1, 0]} />
+  </Page>
+);
+
+export const HeaderOnly = () => (
+  <Page>
+    <BoardSkeleton variant="todo" />
   </Page>
 );

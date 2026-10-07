@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
-import { loadNotitiesPageData } from "./notes-data";
+import { loadNotitiesColumnCounts, loadNotitiesPageData } from "./notes-data";
 import { NotitiesBoard } from "./NotitiesBoard";
 import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 
@@ -38,6 +38,24 @@ async function NotitiesPageContent({
   );
 }
 
+// Loading stage 2: header-only skeleton (outer fallback) until the per-category
+// note counts are in; search mode has no columns and keeps header-only.
+// See design/notes/Skeletons.md.
+async function NotitiesPageStream({
+  sortParam,
+  queryParam,
+}: {
+  sortParam?: string;
+  queryParam?: string;
+}) {
+  const counts = await loadNotitiesColumnCounts(queryParam);
+  return (
+    <Suspense fallback={<BoardSkeleton variant="notes" counts={counts} />}>
+      <NotitiesPageContent sortParam={sortParam} queryParam={queryParam} />
+    </Suspense>
+  );
+}
+
 export default async function NotitiesPage({
   searchParams,
 }: {
@@ -46,7 +64,7 @@ export default async function NotitiesPage({
   const { sort, q } = await searchParams;
   return (
     <Suspense fallback={<BoardSkeleton variant="notes" />}>
-      <NotitiesPageContent sortParam={sort} queryParam={q} />
+      <NotitiesPageStream sortParam={sort} queryParam={q} />
     </Suspense>
   );
 }
