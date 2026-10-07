@@ -175,6 +175,7 @@ async function replaceRecipeContents(
       unit: line.unit,
       ingredientId: line.ingredientId ?? null,
       groupLabel: line.groupLabel ?? null,
+      needsReview: line.needsReview ?? false,
     })),
     p_steps: steps.map((line) => ({
       instruction: line.instruction,
