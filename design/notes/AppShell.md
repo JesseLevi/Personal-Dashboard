@@ -496,7 +496,7 @@ but it's a deliberate call, not an oversight, and is flagged here per
   the streamed board data. It adds no network request (bundled inline) and
   is a handful of synchronous statements — `curl`'d the SSR'd `/te-doen` and
   `/recepten` HTML directly: the script tag lands in the first flushed
-  chunk, before the `PageSkeleton` fallback markup, in both. Did not have an
+  chunk, before the skeleton fallback markup, in both. Did not have an
   authenticated browser session to capture a Lighthouse/TTFB trace against a
   real login (see #185's standing gap) — the "no added network cost, no
   added render-blocking work beyond one inline script" argument above is
