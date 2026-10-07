@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { embeddedCounts } from "@/lib/ui/embedded-counts";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import {
   EMPTY_BRIDGE_UNIT_GRAMS,
@@ -667,4 +668,27 @@ export async function resolveIngredientUnitMass(
   );
 
   return resolveMassWithBridge(unit, null, referenceExact, userBridge, referenceBridge);
+}
+
+/**
+ * Recipes per category in `position` order — count-only read for the loading
+ * skeleton (embedded `recipes(count)`). Empty array if signed out.
+ */
+export async function getRecipeCategoryRecipeCounts(): Promise<number[]> {
+  const supabase = await createSupabaseServerClient();
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return [];
+
+  const { data, error } = await supabase
+    .from("recipe_categories")
+    .select("id, recipes(count)")
+    .eq("user_id", userId)
+    .order("position", { ascending: true })
+    .overrideTypes<Array<{ id: string; recipes: Array<{ count: number }> }>, { merge: false }>();
+
+  if (error) {
+    console.error("[recipes] getRecipeCategoryRecipeCounts failed:", error.code, error.message);
+    throw new Error("Failed to load recipe category counts");
+  }
+  return embeddedCounts(data, "recipes");
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { TeDoenPageBody } from "./TeDoenPageBody";
+import { TeDoenPageStream } from "./TeDoenPageStream";
 import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 
 // #95: no boardId segment here — TeDoenPageBody/board-data.ts fall back to
@@ -29,7 +29,7 @@ export default async function TeDoenPage({
   const { sort } = await searchParams;
   return (
     <Suspense fallback={<BoardSkeleton variant="todo" />}>
-      <TeDoenPageBody sortParam={sort} />
+      <TeDoenPageStream sortParam={sort} />
     </Suspense>
   );
 }

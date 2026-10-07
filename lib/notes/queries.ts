@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { embeddedCounts } from "@/lib/ui/embedded-counts";
 import { getAuthenticatedUserId } from "@/lib/notes/session";
 import type { Database } from "@/lib/database.types";
 import type { CategoryWithNotes, NoteCategoryRow, NoteRow, NoteSummaryRow } from "@/lib/notes/types";
@@ -225,4 +226,27 @@ export async function searchNotes(query: string, limit = 20): Promise<NoteSummar
       ...note,
       snippet: snippetFrom(content_text),
     }));
+}
+
+/**
+ * Notes per category in `position` order — count-only read for the loading
+ * skeleton (embedded `notes(count)`, no content). Empty array if signed out.
+ */
+export async function getNoteCategoryNoteCounts(): Promise<number[]> {
+  const supabase = await createSupabaseServerClient();
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return [];
+
+  const { data, error } = await supabase
+    .from("note_categories")
+    .select("id, notes(count)")
+    .eq("user_id", userId)
+    .order("position", { ascending: true })
+    .overrideTypes<Array<{ id: string; notes: Array<{ count: number }> }>, { merge: false }>();
+
+  if (error) {
+    console.error("[notes] getNoteCategoryNoteCounts failed:", error.code, error.message);
+    throw new Error("Failed to load note category counts");
+  }
+  return embeddedCounts(data, "notes");
 }

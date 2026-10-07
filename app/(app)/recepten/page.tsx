@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
-import { getRecipeCategoriesWithRecipes } from "@/lib/recipes/queries";
+import { getRecipeCategoriesWithRecipes, getRecipeCategoryRecipeCounts } from "@/lib/recipes/queries";
 import { ReceptenBoard } from "./ReceptenBoard";
 import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 
@@ -40,6 +40,18 @@ async function ReceptenPageContent() {
   );
 }
 
+// Loading stage 2: header-only skeleton (outer fallback) until the per-category
+// recipe counts are in, then the exact-shaped skeleton while the full fetch runs.
+// See design/notes/Skeletons.md.
+async function ReceptenPageStream() {
+  const counts = await getRecipeCategoryRecipeCounts();
+  return (
+    <Suspense fallback={<BoardSkeleton variant="recipes" counts={counts} />}>
+      <ReceptenPageContent />
+    </Suspense>
+  );
+}
+
 // #223 follow-up: links this route's own Web App Manifest, same mechanism
 // as app/(app)/te-doen/page.tsx — see that file's comment and
 // design/notes/AppShell.md.
@@ -50,7 +62,7 @@ export const metadata: Metadata = {
 export default function ReceptenPage() {
   return (
     <Suspense fallback={<BoardSkeleton variant="recipes" />}>
-      <ReceptenPageContent />
+      <ReceptenPageStream />
     </Suspense>
   );
 }

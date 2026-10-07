@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { TeDoenPageBody } from "../TeDoenPageBody";
+import { TeDoenPageStream } from "../TeDoenPageStream";
 import { BoardSkeleton } from "../../_components/skeletons/BoardSkeleton";
 
 // #95: the board switcher's explicit, shareable/bookmarkable URL (ticket's
@@ -21,7 +21,7 @@ export default async function TeDoenBoardPage({
   const { sort } = await searchParams;
   return (
     <Suspense fallback={<BoardSkeleton variant="todo" />}>
-      <TeDoenPageBody boardId={boardId} sortParam={sort} />
+      <TeDoenPageStream boardId={boardId} sortParam={sort} />
     </Suspense>
   );
 }
