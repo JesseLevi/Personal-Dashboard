@@ -183,6 +183,7 @@
         "favoriteActiveLabel": "Favorite board",
         "addBoardOptionLabel": "Add",
         "sortLabel": "Sort",
+        "addCategoryLabel": "Category",
         "emptyBoardTitle": "No board",
         "emptyBoardBody": "There is no board to show yet.",
         "sortOptions": {
@@ -375,6 +376,41 @@
         "User": "Personal",
         "Shirt": "Clothing",
         "Image": "Media"
+      }
+    },
+    "todoColumnPanel": {
+      "addTitle": "Add category",
+      "editTitle": "Rename category",
+      "fields": {
+        "nameLabel": "Name",
+        "iconLabel": "Icon"
+      },
+      "saveLabel": "Save",
+      "savingLabel": "Saving...",
+      "deleteLabel": "Delete",
+      "deleteConfirmLabel": "Are you sure?",
+      "deleteConfirmButtonLabel": "Yes, delete",
+      "deletingLabel": "Deleting...",
+      "cancelLabel": "Cancel",
+      "iconLabels": {
+        "Lightbulb": "Idea",
+        "AlarmClockCheck": "Ready",
+        "Loader": "In progress",
+        "CircleCheck": "Done",
+        "Star": "Favorite",
+        "Calendar": "Calendar",
+        "Timer": "Timer",
+        "Flame": "Urgent",
+        "Check": "Check",
+        "Columns3": "Columns",
+        "FolderClosed": "Folder",
+        "Notebook": "Notebook",
+        "ShoppingBasket": "Shopping",
+        "BicepsFlexed": "Fitness",
+        "User": "Personal",
+        "Shirt": "Clothing",
+        "Image": "Media",
+        "Scroll": "Document"
       }
     },
     "noteEditor": {

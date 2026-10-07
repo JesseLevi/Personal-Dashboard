@@ -157,3 +157,7 @@ re-measured (this wrapper exists only for `useDroppable`'s hit-test, per
 this file's own comment) — bound to the same token as `CardContainer`'s
 "Content" slot (`spacing/stack/stack-sm`, see design/notes/CardContainer.md's
 #205 entry), which this wrapper stands in for pixel-for-pixel.
+
+## Muted items (`isItemMuted`)
+
+Optional `isItemMuted(item, columnId)`: the item's `SortableCard` wrapper gets `opacity-30 line-through` (whole card, not just content). Evaluated against the column the item currently sits in (live drag state), so a card dragged into/out of the muted column updates on hover. `isDragging`'s `opacity-40` comes later in `cn()` and wins while dragging. Used by `/te-doen` for the last column; Ladle story `LastColumnMuted`.

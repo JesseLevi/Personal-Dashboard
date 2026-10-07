@@ -10,6 +10,7 @@ import { isIconName } from "@/components/atoms/Icon";
 import { isPriority } from "@/lib/boards/enums";
 import { applyCardMove, type CardMove } from "@/lib/boards/optimistic";
 import type { BoardWithColumns, CardWithLabels } from "@/lib/boards/types";
+import { useTeDoenColumnPanel } from "./TeDoenColumnPanel";
 import { CardDetailPanel, type CardDetailPanelTarget } from "./CardDetailPanel";
 import { createCard, deleteCard, moveCard, updateCard } from "./actions";
 
@@ -36,6 +37,7 @@ export function TeDoenBoard({ board, dragDisabled }: TeDoenBoardProps) {
   const tErrors = useTranslations("boards.errors");
   const format = useFormatter();
   const router = useRouter();
+  const columnPanel = useTeDoenColumnPanel();
 
   // Local optimistic copy of `board` (#96) — same pattern @dnd-kit's own
   // docs describe one layer down (Context7 /clauderic/dnd-kit,
@@ -109,6 +111,8 @@ export function TeDoenBoard({ board, dragDisabled }: TeDoenBoardProps) {
     icon: isIconName(column.icon) ? column.icon : "Croissant",
     items: column.cards,
   }));
+  // Done styling: cards in the rightmost column (by position, not name).
+  const lastColumnId = columns[columns.length - 1]?.id;
   const panelColumns = columns.map(({ id, name, icon }) => ({ id, name, icon }));
 
   // `open`/`target` are independent: closing (X, overlay, Escape) only
@@ -139,6 +143,11 @@ export function TeDoenBoard({ board, dragDisabled }: TeDoenBoardProps) {
         editLabel={t("editLabel")}
         emptyLabel={t("addItemLabel")}
         onAddItem={(columnId) => setPanel({ open: true, target: { mode: "create", columnId } })}
+        onEditColumn={(columnId) => {
+          const column = columns.find((c) => c.id === columnId);
+          if (column) columnPanel.openEdit({ id: column.id, name: column.name, icon: column.icon });
+        }}
+        isItemMuted={(_card, columnId) => columnId === lastColumnId}
         onItemClick={(card) => setPanel({ open: true, target: { mode: "edit", card } })}
         renderItem={(card) => {
           const priority = isPriority(card.priority) ? card.priority : "medium";
