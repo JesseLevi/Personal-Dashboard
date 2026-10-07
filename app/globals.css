@@ -1,6 +1,26 @@
 @import "tailwindcss";
 @import "./theme.css";
 
+/* Loading skeletons (app/(app)/_components/skeletons/): a slow opacity
+   "breathe" on the placeholder surfaces — no gradient, no translate. Figma
+   carries no motion spec, so duration and depth are this codebase's own
+   picks: docs/open-questions.md#skeleton-breathe-timing-unsourced.
+   `--duration-*` is not a Tailwind theme namespace (design/tokens.json
+   semantic.duration), hence the literal here rather than a token. */
+@theme {
+  --animate-breathe: breathe 2.4s ease-in-out infinite;
+
+  @keyframes breathe {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.55;
+    }
+  }
+}
+
 /* #115 (components/organisms/BoardView.tsx SortableCard): iOS Safari's
    native long-press callout/text-selection has no Tailwind utility
    (`-webkit-touch-callout` isn't part of the utility set) and would

@@ -19,6 +19,9 @@ export interface CarouselProps {
   className?: string;
 }
 
+/** Board columns measure 296px (mobile) / 320px (desktop) in the fetched nodes — shared by `BoardView` and the board skeleton so the two never drift. See design/notes/Carousel.md. */
+export const BOARD_COLUMN_WIDTH = "w-74 md:w-80";
+
 export function Carousel({
   children,
   columnWidthClassName = "w-70",
