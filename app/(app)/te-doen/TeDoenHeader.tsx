@@ -11,6 +11,7 @@ import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import { SORT_OPTIONS, type SortOption } from "@/lib/boards/sort";
 import type { ActionResult, BoardRow, BoardWithColumns } from "@/lib/boards/types";
 import { BoardPanel, type BoardPanelTarget } from "./BoardPanel";
+import { useTeDoenColumnPanel } from "./TeDoenColumnPanel";
 
 // Per-option icon, matching the fetched sort-dropdown node (3877:7682) and
 // SORT_OPTIONS' own order (lib/boards/sort.ts): Aanmaakdatum/Prioriteit/
@@ -69,6 +70,7 @@ export function TeDoenHeader({
   const t = useTranslations("components.pageHeader.todo");
   const tSort = useTranslations("components.pageHeader.todo.sortOptions");
   const router = useRouter();
+  const columnPanel = useTeDoenColumnPanel();
   const [isFavoritePending, startFavoriteTransition] = useTransition();
 
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
@@ -182,6 +184,7 @@ export function TeDoenHeader({
           </>
         }
         actions={
+          <div className="flex items-center gap-inline-sm md:gap-inline-xl">
           <div ref={sortMenuRef} className="relative">
             <Button
               icon="ArrowUpDown"
@@ -218,6 +221,10 @@ export function TeDoenHeader({
                 </Dropdown>
               </div>
             )}
+          </div>
+          <Button icon="Plus" onClick={columnPanel.openCreate}>
+            {t("addCategoryLabel")}
+          </Button>
           </div>
         }
       />

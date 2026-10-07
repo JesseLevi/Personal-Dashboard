@@ -183,6 +183,7 @@
         "favoriteActiveLabel": "Favoriete bord",
         "addBoardOptionLabel": "Toevoegen",
         "sortLabel": "Sorteer",
+        "addCategoryLabel": "Categorie",
         "emptyBoardTitle": "Geen bord",
         "emptyBoardBody": "Er is nog geen bord om te tonen.",
         "sortOptions": {
@@ -375,6 +376,41 @@
         "User": "Persoonlijk",
         "Shirt": "Kleding",
         "Image": "Media"
+      }
+    },
+    "todoColumnPanel": {
+      "addTitle": "Categorie toevoegen",
+      "editTitle": "Categorie hernoemen",
+      "fields": {
+        "nameLabel": "Naam",
+        "iconLabel": "Icoon"
+      },
+      "saveLabel": "Opslaan",
+      "savingLabel": "Opslaan...",
+      "deleteLabel": "Verwijderen",
+      "deleteConfirmLabel": "Weet je het zeker?",
+      "deleteConfirmButtonLabel": "Ja, verwijderen",
+      "deletingLabel": "Verwijderen...",
+      "cancelLabel": "Annuleren",
+      "iconLabels": {
+        "Lightbulb": "Idee",
+        "AlarmClockCheck": "Klaar",
+        "Loader": "Bezig",
+        "CircleCheck": "Afgerond",
+        "Star": "Favoriet",
+        "Calendar": "Kalender",
+        "Timer": "Timer",
+        "Flame": "Urgent",
+        "Check": "Vinkje",
+        "Columns3": "Kolommen",
+        "FolderClosed": "Map",
+        "Notebook": "Notitieboek",
+        "ShoppingBasket": "Boodschappen",
+        "BicepsFlexed": "Sport",
+        "User": "Persoonlijk",
+        "Shirt": "Kleding",
+        "Image": "Media",
+        "Scroll": "Document"
       }
     },
     "noteEditor": {

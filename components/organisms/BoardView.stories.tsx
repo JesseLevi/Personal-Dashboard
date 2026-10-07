@@ -168,3 +168,26 @@ export const RecipeGeneric = () => (
     )}
   />
 );
+
+// Done styling: cards in the last column render muted (opacity-30 + line-through).
+const lastColumnId = initialTicketColumns[initialTicketColumns.length - 1].id;
+const mutedColumns: BoardColumn<TicketItem>[] = initialTicketColumns.map((column) =>
+  column.id === lastColumnId
+    ? { ...column, items: [{ id: "t7", title: "Ramen lappen", tag: { variant: "low", label: "Low" } }] }
+    : column,
+);
+
+export const LastColumnMuted = () => (
+  <BoardView
+    columns={mutedColumns}
+    addLabel={addLabel}
+    editLabel={editLabel}
+    emptyLabel={emptyLabel}
+    isItemMuted={(_item, columnId) => columnId === lastColumnId}
+    renderItem={(item: TicketItem) => (
+      <CardContentTicket title={item.title}>
+        <Tag variant={item.tag.variant}>{item.tag.label}</Tag>
+      </CardContentTicket>
+    )}
+  />
+);

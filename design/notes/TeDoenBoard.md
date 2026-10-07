@@ -402,3 +402,9 @@ designed placement. Full mechanism: `docs/incidents.md` (2026-08-18).
 ## #219 — raw radius/spacing audit: zero found in this file's group
 
 `app/` joined `pnpm check:raw-spacing`'s scope this ticket. Grepped `TeDoenBoard.tsx`, `TeDoenHeader.tsx`, `TeDoenPageBody.tsx`, `page.tsx`, `loading.tsx`, `[boardId]/page.tsx`, `[boardId]/loading.tsx` against the gate's own candidate regex (`rounded-{sm,md,lg,xl,2xl,3xl}`, `gap-N`, `space-{x,y}-N`, `p{,x,y,l,r,t,b}-N`) — none matched. `TeDoenHeader.tsx`'s `mt-2` (two dropdown-menu positioning divs) is a margin utility, outside the gate's pattern (margin isn't gated, only padding/gap/rounded), so it's untouched and out of scope, not a miss. Nothing to convert or flag in this group; `CardDetailPanel.tsx` (6 raw utilities) and `BoardPanel.tsx` (1) carried this ticket's actual conversions — see `design/notes/CardDetailPanel.md`'s and `design/notes/BoardPanel.md`'s own `#219` entries.
+
+## Column edit/create/delete + done styling
+
+- One shared `CategoryPanel` (`TeDoenColumnPanel.tsx`: context provider wrapping header + board in `TeDoenPageBody`) serves the header "+ Categorie" button (create), each column pencil (edit: name + icon) and delete. The provider holds the only open/target state and is the single "use server" import site for these actions, with thin adapters (`categoryId` -> `columnId`, `boardId` injected).
+- Actions: `renameColumn` takes an optional `icon`; new `deleteColumn` (cards cascade, no migration). Icon picker: `column-icons.ts` (four default-column icons first). i18n: `components.todoColumnPanel`, `components.pageHeader.todo.addCategoryLabel`, errors in `boards.errors`.
+- Done styling: cards in the last column (last of the position-ordered `columns`, not by name) are muted via `BoardView`'s `isItemMuted` (see BoardView.md).

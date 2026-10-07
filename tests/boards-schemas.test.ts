@@ -8,6 +8,7 @@ import {
   moveCardSchema,
   renameBoardSchema,
   renameColumnSchema,
+  deleteColumnSchema,
   updateCardSchema,
 } from "../lib/boards/schemas";
 
@@ -84,6 +85,30 @@ describe("renameColumnSchema", () => {
     expect(
       renameColumnSchema.safeParse({ columnId: uuid, name: "Klaar" }).success,
     ).toBe(true);
+  });
+});
+
+describe("renameColumnSchema icon", () => {
+  it("accepts an optional icon", () => {
+    expect(
+      renameColumnSchema.safeParse({ columnId: uuid, name: "Klaar", icon: "Star" }).success,
+    ).toBe(true);
+  });
+
+  it("rejects an empty icon", () => {
+    expect(
+      renameColumnSchema.safeParse({ columnId: uuid, name: "Klaar", icon: " " }).success,
+    ).toBe(false);
+  });
+});
+
+describe("deleteColumnSchema", () => {
+  it("accepts a uuid", () => {
+    expect(deleteColumnSchema.safeParse({ columnId: uuid }).success).toBe(true);
+  });
+
+  it("rejects a non-uuid id", () => {
+    expect(deleteColumnSchema.safeParse({ columnId: "nope" }).success).toBe(false);
   });
 });
 

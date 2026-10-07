@@ -52,6 +52,8 @@ export interface BoardViewProps<TItem extends { id: string }> {
   /** Fired with a column id from that column's add button (header, or its empty-state button). */
   onAddItem?: (columnId: string) => void;
   onEditColumn?: (columnId: string) => void;
+  /** Muted (30% opacity + line-through) card, decided per item against the column it currently sits in (live, so also mid-drag). See design/notes/BoardView.md. */
+  isItemMuted?: (item: TItem, columnId: string) => boolean;
   /** #95: disables both dragging and dropping everywhere (still renders the same DOM/DragDropProvider — only `useSortable`/`useDroppable`'s own `disabled` flips). Set by a caller whose current view is sorted rather than manual/position order, where a drop's resulting index would be meaningless against the stored `position`. See design/notes/TeDoenBoard.md for the full reasoning. */
   dragDisabled?: boolean;
   className?: string;
@@ -98,6 +100,7 @@ function SortableCard({
   index,
   columnId,
   disabled,
+  muted,
   onClick,
   children,
 }: {
@@ -105,6 +108,7 @@ function SortableCard({
   index: number;
   columnId: string;
   disabled?: boolean;
+  muted?: boolean;
   onClick?: () => void;
   children: ReactNode;
 }) {
@@ -135,6 +139,7 @@ function SortableCard({
         // Reasoning: design/notes/BoardView.md.
         "[@media(any-pointer:coarse)]:touch-manipulation [@media(any-pointer:coarse)]:select-none touch-callout-none",
         disabled ? "cursor-default" : "cursor-grab",
+        muted && "opacity-30 line-through",
         isDragging && "opacity-40",
       )}
     >
@@ -158,6 +163,7 @@ function BoardColumnView<TItem extends { id: string }>({
   onAddItem,
   onEditColumn,
   onItemClick,
+  isItemMuted,
 }: {
   column: BoardColumn<TItem>;
   items: TItem[];
@@ -169,6 +175,7 @@ function BoardColumnView<TItem extends { id: string }>({
   onAddItem?: (columnId: string) => void;
   onEditColumn?: (columnId: string) => void;
   onItemClick?: (item: TItem) => void;
+  isItemMuted?: (item: TItem, columnId: string) => boolean;
 }) {
   const { ref: dropRef } = useDroppable({
     id: column.id,
@@ -216,6 +223,7 @@ function BoardColumnView<TItem extends { id: string }>({
               index={index}
               columnId={column.id}
               disabled={dragDisabled}
+              muted={isItemMuted?.(item, column.id)}
               onClick={onItemClick ? () => onItemClick(item) : undefined}
             >
               {renderItem(item)}
@@ -238,6 +246,7 @@ export function BoardView<TItem extends { id: string }>({
   onAddItem,
   onEditColumn,
   onItemClick,
+  isItemMuted,
   className,
 }: BoardViewProps<TItem>) {
   const [itemsByColumn, setItemsByColumn] = useState(() =>
@@ -303,6 +312,7 @@ export function BoardView<TItem extends { id: string }>({
             onAddItem={onAddItem}
             onEditColumn={onEditColumn}
             onItemClick={onItemClick}
+            isItemMuted={isItemMuted}
           />
         ))}
       </Carousel>
