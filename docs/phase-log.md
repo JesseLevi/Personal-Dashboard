@@ -15,12 +15,14 @@ Standard scaffold (Next.js 15 App Router, TS strict, Tailwind v4 via PostCSS, pn
 | Figma↔code map | `design/figma-map.json` | Canonical per ADR-0010 — the component inventory, not `Architecture.md` §3.1 or this file. Records node-ids and Figma→code name translations; the per-component design notes and flagged discrepancies live in `design/notes/<Component>.md` |
 | RLS harness | `supabase/tests/000-rls-enabled.sql`, `rls-profiles.sql` | pgTAP; `rls-profiles.sql` is the copy-me template for new tables |
 | CI gates | `scripts/check-rls-coverage.sh`, `check-server-only.sh` | Coverage gate fails on a table without an RLS test; greps block service_role misplacement, `NEXT_PUBLIC_SUPABASE*`, `dangerouslySetInnerHTML`, and raw hex in `components/` (comments included) |
-| Localhost-binding check | `scripts/check-localhost-binding.sh` | Run **on the server**, not here; wire into the deploy workflow |
+| Localhost-binding check | `scripts/check-localhost-binding.sh` | Shelved with the Mac mini (ADR-0018); not run anywhere |
 | Supabase server client | `lib/supabase/server.ts` | `server-only`, cookie-based, deliberately no `NEXT_PUBLIC_` vars (ADR-0003) |
 | Worker skeleton | `worker/index.ts` | Poll loop + backoff + heartbeat only. Calls `claim_next_job()`, a SQL function that **ships with the Phase 7 jobs migration (#31)** — the worker is incomplete by design; don't "fix" it earlier |
 | CI pipeline | `.github/workflows/ci.yml` (app), `ci-visual.yml` (visual), `ci-db.yml` (db) | Split into three files (#259, was one `ci.yml` with three jobs) so each carries its own `paths:` filter — safe with no branch protection/rulesets on this Free-plan repo, since a `paths:`-skipped workflow can't leave a required check stuck pending. All three: `pull_request`-only (no `push: [main]` — a merge no longer re-runs the suite on the merge commit) + `workflow_dispatch` + `concurrency: cancel-in-progress`. `app` no longer runs `pnpm build` (Vercel already builds every push as a Preview and reports it as a commit status; `pnpm typecheck` remains the TS gate). Projected ≈720 min/month against the 2000 limit, down from ≈4150 projected pre-#259. |
 
 ### ⬜ Phase 0 remainder — all server-side, ticketed as #1–#6
+
+> **Mac-mini items #1–#5 are shelved (ADR-0018)**: the platform stays on Vercel + Supabase Cloud. Of the text below only the non-Mac-mini items still apply.
 
 Mac mini Supabase stacks (#1, incl. `GOTRUE_DISABLE_SIGNUP=true` — no self-signup; matches `shouldCreateUser: false` in the app), Cloudflare Tunnel + Access (#2), Ollama (#3), restic backups incl. **separately backed-up Vault root key** (#4), hardened self-hosted runner + deploy workflow (#5), Playwright screenshot baselines (#6).
 

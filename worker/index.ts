@@ -1,5 +1,5 @@
-// Job queue consumer (Architecture §5, ADR-0006). Runs on the Mac mini next
-// to Supabase; connects with service_role (bypasses RLS — this process is
+// Job queue consumer (Architecture §5, ADR-0006). Host undecided since the
+// Mac mini was shelved (ADR-0018 §4); connects with service_role (bypasses RLS — this process is
 // trusted infrastructure and must never execute user-supplied code or URLs
 // without the SSRF guard, see ADR-0008).
 //

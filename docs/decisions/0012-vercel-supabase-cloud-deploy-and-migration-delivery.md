@@ -136,6 +136,8 @@ The two Phase 4 migrations have never reached the hosted project. Until a human 
 
 ### 6. Relationship to the Mac-mini path (`Architecture.md` §8, §1, §7)
 
+> **Superseded by ADR-0018 (2026-10-07):** the Mac-mini path is no longer "future/optional" but shelved, and Vercel + Supabase Cloud is the target, not an interim. The paragraph below is history.
+
 The Mac-mini/self-hosted design in `Architecture.md` is not wrong or discarded — it was designed before any hosting decision was exercised in production, and none of its infrastructure (#1–#5 in `docs/phase-log.md`) was ever built. This ADR does not retire it; it demotes it to a **future/optional target**: something to pick back up if/when running fully locally (CLAUDE.md priority 2) becomes practical again, e.g. once Ollama/local-inference phases (7–8) are underway and the Mac mini is provisioned for that anyway. Until then, Vercel + Supabase Cloud is what actually runs, and this ADR — not `Architecture.md` §8 — is authoritative for deploy topology.
 
 ## Consequences

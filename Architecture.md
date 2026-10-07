@@ -8,6 +8,8 @@
 
 ## 1. System context
 
+> **Shelved topology (ADR-0018).** The diagram below is the original Mac-mini design and will most likely never be built. The platform runs on **Vercel (Next.js) + Supabase Cloud** (§8 "Current", ADR-0012). AI features call hosted inference APIs through `lib/ai/`; there is no Ollama and no always-on worker host. The diagram stays only because older ADRs refer to it.
+
 ```
                     ┌──────────────────────────── Mac mini M4 (homeserver) ───────────────────────────┐
 Browser ── HTTPS ── Cloudflare Tunnel ── Next.js app (staging + prod instances)                       │
@@ -23,7 +25,7 @@ Browser ── HTTPS ── Cloudflare Tunnel ── Next.js app (staging + prod
                     └─────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Only the Next.js app is reachable from outside, via Cloudflare Tunnel (ADR-0003). Supabase (API, Studio) and Ollama bind to localhost — they are never exposed. The browser talks to Supabase exclusively through the Next.js server (server components / server actions / route handlers), not directly.
+The browser talks to Supabase exclusively through the Next.js server (server components / server actions / route handlers), not directly.
 
 ## 2. Repository layout
 
@@ -106,26 +108,28 @@ Textual search: `pg_trgm` ILIKE indexes on `notes.content_text`, `recipes.title`
 
 One generic pipeline; no module-specific embedding code.
 
+> **Host reopened (ADR-0018).** The pipeline shape below stands. But "Ollama" now means *the hosted provider behind `lib/ai/`*, picked in Phase 8, and the worker's host is undecided (`after()` for short work, a managed cron/function mechanism for the rest).
+
 1. **Enqueue**: DB triggers on `notes` and `recipes`(+ingredients/steps) insert a `jobs` row (`embed`, `{source_table, source_id}`) on insert/update.
-2. **Worker** (Node, `worker/`, runs on Mac mini next to the app): polls `jobs` with `FOR UPDATE SKIP LOCKED` (service_role, LAN). For `embed` jobs: build canonical text → compare `content_hash` (skip if unchanged) → chunk → Ollama `/api/embed` (bge-m3) → upsert `embeddings`.
+2. **Worker** (Node, `worker/`, host undecided — ADR-0018 §4): polls `jobs` with `FOR UPDATE SKIP LOCKED` (service_role). For `embed` jobs: build canonical text → compare `content_hash` (skip if unchanged) → chunk → Ollama `/api/embed` (bge-m3) → upsert `embeddings`.
 3. **Semantic search**: route handler embeds the query via Ollama, then calls a **security-invoker** Postgres function `search_semantic(query_embedding, scope, limit)` doing pgvector cosine top-k — RLS applies automatically because the function runs as the calling user.
 4. **AI-agent**: `pg_cron` runs SQL detectors (e.g. cards stale in a column > N days, overdue due_at, recurring themes via vector neighbors) → inserts candidate rows into `jobs` (`agent`) → worker assembles context (signal + related content via vector search) → **one** Ollama chat call → stores the natural-language result in `agent_signals`. Surfaced via an API endpoint + minimal list UI; a designed dashboard surface is a later round (needs Figma).
 5. **Prompt-injection containment**: user content (notes, recipes, sync'd event titles) flows into LLM prompts. The agent therefore has **no tools and no write access to anything but its own `agent_signals` row**, and agent output is rendered as plain text (never markdown-to-HTML). Worst case for an injected note is a misleading message, never an action.
 
-Deliberately simple: no streaming, no agent frameworks, no LangChain. A queue table, a poller, and two Ollama endpoints.
+Deliberately simple: no streaming, no agent frameworks, no LangChain. A queue table, a poller, and two inference calls (embed + chat) behind `lib/ai/`.
 
 ## 6. External calendar sync (ADR-0008)
 
 **This round: read-only import.** Provider abstraction with three implementations, cheapest first: `ics` (public/secret ICS URL — no OAuth), `caldav` (`tsdav`, MIT), `google` (OAuth offline refresh token). Credentials/tokens stored via the Vault pattern (ADR-0002). Worker job `calendar:sync` per account on an interval: incremental where supported (Google syncToken, CalDAV ctag/etag) → upsert `calendar_events` with `source='sync'`. Sync'd events are read-only in the UI. Two-way sync is explicitly a later round.
 
-- **SSRF guard (mandatory)**: user-supplied ICS/CalDAV URLs are fetched by the worker, which sits next to Supabase and Ollama. Fetches must be https-only, resolve DNS first and reject private/loopback/link-local ranges, cap redirects (re-validating each hop), and enforce response size/time limits. This ships in the same ticket as the first provider, not later.
+- **SSRF guard (mandatory)**: user-supplied URLs (ICS/CalDAV, recipe pages for #309) are fetched server-side, where internal and cloud-metadata endpoints must stay unreachable. Fetches must be https-only, resolve DNS first and reject private/loopback/link-local ranges, cap redirects (re-validating each hop), and enforce response size/time limits. This ships in the same ticket as the first provider, not later.
 - **Recurring events**: expanded into concrete event instances at sync time within a rolling window (e.g. −30d/+400d); no RRULE storage or evaluation in-app this round. Manual events have no recurrence yet (not in Vision scope).
 - All timestamps `timestamptz`; all-day events flagged, not midnight-encoded.
 
-## 7. Security (ADR-0003)
+## 7. Security
 
-- **Exposure**: `cloudflared` on the Mac mini; tunnel routes `dash.<domain>` → prod Next.js, `staging.<domain>` → staging. Staging behind Cloudflare Access; **recommended: prod behind Access too** (email allowlist of household members — free, closes the entire pre-auth attack surface incl. future Next.js/Auth CVEs; drop it only when someone outside the allowlist needs access). No inbound ports on the router.
-- **Strict localhost binding**: Supabase's Docker compose publishes ports on `0.0.0.0` by default — every published port (Kong, Postgres, Studio, Analytics) must be explicitly bound to `127.0.0.1`, and Ollama runs with `OLLAMA_HOST=127.0.0.1`. "On the LAN" is not trusted; any IoT device on the home Wi-Fi would otherwise reach the database. Phase 0 includes a check script for this.
+- **Shelved with the Mac mini (ADR-0018)**: Cloudflare Tunnel exposure (ADR-0003, superseded), strict localhost binding (`scripts/check-localhost-binding.sh`), the self-hosted CI runner, and restic/Vault-root-key backups. Supabase Cloud's backups cover that role (ADR-0012). The bullets below that still mention them are history.
+- **AI cost & injection guardrails (ADR-0018 §3)**: deterministic code first; LLM output schema-constrained + zod-validated, rendered as plain text; per-user rate limit; hard spend cap in the provider console.
 - **Email delivery**: magic-link auth requires SMTP for self-hosted GoTrue — configure a transactional provider (e.g. Resend/Postmark free tier) in Phase 1; without it, half the login story silently doesn't work.
 - **Secrets**: `.env` files live outside git (repo ships `.env.example`); CI secrets in GitHub Actions; `service_role` key exists only in server/worker env, never in client bundles (`import "server-only"` + CI grep, ADR-0002). Per-user AI API keys and calendar credentials in Supabase Vault via server-side functions (ADR-0002).
 - **Content rendering**: TipTap documents render exclusively through TipTap's React renderer with a fixed extension whitelist — never `dangerouslySetInnerHTML` on stored content. Agent output renders as plain text (§5, item 5).
@@ -137,21 +141,21 @@ Deliberately simple: no streaming, no agent frameworks, no LangChain. A queue ta
 
 ## 8. Environments & CI/CD
 
-**This section describes two topologies. ADR-0012 is authoritative on which one is current** — as of 2026-07-31 that is the "Current" subsection below; the Mac-mini plan is a future/optional target, kept here for when it's picked back up (e.g. once local-inference phases 7–8 make provisioning the Mac mini for Ollama worthwhile anyway). ADR-0012 also records that this decision is the user's, not yet ratified by the architecture layer.
+**ADR-0012 and ADR-0018 are authoritative.** Vercel + Supabase Cloud is the target topology, not an interim. The Mac-mini plan at the end of this section is shelved and will most likely never be built. Both decisions are the user's and have not yet been ratified by the architecture layer.
 
 ### Current (ADR-0012): Vercel + Supabase Cloud
 
-- **Local dev**: `supabase start` (CLI), local Ollama, `next dev` — unchanged.
+- **Local dev**: `supabase start` (CLI), `next dev`. Ollama is optional for experiments, never required (ADR-0018 §6).
 - **Hosted**: Vercel hosts the Next.js app (production + per-PR preview deployments, via its GitHub integration). Supabase Cloud hosts the single hosted project's Postgres + Auth + RLS + Storage. There is currently one hosted environment (production) — no separate on-demand staging stack exists yet under this topology; ADR-0012 doesn't add one.
 - **CI (GitHub Actions)**: `ci.yml` is unchanged — lint → typecheck → unit tests (`--frozen-lockfile`) → token-drift check → `supabase db reset` + RLS suite (ADR-0009, against an ephemeral local container) → build. This proves migrations are sound; it does not deploy them anywhere. The **Ladle/Playwright screenshot diff (ADR-0010) is wired in** as `pnpm test:visual` (#6); its CI job's arming status is tracked in `docs/HANDOFF.md`, not here.
 - **CD**: production promotion is manual (ADR-0012, amended 2026-08-02) — the user promotes a specific Vercel deployment to production themselves once they've confirmed it works, rather than every merge going live automatically. Vercel's own Git-triggered production build stays disabled via `vercel.json`'s `ignoreCommand` regardless (preview deployments per PR are unaffected). `deploy.yml` still exists as an on-demand (`workflow_dispatch`-only) tool: a `migrate` job applies pending migrations to the hosted Supabase project (`supabase db push`, forward-only, never `db reset`), then a `deploy` job can build and push to Vercel production, when the user chooses to run it. See ADR-0012 §3 for the original race-condition reasoning (still why migrations must land before matching code, just enforced by the user's own sequencing now) and §4 for the security trade-off of giving CI production-schema access.
-- The worker (`worker/`) and Ollama have no hosted equivalent decided yet under this topology — out of scope for ADR-0012, to be settled when Phase 7+ starts.
+- **AI & async work (ADR-0018)**: hosted inference APIs, pay-per-use, behind `lib/ai/`. Short async work runs via Next.js `after()`. The worker's managed host (cron/functions) is decided when Phase 7/8 starts.
 
-### Future/optional: self-hosted Mac mini
+### Shelved (ADR-0018): self-hosted Mac mini
 
 - **Staging + prod**: two Supabase Docker stacks + two app instances on the Mac mini, separate tunnel hostnames. **Capacity note**: prod Supabase + Ollama (a 14B q4 model ≈ 9 GB) already stress a 16 GB machine — staging runs **on-demand** (started for deploy verification/restore drills, stopped otherwise), and model size follows available RAM, not ambition.
 - **CD**: self-hosted runner on the Mac mini (hardened per §7); deploy = migrate then restart app/worker; staging on merge to `main`, prod on tag.
-- None of this infrastructure has been built (`docs/phase-log.md` tracks #1–#5 as not started); it remains the plan to return to if/when running fully locally becomes the priority again (CLAUDE.md priority 2).
+- None of this infrastructure was ever built (#1–#5 never started). Reviving it requires a new ADR (ADR-0018 §1).
 
 ## 9. Testing
 

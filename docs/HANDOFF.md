@@ -11,7 +11,9 @@
 - `main` is green after #277. Per-ticket status lives on the board.
 - Phases 0–3 done. Phases 4 (Recepten) and 5 (Boodschappenlijst) mid-flight per the board.
 - Phase 6 (Notities) is code-complete (#225–#235, #263). Left: a **design round** (rendered table, prose typography, row/column controls — `notes-table-ui-not-designed`, `notes-prose-typography-not-designed`; plus #265's two undesigned values in `design/notes/ButtonToggle.md`, `Sidebar.md`). Treat that shipped CSS as provisional.
-- Phase 7+ (Agenda, AI) is backlog. #1–#5, #9–#11 need real accounts: don't start unprompted.
+- Phase 7+ (Agenda, AI) is backlog. #9–#11 need real accounts: don't start unprompted.
+- **Mac mini/Ollama is shelved (ADR-0018)**: Vercel + Supabase Cloud is the target, and AI goes through hosted APIs behind `lib/ai/`. #1–#5 are obsolete.
+- **#309 (recipe via URL) is planned** as an epic with subtickets: JSON-LD → parser → NEVO match via `pg_trgm`, with Haiku 4.5 only for what code can't do. The user explicitly asked Claude to design the missing states (error card, review marker, source link) per the "Claude-designed UI" rule.
 - `[OPT]` round (#279–#304): all merged or in review except the hosted tickets #279 and #291.
 
 ## Next
@@ -41,5 +43,5 @@
 
 ## Environment still to set up (outside this repo)
 
-- **Mac mini (#1–#5)**: Docker + two Supabase stacks on 127.0.0.1 (`scripts/check-localhost-binding.sh`); `cloudflared` + Access; Ollama (`OLLAMA_HOST=127.0.0.1`, `bge-m3` + a chat model); hardened self-hosted runner; restic backups incl. Vault root key.
-- **Accounts (free tier)**: Cloudflare; SMTP (Resend); Healthchecks.io; S3-compatible bucket (e.g. B2).
+- **Anthropic API key** in Vercel env (`ANTHROPIC_API_KEY`) plus a monthly spend cap in the Console. Needed before #309's LLM step reaches production.
+- **SMTP (Resend, free tier)** for magic links.
