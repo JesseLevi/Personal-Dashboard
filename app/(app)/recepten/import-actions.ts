@@ -1,11 +1,60 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/recipes/session";
-import { upsertAlias, type MatcherClient } from "@/lib/recipes/import/match-ingredients";
-import { confirmIngredientMatchSchema } from "@/lib/recipes/schemas";
+import { upsertAlias } from "@/lib/recipes/import/match-ingredients";
+import { runRecipeImport, type ImportJob } from "@/lib/recipes/import/pipeline";
+import { retryImport, startImport } from "@/lib/recipes/import/start";
+import {
+  confirmIngredientMatchSchema,
+  retryRecipeImportSchema,
+  startRecipeImportSchema,
+} from "@/lib/recipes/schemas";
 import type { ActionResult } from "@/lib/recipes/types";
+
+// The pipeline runs after the response. The client it gets was built here,
+// inside the action, with this request's cookie store captured, and it
+// is the user's own RLS-scoped client: nothing in the pipeline reads cookies
+// or request headers, and there is no service_role anywhere (ADR-0003).
+const scheduleImport = (job: ImportJob) => after(() => runRecipeImport(job));
+
+/**
+ * #318: "Via link". Validates, rate-limits (20/hour), inserts the `importing`
+ * recipe at the top of the category and schedules the pipeline with `after()`.
+ * Returns the new recipe id at once.
+ */
+export async function startRecipeImport(categoryId: unknown, url: unknown): Promise<ActionResult<{ recipeId: string }>> {
+  const parsed = startRecipeImportSchema.safeParse({ categoryId, url });
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+  const supabase = await createSupabaseServerClient();
+
+  const result = await startImport(supabase, auth.userId, parsed.data, scheduleImport);
+  if (!result.ok) return { success: false, error: result.error };
+
+  revalidatePath("/recepten", "layout");
+  return { success: true, data: { recipeId: result.recipeId } };
+}
+
+/** #318: "Opnieuw proberen" on a failed import card; counts against the same hourly limit. */
+export async function retryRecipeImport(input: unknown): Promise<ActionResult<{ recipeId: string }>> {
+  const parsed = retryRecipeImportSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+  const supabase = await createSupabaseServerClient();
+
+  const result = await retryImport(supabase, auth.userId, parsed.data.recipeId, scheduleImport);
+  if (!result.ok) return { success: false, error: result.error };
+
+  revalidatePath("/recepten", "layout");
+  return { success: true, data: { recipeId: result.recipeId } };
+}
 
 /**
  * #316: the user fixed a `needs_review` imported line by picking one of their
@@ -21,7 +70,7 @@ export async function confirmIngredientMatch(input: unknown): Promise<ActionResu
 
   const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
-  const supabase = (await createSupabaseServerClient()) as unknown as MatcherClient;
+  const supabase = await createSupabaseServerClient();
 
   const { data: line, error: lineError } = await supabase
     .from("recipe_ingredients")

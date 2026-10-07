@@ -1,5 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/database.types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import { validateThumbnailFile } from "@/lib/recipes/thumbnail-validation";
@@ -50,8 +52,21 @@ export async function uploadRecipeThumbnail(file: File): Promise<ActionResult<{ 
   const userId = await getAuthenticatedUserId();
   if (!userId) return { success: false, error: "unauthenticated" };
 
-  const bytes = new Uint8Array(await file.arrayBuffer());
+  return storeRecipeThumbnail(supabase, userId, new Uint8Array(await file.arrayBuffer()));
+}
 
+/**
+ * Re-encodes `bytes` and uploads both variants under `<userId>/<uuid>`. The
+ * shared core of the manual upload above and the importer's remote image
+ * (lib/recipes/import/pipeline.ts, #318): the caller owns validation of the
+ * input and passes its own RLS-bound client, so no cookie/request context is
+ * needed here (the importer runs inside `after()`).
+ */
+export async function storeRecipeThumbnail(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  bytes: Uint8Array,
+): Promise<ActionResult<{ path: string }>> {
   let variants: Record<ThumbnailVariant, Uint8Array>;
   try {
     variants = await renderThumbnailVariants(bytes);

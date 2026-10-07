@@ -26,5 +26,27 @@ export const isImportStatus = (value: unknown): value is ImportStatus =>
   typeof value === "string" && (IMPORT_STATUSES as readonly string[]).includes(value);
 
 // recipes.import_error is a free-form snake_case reason code (no DB enum, see
-// 20261008000001_recipe_import.sql). Codes the schema relies on live here.
-export const IMPORT_ERROR_TIMEOUT = "timeout"; // set by the lazy sweep (ADR-0019 §1)
+// 20261008000001_recipe_import.sql). Every code the app writes lives here, the
+// one home (ADR-0019 §9); each maps to `recipes.import.errors.<code>` in the
+// message catalogs (tests/messages-key-parity + recipes-import-errors.test.ts).
+export const IMPORT_ERROR_CODES = [
+  "timeout", // lazy sweep (ADR-0019 §1) and safe-fetch's own timeout
+  "no_content", // ExtractError: no JSON-LD recipe and no readable text
+  "ai_unavailable", // no API key / key rejected
+  "ai_failed", // provider or output problem
+  "no_recipe_found", // the page text holds no recipe
+  "rate_limited", // 20 imports per hour (ADR-0019 §5)
+  // lib/net/safe-fetch.ts SafeFetchErrorCode (already snake_case)
+  "invalid_url",
+  "blocked_address",
+  "too_large",
+  "bad_content_type",
+  "too_many_redirects",
+  "http_error",
+  "import_failed", // anything unexpected (database error, bug)
+] as const;
+export type ImportErrorCode = (typeof IMPORT_ERROR_CODES)[number];
+export const isImportErrorCode = (value: unknown): value is ImportErrorCode =>
+  typeof value === "string" && (IMPORT_ERROR_CODES as readonly string[]).includes(value);
+
+export const IMPORT_ERROR_TIMEOUT: ImportErrorCode = "timeout";

@@ -15,6 +15,7 @@ import {
   type MatcherClient,
 } from "@/lib/recipes/import/match-ingredients";
 import type { ParsedIngredient } from "@/lib/recipes/import/parse-ingredient";
+import type { ImportErrorCode } from "@/lib/recipes/enums";
 import { UNIT_CODES, type UnitCode } from "@/lib/recipes/units";
 
 // LLM fill-in for the recipe import (#317, ADR-0019 §4). Deterministic steps
@@ -23,15 +24,17 @@ import { UNIT_CODES, type UnitCode } from "@/lib/recipes/units";
 //   1. extractRecipeFromText: page without JSON-LD (kind "text"), full extraction.
 //   2. fillGaps: ONE call for low-confidence lines (re-parse), unmatched lines
 //      (choose among the matcher's candidates, EN -> NL name) and step <->
-//      ingredient references. Skipped when there is no gap.
+//      ingredient references. Always runs when a key is configured and the
+//      recipe has steps and ingredients, so even a clean JSON-LD import gets
+//      its step references (user decision 2026-10-07, ADR-0019 §4).
 // The model has no tools and cannot write anything. Page text is untrusted:
 // it travels as escaped JSON inside <untrusted_page_data>, the output is
 // zod-validated with capped lengths, stripped to plain text, and every id or
 // index it returns is checked against what we sent (a candidate key outside
 // the list means "none", an out-of-range index is dropped).
 
-/** Reason codes for recipes.import_error (^[a-z0-9_]{1,64}$, #312). */
-export type ImportAiErrorCode = "ai_unavailable" | "ai_failed" | "no_recipe_found";
+/** Reason codes for recipes.import_error; the full list lives in lib/recipes/enums.ts. */
+export type ImportAiErrorCode = Extract<ImportErrorCode, "ai_unavailable" | "ai_failed" | "no_recipe_found">;
 
 export class ImportAiError extends Error {
   constructor(
@@ -244,7 +247,8 @@ export async function fillGaps(
   });
 
   const gapIndexes = lines.flatMap((l, i) => (needsParse(l) || needsMatch(l) ? [i] : [])).slice(0, MAX_GAP_LINES);
-  if (gapIndexes.length === 0 || lines.length > MAX_MATCH_LINES) return base(null); // nothing for the LLM to do
+  const wantsStepRefs = steps.length > 0 && lines.length > 0;
+  if ((gapIndexes.length === 0 && !wantsStepRefs) || lines.length > MAX_MATCH_LINES) return base(null); // nothing for the LLM to do
   if (!isAiConfigured()) return base("ai_unavailable");
 
   const usedSteps = steps.slice(0, MAX_STEPS);

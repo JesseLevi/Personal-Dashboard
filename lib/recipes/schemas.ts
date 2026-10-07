@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isUnitCode } from "@/lib/recipes/units";
+import { importUrlSchema } from "@/lib/recipes/import/url";
 
 // Validates every server-action input in app/(app)/recepten/actions.ts
 // (#122), same pattern and same split (shape/format here, ownership checked
@@ -188,4 +189,14 @@ export const searchIngredientsSchema = z.object({
 export const confirmIngredientMatchSchema = z.object({
   recipeIngredientId: z.uuid(),
   ingredientId: z.uuid(),
+});
+
+// #318: "Via link". The URL is also re-validated by safe-fetch (#313).
+export const startRecipeImportSchema = z.object({
+  categoryId: z.uuid(),
+  url: importUrlSchema,
+});
+
+export const retryRecipeImportSchema = z.object({
+  recipeId: z.uuid(),
 });

@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/database.types";
 import { findOrCreateOwnIngredient } from "@/lib/recipes/ingredients";
 
 // Matches parsed ingredient names (#315) to the ingredient library (#316,
@@ -16,12 +17,9 @@ import { findOrCreateOwnIngredient } from "@/lib/recipes/ingredients";
 // turns the chosen candidate into an ingredientId with resolveIngredientId,
 // which uses the same findOrCreateOwnIngredient as the manual picker.
 
-// The new SQL function, ingredient_aliases and recipe_ingredients.needs_review
-// are not in lib/database.types.ts until CI regenerates it (never hand-edited,
-// docs/guides/data-layer.md), so this module talks to the client untyped.
-// Drop the cast after the next `pnpm db:types` run.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type MatcherClient = SupabaseClient<any, "public", any>;
+// The caller's RLS-scoped, typed client (lib/database.types.ts knows
+// ingredient_aliases and match_ingredient_candidates since #312/#316).
+export type MatcherClient = SupabaseClient<Database>;
 
 /**
  * Link only when the best trigram score is at least this. pg_trgm's own
@@ -228,10 +226,7 @@ export async function matchIngredients(
     throw new Error("Failed to look up ingredient aliases");
   }
   const aliasByKey = new Map<string, string>(
-    (aliasRows ?? []).map((row: { alias_normalized: string; ingredient_id: string }) => [
-      row.alias_normalized,
-      row.ingredient_id,
-    ]),
+    (aliasRows ?? []).map((row) => [row.alias_normalized, row.ingredient_id]),
   );
 
   const pending: number[] = [];

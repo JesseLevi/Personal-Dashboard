@@ -95,7 +95,9 @@ export type RecipesErrorCode =
   | "invalid-file-type"
   | "file-too-large"
   | "upload-failed"
-  | "invalid-image";
+  | "invalid-image"
+  // #318: the 20-imports-per-hour limit (lib/recipes/import/rate-limit.ts).
+  | "rate-limited";
 
 export type ActionResult<T = undefined> =
   | { success: true; data: T }
