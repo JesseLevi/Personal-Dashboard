@@ -7,6 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/recipes/session";
 import { nextPosition } from "@/lib/boards/positioning";
 import { searchIngredientLibrary } from "@/lib/recipes/queries";
+import { findOrCreateOwnIngredient } from "@/lib/recipes/ingredients";
 import {
   uploadRecipeThumbnail as uploadRecipeThumbnailToStorage,
   deleteRecipeThumbnail,
@@ -563,39 +564,12 @@ export async function createOwnIngredient(
   const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
-  if (parsed.data.referenceId) {
-    const { data: existing, error: existingError } = await supabase
-      .from("ingredients")
-      .select("*")
-      .eq("user_id", auth.userId)
-      .eq("reference_id", parsed.data.referenceId)
-      .maybeSingle();
-    if (existingError) {
-      logDbError("createOwnIngredient/existing-lookup", existingError);
-      return { success: false, error: "generic" };
-    }
-    if (existing) return { success: true, data: existing };
-  }
-
-  const { data, error } = await supabase
-    .from("ingredients")
-    .insert({
-      user_id: auth.userId,
-      reference_id: parsed.data.referenceId,
-      name: parsed.data.name,
-    })
-    .select()
-    .single();
-
-  if (error || !data) {
-    if (error) logDbError("createOwnIngredient", error);
-    return { success: false, error: "generic" };
-  }
-
+  const result = await findOrCreateOwnIngredient(supabase, auth.userId, parsed.data);
+  if (!result.ok) return { success: false, error: "generic" };
   // No revalidatePath: this manages the ingredient library, not the
   // /recepten route — it's called from within the recipe write flow
   // (#126/#131), whose own actions already revalidate it.
-  return { success: true, data };
+  return { success: true, data: result.ingredient };
 }
 
 /**

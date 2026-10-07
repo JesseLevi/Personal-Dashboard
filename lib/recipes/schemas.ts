@@ -181,3 +181,11 @@ export const createOwnIngredientSchema = z.object({
 export const searchIngredientsSchema = z.object({
   query: z.string().max(200),
 });
+
+// #316: the user fixed a needs_review import line by picking one of their own
+// ingredients. The alias key comes from the stored recipe_ingredients.name
+// server-side, never from the client.
+export const confirmIngredientMatchSchema = z.object({
+  recipeIngredientId: z.uuid(),
+  ingredientId: z.uuid(),
+});
