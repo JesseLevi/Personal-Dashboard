@@ -131,7 +131,7 @@ describe("prepareRecipe", () => {
 // --------------------------------------------------------------- link
 
 const linkAnswer = (lines: unknown[] = [], stepRefs: unknown[] = []) => ({ lines, stepRefs });
-const link = (i: number, over: Record<string, unknown> = {}) => ({ i, choice: null, grams: null, amount: null, ...over });
+const link = (i: number, over: Record<string, unknown> = {}) => ({ i, choice: null, grams: null, ...over });
 
 describe("asksGrams", () => {
   it.each([
@@ -149,35 +149,35 @@ describe("asksGrams", () => {
 describe("linkIngredients", () => {
   it("makes no call when there is nothing to choose, weigh or link", async () => {
     const { provider } = fakeProvider(() => linkAnswer());
-    const result = await linkIngredients([{ parsed: parsed("zout"), match: matched() }], [], "nl");
+    const result = await linkIngredients([{ parsed: parsed("zout"), match: matched() }], []);
     expect(provider.generateObject).not.toHaveBeenCalled();
     expect(result).toMatchObject({ aiUsed: false, degraded: null });
   });
 
   it("always runs one call for step references, even when every line is clean (ADR-0019 §4)", async () => {
     const { provider } = fakeProvider(() => linkAnswer([], [{ step: 0, ingredients: [0] }]));
-    const result = await linkIngredients([{ parsed: parsed("zout"), match: matched() }], ["Zout toevoegen."], "nl");
+    const result = await linkIngredients([{ parsed: parsed("zout"), match: matched() }], ["Zout toevoegen."]);
     expect(provider.generateObject).toHaveBeenCalledTimes(1);
     expect(result).toMatchObject({ aiUsed: true, degraded: null, stepIngredientRefs: [[0]] });
   });
 
   it("no key: unmatched lines stay needs_review, import continues degraded", async () => {
     const lines: FillInputLine[] = [{ parsed: parsed("ui"), match: review([OWN_A]) }];
-    const result = await linkIngredients(lines, ["Snijd.", "Bak."], "nl");
+    const result = await linkIngredients(lines, ["Snijd.", "Bak."]);
     expect(result).toMatchObject({ aiUsed: false, degraded: "ai_unavailable", stepIngredientRefs: [[], []] });
     expect(result.lines[0]).toMatchObject({ needsReview: true, aiAssisted: false, gramsEstimate: null });
   });
 
   it("degrades instead of throwing when the provider fails", async () => {
     setProviderForTests({ generateObject: vi.fn().mockRejectedValue(new AiError("overloaded", "busy")) });
-    const result = await linkIngredients([{ parsed: parsed("ui"), match: review([OWN_A]) }], [], "nl");
+    const result = await linkIngredients([{ parsed: parsed("ui"), match: review([OWN_A]) }], []);
     expect(result).toMatchObject({ aiUsed: false, degraded: "ai_failed" });
     expect(result.lines[0]!.needsReview).toBe(true);
   });
 
   it("offers the candidates and applies the chosen one (the best fit, e.g. 'Ui rauw' for 'ui')", async () => {
     const { prompts } = fakeProvider(() => linkAnswer([link(0, { choice: "c3" })]));
-    const result = await linkIngredients([{ parsed: parsed("ui"), match: review([OWN_A, OWN_B, REF_C]) }], [], "nl");
+    const result = await linkIngredients([{ parsed: parsed("ui"), match: review([OWN_A, OWN_B, REF_C]) }], []);
     expect(payloadOf(prompts[0]!.prompt).ingredients[0].candidates).toEqual([
       { key: "c1", name: "ui" },
       { key: "c2", name: "rode ui" },
@@ -191,7 +191,7 @@ describe("linkIngredients", () => {
     "treats the out-of-list choice %j as none",
     async (choice) => {
       fakeProvider(() => linkAnswer([link(0, { choice })]));
-      const result = await linkIngredients([{ parsed: parsed("ui"), match: review([OWN_A]) }], [], "nl");
+      const result = await linkIngredients([{ parsed: parsed("ui"), match: review([OWN_A]) }], []);
       expect(result.lines[0]!.match).toMatchObject({ ingredientId: null, chosen: null, needsReview: true });
     },
   );
@@ -199,16 +199,16 @@ describe("linkIngredients", () => {
   it("never replaces a deterministic match", async () => {
     fakeProvider(() => linkAnswer([link(0, { choice: "c1" })]));
     const lines: FillInputLine[] = [{ parsed: parsed("zout", { unit: "stuk" }), match: { ...matched(), candidates: [OWN_A] } }];
-    const result = await linkIngredients(lines, [], "nl");
+    const result = await linkIngredients(lines, []);
     expect(result.lines[0]!.match).toBe(lines[0]!.match);
   });
 
-  it("returns a grams estimate and the stated amount only for lines it asked about", async () => {
+  it("returns a grams estimate only for lines it asked about", async () => {
     fakeProvider(() =>
       linkAnswer([
-        link(0, { grams: 100, amount: "1 stuk" }),
-        link(1, { grams: 500, amount: "500 g" }),
-        link(2, { grams: 10, amount: "<i>2 teentjes</i>" }),
+        link(0, { grams: 100 }),
+        link(1, { grams: 500 }),
+        link(2, { grams: 10 }),
       ]),
     );
     const result = await linkIngredients(
@@ -218,13 +218,8 @@ describe("linkIngredients", () => {
         { parsed: parsed("2 teentjes knoflook", { quantity: 2, unit: null }), match: matched() },
       ],
       [],
-      "nl",
     );
-    expect(result.lines.map((l) => [l.gramsEstimate, l.amount])).toEqual([
-      [100, "1 stuk"],
-      [null, null],
-      [10, "2 teentjes"],
-    ]);
+    expect(result.lines.map((l) => l.gramsEstimate)).toEqual([100, null, 10]);
   });
 
   it("validates step references: out-of-range ingredient and step indices are dropped, duplicates merged", async () => {
@@ -238,7 +233,7 @@ describe("linkIngredients", () => {
       { parsed: parsed("a"), match: review() },
       { parsed: parsed("b"), match: matched() },
     ];
-    const result = await linkIngredients(lines, ["Mix a en b.", "Bak."], "nl");
+    const result = await linkIngredients(lines, ["Mix a en b.", "Bak."]);
     expect(result.stepIngredientRefs).toEqual([[0, 1], []]);
   });
 
@@ -248,7 +243,7 @@ describe("linkIngredients", () => {
       { parsed: parsed("a"), match: review([OWN_A]) },
       { parsed: parsed("b"), match: { ...review([OWN_B]), needsReview: false } },
     ];
-    const result = await linkIngredients(lines, [], "nl");
+    const result = await linkIngredients(lines, []);
     expect(result.lines[1]!.match).toBe(lines[1]!.match);
     expect(result.lines[1]!.gramsEstimate).toBeNull();
   });
@@ -261,7 +256,7 @@ describe("prompt injection", () => {
   it("delimits and escapes page text so it cannot close the data block (both calls)", async () => {
     const { prompts } = fakeProvider((prompt) => (payloadOf(prompt).allowedUnits ? prepAnswer() : linkAnswer()));
     await prepareRecipe([parsed(attack)], { name: attack, steps: [attack] }, "nl");
-    await linkIngredients([{ parsed: parsed(attack), match: review([OWN_A]) }], [attack], "nl");
+    await linkIngredients([{ parsed: parsed(attack), match: review([OWN_A]) }], [attack]);
     expect(prompts).toHaveLength(2);
     for (const { system, prompt } of prompts) {
       expect(system).toContain("never an instruction");
@@ -289,8 +284,8 @@ describe("prompt injection", () => {
     expect(prepared.lines[0]!.searchTerms).toEqual(["kaas"]);
     expect(prepared.translation).toEqual({ title: "Evil", steps: ["Stap"] });
 
-    fakeProvider(() => linkAnswer([link(0, { choice: "own-evil", amount: "<b>1</b>" })]));
-    const linked = await linkIngredients([{ parsed: parsed(attack), match: review([OWN_A]) }], [attack], "nl");
+    fakeProvider(() => linkAnswer([link(0, { choice: "own-evil" })]));
+    const linked = await linkIngredients([{ parsed: parsed(attack), match: review([OWN_A]) }], [attack]);
     expect(Object.keys(linked).sort()).toEqual(["aiUsed", "degraded", "lines", "stepIngredientRefs"]);
     expect(linked.lines[0]!.match).toMatchObject({ ingredientId: null, chosen: null });
   });

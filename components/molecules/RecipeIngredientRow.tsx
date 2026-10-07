@@ -43,6 +43,8 @@ export interface RecipeIngredientRowProps {
   removeDisabled?: boolean;
   /** #318 (Claude-designed on request): "controleren" marker above an imported line the importer was unsure about. Pressing it opens the same ingredient picker as the name field (`onNameClick`). Omit when the line is fine. */
   reviewLabel?: string;
+  /** Claude-designed on request (2026-10-07): one line under the fields naming what the nutrition calculator uses for this row (e.g. "NEVO: Selderij bleek- rauw · 17 kcal per 100 g"), or that it is not counted. Omit to hide. */
+  linkInfo?: string;
   className?: string;
 }
 
@@ -66,6 +68,7 @@ export function RecipeIngredientRow({
   removeLabel,
   removeDisabled,
   reviewLabel,
+  linkInfo,
   className,
 }: RecipeIngredientRowProps) {
   const selectOptions = unitOptions.map((option) => ({ value: option.code, label: option.label }));
@@ -182,6 +185,10 @@ export function RecipeIngredientRow({
         </div>
       </div>
       </div>
+      {linkInfo ? (
+        // design: Claude-designed on request (2026-10-07), design/notes/RecipeIngredientRow.md.
+        <p className="text-base font-normal text-text-secondary">{linkInfo}</p>
+      ) : null}
     </div>
   );
 }

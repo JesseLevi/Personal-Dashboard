@@ -22,8 +22,9 @@ import type { Locale } from "@/lib/profile/types";
 //      a translation into the user's language when the recipe is in another
 //      one (user decision 2026-10-07).
 //   3. linkIngredients: choose the best-fitting candidate per unmatched line,
-//      estimate grams for count/unknown amounts ("1 ui" -> 100 g), and the
-//      step <-> ingredient references.
+//      estimate the weight of count/unknown/volume amounts ("2 stuks
+//      selderij" -> 80 g, stored per unit by the pipeline), and the step <->
+//      ingredient references.
 // The model has no tools and cannot write anything. Page text is untrusted:
 // it travels as escaped JSON inside <untrusted_page_data>, the output is
 // zod-validated with capped lengths, stripped to plain text, and every id or
@@ -300,8 +301,6 @@ export type FilledLine = {
   aiAssisted: boolean;
   /** LLM estimate of the whole line's weight, for count/unknown/volume amounts; null when not asked or unknown. */
   gramsEstimate: number | null;
-  /** The stated amount as short text in the target language ("1 stuk"), kept next to a grams conversion. */
-  amount: string | null;
 };
 
 export type LinkResult = {
@@ -323,7 +322,6 @@ export const LinkSchema = z.object({
         /** A candidate key ("c1".."c10") from this line's list, or null for none. */
         choice: z.string().max(8).nullable(),
         grams: z.number().min(0).max(100_000).nullable(),
-        amount: z.string().max(40).nullable(),
       }),
     )
     .max(MAX_MATCH_LINES),
@@ -340,7 +338,7 @@ export const LinkSchema = z.object({
 const LINK_SYSTEM = `You link the ingredients of a recipe to a Dutch food composition table (NEVO) so its nutrition can be calculated. ${SYSTEM_RULES}
 For each entry in "ingredients" return one item with its "i":
 - choice: only if the entry has candidates: the key of the candidate that best describes the ingredient as it goes into the dish. Prefer the plain raw product (for example "Ui rauw" for "ui") unless the line says it is cooked, canned, dried, frozen or otherwise prepared. Choose a candidate whenever it is the same kind of food, even when the wording differs; return null only when none is (for example "paprikapoeder" is not "Paprika rauw"). Never answer with anything but a listed key or null.
-- grams and amount: only if askGrams is true: grams is your best estimate of the total weight in grams of the stated amount (for example 1 onion -> 100, 2 cloves of garlic -> 10, 1 tablespoon of olive oil -> 13), amount is that stated amount as a short text in the target language (for example "1 stuk", "2 teentjes", "1 el"). Use null for both when the line states no amount or the weight cannot be estimated. Otherwise both null.
+- grams: only if askGrams is true: your best estimate of the total weight in grams of the stated amount (for example 1 onion -> 100, 2 stalks of celery -> 80, 2 cloves of garlic -> 10, 1 tablespoon of olive oil -> 13). Null when the line states no amount or the weight cannot be estimated, and when askGrams is false.
 For "steps" (numbered) and "ingredients" (numbered), return stepRefs: for each step the numbers of the ingredients it uses. Reference only numbers that exist.`;
 
 type LinkItem = z.infer<typeof LinkSchema>["lines"][number];
@@ -367,7 +365,6 @@ function unchanged(lines: FillInputLine[]): FilledLine[] {
     needsReview: lineNeedsReview(l.parsed, l.match),
     aiAssisted: false,
     gramsEstimate: null,
-    amount: null,
   }));
 }
 
@@ -385,7 +382,6 @@ function candidateKeys(match: LineMatch): Map<string, Candidate> {
 export async function linkIngredients(
   lines: FillInputLine[],
   steps: string[],
-  targetLanguage: Locale,
 ): Promise<LinkResult> {
   const base = (degraded: ImportAiErrorCode | null): LinkResult => ({
     lines: unchanged(lines),
@@ -404,7 +400,6 @@ export async function linkIngredients(
   const asked = new Set(askIndexes);
   const usedSteps = steps.slice(0, MAX_STEPS);
   const payload = {
-    targetLanguage: LANGUAGE_NAMES[targetLanguage],
     ingredients: lines.map((l, i) => ({
       i,
       raw: l.parsed.raw.slice(0, 300),
@@ -455,12 +450,7 @@ export async function linkIngredients(
       }
     }
 
-    let gramsEstimate: number | null = null;
-    let amount: string | null = null;
-    if (asksGrams(input.parsed) && item.grams !== null && item.grams > 0) {
-      gramsEstimate = item.grams;
-      amount = item.amount ? sanitizePlainText(item.amount, 40) || null : null;
-    }
+    const gramsEstimate = asksGrams(input.parsed) && item.grams !== null && item.grams > 0 ? item.grams : null;
 
     filled[i] = {
       parsed: input.parsed,
@@ -468,7 +458,6 @@ export async function linkIngredients(
       needsReview: lineNeedsReview(input.parsed, match),
       aiAssisted,
       gramsEstimate,
-      amount,
     };
   }
 

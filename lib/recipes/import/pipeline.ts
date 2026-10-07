@@ -24,7 +24,7 @@ import { parseIngredientLine, type ParsedIngredient } from "@/lib/recipes/import
 import { ImportRateLimitError } from "@/lib/recipes/import/rate-limit";
 import { loadUnitGrams, type UnitGramsLookup } from "@/lib/recipes/import/unit-grams";
 import { hostOf } from "@/lib/recipes/import/url";
-import { magnitudeOf } from "@/lib/recipes/units";
+import type { UnitCode } from "@/lib/recipes/units";
 import type { Locale } from "@/lib/profile/types";
 import { storeRecipeThumbnail } from "@/lib/recipes/thumbnails";
 import { MAX_THUMBNAIL_BYTES, isAllowedThumbnailMimeType } from "@/lib/recipes/thumbnail-validation";
@@ -38,7 +38,7 @@ import { MAX_THUMBNAIL_BYTES, isAllowedThumbnailMimeType } from "@/lib/recipes/t
 //   safeFetch -> extractRecipe -> (text page: extractRecipeFromText) ->
 //   parse lines -> matchIngredients -> prepareRecipe (search terms,
 //   translation) -> widenMatches -> linkIngredients (choice, grams, step
-//   refs) -> resolve ingredient ids -> grams for counts ->
+//   refs) -> resolve ingredient ids -> weight per unit for counts ->
 //   replace_recipe_contents (the manual write path) -> thumbnail -> done.
 //
 // Everything that can fail runs before the first write; a typed error ends in
@@ -108,20 +108,45 @@ function roundGrams(grams: number): number {
   return grams >= 10 ? Math.round(grams) : Math.round(grams * 10) / 10;
 }
 
+export type AmountPlan =
+  /** Keep the amount as written; the calculator can already weigh it (or nothing can). */
+  | { kind: "keep" }
+  /** Keep "2 stuk" as written and store this weight for ONE unit as the user's own override. */
+  | { kind: "unit-weight"; gramsPerUnit: number }
+  /** No unit to keep ("2 teentjes"): save the line in grams. */
+  | { kind: "grams"; grams: number };
+
 /**
- * Grams to save instead of the parsed amount, or null to keep it. Only for a
- * linked line whose amount the nutrition calculator could not weigh: a count
- * ("1 ui") or an unmapped measure word ("2 teentjes"), or a volume the
- * ingredient has no mass for. NEVO's own measured weight per piece wins over
- * the LLM estimate (user decision 2026-10-07).
+ * How a linked line's amount reaches the nutrition calculator (user decision
+ * 2026-10-07): the recipe keeps its own amount ("2 stuks selderij"), and a
+ * missing weight per unit is stored for that ingredient instead
+ * (public.ingredient_unit_masses, the user-override layer of ADR-0011 §3).
+ * NEVO's or the user's own weight always wins: an estimate only fills a unit
+ * nothing resolves yet. A line without a unit cannot carry a per-unit weight,
+ * so it becomes grams (its measure word stays in the name, ADR-0019 §8).
  */
-export function gramsInstead(line: FilledLine, ingredientId: string | null, unitGrams: UnitGramsLookup): number | null {
+export function planAmount(line: FilledLine, ingredientId: string | null, unitGrams: UnitGramsLookup): AmountPlan {
   const { quantity, unit } = line.parsed;
-  if (!ingredientId || quantity === null || !asksGrams(line.parsed)) return null;
-  const perUnit = unit ? unitGrams(ingredientId, unit) : null;
-  if (perUnit !== null && unit !== null && magnitudeOf(unit) === "volume") return null;
-  const grams = perUnit !== null ? quantity * perUnit : line.gramsEstimate;
-  return grams !== null && grams > 0 ? roundGrams(grams) : null;
+  if (!ingredientId || quantity === null || !asksGrams(line.parsed)) return { kind: "keep" };
+  if (unit !== null && unitGrams(ingredientId, unit) !== null) return { kind: "keep" };
+  if (line.gramsEstimate === null || line.gramsEstimate <= 0) return { kind: "keep" };
+  if (unit === null) return { kind: "grams", grams: roundGrams(line.gramsEstimate) };
+  return { kind: "unit-weight", gramsPerUnit: roundGrams(line.gramsEstimate / quantity) };
+}
+
+/** Stores estimated weights per unit; best effort, an existing row is never overwritten. */
+async function saveUnitWeights(
+  supabase: Client,
+  userId: string,
+  weights: Array<{ ingredientId: string; unit: UnitCode; grams: number }>,
+): Promise<void> {
+  const unique = new Map(weights.map((w) => [`${w.ingredientId}:${w.unit}`, w]));
+  if (unique.size === 0) return;
+  const { error } = await supabase.from("ingredient_unit_masses").upsert(
+    [...unique.values()].map((w) => ({ user_id: userId, ingredient_id: w.ingredientId, unit: w.unit, grams: w.grams })),
+    { onConflict: "user_id,ingredient_id,unit", ignoreDuplicates: true },
+  );
+  if (error) console.error("[recipes] import unit weights failed:", error.code, error.message);
 }
 
 async function run(job: ImportJob, deps: PipelineDeps): Promise<void> {
@@ -154,7 +179,6 @@ async function run(job: ImportJob, deps: PipelineDeps): Promise<void> {
   const linked = await linkIngredients(
     prepared.lines.map((line, i) => ({ parsed: line.parsed, match: matches[i]! })),
     steps,
-    locale,
   );
 
   const ingredientIds: Array<string | null> = [];
@@ -168,24 +192,28 @@ async function run(job: ImportJob, deps: PipelineDeps): Promise<void> {
   );
 
   const ingredients: IngredientLine[] = [];
+  const unitWeights: Array<{ ingredientId: string; unit: UnitCode; grams: number }> = [];
   for (const [i, entry] of entries.entries()) {
     const line = linked.lines[i]!;
     const ingredientId = ingredientIds[i] ?? null;
-    const grams = gramsInstead(line, ingredientId, unitGrams);
+    const plan = planAmount(line, ingredientId, unitGrams);
+    if (plan.kind === "unit-weight" && ingredientId && line.parsed.unit) {
+      unitWeights.push({ ingredientId, unit: line.parsed.unit, grams: plan.gramsPerUnit });
+    }
     const unitMissing = line.parsed.unit === null;
-    // recipe_ingredients has no note column: the stated amount of a grams
-    // conversion ("1 stuk"), or an unmapped measure word ("teentje"), stays
-    // readable in the name instead of being dropped (ADR-0019 §8).
-    const aside = grams !== null ? line.amount : unitMissing ? line.parsed.note : null;
-    const label = aside ? `${line.parsed.name} (${aside})` : line.parsed.name;
-    const quantity = grams ?? line.parsed.quantity;
+    // recipe_ingredients has no note column: an unmapped measure word
+    // ("teentje") stays readable in the name instead of being dropped
+    // (ADR-0019 §8). The name is otherwise the recipe's own.
+    const label = unitMissing && line.parsed.note ? `${line.parsed.name} (${line.parsed.note})` : line.parsed.name;
+    const quantity = plan.kind === "grams" ? plan.grams : line.parsed.quantity;
+    const weighed = plan.kind !== "keep";
     ingredients.push({
       name: (label.trim() || line.parsed.raw).slice(0, MAX_TITLE),
       quantity: quantity !== null && Number.isFinite(quantity) && quantity > 0 ? quantity : null,
-      unit: grams !== null ? "gram" : (line.parsed.unit ?? PLACEHOLDER_UNIT),
+      unit: plan.kind === "grams" ? "gram" : (line.parsed.unit ?? PLACEHOLDER_UNIT),
       ingredientId,
       groupLabel: entry.groupLabel,
-      needsReview: ingredientId === null || (grams === null && (line.needsReview || unitMissing)),
+      needsReview: ingredientId === null || (!weighed && (line.needsReview || unitMissing)),
     });
   }
 
@@ -196,6 +224,7 @@ async function run(job: ImportJob, deps: PipelineDeps): Promise<void> {
 
   const contents = await replaceRecipeContents(supabase, userId, recipeId, ingredients, recipeSteps);
   if (!contents.ok) throw new Error("Failed to save the imported recipe contents");
+  await saveUnitWeights(supabase, userId, unitWeights);
 
   const thumbnailPath = recipe.image ? await fetchThumbnailPath(job, recipe.image, fetchPage) : null;
 

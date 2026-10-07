@@ -317,3 +317,8 @@ Full mechanism: `docs/incidents.md` (2026-08-18).
 
 - "Bron" source link (`SourceLink.tsx`, Claude-designed on request): `text-base font-semibold text-text-secondary` line under the nutrition row, host as plain text, `target="_blank" rel="noopener noreferrer"`, shown only for a stored https URL. Story `SourceLink`.
 - Ingredient rows with `needs_review` get the "controleren" marker (see `CardContentIngredient.md`).
+
+
+## Nutrition from recognised ingredients only (Claude-designed on request, 2026-10-07)
+
+User decision: the macros are the sum of the rows the calculator can weigh and that have NEVO values (`summarizeRecipeNutrition`, lib/recipes/nutrition.ts); a row it cannot is left out, never counted as 0. It is never silent: when rows are missing, a `text-base font-semibold text-text-secondary` line under the NutritionalData row reads "Op basis van {counted} van {total} ingrediënten" (same style as SourceLink), and each such ingredient card carries the existing highlight Tag marker "niet meegeteld" (takes precedence over "controleren"), which opens the edit panel. Rows without a quantity ("naar smaak") are neither counted nor flagged. No new tokens or components.

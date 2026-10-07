@@ -57,6 +57,7 @@ function fetcher(html: string, image: { contentType: string } | "fail" = { conte
 
 function fakeSupabase() {
   const updates: Array<Record<string, unknown>> = [];
+  const unitWeights: Array<{ rows: unknown; options: unknown }> = [];
   const supabase = {
     from: vi.fn(() => ({
       update: (patch: Record<string, unknown>) => {
@@ -64,9 +65,13 @@ function fakeSupabase() {
         const chain = { eq: () => chain, then: (resolve: (v: unknown) => void) => resolve({ error: null }) };
         return chain;
       },
+      upsert: (rows: unknown, options: unknown) => {
+        unitWeights.push({ rows, options });
+        return Promise.resolve({ error: null });
+      },
     })),
   } as unknown as MatcherClient;
-  return { supabase, updates };
+  return { supabase, updates, unitWeights };
 }
 
 const review = (): LineMatch => ({ ingredientId: null, chosen: null, needsReview: true, candidates: [] });
@@ -220,59 +225,69 @@ describe("runRecipeImport: JSON-LD page", () => {
   });
 });
 
-describe("runRecipeImport: amounts become grams so nutrition can be calculated", () => {
+describe("runRecipeImport: the recipe keeps its amounts, the calculator gets a weight per unit", () => {
   const ld = (lines: string[]) => page(recipeLd({ recipeIngredient: lines }));
 
-  it("'1 ui' uses NEVO's measured weight per piece, even without a key", async () => {
-    vi.mocked(matchIngredients).mockResolvedValue([own("ui")]);
-    vi.mocked(loadUnitGrams).mockResolvedValue((id, unit) => (id === "ui" && unit === "stuk" ? 100 : null));
-    const { supabase } = fakeSupabase();
-    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(ld(["2 uien"])) });
-    expect(contentsCall().ingredients[0]).toMatchObject({ name: "uien", quantity: 200, unit: "gram", needsReview: false });
+  it("'2 stuks selderij' stays as written and its estimated weight per piece is stored for the ingredient", async () => {
+    vi.mocked(matchIngredients).mockResolvedValue([own("selderij")]);
+    aiAnswers({ link: { lines: [{ i: 0, choice: null, grams: 80 }], stepRefs: [] } });
+    const { supabase, unitWeights } = fakeSupabase();
+    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(ld(["2 stuks selderij"])) });
+    expect(contentsCall().ingredients[0]).toMatchObject({ name: "selderij", quantity: 2, unit: "stuk", ingredientId: "selderij", needsReview: false });
+    expect(unitWeights).toEqual([
+      {
+        rows: [{ user_id: "u1", ingredient_id: "selderij", unit: "stuk", grams: 40 }],
+        options: { onConflict: "user_id,ingredient_id,unit", ignoreDuplicates: true },
+      },
+    ]);
   });
 
-  it("NEVO's weight wins over the LLM estimate; the stated amount stays in the name", async () => {
+  it("a weight NEVO (or the user) already has wins: nothing is stored", async () => {
     vi.mocked(matchIngredients).mockResolvedValue([own("ui")]);
     vi.mocked(loadUnitGrams).mockResolvedValue((_id, unit) => (unit === "stuk" ? 100 : null));
-    aiAnswers({ link: { lines: [{ i: 0, choice: null, grams: 150, amount: "1 stuk" }], stepRefs: [] } });
-    const { supabase } = fakeSupabase();
+    aiAnswers({ link: { lines: [{ i: 0, choice: null, grams: 150 }], stepRefs: [] } });
+    const { supabase, unitWeights } = fakeSupabase();
     await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(ld(["1 ui"])) });
-    expect(contentsCall().ingredients[0]).toMatchObject({ name: "ui (1 stuk)", quantity: 100, unit: "gram" });
+    expect(contentsCall().ingredients[0]).toMatchObject({ name: "ui", quantity: 1, unit: "stuk", needsReview: false });
+    expect(unitWeights).toEqual([]);
   });
 
-  it("an unmapped measure word uses the LLM estimate and is no longer flagged", async () => {
+  it("an unmapped measure word has no unit to weigh, so that line is saved in grams", async () => {
     vi.mocked(matchIngredients).mockResolvedValue([own("knoflook")]);
-    aiAnswers({ link: { lines: [{ i: 0, choice: null, grams: 5, amount: "1 teentje" }], stepRefs: [] } });
-    const { supabase } = fakeSupabase();
+    aiAnswers({ link: { lines: [{ i: 0, choice: null, grams: 5 }], stepRefs: [] } });
+    const { supabase, unitWeights } = fakeSupabase();
     await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(ld(["1 teentje knoflook"])) });
-    expect(contentsCall().ingredients[0]).toMatchObject({ name: "knoflook (1 teentje)", quantity: 5, unit: "gram", needsReview: false });
+    expect(contentsCall().ingredients[0]).toMatchObject({ name: "knoflook (teentje)", quantity: 5, unit: "gram", needsReview: false });
+    expect(unitWeights).toEqual([]);
   });
 
-  it("a spoon the ingredient has a mass for is kept; one without a mass becomes grams", async () => {
+  it("a spoon without a known mass keeps '2 el' and stores the weight per spoon", async () => {
     vi.mocked(matchIngredients).mockResolvedValue([own("olie"), own("pesto")]);
     vi.mocked(loadUnitGrams).mockResolvedValue((id, unit) => (id === "olie" && unit === "eetlepel" ? 13 : null));
-    aiAnswers({
-      link: {
-        lines: [
-          { i: 0, choice: null, grams: 14, amount: "1 el" },
-          { i: 1, choice: null, grams: 30, amount: "2 el" },
-        ],
-        stepRefs: [],
-      },
-    });
-    const { supabase } = fakeSupabase();
+    aiAnswers({ link: { lines: [{ i: 0, choice: null, grams: 14 }, { i: 1, choice: null, grams: 30 }], stepRefs: [] } });
+    const { supabase, unitWeights } = fakeSupabase();
     await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(ld(["1 el olijfolie", "2 el pesto"])) });
     const [oil, pesto] = contentsCall().ingredients;
     expect(oil).toMatchObject({ name: "olijfolie", quantity: 1, unit: "eetlepel" });
-    expect(pesto).toMatchObject({ name: "pesto (2 el)", quantity: 30, unit: "gram" });
+    expect(pesto).toMatchObject({ name: "pesto", quantity: 2, unit: "eetlepel" });
+    expect(unitWeights[0]!.rows).toEqual([{ user_id: "u1", ingredient_id: "pesto", unit: "eetlepel", grams: 15 }]);
   });
 
-  it("an unlinked line keeps its amount and stays in review", async () => {
+  it("the same ingredient and unit twice in one recipe is stored once", async () => {
+    vi.mocked(matchIngredients).mockResolvedValue([own("ui"), own("ui")]);
+    aiAnswers({ link: { lines: [{ i: 0, choice: null, grams: 100 }, { i: 1, choice: null, grams: 220 }], stepRefs: [] } });
+    const { supabase, unitWeights } = fakeSupabase();
+    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(ld(["1 ui", "2 uien"])) });
+    expect(unitWeights[0]!.rows).toHaveLength(1);
+  });
+
+  it("an unlinked line keeps its amount, stays in review and stores nothing", async () => {
     vi.mocked(matchIngredients).mockResolvedValue([review()]);
-    aiAnswers({ link: { lines: [{ i: 0, choice: null, grams: 100, amount: "1 stuk" }], stepRefs: [] } });
-    const { supabase } = fakeSupabase();
+    aiAnswers({ link: { lines: [{ i: 0, choice: null, grams: 100 }], stepRefs: [] } });
+    const { supabase, unitWeights } = fakeSupabase();
     await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(ld(["1 ui"])) });
     expect(contentsCall().ingredients[0]).toMatchObject({ name: "ui", quantity: 1, unit: "stuk", ingredientId: null, needsReview: true });
+    expect(unitWeights).toEqual([]);
   });
 });
 

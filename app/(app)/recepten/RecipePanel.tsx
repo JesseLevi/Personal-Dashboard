@@ -12,7 +12,7 @@ import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteC
 import { ImageUploadField } from "@/components/molecules/ImageUploadField";
 import { RecipeIngredientRow } from "@/components/molecules/RecipeIngredientRow";
 import { isIconName } from "@/components/atoms/Icon";
-import { UNIT_CODES, formatQuantity, type UnitCode } from "@/lib/recipes/units";
+import { UNIT_CODES, formatQuantity, magnitudeOf, type UnitCode } from "@/lib/recipes/units";
 import {
   buildContentsPayload,
   keepsNeedsReview,
@@ -76,6 +76,7 @@ function emptyIngredientRow(): IngredientRowState {
     sourceId: null,
     groupLabel: null,
     needsReview: false,
+    link: null,
     loaded: null,
   };
 }
@@ -96,6 +97,16 @@ function ingredientRowsFromRecipe(recipe: RecipeWithIngredientsAndSteps): Ingred
     sourceId: row.id,
     groupLabel: row.group_label,
     needsReview: row.needs_review,
+    link:
+      row.ingredient_id && row.linkedIngredientName
+        ? {
+            name: row.linkedIngredientName,
+            isNevo: row.referenceIngredientId !== null,
+            kcalPer100g: row.nutrients.kcalPer100g,
+            gramsPerUnit: row.unitMassGrams,
+            unit: row.unit as UnitCode,
+          }
+        : null,
     loaded: { name: row.name, quantity: row.quantity, unit: row.unit as UnitCode, ingredientId: row.ingredient_id },
   }));
 }
@@ -161,6 +172,7 @@ export function RecipePanel({
   const tSidePanel = useTranslations("components.sidePanel");
   const tUnits = useTranslations("recipes.units");
   const tErrors = useTranslations("recipes.errors");
+  const tLink = useTranslations("components.recipePanel.link");
   const tImageUpload = useTranslations("components.imageUploadField");
 
   const recipe = target.mode === "edit" ? target.recipe : null;
@@ -227,6 +239,28 @@ export function RecipePanel({
 
   const unitOptions = UNIT_CODES.map((code) => ({ code, label: tUnits(code) }));
 
+  // Claude-designed on request (2026-10-07): what the nutrition calculator
+  // uses for a row, so a wrong NEVO link or a missing one is visible here.
+  // Grams per unit only while the unit is still the one it was loaded for.
+  function linkInfo(row: IngredientRowState): string | undefined {
+    if (!row.link) return row.name.trim() || row.ingredientId ? tLink("none") : undefined;
+    const parts = [tLink(row.link.isNevo ? "nevo" : "own", { name: row.link.name })];
+    if (row.link.kcalPer100g !== null) {
+      parts.push(tLink("kcal", { kcal: Math.round(row.link.kcalPer100g) }));
+    } else if (row.ingredientId === row.loaded?.ingredientId) {
+      parts.push(tLink("noNutrition"));
+    }
+    if (row.link.gramsPerUnit !== null && row.unit !== "" && row.unit === row.link.unit && magnitudeOf(row.unit) !== "mass") {
+      parts.push(
+        tLink("unitMass", {
+          unit: tUnits(row.unit).toLocaleLowerCase(),
+          grams: Math.round(row.link.gramsPerUnit * 10) / 10,
+        }),
+      );
+    }
+    return parts.join(" · ");
+  }
+
   function updateIngredientRow(localId: string, patch: Partial<IngredientRowState>) {
     setIngredients((current) =>
       current.map((row) => (row.localId === localId ? { ...row, ...patch } : row)),
@@ -268,10 +302,14 @@ export function RecipePanel({
           if (!result.success) setError(tErrors(result.error));
         });
       }
+      // A name of the user's own ("Selderij") stays when only the link
+      // changes; a name that just mirrored the old link follows the new one.
+      const keepName = flaggedRow !== undefined && flaggedRow.name.trim() !== "" && flaggedRow.name !== flaggedRow.link?.name;
       updateIngredientRow(ingredientSearch.rowLocalId, {
-        name: picked.name,
+        name: keepName ? flaggedRow.name : picked.name,
         ingredientId: picked.id,
         needsReview: false,
+        link: { name: picked.name, isNevo: picked.reference_id !== null, kcalPer100g: null, gramsPerUnit: null, unit: "" },
       });
     }
   }
@@ -501,6 +539,7 @@ export function RecipePanel({
                 removeLabel={t("fields.removeIngredientLabel")}
                 removeDisabled={ingredients.length <= 1}
                 reviewLabel={keepsNeedsReview(row) ? t("fields.needsReviewLabel") : undefined}
+                linkInfo={linkInfo(row)}
               />
             </div>
           ))}

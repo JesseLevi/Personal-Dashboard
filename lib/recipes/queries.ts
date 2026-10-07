@@ -174,6 +174,7 @@ async function nutritionInputsForIngredients(
       unitMassGrams: number | null;
       kitchenUnitMasses: KitchenUnitMasses;
       referenceIngredientId: string | null;
+      linkedIngredientName: string | null;
     }
   >
 > {
@@ -184,6 +185,7 @@ async function nutritionInputsForIngredients(
       unitMassGrams: number | null;
       kitchenUnitMasses: KitchenUnitMasses;
       referenceIngredientId: string | null;
+      linkedIngredientName: string | null;
     }
   >();
   const ingredientIds = [
@@ -193,7 +195,7 @@ async function nutritionInputsForIngredients(
 
   const { data: ownRows, error: ownError } = await supabase
     .from("ingredients")
-    .select("id, reference_id")
+    .select("id, reference_id, name")
     .eq("user_id", userId)
     .in("id", ingredientIds);
   if (ownError) {
@@ -220,6 +222,7 @@ async function nutritionInputsForIngredients(
   }
 
   const referenceIdByIngredientId = new Map(ownRows.map((row) => [row.id, row.reference_id] as const));
+  const nameByIngredientId = new Map(ownRows.map((row) => [row.id, row.name] as const));
   const referenceIds = [
     ...new Set(ownRows.map((row) => row.reference_id).filter((id): id is string => id !== null)),
   ];
@@ -323,6 +326,7 @@ async function nutritionInputsForIngredients(
       // #179: same referenceIdByIngredientId lookup nutrients already used,
       // exposed on the row rather than recomputed by a caller.
       referenceIngredientId: referenceId,
+      linkedIngredientName: nameByIngredientId.get(ingredientId) ?? null,
     });
   }
 
@@ -396,6 +400,7 @@ export async function getRecipeWithIngredientsAndSteps(
           unitMassGrams: null,
           kitchenUnitMasses: EMPTY_KITCHEN_UNIT_MASSES,
           referenceIngredientId: null,
+          linkedIngredientName: null,
         }),
       })),
     steps: [...recipe_steps]

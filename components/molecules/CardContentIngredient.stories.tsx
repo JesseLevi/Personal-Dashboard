@@ -171,3 +171,16 @@ export const NeedsReview = () => (
     />
   </div>
 );
+
+// Claude-designed on request (2026-10-07): the same marker for a line the
+// nutrition totals leave out; pressing it opens the edit panel.
+export const NotCounted = () => (
+  <div className="w-96">
+    <CardContentIngredient
+      name="Garnalen"
+      quantity="200 g"
+      reviewLabel={nl.components.recipeDetailPage.notCountedLabel}
+      onReviewClick={() => {}}
+    />
+  </div>
+);

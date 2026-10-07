@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  EMPTY_NUTRIENTS,
   computeRecipeNutritionPerPerson,
   resolveIngredientGrams,
   resolveIngredientNutrition,
   roundMacroForDisplay,
+  summarizeRecipeNutrition,
   type RecipeIngredientNutritionInput,
 } from "../lib/recipes/nutrition";
 import { InvalidPortionCountError } from "../lib/recipes/units";
@@ -164,13 +166,13 @@ describe("computeRecipeNutritionPerPerson", () => {
     });
   });
 
-  it("is unknown (null) for a nutrient the moment any single ingredient's value for it is unknown, even with other known ingredients present", () => {
+  it("sums only the rows that know a nutrient; other nutrients are unaffected", () => {
     const missingProtein: RecipeIngredientNutritionInput = {
       ...knownCount,
       nutrients: { ...knownCount.nutrients, proteinGPer100g: null },
     };
     const totals = computeRecipeNutritionPerPerson([knownGram, missingProtein], 2);
-    expect(totals.proteinG).toBeNull();
+    expect(totals.proteinG).toBe(computeRecipeNutritionPerPerson([knownGram], 2).proteinG);
     // The other four macros stay known -- one unknown ingredient value
     // doesn't null out unrelated nutrients or unrelated rows.
     expect(totals.kcal).toBe(200);
@@ -179,7 +181,7 @@ describe("computeRecipeNutritionPerPerson", () => {
     expect(totals.fiberG).toBe(4.5);
   });
 
-  it("is unknown when any row's grams are unresolved, never a silent sum of the known subset", () => {
+  it("leaves a row with unresolved grams out of the totals (user decision 2026-10-07), never counting it as 0", () => {
     const unresolved: RecipeIngredientNutritionInput = {
       quantity: 1,
       unit: "cup",
@@ -193,7 +195,12 @@ describe("computeRecipeNutritionPerPerson", () => {
       },
     };
     const totals = computeRecipeNutritionPerPerson([knownGram, unresolved], 2);
-    expect(totals).toEqual({ kcal: null, carbsG: null, proteinG: null, fatG: null, fiberG: null });
+    expect(totals).toEqual(computeRecipeNutritionPerPerson([knownGram], 2));
+  });
+
+  it("is unknown (null) only when no row contributes a known value", () => {
+    const unlinked: RecipeIngredientNutritionInput = { quantity: 100, unit: "gram", unitMassGrams: null, nutrients: EMPTY_NUTRIENTS };
+    expect(computeRecipeNutritionPerPerson([unlinked], 2)).toEqual({ kcal: null, carbsG: null, proteinG: null, fatG: null, fiberG: null });
   });
 
   it("is all-zero (known), not null, for an empty ingredient list -- vacuously nothing is unknown", () => {
@@ -232,5 +239,16 @@ describe("roundMacroForDisplay", () => {
 
   it("rounds a genuinely tiny but known macro to 0 -- a real measurement, distinct from null", () => {
     expect(roundMacroForDisplay(0.4)).toBe(0);
+  });
+});
+
+describe("summarizeRecipeNutrition", () => {
+  it("reports which rows are counted; rows without an amount are neither counted nor missing", () => {
+    const unlinked: RecipeIngredientNutritionInput = { quantity: 2, unit: "stuk", unitMassGrams: null, nutrients: EMPTY_NUTRIENTS };
+    const toTaste: RecipeIngredientNutritionInput = { quantity: null, unit: "naar_smaak", unitMassGrams: null, nutrients: EMPTY_NUTRIENTS };
+    const summary = summarizeRecipeNutrition([knownGram, unlinked, toTaste, knownCount], 2);
+    expect(summary.rowStatus).toEqual(["counted", "not-counted", "no-amount", "counted"]);
+    expect(summary).toMatchObject({ counted: 2, countable: 3 });
+    expect(summary.perPerson).toEqual(computeRecipeNutritionPerPerson([knownGram, knownCount], 2));
   });
 });
