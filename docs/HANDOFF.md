@@ -13,7 +13,7 @@
 - Phase 6 (Notities) is code-complete (#225–#235, #263). Left: a **design round** (rendered table, prose typography, row/column controls — `notes-table-ui-not-designed`, `notes-prose-typography-not-designed`; plus #265's two undesigned values in `design/notes/ButtonToggle.md`, `Sidebar.md`). Treat that shipped CSS as provisional.
 - Phase 7+ (Agenda, AI) is backlog. #9–#11 need real accounts: don't start unprompted.
 - **Mac mini/Ollama is shelved (ADR-0018)**: Vercel + Supabase Cloud is the target, and AI goes through hosted APIs behind `lib/ai/`. #1–#5 are obsolete.
-- **#309 (recipe via URL) is planned** as an epic with subtickets: JSON-LD → parser → NEVO match via `pg_trgm`, with Haiku 4.5 only for what code can't do. The user explicitly asked Claude to design the missing states (error card, review marker, source link) per the "Claude-designed UI" rule.
+- **#309 (recipe via URL)**: ADR-0019 (#311), `lib/net/safe-fetch` (#313) and the ingredient parser (#315) are on `main`. Next: #312 migration, #314 extraction, then #316–#318. The user explicitly asked Claude to design the missing states (error card, review marker, source link) per the "Claude-designed UI" rule.
 - `[OPT]` round (#279–#304): all merged or in review except the hosted tickets #279 and #291.
 
 ## Next
