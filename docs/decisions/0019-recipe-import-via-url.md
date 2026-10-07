@@ -17,9 +17,10 @@
 4. **Deterministic first.** JSON-LD, the regex parser and `pg_trgm` always run first. The LLM may only:
    - re-parse ingredient lines the parser marked low confidence;
    - extract title, ingredients and steps from pages without usable JSON-LD (Readability text);
-   - suggest an existing library ingredient (or an alias) for a line `pg_trgm` could not match.
+   - suggest an existing library ingredient (or an alias) for a line `pg_trgm` could not match;
+   - link steps to the ingredients they use (`ingredientRefs`). This runs on **every** import with a key configured, so an otherwise clean JSON-LD import makes exactly one Haiku call (user decision 2026-10-07).
 
-   The LLM must not: fetch anything, replace a high-confidence parser or JSON-LD result, invent missing ingredients, quantities or steps, write to the database, create library ingredients or aliases on its own (suggestions are applied by deterministic code after validation, or left for review), or be called when everything already parsed with high confidence.
+   The LLM must not: fetch anything, replace a high-confidence parser or JSON-LD result, invent missing ingredients, quantities or steps, write to the database, create library ingredients or aliases on its own (suggestions are applied by deterministic code after validation, or left for review), or be called for anything beyond step references when everything already parsed with high confidence.
 5. **Guardrails** (ADR-0018 §3 applied). 20 imports per hour per user. Hard monthly spend cap set in the Anthropic Console. The LLM has no tools. Output is validated with zod and rendered as plain text, never as HTML/markdown (Architecture.md §5.5). Scraped page text is untrusted: it is passed as quoted data, never as instructions, and the worst case is a wrong recipe the user can edit. Fetching goes only through the SSRF-guarded `safe-fetch` (Architecture.md §6): https only, port 443 only, DNS-pinned, max 3 redirects, 3 MB, 10 s, typed errors.
 6. **Degraded mode.** Without `ANTHROPIC_API_KEY` the import still works with JSON-LD + parser + matching. Lines or pages that would have needed the LLM become `needs_review` lines or a failed import with a clear reason, never a crash.
 7. **Data model** (migration in #312; details belong there). `recipes.source_url`, `recipes.import_status` (`importing|done|failed`), `recipes.import_error`; `recipe_ingredients.needs_review`; new table `ingredient_aliases`. Every new table has `user_id` FK + RLS + an RLS test in the same PR (ADR-0009); reference data stays per ADR-0011.
