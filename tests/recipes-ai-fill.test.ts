@@ -52,12 +52,25 @@ afterEach(() => {
 });
 
 describe("fillGaps", () => {
-  it("makes no call when every line is high confidence and matched", async () => {
+  it("makes no call when there is no gap and no step to link", async () => {
     const { provider } = fakeProvider(() => gapAnswer());
-    const result = await fillGaps(supabase, "u", [{ parsed: parsed("zout"), match: matched() }], ["Mix."]);
+    const result = await fillGaps(supabase, "u", [{ parsed: parsed("zout"), match: matched() }], []);
     expect(provider.generateObject).not.toHaveBeenCalled();
     expect(result).toMatchObject({ aiUsed: false, degraded: null });
     expect(result.lines[0]!.needsReview).toBe(false);
+  });
+
+  it("always runs one call for step references, even when every line is clean (ADR-0019 §4)", async () => {
+    const { provider } = fakeProvider(() => gapAnswer([], [{ step: 0, ingredients: [0] }]));
+    const result = await fillGaps(supabase, "u", [{ parsed: parsed("zout"), match: matched() }], ["Zout toevoegen."]);
+    expect(provider.generateObject).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({ aiUsed: true, degraded: null, stepIngredientRefs: [[0]] });
+    expect(result.lines[0]!.needsReview).toBe(false);
+  });
+
+  it("clean recipe without a key: no call, empty refs, import continues", async () => {
+    const result = await fillGaps(supabase, "u", [{ parsed: parsed("zout"), match: matched() }], ["Zout toevoegen."]);
+    expect(result).toMatchObject({ aiUsed: false, stepIngredientRefs: [[]] });
   });
 
   it("no key: skips the LLM, lines stay needs_review, import continues degraded", async () => {

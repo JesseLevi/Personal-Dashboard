@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { getRecipeCategoriesWithRecipes, getRecipeCategoryRecipeCounts } from "@/lib/recipes/queries";
+import { getAuthenticatedUserId } from "@/lib/recipes/session";
+import { sweepStuckImports } from "@/lib/recipes/import/sweep";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ReceptenBoard } from "./ReceptenBoard";
 import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 
@@ -29,6 +32,10 @@ import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 // app/(app)/te-doen/page.tsx's <TeDoenPageBody> wrap.
 async function ReceptenPageContent() {
   const t = await getTranslations();
+  // #318 / ADR-0019 §1: stuck `importing` rows (> 5 min) become failed/timeout
+  // before the board reads them, so they show as a failed card, not a skeleton.
+  const userId = await getAuthenticatedUserId();
+  if (userId) await sweepStuckImports(await createSupabaseServerClient(), userId);
   const categories = await getRecipeCategoriesWithRecipes();
 
   return (
@@ -58,6 +65,11 @@ async function ReceptenPageStream() {
 export const metadata: Metadata = {
   manifest: "/recepten/manifest.webmanifest",
 };
+
+// #318: `after()` in startRecipeImport shares the invoking route's max
+// duration, and a Server Action takes it from the page that calls it. The
+// pipeline is bounded well inside this (fetch 10 s, one LLM call, no retries).
+export const maxDuration = 60;
 
 export default function ReceptenPage() {
   return (

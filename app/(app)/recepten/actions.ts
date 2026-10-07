@@ -1,13 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/recipes/session";
 import { nextPosition } from "@/lib/boards/positioning";
 import { searchIngredientLibrary } from "@/lib/recipes/queries";
 import { findOrCreateOwnIngredient } from "@/lib/recipes/ingredients";
+import { replaceRecipeContents } from "@/lib/recipes/contents";
 import {
   uploadRecipeThumbnail as uploadRecipeThumbnailToStorage,
   deleteRecipeThumbnail,
@@ -81,8 +81,6 @@ import type { Database } from "@/lib/database.types";
 // none of it does.
 
 type Client = SupabaseClient<Database>;
-type IngredientLine = z.infer<typeof createRecipeSchema>["ingredients"][number];
-type StepLine = z.infer<typeof createRecipeSchema>["steps"][number];
 
 // requireUserId used to be defined locally here (identically in
 // app/(app)/te-doen/actions.ts and app/(app)/winkelmand/actions.ts) taking a
@@ -128,66 +126,6 @@ async function lastRecipePosition(
     .limit(1)
     .maybeSingle();
   return data?.position ?? null;
-}
-
-// Replaces every recipe_ingredients/recipe_steps/recipe_step_ingredients row
-// for `recipeId` with `ingredients`/`steps`, via one call to the
-// public.replace_recipe_contents RPC (#149, see the module header comment)
-// — a real Postgres transaction, not the old two-statement delete-then-
-// insert pairs. Still rejects the whole write from this layer (returns
-// `{ ok: false }`, the RPC is never called, nothing is touched) if any
-// line's ingredientId doesn't belong to this user — the same "don't trust
-// the client for ownership" check moveCard applies to columnId, applied
-// here to recipe_ingredients.ingredient_id. This check stays in this file
-// rather than folding into the RPC because it's a cross-table check against
-// public.ingredients, unrelated to the RPC's own recipe-ownership guard.
-async function replaceRecipeContents(
-  supabase: Client,
-  userId: string,
-  recipeId: string,
-  ingredients: IngredientLine[],
-  steps: StepLine[],
-): Promise<{ ok: true } | { ok: false }> {
-  const ingredientIds = [
-    ...new Set(
-      ingredients
-        .map((line) => line.ingredientId)
-        .filter((id): id is string => id != null),
-    ),
-  ];
-  if (ingredientIds.length > 0) {
-    const { data: owned, error: ownedError } = await supabase
-      .from("ingredients")
-      .select("id")
-      .eq("user_id", userId)
-      .in("id", ingredientIds);
-    if (ownedError) {
-      logDbError("replaceRecipeContents/ownership-check", ownedError);
-      return { ok: false };
-    }
-    if ((owned?.length ?? 0) !== ingredientIds.length) return { ok: false };
-  }
-
-  const { error } = await supabase.rpc("replace_recipe_contents", {
-    p_recipe_id: recipeId,
-    p_ingredients: ingredients.map((line) => ({
-      name: line.name,
-      quantity: line.quantity,
-      unit: line.unit,
-      ingredientId: line.ingredientId ?? null,
-      groupLabel: line.groupLabel ?? null,
-      needsReview: line.needsReview ?? false,
-    })),
-    p_steps: steps.map((line) => ({
-      instruction: line.instruction,
-      ingredientRefs: line.ingredientRefs,
-    })),
-  });
-  if (error) {
-    logDbError("replaceRecipeContents", error);
-    return { ok: false };
-  }
-  return { ok: true };
 }
 
 // ============================================================================

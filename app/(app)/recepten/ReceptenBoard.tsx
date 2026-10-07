@@ -7,12 +7,21 @@ import { PageHeader } from "@/components/organisms/PageHeader";
 import { Button } from "@/components/atoms/Button";
 import { BoardView, type BoardColumn } from "@/components/organisms/BoardView";
 import { CardContentRecipe } from "@/components/molecules/CardContentRecipe";
+import { CardContentRecipeSkeleton } from "@/components/molecules/CardContentRecipeSkeleton";
+import { CardContentRecipeFailed } from "@/components/molecules/CardContentRecipeFailed";
 import { isIconName } from "@/components/atoms/Icon";
+import { isImportErrorCode } from "@/lib/recipes/enums";
+import { hasImportingRecipe } from "@/lib/recipes/import/polling";
+import { hostOf } from "@/lib/recipes/import/url";
 import { applyItemMove, type CardMove } from "@/lib/boards/optimistic";
 import type { CategoryWithRecipes, RecipeRow } from "@/lib/recipes/types";
 import { CategoryPanel, type CategoryPanelTarget } from "@/app/(app)/_components/CategoryPanel";
 import { CATEGORY_ICONS } from "./category-icons";
 import { RecipePanel, type RecipePanelTarget } from "./RecipePanel";
+import { AddRecipeMenu } from "./AddRecipeMenu";
+import { LinkImportPanel } from "./LinkImportPanel";
+import { useImportPolling } from "./use-import-polling";
+import { confirmIngredientMatch, retryRecipeImport, startRecipeImport } from "./import-actions";
 import {
   createCategory,
   updateCategory,
@@ -71,6 +80,8 @@ export function ReceptenBoard({
   const t = useTranslations("components.cardContainer");
   const tRecipe = useTranslations("components.cardContentRecipe");
   const tErrors = useTranslations("recipes.errors");
+  const tImportErrors = useTranslations("recipes.import.errors");
+  const tImport = useTranslations("components.recipeImport");
   const router = useRouter();
 
   // Local optimistic copy of `categories` (#155) — same "render from local
@@ -155,6 +166,78 @@ export function ReceptenBoard({
     target: { mode: "create", categoryId: localCategories[0]?.id ?? "" },
   });
 
+  // #318: column Plus -> "Via link / Handmatig" menu; "Via link" opens the link
+  // panel for that column, "Handmatig" is today's RecipePanel (create).
+  const [addMenuColumnId, setAddMenuColumnId] = useState<string | null>(null);
+  const [linkPanel, setLinkPanel] = useState<{ open: boolean; categoryId: string }>({
+    open: false,
+    categoryId: localCategories[0]?.id ?? "",
+  });
+
+  // Polls (router.refresh) only while a card is importing and the tab is
+  // visible; the lazy sweep on the server turns stuck rows into failed cards.
+  useImportPolling(hasImportingRecipe(categories), () => router.refresh());
+
+  const [busyRecipeIds, setBusyRecipeIds] = useState<ReadonlySet<string>>(new Set());
+  async function runFailedCardAction(recipeId: string, action: () => Promise<{ success: boolean; error?: string }>) {
+    setMoveError(null);
+    setBusyRecipeIds((current) => new Set(current).add(recipeId));
+    try {
+      const result = await action();
+      if (!result.success) setMoveError(tErrors((result.error ?? "generic") as Parameters<typeof tErrors>[0]));
+      router.refresh();
+    } catch {
+      setMoveError(tErrors("generic"));
+    } finally {
+      setBusyRecipeIds((current) => {
+        const next = new Set(current);
+        next.delete(recipeId);
+        return next;
+      });
+    }
+  }
+
+  function renderRecipeCard(recipe: RecipeRow) {
+    if (recipe.import_status === "importing") {
+      return <CardContentRecipeSkeleton label={tImport("skeleton.loadingLabel")} />;
+    }
+    if (recipe.import_status === "failed") {
+      const code = isImportErrorCode(recipe.import_error) ? recipe.import_error : "import_failed";
+      return (
+        <CardContentRecipeFailed
+          title={tImport("failed.title")}
+          name={hostOf(recipe.source_url ?? "") || recipe.title}
+          reason={tImportErrors(code)}
+          retryLabel={tImport("failed.retryLabel")}
+          deleteLabel={tImport("failed.deleteLabel")}
+          disabled={busyRecipeIds.has(recipe.id)}
+          onRetry={() => void runFailedCardAction(recipe.id, () => retryRecipeImport({ recipeId: recipe.id }))}
+          onDelete={() => void runFailedCardAction(recipe.id, () => deleteRecipe({ recipeId: recipe.id }))}
+        />
+      );
+    }
+    return (
+      <CardContentRecipe
+        name={recipe.title}
+        // #171: `/api/recipe-thumbnail` route, not a resolved signed
+        // URL — a recipe with no `thumbnail_path` gets no `imageUrl` at
+        // all (decided here, not by letting the request 404), so
+        // CardContentRecipe still renders its "no photo" placeholder.
+        // See design/notes/CardContentRecipe.md.
+        imageUrl={
+          recipe.thumbnail_path
+            ? `/api/recipe-thumbnail/${recipe.id}?v=${recipe.updated_at}&size=card`
+            : undefined
+        }
+        duration={
+          recipe.time_minutes != null
+            ? tRecipe("durationMinutes", { minutes: recipe.time_minutes })
+            : undefined
+        }
+      />
+    );
+  }
+
   return (
     <>
       <PageHeader
@@ -176,34 +259,37 @@ export function ReceptenBoard({
         addLabel={t("addLabel")}
         editLabel={t("editLabel")}
         emptyLabel={t("addItemLabel")}
-        onItemClick={(recipe) => router.push(`/recepten/${recipe.id}`)}
+        onItemClick={(recipe) => {
+          // Importing/failed cards have no detail page to open.
+          if (recipe.import_status === "done") router.push(`/recepten/${recipe.id}`);
+        }}
         onEditColumn={(columnId) => {
           const category = localCategories.find((c) => c.id === columnId);
           if (category) setPanel({ open: true, target: { mode: "edit", category } });
         }}
-        onAddItem={(columnId) =>
-          setRecipePanel({ open: true, target: { mode: "create", categoryId: columnId } })
-        }
-        renderItem={(recipe) => (
-          <CardContentRecipe
-            name={recipe.title}
-            // #171: `/api/recipe-thumbnail` route, not a resolved signed
-            // URL — a recipe with no `thumbnail_path` gets no `imageUrl` at
-            // all (decided here, not by letting the request 404), so
-            // CardContentRecipe still renders its "no photo" placeholder.
-            // See design/notes/CardContentRecipe.md.
-            imageUrl={
-              recipe.thumbnail_path
-                ? `/api/recipe-thumbnail/${recipe.id}?v=${recipe.updated_at}&size=card`
-                : undefined
-            }
-            duration={
-              recipe.time_minutes != null
-                ? tRecipe("durationMinutes", { minutes: recipe.time_minutes })
-                : undefined
-            }
+        onAddItem={(columnId) => setAddMenuColumnId((current) => (current === columnId ? null : columnId))}
+        renderAddMenu={(columnId) => (
+          <AddRecipeMenu
+            open={addMenuColumnId === columnId}
+            onClose={() => setAddMenuColumnId(null)}
+            onViaLink={() => {
+              setAddMenuColumnId(null);
+              setLinkPanel({ open: true, categoryId: columnId });
+            }}
+            onManual={() => {
+              setAddMenuColumnId(null);
+              setRecipePanel({ open: true, target: { mode: "create", categoryId: columnId } });
+            }}
           />
         )}
+        renderItem={renderRecipeCard}
+      />
+      <LinkImportPanel
+        open={linkPanel.open}
+        onClose={() => setLinkPanel((current) => ({ ...current, open: false }))}
+        categoryId={linkPanel.categoryId}
+        onStartImport={startRecipeImport}
+        onStarted={() => router.refresh()}
       />
       <CategoryPanel
         open={panel.open}
@@ -227,6 +313,7 @@ export function ReceptenBoard({
         onDeleteRecipe={deleteRecipe}
         onSearchIngredients={searchIngredients}
         onCreateOwnIngredient={createOwnIngredient}
+        onConfirmIngredientMatch={confirmIngredientMatch}
         onUploadThumbnail={uploadRecipeThumbnail}
         onMutated={() => router.refresh()}
       />

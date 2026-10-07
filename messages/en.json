@@ -44,7 +44,8 @@
       "invalid-file-type": "Choose a JPEG, PNG or WebP image.",
       "file-too-large": "This image is too large (max 10 MB).",
       "upload-failed": "The image could not be uploaded. Please try again.",
-      "invalid-image": "This image could not be processed. Please try a different photo."
+      "invalid-image": "This image could not be processed. Please try a different photo.",
+      "rate-limited": "You have reached the limit of 20 imports per hour. Try again later."
     },
     "units": {
       "gram": "Gram",
@@ -83,6 +84,23 @@
       "snufje": "pinch",
       "scoop": "scoop",
       "naar_smaak": "to taste"
+    },
+    "import": {
+      "errors": {
+        "timeout": "The import took too long.",
+        "no_content": "No text was found on this page.",
+        "ai_unavailable": "Smart import is not available for this page.",
+        "ai_failed": "Reading the page did not work.",
+        "no_recipe_found": "No recipe was found on this page.",
+        "rate_limited": "You have reached the maximum number of imports per hour.",
+        "invalid_url": "This link could not be opened.",
+        "blocked_address": "This link is not allowed.",
+        "too_large": "This page is too large to import.",
+        "bad_content_type": "This link does not point to a web page.",
+        "too_many_redirects": "This link redirects too many times.",
+        "http_error": "The website returned an error.",
+        "import_failed": "The import did not work."
+      }
     }
   },
   "shopping": {
@@ -475,7 +493,8 @@
         "ingredientUnitPlaceholder": "Pick a unit",
         "removeIngredientLabel": "Remove ingredient",
         "stepLabel": "Step {number}",
-        "stepPlaceholder": "Type an instruction here..."
+        "stepPlaceholder": "Type an instruction here...",
+        "needsReviewLabel": "check"
       },
       "addRowLabel": "Add",
       "stepIngredientPillLabel": "Ingredient",
@@ -523,7 +542,9 @@
         "fiberUnit": "gr.",
         "servingsUnit": "pers.",
         "nevoAttribution": "Based on data from NEVO online version 2025/9.0, RIVM, Bilthoven and other data sources"
-      }
+      },
+      "needsReviewLabel": "check",
+      "sourceLabel": "Source:"
     },
     "pasAanPanel": {
       "title": "Adjust",
@@ -536,6 +557,28 @@
     },
     "imageUploadField": {
       "selectImage": "Select image"
+    },
+    "recipeImport": {
+      "menu": {
+        "viaLinkLabel": "Via link",
+        "manualLabel": "Manual"
+      },
+      "linkPanel": {
+        "title": "Add recipe via link",
+        "linkLabel": "Link",
+        "linkPlaceholder": "Add a recipe page",
+        "saveLabel": "Save",
+        "savingLabel": "Saving...",
+        "invalidUrl": "Enter a valid link starting with https."
+      },
+      "skeleton": {
+        "loadingLabel": "Importing recipe..."
+      },
+      "failed": {
+        "title": "Import failed",
+        "retryLabel": "Try again",
+        "deleteLabel": "Delete"
+      }
     }
   }
 }

@@ -70,7 +70,8 @@ export async function getRecipeCategoriesWithRecipes(): Promise<CategoryWithReci
       id, user_id, name, icon, position, created_at, updated_at,
       recipes (
         id, user_id, category_id, title, servings, thumbnail_path,
-        time_minutes, position, created_at, updated_at
+        time_minutes, position, created_at, updated_at,
+        source_url, import_status, import_error
       )
     `,
     )
@@ -373,9 +374,10 @@ export async function getRecipeWithIngredientsAndSteps(
       `
       id, user_id, category_id, title, servings, thumbnail_path,
       time_minutes, position, created_at, updated_at,
+      source_url, import_status, import_error,
       recipe_ingredients (
         id, user_id, recipe_id, ingredient_id, name, quantity, unit,
-        position, group_label, created_at, updated_at
+        position, group_label, needs_review, created_at, updated_at
       ),
       recipe_steps (
         id, user_id, recipe_id, position, instruction, created_at, updated_at,

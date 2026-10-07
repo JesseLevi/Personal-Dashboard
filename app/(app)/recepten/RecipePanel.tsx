@@ -13,6 +13,12 @@ import { ImageUploadField } from "@/components/molecules/ImageUploadField";
 import { RecipeIngredientRow } from "@/components/molecules/RecipeIngredientRow";
 import { isIconName } from "@/components/atoms/Icon";
 import { UNIT_CODES, formatQuantity, type UnitCode } from "@/lib/recipes/units";
+import {
+  buildContentsPayload,
+  keepsNeedsReview,
+  type IngredientRowState,
+  type StepRowState,
+} from "@/lib/recipes/panel-payload";
 import { downscaleImageFile } from "@/lib/images/downscale-client";
 import type {
   ActionResult,
@@ -37,23 +43,6 @@ import type {
 export type RecipePanelTarget =
   | { mode: "create"; categoryId: string }
   | { mode: "edit"; recipe: RecipeWithIngredientsAndSteps };
-
-interface IngredientRowState {
-  localId: string;
-  name: string;
-  quantity: number | null;
-  unit: UnitCode | "";
-  ingredientId: string | null;
-  /** The `recipe_ingredients.id` this row was loaded from (edit mode only) — used once, at construction, to seed a step's `ingredientLocalIds` from the recipe's own `steps[].ingredientIds` (#149). Never sent in the save payload; `null` for a freshly typed/added row. */
-  sourceId: string | null;
-}
-
-interface StepRowState {
-  localId: string;
-  instruction: string;
-  /** Selected ingredient rows for this step, by their local `IngredientRowState.localId` — translated into payload `ingredientRefs` (indexes) at save time, never sent as-is. See `buildContentsPayload` below. */
-  ingredientLocalIds: string[];
-}
 
 // Fallback icon for a category whose stored icon isn't a real `IconName` —
 // same gap and same fallback ReceptenBoard.tsx already applies.
@@ -85,6 +74,9 @@ function emptyIngredientRow(): IngredientRowState {
     unit: "gram",
     ingredientId: null,
     sourceId: null,
+    groupLabel: null,
+    needsReview: false,
+    loaded: null,
   };
 }
 
@@ -102,6 +94,9 @@ function ingredientRowsFromRecipe(recipe: RecipeWithIngredientsAndSteps): Ingred
     unit: row.unit as UnitCode,
     ingredientId: row.ingredient_id,
     sourceId: row.id,
+    groupLabel: row.group_label,
+    needsReview: row.needs_review,
+    loaded: { name: row.name, quantity: row.quantity, unit: row.unit as UnitCode, ingredientId: row.ingredient_id },
   }));
 }
 
@@ -140,6 +135,8 @@ export interface RecipePanelProps {
   onDeleteRecipe: (input: unknown) => Promise<ActionResult>;
   onSearchIngredients: (input: unknown) => Promise<IngredientSearchResult[]>;
   onCreateOwnIngredient: (input: unknown) => Promise<ActionResult<IngredientRow>>;
+  /** `"use server"` action `confirmIngredientMatch` (#316/#318): called when the user fixes a "controleren" line through the ingredient picker. Optional so create-only hosts can omit it. */
+  onConfirmIngredientMatch?: (input: unknown) => Promise<ActionResult>;
   /** `"use server"` action `uploadRecipeThumbnail` (`app/(app)/recepten/actions.ts`) — called before create/update whenever a new thumbnail file was picked (#149). */
   onUploadThumbnail: (formData: FormData) => Promise<ActionResult<{ path: string }>>;
   /** Fired after a successful create/update/delete, before `onClose`. Never fired on a plain close/cancel. */
@@ -156,6 +153,7 @@ export function RecipePanel({
   onDeleteRecipe,
   onSearchIngredients,
   onCreateOwnIngredient,
+  onConfirmIngredientMatch,
   onUploadThumbnail,
   onMutated,
 }: RecipePanelProps) {
@@ -261,40 +259,21 @@ export function RecipePanel({
     // name/ingredientId slot. See design/notes/RecipePanel.md.
     const picked = selected[0];
     if (picked && ingredientSearch.rowLocalId) {
+      // #318: picking an ingredient for a still-flagged imported line confirms
+      // it: the server clears needs_review and remembers the imported name as
+      // an alias (confirmIngredientMatch). The pick itself is saved with the form.
+      const flaggedRow = ingredients.find((row) => row.localId === ingredientSearch.rowLocalId);
+      if (flaggedRow && keepsNeedsReview(flaggedRow) && flaggedRow.sourceId && onConfirmIngredientMatch) {
+        void onConfirmIngredientMatch({ recipeIngredientId: flaggedRow.sourceId, ingredientId: picked.id }).then((result) => {
+          if (!result.success) setError(tErrors(result.error));
+        });
+      }
       updateIngredientRow(ingredientSearch.rowLocalId, {
         name: picked.name,
         ingredientId: picked.id,
+        needsReview: false,
       });
     }
-  }
-
-  // Ingredients/steps are built together, not by two independent filters
-  // (#149): a step's `ingredientRefs` are indexes into the payload's
-  // `ingredients` array, and that array only contains rows that survive the
-  // empty-name filter — so the index map must be built from the FILTERED
-  // list, never the raw `ingredients` state (an index computed before
-  // filtering would point at the wrong row, or at a row that got dropped
-  // entirely). See `lib/recipes/schemas.ts`'s `ingredientRefs` comment for
-  // the receiving end of this contract.
-  function buildContentsPayload() {
-    const filteredIngredients = ingredients.filter((row) => row.name.trim() !== "");
-    const indexByLocalId = new Map(filteredIngredients.map((row, index) => [row.localId, index]));
-    return {
-      ingredients: filteredIngredients.map((row) => ({
-        name: row.name.trim(),
-        quantity: row.quantity,
-        unit: row.unit || "gram",
-        ingredientId: row.ingredientId,
-      })),
-      steps: steps
-        .filter((row) => row.instruction.trim() !== "")
-        .map((row) => ({
-          instruction: row.instruction.trim(),
-          ingredientRefs: row.ingredientLocalIds
-            .map((localId) => indexByLocalId.get(localId))
-            .filter((index): index is number => index !== undefined),
-        })),
-    };
   }
 
   function handleSave() {
@@ -333,7 +312,7 @@ export function RecipePanel({
         servings,
         timeMinutes: timeMinutes === "" ? null : timeMinutes,
         ...(thumbnailPath !== undefined ? { thumbnailPath } : {}),
-        ...buildContentsPayload(),
+        ...buildContentsPayload(ingredients, steps),
       };
       const result =
         target.mode === "create"
@@ -521,6 +500,7 @@ export function RecipePanel({
                 onRemove={() => handleRemoveIngredientRow(row.localId)}
                 removeLabel={t("fields.removeIngredientLabel")}
                 removeDisabled={ingredients.length <= 1}
+                reviewLabel={keepsNeedsReview(row) ? t("fields.needsReviewLabel") : undefined}
               />
             </div>
           ))}

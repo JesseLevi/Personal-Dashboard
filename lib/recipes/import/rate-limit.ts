@@ -1,4 +1,5 @@
 import "server-only";
+import type { ImportErrorCode } from "@/lib/recipes/enums";
 import type { MatcherClient } from "@/lib/recipes/import/match-ingredients";
 
 // Per-user import rate limit (#317, ADR-0019 §5): 20 imports per hour. No
@@ -10,7 +11,7 @@ import type { MatcherClient } from "@/lib/recipes/import/match-ingredients";
 // which is acceptable for a spend guard, the Console cap is the hard stop.
 
 export const IMPORTS_PER_HOUR = 20;
-export const IMPORT_RATE_LIMIT_ERROR = "rate_limited"; // import_error code, #312 format
+export const IMPORT_RATE_LIMIT_ERROR: ImportErrorCode = "rate_limited";
 
 export class ImportRateLimitError extends Error {
   readonly code = IMPORT_RATE_LIMIT_ERROR;

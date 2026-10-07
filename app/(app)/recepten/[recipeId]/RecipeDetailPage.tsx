@@ -32,6 +32,8 @@ import {
   updateRecipe,
   uploadRecipeThumbnail,
 } from "../actions";
+import { confirmIngredientMatch } from "../import-actions";
+import { SourceLink } from "./SourceLink";
 import { addIngredientToShoppingList, sendRecipeToShoppingList } from "../../winkelmand/actions";
 
 // #127/#160 recipe detail route body — V2 Figma "Recept/Mobile" (3997:14737)
@@ -333,6 +335,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
           fiberG={nutritionPerPerson.fiberG}
           servings={portions}
         />
+        <SourceLink url={recipe.source_url} label={t("sourceLabel")} />
       </div>
 
       {/* spacing-flag: Figma's "Main" frame keeps ingredient-group Cards as flat vertical siblings (page-stack=24, node 3997:14738/3997:15173) — only one ingredient-group Card exists in the fetched design, so no bound relationship covers this wrapper's md:flex-row (row-axis) gap — design/notes/RecipeDetailPage.md */}
@@ -363,6 +366,8 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
                 name={ingredient.name}
                 quantity={formatQuantityFraction(ingredient.quantity, ingredient.unit, tUnits(ingredient.unit))}
                 divider={index < group.ingredients.length - 1}
+                reviewLabel={ingredient.needs_review ? t("needsReviewLabel") : undefined}
+                onReviewClick={ingredient.needs_review ? () => setEditOpen(true) : undefined}
                 swipeAction="cart"
                 onAddToCart={() => handleAddIngredientToCart(ingredient.id)}
                 addToCartLabel={t("addIngredientToBasketLabel", { name: ingredient.name })}
@@ -422,6 +427,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
         }}
         onSearchIngredients={searchIngredients}
         onCreateOwnIngredient={createOwnIngredient}
+        onConfirmIngredientMatch={confirmIngredientMatch}
         onUploadThumbnail={uploadRecipeThumbnail}
         onMutated={() => router.refresh()}
       />

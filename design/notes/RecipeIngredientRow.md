@@ -56,3 +56,7 @@ The invisible-spacer fix above lands the Button's **top edge** level with the in
 Fixed by keeping the spacer (it correctly consumes row 1's label block) and giving the Button column `self-stretch` — overriding the row's `items-start` so the column spans the row's full height — with the Button then wrapped in a `flex-1 items-center` box. `flex-1` resolves to exactly the field box's own height on both branches, so `items-center` centres against the box in the labelled and unlabelled cases alike, without hard-coding a pixel height anywhere.
 
 **Hard-coding that height gets it wrong by 1px, and the error is invisible by inspection.** `h-12` (48px) looks right from `InputField`'s own padding arithmetic (`p-1` 4 + `py-2` 8 + a 24px line, doubled = 48), but the box also carries a 1px border on each edge and is `border-box`, so its real height is **50px**. Measured in a real browser (Playwright against `pnpm ladle`, `getBoundingClientRect`): field box centre and Button centre both land on 89.00 in `recipe-ingredient-row--labelled` and both on 57.00 in `--unlabelled` — exact, on both branches. The earlier `h-12` attempt measured 88.00 vs 89.00.
+
+## "controleren" marker (Claude-designed on request, #318)
+
+Optional `reviewLabel`: a `Tag variant="highlight"` button above the row that opens the same ingredient picker as the name field (the picker then calls `confirmIngredientMatch`). The root became a flex column so the marker sits above the field row; without the marker the layout is unchanged (all existing baselines keep their size). Story `NeedsReview`.

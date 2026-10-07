@@ -1,6 +1,7 @@
 import { cn } from "@/lib/ui/cn";
 import { Button } from "../atoms/Button";
 import { InputField } from "../atoms/InputField";
+import { Tag } from "../atoms/Tag";
 import type { UnitCode } from "@/lib/recipes/units";
 
 /**
@@ -40,6 +41,8 @@ export interface RecipeIngredientRowProps {
   removeLabel: string;
   /** Disables the delete Button without hiding it — Figma never draws a "last remaining row" state, so the caller (RecipePanel.tsx) disables removal at exactly one row rather than letting the list go empty. */
   removeDisabled?: boolean;
+  /** #318 (Claude-designed on request): "controleren" marker above an imported line the importer was unsure about. Pressing it opens the same ingredient picker as the name field (`onNameClick`). Omit when the line is fine. */
+  reviewLabel?: string;
   className?: string;
 }
 
@@ -62,15 +65,23 @@ export function RecipeIngredientRow({
   onRemove,
   removeLabel,
   removeDisabled,
+  reviewLabel,
   className,
 }: RecipeIngredientRowProps) {
   const selectOptions = unitOptions.map((option) => ({ value: option.code, label: option.label }));
 
   return (
-    // spacing-flag: `gap-2` — this component has no Figma node to bind
-    // against (see "Why no design/figma-map.json entry" in
-    // design/notes/RecipeIngredientRow.md).
-    <div className={cn("flex w-full items-start gap-2", className)}>
+    <div className={cn("flex w-full flex-col gap-stack-sm", className)}>
+      {reviewLabel ? (
+        // design: Claude-designed on request (#318), design/notes/RecipeIngredientRow.md.
+        <button type="button" className="w-fit" onClick={onNameClick}>
+          <Tag variant="highlight">{reviewLabel}</Tag>
+        </button>
+      ) : null}
+      {/* spacing-flag: `gap-2` — this component has no Figma node to bind
+          against (see "Why no design/figma-map.json entry" in
+          design/notes/RecipeIngredientRow.md). */}
+      <div className="flex w-full items-start gap-2">
       <div className="w-full min-w-0 flex-1">
         {showLabels ? (
           <InputField
@@ -169,6 +180,7 @@ export function RecipeIngredientRow({
             disabled={removeDisabled}
           />
         </div>
+      </div>
       </div>
     </div>
   );
