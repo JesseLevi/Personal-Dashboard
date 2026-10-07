@@ -26,7 +26,7 @@ const NL: Row[] = [
   ["½ tl zout", 0.5, "theelepel", "zout", null, "high"],
   ["1½ el boter", 1.5, "eetlepel", "boter", null, "high"],
   ["¼ tl nootmuskaat", 0.25, "theelepel", "nootmuskaat", null, "high"],
-  ["⅓ kopje rijst", 1 / 3, "stuk", "kopje rijst", null, "high"],
+  ["⅓ kopje rijst", 1 / 3, null, "rijst", "kopje", "low"],
   ["2 ⅔ dl water", 2 + 2 / 3, "deciliter", "water", null, "high"],
   ["3/4 l bouillon", 0.75, "liter", "bouillon", null, "high"],
   ["2 uien", 2, "stuk", "uien", null, "high"],

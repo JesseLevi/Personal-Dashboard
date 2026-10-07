@@ -49,6 +49,7 @@ export const UNIT_ALIASES = {
 export const UNMAPPED_UNIT_WORDS: ReadonlySet<string> = new Set([
   "cl", "mespunt", "mespuntje", "handvol", "scheut", "scheutje", "bosje",
   "teen", "teentje", "takje", "plak", "plakje", "blaadje", "klont", "dash",
+  "kop", "kopje",
 ]);
 
 export type ParsedIngredient = {
