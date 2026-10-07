@@ -8,11 +8,17 @@
 // Policies (all covered in tests/recipes-parse-ingredient.test.ts):
 // - Range ("2-3", "2 tot 3", "2 to 3"): quantity = LOWER bound, the original
 //   range text is kept in `note`, so scaling stays safe and nothing is lost.
-// - "2 x 400 g blik tomaten": quantity 2, the count unit for "stuk", note
-//   "400 g", name "blik tomaten". No 2 * 400 multiplication: the pack size
-//   stays visible and the count is what a shopper buys.
+// - Pack "N x M <unit>" ("2 x 400 g blik tomaten"): quantity N*M in the inner
+//   unit (800 gram), original "2 x 400 g" in `note`, so the nutrition
+//   calculator gets a measurable amount. Inner count unit multiplies too;
+//   inner without unit ("2 x 3 eieren") -> 6 stuk, note "2 x 3"; inner
+//   unmapped word -> N*M, unit null, low. Ranges with a pack are not
+//   supported and come out low (name keeps the unread text).
+// - A quantity with no unit ("2 uien") gets the count unit for "stuk".
+//   unit null (no quantity and no unit, or an unmapped measure word) means
+//   the persistence step must resolve it: recipe_unit is NOT NULL in the DB.
 // - A measure word with no UnitCode (teentje, bosje, cl, ...) is not
-//   invented: unit null, the raw word goes to `note`, confidence "low".
+//   invented: unit stays null, the raw word goes to `note`, confidence "low".
 // - Unit codes appear ONLY in UNIT_ALIASES below; the unit list itself is
 //   units.ts's (decided, ADR-0011) and is never extended here.
 
@@ -156,12 +162,25 @@ export function parseIngredientLine(raw: string): ParsedIngredientLine {
   const range = mult ? null : RANGE_RE.exec(rest);
   const single = mult || range ? null : SINGLE_RE.exec(rest);
   if (mult?.[1] && mult[2]) {
-    quantity = toNumber(mult[1]);
+    const packs = toNumber(mult[1]);
+    const inner = toNumber(mult[2]);
+    quantity = packs * inner;
     rest = rest.slice(mult[0].length);
     const pack = matchUnit(rest);
-    packNote = pack ? `${mult[2].trim()} ${pack.word}` : mult[2].trim();
-    rest = pack ? pack.rest : rest;
-    unit = lookupWord("stuk");
+    const innerText = `${mult[1].trim()} x ${mult[2].trim()}`;
+    if (pack?.kind === "unit") {
+      unit = pack.code;
+      packNote = `${innerText} ${pack.word}`;
+      rest = pack.rest;
+    } else if (pack) {
+      unmappedWord = pack.word;
+      packNote = innerText;
+      rest = pack.rest;
+      low = true;
+    } else {
+      unit = lookupWord("stuk");
+      packNote = innerText;
+    }
   } else if (range?.[1] && range[2]) {
     quantity = toNumber(range[1]);
     rangeNote = range[0].trim();
@@ -198,6 +217,8 @@ export function parseIngredientLine(raw: string): ParsedIngredientLine {
       }
     }
   }
+
+  if (quantity !== null && unit === null && unmappedWord === null) unit = lookupWord("stuk");
 
   const name = rest.replace(/^[\s,.;:]+|[\s,.;]+$/g, "");
   if (name === "" || !/^\p{L}/u.test(name) || /[\d()]/.test(name)) low = true;
