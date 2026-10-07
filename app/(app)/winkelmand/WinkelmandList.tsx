@@ -247,11 +247,8 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
   const isEmpty = localItems.length === 0;
   const groups = isEmpty ? [] : buildGroups(localItems, sortBy, locale, t("otherGroupLabel"));
 
-  // Shared by both PageHeader states below (#222 pt.4's own fetch found the
-  // EmptyState "Knoppen" frame is NOT action-less as #179 recorded -- it
-  // carries this one Destructive button, both breakpoints, measured live via
-  // the figma-console bridge, not assumed from that older note. See
-  // design/notes/WinkelmandPage.md#222.
+  // Shared by both PageHeader states below. Empty state also carries the
+  // Add button by user instruction (deviates from Figma): design/notes/WinkelmandPage.md.
   const clearAllButton = (
     <Button variant="destructive" icon="Trash" onClick={handleClearAll}>
       <span className="md:hidden">{t("clearAllLabelShort")}</span>
@@ -259,19 +256,27 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
     </Button>
   );
 
+  // #222 pt.4: icon-only on mobile, "Item" from md up -- span-hide + permanent
+  // aria-label (same pattern as Sort). Opens the existing IngredientSearchPanel.
+  const addItemButton = (
+    <Button icon="Plus" aria-label={t("addItemLabel")} onClick={() => setAddItemPanelOpen(true)}>
+      <span className="hidden md:inline">{t("addItemLabel")}</span>
+    </Button>
+  );
+
   return (
     <>
       <PageHeader
         title={title}
-        // #222 pt.4: the EmptyState "Knoppen" frame is not action-less --
-        // it carries the same Destructive button below, both breakpoints
-        // (corrects #179's "no action buttons at all" read, see
-        // design/notes/WinkelmandPage.md#222). The non-empty frame gained a
-        // third, leading button (+ Item, Filled, icon Plus) ahead of Sort --
-        // same fetched "Knoppen" order both breakpoints.
+        // Add + Clear in the empty state (Sort hidden), Add + Sort + Clear
+        // otherwise; empty-state Add is not in Figma, see
+        // design/notes/WinkelmandPage.md.
         actions={
           isEmpty ? (
-            clearAllButton
+            <div className="flex items-center gap-inline-sm md:gap-inline-xl">
+              {addItemButton}
+              {clearAllButton}
+            </div>
           ) : (
             // #182: a single flex wrapper mirroring Figma's own "Knoppen"
             // frame (row, gap 8px mobile / 20px desktop) -- every button
@@ -293,19 +298,7 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
             // whole group, per user decision. Geometry re-verified in a real
             // browser at 320/375/390/430px, see design/notes/WinkelmandPage.md#182.
             <div className="flex items-center gap-inline-sm md:gap-inline-xl">
-              <Button
-                icon="Plus"
-                // #222 pt.4: icon-only on mobile, "Item" text from md up --
-                // same span-hide + permanent aria-label pattern as Sort
-                // below, not swapped children (fetched Mobile node draws
-                // "With text: false", Desktop draws "Item"). Opens the
-                // existing IngredientSearchPanel organism, no new panel
-                // built -- see design/notes/WinkelmandPage.md#222.
-                aria-label={t("addItemLabel")}
-                onClick={() => setAddItemPanelOpen(true)}
-              >
-                <span className="hidden md:inline">{t("addItemLabel")}</span>
-              </Button>
+              {addItemButton}
               <div ref={sortMenuRef} className="relative">
                 <Button
                   icon="ArrowUpDown"

@@ -408,3 +408,7 @@ The pre-existing, separately-flagged 320px **header row** overflow
 is unrelated to the dropdown anchor and was not re-verified here with real
 icons — don't read the 320px "fits" row above as a claim that issue is
 closed.
+
+## Empty-state add button (2026-10-06) — user instruction, deviates from Figma
+
+By direct user instruction the EmptyState header now carries the "+ Item" button (icon-only on mobile, "Item" from md up) before "Leeg mand", opening the same IngredientSearchPanel. Figma EmptyState nodes `4049:11175`/`4049:11167` still draw only the Destructive button in "Knoppen", so code and Figma disagree until the designer updates it — recorded, not silently reconciled (same precedent as the "Leeg mand" copy deviation above). Supersedes #222 pt.4's "only the Plus/Sort pair is conditional on !isEmpty": now only Sort is conditional. Tracked as `docs/open-questions.md#winkelmand-empty-state-add-button-not-in-figma`.
