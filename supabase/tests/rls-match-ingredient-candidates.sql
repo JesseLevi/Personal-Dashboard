@@ -2,7 +2,8 @@
 -- the alias upsert the matcher's server action performs. ADR-0009 pattern for
 -- an RPC, same shape as rls-move-rpcs.sql: the caller sees only their own
 -- ingredients plus shared reference rows, never another user's.
--- Reference seed rows used: 'Halloumi' (20260730000001_ingredient_library.sql).
+-- Reference row used: 'Knoflook rauw' (NEVO import, 20260806000001). The full
+-- NEVO set is present, so own-row assertions filter on source = 'own'.
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(12);
@@ -32,21 +33,21 @@ select set_config(
 set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-00000000316a", "role": "authenticated"}';
 
 select results_eq(
-  $$ select input_index, source, name from public.match_ingredient_candidates(array['zxcvbnmwortel']) $$,
+  $$ select input_index, source, name from public.match_ingredient_candidates(array['zxcvbnmwortel']) limit 1 $$,
   $$ values (0, 'own', 'Zxcvbnmwortel') $$,
-  'A finds their own ingredient by name'
+  'A finds their own ingredient by name, ranked first'
 );
 select is_empty(
-  $$ select 1 from public.match_ingredient_candidates(array['qwertyplant']) $$,
+  $$ select 1 from public.match_ingredient_candidates(array['qwertyplant']) where source = 'own' $$,
   'A never gets B''s ingredient as a candidate'
 );
 select results_eq(
-  $$ select input_index, source, name, score = 1 from public.match_ingredient_candidates(array['halloumi']) $$,
-  $$ values (0, 'reference', 'Halloumi', true) $$,
+  $$ select input_index, source, name, score = 1 from public.match_ingredient_candidates(array['knoflook rauw']) limit 1 $$,
+  $$ values (0, 'reference', 'Knoflook rauw', true) $$,
   'a reference ingredient is returned as source reference with its own id'
 );
 select results_eq(
-  $$ select input_index from public.match_ingredient_candidates(array['', 'zxcvbnmwortel', null]) $$,
+  $$ select input_index from public.match_ingredient_candidates(array['', 'zxcvbnmwortel', null]) where source = 'own' $$,
   $$ values (1) $$,
   'input_index is the 0-based array position; empty and null names are skipped'
 );
@@ -58,10 +59,11 @@ select cmp_ok(
 
 -- Adopting a reference ingredient hides its reference row (own wins).
 insert into public.ingredients (user_id, name, reference_id)
-values ('00000000-0000-0000-0000-00000000316a', 'Halloumi',
-        (select id from reference.ingredients where name_nl = 'Halloumi'));
+values ('00000000-0000-0000-0000-00000000316a', 'Knoflook rauw',
+        (select id from reference.ingredients where name_nl = 'Knoflook rauw'));
 select results_eq(
-  $$ select source from public.match_ingredient_candidates(array['halloumi']) $$,
+  $$ select source from public.match_ingredient_candidates(array['knoflook rauw'])
+     where name = 'Knoflook rauw' $$,
   $$ values ('own') $$,
   'an adopted reference ingredient is offered once, as the own row'
 );
@@ -73,7 +75,7 @@ values ('00000000-0000-0000-0000-00000000316a', 'bosui',
 select lives_ok(
   $$ insert into public.ingredient_aliases (user_id, alias_normalized, ingredient_id)
      values ('00000000-0000-0000-0000-00000000316a', 'bosui',
-             (select id from public.ingredients where name = 'Halloumi'))
+             (select id from public.ingredients where name = 'Knoflook rauw'))
      on conflict (user_id, alias_normalized)
      do update set ingredient_id = excluded.ingredient_id $$,
   'A can upsert their own alias onto another own ingredient'
@@ -82,7 +84,7 @@ select results_eq(
   $$ select i.name from public.ingredient_aliases a
      join public.ingredients i on i.id = a.ingredient_id
      where a.alias_normalized = 'bosui' $$,
-  $$ values ('Halloumi') $$,
+  $$ values ('Knoflook rauw') $$,
   'the upsert repointed the alias instead of adding a second row'
 );
 select throws_ok(
@@ -110,7 +112,7 @@ select ok(
   'anon has no EXECUTE on the function'
 );
 select throws_ok(
-  $$ select * from public.match_ingredient_candidates(array['halloumi']) $$,
+  $$ select * from public.match_ingredient_candidates(array['knoflook']) $$,
   '42501',
   null,
   'anon calling the function is refused by the grant'
