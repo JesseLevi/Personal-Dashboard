@@ -36,6 +36,9 @@ const recipeIngredientLine = z.object({
   // migration comment.
   ingredientId: z.uuid().nullable().optional(),
   groupLabel: z.string().trim().min(1).max(100).nullable().optional(),
+  // #312: import flags a line the parser/matcher was unsure about; omitted
+  // (manual edits) means false.
+  needsReview: z.boolean().optional(),
 });
 
 const recipeStepLine = z.object({

@@ -15,3 +15,16 @@
 // predictable and give any future recipe-domain CHECK-constraint enum an
 // obvious home next to this one.
 export { UNIT_CODES, isUnitCode, type UnitCode } from "@/lib/recipes/units";
+
+// #312 / ADR-0019: recipes.import_status is the Postgres enum
+// public.recipe_import_status. Hand-mirrored here until `pnpm db:types`
+// regenerates lib/database.types.ts; tests/recipes-import-status-enum-sync.test.ts
+// fails on drift.
+export const IMPORT_STATUSES = ["importing", "done", "failed"] as const;
+export type ImportStatus = (typeof IMPORT_STATUSES)[number];
+export const isImportStatus = (value: unknown): value is ImportStatus =>
+  typeof value === "string" && (IMPORT_STATUSES as readonly string[]).includes(value);
+
+// recipes.import_error is a free-form snake_case reason code (no DB enum, see
+// 20261008000001_recipe_import.sql). Codes the schema relies on live here.
+export const IMPORT_ERROR_TIMEOUT = "timeout"; // set by the lazy sweep (ADR-0019 §1)
