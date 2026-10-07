@@ -48,6 +48,13 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* No browser focus outline anywhere (user request, 2026-10-07). Components'
+   own designed focus states (Button, InputField) still render. */
+*:focus,
+*:focus-visible {
+  outline: none;
+}
+
 /* Chrome only (nav, buttons, headers) — never user content (recipe text,
    ingredient names, notes), which must stay selectable/copyable. Coarse
    pointers only, same reasoning as `.touch-callout-none` above: a mouse
