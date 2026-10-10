@@ -41,6 +41,8 @@ const DARK_STORIES = [
   "editing-bar--with-active-button",
   "image-upload-field--empty",
   "image-upload-field--file-selected",
+  "ingredient-admin--koppelingen",
+  "ingredient-admin--own-ingredient-panel-edit",
   "input-field--states",
   "input-field--icon-combinations",
   "login-form--step1-email",

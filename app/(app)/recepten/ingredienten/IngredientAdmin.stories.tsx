@@ -1,4 +1,4 @@
-// design: Claude-designed on request (#325)
+// design: Claude-designed on request (#325, #350)
 import { IngredientAdmin } from "./IngredientAdmin";
 import { AliasPanel } from "./AliasPanel";
 import { OwnIngredientPanel } from "./OwnIngredientPanel";
@@ -82,25 +82,43 @@ const handlers = {
 
 // min-h-screen: the panels are `position: fixed`, so without it the baseline crop collapses.
 export const Koppelingen = () => (
-  <div className="min-h-screen">
+  <div className="min-h-screen bg-surface-primary">
     <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} {...handlers} />
   </div>
 );
 
 export const EigenIngredienten = () => (
-  <div className="min-h-screen">
+  <div className="min-h-screen bg-surface-primary">
     <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialTab="own" {...handlers} />
   </div>
 );
 
 export const LeegKoppelingen = () => (
-  <div className="min-h-screen">
+  <div className="min-h-screen bg-surface-primary">
     <IngredientAdmin title="Ingrediënten" aliases={[]} eigen={[]} {...handlers} />
   </div>
 );
 
+export const LeegEigenIngredienten = () => (
+  <div className="min-h-screen bg-surface-primary">
+    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={[]} initialTab="own" {...handlers} />
+  </div>
+);
+
+export const GeenResultaten = () => (
+  <div className="min-h-screen bg-surface-primary">
+    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialQuery="zzz" {...handlers} />
+  </div>
+);
+
+export const Gefilterd = () => (
+  <div className="min-h-screen bg-surface-primary">
+    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialQuery="tom" {...handlers} />
+  </div>
+);
+
 export const AliasPanelEdit = () => (
-  <div className="min-h-screen">
+  <div className="min-h-screen bg-surface-primary">
     <AliasPanel
       open
       onClose={() => {}}
@@ -114,13 +132,13 @@ export const AliasPanelEdit = () => (
 );
 
 export const OwnIngredientPanelEdit = () => (
-  <div className="min-h-screen">
+  <div className="min-h-screen bg-surface-primary">
     <OwnIngredientPanel open onClose={() => {}} target={{ mode: "edit", ingredient: eigen[0] }} onCreate={ok} onUpdate={ok} onDelete={ok} />
   </div>
 );
 
 export const OwnIngredientPanelCreate = () => (
-  <div className="min-h-screen">
+  <div className="min-h-screen bg-surface-primary">
     <OwnIngredientPanel open onClose={() => {}} target={{ mode: "create" }} onCreate={ok} onUpdate={ok} onDelete={ok} />
   </div>
 );
