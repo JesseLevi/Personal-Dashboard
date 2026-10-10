@@ -42,6 +42,15 @@ A non-`public` schema must also be exposed on the Data API, and that setting is 
 - Seed functions (`seed_default_*`) are `after insert on auth.users` triggers (`security definer`; neither `anon` nor `authenticated` can call them, #304) and thin wrappers around `apply_seed()`. Pre-existing accounts are seeded lazily by `ensure_user_defaults()` (called in `app/(app)/layout.tsx`, marker table `user_seeds`, ADR-0017). New seed = key in `seed_keys()` + `seed_*_for` body + `case` in `apply_seed`; never grant EXECUTE on user-id-taking helpers.
 - RPC form for atomic multi-statement writes (ADR-0015 precedent: `move_card`): `security invoker`, `search_path=''`, `revoke from public`, grants only to `authenticated`/`service_role`, pgTAP test. anon gets no implicit EXECUTE on new functions (default privileges revoked, #304); `rls-function-execute-grants.sql` fails if one slips through.
 
+## Object storage (R2, ADR-0024)
+
+- **One seam**: `lib/storage/` (`put`/`get`/`delete`/`deletePrefix`/`presignGet`, `fake.ts` for tests) is the only code that touches the S3 client or `R2_*` env; `check:server-only` enforces it.
+- **Keys** come from the key builder in `lib/storage/keys.ts`: `<user_id>/<module>/…`, user id from the session, never client input.
+- **Delivery**: app route -> `redirectToStoredObject` (`lib/storage/deliver.ts`): session, RLS-bound owner check on the owning row, then `302` to a presigned GET (hour-stable, so the browser caches it). Stored documents keep the app-route URL, never a presigned one.
+- **No RLS on objects.** Ownership is proven by Vitest ownership tests against the fake (user B cannot reach user A's key), one per consumer.
+- **Orphans**: `deletePrefix` when the owner is deleted; note images also get a lazy sweep (`sweepNoteImages`).
+- **Hosted buckets and tokens live outside the repo**: checklist in `docs/phase-log.md`; backup decision in ADR-0024 Consequences.
+
 ## Constraints
 
 - `public.recipe_unit` is the one unit enum — reuse it, never redeclare (`tests/recipes-units-enum-sync.test.ts` fails on drift).
