@@ -212,7 +212,7 @@ export function NoteBlockHandle({ editor }: NoteBlockHandleProps) {
               placement.openUp ? "bottom-[var(--menu-y)] pb-stack-xs" : "top-[var(--menu-y)] pt-stack-xs",
             )}
           >
-            <Dropdown role="menu" aria-label={t("menuLabel")} className="max-h-[70vh] overflow-y-auto shadow-sm">
+            <Dropdown role="menu" aria-label={t("menuLabel")} className="max-h-[calc(100vh-var(--menu-y)-1rem)] overflow-y-auto shadow-sm">
               {isConvertibleBlock(current.node) && (
                 <div role="group" aria-labelledby={`${panelId}-turn-into`} className="flex flex-col">
                   <span id={`${panelId}-turn-into`} className="px-component-md py-component-xs text-base font-semibold text-text-secondary">

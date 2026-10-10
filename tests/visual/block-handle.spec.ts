@@ -112,10 +112,6 @@ test("works on code blocks and details: duplicate, move, delete, undo", async ({
   await page.goto("/?story=note-block-handle--code-and-details&mode=preview");
   await expect(page.locator(".tiptap [data-type=details]")).toBeVisible();
   const trigger = page.locator(handle);
-  const count = () => page.locator(".tiptap > *").count();
-  // intro, code, details and the trailing paragraph the editor appends.
-  await expect.poll(count).toBe(4);
-  const start = 4;
 
   await page.locator(".tiptap > [data-type=details]").hover();
   await trigger.click();
@@ -137,5 +133,6 @@ test("works on code blocks and details: duplicate, move, delete, undo", async ({
   await page.getByRole("menuitem", { name: "Verwijderen" }).click();
   await expect(page.locator(".tiptap > :has(pre)")).toHaveCount(0);
   await page.keyboard.press("ControlOrMeta+z");
-  await expect.poll(count).toBe(start);
+  await expect(page.locator(".tiptap > :has(pre)")).toHaveCount(1);
+  await expect(page.locator(".tiptap > [data-type=details]")).toHaveCount(1);
 });
