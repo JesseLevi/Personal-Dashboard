@@ -560,7 +560,6 @@
       "underlineLabel": "Onderstrepen",
       "highlightLabel": "Markeren",
       "linkLabel": "Link",
-      "linkPromptLabel": "Voer een URL in",
       "superscriptLabel": "Superscript",
       "subscriptLabel": "Subscript",
       "alignLeftLabel": "Links uitlijnen",
@@ -594,6 +593,20 @@
         "table": "Tabel",
         "divider": "Scheidingslijn"
       }
+    },
+    "noteBubbleMenu": {
+      "label": "Tekstopmaak",
+      "turnInto": "Omzetten naar"
+    },
+    "noteLink": {
+      "label": "Link",
+      "urlLabel": "Webadres",
+      "urlPlaceholder": "voorbeeld.nl",
+      "invalid": "Voer een webadres (http, https) of e-mailadres in.",
+      "apply": "Toepassen",
+      "open": "Openen",
+      "edit": "Bewerken",
+      "remove": "Verwijderen"
     },
     "noteTable": {
       "insertLabel": "Tabel invoegen",

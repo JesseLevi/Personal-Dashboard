@@ -6,6 +6,7 @@ import Subscript from "@tiptap/extension-subscript";
 import { TableKit } from "@tiptap/extension-table";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import type { AnyExtension } from "@tiptap/react";
+import { LINK_PROTOCOLS, isAllowedLinkUri } from "./link-url";
 
 // The fixed TipTap extension whitelist Architecture §133 requires (#233):
 // used by the editor (app/(app)/notities/[noteId]/NoteEditor.tsx) AND every
@@ -46,7 +47,17 @@ export const TABLE_CELL_MIN_WIDTH = 96;
 // hard-coded English string and this static whitelist has no access to
 // next-intl: the checkbox is named after the task text itself instead.
 export const noteExtensions: AnyExtension[] = [
-  StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+  // #331: links are limited to http/https/mailto (lib/notes/link-url.ts is the
+  // one validator); the link popover, not a click, opens/edits a link.
+  StarterKit.configure({
+    heading: { levels: [1, 2, 3] },
+    link: {
+      autolink: true,
+      openOnClick: false,
+      protocols: LINK_PROTOCOLS,
+      isAllowedUri: (url) => isAllowedLinkUri(url),
+    },
+  }),
   TaskList,
   TaskItem.configure({
     nested: true,

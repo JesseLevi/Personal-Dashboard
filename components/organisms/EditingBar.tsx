@@ -7,6 +7,7 @@ import { useEditorState, type Editor } from "@tiptap/react";
 import { cn } from "@/lib/ui/cn";
 import { Button } from "@/components/atoms/Button";
 import type { IconName } from "@/components/atoms/Icon";
+import { requestLinkPopover } from "@/lib/notes/link-popover";
 import { insertTable } from "@/lib/notes/table-commands";
 import { EditingBarMenu } from "./EditingBarMenu";
 import { TableSizePicker } from "./TableSizePicker";
@@ -32,13 +33,13 @@ interface EditingBarCommand {
   id: string;
   icon: IconName;
   isActive?: (editor: Editor) => boolean;
-  run: (editor: Editor, ctx: { promptLinkUrl: () => string | null }) => void;
+  run: (editor: Editor, ctx: { openLink: () => void }) => void;
 }
 
 // #329: block type and list type are menu buttons, not toggles. Each option
 // has an i18n key under components.editingBar and reads/writes the document
 // through the same editor commands the markdown input rules use.
-interface EditingBarMenuDef {
+export interface EditingBarMenuDef {
   id: "blockType" | "list";
   icon: IconName;
   fallbackKey: string;
@@ -66,7 +67,8 @@ function isMenu(command: BarCommand): command is EditingBarMenuDef {
   return "options" in command;
 }
 
-const BLOCK_TYPE_MENU: EditingBarMenuDef = {
+// Also the bubble menu's "Turn into" list (NoteBubbleMenu.tsx).
+export const BLOCK_TYPE_MENU: EditingBarMenuDef = {
   id: "blockType",
   icon: "Heading",
   fallbackKey: "paragraph",
@@ -175,18 +177,8 @@ const GROUPS: BarCommand[][] = [
       id: "link",
       icon: "Link",
       isActive: (editor) => editor.isActive("link"),
-      // No link-input UI exists anywhere in Figma for this file (docs/open-
-      // questions.md#notes-editingbar-link-no-url-input-designed) — a native
-      // window.prompt is the least-invention stand-in, not a custom dialog.
-      run: (editor, { promptLinkUrl }) => {
-        if (editor.isActive("link")) {
-          editor.chain().focus().unsetLink().run();
-          return;
-        }
-        const url = promptLinkUrl();
-        if (!url) return;
-        editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
-      },
+      // Opens the shared LinkPopover (#331); no window.prompt.
+      run: (_editor, { openLink }) => openLink(),
     },
   ],
   [
@@ -280,6 +272,12 @@ function useKeyboardInset() {
     };
   }, []);
   return inset;
+}
+
+// #331: on the mobile bar (fixed to the bottom) the popover anchors to the
+// whole bar, whose link button may be scrolled out of view; on desktop to the button.
+function linkAnchor(button: HTMLElement, bar: HTMLElement | null) {
+  return window.matchMedia("(min-width: 48rem)").matches ? button : (bar ?? button);
 }
 
 export function EditingBar({ editor, className }: EditingBarProps) {
@@ -398,7 +396,11 @@ export function EditingBar({ editor, className }: EditingBarProps) {
             aria-pressed={command.isActive ? Boolean(activeState?.[command.id]) : undefined}
             tabIndex={item.index === activeIndex ? 0 : -1}
             onFocus={() => setActiveIndex(item.index)}
-            onClick={() => command.run(editor, { promptLinkUrl: () => window.prompt(t("linkPromptLabel")) })}
+            onClick={(event) =>
+              command.run(editor, {
+                openLink: () => requestLinkPopover(editor, linkAnchor(event.currentTarget, containerRef.current)),
+              })
+            }
           />
         );
       })}

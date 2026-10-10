@@ -46,7 +46,9 @@ export interface Placement {
 
 // Runtime geometry only (same exception as EditingBar's keyboard inset):
 // handed to Tailwind as custom properties so no colour/spacing is inline.
-export function measure(trigger: HTMLElement): Placement {
+export function measure(trigger: {
+  getBoundingClientRect(): Pick<DOMRect, "left" | "right" | "top" | "bottom">;
+}): Placement {
   const rect = trigger.getBoundingClientRect();
   const openUp = rect.top > window.innerHeight / 2;
   const alignRight = rect.left > window.innerWidth / 2;
