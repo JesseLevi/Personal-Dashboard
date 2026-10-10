@@ -1,6 +1,6 @@
 "use client";
 
-// design: Claude-designed on request (#325), design/notes/IngredientAdminPage.md.
+// design: Claude-designed on request (#325, #350), design/notes/IngredientAdminPage.md.
 import { useEffect, useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { SidePanel } from "@/components/organisms/SidePanel";
@@ -9,6 +9,7 @@ import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
+import { PanelSection, PanelTitle } from "./PanelSection";
 import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import { normalizeIngredientName } from "@/lib/recipes/import/normalize-name";
 import type { AdminAlias } from "@/lib/recipes/ingredient-admin";
@@ -171,7 +172,7 @@ export function AliasPanel({
     ) : (
       <div className="flex gap-inline-sm">
         {alias && (
-          <Button variant="destructive" icon="Trash" className="grow basis-0" onClick={ask} disabled={isPending}>
+          <Button variant="destructive" icon="Trash" onClick={ask} disabled={isPending}>
             {t("deleteLabel")}
           </Button>
         )}
@@ -189,18 +190,22 @@ export function AliasPanel({
       closeLabel={tSidePanel("closeLabel")}
       footer={footer}
     >
-      <div className="flex w-full flex-col gap-stack-sm">
-        <InputField
-          label={t("nameLabel")}
-          id="alias-panel-name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          required
-        />
-        {key !== "" && <p className="text-base text-text-secondary">{t("keyPreview", { key })}</p>}
-      </div>
+      <PanelTitle>{alias ? t("editTitle") : t("addTitle")}</PanelTitle>
 
-      <div className="flex w-full flex-col gap-stack-md">
+      <PanelSection heading={t("nameHeading")}>
+        <div className="flex w-full flex-col gap-stack-sm">
+          <InputField
+            label={t("nameLabel")}
+            id="alias-panel-name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            required
+          />
+          {key !== "" && <p className="text-base text-text-secondary">{t("keyPreview", { key })}</p>}
+        </div>
+      </PanelSection>
+
+      <PanelSection heading={t("searchHeading")}>
         <InputField
           label={t("searchLabel")}
           id="alias-panel-search"
@@ -241,7 +246,7 @@ export function AliasPanel({
             ))}
           </Card>
         )}
-      </div>
+      </PanelSection>
       {error && <p className="text-base font-semibold text-priority-urgent">{error}</p>}
     </SidePanel>
   );

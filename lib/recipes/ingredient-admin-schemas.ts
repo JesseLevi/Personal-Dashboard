@@ -26,7 +26,7 @@ const optionalText = z.preprocess(
 const weighableUnits = UNITS.filter((unit) => unit.magnitude !== "mass").map((unit) => unit.code);
 const unitCode = z.enum(weighableUnits as [string, ...string[]]);
 
-const unitMass = z
+export const unitMass = z
   .object({
     unit: unitCode,
     grams: z.preprocess(
@@ -44,6 +44,8 @@ const aliasName = z.string().trim().min(1).max(200);
 export const createAliasSchema = z.object({ name: aliasName, ingredientId: id });
 export const updateAliasSchema = z.object({ aliasId: id, name: aliasName, ingredientId: id });
 export const deleteAliasSchema = z.object({ aliasId: id });
+
+export const linkPendingGroupSchema = z.object({ name: aliasName, ingredientId: id, unitMass });
 
 const eigenFields = {
   nameNl: z.string().trim().min(1).max(200),

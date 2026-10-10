@@ -173,3 +173,27 @@ describe("deriveTitle", () => {
     expect(deriveTitle(doc(paragraph(text(exactLine))))).toBe(exactLine);
   });
 });
+
+describe("task lists (#329)", () => {
+  const task = (label: string, ...nested: TipTapNode[]): TipTapNode => ({
+    type: "taskItem",
+    content: [paragraph(text(label)), ...nested],
+  });
+  const taskList = (...items: TipTapNode[]): TipTapNode => ({ type: "taskList", content: items });
+
+  it("reads each task item as one line, without a checkbox prefix", () => {
+    const document = doc(taskList(task("Melk kopen"), task("Brood kopen")));
+    expect(toPlainText(document)).toBe("Melk kopen\nBrood kopen");
+  });
+
+  it("flattens nested task lists one line per item", () => {
+    const document = doc(taskList(task("Boodschappen", taskList(task("Melk"), task("Kaas")))));
+    expect(toPlainText(document)).toBe("Boodschappen\nMelk\nKaas");
+  });
+
+  it("derives the title from a leading task item, so search finds checklist text", () => {
+    const document = doc(taskList(task("Melk kopen")));
+    expect(deriveTitle(document)).toBe("Melk kopen");
+    expect(toPlainText(document)).toContain("kopen");
+  });
+});

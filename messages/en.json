@@ -47,7 +47,8 @@
       "invalid-image": "This image could not be processed. Please try a different photo.",
       "rate-limited": "You have reached the limit of 20 imports per hour. Try again later.",
       "forbidden": "Only admins can do this.",
-      "duplicate": "A mapping with this name already exists."
+      "duplicate": "A mapping with this name already exists.",
+      "unit-mass-exists": "This ingredient already has a weight for this unit."
     },
     "units": {
       "gram": "Gram",
@@ -109,17 +110,20 @@
       "tabsLabel": "Section",
       "tabs": {
         "aliases": "Mappings",
-        "own": "Own"
+        "own": "Own ingredients",
+        "ownShort": "Own",
+        "aliasesShort": "Alias",
+        "pending": "To link",
+        "pendingShort": "To link"
       },
       "ownBadge": "Own",
-      "ownNotice": "Own ingredients are separate from the NEVO database. NEVO ingredients cannot be changed here.",
-      "aliasesIntro": "A mapping turns a name from a recipe into one fixed ingredient on every later import.",
       "aliases": {
         "searchPlaceholder": "Search a mapping",
         "addLabel": "Mapping",
         "empty": "There are no mappings yet.",
         "noResults": "No mappings found for \"{query}\".",
-        "rowEditLabel": "Edit mapping: {name}"
+        "rowEditLabel": "Edit mapping: {name}",
+        "count": "{count, plural, one {# mapping} other {# mappings}}"
       },
       "own": {
         "searchPlaceholder": "Search an own ingredient",
@@ -127,14 +131,15 @@
         "empty": "There are no own ingredients yet.",
         "noResults": "No own ingredients found for \"{query}\".",
         "rowEditLabel": "Edit own ingredient: {name}",
-        "weightSummary": "1 {unit} = {grams} g"
+        "weightSummary": "1 {unit} = {grams} g",
+        "count": "{count, plural, one {# own ingredient} other {# own ingredients}}"
       },
       "aliasPanel": {
         "addTitle": "Add mapping",
         "editTitle": "Edit mapping",
-        "nameLabel": "Name in recipe",
+        "nameLabel": "Name",
         "keyPreview": "Stored as: {key}",
-        "searchLabel": "Linked ingredient",
+        "searchLabel": "Search",
         "searchPlaceholder": "Search an ingredient",
         "searchPrompt": "Search the ingredient this name should map to.",
         "searching": "Searching…",
@@ -147,7 +152,9 @@
         "deletingLabel": "Deleting…",
         "cancelLabel": "Cancel",
         "saveLabel": "Save",
-        "savingLabel": "Saving…"
+        "savingLabel": "Saving…",
+        "nameHeading": "Name in recipe",
+        "searchHeading": "Linked ingredient"
       },
       "ownPanel": {
         "addTitle": "Add own ingredient",
@@ -174,7 +181,29 @@
         "deletingLabel": "Deleting…",
         "cancelLabel": "Cancel",
         "saveLabel": "Save",
-        "savingLabel": "Saving…"
+        "savingLabel": "Saving…",
+        "namesHeading": "Names"
+      },
+      "countOf": "{shown} of {total}",
+      "pending": {
+        "searchPlaceholder": "Search an unlinked line",
+        "empty": "Everything is linked. New lines without a link show up here.",
+        "noResults": "No lines found for \"{query}\".",
+        "rowLinkLabel": "Link: {name}",
+        "count": "{count, plural, one {# name} other {# names}} to link",
+        "lines": "{count, plural, one {# line} other {# lines}} in your recipes"
+      },
+      "pendingPanel": {
+        "title": "Link \"{name}\"",
+        "lines": "{count, plural, one {# line} other {# lines}} in your recipes will be linked. The next import finds this name right away.",
+        "searchPrompt": "Search the ingredient this name belongs to.",
+        "weightHeading": "Weight per unit",
+        "weightHint": "Optional, for example 1 piece = 60 g. The import then has less to estimate.",
+        "unitLabel": "Unit",
+        "unitNone": "None",
+        "gramsLabel": "Weight (g)",
+        "linkLabel": "Link",
+        "linkingLabel": "Linking…"
       }
     }
   },
@@ -521,7 +550,7 @@
       "label": "Formatting toolbar",
       "undoLabel": "Undo",
       "redoLabel": "Redo",
-      "headingLabel": "Heading",
+      "blockTypeLabel": "Block type",
       "listLabel": "List",
       "blockquoteLabel": "Blockquote",
       "tableLabel": "Insert table",
@@ -539,7 +568,17 @@
       "alignLeftLabel": "Align left",
       "alignCenterLabel": "Align center",
       "alignRightLabel": "Align right",
-      "alignJustifyLabel": "Align justify"
+      "alignJustifyLabel": "Align justify",
+      "options": {
+        "paragraph": "Text",
+        "heading1": "Heading 1",
+        "heading2": "Heading 2",
+        "heading3": "Heading 3",
+        "bulletList": "Bulleted list",
+        "orderedList": "Numbered list",
+        "taskList": "Checklist",
+        "list": "List"
+      }
     },
     "ingredientSearchPanel": {
       "title": "Search ingredient",
