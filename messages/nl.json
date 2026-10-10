@@ -529,7 +529,6 @@
       "blockTypeLabel": "Bloktype",
       "listLabel": "Lijst",
       "blockquoteLabel": "Citaatblok",
-      "tableLabel": "Tabel invoegen",
       "codeBlockLabel": "Codeblok",
       "codeLabel": "Inline code",
       "boldLabel": "Vet",
@@ -554,6 +553,24 @@
         "orderedList": "Genummerde lijst",
         "taskList": "Checklist",
         "list": "Lijst"
+      }
+    },
+    "noteTable": {
+      "insertLabel": "Tabel invoegen",
+      "sizeLabel": "Tabelgrootte",
+      "size": "{rows} × {cols}",
+      "menuLabel": "Tabel",
+      "commands": {
+        "addRowBefore": "Rij erboven invoegen",
+        "addRowAfter": "Rij eronder invoegen",
+        "addColumnBefore": "Kolom links invoegen",
+        "addColumnAfter": "Kolom rechts invoegen",
+        "deleteRow": "Rij verwijderen",
+        "deleteColumn": "Kolom verwijderen",
+        "toggleHeaderRow": "Koprij aan/uit",
+        "mergeCells": "Cellen samenvoegen",
+        "splitCell": "Cel splitsen",
+        "deleteTable": "Tabel verwijderen"
       }
     },
     "ingredientSearchPanel": {

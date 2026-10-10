@@ -1,4 +1,4 @@
-// Prose sample, every block type: .tiptap CSS is Claude-designed on request (#329, design/notes/NoteEditor.md); tables stay undesigned (notes-table-ui-not-designed).
+// Prose sample, every block type: .tiptap CSS is Claude-designed on request (#329, design/notes/NoteEditor.md); table styling since #330 (design/notes/NoteEditor.md).
 import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
 

@@ -230,27 +230,13 @@ a raw 1.25rem task-checkbox box. Same precedent as `PageHeader`'s `text-xl`.
 Needs a typography token set in Figma (and `design/tokens.json`) before these
 can be bound. → `design/notes/NoteEditor.md` (#329 section).
 
-### notes-table-ui-not-designed
+### button-no-disabled-state
 
-`Pages/Notities/Breakpoints` (`3934:32790`) draws no table anywhere — the
-only table-related node in the whole section is `EditingBar`'s own toolbar
-button with a table icon (`4067:20040`). Not designed: how a rendered table
-should look (border weight/colour, whether the header row is visually
-distinguished, cell padding, zebra striping or not, how it behaves when
-wider than the viewport on mobile), any UI to add or remove a row/column
-(TipTap ships the commands, not a control surface), whether columns should
-be user-resizable, or a cell's selection/focus treatment. #235 built the
-smallest defensible surface on top of this gap: `.tiptap table`/`td`/`th`
-rules in `app/globals.css`, entirely on existing semantic tokens (no new
-token, no raw hex/px), with the header row given `surface-secondary` as a
-background so `withHeaderRow: true` isn't visually silent (recorded as a
-deliberate one-token deviation from "minimal" in `design/notes/
-NoteEditor.md`'s table section) — and `TableKit.resizable` left at its
-`false` default, since resize handles need a design that doesn't exist.
-Row/column editing has no UI at all: only TipTap's own keyboard/ProseMirror
-behaviour (e.g. Tab in the last cell adds a row). Needs a real design pass
-for the row/column controls, and ideally a Figma frame that actually draws
-a table, before any of the current CSS should be treated as final.
+`Button` has no designed disabled look (Figma draws none, no token). #330's table
+menu marks rows that do not apply with `aria-disabled` and `opacity-40` as a
+stand-in; a disabled text/fill token (the `text-placeholder` token does not
+darken enough in dark mode, it is brighter than the enabled text) and a Button
+disabled state need a design pass. -> `design/notes/NoteEditor.md` (#330 section).
 
 ---
 
@@ -265,6 +251,8 @@ These were open questions that the shipped build now answers. The deviation and 
 **Built with an existing, already-approved pattern** — `category-delete-no-confirm-designed` and `category-name-no-validation-designed` (two-step confirm + disabled-Save gate), `category-icon-no-selected-state` (`aria-pressed` reusing Button's Selected semantics), `recipe-detail-mobile-overflow-menu-undesigned` and `nutrition-dropdown-content-undesigned` (labelless `Dropdown` bordered-panel popover), `ingredient-search-panel-empty-and-zero-result-states-unsourced`, `recipe-panel-verwijderen-hidden-on-create`.
 
 **Built as the least-surprising literal read** — `ingredient-name-annotation-only-on-row-two`, `recipe-panel-two-identical-voeg-toe-buttons`, `recipe-panel-personen-chevron-behaviour-unsourced`, `recipe-panel-desktop-layout-gap`, `recipe-ingredient-row-unit-label-always-shown`, `recipe-card-no-photo-placeholder`, `toggle-group-shared-track`, `winkelmand-send-no-subset-picker` (per-ingredient swipe covers single sends; only *multi*-select stays undesigned).
+
+**Notes tables (#330)** — `notes-table-ui-not-designed` (2026-10-10, user: Claude designs it on request; stable fixed layout, resizable columns, size picker, table menu — `design/notes/NoteEditor.md` #330 section; the generic icon reuse and the missing disabled style are recorded there and as `button-no-disabled-state`).
 
 **Notes prose (#329)** — `notes-prose-typography-not-designed` (2026-10-10, user: Claude designs it on request; H1-H3 on Tailwind's type scale, rhythm, 70ch width, task lists — `design/notes/NoteEditor.md` #329 section; the missing font tokens are the new `notes-prose-font-scale-no-tokens`).
 

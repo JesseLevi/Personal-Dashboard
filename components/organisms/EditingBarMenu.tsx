@@ -38,7 +38,7 @@ export interface EditingBarMenuProps {
   onTriggerFocus: () => void;
 }
 
-interface Placement {
+export interface Placement {
   openUp: boolean;
   alignRight: boolean;
   style: CSSProperties;
@@ -46,7 +46,7 @@ interface Placement {
 
 // Runtime geometry only (same exception as EditingBar's keyboard inset):
 // handed to Tailwind as custom properties so no colour/spacing is inline.
-function measure(trigger: HTMLElement): Placement {
+export function measure(trigger: HTMLElement): Placement {
   const rect = trigger.getBoundingClientRect();
   const openUp = rect.top > window.innerHeight / 2;
   const alignRight = rect.left > window.innerWidth / 2;

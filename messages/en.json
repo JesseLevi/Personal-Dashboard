@@ -529,7 +529,6 @@
       "blockTypeLabel": "Block type",
       "listLabel": "List",
       "blockquoteLabel": "Blockquote",
-      "tableLabel": "Insert table",
       "codeBlockLabel": "Code block",
       "codeLabel": "Inline code",
       "boldLabel": "Bold",
@@ -554,6 +553,24 @@
         "orderedList": "Numbered list",
         "taskList": "Checklist",
         "list": "List"
+      }
+    },
+    "noteTable": {
+      "insertLabel": "Insert table",
+      "sizeLabel": "Table size",
+      "size": "{rows} × {cols}",
+      "menuLabel": "Table",
+      "commands": {
+        "addRowBefore": "Insert row above",
+        "addRowAfter": "Insert row below",
+        "addColumnBefore": "Insert column left",
+        "addColumnAfter": "Insert column right",
+        "deleteRow": "Delete row",
+        "deleteColumn": "Delete column",
+        "toggleHeaderRow": "Toggle header row",
+        "mergeCells": "Merge cells",
+        "splitCell": "Split cell",
+        "deleteTable": "Delete table"
       }
     },
     "ingredientSearchPanel": {

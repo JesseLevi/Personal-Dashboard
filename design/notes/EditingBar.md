@@ -348,6 +348,32 @@ split (2/6/6/2/4) are unchanged. No Figma node exists for them.
   (light + dark), `--at-rest`/`--with-active-button` regenerated because the
   two triggers now carry text.
 
+## #330 — table size picker (Claude-designed on request)
+
+The `table` button (position 6, count and group split unchanged) no longer
+inserts a fixed 3x3: it opens `components/organisms/TableSizePicker.tsx`, a
+`Button variant="transparent" icon="Table"` trigger plus a portalled, labelless
+`Dropdown` panel (placement and dismissal shared with `EditingBarMenu` through
+`usePopoverPanel`). The panel is a `role="grid"` of 8x8 `gridcell` buttons
+(`aria-label` "3 x 4", `aria-selected` for the highlighted range) and a
+`role="status"` line with the live size. Highlight: `surface-secondary` fill +
+`stroke-primary-hover` border, focused cell `stroke-secondary-active`.
+
+- **Keyboard**: trigger opens on Enter/Space/click/ArrowDown/ArrowUp; roving
+  tabindex on the grid, arrows move (no wrap), Home/End jump to column 1/8,
+  Enter/Space insert the highlighted size, Escape/Tab close; focus returns to
+  the editor in every case. Default size 3 x 3 (what the button inserted
+  before). Header row on.
+- **Mouse / touch**: hover (mouse only) moves the highlight and focus; a click
+  or tap inserts at once. Touch has no hover, so the highlight is only a
+  preview there; no stepper variant was built.
+- **Why not a new atom**: the grid is specific to this one control; promote it
+  only if another picker needs it. Cell size `size-6` has no spacing token
+  (a raw size utility, not covered by `check:raw-spacing`).
+- Strings: `components.noteTable.insertLabel`, `sizeLabel`, `size`
+  (`{rows} x {cols}`); `editingBar.tableLabel` was removed. Table actions on
+  mobile arrive with #333 from `lib/notes/table-commands.ts`.
+
 ## Verification — what was and wasn't run
 
 `pnpm lint`/`typecheck`/`test`/`check:server-only`/`check:raw-spacing`/
