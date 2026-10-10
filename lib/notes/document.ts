@@ -114,3 +114,34 @@ export function deriveTitle(doc: TipTapDocument): string {
   if (firstLine.length <= TITLE_MAX_LENGTH) return firstLine;
   return `${firstLine.slice(0, TITLE_MAX_LENGTH - 1).trimEnd()}…`;
 }
+
+/* #340 (ADR-0023): note links ------------------------------------------- */
+
+/** The inline node type the editor uses for a link to another note (#341). */
+export const NOTE_LINK_NODE_TYPE = "noteLink";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+interface LinkAwareNode {
+  type: string;
+  attrs?: { noteId?: unknown };
+  content?: LinkAwareNode[];
+}
+
+/**
+ * Distinct target note ids of every `noteLink` node in the document, in
+ * document order. Attribute values that aren't uuids are skipped, so a
+ * malformed node never reaches the `save_note_content` RPC's uuid[] argument.
+ */
+export function extractNoteLinkIds(doc: TipTapDocument): string[] {
+  const ids = new Set<string>();
+  const walk = (node: LinkAwareNode) => {
+    if (node.type === NOTE_LINK_NODE_TYPE) {
+      const id = node.attrs?.noteId;
+      if (typeof id === "string" && UUID_RE.test(id)) ids.add(id.toLowerCase());
+    }
+    for (const child of node.content ?? []) walk(child);
+  };
+  for (const node of doc.content ?? []) walk(node as LinkAwareNode);
+  return [...ids];
+}
