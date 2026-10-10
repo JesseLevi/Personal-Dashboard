@@ -6,6 +6,11 @@
   bridge, `boundVariables` on every relevant node — never inferred from a
   resolved value (`docs/incidents.md` #204/#213).
 
+> **Superseded layout (#333).** The 20-button bar below is the Figma/#234
+> record. The shipped bar is the slim one in "#333 — slim, context-aware bar"
+> at the end of this file; the command table below is still the source for
+> icons, node ids and the original order.
+
 ## Structural trap, confirmed before anything else was measured
 
 Every one of the twenty toolbar buttons is a **detached** `FRAME` named
@@ -373,6 +378,65 @@ inserts a fixed 3x3: it opens `components/organisms/TableSizePicker.tsx`, a
 - Strings: `components.noteTable.insertLabel`, `sizeLabel`, `size`
   (`{rows} x {cols}`); `editingBar.tableLabel` was removed. Table actions on
   mobile arrive with #333 from `lib/notes/table-commands.ts`.
+
+## #333 — slim, context-aware bar (Claude-designed on request)
+
+Deliberate departure from Figma (user-requested redesign, ADR-0021 section 1;
+`docs/open-questions.md#notes-editingbar-detached-from-components`). With the
+bubble menu (#331) and slash menu (#332) the 20-button bar duplicated most of
+what is now one gesture away. Stories: `AtRest`, `WithActiveButton`,
+`OverflowOpen`, `Mobile`, `MobileInTable` (+ the two #329 menu stories).
+
+### Desktop grouping: 2 | 3 | 3 | More (nine roving stops)
+
+1. **Undo, redo.** History has no other surface and is shortcut-poor on touch.
+2. **Block type, list, table.** The structure group. Each is a menu or picker
+   whose contents no bubble/slash gesture replaces while the cursor is idle;
+   they stay one click from an empty line.
+3. **Bold, italic, link.** The three marks used constantly and the only ones
+   that make sense with a collapsed cursor (typing mode). On desktop they
+   duplicate the bubble menu on purpose: the bubble needs a selection, the
+   bar works before typing and is the discoverable list. Link keeps opening
+   the shared LinkPopover (`requestLinkPopover`).
+4. **More** (`Ellipsis`, `EditingBarOverflow`). Three separated sections:
+   *insert* (quote, code block, divider; filtered from `SLASH_ITEMS`, labels
+   from `components.slashMenu.items`), *format* (underline, strikethrough,
+   highlight, inline code, superscript, subscript) and *align* (4). Rarely used
+   on a typical note; the format rows are also in the bubble on desktop but
+   mobile has no bubble, so they must live here. Rows are `menuitemcheckbox`
+   with `aria-checked` and a trailing `Check`; divider is a plain `menuitem`.
+   The slash list is the single source for insert rows, so a new block there
+   needs no edit here (divider is the one row the old bar never had).
+
+### Mobile (`< md`, or `mobile` prop in stories)
+
+- Default: the same nine items; the bar scrolls horizontally if narrow.
+- **Cursor in a table:** the bar swaps to *Back* (`ArrowLeft`) | the ten
+  `TABLE_COMMANDS` (`lib/notes/table-commands.ts`, #330) as icon + text buttons
+  (the icons repeat: four `Plus`, two `Minus`, so text is required). Disabled
+  rows are `aria-disabled` like the desktop table menu. Toolbar label becomes
+  "Tabelwerkbalk".
+- **Way back:** Back returns to the default bar and focuses the editor; the
+  table slot then shows a *Table actions* button (replaces the size picker, no
+  nested tables) that swaps again. Leaving the table resets this, so the
+  default bar is back and the table slot is the picker again.
+- Motion/inset: unchanged `fixed bottom` bar and the #263 `useKeyboardInset`
+  lift, applied to both bar modes since it sits on the same root element.
+
+### Keyboard
+
+One toolbar, one tab stop. Left/Right/Home/End rove over `[data-toolbar-item]`
+**counted from the DOM**, so the nine-button bar, the table bar and the overflow
+trigger all work with the same handler; the stop resets to the first item when
+the mode swaps. Overflow: Enter/Space/click or ArrowUp/Down open, focus lands on
+the first row, arrows/Home/End move, Escape/Tab/outside click close and focus
+returns to the editor. Rows never join the toolbar ring.
+
+### Not verified
+
+No real iOS device: the mobile layout is exercised in Chromium with the
+`mobile` prop (forced behaviour in a `w-96` frame), the viewport branch
+(`matchMedia`) only through code reading and the existing `md:` classes.
 
 ## Verification — what was and wasn't run
 

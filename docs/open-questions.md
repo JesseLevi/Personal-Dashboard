@@ -183,6 +183,8 @@ state.
 
 `EditingBar` (desktop `3978:14138`, mobile `3978:14870`) is not built from design-system components: every toolbar button is named `Button/Default` but is a detached `FRAME`, not a `Button` instance — each carries a placeholder text layer `"Categorie "` and a stray, invisible trailing `Icon/Plus` instance left over from wherever the frame was copied from. The twenty icons inside are likewise loose frames, not `Icon/*` instances. Measured 2026-08-13 via the `figma-console` bridge while adding the twenty icons to `IconName` for #227. Nothing to fix in code — #234 (EditingBar) builds on real `Button`/`Icon` components regardless, per this repo's normal convention — but the Figma file itself should eventually be rebuilt on real instances so a future re-measurement of this toolbar isn't reading detached frames again.
 
+**Intentional deviation (#333, 2026-10-10).** The shipped bar no longer matches these frames: by user request it is slimmed to undo/redo, block type, list, table, bold, italic, link and a "More" overflow, and on mobile it swaps to table actions inside a table (`design/notes/EditingBar.md`, "#333"). The Figma frames still show the old 20-button bar; they should be redrawn from the code (or marked as superseded) when the file is next rebuilt.
+
 ### notes-category-panel-not-designed
 
 `Pages/Notities/Breakpoints` (`3934:32790`) contains only the seven overview/editor frames — no category-add/rename/delete panel of its own. #232 built the Notities category panel by reusing `/recepten`'s panel shape one-to-one (one shared `CategoryPanel` since #287) (`design/notes/CategoryPanel.md`) rather than inventing a new panel, but three sub-parts have no Figma source and were resolved by precedent, not design:

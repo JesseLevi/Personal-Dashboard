@@ -547,6 +547,10 @@
     },
     "editingBar": {
       "label": "Formatting toolbar",
+      "moreLabel": "More",
+      "backLabel": "Back to formatting",
+      "tableActionsLabel": "Table actions",
+      "tableActionsBarLabel": "Table toolbar",
       "undoLabel": "Undo",
       "redoLabel": "Redo",
       "blockTypeLabel": "Block type",

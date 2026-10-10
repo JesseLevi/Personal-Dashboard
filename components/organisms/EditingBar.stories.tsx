@@ -50,7 +50,7 @@ export const WithActiveButton = () => <EditingBarDemo activateBold />;
 // #329: menus open at first paint (a click on the trigger once mounted) so the
 // baseline shows the panel; `content` seeds the cursor block so the trigger
 // reads the current type.
-function OpenMenuDemo({ menu, content }: { menu: "blockType" | "list"; content: string }) {
+function OpenMenuDemo({ menu, content }: { menu: "blockType" | "list" | "overflow"; content: string }) {
   const editor = useEditor({
     extensions: [...noteExtensions, Placeholder.configure({ placeholder })],
     content,
@@ -65,7 +65,7 @@ function OpenMenuDemo({ menu, content }: { menu: "blockType" | "list"; content: 
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!editor) return;
-    const index = menu === "blockType" ? 2 : 3;
+    const index = { blockType: 2, list: 3, overflow: 8 }[menu];
     const timer = requestAnimationFrame(() => {
       ref.current?.querySelectorAll<HTMLButtonElement>("[data-toolbar-item]")[index]?.click();
     });
@@ -88,3 +88,35 @@ export const ListMenuOpen = () => (
     content={'<ul data-type="taskList"><li data-type="taskItem" data-checked="false"><p>Boodschappen doen</p></li></ul>'}
   />
 );
+
+// #333: the slim bar. Desktop is AtRest; the overflow opens at first paint; the
+// mobile stories force the mobile behaviour in a phone-width frame.
+export const OverflowOpen = () => (
+  <OpenMenuDemo menu="overflow" content="<p>Voorbeeldtekst in de notitie-editor.</p>" />
+);
+
+const TABLE_CONTENT =
+  "<p>Voorbeeldtekst.</p><table><tbody><tr><th><p>Product</p></th><th><p>Prijs</p></th></tr><tr><td><p>Appel</p></td><td><p>1,20</p></td></tr></tbody></table>";
+
+function MobileDemo({ content }: { content: string }) {
+  const editor = useEditor({
+    extensions: [...noteExtensions, Placeholder.configure({ placeholder })],
+    content,
+    immediatelyRender: false,
+    editorProps: {
+      attributes: { class: "text-base font-semibold text-text-primary focus:outline-none" },
+    },
+    onCreate: ({ editor: created }) => {
+      created.commands.focus("end");
+    },
+  });
+  return (
+    <div className="flex w-96 max-w-full flex-col gap-page-stack">
+      <EditingBar editor={editor} mobile />
+      <EditorContent editor={editor} />
+    </div>
+  );
+}
+
+export const Mobile = () => <MobileDemo content="<p>Voorbeeldtekst in de notitie-editor.</p>" />;
+export const MobileInTable = () => <MobileDemo content={TABLE_CONTENT} />;
