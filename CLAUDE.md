@@ -54,7 +54,7 @@ When a ticket forces a trade-off, resolve it in this order:
 - `pnpm lint` / `pnpm typecheck` / `pnpm test` — ESLint, tsc, Vitest
 - `pnpm sync:tokens` — regenerate `app/theme.css` from `design/tokens.json` (run after every token edit; CI fails on drift)
 - `pnpm ladle` — design-system workbench (`pnpm ladle:build` for a non-interactive build; `pnpm ladle build` hangs)
-- `pnpm test:visual` / `pnpm test:visual:update` — Playwright screenshot baselines; run before every component PR (CI's job is non-blocking until Linux baselines exist)
+- `pnpm test:visual` / `pnpm test:visual:update` — Playwright screenshot baselines; the CI Linux job is the blocking gate. Regenerate baselines with the `visual-update` workflow (`gh workflow run visual-update.yml --ref <branch>`); a local run is optional (`-darwin.png` is git-ignored)
 - `pnpm worker` — job queue consumer (needs `.env` with service_role)
 - `pnpm db:reset` / `pnpm test:rls` / `pnpm db:types` — Supabase (needs Docker: CI only, not this dev machine)
 - `pnpm check:rls-coverage` / `pnpm check:server-only` / `pnpm check:raw-spacing` / `pnpm check:comment-budget` / `pnpm check:retired-tokens` / `pnpm check:doc-budget` — CI gates, also runnable locally

@@ -1,6 +1,8 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { isAdmin } from "@/lib/recipes/session";
+import { getAuthenticatedUserId, isAdmin } from "@/lib/recipes/session";
+import { normalizeIngredientName } from "@/lib/recipes/import/normalize-name";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/database.types";
 
 // Read side of the admin ingredient page (#325, ADR-0020 §2/§4). User's
@@ -95,4 +97,78 @@ export async function getIngredientAdminData(): Promise<IngredientAdminData> {
   });
 
   return { aliases, eigen };
+}
+
+// ---------------------------------------------------------------------------
+// Nog te koppelen (#326, ADR-0020 §6): the admin's OWN unlinked lines.
+// ---------------------------------------------------------------------------
+
+export interface PendingGroup {
+  /** `normalizeIngredientName` of the line name; the grouping key. */
+  key: string;
+  /** Most common original spelling in the group, shown to the admin and used to create the alias. */
+  name: string;
+  count: number;
+}
+
+export interface PendingLine {
+  id: string;
+  name: string;
+}
+
+const PENDING_PAGE_SIZE = 1000;
+const PENDING_MAX_LINES = 10000;
+
+/**
+ * The caller's own lines with needs_review or no ingredient. Filters on
+ * user_id explicitly on top of RLS (ADR-0002/0003); never another user's lines.
+ */
+export async function fetchOwnPendingLines(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+): Promise<PendingLine[]> {
+  const lines: PendingLine[] = [];
+  for (let from = 0; from < PENDING_MAX_LINES; from += PENDING_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("recipe_ingredients")
+      .select("id, name")
+      .eq("user_id", userId)
+      .or("needs_review.eq.true,ingredient_id.is.null")
+      .order("id", { ascending: true })
+      .range(from, from + PENDING_PAGE_SIZE - 1);
+    if (error) {
+      console.error("[recipes] fetchOwnPendingLines failed:", error.code, error.message);
+      throw new Error("Failed to load unlinked ingredient lines");
+    }
+    lines.push(...data);
+    if (data.length < PENDING_PAGE_SIZE) break;
+  }
+  return lines;
+}
+
+export function groupPendingLines(lines: PendingLine[]): PendingGroup[] {
+  const groups = new Map<string, { spellings: Map<string, number>; count: number }>();
+  for (const line of lines) {
+    const key = normalizeIngredientName(line.name);
+    if (key === "") continue;
+    const group = groups.get(key) ?? { spellings: new Map(), count: 0 };
+    const spelling = line.name.trim();
+    group.spellings.set(spelling, (group.spellings.get(spelling) ?? 0) + 1);
+    group.count += 1;
+    groups.set(key, group);
+  }
+  return [...groups.entries()]
+    .map(([key, group]) => {
+      const [name] = [...group.spellings.entries()].sort((a, b) => b[1] - a[1])[0];
+      return { key, name, count: group.count };
+    })
+    .sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
+}
+
+export async function getPendingIngredientGroups(): Promise<PendingGroup[]> {
+  if (!(await isAdmin())) return [];
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return [];
+  const supabase = await createSupabaseServerClient();
+  return groupPendingLines(await fetchOwnPendingLines(supabase, userId));
 }
