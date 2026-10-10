@@ -543,8 +543,7 @@
       "deleteConfirmLabel": "Weet je het zeker?",
       "deleteConfirmButtonLabel": "Ja, verwijderen",
       "deletingLabel": "Verwijderen...",
-      "cancelLabel": "Annuleren",
-      "saveErrorLabel": "Opslaan mislukt. Je wijzigingen zijn niet bewaard."
+      "cancelLabel": "Annuleren"
     },
     "editingBar": {
       "label": "Opmaakwerkbalk",
@@ -721,6 +720,15 @@
         "retryLabel": "Opnieuw proberen",
         "deleteLabel": "Verwijderen"
       }
+    },
+    "noteSaveStatus": {
+      "saved": "Opgeslagen",
+      "saving": "Opslaan…",
+      "error": "Niet opgeslagen — opnieuw proberen"
+    },
+    "noteWordCount": {
+      "words": "{count, plural, one {# woord} other {# woorden}}",
+      "readingTime": "{count, plural, =0 {0 min lezen} other {# min lezen}}"
     }
   }
 }
