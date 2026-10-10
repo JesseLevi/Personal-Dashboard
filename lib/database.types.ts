@@ -787,6 +787,7 @@ export type Database = {
         Returns: boolean
       }
       ensure_user_defaults: { Args: never; Returns: undefined }
+      is_admin: { Args: never; Returns: boolean }
       match_ingredient_candidates: {
         Args: { p_limit?: number; p_names: string[] }
         Returns: {
@@ -860,6 +861,38 @@ export type Database = {
   }
   reference: {
     Tables: {
+      ingredient_aliases: {
+        Row: {
+          alias_normalized: string
+          created_at: string
+          id: string
+          ingredient_id: string
+          updated_at: string
+        }
+        Insert: {
+          alias_normalized: string
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          updated_at?: string
+        }
+        Update: {
+          alias_normalized?: string
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_aliases_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingredient_unit_masses: {
         Row: {
           grams: number

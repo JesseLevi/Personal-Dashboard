@@ -281,11 +281,11 @@ describe("deleteRecipeSchema", () => {
 });
 
 describe("createOwnIngredientSchema", () => {
-  it("accepts a self-added ingredient (referenceId null)", () => {
+  it("rejects referenceId null (#324: no self-added ingredients)", () => {
     expect(
       createOwnIngredientSchema.safeParse({ name: "Kokosmelk", referenceId: null })
         .success,
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it("accepts materialising a library pick (referenceId set)", () => {
@@ -295,7 +295,7 @@ describe("createOwnIngredientSchema", () => {
     ).toBe(true);
   });
 
-  it("rejects a missing referenceId (must be explicit null, not omitted)", () => {
+  it("rejects a missing referenceId", () => {
     expect(createOwnIngredientSchema.safeParse({ name: "Havermout" }).success).toBe(
       false,
     );
@@ -303,7 +303,7 @@ describe("createOwnIngredientSchema", () => {
 
   it("rejects an empty name", () => {
     expect(
-      createOwnIngredientSchema.safeParse({ name: "", referenceId: null }).success,
+      createOwnIngredientSchema.safeParse({ name: "", referenceId: uuid }).success,
     ).toBe(false);
   });
 });

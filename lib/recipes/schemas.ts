@@ -164,14 +164,13 @@ export const moveRecipeSchema = z.object({
   targetIndex: z.int().nonnegative(),
 });
 
-// ADR-0011 §2's "add as new ingredient" / "materialise a picked library
-// ingredient" action (lib/recipes/queries.ts header comment explains why one
-// function covers both). referenceId null = self-added, unlinked ingredient;
-// referenceId set = pick from reference.ingredients, reusing an existing
-// per-user row for that reference_id if one already exists.
+// ADR-0011 §2's "materialise a picked library ingredient" action: a pick from
+// reference.ingredients, reusing an existing per-user row for that
+// reference_id if one exists. #324 (ADR-0020 §5): no self-added rows any
+// more -- referenceId is required; a hand-typed name stays a plain name.
 export const createOwnIngredientSchema = z.object({
   name,
-  referenceId: z.uuid().nullable(),
+  referenceId: z.uuid(),
 });
 
 // #131's IngredientSearchPanel search box. searchIngredientLibrary

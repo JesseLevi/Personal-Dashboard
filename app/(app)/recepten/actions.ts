@@ -484,13 +484,10 @@ export async function moveRecipe(
 
 /**
  * Creates a `public.ingredients` row for the signed-in user (ADR-0011 §2).
- * `referenceId: null` is the ticket's explicit "search yielded nothing, add
- * as new" case; a set `referenceId` is the companion case the ADR names in
- * the same breath — "picking a library ingredient materialises (or reuses)
- * a user-owned row that links to the reference row" — reusing an existing
- * row for that reference_id instead of inserting a duplicate. One function
- * covers both, matching the ticket's own dependency note that #131 "calls
- * the search function and the create function above" (singular).
+ * "Picking a library ingredient materialises (or reuses) a user-owned row
+ * that links to the reference row" — reusing an existing row for that
+ * reference_id instead of inserting a duplicate. #324 (ADR-0020 §5):
+ * `referenceId` is required; a hand-typed name never creates a row.
  */
 export async function createOwnIngredient(
   input: unknown,

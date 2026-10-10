@@ -92,7 +92,7 @@ async function mockOnSearch(input: unknown): Promise<IngredientSearchResult[]> {
 
 let mockCreatedCount = 0;
 async function mockOnCreateOwnIngredient(input: unknown): Promise<ActionResult<IngredientRow>> {
-  const { name, referenceId } = input as { name: string; referenceId: string | null };
+  const { name, referenceId } = input as { name: string; referenceId: string };
   mockCreatedCount += 1;
   return {
     success: true,
@@ -108,8 +108,8 @@ async function mockOnCreateOwnIngredient(input: unknown): Promise<ActionResult<I
   };
 }
 
-function logSave(ingredients: IngredientRow[]) {
-  console.log("IngredientSearchPanel saved", ingredients);
+function logSave(ingredients: IngredientRow[], plainNames: string[]) {
+  console.log("IngredientSearchPanel saved", ingredients, plainNames);
 }
 
 // SidePanel is `position: fixed`, so it contributes 0 to ancestor flow
@@ -148,7 +148,7 @@ export const FilledResults = () => (
 // Zero results -- exercises the "add as new ingredient" affordance, the
 // deliberate deviation from Figma (see the component's own header comment
 // and design/notes/IngredientSearchPanel.md).
-export const ZeroResultsWithAddNew = () => (
+export const ZeroResultsWithPlainName = () => (
   <div className="min-h-screen">
     <IngredientSearchPanel
       open

@@ -70,7 +70,7 @@ are recorded above in this file.
 
 ## Ladle stories
 
-`Empty` (no search yet), `FilledResults` (mixed own+reference via `initialQuery="e"`), `ZeroResultsWithAddNew` (`initialQuery="Kaneel"`), `SomeRowsChecked` (same "e" results, Appel+Kipfilet pre-checked via `initialSelectedIds`). Mock `onSearch`/`onCreateOwnIngredient` never import the real action module, matching `CardDetailPanel.stories.tsx`'s precedent.
+`Empty` (no search yet), `FilledResults` (mixed own+reference via `initialQuery="e"`), `ZeroResultsWithPlainName` (`initialQuery="Kaneel"`), `SomeRowsChecked` (same "e" results, Appel+Kipfilet pre-checked via `initialSelectedIds`). Mock `onSearch`/`onCreateOwnIngredient` never import the real action module, matching `CardDetailPanel.stories.tsx`'s precedent.
 
 ## TICKET #205 (2026-08-12): radius/spacing tokens
 
@@ -99,3 +99,7 @@ marker directly adjacent to the flagged line. Both exceptions above
 next to their own `className` — the existing #205 paragraph covers the
 row as a whole from a few lines away — so each got its own short pointer
 comment at the actual line. No reasoning changed.
+
+## TICKET #324 (2026-10-10): "add as new" becomes "use as plain name" (ADR-0020 §5)
+
+Same row and label slot; only wording (`usePlainNameLabel`) and behaviour change. Checking it stages a `{kind: "plain"}` selection; `Opslaan` no longer calls `onCreateOwnIngredient` for it (that now only materialises library picks, `referenceId` required). `onSave(ingredients, plainNames)` fires once with both, so callers handle a mixed selection in one call (no racing writes on `WinkelmandList`). A plain name creates no `public.ingredients` row: `RecipePanel` sets the line's `name` with `ingredientId: null`; the shopping list adds the name only. Nutrition already leaves unlinked lines out of the totals (the `?` unknown value, no per-line marker exists); #324 reuses that, nothing new. Story `ZeroResultsWithPlainName` renamed `ZeroResultsWithPlainName` (baseline renamed and regenerated). Existing self-added rows are untouched.
