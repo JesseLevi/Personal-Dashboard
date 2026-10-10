@@ -777,6 +777,14 @@
         "deleteLabel": "Verwijderen"
       }
     },
+    "noteMarkdownMenu": {
+      "menuLabel": "Meer opties",
+      "copy": "Kopieer als Markdown",
+      "export": "Exporteer als .md",
+      "copied": "Gekopieerd als Markdown",
+      "copyFailed": "Kopiëren is niet gelukt",
+      "untitled": "Naamloze notitie"
+    },
     "noteSaveStatus": {
       "saved": "Opgeslagen",
       "saving": "Opslaan…",

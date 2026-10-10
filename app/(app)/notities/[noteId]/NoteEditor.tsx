@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
@@ -17,6 +17,10 @@ import { noteExtensions } from "@/lib/notes/extensions";
 import { setDetailsToggleLabels } from "@/lib/notes/details-labels";
 import { countWords, readingMinutes, typographyForLocale } from "@/lib/notes/writing-comfort";
 import { SlashMenu } from "@/components/organisms/SlashMenu";
+import { NoteMarkdownMenu } from "@/components/organisms/NoteMarkdownMenu"; // #337
+import { MarkdownPaste } from "@/lib/notes/markdown-paste"; // #337
+import { downloadMarkdown, markdownFilename } from "@/lib/notes/markdown-export"; // #337
+import { deriveTitle, type TipTapDocument } from "@/lib/notes/document"; // #337
 import { SlashCommand } from "@/lib/notes/slash-command";
 import { SLASH_ITEMS } from "@/lib/notes/slash-items";
 import type { NoteRow } from "@/lib/notes/types";
@@ -42,6 +46,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
   const tSlash = useTranslations("components.slashMenu");
   const tErrors = useTranslations("notes.errors");
   const tDetails = useTranslations("components.noteDetails");
+  const tMarkdown = useTranslations("components.noteMarkdownMenu"); // #337
   const locale = useLocale();
   // #336: the collapsible-section toggle is plain DOM; give it translated labels.
   setDetailsToggleLabels({ open: tDetails("expand"), close: tDetails("collapse") });
@@ -60,6 +65,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
       // whitelist (lib/notes/extensions.ts's own header explains the split).
       Placeholder.configure({ placeholder: t("placeholder") }),
       typographyForLocale(locale),
+      MarkdownPaste, // #337: plain-text markdown paste -> rich blocks
       CharacterCount.configure({ wordCounter: countWords }),
       // "/" block menu (#332): labels are searchable in the active language.
       SlashCommand.configure({
@@ -84,6 +90,43 @@ export function NoteEditor({ note }: NoteEditorProps) {
     editor,
     selector: ({ editor: current }) => current?.storage.characterCount.words() ?? 0,
   }) ?? 0;
+
+  // #337: client-side only. The serializer is a lazy chunk (lib/notes/markdown.ts).
+  const [markdownNotice, setMarkdownNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!markdownNotice) return;
+    const timer = setTimeout(() => setMarkdownNotice(null), 3000);
+    return () => clearTimeout(timer);
+  }, [markdownNotice]);
+
+  async function serializeNote() {
+    if (!editor) return null;
+    const { docToMarkdown } = await import("@/lib/notes/markdown");
+    return docToMarkdown(editor.getJSON());
+  }
+
+  async function handleCopyMarkdown() {
+    try {
+      const markdown = await serializeNote();
+      if (markdown === null) return;
+      await navigator.clipboard.writeText(markdown);
+      setMarkdownNotice(tMarkdown("copied"));
+    } catch {
+      setMarkdownNotice(tMarkdown("copyFailed"));
+    }
+  }
+
+  async function handleExportMarkdown() {
+    try {
+      const markdown = await serializeNote();
+      if (markdown === null || !editor) return;
+      const title = deriveTitle(editor.getJSON() as TipTapDocument);
+      downloadMarkdown(markdown, markdownFilename(title, tMarkdown("untitled")));
+    } catch {
+      setMarkdownNotice(tMarkdown("copyFailed"));
+    }
+  }
 
   function handleDelete() {
     setDeleteError(null);
@@ -119,11 +162,20 @@ export function NoteEditor({ note }: NoteEditorProps) {
             labels={{ prompt: t("deleteConfirmLabel"), cancel: t("cancelLabel"), confirm: t("deleteConfirmButtonLabel"), deleting: t("deletingLabel") }}
           />
         ) : (
-          <Button variant="destructive" icon="Trash" onClick={() => askDelete()}>
-            {t("deleteLabel")}
-          </Button>
+          <div className="flex items-center gap-inline-sm">
+            <NoteMarkdownMenu onCopy={handleCopyMarkdown} onExport={handleExportMarkdown} disabled={!editor} />
+            <Button variant="destructive" icon="Trash" onClick={() => askDelete()}>
+              {t("deleteLabel")}
+            </Button>
+          </div>
         )}
       </div>
+
+      {markdownNotice && (
+        <p role="status" className="text-sm font-semibold text-text-secondary">
+          {markdownNotice}
+        </p>
+      )}
 
       {deleteError && <p className="text-base font-semibold text-priority-urgent">{deleteError}</p>}
 
