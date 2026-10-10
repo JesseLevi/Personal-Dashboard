@@ -47,7 +47,8 @@
       "invalid-image": "This image could not be processed. Please try a different photo.",
       "rate-limited": "You have reached the limit of 20 imports per hour. Try again later.",
       "forbidden": "Only admins can do this.",
-      "duplicate": "A mapping with this name already exists."
+      "duplicate": "A mapping with this name already exists.",
+      "unit-mass-exists": "This ingredient already has a weight for this unit."
     },
     "units": {
       "gram": "Gram",
@@ -110,7 +111,10 @@
       "tabs": {
         "aliases": "Mappings",
         "own": "Own ingredients",
-        "ownShort": "Own"
+        "ownShort": "Own",
+        "aliasesShort": "Alias",
+        "pending": "To link",
+        "pendingShort": "To link"
       },
       "ownBadge": "Own",
       "aliases": {
@@ -180,7 +184,27 @@
         "savingLabel": "Saving…",
         "namesHeading": "Names"
       },
-      "countOf": "{shown} of {total}"
+      "countOf": "{shown} of {total}",
+      "pending": {
+        "searchPlaceholder": "Search an unlinked line",
+        "empty": "Everything is linked. New lines without a link show up here.",
+        "noResults": "No lines found for \"{query}\".",
+        "rowLinkLabel": "Link: {name}",
+        "count": "{count, plural, one {# name} other {# names}} to link",
+        "lines": "{count, plural, one {# line} other {# lines}} in your recipes"
+      },
+      "pendingPanel": {
+        "title": "Link \"{name}\"",
+        "lines": "{count, plural, one {# line} other {# lines}} in your recipes will be linked. The next import finds this name right away.",
+        "searchPrompt": "Search the ingredient this name belongs to.",
+        "weightHeading": "Weight per unit",
+        "weightHint": "Optional, for example 1 piece = 60 g. The import then has less to estimate.",
+        "unitLabel": "Unit",
+        "unitNone": "None",
+        "gramsLabel": "Weight (g)",
+        "linkLabel": "Link",
+        "linkingLabel": "Linking…"
+      }
     }
   },
   "shopping": {

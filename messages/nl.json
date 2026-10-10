@@ -47,7 +47,8 @@
       "invalid-image": "Deze afbeelding kon niet worden verwerkt. Probeer een andere foto.",
       "rate-limited": "Je hebt het maximum van 20 imports per uur bereikt. Probeer het later opnieuw.",
       "forbidden": "Alleen beheerders mogen dit doen.",
-      "duplicate": "Er bestaat al een koppeling met deze naam."
+      "duplicate": "Er bestaat al een koppeling met deze naam.",
+      "unit-mass-exists": "Dit ingrediënt heeft al een gewicht voor deze eenheid."
     },
     "units": {
       "gram": "Gram",
@@ -110,7 +111,10 @@
       "tabs": {
         "aliases": "Koppelingen",
         "own": "Eigen ingrediënten",
-        "ownShort": "Eigen"
+        "ownShort": "Eigen",
+        "aliasesShort": "Alias",
+        "pending": "Nog te koppelen",
+        "pendingShort": "Open"
       },
       "ownBadge": "Eigen",
       "aliases": {
@@ -180,7 +184,27 @@
         "savingLabel": "Opslaan…",
         "namesHeading": "Namen"
       },
-      "countOf": "{shown} van {total}"
+      "countOf": "{shown} van {total}",
+      "pending": {
+        "searchPlaceholder": "Zoek een regel zonder koppeling",
+        "empty": "Alles is gekoppeld. Nieuwe regels zonder koppeling verschijnen hier.",
+        "noResults": "Geen regels gevonden voor \"{query}\".",
+        "rowLinkLabel": "Koppel: {name}",
+        "count": "{count, plural, one {# naam} other {# namen}} om te koppelen",
+        "lines": "{count, plural, one {# regel} other {# regels}} in je recepten"
+      },
+      "pendingPanel": {
+        "title": "Koppel \"{name}\"",
+        "lines": "{count, plural, one {# regel} other {# regels}} in je recepten worden gekoppeld. Een volgende import vindt deze naam direct.",
+        "searchPrompt": "Zoek het ingrediënt waar deze naam bij hoort.",
+        "weightHeading": "Gewicht per eenheid",
+        "weightHint": "Optioneel, bijvoorbeeld 1 stuk = 60 g. Dan hoeft de import minder te schatten.",
+        "unitLabel": "Eenheid",
+        "unitNone": "Geen",
+        "gramsLabel": "Gewicht (g)",
+        "linkLabel": "Koppelen",
+        "linkingLabel": "Koppelen…"
+      }
     }
   },
   "shopping": {

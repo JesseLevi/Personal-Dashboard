@@ -2,7 +2,8 @@
 import { IngredientAdmin } from "./IngredientAdmin";
 import { AliasPanel } from "./AliasPanel";
 import { OwnIngredientPanel } from "./OwnIngredientPanel";
-import type { AdminAlias, AdminEigenIngredient } from "@/lib/recipes/ingredient-admin";
+import { PendingPanel } from "./PendingPanel";
+import type { AdminAlias, AdminEigenIngredient, PendingGroup } from "@/lib/recipes/ingredient-admin";
 import type { ActionResult, IngredientSearchResult, ReferenceIngredientRow } from "@/lib/recipes/types";
 
 // Dev-only mock actions: the page components never import the real "use server" module.
@@ -70,6 +71,12 @@ const eigen: AdminEigenIngredient[] = [
   },
 ];
 
+const pending: PendingGroup[] = [
+  { key: "tomaat", name: "tomaten", count: 4 },
+  { key: "verse koriander", name: "verse koriander", count: 2 },
+  { key: "gochujang", name: "Gochujang", count: 1 },
+];
+
 const handlers = {
   onSearch: mockSearch,
   onCreateAlias: ok,
@@ -78,42 +85,43 @@ const handlers = {
   onCreateEigen: ok,
   onUpdateEigen: ok,
   onDeleteEigen: ok,
+  onLinkPending: ok,
 };
 
 // min-h-screen: the panels are `position: fixed`, so without it the baseline crop collapses.
 export const Koppelingen = () => (
   <div className="min-h-screen bg-surface-primary">
-    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} {...handlers} />
+    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} pending={pending} {...handlers} />
   </div>
 );
 
 export const EigenIngredienten = () => (
   <div className="min-h-screen bg-surface-primary">
-    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialTab="own" {...handlers} />
+    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialTab="own" pending={pending} {...handlers} />
   </div>
 );
 
 export const LeegKoppelingen = () => (
   <div className="min-h-screen bg-surface-primary">
-    <IngredientAdmin title="Ingrediënten" aliases={[]} eigen={[]} {...handlers} />
+    <IngredientAdmin title="Ingrediënten" aliases={[]} eigen={[]} pending={pending} {...handlers} />
   </div>
 );
 
 export const LeegEigenIngredienten = () => (
   <div className="min-h-screen bg-surface-primary">
-    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={[]} initialTab="own" {...handlers} />
+    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={[]} initialTab="own" pending={pending} {...handlers} />
   </div>
 );
 
 export const GeenResultaten = () => (
   <div className="min-h-screen bg-surface-primary">
-    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialQuery="zzz" {...handlers} />
+    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialQuery="zzz" pending={pending} {...handlers} />
   </div>
 );
 
 export const Gefilterd = () => (
   <div className="min-h-screen bg-surface-primary">
-    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialQuery="tom" {...handlers} />
+    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialQuery="tom" pending={pending} {...handlers} />
   </div>
 );
 
@@ -140,5 +148,23 @@ export const OwnIngredientPanelEdit = () => (
 export const OwnIngredientPanelCreate = () => (
   <div className="min-h-screen bg-surface-primary">
     <OwnIngredientPanel open onClose={() => {}} target={{ mode: "create" }} onCreate={ok} onUpdate={ok} onDelete={ok} />
+  </div>
+);
+
+export const NogTeKoppelen = () => (
+  <div className="min-h-screen bg-surface-primary">
+    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialTab="pending" pending={pending} {...handlers} />
+  </div>
+);
+
+export const LeegNogTeKoppelen = () => (
+  <div className="min-h-screen bg-surface-primary">
+    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialTab="pending" pending={[]} {...handlers} />
+  </div>
+);
+
+export const PendingPanelOpen = () => (
+  <div className="min-h-screen bg-surface-primary">
+    <PendingPanel open onClose={() => {}} group={pending[0]} onSearch={mockSearch} onLink={ok} />
   </div>
 );
