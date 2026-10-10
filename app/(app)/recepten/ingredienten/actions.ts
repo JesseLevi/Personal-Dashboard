@@ -2,13 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { isAdmin } from "@/lib/recipes/session";
-import { normalizeIngredientName } from "@/lib/recipes/import/match-ingredients";
+import { isAdmin, requireUserId } from "@/lib/recipes/session";
+import { normalizeIngredientName, resolveIngredientId } from "@/lib/recipes/import/match-ingredients";
+import { fetchOwnPendingLines } from "@/lib/recipes/ingredient-admin";
 import {
   createAliasSchema,
   createEigenIngredientSchema,
   deleteAliasSchema,
   deleteEigenIngredientSchema,
+  linkPendingGroupSchema,
   updateAliasSchema,
   updateEigenIngredientSchema,
 } from "@/lib/recipes/ingredient-admin-schemas";
@@ -214,6 +216,96 @@ export async function updateEigenIngredient(input: unknown): Promise<ActionResul
   }
   revalidatePath(PAGE);
   return { success: true, data: undefined };
+}
+
+// Nog te koppelen (#326): link a group of the admin's own unlinked lines.
+// Order: optional weight, shared alias, then the admin's own lines. The alias
+// is what the next import hits; relinking only repairs lines already saved.
+// A duplicate alias stops before any line is touched (fix it under Koppelingen).
+const RELINK_CHUNK = 200;
+
+export async function linkPendingGroup(input: unknown): Promise<ActionResult<{ relinked: number }>> {
+  const supabase = await adminClient();
+  if (!supabase) return failure("forbidden");
+  const parsed = linkPendingGroupSchema.safeParse(input);
+  if (!parsed.success) return failure("invalid-input");
+  const key = normalizeIngredientName(parsed.data.name);
+  if (key === "") return failure("invalid-input");
+  const session = await requireUserId();
+  if ("error" in session) return failure("unauthenticated");
+
+  const { data: reference, error: referenceError } = await supabase
+    .schema("reference")
+    .from("ingredients")
+    .select("id, name_nl")
+    .eq("id", parsed.data.ingredientId)
+    .maybeSingle();
+  if (referenceError) {
+    console.error("[recipes] linkPendingGroup/reference failed:", referenceError.code, referenceError.message);
+    return failure("generic");
+  }
+  if (!reference) return failure("not-found");
+
+  const unitMass = parsed.data.unitMass;
+  if (unitMass) {
+    const removed = await supabase
+      .schema("reference")
+      .from("ingredient_unit_masses")
+      .delete()
+      .eq("ingredient_id", reference.id)
+      .eq("unit", unitMass.unit as RecipeUnit)
+      .eq("source", "eigen");
+    const inserted = removed.error
+      ? removed
+      : await supabase.schema("reference").from("ingredient_unit_masses").insert({
+          ingredient_id: reference.id,
+          unit: unitMass.unit as RecipeUnit,
+          grams: unitMass.grams,
+          source: "eigen",
+          source_version: todayIso(),
+        });
+    if (inserted.error) {
+      if (inserted.error.code === UNIQUE_VIOLATION) return failure("duplicate");
+      console.error("[recipes] linkPendingGroup/unit-mass failed:", inserted.error.code, inserted.error.message);
+      return failure("generic");
+    }
+  }
+
+  const alias = await supabase
+    .schema("reference")
+    .from("ingredient_aliases")
+    .insert({ alias_normalized: key, ingredient_id: reference.id });
+  if (alias.error) {
+    if (alias.error.code === UNIQUE_VIOLATION) return failure("duplicate");
+    console.error("[recipes] linkPendingGroup/alias failed:", alias.error.code, alias.error.message);
+    return failure("generic");
+  }
+
+  const ownIngredientId = await resolveIngredientId(supabase, session.userId, {
+    source: "reference",
+    referenceId: reference.id,
+    name: reference.name_nl,
+    score: 1,
+  });
+  if (!ownIngredientId) return failure("generic");
+
+  const ids = (await fetchOwnPendingLines(supabase, session.userId))
+    .filter((line) => normalizeIngredientName(line.name) === key)
+    .map((line) => line.id);
+  for (let start = 0; start < ids.length; start += RELINK_CHUNK) {
+    const { error } = await supabase
+      .from("recipe_ingredients")
+      .update({ ingredient_id: ownIngredientId, needs_review: false })
+      .eq("user_id", session.userId)
+      .in("id", ids.slice(start, start + RELINK_CHUNK));
+    if (error) {
+      console.error("[recipes] linkPendingGroup/relink failed:", error.code, error.message);
+      return failure("generic");
+    }
+  }
+  revalidatePath(PAGE);
+  revalidatePath("/recepten");
+  return { success: true, data: { relinked: ids.length } };
 }
 
 // Users' public.ingredients.reference_id goes to null (FK set null) and the

@@ -7,12 +7,13 @@ import { PageHeader } from "@/components/organisms/PageHeader";
 import { Button } from "@/components/atoms/Button";
 import { InputField } from "@/components/atoms/InputField";
 import { ButtonToggle } from "@/components/molecules/ButtonToggle";
-import type { AdminAlias, AdminEigenIngredient } from "@/lib/recipes/ingredient-admin";
+import type { AdminAlias, AdminEigenIngredient, PendingGroup } from "@/lib/recipes/ingredient-admin";
 import type { ActionResult, IngredientSearchResult } from "@/lib/recipes/types";
 import { AliasPanel, type AliasPanelTarget } from "./AliasPanel";
+import { PendingPanel } from "./PendingPanel";
 import { OwnIngredientPanel, type OwnIngredientPanelTarget } from "./OwnIngredientPanel";
 
-type Tab = "aliases" | "own";
+type Tab = "aliases" | "own" | "pending";
 
 // The full "Eigen ingrediënten" wraps in ButtonToggle below md; the short
 // label is mobile-only (#350). The label is a string, so CSS alone can't swap it.
@@ -33,6 +34,7 @@ export interface IngredientAdminProps {
   title: string;
   aliases: AdminAlias[];
   eigen: AdminEigenIngredient[];
+  pending: PendingGroup[];
   onSearch: (input: unknown) => Promise<IngredientSearchResult[]>;
   onCreateAlias: (input: unknown) => Promise<ActionResult<unknown>>;
   onUpdateAlias: (input: unknown) => Promise<ActionResult>;
@@ -40,6 +42,7 @@ export interface IngredientAdminProps {
   onCreateEigen: (input: unknown) => Promise<ActionResult<unknown>>;
   onUpdateEigen: (input: unknown) => Promise<ActionResult>;
   onDeleteEigen: (input: unknown) => Promise<ActionResult>;
+  onLinkPending: (input: unknown) => Promise<ActionResult<unknown>>;
   /** Story hook: first tab shown. */
   initialTab?: Tab;
   /** Story hook: search text on first render. */
@@ -79,6 +82,7 @@ export function IngredientAdmin({
   title,
   aliases,
   eigen,
+  pending,
   onSearch,
   onCreateAlias,
   onUpdateAlias,
@@ -86,6 +90,7 @@ export function IngredientAdmin({
   onCreateEigen,
   onUpdateEigen,
   onDeleteEigen,
+  onLinkPending,
   initialTab = "aliases",
   initialQuery = "",
 }: IngredientAdminProps) {
@@ -105,6 +110,11 @@ export function IngredientAdmin({
     target: { mode: "create" },
   });
 
+  const [pendingPanel, setPendingPanel] = useState<{ open: boolean; group: PendingGroup | null }>({
+    open: false,
+    group: null,
+  });
+
   const needle = query.trim().toLowerCase();
   const matches = (...values: (string | null)[]) =>
     needle === "" || values.some((value) => value?.toLowerCase().includes(needle));
@@ -114,16 +124,21 @@ export function IngredientAdmin({
   );
   const shownEigen = eigen.filter((item) => matches(item.nameNl, item.nameEn, item.categoryNl, item.categoryEn));
 
+  const shownPending = pending.filter((group) => matches(group.key, group.name));
+
   const localName = (nameNl: string, nameEn: string | null) => (locale === "en" && nameEn ? nameEn : nameNl);
   const isAliases = tab === "aliases";
-  const shownCount = isAliases ? shownAliases.length : shownEigen.length;
-  const totalCount = isAliases ? aliases.length : eigen.length;
+  const isPending = tab === "pending";
+  const shownCount = isAliases ? shownAliases.length : isPending ? shownPending.length : shownEigen.length;
+  const totalCount = isAliases ? aliases.length : isPending ? pending.length : eigen.length;
+  const section = isAliases ? "aliases" : isPending ? "pending" : "own";
 
   return (
     <>
       <PageHeader
         title={title}
         actions={
+          isPending ? undefined : (
           <Button
             icon="Plus"
             onClick={() =>
@@ -134,26 +149,28 @@ export function IngredientAdmin({
           >
             {isAliases ? t("aliases.addLabel") : t("own.addLabel")}
           </Button>
+          )
         }
       />
       <div className="flex w-full flex-col gap-stack-xl pr-page-right-equal pt-stack-md md:max-w-3xl">
         <ButtonToggle
           aria-label={t("tabsLabel")}
-          className="w-full md:max-w-md"
+          className="w-full"
           defaultValue={initialTab}
           onValueChange={(value) => {
             setTab(value as Tab);
             setQuery("");
           }}
           items={[
-            { value: "aliases", icon: "Link", label: t("tabs.aliases") },
+            { value: "aliases", icon: "Link", label: isDesktop ? t("tabs.aliases") : t("tabs.aliasesShort") },
             { value: "own", icon: "LeafyGreen", label: isDesktop ? t("tabs.own") : t("tabs.ownShort") },
+            { value: "pending", icon: "List", label: isDesktop ? t("tabs.pending") : t("tabs.pendingShort") },
           ]}
         />
         <InputField
           id="ingredient-admin-search"
-          aria-label={isAliases ? t("aliases.searchPlaceholder") : t("own.searchPlaceholder")}
-          placeholder={isAliases ? t("aliases.searchPlaceholder") : t("own.searchPlaceholder")}
+          aria-label={t(`${section}.searchPlaceholder`)}
+          placeholder={t(`${section}.searchPlaceholder`)}
           trailingIcon="Search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
@@ -161,25 +178,28 @@ export function IngredientAdmin({
 
         {shownCount === 0 ? (
           <p className="py-stack-xxl text-center text-base text-text-secondary">
-            {totalCount === 0
-              ? isAliases
-                ? t("aliases.empty")
-                : t("own.empty")
-              : isAliases
-                ? t("aliases.noResults", { query: query.trim() })
-                : t("own.noResults", { query: query.trim() })}
+            {totalCount === 0 ? t(`${section}.empty`) : t(`${section}.noResults`, { query: query.trim() })}
           </p>
         ) : (
           <div className="flex w-full flex-col gap-stack-sm">
             <p className="text-base text-text-secondary">
               {needle === ""
-                ? isAliases
-                  ? t("aliases.count", { count: totalCount })
-                  : t("own.count", { count: totalCount })
+                ? t(`${section}.count`, { count: totalCount })
                 : t("countOf", { shown: shownCount, total: totalCount })}
             </p>
             <div className="flex w-full flex-col">
-              {isAliases
+              {isPending
+                ? shownPending.map((group, index) => (
+                    <ListRow
+                      key={group.key}
+                      primary={group.name}
+                      secondary={t("pending.lines", { count: group.count })}
+                      editLabel={t("pending.rowLinkLabel", { name: group.name })}
+                      divider={index < shownPending.length - 1}
+                      onClick={() => setPendingPanel({ open: true, group })}
+                    />
+                  ))
+                : isAliases
                 ? shownAliases.map((alias, index) => {
                     const target = localName(alias.ingredient.nameNl, alias.ingredient.nameEn);
                     return (
@@ -225,6 +245,13 @@ export function IngredientAdmin({
         onCreateAlias={onCreateAlias}
         onUpdateAlias={onUpdateAlias}
         onDeleteAlias={onDeleteAlias}
+      />
+      <PendingPanel
+        open={pendingPanel.open}
+        onClose={() => setPendingPanel((current) => ({ ...current, open: false }))}
+        group={pendingPanel.group}
+        onSearch={onSearch}
+        onLink={onLinkPending}
       />
       <OwnIngredientPanel
         open={ownPanel.open}

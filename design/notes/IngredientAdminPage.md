@@ -32,6 +32,14 @@ Claude-designed on request (#325, redesigned #350: the first version read as a d
 
 - "Eigen ingrediënten" wraps to two lines at 375 px (each segment gets about 157 px), so mobile shows "Eigen" (user decision). Desktop drawer keeps its scrim: accepted by the user as consistent with the other panels.
 
-## Not here
+## Nog te koppelen (#326)
 
-"Nog te koppelen" (#326).
+Claude-designed on request (#326); existing pieces only, no new tokens. Code: `PendingPanel.tsx`, `linkPendingGroup` in `actions.ts`, `getPendingIngredientGroups` in `lib/recipes/ingredient-admin.ts`.
+
+- Third `ButtonToggle` segment (icon `List`). Three segments do not fit at 375 px with the long labels, so below `md:` all three are short ("Alias", "Eigen", "Open"; "To link" in en), from `md:` the full "Koppelingen", "Eigen ingrediënten", "Nog te koppelen". The toggle is `w-full` (640 px column) so the long labels stay on one line. The header "add" button is hidden on this tab: rows are the action, so there is still one primary action per view.
+- Same `ListRow`: primary = most common spelling, secondary = "N regels in je recepten". Tap opens `PendingPanel` (`SidePanel`): link target search (copy of `AliasPanel`'s single-select reference-only picker), optional "Gewicht per eenheid" (unit + grams, as in `OwnIngredientPanel`), one filled "Koppelen" footer button.
+- Data: the admin's own `recipe_ingredients` (`needs_review` or no `ingredient_id`), read with the user's RLS client plus an explicit `user_id` filter, grouped by `normalizeIngredientName` (which singularises: "tomaten" groups as "tomaat"). No SQL, no migration, no cross-user data.
+- `linkPendingGroup` order: optional `eigen` unit mass (delete + insert of that (ingredient, unit) eigen row), shared alias insert, `resolveIngredientId` (adopt the reference row as the admin's own ingredient), then update the admin's lines with that normalised name (`ingredient_id`, `needs_review = false`). A duplicate alias stops before lines change (edit it under Koppelingen). Not atomic across steps, but every step is idempotent, so a retry repairs a partial run.
+- A unique (ingredient, unit) clash with a NEVO mass row surfaces as the same `duplicate` error.
+- Lines deliberately kept as plain names (ADR-0020 §5, `ingredient_id = null`) also appear here until linked.
+- Tests: `tests/recipes-pending-groups.test.ts` (a second user's lines are present in the fake).
