@@ -71,6 +71,7 @@ function pickStore(): ObjectStore {
       put: async () => {},
       delete: async () => {},
       deletePrefix: async () => 0,
+      list: async () => [],
       presignGet: async () => "",
     };
   }
