@@ -14,6 +14,7 @@ import { LinkPopover } from "@/components/organisms/LinkPopover";
 import { NoteBubbleMenu } from "@/components/organisms/NoteBubbleMenu";
 import { TableMenu } from "@/components/organisms/TableMenu";
 import { noteExtensions } from "@/lib/notes/extensions";
+import { setDetailsToggleLabels } from "@/lib/notes/details-labels";
 import { countWords, readingMinutes, typographyForLocale } from "@/lib/notes/writing-comfort";
 import { SlashMenu } from "@/components/organisms/SlashMenu";
 import { SlashCommand } from "@/lib/notes/slash-command";
@@ -40,7 +41,10 @@ export function NoteEditor({ note }: NoteEditorProps) {
   const t = useTranslations("components.noteEditor");
   const tSlash = useTranslations("components.slashMenu");
   const tErrors = useTranslations("notes.errors");
+  const tDetails = useTranslations("components.noteDetails");
   const locale = useLocale();
+  // #336: the collapsible-section toggle is plain DOM; give it translated labels.
+  setDetailsToggleLabels({ open: tDetails("expand"), close: tDetails("collapse") });
   const router = useRouter();
 
   const { confirming: deleteConfirming, ask: askDelete, cancel: cancelDelete } = useDeleteConfirm();

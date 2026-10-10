@@ -327,3 +327,112 @@ html {
 .tiptap.resize-cursor {
   cursor: col-resize;
 }
+
+/* #336: code blocks (CodeBlockView.tsx wraps the <pre> in .code-block, which
+   carries the surface, so the inner <pre> drops its own) and syntax colours.
+   Only existing semantic text tokens are used -- there is no dedicated syntax
+   palette, see docs/open-questions.md#code-syntax-colour-tokens. */
+.tiptap .code-block {
+  background-color: var(--color-surface-secondary);
+  border-radius: var(--radius-card-inner);
+  padding: var(--spacing-component-sm) var(--spacing-component-md);
+}
+.tiptap .code-block pre {
+  background-color: transparent;
+  border-radius: 0;
+  padding: 0;
+}
+.tiptap .hljs-comment,
+.tiptap .hljs-quote,
+.tiptap .hljs-meta {
+  color: var(--color-text-secondary);
+}
+.tiptap .hljs-keyword,
+.tiptap .hljs-selector-tag,
+.tiptap .hljs-doctag,
+.tiptap .hljs-built_in,
+.tiptap .hljs-type {
+  color: var(--color-text-highlight-blue);
+}
+.tiptap .hljs-string,
+.tiptap .hljs-regexp,
+.tiptap .hljs-addition {
+  color: var(--color-text-highlight-green);
+}
+.tiptap .hljs-number,
+.tiptap .hljs-literal,
+.tiptap .hljs-symbol,
+.tiptap .hljs-bullet {
+  color: var(--color-text-highlight-yellow);
+}
+.tiptap .hljs-title,
+.tiptap .hljs-section,
+.tiptap .hljs-attr,
+.tiptap .hljs-attribute,
+.tiptap .hljs-name,
+.tiptap .hljs-selector-class,
+.tiptap .hljs-selector-id,
+.tiptap .hljs-deletion {
+  color: var(--color-text-highlight-red);
+}
+.tiptap .hljs-emphasis {
+  font-style: italic;
+}
+.tiptap .hljs-strong {
+  font-weight: 700;
+}
+
+/* #336: collapsible section. The extension's node view renders
+   div[data-type=details] > button (toggle) + div (summary + detailsContent);
+   `.is-open` is its open class and the content carries `hidden` while closed
+   (it stays in the document, so search still finds it). */
+.tiptap [data-type="details"] {
+  display: flex;
+  gap: var(--spacing-inline-sm);
+  align-items: flex-start;
+  border: 1px solid var(--color-stroke-primary);
+  border-radius: var(--radius-card-inner);
+  padding: var(--spacing-component-sm) var(--spacing-component-md);
+}
+.tiptap [data-type="details"] > button {
+  flex-shrink: 0;
+  display: grid;
+  place-content: center;
+  width: 1.5rem;
+  /* Aligns the toggle with the summary's first text line. */
+  height: 1lh;
+  border-radius: var(--radius-control-inner);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: transform 150ms, color 150ms;
+}
+.tiptap [data-type="details"] > button:hover {
+  color: var(--color-text-primary);
+}
+.tiptap [data-type="details"] > button:focus-visible {
+  outline: 2px solid var(--color-stroke-primary-selected);
+  outline-offset: 2px;
+}
+.tiptap [data-type="details"].is-open > button {
+  transform: rotate(90deg);
+}
+.tiptap [data-type="details"] > div {
+  flex: 1;
+  min-width: 0;
+}
+.tiptap [data-type="details"] summary {
+  display: block;
+  list-style: none;
+  font-weight: 700;
+}
+.tiptap [data-type="detailsContent"] {
+  padding-top: var(--spacing-stack-sm);
+}
+.tiptap [data-type="detailsContent"] > * + * {
+  margin-top: var(--spacing-stack-md);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tiptap [data-type="details"] > button {
+    transition: none;
+  }
+}

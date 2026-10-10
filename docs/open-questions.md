@@ -233,6 +233,10 @@ disabled state need a design pass. -> `design/notes/NoteEditor.md` (#330 section
 
 The slash menu (#332) wants glyphs the `Icon` set does not have: `Pilcrow`/`Type` (Text), `Heading1`/`Heading2`/`Heading3`, `ListOrdered`, `ListTodo`/`ListChecks`. Adding lucide glyphs changes the `icon--all-icons` baseline, which #332 may not regenerate, and raw SVG is not allowed. The menu reuses `TextAlignStart` (Text), `Heading` (H1-H3), `List` (all three lists), `TextQuote`, `SquareCode`, `Table`, `Minus` (Divider); the label tells the rows apart. Register the glyphs in `components/atoms/Icon.tsx`, regenerate that baseline and switch `lib/notes/slash-items.ts`. -> `design/notes/NoteEditor.md` (#332 section).
 
+### code-syntax-colour-tokens
+
+Code highlighting (#336) has no dedicated syntax palette. `app/globals.css` maps the highlight.js classes onto the only distinct text tokens that exist: `text-secondary` (comments), `text-highlight-blue` (keywords, types), `text-highlight-green` (strings), `text-highlight-yellow` (numbers, literals), `text-highlight-red` (titles, attributes, names) and `text-primary` (everything else). That is 5 hues for ~16 token classes, so function names and attributes share red, and red also means "urgent" elsewhere. The contrast of these `text-highlight-*` tokens on `surface-secondary` (the code block surface) was not measured and may be low, especially the yellow (orange-400) in light mode. Needs a design pass: dedicated `text/syntax/*` tokens (light and dark) with checked contrast. Also missing: a `Copy` glyph in `Icon` (the copy button is text-only, with the `Check` glyph while copied) and a `ChevronRight` glyph (the collapsible-section toggle is a text glyph rotated in CSS). -> `design/notes/NoteEditor.md` (#336 section).
+
 ---
 
 ## Resolved and removed

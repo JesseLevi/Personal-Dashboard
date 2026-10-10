@@ -5,7 +5,12 @@ import Superscript from "@tiptap/extension-superscript";
 import Subscript from "@tiptap/extension-subscript";
 import { TableKit } from "@tiptap/extension-table";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
-import type { AnyExtension } from "@tiptap/react";
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import { Details, DetailsContent, DetailsSummary } from "@tiptap/extension-details";
+import { ReactNodeViewRenderer, type AnyExtension } from "@tiptap/react";
+import { CodeBlockView } from "@/components/organisms/CodeBlockView";
+import { noteLowlight } from "./code-languages";
+import { detailsToggleLabel } from "./details-labels";
 import { LINK_PROTOCOLS, isAllowedLinkUri } from "./link-url";
 
 // The fixed TipTap extension whitelist Architecture §133 requires (#233):
@@ -50,6 +55,8 @@ export const noteExtensions: AnyExtension[] = [
   // #331: links are limited to http/https/mailto (lib/notes/link-url.ts is the
   // one validator); the link popover, not a click, opens/edits a link.
   StarterKit.configure({
+    // #336: replaced by CodeBlockLowlight below (same node name `codeBlock`).
+    codeBlock: false,
     heading: { levels: [1, 2, 3] },
     link: {
       autolink: true,
@@ -72,4 +79,25 @@ export const noteExtensions: AnyExtension[] = [
   Superscript,
   Subscript,
   TableKit.configure({ table: { resizable: true, cellMinWidth: TABLE_CELL_MIN_WIDTH } }),
+  // #336 (ADR-0021 s3): code blocks keep the node name `codeBlock` (and its
+  // `language` attribute), so every stored block loads unchanged. Highlighting
+  // runs on lib/notes/code-languages.ts's lazily-loaded grammars; the chrome
+  // (language selector, copy button) is components/organisms/CodeBlockView.tsx.
+  CodeBlockLowlight.extend({
+    addNodeView() {
+      return ReactNodeViewRenderer(CodeBlockView);
+    },
+  }).configure({ lowlight: noteLowlight, defaultLanguage: null }),
+  // #336: collapsible section. Node names: `details` (attr `open`, persisted),
+  // `detailsSummary` (inline text), `detailsContent` (block+).
+  Details.configure({
+    persist: true,
+    renderToggleButton: ({ element, isOpen }) => {
+      element.setAttribute("aria-label", detailsToggleLabel(isOpen));
+      element.setAttribute("aria-expanded", String(isOpen));
+      element.textContent = "▸";
+    },
+  }),
+  DetailsSummary,
+  DetailsContent,
 ];
