@@ -16,7 +16,7 @@
 -- from #130 covering runtime behaviour.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(15);
 
 insert into auth.users (id, email)
 values ('00000000-0000-0000-0000-00000000008a', 'a@test.local'),
@@ -47,7 +47,9 @@ select ok(
   'B can see the Banaan seed row too'
 );
 
--- Writes fail for both users -- grants only allow select.
+-- Non-admin authenticated: insert is refused by the with-check (42501);
+-- update/delete are filtered by the using-clause (no error, zero rows).
+-- Admin writes are covered in rls-reference-admin-writes.sql.
 set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-00000000008a", "role": "authenticated"}';
 select throws_ok(
   $$ insert into reference.ingredients (name_nl, source, source_version)
@@ -56,17 +58,13 @@ select throws_ok(
   null,
   'A cannot insert into reference.ingredients'
 );
-select throws_ok(
+select lives_ok(
   $$ update reference.ingredients set name_nl = 'hacked' where name_nl = 'Banaan' $$,
-  '42501',
-  null,
-  'A cannot update reference.ingredients'
+  'A (non-admin) update is filtered by RLS: no error, zero rows'
 );
-select throws_ok(
+select lives_ok(
   $$ delete from reference.ingredients where name_nl = 'Banaan' $$,
-  '42501',
-  null,
-  'A cannot delete from reference.ingredients'
+  'A (non-admin) delete is filtered by RLS: no error, zero rows'
 );
 
 set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-00000000008b", "role": "authenticated"}';
@@ -77,17 +75,24 @@ select throws_ok(
   null,
   'B cannot insert into reference.ingredients'
 );
-select throws_ok(
+select lives_ok(
   $$ update reference.ingredients set name_nl = 'hacked' where name_nl = 'Banaan' $$,
-  '42501',
-  null,
-  'B cannot update reference.ingredients'
+  'B (non-admin) update is filtered by RLS: no error, zero rows'
 );
-select throws_ok(
+select lives_ok(
   $$ delete from reference.ingredients where name_nl = 'Banaan' $$,
-  '42501',
-  null,
-  'B cannot delete from reference.ingredients'
+  'B (non-admin) delete is filtered by RLS: no error, zero rows'
+);
+
+select is(
+  (select count(*)::int from reference.ingredients where name_nl = 'hacked'),
+  0,
+  'non-admin update left no hacked row behind'
+);
+select is(
+  (select count(*)::int from reference.ingredients where name_nl = 'Banaan'),
+  1,
+  'non-admin delete left the Banaan row in place'
 );
 
 -- Writes fail for anon too.
