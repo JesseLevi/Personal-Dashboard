@@ -49,6 +49,7 @@
     "@tiptap/react": "^3.30.0",
     "@tiptap/starter-kit": "^3.30.0",
     "@tiptap/suggestion": "3.30.0",
+    "aws4fetch": "^1.0.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "linkedom": "^0.18.13",
