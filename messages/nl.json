@@ -45,7 +45,9 @@
       "file-too-large": "Deze afbeelding is te groot (max 10 MB).",
       "upload-failed": "De afbeelding kon niet worden geüpload. Probeer het opnieuw.",
       "invalid-image": "Deze afbeelding kon niet worden verwerkt. Probeer een andere foto.",
-      "rate-limited": "Je hebt het maximum van 20 imports per uur bereikt. Probeer het later opnieuw."
+      "rate-limited": "Je hebt het maximum van 20 imports per uur bereikt. Probeer het later opnieuw.",
+      "forbidden": "Alleen beheerders mogen dit doen.",
+      "duplicate": "Er bestaat al een koppeling met deze naam."
     },
     "units": {
       "gram": "Gram",
@@ -103,7 +105,77 @@
       }
     },
     "ingredientAdmin": {
-      "title": "Ingrediënten"
+      "title": "Ingrediënten",
+      "tabsLabel": "Onderdeel",
+      "tabs": {
+        "aliases": "Koppelingen",
+        "own": "Eigen"
+      },
+      "ownBadge": "Eigen",
+      "ownNotice": "Eigen ingrediënten staan los van de NEVO-database. NEVO-ingrediënten kun je hier niet wijzigen.",
+      "aliasesIntro": "Een koppeling vertaalt een naam uit een recept naar één vast ingrediënt, bij elke volgende import.",
+      "aliases": {
+        "searchPlaceholder": "Zoek een koppeling",
+        "addLabel": "Koppeling",
+        "empty": "Er zijn nog geen koppelingen.",
+        "noResults": "Geen koppelingen gevonden voor \"{query}\".",
+        "rowEditLabel": "Koppeling bewerken: {name}"
+      },
+      "own": {
+        "searchPlaceholder": "Zoek een eigen ingrediënt",
+        "addLabel": "Ingrediënt",
+        "empty": "Er zijn nog geen eigen ingrediënten.",
+        "noResults": "Geen eigen ingrediënten gevonden voor \"{query}\".",
+        "rowEditLabel": "Eigen ingrediënt bewerken: {name}",
+        "weightSummary": "1 {unit} = {grams} g"
+      },
+      "aliasPanel": {
+        "addTitle": "Koppeling toevoegen",
+        "editTitle": "Koppeling bewerken",
+        "nameLabel": "Naam in recept",
+        "keyPreview": "Opgeslagen als: {key}",
+        "searchLabel": "Gekoppeld ingrediënt",
+        "searchPlaceholder": "Zoek een ingrediënt",
+        "searchPrompt": "Zoek het ingrediënt waaraan deze naam gekoppeld wordt.",
+        "searching": "Zoeken…",
+        "searchError": "Zoeken lukt nu niet. Probeer het opnieuw.",
+        "noResults": "Geen ingrediënten gevonden voor \"{query}\".",
+        "selectedLabel": "Gekozen: {name}",
+        "deleteLabel": "Verwijderen",
+        "deleteConfirmLabel": "Deze koppeling verwijderen? Bij de volgende import wordt de naam weer op de gewone manier gematcht.",
+        "deleteConfirmButtonLabel": "Ja, verwijderen",
+        "deletingLabel": "Verwijderen…",
+        "cancelLabel": "Annuleren",
+        "saveLabel": "Opslaan",
+        "savingLabel": "Opslaan…"
+      },
+      "ownPanel": {
+        "addTitle": "Eigen ingrediënt toevoegen",
+        "editTitle": "Eigen ingrediënt bewerken",
+        "nameNlLabel": "Naam (Nederlands)",
+        "nameEnLabel": "Naam (Engels)",
+        "categoryNlLabel": "Categorie (Nederlands)",
+        "categoryEnLabel": "Categorie (Engels)",
+        "nutrientsLabel": "Voedingswaarden per 100 g",
+        "nutrientsHint": "Laat een veld leeg als de waarde onbekend is. Leeg telt nooit als 0.",
+        "kcalLabel": "Energie (kcal)",
+        "proteinLabel": "Eiwit (g)",
+        "carbsLabel": "Koolhydraten (g)",
+        "fatLabel": "Vet (g)",
+        "fiberLabel": "Vezels (g)",
+        "weightLabel": "Gewicht per eenheid",
+        "weightHint": "Optioneel, bijvoorbeeld 1 stuk = 60 g.",
+        "unitLabel": "Eenheid",
+        "unitNone": "Geen",
+        "gramsLabel": "Gewicht (g)",
+        "deleteLabel": "Verwijderen",
+        "deleteConfirmLabel": "Dit eigen ingrediënt verwijderen? Het wordt losgekoppeld van de ingrediënten van gebruikers en de bijbehorende koppelingen worden verwijderd.",
+        "deleteConfirmButtonLabel": "Ja, verwijderen",
+        "deletingLabel": "Verwijderen…",
+        "cancelLabel": "Annuleren",
+        "saveLabel": "Opslaan",
+        "savingLabel": "Opslaan…"
+      }
     }
   },
   "shopping": {

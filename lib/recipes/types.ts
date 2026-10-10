@@ -99,7 +99,11 @@ export type RecipesErrorCode =
   | "upload-failed"
   | "invalid-image"
   // #318: the 20-imports-per-hour limit (lib/recipes/import/rate-limit.ts).
-  | "rate-limited";
+  | "rate-limited"
+  // #325 (ADR-0020 §6): non-admin caller of an ingredient-admin action; and a
+  // shared alias key that already exists.
+  | "forbidden"
+  | "duplicate";
 
 export type ActionResult<T = undefined> =
   | { success: true; data: T }

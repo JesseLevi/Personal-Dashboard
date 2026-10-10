@@ -45,7 +45,9 @@
       "file-too-large": "This image is too large (max 10 MB).",
       "upload-failed": "The image could not be uploaded. Please try again.",
       "invalid-image": "This image could not be processed. Please try a different photo.",
-      "rate-limited": "You have reached the limit of 20 imports per hour. Try again later."
+      "rate-limited": "You have reached the limit of 20 imports per hour. Try again later.",
+      "forbidden": "Only admins can do this.",
+      "duplicate": "A mapping with this name already exists."
     },
     "units": {
       "gram": "Gram",
@@ -103,7 +105,77 @@
       }
     },
     "ingredientAdmin": {
-      "title": "Ingredients"
+      "title": "Ingredients",
+      "tabsLabel": "Section",
+      "tabs": {
+        "aliases": "Mappings",
+        "own": "Own"
+      },
+      "ownBadge": "Own",
+      "ownNotice": "Own ingredients are separate from the NEVO database. NEVO ingredients cannot be changed here.",
+      "aliasesIntro": "A mapping turns a name from a recipe into one fixed ingredient on every later import.",
+      "aliases": {
+        "searchPlaceholder": "Search a mapping",
+        "addLabel": "Mapping",
+        "empty": "There are no mappings yet.",
+        "noResults": "No mappings found for \"{query}\".",
+        "rowEditLabel": "Edit mapping: {name}"
+      },
+      "own": {
+        "searchPlaceholder": "Search an own ingredient",
+        "addLabel": "Ingredient",
+        "empty": "There are no own ingredients yet.",
+        "noResults": "No own ingredients found for \"{query}\".",
+        "rowEditLabel": "Edit own ingredient: {name}",
+        "weightSummary": "1 {unit} = {grams} g"
+      },
+      "aliasPanel": {
+        "addTitle": "Add mapping",
+        "editTitle": "Edit mapping",
+        "nameLabel": "Name in recipe",
+        "keyPreview": "Stored as: {key}",
+        "searchLabel": "Linked ingredient",
+        "searchPlaceholder": "Search an ingredient",
+        "searchPrompt": "Search the ingredient this name should map to.",
+        "searching": "Searching…",
+        "searchError": "Search is unavailable right now. Please try again.",
+        "noResults": "No ingredients found for \"{query}\".",
+        "selectedLabel": "Selected: {name}",
+        "deleteLabel": "Delete",
+        "deleteConfirmLabel": "Delete this mapping? On the next import the name is matched the regular way again.",
+        "deleteConfirmButtonLabel": "Yes, delete",
+        "deletingLabel": "Deleting…",
+        "cancelLabel": "Cancel",
+        "saveLabel": "Save",
+        "savingLabel": "Saving…"
+      },
+      "ownPanel": {
+        "addTitle": "Add own ingredient",
+        "editTitle": "Edit own ingredient",
+        "nameNlLabel": "Name (Dutch)",
+        "nameEnLabel": "Name (English)",
+        "categoryNlLabel": "Category (Dutch)",
+        "categoryEnLabel": "Category (English)",
+        "nutrientsLabel": "Nutrition per 100 g",
+        "nutrientsHint": "Leave a field empty when the value is unknown. Empty never counts as 0.",
+        "kcalLabel": "Energy (kcal)",
+        "proteinLabel": "Protein (g)",
+        "carbsLabel": "Carbohydrates (g)",
+        "fatLabel": "Fat (g)",
+        "fiberLabel": "Fibre (g)",
+        "weightLabel": "Weight per unit",
+        "weightHint": "Optional, for example 1 piece = 60 g.",
+        "unitLabel": "Unit",
+        "unitNone": "None",
+        "gramsLabel": "Weight (g)",
+        "deleteLabel": "Delete",
+        "deleteConfirmLabel": "Delete this own ingredient? It is detached from users' ingredients and its mappings are removed.",
+        "deleteConfirmButtonLabel": "Yes, delete",
+        "deletingLabel": "Deleting…",
+        "cancelLabel": "Cancel",
+        "saveLabel": "Save",
+        "savingLabel": "Saving…"
+      }
     }
   },
   "shopping": {
