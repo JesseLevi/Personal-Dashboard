@@ -23,6 +23,9 @@ importers:
       '@dnd-kit/react':
         specifier: ^0.5.0
         version: 0.5.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@lucasmarkes/hairline':
+        specifier: ^0.5.0
+        version: 0.5.0(react@19.2.7)
       '@mozilla/readability':
         specifier: ^0.6.0
         version: 0.6.0
@@ -1151,6 +1154,14 @@ packages:
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'
+
+  '@lucasmarkes/hairline@0.5.0':
+    resolution: {integrity: sha512-anXxRq2vRoBtjwt8q6CAlwcfpqVNmJIlM0HOaGpJFG6BNJVbjIoqD8m0JaFdYActPx6drUTpsaey55+ajWJ4pA==}
+    peerDependencies:
+      react: '>=18'
+    peerDependenciesMeta:
+      react:
+        optional: true
 
   '@mdx-js/mdx@3.1.1':
     resolution: {integrity: sha512-f6ZO2ifpwAQIpzGWaBQT2TXxPv6z3RBzQKpVftEWN78Vl/YweF1uwussDx8ECAXVtr3Rs89fKyG9YlzUs9DyGQ==}
@@ -5827,6 +5838,10 @@ snapshots:
       - tsx
       - typescript
       - yaml
+
+  '@lucasmarkes/hairline@0.5.0(react@19.2.7)':
+    optionalDependencies:
+      react: 19.2.7
 
   '@mdx-js/mdx@3.1.1(supports-color@7.2.0)':
     dependencies:

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { PageHeader } from "@/components/organisms/PageHeader";
+import { Basket } from "@lucasmarkes/hairline/react";
 import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import type { IconName } from "@/components/atoms/Icon";
@@ -369,12 +370,17 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
                 gap. Corrects #219's "stays raw" call, which compared this
                 wrapper against the wrong box. design/notes/WinkelmandPage.md#222. */}
             <div className="flex w-full flex-col items-center justify-center">
+              {/* Hairline figure; its six theme properties bind semantic tokens. Not in Figma: user-requested. */}
+              <Basket
+                label={t("emptyStateTitle")}
+                className="-mb-5 mt-1 w-full max-w-64 [--hairline-edge:var(--color-text-secondary)] [--hairline-hi:var(--color-text-primary)] [--hairline-lo:var(--color-stroke-primary)] [--hairline-mid:var(--color-text-placeholder)] [--hairline-plate:var(--color-surface-highlight-white)]"
+              />
               <p className="w-full py-component-lg text-center text-base font-semibold text-text-secondary">
                 {t("emptyStateTitle")}
               </p>
               <Button
                 trailingIcon="ArrowRight"
-                className="w-full md:w-fit"
+                className="mb-6 w-full md:w-fit"
                 onClick={() => router.push("/recepten")}
               >
                 {t("emptyStateCta")}

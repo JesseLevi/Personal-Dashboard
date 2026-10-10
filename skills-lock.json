@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "hairline-create": {
+      "source": "lucasmarkes/hairline",
+      "sourceType": "github",
+      "skillPath": "skills/hairline-create/SKILL.md",
+      "computedHash": "836906905802fe12e344719545b8ff4d99e3741af044454309b1f8dfe793a948"
+    },
     "supabase": {
       "source": "supabase/agent-skills",
       "sourceType": "github",
