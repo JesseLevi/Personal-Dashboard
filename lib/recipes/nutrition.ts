@@ -17,12 +17,15 @@
 // -- NULL means unknown, never 0 (ADR-0011 §4) ---------------------------
 // A `null` anywhere in a row's inputs (quantity, unitMassGrams, or any one
 // of the five nutrient columns) makes that row's contribution to that
-// nutrient `null`, and one unknown row's contribution makes the whole
-// recipe's total for that nutrient `null` -- never a silent sum of the
-// known subset presented as a total. NEVO's import (#161, ADR-0013) fills
-// kcal/protein/carbs/fat/fiber for 2328 `reference.ingredients` rows; an
-// unlinked ingredient (or a `per_100ml` row, ADR-0013 §4) still resolves to
-// EMPTY_NUTRIENTS, so its macros render "?" -- expected, not a bug.
+// nutrient `null`. Totals sum the KNOWN contributions only (user decision
+// 2026-10-07, replacing "one unknown row nulls the total"): an unknown row
+// is left out, never counted as 0, and that is never silent -- the summary
+// below reports which rows were counted, and the detail page marks the
+// rest "niet meegeteld" with a counted/total line under the macros. A total
+// with no known contribution at all stays `null` ("?"). NEVO's import
+// (#161, ADR-0013) fills kcal/protein/carbs/fat/fiber for 2328
+// `reference.ingredients` rows; an unlinked ingredient (or a `per_100ml`
+// row, ADR-0013 §4) resolves to EMPTY_NUTRIENTS and is not counted.
 //
 // -- Fibre (#166) ----------------------------------------------------------
 // `fiberGPer100g`/`fiberG` are computed the same way as the other four
@@ -126,17 +129,18 @@ export function resolveIngredientNutrition(
   };
 }
 
-// A `null` anywhere in the list makes the whole sum `null`, per the module
-// header -- never the sum of whichever rows happened to be known. An empty
-// list sums to 0 (vacuously known: no ingredient is contributing unknown
-// data), not `null`.
+// Sum of the known values; unknown ones are left out (module header). `null`
+// only when values exist but none is known. An empty list sums to 0
+// (vacuously known), not `null`.
 function sumKnown(values: readonly (number | null)[]): number | null {
   let total = 0;
+  let known = 0;
   for (const value of values) {
-    if (value === null) return null;
+    if (value === null) continue;
     total += value;
+    known += 1;
   }
-  return total;
+  return values.length > 0 && known === 0 ? null : total;
 }
 
 // Same rounding rule as units.ts's roundQuantity (2 decimals, with the
@@ -160,9 +164,9 @@ export function roundMacroForDisplay(value: number | null): number | null {
 
 /**
  * Per-person kcal/carbs/protein/fat/fiber for a whole recipe: sums every
- * ingredient row's contribution (see `sumKnown` -- one unknown row makes
- * that nutrient's total, and therefore its per-person value, unknown too),
- * then divides by `servings`. `servings` mirrors `scaleQuantity`'s own
+ * ingredient row's known contribution (see `sumKnown` -- an unknown one is
+ * left out, see `summarizeRecipeNutrition` for which), then divides by
+ * `servings`. `servings` mirrors `scaleQuantity`'s own
  * invariant (the DB's `recipes.servings > 0` check) and throws the same
  * `InvalidPortionCountError` rather than dividing by zero if it is ever
  * violated.
@@ -188,5 +192,41 @@ export function computeRecipeNutritionPerPerson(
     proteinG: totals.proteinG === null ? null : round(totals.proteinG / servings),
     fatG: totals.fatG === null ? null : round(totals.fatG / servings),
     fiberG: totals.fiberG === null ? null : round(totals.fiberG / servings),
+  };
+}
+
+/**
+ * Whether a row is in the totals: its grams and its kcal are known. A row
+ * without a quantity ("naar smaak") is `"no-amount"`: there is nothing to
+ * weigh, so it is neither counted nor reported as missing.
+ */
+export type NutritionRowStatus = "counted" | "not-counted" | "no-amount";
+
+export function nutritionRowStatus(input: RecipeIngredientNutritionInput): NutritionRowStatus {
+  if (input.quantity === null) return "no-amount";
+  return resolveIngredientNutrition(input).kcal === null ? "not-counted" : "counted";
+}
+
+export interface RecipeNutritionSummary {
+  perPerson: NutritionAmounts;
+  /** Index-aligned with the input rows. */
+  rowStatus: NutritionRowStatus[];
+  /** Rows in the totals, out of the rows that have an amount. */
+  counted: number;
+  countable: number;
+}
+
+/** Per-person totals plus which rows they are based on, for the "x van y" line and the per-row marker. */
+export function summarizeRecipeNutrition(
+  ingredients: readonly RecipeIngredientNutritionInput[],
+  servings: number,
+): RecipeNutritionSummary {
+  const perPerson = computeRecipeNutritionPerPerson(ingredients, servings);
+  const rowStatus = ingredients.map(nutritionRowStatus);
+  return {
+    perPerson,
+    rowStatus,
+    counted: rowStatus.filter((status) => status === "counted").length,
+    countable: rowStatus.filter((status) => status !== "no-amount").length,
   };
 }

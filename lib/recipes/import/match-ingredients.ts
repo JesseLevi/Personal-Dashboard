@@ -192,6 +192,9 @@ function toCandidate(row: CandidateRow): Candidate | null {
 
 export const MAX_MATCH_LINES = 200;
 const CANDIDATES_PER_LINE = 5;
+/** Per search term in the second pass, and per line after merging: what the link step chooses from. */
+export const WIDE_CANDIDATES_PER_TERM = 8;
+export const MAX_LINK_CANDIDATES = 10;
 
 /**
  * Matches every parsed name (index-aligned result). Two round trips at most:
@@ -203,6 +206,7 @@ export async function matchIngredients(
   supabase: MatcherClient,
   userId: string,
   names: string[],
+  candidatesPerName: number = CANDIDATES_PER_LINE,
 ): Promise<LineMatch[]> {
   if (names.length > MAX_MATCH_LINES) throw new Error("Too many ingredient lines to match");
   const normalized = names.map(normalizeIngredientName);
@@ -247,7 +251,7 @@ export async function matchIngredients(
 
   const { data: rows, error } = await supabase.rpc("match_ingredient_candidates", {
     p_names: pending.map((index) => normalized[index]),
-    p_limit: CANDIDATES_PER_LINE,
+    p_limit: candidatesPerName,
   });
   if (error) {
     console.error("[recipes] matchIngredients/candidates failed:", error.code, error.message);
@@ -274,6 +278,71 @@ export async function matchIngredients(
     };
   });
   return results;
+}
+
+const candidateKey = (c: Candidate) => (c.source === "own" ? `own:${c.id}` : `ref:${c.referenceId}`);
+
+/** Union of candidate lists, best score per ingredient, best first, capped. */
+export function mergeCandidates(lists: Candidate[][], max: number = MAX_LINK_CANDIDATES): Candidate[] {
+  const best = new Map<string, Candidate>();
+  for (const candidate of lists.flat()) {
+    const key = candidateKey(candidate);
+    const current = best.get(key);
+    if (!current || candidate.score > current.score) best.set(key, candidate);
+  }
+  return [...best.values()].sort((a, b) => b.score - a.score).slice(0, max);
+}
+
+/**
+ * Second pass for the lines the first pass left in review: looks each one up
+ * again under extra search terms (the LLM's Dutch NEVO-style names and, for a
+ * translated recipe, the translated name). Raw recipe names ("onion",
+ * "rode uien, gesnipperd") rarely score high against NEVO's "Ui rauw" style,
+ * so this is what puts the right reference row in the link step's list. The
+ * first term that settles (alias or confident trigram match) wins; otherwise
+ * every term's candidates are merged for the link step to choose from. One
+ * round trip pair (alias + RPC) for the whole recipe; terms beyond
+ * MAX_MATCH_LINES are dropped.
+ */
+export async function widenMatches(
+  supabase: MatcherClient,
+  userId: string,
+  matches: LineMatch[],
+  termsPerLine: string[][],
+): Promise<LineMatch[]> {
+  const lookups: Array<{ line: number; term: string }> = [];
+  matches.forEach((match, line) => {
+    if (!match.needsReview) return;
+    for (const term of termsPerLine[line] ?? []) {
+      if (lookups.length < MAX_MATCH_LINES) lookups.push({ line, term });
+    }
+  });
+  if (lookups.length === 0) return matches;
+
+  const results = await matchIngredients(
+    supabase,
+    userId,
+    lookups.map((l) => l.term),
+    WIDE_CANDIDATES_PER_TERM,
+  );
+  const widened = [...matches];
+  const settled = new Set<number>();
+  const extra = new Map<number, Candidate[][]>();
+  lookups.forEach(({ line }, n) => {
+    const result = results[n];
+    if (!result || settled.has(line)) return;
+    if (!result.needsReview) {
+      widened[line] = result;
+      settled.add(line);
+      return;
+    }
+    extra.set(line, [...(extra.get(line) ?? []), result.candidates]);
+  });
+  for (const [line, lists] of extra) {
+    if (settled.has(line)) continue;
+    widened[line] = { ...matches[line]!, candidates: mergeCandidates([matches[line]!.candidates, ...lists]) };
+  }
+  return widened;
 }
 
 /**

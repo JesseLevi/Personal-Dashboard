@@ -7,26 +7,24 @@ import {
   type ExtractedRecipe,
   type ExtractionResult,
 } from "@/lib/recipes/import/extract";
-import {
-  MAX_MATCH_LINES,
-  matchIngredients,
-  type Candidate,
-  type LineMatch,
-  type MatcherClient,
-} from "@/lib/recipes/import/match-ingredients";
+import { MAX_MATCH_LINES, type Candidate, type LineMatch } from "@/lib/recipes/import/match-ingredients";
 import type { ParsedIngredient } from "@/lib/recipes/import/parse-ingredient";
 import type { ImportErrorCode } from "@/lib/recipes/enums";
-import { UNIT_CODES, type UnitCode } from "@/lib/recipes/units";
+import { UNIT_CODES, magnitudeOf, type UnitCode } from "@/lib/recipes/units";
+import type { Locale } from "@/lib/profile/types";
 
 // LLM fill-in for the recipe import (#317, ADR-0019 §4). Deterministic steps
-// (JSON-LD, parser, pg_trgm) run first; this module only covers what they
-// leave open, in at most two calls per import:
+// (JSON-LD, parser, pg_trgm) run first; this module covers what they leave
+// open, in at most three calls per import:
 //   1. extractRecipeFromText: page without JSON-LD (kind "text"), full extraction.
-//   2. fillGaps: ONE call for low-confidence lines (re-parse), unmatched lines
-//      (choose among the matcher's candidates, EN -> NL name) and step <->
-//      ingredient references. Always runs when a key is configured and the
-//      recipe has steps and ingredients, so even a clean JSON-LD import gets
-//      its step references (user decision 2026-10-07, ADR-0019 §4).
+//   2. prepareRecipe: per line Dutch NEVO-style search terms (the matcher
+//      re-runs on them, widenMatches), re-parse of low-confidence lines, and
+//      a translation into the user's language when the recipe is in another
+//      one (user decision 2026-10-07).
+//   3. linkIngredients: choose the best-fitting candidate per unmatched line,
+//      estimate the weight of count/unknown/volume amounts ("2 stuks
+//      selderij" -> 80 g, stored per unit by the pipeline), and the step <->
+//      ingredient references.
 // The model has no tools and cannot write anything. Page text is untrusted:
 // it travels as escaped JSON inside <untrusted_page_data>, the output is
 // zod-validated with capped lengths, stripped to plain text, and every id or
@@ -49,7 +47,6 @@ export class ImportAiError extends Error {
 // ---------------------------------------------------------------- shared
 
 const MAX_STEPS = 60;
-const MAX_GAP_LINES = 60;
 const MAX_REFS_PER_STEP = 12;
 
 /** Model output is plain text: tags (and script/style bodies) and control characters go. */
@@ -112,7 +109,7 @@ export async function extractRecipeFromText(
       system: TEXT_SYSTEM,
       prompt: untrustedBlock({ title: extraction.title, text: extraction.text }),
       schema: TextRecipeSchema,
-      maxOutputTokens: 4096,
+      maxOutputTokens: 8192,
       purpose: "recipe_text_extract",
     });
   } catch (error) {
@@ -140,165 +137,119 @@ export async function extractRecipeFromText(
   return checked.data;
 }
 
-// ----------------------------------------------------- 2. gap fill call
+// ------------------------------------- 2. prepare: search terms, language
 
-export type FillInputLine = { parsed: ParsedIngredient; match: LineMatch };
+const MAX_SEARCH_TERMS = 3;
+const LANGUAGE_NAMES: Record<Locale, string> = { nl: "Dutch", en: "English" };
 
-export type FilledLine = {
-  parsed: ParsedIngredient;
-  match: LineMatch;
-  /** Final flag for recipe_ingredients.needs_review: parser unsure or no library link. */
-  needsReview: boolean;
-  /** True when the LLM or its NL name changed this line. */
-  aiAssisted: boolean;
-};
+const ReparsedSchema = z
+  .object({
+    quantity: z.number().min(0).max(100_000).nullable(),
+    unit: z.enum(UNIT_CODES as unknown as [UnitCode, ...UnitCode[]]).nullable(),
+    name: z.string().max(120),
+    note: z.string().max(200).nullable(),
+  })
+  .nullable();
 
-export type FillGapsResult = {
-  /** Index-aligned with the input lines. */
-  lines: FilledLine[];
-  /** Index-aligned with the input steps: indices into `lines` each step uses. */
-  stepIngredientRefs: number[][];
-  /** Whether the LLM call ran and its output was applied. */
-  aiUsed: boolean;
-  /** Set when gaps remained but the LLM was unavailable or failed (lines stay needs_review). */
-  degraded: ImportAiErrorCode | null;
-};
-
-export const GapSchema = z.object({
+export const PrepareSchema = z.object({
+  translated: z
+    .object({
+      title: z.string().max(200),
+      steps: z.array(z.string().max(2000)).max(MAX_STEPS),
+    })
+    .nullable(),
   lines: z
     .array(
       z.object({
         i: z.number().int().min(0).max(MAX_MATCH_LINES),
-        reparsed: z
-          .object({
-            quantity: z.number().min(0).max(100_000).nullable(),
-            unit: z.enum(UNIT_CODES as unknown as [UnitCode, ...UnitCode[]]).nullable(),
-            name: z.string().max(120),
-            note: z.string().max(200).nullable(),
-          })
-          .nullable(),
-        /** A candidate key ("c1".."c5") from this line's list, or null for none. */
-        choice: z.string().max(8).nullable(),
-        /** Dutch ingredient name when the line is in another language, else null. */
-        nameNl: z.string().max(80).nullable(),
+        reparsed: ReparsedSchema,
+        /** Name and note in the target language; null when the recipe already is in it. */
+        name: z.string().max(120).nullable(),
+        note: z.string().max(200).nullable(),
+        searchTerms: z.array(z.string().max(60)).max(MAX_SEARCH_TERMS),
       }),
     )
-    .max(MAX_GAP_LINES),
-  stepRefs: z
-    .array(
-      z.object({
-        step: z.number().int().min(0).max(MAX_STEPS),
-        ingredients: z.array(z.number().int().min(0).max(MAX_MATCH_LINES)).max(MAX_REFS_PER_STEP),
-      }),
-    )
-    .max(MAX_STEPS),
+    .max(MAX_MATCH_LINES),
 });
 
-const GAP_SYSTEM = `You help finish a recipe import. ${SYSTEM_RULES}
-For each entry in "gaps":
-- If needsParse is true, return reparsed: quantity (number or null), unit (one of the allowed unit codes or null), the ingredient name without quantity or unit, and an optional short note. Use a range's lower bound. If unsure, null.
-- If candidates is non-empty, return choice: the key of the one candidate that is the same ingredient, or null if none is clearly the same. Never answer with anything but a listed key or null.
-- If needsMatch is true, return nameNl: the plain Dutch name of the ingredient (singular, no quantity) when the line is not Dutch, else null.
-For "steps" (numbered) and "ingredients" (numbered), return stepRefs: for each step the numbers of the ingredients it uses. Reference only numbers that exist.
-Return reparsed, choice and nameNl as null when not asked.`;
+const PREPARE_SYSTEM = `You prepare an imported recipe for a Dutch food composition table (NEVO). ${SYSTEM_RULES}
+For each entry in "ingredients" return one item with its "i":
+- searchTerms: 1 to ${MAX_SEARCH_TERMS} short Dutch names of the base food as NEVO would list it, most specific first, without quantity, unit, brand or cutting words. Examples: "red onions, diced" -> ["ui rode", "rode ui", "ui"]; "extra virgin olive oil" -> ["olijfolie", "olie olijf"]; "kipfilet in reepjes" -> ["kipfilet"]; "2 teentjes knoflook" -> ["knoflook"].
+- reparsed: only if needsParse is true: quantity (number or null, a range's lower bound), unit (one of allowedUnits or null), the ingredient name without quantity or unit, and an optional short note. Otherwise null.
+- name and note: only if the recipe is NOT written in the target language: the ingredient name (without quantity or unit) and its note translated into the target language, note null when there is none. Otherwise both null.
+translated: only if the recipe is NOT written in the target language: the title and every step translated into the target language, the same number of steps in the same order, nothing added or left out. Otherwise null.`;
 
-type GapItem = z.infer<typeof GapSchema>["lines"][number];
+export type PreparedLine = { parsed: ParsedIngredient; searchTerms: string[] };
 
-const needsParse = (l: FillInputLine) => l.parsed.confidence === "low";
-const needsMatch = (l: FillInputLine) => l.match.needsReview;
-const lineNeedsReview = (parsed: ParsedIngredient, match: LineMatch) =>
-  parsed.confidence === "low" || match.needsReview;
+export type PrepareResult = {
+  /** Index-aligned with the input lines. */
+  lines: PreparedLine[];
+  /** Set when the recipe was translated into the target language. */
+  translation: { title: string; steps: string[] } | null;
+  aiUsed: boolean;
+  degraded: ImportAiErrorCode | null;
+};
 
-function unchanged(lines: FillInputLine[]): FilledLine[] {
-  return lines.map((l) => ({
-    parsed: l.parsed,
-    match: l.match,
-    needsReview: lineNeedsReview(l.parsed, l.match),
-    aiAssisted: false,
-  }));
-}
-
-function candidateKeys(match: LineMatch): Map<string, Candidate> {
-  return new Map(match.candidates.map((c, n) => [`c${n + 1}`, c]));
-}
+const needsParse = (parsed: ParsedIngredient) => parsed.confidence === "low";
 
 /**
- * One structured call over every gap the deterministic steps left, then
- * deterministic application: re-parsed fields (validated unit/quantity), the
- * chosen candidate (only if its key was offered), and a re-match on the Dutch
- * name via the normal matcher (no second LLM call). `lines` must be the real
- * ingredient lines only (no group headings): stepIngredientRefs index into it.
- *
- * Never throws for AI problems: no key or a failed call returns the input
- * unchanged with `degraded` set, so the import continues (ADR-0019 §6).
- * Throws only on a database error from the re-match.
+ * One call over every line and the steps. Never throws for AI problems: no
+ * key or a failed call returns the lines unchanged with no search terms and
+ * no translation (ADR-0019 §6).
  */
-export async function fillGaps(
-  supabase: MatcherClient,
-  userId: string,
-  lines: FillInputLine[],
-  steps: string[],
-): Promise<FillGapsResult> {
-  const base = (degraded: ImportAiErrorCode | null): FillGapsResult => ({
-    lines: unchanged(lines),
-    stepIngredientRefs: steps.map(() => []),
+export async function prepareRecipe(
+  lines: ParsedIngredient[],
+  recipe: { name: string; steps: string[] },
+  targetLanguage: Locale,
+): Promise<PrepareResult> {
+  const base = (degraded: ImportAiErrorCode | null): PrepareResult => ({
+    lines: lines.map((parsed) => ({ parsed, searchTerms: [] })),
+    translation: null,
     aiUsed: false,
     degraded,
   });
-
-  const gapIndexes = lines.flatMap((l, i) => (needsParse(l) || needsMatch(l) ? [i] : [])).slice(0, MAX_GAP_LINES);
-  const wantsStepRefs = steps.length > 0 && lines.length > 0;
-  if ((gapIndexes.length === 0 && !wantsStepRefs) || lines.length > MAX_MATCH_LINES) return base(null); // nothing for the LLM to do
+  if (lines.length === 0 && recipe.steps.length === 0) return base(null);
+  if (lines.length > MAX_MATCH_LINES) return base(null);
   if (!isAiConfigured()) return base("ai_unavailable");
 
-  const usedSteps = steps.slice(0, MAX_STEPS);
+  const usedSteps = recipe.steps.slice(0, MAX_STEPS);
   const payload = {
+    targetLanguage: LANGUAGE_NAMES[targetLanguage],
     allowedUnits: UNIT_CODES,
-    gaps: gapIndexes.map((i) => {
-      const line = lines[i]!;
-      return {
-        i,
-        raw: line.parsed.raw.slice(0, 300),
-        needsParse: needsParse(line),
-        needsMatch: needsMatch(line),
-        candidates: [...candidateKeys(line.match)].map(([key, c]) => ({ key, name: c.name.slice(0, 80) })),
-      };
-    }),
-    ingredients: lines.map((l, i) => ({ n: i, name: l.parsed.name.slice(0, 60) })),
-    steps: usedSteps.map((text, n) => ({ n, text: text.slice(0, 300) })),
+    title: recipe.name.slice(0, 200),
+    ingredients: lines.map((parsed, i) => ({
+      i,
+      raw: parsed.raw.slice(0, 300),
+      name: parsed.name.slice(0, 120),
+      needsParse: needsParse(parsed),
+    })),
+    steps: usedSteps.map((text) => text.slice(0, 2000)),
   };
 
-  let output: z.infer<typeof GapSchema>;
+  let output: z.infer<typeof PrepareSchema>;
   try {
     output = await generateObject({
-      system: GAP_SYSTEM,
+      system: PREPARE_SYSTEM,
       prompt: untrustedBlock(payload),
-      schema: GapSchema,
-      maxOutputTokens: 4096,
-      purpose: "recipe_gap_fill",
+      schema: PrepareSchema,
+      maxOutputTokens: 16384,
+      purpose: "recipe_prepare",
     });
   } catch (error) {
     if (!(error instanceof AiError)) throw error;
-    console.warn(`[recipes] fillGaps degraded: ${error.code}`);
+    console.warn(`[recipes] prepareRecipe degraded: ${error.code}`);
     return base(errorCodeFor(error));
   }
 
-  const byIndex = new Map<number, GapItem>();
+  const result = base(null);
+  result.aiUsed = true;
+  const seen = new Set<number>();
   for (const item of output.lines) {
-    if (gapIndexes.includes(item.i) && !byIndex.has(item.i)) byIndex.set(item.i, item);
-  }
+    if (item.i >= lines.length || seen.has(item.i)) continue;
+    seen.add(item.i);
+    let parsed = lines[item.i]!;
 
-  const filled = unchanged(lines);
-  const rematch = new Map<number, string>(); // line index -> name to look up again
-
-  for (const i of gapIndexes) {
-    const input = lines[i]!;
-    const item = byIndex.get(i);
-    if (!item) continue;
-    let { parsed, match } = input;
-    let assisted = false;
-
-    if (needsParse(input) && item.reparsed) {
+    if (needsParse(parsed) && item.reparsed) {
       const name = sanitizePlainText(item.reparsed.name, 120);
       if (name) {
         const quantity = item.reparsed.quantity !== null && item.reparsed.quantity > 0 ? item.reparsed.quantity : null;
@@ -312,46 +263,202 @@ export async function fillGaps(
           note: note || parsed.note,
           confidence: quantity !== null && unit !== null ? "high" : "low",
         };
-        assisted = true;
-        if (match.needsReview && name !== input.parsed.name) rematch.set(i, name);
       }
     }
 
-    if (match.needsReview) {
+    const translatedName = item.name ? sanitizePlainText(item.name, 120) : "";
+    if (translatedName) {
+      const translatedNote = item.note ? sanitizePlainText(item.note, 200) : "";
+      parsed = { ...parsed, name: translatedName, note: translatedNote || null };
+    }
+
+    const searchTerms = [...new Set(item.searchTerms.map((t) => sanitizePlainText(t, 60).toLowerCase()).filter(Boolean))];
+    result.lines[item.i] = { parsed, searchTerms };
+  }
+
+  // A translation is all or nothing: a step count that differs from what we
+  // sent would shift the step <-> ingredient references.
+  if (output.translated) {
+    const title = sanitizePlainText(output.translated.title, 200);
+    const steps = output.translated.steps.map((step) => sanitizePlainText(step, 2000));
+    if (title && steps.length === usedSteps.length && steps.every(Boolean)) {
+      result.translation = { title, steps: [...steps, ...recipe.steps.slice(MAX_STEPS)] };
+    }
+  }
+  return result;
+}
+
+// ---------------------------- 3. link: candidates, grams, step references
+
+export type FillInputLine = { parsed: ParsedIngredient; match: LineMatch };
+
+export type FilledLine = {
+  parsed: ParsedIngredient;
+  match: LineMatch;
+  /** Parser unsure or no library link. */
+  needsReview: boolean;
+  /** True when the LLM chose this line's link. */
+  aiAssisted: boolean;
+  /** LLM estimate of the whole line's weight, for count/unknown/volume amounts; null when not asked or unknown. */
+  gramsEstimate: number | null;
+};
+
+export type LinkResult = {
+  /** Index-aligned with the input lines. */
+  lines: FilledLine[];
+  /** Index-aligned with the input steps: indices into `lines` each step uses. */
+  stepIngredientRefs: number[][];
+  /** Whether the LLM call ran and its output was applied. */
+  aiUsed: boolean;
+  /** Set when the LLM was unavailable or failed (unmatched lines stay needs_review). */
+  degraded: ImportAiErrorCode | null;
+};
+
+export const LinkSchema = z.object({
+  lines: z
+    .array(
+      z.object({
+        i: z.number().int().min(0).max(MAX_MATCH_LINES),
+        /** A candidate key ("c1".."c10") from this line's list, or null for none. */
+        choice: z.string().max(8).nullable(),
+        grams: z.number().min(0).max(100_000).nullable(),
+      }),
+    )
+    .max(MAX_MATCH_LINES),
+  stepRefs: z
+    .array(
+      z.object({
+        step: z.number().int().min(0).max(MAX_STEPS),
+        ingredients: z.array(z.number().int().min(0).max(MAX_MATCH_LINES)).max(MAX_REFS_PER_STEP),
+      }),
+    )
+    .max(MAX_STEPS),
+});
+
+const LINK_SYSTEM = `You link the ingredients of a recipe to a Dutch food composition table (NEVO) so its nutrition can be calculated. ${SYSTEM_RULES}
+For each entry in "ingredients" return one item with its "i":
+- choice: only if the entry has candidates: the key of the candidate that best describes the ingredient as it goes into the dish. Prefer the plain raw product (for example "Ui rauw" for "ui") unless the line says it is cooked, canned, dried, frozen or otherwise prepared. Choose a candidate whenever it is the same kind of food, even when the wording differs; return null only when none is (for example "paprikapoeder" is not "Paprika rauw"). Never answer with anything but a listed key or null.
+- grams: only if askGrams is true: your best estimate of the total weight in grams of the stated amount (for example 1 onion -> 100, 2 stalks of celery -> 80, 2 cloves of garlic -> 10, 1 tablespoon of olive oil -> 13). Null when the line states no amount or the weight cannot be estimated, and when askGrams is false.
+For "steps" (numbered) and "ingredients" (numbered), return stepRefs: for each step the numbers of the ingredients it uses. Reference only numbers that exist.`;
+
+type LinkItem = z.infer<typeof LinkSchema>["lines"][number];
+
+const MAX_ASK_LINES = 60;
+
+const lineNeedsReview = (parsed: ParsedIngredient, match: LineMatch) =>
+  parsed.confidence === "low" || match.needsReview;
+
+/** Amounts the nutrition calculator may not resolve on its own: counts, unknown measure words, volumes. */
+export function asksGrams(parsed: ParsedIngredient): boolean {
+  if (parsed.quantity === null || parsed.quantity <= 0) return false;
+  if (parsed.unit === null) return true;
+  if (parsed.unit === "snufje" || parsed.unit === "naar_smaak") return false;
+  return magnitudeOf(parsed.unit) !== "mass";
+}
+
+const wantsChoice = (l: FillInputLine) => l.match.needsReview && l.match.candidates.length > 0;
+
+function unchanged(lines: FillInputLine[]): FilledLine[] {
+  return lines.map((l) => ({
+    parsed: l.parsed,
+    match: l.match,
+    needsReview: lineNeedsReview(l.parsed, l.match),
+    aiAssisted: false,
+    gramsEstimate: null,
+  }));
+}
+
+function candidateKeys(match: LineMatch): Map<string, Candidate> {
+  return new Map(match.candidates.map((c, n) => [`c${n + 1}`, c]));
+}
+
+/**
+ * One structured call, then deterministic application: the chosen candidate
+ * only if its key was offered for that line, a grams estimate only for lines
+ * that were asked, step references only within range. `lines` must be the
+ * real ingredient lines only (no group headings): stepIngredientRefs index
+ * into it. Never throws for AI problems (ADR-0019 §6).
+ */
+export async function linkIngredients(
+  lines: FillInputLine[],
+  steps: string[],
+): Promise<LinkResult> {
+  const base = (degraded: ImportAiErrorCode | null): LinkResult => ({
+    lines: unchanged(lines),
+    stepIngredientRefs: steps.map(() => []),
+    aiUsed: false,
+    degraded,
+  });
+
+  const askIndexes = lines
+    .flatMap((l, i) => (wantsChoice(l) || asksGrams(l.parsed) ? [i] : []))
+    .slice(0, MAX_ASK_LINES);
+  const wantsStepRefs = steps.length > 0 && lines.length > 0;
+  if ((askIndexes.length === 0 && !wantsStepRefs) || lines.length > MAX_MATCH_LINES) return base(null);
+  if (!isAiConfigured()) return base(askIndexes.some((i) => wantsChoice(lines[i]!)) ? "ai_unavailable" : null);
+
+  const asked = new Set(askIndexes);
+  const usedSteps = steps.slice(0, MAX_STEPS);
+  const payload = {
+    ingredients: lines.map((l, i) => ({
+      i,
+      raw: l.parsed.raw.slice(0, 300),
+      name: l.parsed.name.slice(0, 120),
+      quantity: l.parsed.quantity,
+      unit: l.parsed.unit,
+      ...(asked.has(i) && wantsChoice(l)
+        ? { candidates: [...candidateKeys(l.match)].map(([key, c]) => ({ key, name: c.name.slice(0, 80) })) }
+        : {}),
+      askGrams: asked.has(i) && asksGrams(l.parsed),
+    })),
+    steps: usedSteps.map((text, n) => ({ n, text: text.slice(0, 300) })),
+  };
+
+  let output: z.infer<typeof LinkSchema>;
+  try {
+    output = await generateObject({
+      system: LINK_SYSTEM,
+      prompt: untrustedBlock(payload),
+      schema: LinkSchema,
+      maxOutputTokens: 8192,
+      purpose: "recipe_link",
+    });
+  } catch (error) {
+    if (!(error instanceof AiError)) throw error;
+    console.warn(`[recipes] linkIngredients degraded: ${error.code}`);
+    return base(errorCodeFor(error));
+  }
+
+  const byIndex = new Map<number, LinkItem>();
+  for (const item of output.lines) {
+    if (asked.has(item.i) && !byIndex.has(item.i)) byIndex.set(item.i, item);
+  }
+
+  const filled = unchanged(lines);
+  for (const i of askIndexes) {
+    const input = lines[i]!;
+    const item = byIndex.get(i);
+    if (!item) continue;
+    let { match } = input;
+    let aiAssisted = false;
+
+    if (wantsChoice(input)) {
       const chosen = item.choice ? candidateKeys(match).get(item.choice) : undefined;
       if (chosen) {
         match = { ...match, chosen, ingredientId: chosen.source === "own" ? chosen.id : null, needsReview: false };
-        assisted = true;
-        rematch.delete(i);
-      } else if (item.nameNl) {
-        const nameNl = sanitizePlainText(item.nameNl, 80);
-        if (nameNl) rematch.set(i, nameNl);
+        aiAssisted = true;
       }
     }
 
-    filled[i] = { parsed, match, needsReview: lineNeedsReview(parsed, match), aiAssisted: assisted };
-  }
+    const gramsEstimate = asksGrams(input.parsed) && item.grams !== null && item.grams > 0 ? item.grams : null;
 
-  // EN -> NL (or cleaned) names go through the same deterministic matcher as
-  // every other line; the LLM never picks an id here.
-  if (rematch.size > 0) {
-    const indexes = [...rematch.keys()];
-    const results = await matchIngredients(
-      supabase,
-      userId,
-      indexes.map((i) => rematch.get(i)!),
-    );
-    indexes.forEach((lineIndex, n) => {
-      const result = results[n];
-      const current = filled[lineIndex]!;
-      if (!result || result.needsReview) return;
-      filled[lineIndex] = {
-        ...current,
-        match: result,
-        needsReview: lineNeedsReview(current.parsed, result),
-        aiAssisted: true,
-      };
-    });
+    filled[i] = {
+      parsed: input.parsed,
+      match,
+      needsReview: lineNeedsReview(input.parsed, match),
+      aiAssisted,
+      gramsEstimate,
+    };
   }
 
   const stepIngredientRefs = steps.map(() => [] as number[]);

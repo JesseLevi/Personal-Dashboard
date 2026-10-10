@@ -142,3 +142,50 @@ export const NeedsReview = () => (
     reviewLabel={nl.components.recipePanel.fields.needsReviewLabel}
   />
 );
+
+// Claude-designed on request (2026-10-07): the line under the fields names
+// what the nutrition calculator uses, so a wrong or missing NEVO link shows.
+export const LinkInfo = () => (
+  <div className="flex flex-col gap-6">
+    <RecipeIngredientRow
+      id="story-row-linked"
+      showLabels
+      itemLabel="Item"
+      quantityLabel="Aantal"
+      unitLabel="Eenheid"
+      name="Selderij"
+      namePlaceholder="Kies een ingrediënt"
+      onNameClick={() => {}}
+      quantity={2}
+      quantityPlaceholder="0"
+      onQuantityChange={() => {}}
+      unit="stuk"
+      unitPlaceholder="Kies eenheid"
+      unitOptions={UNIT_OPTIONS}
+      onUnitChange={() => {}}
+      onRemove={() => {}}
+      removeLabel="Verwijder ingrediënt"
+      linkInfo="NEVO: Selderij bleek- rauw · 17 kcal per 100 g · 1 stuk ≈ 40 g"
+    />
+    <RecipeIngredientRow
+      id="story-row-unlinked"
+      itemLabel="Item"
+      quantityLabel="Aantal"
+      unitLabel="Eenheid"
+      name="Garnalen"
+      namePlaceholder="Kies een ingrediënt"
+      onNameClick={() => {}}
+      quantity={200}
+      quantityPlaceholder="0"
+      onQuantityChange={() => {}}
+      unit="gram"
+      unitPlaceholder="Kies eenheid"
+      unitOptions={UNIT_OPTIONS}
+      onUnitChange={() => {}}
+      onRemove={() => {}}
+      removeLabel="Verwijder ingrediënt"
+      reviewLabel={nl.components.recipePanel.fields.needsReviewLabel}
+      linkInfo={nl.components.recipePanel.link.none}
+    />
+  </div>
+);

@@ -61,6 +61,30 @@ export interface BridgeUnitGrams {
   teaspoon: number | null;
 }
 
+/**
+ * Builds one ownership layer's `BridgeUnitGrams` (mass-resolution.ts) from
+ * a `unit -> grams` lookup already fetched for one ingredient — shared by
+ * queries.ts's `nutritionInputsForIngredients` batched map lookup,
+ * `resolveIngredientUnitMass`'s single-ingredient row list and the recipe
+ * import's unit-grams lookup (lib/recipes/import/unit-grams.ts). Only
+ * `milliliter`/`eetlepel`/`theelepel` are ever populated here
+ * (`tablespoon`/`teaspoon` stay `null`): this app's recipes are authored
+ * in Dutch `eetlepel`/`theelepel`, not US `tablespoon`/`teaspoon`, so
+ * fetching those two extra units for every ingredient would be dead
+ * weight — `resolveMassWithBridge` itself stays fully bidirectional for
+ * tests/future callers, this is just what the query sites
+ * choose to feed it.
+ */
+export function bridgeUnitGramsFrom(gramsForUnit: (unit: string) => number | null): BridgeUnitGrams {
+  return {
+    milliliter: gramsForUnit("milliliter"),
+    eetlepel: gramsForUnit("eetlepel"),
+    theelepel: gramsForUnit("theelepel"),
+    tablespoon: null,
+    teaspoon: null,
+  };
+}
+
 /** No bridge data fetched/available -- both bridge tiers fall straight
  * through to the next tier for every unit. */
 export const EMPTY_BRIDGE_UNIT_GRAMS: BridgeUnitGrams = {

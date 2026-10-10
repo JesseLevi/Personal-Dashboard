@@ -16,6 +16,8 @@ export interface IngredientRowState {
   groupLabel: string | null;
   /** The saved `needs_review` flag (#318): a save only clears it on a line the user changed or confirmed. */
   needsReview: boolean;
+  /** What the nutrition calculator uses for this row, shown under it in the panel. `null` when unlinked. `kcalPer100g`/`gramsPerUnit` are only known as loaded from the server (null after a fresh pick); `gramsPerUnit` is grams for one `unit` as loaded. */
+  link: { name: string; isNevo: boolean; kcalPer100g: number | null; gramsPerUnit: number | null; unit: UnitCode | "" } | null;
   /** Name/quantity/unit/link as loaded, to tell a touched row from an untouched one. `null` for a new row. */
   loaded: { name: string; quantity: number | null; unit: UnitCode | ""; ingredientId: string | null } | null;
 }

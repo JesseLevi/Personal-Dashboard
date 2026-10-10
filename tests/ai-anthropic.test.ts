@@ -7,7 +7,7 @@ vi.mock("server-only", () => ({}));
 
 import { ANTHROPIC_MODEL, createAnthropicProvider, mapAnthropicError } from "@/lib/ai/anthropic";
 import { AiError } from "@/lib/ai/types";
-import { GapSchema, TextRecipeSchema } from "@/lib/recipes/import/ai-fill";
+import { LinkSchema, PrepareSchema, TextRecipeSchema } from "@/lib/recipes/import/ai-fill";
 
 const schema = z.object({ name: z.string().max(10), n: z.number().int() });
 const request = { system: "sys", prompt: "p", schema, purpose: "unit_test" };
@@ -30,8 +30,11 @@ describe("createAnthropicProvider", () => {
     const { create, provider } = providerReturning({ content: [{ type: "text", text: '{"name":"ui","n":2}' }] });
     await expect(provider.generateObject(request)).resolves.toEqual({ name: "ui", n: 2 });
     const params = create.mock.calls[0]![0];
-    expect(params.model).toBe(ANTHROPIC_MODEL);
+    expect(params.model).toBe("claude-haiku-5-5");
     expect(params.tools).toBeUndefined();
+    // Haiku 5.5 answers a non-default sampling parameter with a 400.
+    for (const key of ["temperature", "top_p", "top_k"]) expect(params).not.toHaveProperty(key);
+    expect(params.output_config.effort).toBe("low");
     expect(params.output_config.format.type).toBe("json_schema");
     expect(JSON.parse(info.mock.calls[0]![0] as string)).toEqual({
       event: "ai_usage",
@@ -91,7 +94,7 @@ describe("mapAnthropicError", () => {
 
 describe("import schemas", () => {
   it("convert to a structured-output JSON schema", () => {
-    for (const s of [GapSchema, TextRecipeSchema]) {
+    for (const s of [PrepareSchema, LinkSchema, TextRecipeSchema]) {
       expect(zodOutputFormat(s).type).toBe("json_schema");
     }
   });
