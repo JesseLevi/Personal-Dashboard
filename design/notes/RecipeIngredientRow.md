@@ -60,3 +60,8 @@ Fixed by keeping the spacer (it correctly consumes row 1's label block) and givi
 ## "controleren" marker (Claude-designed on request, #318)
 
 Optional `reviewLabel`: a `Tag variant="highlight"` button above the row that opens the same ingredient picker as the name field (the picker then calls `confirmIngredientMatch`). The root became a flex column so the marker sits above the field row; without the marker the layout is unchanged (all existing baselines keep their size). Story `NeedsReview`.
+
+
+## Link line (Claude-designed on request, 2026-10-07)
+
+Optional `linkInfo`: one `text-base font-normal text-text-secondary` line under the fields saying what the nutrition calculator uses for the row: "NEVO: <NEVO name> · <kcal> kcal per 100 g · 1 <unit> ≈ <g> g", "Eigen ingrediënt: …", or "Niet gekoppeld, telt niet mee in de voedingswaarden". Built in RecipePanel from `linkedIngredientName`/nutrients/unit mass; after a fresh pick only the name is known until saved. Re-linking keeps a name of the user's own ("Selderij") and only renames a row whose name mirrored the old link. Story `LinkInfo`.

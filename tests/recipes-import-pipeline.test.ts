@@ -9,12 +9,15 @@ vi.mock("@/lib/recipes/import/match-ingredients", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/recipes/import/match-ingredients")>()),
   matchIngredients: vi.fn(),
   resolveIngredientId: vi.fn(),
+  widenMatches: vi.fn(),
 }));
+vi.mock("@/lib/recipes/import/unit-grams", () => ({ loadUnitGrams: vi.fn() }));
 
 import { AiError, setProviderForTests, type AiProvider } from "@/lib/ai";
 import { SafeFetchError, type SafeFetchResult } from "@/lib/net/safe-fetch";
 import { replaceRecipeContents, type IngredientLine, type StepLine } from "@/lib/recipes/contents";
-import { matchIngredients, resolveIngredientId, type LineMatch } from "@/lib/recipes/import/match-ingredients";
+import { matchIngredients, resolveIngredientId, widenMatches, type LineMatch } from "@/lib/recipes/import/match-ingredients";
+import { loadUnitGrams } from "@/lib/recipes/import/unit-grams";
 import { runRecipeImport, toImportErrorCode } from "@/lib/recipes/import/pipeline";
 import { storeRecipeThumbnail } from "@/lib/recipes/thumbnails";
 import { IMPORT_ERROR_CODES } from "@/lib/recipes/enums";
@@ -23,7 +26,7 @@ import type { UnitCode } from "@/lib/recipes/units";
 import type { MatcherClient } from "@/lib/recipes/import/match-ingredients";
 
 const URL_ = "https://example.com/recept";
-const JOB = { userId: "u1", recipeId: "r1", url: URL_ };
+const JOB = { userId: "u1", recipeId: "r1", url: URL_, locale: "nl" as const };
 
 function page(jsonLd: object | null, body = "<p>x</p>"): string {
   const ld = jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>` : "";
@@ -54,6 +57,7 @@ function fetcher(html: string, image: { contentType: string } | "fail" = { conte
 
 function fakeSupabase() {
   const updates: Array<Record<string, unknown>> = [];
+  const unitWeights: Array<{ rows: unknown; options: unknown }> = [];
   const supabase = {
     from: vi.fn(() => ({
       update: (patch: Record<string, unknown>) => {
@@ -61,9 +65,13 @@ function fakeSupabase() {
         const chain = { eq: () => chain, then: (resolve: (v: unknown) => void) => resolve({ error: null }) };
         return chain;
       },
+      upsert: (rows: unknown, options: unknown) => {
+        unitWeights.push({ rows, options });
+        return Promise.resolve({ error: null });
+      },
     })),
   } as unknown as MatcherClient;
-  return { supabase, updates };
+  return { supabase, updates, unitWeights };
 }
 
 const review = (): LineMatch => ({ ingredientId: null, chosen: null, needsReview: true, candidates: [] });
@@ -73,6 +81,21 @@ const own = (id: string): LineMatch => ({
   needsReview: false,
   candidates: [],
 });
+
+type Answers = { prepare?: unknown; link?: unknown; text?: unknown };
+
+/** Fake provider answering per call purpose; an unset answer is an empty, valid one. */
+function aiAnswers(answers: Answers) {
+  const provider: AiProvider = {
+    generateObject: vi.fn(async (req: { purpose?: string }) => {
+      if (req.purpose === "recipe_text_extract") return answers.text;
+      if (req.purpose === "recipe_prepare") return answers.prepare ?? { lines: [], translated: null };
+      return answers.link ?? { lines: [], stepRefs: [] };
+    }) as AiProvider["generateObject"],
+  };
+  setProviderForTests(provider);
+  return provider;
+}
 
 function contentsCall() {
   const call = vi.mocked(replaceRecipeContents).mock.calls[0]!;
@@ -89,6 +112,10 @@ beforeEach(() => {
   vi.mocked(resolveIngredientId).mockImplementation(async (_s, _u, chosen) =>
     chosen.source === "own" ? chosen.id : "own-from-ref",
   );
+  vi.mocked(widenMatches).mockReset();
+  vi.mocked(widenMatches).mockImplementation(async (_s, _u, matches) => matches);
+  vi.mocked(loadUnitGrams).mockReset();
+  vi.mocked(loadUnitGrams).mockResolvedValue(() => null);
   vi.spyOn(console, "warn").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -165,16 +192,141 @@ describe("runRecipeImport: JSON-LD page", () => {
     expect(contentsCall().ingredients[0]).toMatchObject({ ingredientId: "own-from-ref", needsReview: false });
   });
 
-  it("always asks the LLM for step references when a key is configured, and saves them", async () => {
+  it("with a key: one prepare call and one link call, step references saved", async () => {
     vi.mocked(matchIngredients).mockResolvedValue([own("a"), own("b"), own("c"), own("d")]);
-    const provider: AiProvider = {
-      generateObject: vi.fn(async () => ({ lines: [], stepRefs: [{ step: 0, ingredients: [0] }, { step: 1, ingredients: [2, 99] }] })) as AiProvider["generateObject"],
-    };
-    setProviderForTests(provider);
+    const provider = aiAnswers({ link: { lines: [], stepRefs: [{ step: 0, ingredients: [0] }, { step: 1, ingredients: [2, 99] }] } });
     const { supabase } = fakeSupabase();
     await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(page(recipeLd())) });
-    expect(provider.generateObject).toHaveBeenCalledTimes(1);
+    expect(provider.generateObject).toHaveBeenCalledTimes(2);
     expect(contentsCall().steps.map((s) => s.ingredientRefs)).toEqual([[0], [2]]);
+  });
+
+  it("searches unmatched lines again under the LLM's Dutch search terms", async () => {
+    vi.mocked(matchIngredients).mockResolvedValue([own("a"), review(), own("c"), own("d")]);
+    aiAnswers({ prepare: { lines: [{ i: 1, reparsed: null, name: null, note: null, searchTerms: ["knoflook"] }], translated: null } });
+    const { supabase } = fakeSupabase();
+    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(page(recipeLd())) });
+    const terms = vi.mocked(widenMatches).mock.calls[0]![3];
+    expect(terms[1]).toEqual(["knoflook"]);
+  });
+
+  it("the link step's choice links an unmatched line (e.g. 'ui' -> NEVO 'Ui rauw')", async () => {
+    const ui: LineMatch = {
+      ingredientId: null,
+      chosen: null,
+      needsReview: true,
+      candidates: [{ source: "reference", referenceId: "ref-ui-rauw", name: "Ui rauw", score: 0.38 }],
+    };
+    vi.mocked(matchIngredients).mockResolvedValue([ui]);
+    aiAnswers({ link: { lines: [{ i: 0, choice: "c1", grams: null, amount: null }], stepRefs: [] } });
+    const { supabase } = fakeSupabase();
+    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(page(recipeLd({ recipeIngredient: ["200 g ui"] }))) });
+    expect(contentsCall().ingredients[0]).toMatchObject({ name: "ui", quantity: 200, unit: "gram", ingredientId: "own-from-ref", needsReview: false });
+  });
+});
+
+describe("runRecipeImport: the recipe keeps its amounts, the calculator gets a weight per unit", () => {
+  const ld = (lines: string[]) => page(recipeLd({ recipeIngredient: lines }));
+
+  it("'2 stuks selderij' stays as written and its estimated weight per piece is stored for the ingredient", async () => {
+    vi.mocked(matchIngredients).mockResolvedValue([own("selderij")]);
+    aiAnswers({ link: { lines: [{ i: 0, choice: null, grams: 80 }], stepRefs: [] } });
+    const { supabase, unitWeights } = fakeSupabase();
+    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(ld(["2 stuks selderij"])) });
+    expect(contentsCall().ingredients[0]).toMatchObject({ name: "selderij", quantity: 2, unit: "stuk", ingredientId: "selderij", needsReview: false });
+    expect(unitWeights).toEqual([
+      {
+        rows: [{ user_id: "u1", ingredient_id: "selderij", unit: "stuk", grams: 40 }],
+        options: { onConflict: "user_id,ingredient_id,unit", ignoreDuplicates: true },
+      },
+    ]);
+  });
+
+  it("a weight NEVO (or the user) already has wins: nothing is stored", async () => {
+    vi.mocked(matchIngredients).mockResolvedValue([own("ui")]);
+    vi.mocked(loadUnitGrams).mockResolvedValue((_id, unit) => (unit === "stuk" ? 100 : null));
+    aiAnswers({ link: { lines: [{ i: 0, choice: null, grams: 150 }], stepRefs: [] } });
+    const { supabase, unitWeights } = fakeSupabase();
+    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(ld(["1 ui"])) });
+    expect(contentsCall().ingredients[0]).toMatchObject({ name: "ui", quantity: 1, unit: "stuk", needsReview: false });
+    expect(unitWeights).toEqual([]);
+  });
+
+  it("an unmapped measure word has no unit to weigh, so that line is saved in grams", async () => {
+    vi.mocked(matchIngredients).mockResolvedValue([own("knoflook")]);
+    aiAnswers({ link: { lines: [{ i: 0, choice: null, grams: 5 }], stepRefs: [] } });
+    const { supabase, unitWeights } = fakeSupabase();
+    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(ld(["1 teentje knoflook"])) });
+    expect(contentsCall().ingredients[0]).toMatchObject({ name: "knoflook (teentje)", quantity: 5, unit: "gram", needsReview: false });
+    expect(unitWeights).toEqual([]);
+  });
+
+  it("a spoon without a known mass keeps '2 el' and stores the weight per spoon", async () => {
+    vi.mocked(matchIngredients).mockResolvedValue([own("olie"), own("pesto")]);
+    vi.mocked(loadUnitGrams).mockResolvedValue((id, unit) => (id === "olie" && unit === "eetlepel" ? 13 : null));
+    aiAnswers({ link: { lines: [{ i: 0, choice: null, grams: 14 }, { i: 1, choice: null, grams: 30 }], stepRefs: [] } });
+    const { supabase, unitWeights } = fakeSupabase();
+    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(ld(["1 el olijfolie", "2 el pesto"])) });
+    const [oil, pesto] = contentsCall().ingredients;
+    expect(oil).toMatchObject({ name: "olijfolie", quantity: 1, unit: "eetlepel" });
+    expect(pesto).toMatchObject({ name: "pesto", quantity: 2, unit: "eetlepel" });
+    expect(unitWeights[0]!.rows).toEqual([{ user_id: "u1", ingredient_id: "pesto", unit: "eetlepel", grams: 15 }]);
+  });
+
+  it("the same ingredient and unit twice in one recipe is stored once", async () => {
+    vi.mocked(matchIngredients).mockResolvedValue([own("ui"), own("ui")]);
+    aiAnswers({ link: { lines: [{ i: 0, choice: null, grams: 100 }, { i: 1, choice: null, grams: 220 }], stepRefs: [] } });
+    const { supabase, unitWeights } = fakeSupabase();
+    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(ld(["1 ui", "2 uien"])) });
+    expect(unitWeights[0]!.rows).toHaveLength(1);
+  });
+
+  it("an unlinked line keeps its amount, stays in review and stores nothing", async () => {
+    vi.mocked(matchIngredients).mockResolvedValue([review()]);
+    aiAnswers({ link: { lines: [{ i: 0, choice: null, grams: 100 }], stepRefs: [] } });
+    const { supabase, unitWeights } = fakeSupabase();
+    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(ld(["1 ui"])) });
+    expect(contentsCall().ingredients[0]).toMatchObject({ name: "ui", quantity: 1, unit: "stuk", ingredientId: null, needsReview: true });
+    expect(unitWeights).toEqual([]);
+  });
+});
+
+describe("runRecipeImport: translation into the user's language", () => {
+  const englishLd = recipeLd({
+    name: "Onion soup",
+    recipeIngredient: ["2 onions"],
+    recipeInstructions: [{ "@type": "HowToStep", text: "Chop the onions." }, { "@type": "HowToStep", text: "Fry them." }],
+  });
+
+  it("saves the translated title, ingredient names and steps", async () => {
+    vi.mocked(matchIngredients).mockResolvedValue([own("ui")]);
+    aiAnswers({
+      prepare: {
+        lines: [{ i: 0, reparsed: null, name: "uien", note: null, searchTerms: ["ui"] }],
+        translated: { title: "Uiensoep", steps: ["Snipper de uien.", "Bak ze."] },
+      },
+    });
+    const { supabase, updates } = fakeSupabase();
+    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(page(englishLd)) });
+    expect(contentsCall().ingredients[0]).toMatchObject({ name: "uien", quantity: 2, unit: "stuk" });
+    expect(contentsCall().steps.map((s) => s.instruction)).toEqual(["Snipper de uien.", "Bak ze."]);
+    expect(updates[0]).toMatchObject({ title: "Uiensoep", import_status: "done" });
+  });
+
+  it("the translated name is also a search term", async () => {
+    vi.mocked(matchIngredients).mockResolvedValue([review()]);
+    aiAnswers({ prepare: { lines: [{ i: 0, reparsed: null, name: "uien", note: null, searchTerms: ["ui"] }], translated: null } });
+    const { supabase } = fakeSupabase();
+    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(page(englishLd)) });
+    expect(vi.mocked(widenMatches).mock.calls[0]![3]).toEqual([["uien", "ui"]]);
+  });
+
+  it("without a key the recipe is saved in its own language", async () => {
+    vi.mocked(matchIngredients).mockResolvedValue([own("ui")]);
+    const { supabase, updates } = fakeSupabase();
+    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(page(englishLd)) });
+    expect(contentsCall().steps.map((s) => s.instruction)).toEqual(["Chop the onions.", "Fry them."]);
+    expect(updates[0]).toMatchObject({ title: "Onion soup" });
   });
 
   it("without an API key the import still completes, with empty step references", async () => {
@@ -207,14 +359,10 @@ describe("runRecipeImport: text page", () => {
 
   it("extracts through the LLM, then parses and saves", async () => {
     vi.mocked(matchIngredients).mockResolvedValue([own("meel")]);
-    const provider: AiProvider = {
-      generateObject: vi.fn(async (req: { purpose?: string }) =>
-        req.purpose === "recipe_text_extract"
-          ? { isRecipe: true, name: "Pannenkoeken", description: null, recipeIngredient: ["250 g bloem"], steps: ["Meng."], timeMinutes: 20, servings: 4 }
-          : { lines: [], stepRefs: [{ step: 0, ingredients: [0] }] },
-      ) as AiProvider["generateObject"],
-    };
-    setProviderForTests(provider);
+    aiAnswers({
+      text: { isRecipe: true, name: "Pannenkoeken", description: null, recipeIngredient: ["250 g bloem"], steps: ["Meng."], timeMinutes: 20, servings: 4 },
+      link: { lines: [], stepRefs: [{ step: 0, ingredients: [0] }] },
+    });
     const { supabase, updates } = fakeSupabase();
     await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(textPage) });
     expect(contentsCall().ingredients[0]).toMatchObject({ name: "bloem", quantity: 250, unit: "gram", ingredientId: "meel" });

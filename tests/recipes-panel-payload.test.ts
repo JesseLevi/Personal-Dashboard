@@ -17,6 +17,7 @@ function row(id: string, over: Partial<IngredientRowState> = {}): IngredientRowS
     sourceId: `src-${id}`,
     groupLabel: null,
     needsReview: true,
+    link: null,
     loaded: { ...base },
     ...over,
   };

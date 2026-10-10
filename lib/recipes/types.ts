@@ -44,6 +44,8 @@ export type RecipeIngredientWithNutrition = RecipeIngredientRow & {
   kitchenUnitMasses: KitchenUnitMasses;
   /** #179: `public.ingredients.reference_id` for this row's linked ingredient -- the same lookup `nutrients` already resolves, exposed directly so `sendRecipeToShoppingList` (app/(app)/winkelmand/actions.ts) can carry it onto `shopping_list_items.reference_ingredient_id` without a second round trip. Null for an unlinked row. */
   referenceIngredientId: string | null;
+  /** Name of the linked library ingredient (for a NEVO one its NEVO name, e.g. "Selderij bleek- rauw"), shown in the edit panel so a wrong link is visible. Null for an unlinked row. */
+  linkedIngredientName: string | null;
 };
 
 export type RecipeWithIngredientsAndSteps = RecipeRow & {

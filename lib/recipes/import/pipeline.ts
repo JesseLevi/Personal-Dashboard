@@ -5,12 +5,27 @@ import type { Database } from "@/lib/database.types";
 import { SafeFetchError, safeFetch } from "@/lib/net/safe-fetch";
 import { replaceRecipeContents, type IngredientLine, type StepLine } from "@/lib/recipes/contents";
 import { type ImportErrorCode } from "@/lib/recipes/enums";
-import { ImportAiError, extractRecipeFromText, fillGaps } from "@/lib/recipes/import/ai-fill";
+import {
+  ImportAiError,
+  asksGrams,
+  extractRecipeFromText,
+  linkIngredients,
+  prepareRecipe,
+  type FilledLine,
+} from "@/lib/recipes/import/ai-fill";
 import { ExtractError, extractRecipe, type ExtractedRecipe } from "@/lib/recipes/import/extract";
-import { MAX_MATCH_LINES, matchIngredients, resolveIngredientId } from "@/lib/recipes/import/match-ingredients";
+import {
+  MAX_MATCH_LINES,
+  matchIngredients,
+  resolveIngredientId,
+  widenMatches,
+} from "@/lib/recipes/import/match-ingredients";
 import { parseIngredientLine, type ParsedIngredient } from "@/lib/recipes/import/parse-ingredient";
 import { ImportRateLimitError } from "@/lib/recipes/import/rate-limit";
+import { loadUnitGrams, type UnitGramsLookup } from "@/lib/recipes/import/unit-grams";
 import { hostOf } from "@/lib/recipes/import/url";
+import type { UnitCode } from "@/lib/recipes/units";
+import type { Locale } from "@/lib/profile/types";
 import { storeRecipeThumbnail } from "@/lib/recipes/thumbnails";
 import { MAX_THUMBNAIL_BYTES, isAllowedThumbnailMimeType } from "@/lib/recipes/thumbnail-validation";
 
@@ -21,7 +36,9 @@ import { MAX_THUMBNAIL_BYTES, isAllowedThumbnailMimeType } from "@/lib/recipes/t
 // start.ts); nothing here reaches for service_role or for request cookies.
 //
 //   safeFetch -> extractRecipe -> (text page: extractRecipeFromText) ->
-//   parse lines -> matchIngredients -> fillGaps -> resolve ingredient ids ->
+//   parse lines -> matchIngredients -> prepareRecipe (search terms,
+//   translation) -> widenMatches -> linkIngredients (choice, grams, step
+//   refs) -> resolve ingredient ids -> weight per unit for counts ->
 //   replace_recipe_contents (the manual write path) -> thumbnail -> done.
 //
 // Everything that can fail runs before the first write; a typed error ends in
@@ -30,7 +47,8 @@ import { MAX_THUMBNAIL_BYTES, isAllowedThumbnailMimeType } from "@/lib/recipes/t
 
 type Client = SupabaseClient<Database>;
 
-export type ImportJob = { supabase: Client; userId: string; recipeId: string; url: string };
+/** `locale` is the user's UI language: a recipe in another language is translated into it. */
+export type ImportJob = { supabase: Client; userId: string; recipeId: string; url: string; locale: Locale };
 export type PipelineDeps = { safeFetch?: typeof safeFetch };
 
 const MAX_TITLE = 200;
@@ -85,60 +103,137 @@ async function fetchThumbnailPath(job: ImportJob, imageUrl: string, fetchPage: t
   }
 }
 
+/** Grams with one decimal below 10 g, whole grams above. */
+function roundGrams(grams: number): number {
+  return grams >= 10 ? Math.round(grams) : Math.round(grams * 10) / 10;
+}
+
+export type AmountPlan =
+  /** Keep the amount as written; the calculator can already weigh it (or nothing can). */
+  | { kind: "keep" }
+  /** Keep "2 stuk" as written and store this weight for ONE unit as the user's own override. */
+  | { kind: "unit-weight"; gramsPerUnit: number }
+  /** No unit to keep ("2 teentjes"): save the line in grams. */
+  | { kind: "grams"; grams: number };
+
+/**
+ * How a linked line's amount reaches the nutrition calculator (user decision
+ * 2026-10-07): the recipe keeps its own amount ("2 stuks selderij"), and a
+ * missing weight per unit is stored for that ingredient instead
+ * (public.ingredient_unit_masses, the user-override layer of ADR-0011 §3).
+ * NEVO's or the user's own weight always wins: an estimate only fills a unit
+ * nothing resolves yet. A line without a unit cannot carry a per-unit weight,
+ * so it becomes grams (its measure word stays in the name, ADR-0019 §8).
+ */
+export function planAmount(line: FilledLine, ingredientId: string | null, unitGrams: UnitGramsLookup): AmountPlan {
+  const { quantity, unit } = line.parsed;
+  if (!ingredientId || quantity === null || !asksGrams(line.parsed)) return { kind: "keep" };
+  if (unit !== null && unitGrams(ingredientId, unit) !== null) return { kind: "keep" };
+  if (line.gramsEstimate === null || line.gramsEstimate <= 0) return { kind: "keep" };
+  if (unit === null) return { kind: "grams", grams: roundGrams(line.gramsEstimate) };
+  return { kind: "unit-weight", gramsPerUnit: roundGrams(line.gramsEstimate / quantity) };
+}
+
+/** Stores estimated weights per unit; best effort, an existing row is never overwritten. */
+async function saveUnitWeights(
+  supabase: Client,
+  userId: string,
+  weights: Array<{ ingredientId: string; unit: UnitCode; grams: number }>,
+): Promise<void> {
+  const unique = new Map(weights.map((w) => [`${w.ingredientId}:${w.unit}`, w]));
+  if (unique.size === 0) return;
+  const { error } = await supabase.from("ingredient_unit_masses").upsert(
+    [...unique.values()].map((w) => ({ user_id: userId, ingredient_id: w.ingredientId, unit: w.unit, grams: w.grams })),
+    { onConflict: "user_id,ingredient_id,unit", ignoreDuplicates: true },
+  );
+  if (error) console.error("[recipes] import unit weights failed:", error.code, error.message);
+}
+
 async function run(job: ImportJob, deps: PipelineDeps): Promise<void> {
-  const { supabase, userId, recipeId, url } = job;
+  const { supabase, userId, recipeId, url, locale } = job;
   const fetchPage = deps.safeFetch ?? safeFetch;
 
   const recipe = await loadRecipe(url, fetchPage);
   const entries = parseLines(recipe.recipeIngredient);
 
-  const matches = await matchIngredients(
+  const firstPass = await matchIngredients(
     supabase,
     userId,
     entries.map((entry) => entry.parsed.name),
   );
-  const filled = await fillGaps(
+  const prepared = await prepareRecipe(
+    entries.map((entry) => entry.parsed),
+    { name: recipe.name, steps: recipe.steps },
+    locale,
+    // Alias-settled lines need no search terms (ADR-0020 §3); translation still sees every line.
+    firstPass.map((match) => match.needsReview),
+  );
+  const matches = await widenMatches(
     supabase,
     userId,
-    entries.map((entry, i) => ({ parsed: entry.parsed, match: matches[i]! })),
-    recipe.steps,
+    firstPass,
+    prepared.lines.map((line, i) => {
+      const renamed = line.parsed.name !== entries[i]!.parsed.name ? [line.parsed.name] : [];
+      return [...new Set([...renamed, ...line.searchTerms])];
+    }),
+  );
+  const steps = prepared.translation?.steps ?? recipe.steps;
+  const linked = await linkIngredients(
+    prepared.lines.map((line, i) => ({ parsed: line.parsed, match: matches[i]! })),
+    steps,
+  );
+
+  const ingredientIds: Array<string | null> = [];
+  for (const line of linked.lines) {
+    ingredientIds.push(line.match.chosen ? await resolveIngredientId(supabase, userId, line.match.chosen) : null);
+  }
+  const unitGrams = await loadUnitGrams(
+    supabase,
+    userId,
+    ingredientIds.filter((id): id is string => id !== null),
   );
 
   const ingredients: IngredientLine[] = [];
+  const unitWeights: Array<{ ingredientId: string; unit: UnitCode; grams: number }> = [];
   for (const [i, entry] of entries.entries()) {
-    const line = filled.lines[i]!;
+    const line = linked.lines[i]!;
+    const ingredientId = ingredientIds[i] ?? null;
+    const plan = planAmount(line, ingredientId, unitGrams);
+    if (plan.kind === "unit-weight" && ingredientId && line.parsed.unit) {
+      unitWeights.push({ ingredientId, unit: line.parsed.unit, grams: plan.gramsPerUnit });
+    }
     const unitMissing = line.parsed.unit === null;
-    const ingredientId = line.match.chosen
-      ? await resolveIngredientId(supabase, userId, line.match.chosen)
-      : null;
-    // recipe_ingredients has no note column: an unmapped measure word ("teentje")
-    // stays readable in the name instead of being dropped (ADR-0019 §8).
+    // recipe_ingredients has no note column: an unmapped measure word
+    // ("teentje") stays readable in the name instead of being dropped
+    // (ADR-0019 §8). The name is otherwise the recipe's own.
     const label = unitMissing && line.parsed.note ? `${line.parsed.name} (${line.parsed.note})` : line.parsed.name;
-    const quantity = line.parsed.quantity;
+    const quantity = plan.kind === "grams" ? plan.grams : line.parsed.quantity;
+    const weighed = plan.kind !== "keep";
     ingredients.push({
       name: (label.trim() || line.parsed.raw).slice(0, MAX_TITLE),
       quantity: quantity !== null && Number.isFinite(quantity) && quantity > 0 ? quantity : null,
-      unit: line.parsed.unit ?? PLACEHOLDER_UNIT,
+      unit: plan.kind === "grams" ? "gram" : (line.parsed.unit ?? PLACEHOLDER_UNIT),
       ingredientId,
       groupLabel: entry.groupLabel,
-      needsReview: line.needsReview || unitMissing || ingredientId === null,
+      needsReview: ingredientId === null || (!weighed && (line.needsReview || unitMissing)),
     });
   }
 
-  const steps: StepLine[] = recipe.steps.map((instruction, i) => ({
+  const recipeSteps: StepLine[] = steps.map((instruction, i) => ({
     instruction: instruction.slice(0, MAX_INSTRUCTION),
-    ingredientRefs: (filled.stepIngredientRefs[i] ?? []).filter((ref) => ref < ingredients.length),
+    ingredientRefs: (linked.stepIngredientRefs[i] ?? []).filter((ref) => ref < ingredients.length),
   }));
 
-  const contents = await replaceRecipeContents(supabase, userId, recipeId, ingredients, steps);
+  const contents = await replaceRecipeContents(supabase, userId, recipeId, ingredients, recipeSteps);
   if (!contents.ok) throw new Error("Failed to save the imported recipe contents");
+  await saveUnitWeights(supabase, userId, unitWeights);
 
   const thumbnailPath = recipe.image ? await fetchThumbnailPath(job, recipe.image, fetchPage) : null;
 
   const { error } = await supabase
     .from("recipes")
     .update({
-      title: recipe.name.trim().slice(0, MAX_TITLE) || hostOf(url) || url.slice(0, MAX_TITLE),
+      title: (prepared.translation?.title ?? recipe.name).trim().slice(0, MAX_TITLE) || hostOf(url) || url.slice(0, MAX_TITLE),
       servings: recipe.servings ?? DEFAULT_SERVINGS,
       time_minutes: recipe.timeMinutes,
       ...(thumbnailPath ? { thumbnail_path: thumbnailPath } : {}),

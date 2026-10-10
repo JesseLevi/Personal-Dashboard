@@ -581,7 +581,15 @@
       "deleteConfirmLabel": "Are you sure?",
       "deleteConfirmButtonLabel": "Yes, delete",
       "deletingLabel": "Deleting...",
-      "cancelLabel": "Cancel"
+      "cancelLabel": "Cancel",
+      "link": {
+        "nevo": "NEVO: {name}",
+        "own": "Own ingredient: {name}",
+        "none": "Not linked, not counted in the nutrition values",
+        "kcal": "{kcal} kcal per 100 g",
+        "noNutrition": "no nutrition data, not counted",
+        "unitMass": "1 {unit} ≈ {grams} g"
+      }
     },
     "stepIngredientPanel": {
       "title": "Choose ingredients for this step",
@@ -620,6 +628,8 @@
         "nevoAttribution": "Based on data from NEVO online version 2025/9.0, RIVM, Bilthoven and other data sources"
       },
       "needsReviewLabel": "check",
+      "notCountedLabel": "not counted",
+      "nutritionCoverage": "Based on {counted} of {total} ingredients",
       "sourceLabel": "Source:"
     },
     "pasAanPanel": {

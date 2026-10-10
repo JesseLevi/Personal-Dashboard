@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserLocale } from "@/lib/profile/queries";
 import { requireUserId } from "@/lib/recipes/session";
 import { upsertAlias } from "@/lib/recipes/import/match-ingredients";
 import { runRecipeImport, type ImportJob } from "@/lib/recipes/import/pipeline";
@@ -23,6 +24,7 @@ const scheduleImport = (job: ImportJob) => after(() => runRecipeImport(job));
 /**
  * #318: "Via link". Validates, rate-limits (20/hour), inserts the `importing`
  * recipe at the top of the category and schedules the pipeline with `after()`.
+ * A recipe in another language than the user's is translated into it.
  * Returns the new recipe id at once.
  */
 export async function startRecipeImport(categoryId: unknown, url: unknown): Promise<ActionResult<{ recipeId: string }>> {
@@ -33,7 +35,9 @@ export async function startRecipeImport(categoryId: unknown, url: unknown): Prom
   if ("error" in auth) return { success: false, error: auth.error };
   const supabase = await createSupabaseServerClient();
 
-  const result = await startImport(supabase, auth.userId, parsed.data, scheduleImport);
+  // Read now, not in the pipeline: it needs this request's cookies.
+  const locale = await getUserLocale();
+  const result = await startImport(supabase, auth.userId, { ...parsed.data, locale }, scheduleImport);
   if (!result.ok) return { success: false, error: result.error };
 
   revalidatePath("/recepten", "layout");
@@ -49,7 +53,8 @@ export async function retryRecipeImport(input: unknown): Promise<ActionResult<{ 
   if ("error" in auth) return { success: false, error: auth.error };
   const supabase = await createSupabaseServerClient();
 
-  const result = await retryImport(supabase, auth.userId, parsed.data.recipeId, scheduleImport);
+  const locale = await getUserLocale();
+  const result = await retryImport(supabase, auth.userId, parsed.data.recipeId, locale, scheduleImport);
   if (!result.ok) return { success: false, error: result.error };
 
   revalidatePath("/recepten", "layout");

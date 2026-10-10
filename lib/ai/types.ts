@@ -47,4 +47,5 @@ export interface AiProvider {
   generateObject<S extends z.ZodType>(request: GenerateObjectRequest<S>): Promise<z.infer<S>>;
 }
 
-export const DEFAULT_MAX_OUTPUT_TOKENS = 2048;
+/** Includes thinking tokens (Haiku 5.5 thinks adaptively) and the ~30% larger tokenizer. */
+export const DEFAULT_MAX_OUTPUT_TOKENS = 4096;

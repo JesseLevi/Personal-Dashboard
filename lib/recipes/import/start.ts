@@ -6,6 +6,7 @@ import { nextPosition } from "@/lib/boards/positioning";
 import { ImportRateLimitError, checkImportRateLimit } from "@/lib/recipes/import/rate-limit";
 import { hostOf } from "@/lib/recipes/import/url";
 import type { ImportJob } from "@/lib/recipes/import/pipeline";
+import type { Locale } from "@/lib/profile/types";
 import type { RecipesErrorCode } from "@/lib/recipes/types";
 
 // Start side of the recipe import (#318, ADR-0019 §1): validate ownership,
@@ -35,7 +36,7 @@ async function firstRecipePosition(supabase: Client, userId: string, categoryId:
 export async function startImport(
   supabase: Client,
   userId: string,
-  input: { categoryId: string; url: string },
+  input: { categoryId: string; url: string; locale: Locale },
   schedule: ScheduleImport,
 ): Promise<StartResult> {
   const { data: category, error: categoryError } = await supabase
@@ -77,7 +78,7 @@ export async function startImport(
     return { ok: false, error: "generic" };
   }
 
-  schedule({ supabase, userId, recipeId: recipe.id, url: input.url });
+  schedule({ supabase, userId, recipeId: recipe.id, url: input.url, locale: input.locale });
   return { ok: true, recipeId: recipe.id };
 }
 
@@ -91,6 +92,7 @@ export async function retryImport(
   supabase: Client,
   userId: string,
   recipeId: string,
+  locale: Locale,
   schedule: ScheduleImport,
 ): Promise<StartResult> {
   const { data: failed, error } = await supabase
@@ -105,7 +107,12 @@ export async function retryImport(
   }
   if (!failed || failed.import_status !== "failed" || !failed.source_url) return { ok: false, error: "not-found" };
 
-  const started = await startImport(supabase, userId, { categoryId: failed.category_id, url: failed.source_url }, schedule);
+  const started = await startImport(
+    supabase,
+    userId,
+    { categoryId: failed.category_id, url: failed.source_url, locale },
+    schedule,
+  );
   if (!started.ok) return started;
 
   const { error: deleteError } = await supabase.from("recipes").delete().eq("id", failed.id).eq("user_id", userId);

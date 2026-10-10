@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
@@ -11,8 +12,9 @@ import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 // "Add recipi dropdown/Desktop" 4164:23627 (+ Mobile 4164:23731): the
 // labelless `Dropdown` with two `Button` style=White rows (Icon/Globe "Via
 // link", Icon/Pencil "Handmatig"). Rendered inside the Plus button's
-// `relative` wrapper (CardContainer `addMenu`), positioned like the recipe
-// detail overflow menu. Notes: design/notes/AddRecipeMenu.md.
+// `relative` wrapper (CardContainer `addMenu`), but portalled to <body> with
+// fixed positioning: an empty column is shorter than the menu and the
+// carousel's overflow-x clips it. Notes: design/notes/AddRecipeMenu.md.
 export interface AddRecipeMenuProps {
   open: boolean;
   onClose: () => void;
@@ -22,19 +24,25 @@ export interface AddRecipeMenuProps {
 
 export function AddRecipeMenu({ open, onClose, onViaLink, onManual }: AddRecipeMenuProps) {
   const t = useTranslations("components.recipeImport.menu");
+  const anchorRef = useRef<HTMLSpanElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
-  // The positioning hook measures against the trigger wrapper, which is this
-  // menu's own parent (CardContainer's `relative` Plus-button wrapper).
+  // The positioning hook measures against the trigger wrapper: the parent of
+  // the anchor span left in place (CardContainer's Plus-button wrapper).
   const wrapperRef = useRef<HTMLElement | null>(null);
   useLayoutEffect(() => {
-    wrapperRef.current = popoverRef.current?.parentElement ?? null;
+    wrapperRef.current = anchorRef.current?.parentElement ?? null;
   });
-  const position = usePopoverPosition(wrapperRef, popoverRef, { open, anchor: "right", prefer: "below" });
+  const position = usePopoverPosition(wrapperRef, popoverRef, {
+    open,
+    anchor: "right",
+    prefer: "below",
+    strategy: "fixed",
+  });
 
   useEffect(() => {
     if (!open) return;
     function handlePointerDown(event: PointerEvent) {
-      if (isOutsideAllContainers(event.target as Node, [wrapperRef.current])) onClose();
+      if (isOutsideAllContainers(event.target as Node, [wrapperRef.current, popoverRef.current])) onClose();
     }
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
@@ -47,18 +55,25 @@ export function AddRecipeMenu({ open, onClose, onViaLink, onManual }: AddRecipeM
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  const anchor = <span ref={anchorRef} hidden />;
+  if (!open) return anchor;
   return (
-    // `w-[209px]` is the fetched Dropdown's own width (node 4164:23627).
-    <div ref={popoverRef} className="absolute z-[999] w-[209px]" style={position.style}>
-      <Dropdown className="shadow-sm">
-        <Button variant="white" align="left" icon="Globe" onClick={onViaLink}>
-          {t("viaLinkLabel")}
-        </Button>
-        <Button variant="white" align="left" icon="Pencil" onClick={onManual}>
-          {t("manualLabel")}
-        </Button>
-      </Dropdown>
-    </div>
+    <>
+      {anchor}
+      {createPortal(
+        // `w-[209px]` is the fetched Dropdown's own width (node 4164:23627).
+        <div ref={popoverRef} className="z-[999] w-[209px]" style={position.style}>
+          <Dropdown className="shadow-sm">
+            <Button variant="white" align="left" icon="Globe" onClick={onViaLink}>
+              {t("viaLinkLabel")}
+            </Button>
+            <Button variant="white" align="left" icon="Pencil" onClick={onManual}>
+              {t("manualLabel")}
+            </Button>
+          </Dropdown>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }

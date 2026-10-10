@@ -7,10 +7,13 @@ import {
   MATCH_THRESHOLD,
   decideMatch,
   matchIngredients,
+  mergeCandidates,
   normalizeIngredientName,
   resolveIngredientId,
   upsertAlias,
+  widenMatches,
   type Candidate,
+  type LineMatch,
   type MatcherClient,
 } from "@/lib/recipes/import/match-ingredients";
 
@@ -157,9 +160,25 @@ describe("decideMatch", () => {
 
 type Rows = { data: unknown; error: { code: string; message: string } | null };
 
-function fakeClient(opts: { aliases?: Rows; rpc?: Rows; upsert?: Rows }) {
-  const calls = { rpc: vi.fn(), upsert: vi.fn(), aliasIn: vi.fn(), insert: vi.fn() };
+function fakeClient(opts: { aliases?: Rows; shared?: Rows; rpc?: Rows; upsert?: Rows }) {
+  const calls = { rpc: vi.fn(), upsert: vi.fn(), aliasIn: vi.fn(), sharedIn: vi.fn(), insert: vi.fn() };
   const client = {
+    schema: (name: string) => {
+      if (name !== "reference") throw new Error(`unexpected schema ${name}`);
+      return {
+        from: (table: string) => {
+          if (table !== "ingredient_aliases") throw new Error(`unexpected reference table ${table}`);
+          return {
+            select: () => ({
+              in: (...args: unknown[]) => {
+                calls.sharedIn(...args);
+                return Promise.resolve(opts.shared ?? { data: [], error: null });
+              },
+            }),
+          };
+        },
+      };
+    },
     from: (table: string) => {
       if (table === "ingredient_aliases") {
         return {
@@ -220,6 +239,61 @@ describe("matchIngredients", () => {
     const [result] = await matchIngredients(client, "user-1", ["Bosuien"]);
     expect(result).toMatchObject({ ingredientId: "ing-1", needsReview: false, candidates: [] });
     expect(calls.rpc).not.toHaveBeenCalled();
+  });
+
+  it("a shared alias links a reference candidate without trigram or review", async () => {
+    const { client, calls } = fakeClient({
+      shared: {
+        data: [{ alias_normalized: "tomaat", ingredient_id: "ref-tomaat", ingredients: { name_nl: "Tomaat rauw" } }],
+        error: null,
+      },
+    });
+    const [result] = await matchIngredients(client, "user-1", ["tomaten"]);
+    expect(result).toMatchObject({
+      ingredientId: null,
+      needsReview: false,
+      chosen: { source: "reference", referenceId: "ref-tomaat", name: "Tomaat rauw" },
+    });
+    expect(calls.rpc).not.toHaveBeenCalled();
+  });
+
+  it("an own alias beats a shared alias and the shared lookup only gets the missed keys", async () => {
+    const { client, calls } = fakeClient({
+      aliases: { data: [{ alias_normalized: "tomaat", ingredient_id: "ing-own" }], error: null },
+      shared: {
+        data: [
+          { alias_normalized: "tomaat", ingredient_id: "ref-tomaat", ingredients: { name_nl: "Tomaat rauw" } },
+          { alias_normalized: "ui", ingredient_id: "ref-ui", ingredients: { name_nl: "Ui rauw" } },
+        ],
+        error: null,
+      },
+    });
+    const [a, b] = await matchIngredients(client, "user-1", ["tomaten", "uien"]);
+    expect(a).toMatchObject({ ingredientId: "ing-own", chosen: { source: "own" } });
+    expect(b.chosen).toMatchObject({ source: "reference", referenceId: "ref-ui" });
+    expect(calls.sharedIn).toHaveBeenCalledTimes(1);
+    expect(calls.sharedIn).toHaveBeenCalledWith("alias_normalized", ["ui"]);
+  });
+
+  it("a shared alias beats a trigram candidate; only the rest goes to the RPC", async () => {
+    const { client, calls } = fakeClient({
+      shared: {
+        data: [{ alias_normalized: "tomaat", ingredient_id: "ref-tomaat", ingredients: { name_nl: "Tomaat rauw" } }],
+        error: null,
+      },
+      rpc: { data: [row(0, "reference", "ref-boter", "Boter", 1), row(0, "reference", "ref-other", "Tomaat saus", 1)], error: null },
+    });
+    const [a, b] = await matchIngredients(client, "user-1", ["tomaten", "boter"]);
+    expect(a.chosen).toMatchObject({ referenceId: "ref-tomaat" });
+    expect(calls.rpc).toHaveBeenCalledWith("match_ingredient_candidates", { p_names: ["boter"], p_limit: 5 });
+    expect(b.needsReview).toBe(true); // two exact references tie in the fake RPC: margin rule, not the alias
+  });
+
+  it("throws on a shared alias lookup error", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { client } = fakeClient({ shared: { data: null, error: { code: "42501", message: "nope" } } });
+    await expect(matchIngredients(client, "user-1", ["boter"])).rejects.toThrow();
+    spy.mockRestore();
   });
 
   it("only sends names without an alias to the RPC, keeping order", async () => {
@@ -287,6 +361,75 @@ describe("matchIngredients", () => {
     const { client } = fakeClient({ rpc: { data: null, error: { code: "42501", message: "nope" } } });
     await expect(matchIngredients(client, "user-1", ["boter"])).rejects.toThrow();
     spy.mockRestore();
+  });
+});
+
+describe("widenMatches", () => {
+  const review = (candidates: Candidate[] = []): LineMatch => ({ ingredientId: null, chosen: null, needsReview: true, candidates });
+  const settled: LineMatch = {
+    ingredientId: "ing-zout",
+    chosen: { source: "own", id: "ing-zout", name: "zout", score: 1 },
+    needsReview: false,
+    candidates: [],
+  };
+
+  it("NEVO's 'Ui rauw' scores below the auto-link threshold for 'ui', so the link step has to choose", () => {
+    expect(similarity("ui", "ui rauw")).toBeLessThan(MATCH_THRESHOLD);
+  });
+
+  it("looks up only lines in review, with the wider candidate limit, in one round trip", async () => {
+    const { client, calls } = fakeClient({ rpc: { data: [], error: null } });
+    await widenMatches(client, "user-1", [settled, review()], [["zout"], ["ui", "ui rode"]]);
+    expect(calls.rpc).toHaveBeenCalledTimes(1);
+    expect(calls.rpc).toHaveBeenCalledWith("match_ingredient_candidates", { p_names: ["ui", "ui rode"], p_limit: 8 });
+  });
+
+  it("merges every term's candidates (best score per ingredient) into the line's list", async () => {
+    const { client } = fakeClient({
+      rpc: {
+        data: [
+          row(0, "reference", "ref-ui-rauw", "Ui rauw", 0.38),
+          row(0, "reference", "ref-ui-gekookt", "Ui gekookt", 0.3),
+          row(1, "reference", "ref-ui-rauw", "Ui rauw", 0.45),
+        ],
+        error: null,
+      },
+    });
+    const first: Candidate = { source: "reference", referenceId: "ref-uitjes", name: "Uitjes gebakken", score: 0.25 };
+    const [line] = await widenMatches(client, "user-1", [review([first])], [["ui", "uien"]]);
+    expect(line!.needsReview).toBe(true);
+    expect(line!.candidates.map((c) => (c.source === "reference" ? c.referenceId : c.id))).toEqual([
+      "ref-ui-rauw",
+      "ref-ui-gekookt",
+      "ref-uitjes",
+    ]);
+    expect(line!.candidates[0]!.score).toBe(0.45);
+  });
+
+  it("a term that settles (alias) links the line outright", async () => {
+    const { client, calls } = fakeClient({
+      aliases: { data: [{ alias_normalized: "ui", ingredient_id: "ing-ui" }], error: null },
+    });
+    const [line] = await widenMatches(client, "user-1", [review()], [["ui"]]);
+    expect(line).toMatchObject({ ingredientId: "ing-ui", needsReview: false });
+    expect(calls.rpc).not.toHaveBeenCalled();
+  });
+
+  it("no terms: no query, matches unchanged", async () => {
+    const { client, calls } = fakeClient({});
+    const matches = [review()];
+    expect(await widenMatches(client, "user-1", matches, [[]])).toBe(matches);
+    expect(calls.aliasIn).not.toHaveBeenCalled();
+  });
+});
+
+describe("mergeCandidates", () => {
+  it("dedupes own and reference rows by id, keeps the best score, caps the list", () => {
+    const a: Candidate = { source: "own", id: "x", name: "X", score: 0.4 };
+    const b: Candidate = { source: "reference", referenceId: "x", name: "X ref", score: 0.5 };
+    const merged = mergeCandidates([[a], [{ ...a, score: 0.6 }, b]], 2);
+    expect(merged).toEqual([{ ...a, score: 0.6 }, b]);
+    expect(mergeCandidates([[a, b]], 1)).toEqual([b]);
   });
 });
 

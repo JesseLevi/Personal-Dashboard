@@ -5,8 +5,9 @@ import { findOrCreateOwnIngredient } from "@/lib/recipes/ingredients";
 import { normalizeIngredientName } from "@/lib/recipes/import/normalize-name";
 
 // Matches parsed ingredient names (#315) to the ingredient library (#316,
-// ADR-0019 §2): user alias first, then pg_trgm candidates from the SQL
-// function public.match_ingredient_candidates. Only the parser's `name` is
+// ADR-0019 §2, order amended by ADR-0020 §3): user alias first, then the
+// shared curated alias (reference.ingredient_aliases), then pg_trgm candidates
+// from the SQL function public.match_ingredient_candidates. Only the parser's `name` is
 // used; quantity and unit are never touched. A line it cannot link with
 // confidence gets needsReview=true and keeps its candidates for the LLM step
 // (#317).
@@ -103,10 +104,13 @@ function toCandidate(row: CandidateRow): Candidate | null {
 
 export const MAX_MATCH_LINES = 200;
 const CANDIDATES_PER_LINE = 5;
+/** Per search term in the second pass, and per line after merging: what the link step chooses from. */
+export const WIDE_CANDIDATES_PER_TERM = 8;
+export const MAX_LINK_CANDIDATES = 10;
 
 /**
- * Matches every parsed name (index-aligned result). Two round trips at most:
- * one alias lookup, one RPC for the names the alias did not settle. Throws on
+ * Matches every parsed name (index-aligned result). Three round trips at
+ * most: own alias lookup, shared alias lookup, one RPC for the names the alias did not settle. Throws on
  * a database error so the import pipeline can fail loudly rather than silently
  * produce an all-review recipe.
  */
@@ -114,6 +118,7 @@ export async function matchIngredients(
   supabase: MatcherClient,
   userId: string,
   names: string[],
+  candidatesPerName: number = CANDIDATES_PER_LINE,
 ): Promise<LineMatch[]> {
   if (names.length > MAX_MATCH_LINES) throw new Error("Too many ingredient lines to match");
   const normalized = names.map(normalizeIngredientName);
@@ -140,6 +145,27 @@ export async function matchIngredients(
     (aliasRows ?? []).map((row) => [row.alias_normalized, row.ingredient_id]),
   );
 
+  // Shared curated aliases (ADR-0020 §3): one extra query, only for the keys
+  // the user's own aliases missed. Authenticated users may read the table
+  // (RLS); alias lists never go into a prompt.
+  const missedKeys = keys.filter((key) => !aliasByKey.has(key));
+  const sharedByKey = new Map<string, { id: string; name: string }>();
+  if (missedKeys.length > 0) {
+    const { data: sharedRows, error: sharedError } = await supabase
+      .schema("reference")
+      .from("ingredient_aliases")
+      .select("alias_normalized, ingredient_id, ingredients(name_nl)")
+      .in("alias_normalized", missedKeys);
+    if (sharedError) {
+      console.error("[recipes] matchIngredients/shared-alias-lookup failed:", sharedError.code, sharedError.message);
+      throw new Error("Failed to look up shared ingredient aliases");
+    }
+    for (const row of sharedRows ?? []) {
+      const name = row.ingredients?.name_nl;
+      if (name) sharedByKey.set(row.alias_normalized, { id: row.ingredient_id, name });
+    }
+  }
+
   const pending: number[] = [];
   normalized.forEach((key, index) => {
     const ingredientId = key ? aliasByKey.get(key) : undefined;
@@ -147,6 +173,14 @@ export async function matchIngredients(
       results[index] = {
         ingredientId,
         chosen: { source: "own", id: ingredientId, name: key, score: 1 },
+        needsReview: false,
+        candidates: [],
+      };
+    } else if (key && sharedByKey.has(key)) {
+      const shared = sharedByKey.get(key)!;
+      results[index] = {
+        ingredientId: null,
+        chosen: { source: "reference", referenceId: shared.id, name: shared.name, score: 1 },
         needsReview: false,
         candidates: [],
       };
@@ -158,7 +192,7 @@ export async function matchIngredients(
 
   const { data: rows, error } = await supabase.rpc("match_ingredient_candidates", {
     p_names: pending.map((index) => normalized[index]),
-    p_limit: CANDIDATES_PER_LINE,
+    p_limit: candidatesPerName,
   });
   if (error) {
     console.error("[recipes] matchIngredients/candidates failed:", error.code, error.message);
@@ -185,6 +219,71 @@ export async function matchIngredients(
     };
   });
   return results;
+}
+
+const candidateKey = (c: Candidate) => (c.source === "own" ? `own:${c.id}` : `ref:${c.referenceId}`);
+
+/** Union of candidate lists, best score per ingredient, best first, capped. */
+export function mergeCandidates(lists: Candidate[][], max: number = MAX_LINK_CANDIDATES): Candidate[] {
+  const best = new Map<string, Candidate>();
+  for (const candidate of lists.flat()) {
+    const key = candidateKey(candidate);
+    const current = best.get(key);
+    if (!current || candidate.score > current.score) best.set(key, candidate);
+  }
+  return [...best.values()].sort((a, b) => b.score - a.score).slice(0, max);
+}
+
+/**
+ * Second pass for the lines the first pass left in review: looks each one up
+ * again under extra search terms (the LLM's Dutch NEVO-style names and, for a
+ * translated recipe, the translated name). Raw recipe names ("onion",
+ * "rode uien, gesnipperd") rarely score high against NEVO's "Ui rauw" style,
+ * so this is what puts the right reference row in the link step's list. The
+ * first term that settles (alias or confident trigram match) wins; otherwise
+ * every term's candidates are merged for the link step to choose from. One
+ * round trip pair (alias + RPC) for the whole recipe; terms beyond
+ * MAX_MATCH_LINES are dropped.
+ */
+export async function widenMatches(
+  supabase: MatcherClient,
+  userId: string,
+  matches: LineMatch[],
+  termsPerLine: string[][],
+): Promise<LineMatch[]> {
+  const lookups: Array<{ line: number; term: string }> = [];
+  matches.forEach((match, line) => {
+    if (!match.needsReview) return;
+    for (const term of termsPerLine[line] ?? []) {
+      if (lookups.length < MAX_MATCH_LINES) lookups.push({ line, term });
+    }
+  });
+  if (lookups.length === 0) return matches;
+
+  const results = await matchIngredients(
+    supabase,
+    userId,
+    lookups.map((l) => l.term),
+    WIDE_CANDIDATES_PER_TERM,
+  );
+  const widened = [...matches];
+  const settled = new Set<number>();
+  const extra = new Map<number, Candidate[][]>();
+  lookups.forEach(({ line }, n) => {
+    const result = results[n];
+    if (!result || settled.has(line)) return;
+    if (!result.needsReview) {
+      widened[line] = result;
+      settled.add(line);
+      return;
+    }
+    extra.set(line, [...(extra.get(line) ?? []), result.candidates]);
+  });
+  for (const [line, lists] of extra) {
+    if (settled.has(line)) continue;
+    widened[line] = { ...matches[line]!, candidates: mergeCandidates([matches[line]!.candidates, ...lists]) };
+  }
+  return widened;
 }
 
 /**

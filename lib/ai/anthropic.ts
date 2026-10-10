@@ -15,8 +15,17 @@ import {
 // else enabled. Docs: the claude-api skill (typescript README, structured
 // outputs) and the SDK's typed exceptions.
 
-/** Claude Haiku 4.5, the alias from ADR-0019 §3 (not a dated snapshot id). */
-export const ANTHROPIC_MODEL = "claude-haiku-4-5";
+/** Claude Haiku 5.5 (released 2026-10-07), a fixed id with no date suffix or alias (ADR-0019 §3). */
+export const ANTHROPIC_MODEL = "claude-haiku-5-5";
+
+/**
+ * Adaptive thinking is on by default on Haiku 5.5 and its tokens count toward
+ * max_tokens. The import calls are extraction and linking against a closed
+ * candidate list, so the lowest effort keeps latency and cost down; callers
+ * leave room for thinking in maxOutputTokens anyway. Haiku 5.5 rejects
+ * temperature/top_p/top_k (400), so none is sent.
+ */
+const EFFORT = "low";
 
 // ADR-0019 §1: the pipeline runs inside after(), so no long waits or retry
 // loops. One retry covers a transient 429/5xx, 30 s bounds a hung socket.
@@ -60,10 +69,9 @@ export function createAnthropicProvider(options: {
         response = await client.messages.create({
           model: ANTHROPIC_MODEL,
           max_tokens: request.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
-          temperature: 0,
           system: request.system,
           messages: [{ role: "user", content: request.prompt }],
-          output_config: { format: zodOutputFormat(request.schema) },
+          output_config: { format: zodOutputFormat(request.schema), effort: EFFORT },
         });
       } catch (error) {
         throw mapAnthropicError(error);
