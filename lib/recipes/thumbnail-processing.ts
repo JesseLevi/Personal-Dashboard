@@ -41,7 +41,12 @@ import sharp from "sharp";
 export const THUMBNAIL_VARIANTS = ["card", "full"] as const;
 export type ThumbnailVariant = (typeof THUMBNAIL_VARIANTS)[number];
 
-/** Storage object key for one variant of a thumbnail `stem` (see thumbnails.ts's header for the `<user_id>/<uuid>` stem convention). */
+/** True for a pre-R2 stem (`<user_id>/<uuid>`, Supabase bucket); false for `<user_id>/recipes/<uuid>` (R2). ADR-0024 §7. */
+export function isLegacyThumbnailStem(stem: string): boolean {
+  return stem.split("/").length === 2;
+}
+
+/** Storage object key for one variant of a thumbnail `stem` (stem convention: ADR-0024 §3). */
 export function thumbnailVariantPath(stem: string, variant: ThumbnailVariant): string {
   return `${stem}_${variant}.webp`;
 }

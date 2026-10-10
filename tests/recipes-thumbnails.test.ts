@@ -5,7 +5,7 @@ import {
   MAX_THUMBNAIL_BYTES,
   validateThumbnailFile,
 } from "@/lib/recipes/thumbnail-validation";
-import { renderThumbnailVariants, thumbnailVariantPath } from "@/lib/recipes/thumbnail-processing";
+import { isLegacyThumbnailStem, renderThumbnailVariants, thumbnailVariantPath } from "@/lib/recipes/thumbnail-processing";
 
 // #121: validation for the recipe-thumbnails upload path. Tested here (not
 // lib/recipes/thumbnails.ts, which is `import "server-only"` and throws
@@ -53,6 +53,13 @@ describe("thumbnailVariantPath", () => {
   it("appends the variant and .webp extension to the stem", () => {
     expect(thumbnailVariantPath("user-1/abc-123", "card")).toBe("user-1/abc-123_card.webp");
     expect(thumbnailVariantPath("user-1/abc-123", "full")).toBe("user-1/abc-123_full.webp");
+  });
+});
+
+describe("isLegacyThumbnailStem", () => {
+  it("is true for <user>/<uuid> and false for <user>/recipes/<uuid>", () => {
+    expect(isLegacyThumbnailStem("user-1/abc-123")).toBe(true);
+    expect(isLegacyThumbnailStem("user-1/recipes/abc-123")).toBe(false);
   });
 });
 

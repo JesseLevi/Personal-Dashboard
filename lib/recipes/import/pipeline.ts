@@ -95,7 +95,7 @@ async function fetchThumbnailPath(job: ImportJob, imageUrl: string, fetchPage: t
   try {
     const image = await fetchPage(imageUrl, { allowImages: true });
     if (!isAllowedThumbnailMimeType(image.contentType) || image.body.byteLength > MAX_THUMBNAIL_BYTES) return null;
-    const stored = await storeRecipeThumbnail(job.supabase, job.userId, new Uint8Array(image.body));
+    const stored = await storeRecipeThumbnail(job.userId, new Uint8Array(image.body));
     return stored.success ? stored.data.path : null;
   } catch (error) {
     console.warn("[recipes] import thumbnail skipped:", error instanceof Error ? error.message : error);
