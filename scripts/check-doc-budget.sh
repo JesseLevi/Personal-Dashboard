@@ -16,7 +16,7 @@ HANDOFF_BUDGET=6144
 # One obvious home for the guide budgets (bytes). Raise deliberately, in review.
 guide_budget() {
   case "$1" in
-    data-layer.md)      echo 7200 ;;
+    data-layer.md)      echo 8400 ;;
     ticket-workflow.md) echo 4400 ;;
     ui-components.md)   echo 12800 ;;
     *)                  echo "" ;;

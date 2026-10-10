@@ -23,7 +23,7 @@
 
 - RLS no longer guards the bytes themselves. A bug in a route's ownership check is the failure mode, so the shared delivery helper and the key builder are the only allowed paths and each has tests.
 - `note-images` (#338) is built on R2 from the start: it gets no Supabase bucket and no `storage.objects` policies.
-- Backups: Supabase Cloud backups do not include R2. An off-site copy of R2 is tracked separately (`rclone` sync, or accepting R2's durability for re-creatable thumbnails).
+- Backups (decided 2026-10-10, Option B): accept R2's durability, no off-site sync. Supabase Cloud backups do not include R2. Recipe thumbnails can be re-imported from their source URL, and the cost and upkeep of a second copy (credentials, scheduled job, extra storage) outweigh that for a single-user app. Known trade-off: note images have no second copy and cannot be re-created. Revisit with a scheduled `rclone sync` of the production bucket to an off-site S3-compatible target if note images become important.
 - Four new server-only env vars (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`) in `.env.example` and Vercel.
 - Vercel's 4.5 MB request-body limit still caps server-side uploads. Images stay below it through the client pre-resize (`lib/images/downscale-client.ts`). Large files would need presigned PUT uploads, decided when files come into scope.
 
