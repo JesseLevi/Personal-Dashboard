@@ -340,6 +340,39 @@ export type Database = {
         }
         Relationships: []
       }
+      note_links: {
+        Row: {
+          source_note_id: string
+          target_note_id: string
+          user_id: string
+        }
+        Insert: {
+          source_note_id: string
+          target_note_id: string
+          user_id: string
+        }
+        Update: {
+          source_note_id?: string
+          target_note_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_links_source_note_id_fkey"
+            columns: ["source_note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_links_target_note_id_fkey"
+            columns: ["target_note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes: {
         Row: {
           category_id: string
@@ -820,6 +853,16 @@ export type Database = {
       }
       replace_recipe_contents: {
         Args: { p_ingredients: Json; p_recipe_id: string; p_steps: Json }
+        Returns: undefined
+      }
+      save_note_content: {
+        Args: {
+          p_content: Json
+          p_content_text: string
+          p_note_id: string
+          p_target_ids: string[]
+          p_title: string
+        }
         Returns: undefined
       }
       seed_board_for: { Args: { p_user_id: string }; Returns: undefined }
