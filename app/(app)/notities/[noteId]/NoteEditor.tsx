@@ -1,17 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { EditorContent, useEditor } from "@tiptap/react";
-import { Placeholder } from "@tiptap/extensions";
+import { useLocale, useTranslations } from "next-intl";
+import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
+import { CharacterCount, Placeholder } from "@tiptap/extensions";
 import { Button } from "@/components/atoms/Button";
 import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import { EditingBar } from "@/components/organisms/EditingBar";
+import { NoteSaveStatus } from "@/components/molecules/NoteSaveStatus";
+import { NoteWordCount } from "@/components/molecules/NoteWordCount";
 import { TableMenu } from "@/components/organisms/TableMenu";
 import { noteExtensions } from "@/lib/notes/extensions";
+import { countWords, readingMinutes, typographyForLocale } from "@/lib/notes/writing-comfort";
 import type { NoteRow } from "@/lib/notes/types";
-import { deleteNote, updateNoteContent } from "../actions";
+import { deleteNote } from "../actions";
+import { useNoteSave } from "./useNoteSave";
 
 // #233 note-editor page body — Figma "Desktop/Notes/Edit" (3934:33463) /
 // "Mobile/Notes/Edit" (3934:33422). One client component for the whole page
@@ -23,12 +27,6 @@ import { deleteNote, updateNoteContent } from "../actions";
 // Full measurements, autosave debounce rationale, every spacing-flag: see
 // design/notes/NoteEditor.md.
 
-// Autosave debounce (see design/notes/NoteEditor.md for the full rationale):
-// coalesces a typing burst into one write without feeling laggy. Flushed
-// unconditionally (not just on the timer) on unmount/route-leave and on
-// `visibilitychange`, so a debounce window can never eat the last keystroke.
-const AUTOSAVE_DEBOUNCE_MS = 1000;
-
 export interface NoteEditorProps {
   note: NoteRow;
 }
@@ -36,36 +34,14 @@ export interface NoteEditorProps {
 export function NoteEditor({ note }: NoteEditorProps) {
   const t = useTranslations("components.noteEditor");
   const tErrors = useTranslations("notes.errors");
+  const locale = useLocale();
   const router = useRouter();
 
   const { confirming: deleteConfirming, ask: askDelete, cancel: cancelDelete } = useDeleteConfirm();
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  // Holds the latest full document snapshot awaiting a write, and the
-  // pending debounce timer -- refs, not state, because neither should ever
-  // trigger a render on its own (see design/notes/NoteEditor.md's "never an
-  // optimistic success indicator" section for why this stays render-silent
-  // on the happy path too).
-  const pendingContentRef = useRef<unknown>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const flush = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    const pending = pendingContentRef.current;
-    if (pending === null) return;
-    pendingContentRef.current = null;
-    // Fire-and-forget from the unmount/visibilitychange paths -- there's no
-    // component left to show an error on. The debounced path below awaits
-    // the same call and surfaces a failure via `saveError`.
-    void updateNoteContent({ noteId: note.id, content: pending }).then((result) => {
-      setSaveError(!result.success);
-    });
-  }, [note.id]);
+  const { status, change, retry, discard } = useNoteSave(note.id);
 
   const editor = useEditor({
     extensions: [
@@ -73,6 +49,8 @@ export function NoteEditor({ note }: NoteEditorProps) {
       // Editor-only UI copy, not part of the fixed content-rendering
       // whitelist (lib/notes/extensions.ts's own header explains the split).
       Placeholder.configure({ placeholder: t("placeholder") }),
+      typographyForLocale(locale),
+      CharacterCount.configure({ wordCounter: countWords }),
     ],
     content: note.content,
     // Required in the App Router -- without it the server render and the
@@ -84,40 +62,18 @@ export function NoteEditor({ note }: NoteEditorProps) {
         class: "text-base font-semibold text-text-primary focus:outline-none",
       },
     },
-    onUpdate: ({ editor: current }) => {
-      pendingContentRef.current = current.getJSON();
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(flush, AUTOSAVE_DEBOUNCE_MS);
-    },
+    onUpdate: ({ editor: current }) => change(current.getJSON()),
   });
 
-  // Flushes on `visibilitychange` (tab switch, app backgrounding, browser
-  // close -- none of which reliably unmount a React tree) and on this
-  // component's own unmount (in-app route navigation, which visibilitychange
-  // never fires for). Together the two cover every way this page can be
-  // left, so a pending debounce can never silently lose the last edit.
-  useEffect(() => {
-    function handleVisibilityChange() {
-      if (document.visibilityState === "hidden") flush();
-    }
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      flush();
-    };
-  }, [flush]);
+  const words = useEditorState({
+    editor,
+    selector: ({ editor: current }) => current?.storage.characterCount.words() ?? 0,
+  }) ?? 0;
 
   function handleDelete() {
     setDeleteError(null);
-    // Drops any pending autosave first -- the note is about to stop
-    // existing, and a write racing the delete would otherwise resolve
-    // `not-found` and show a confusing save-error right as the page
-    // navigates away.
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    pendingContentRef.current = null;
+    // Drops any pending autosave first: a write racing the delete would show a confusing save error.
+    discard();
     startTransition(async () => {
       const result = await deleteNote({ noteId: note.id });
       if (!result.success) {
@@ -137,6 +93,8 @@ export function NoteEditor({ note }: NoteEditorProps) {
       <div className="flex w-full items-center justify-between gap-4">
         <Button icon="ArrowLeft" aria-label={t("backLabel")} onClick={() => router.push("/notities")} />
 
+        {!deleteConfirming && <NoteSaveStatus status={status} onRetry={retry} />}
+
         {deleteConfirming ? (
           <DeleteConfirm
             layout="inline"
@@ -153,7 +111,6 @@ export function NoteEditor({ note }: NoteEditorProps) {
       </div>
 
       {deleteError && <p className="text-base font-semibold text-priority-urgent">{deleteError}</p>}
-      {saveError && <p className="text-base font-semibold text-priority-urgent">{t("saveErrorLabel")}</p>}
 
       {/* Desktop: in-flow, directly under the header (EditingBar.tsx's own
           `md:static`). Mobile: EditingBar.tsx renders it `fixed` to the
@@ -172,6 +129,9 @@ export function NoteEditor({ note }: NoteEditorProps) {
       <div className="pb-[calc(4rem+env(safe-area-inset-bottom))] md:py-2">
         <EditorContent editor={editor} />
         <TableMenu editor={editor} />
+        <div className="pt-stack-md">
+          <NoteWordCount words={words} minutes={readingMinutes(words)} />
+        </div>
       </div>
     </div>
   );

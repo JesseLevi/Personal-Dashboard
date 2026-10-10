@@ -513,3 +513,31 @@ s1/s3). Built from existing components and semantic tokens; no Figma step.
   this ticket may not regenerate; the floating-ui `offset: 8` is a number
   handed to the library, not a class. Missing disabled-state token/style:
   `docs/open-questions.md#button-no-disabled-state`.
+
+## #334 — writing comfort (Claude-designed on request)
+
+- **Typography placement:** `Typography` is wired at the `NoteEditor.tsx` call
+  site via `typographyForLocale(useLocale())` (`lib/notes/writing-comfort.ts`),
+  like Placeholder. It only adds input rules and changes no stored structure,
+  so `lib/notes/extensions.ts` stays the single content-structure source.
+  nl: `„ ”` / `‚ ’`; every other locale: `“ ”` / `‘ ’`. Em dash, arrows, ½ etc.
+  are the extension defaults; input rules never fire inside code.
+  `@tiptap/extension-typography` is pinned to `3.30.0` (= `@tiptap/core`).
+- **Word count:** `CharacterCount` (from `@tiptap/extensions`) with `countWords`
+  (whitespace split; the default splits on spaces only). Reading time is
+  `ceil(words / 200)`, at least 1 once there is text. Strings are ICU plurals
+  in `components.noteWordCount`. Shown as a meta line under the editor
+  (`NoteWordCount`), desktop and mobile.
+- **Save status:** `lib/notes/save-controller.ts` (`SaveController`) owns the
+  debounce, in-flight tracking and status; `useNoteSave.ts` binds it to
+  `updateNoteContent`. Status becomes "saved" only from a resolved
+  `{ success: true }`, a rejected call counts as failure, and a newer edit
+  during a write keeps it at "saving". The error state is a destructive Button
+  ("Niet opgeslagen — opnieuw proberen") that re-sends the failed snapshot.
+  `beforeunload` warns while status is not "saved". `NoteSaveStatus` sits in the
+  header row between back and delete (hidden during the delete confirm);
+  `EditingBar` is untouched. Tests: `tests/notes-save-controller.test.ts`.
+- **TrailingNode:** on by default in StarterKit 3.30 (`trailingNode !== false`);
+  covered by `tests/notes-writing-comfort.test.ts`.
+- **No new tokens or Figma nodes:** text-secondary / priority-urgent and the
+  existing `Button` only. No retry icon exists in `Icon`, so retry is text.

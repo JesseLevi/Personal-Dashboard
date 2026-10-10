@@ -543,8 +543,7 @@
       "deleteConfirmLabel": "Are you sure?",
       "deleteConfirmButtonLabel": "Yes, delete",
       "deletingLabel": "Deleting...",
-      "cancelLabel": "Cancel",
-      "saveErrorLabel": "Saving failed. Your changes were not saved."
+      "cancelLabel": "Cancel"
     },
     "editingBar": {
       "label": "Formatting toolbar",
@@ -721,6 +720,15 @@
         "retryLabel": "Try again",
         "deleteLabel": "Delete"
       }
+    },
+    "noteSaveStatus": {
+      "saved": "Saved",
+      "saving": "Saving…",
+      "error": "Not saved — try again"
+    },
+    "noteWordCount": {
+      "words": "{count, plural, one {# word} other {# words}}",
+      "readingTime": "{count, plural, =0 {0 min read} other {# min read}}"
     }
   }
 }
