@@ -69,7 +69,7 @@ describe("toPlainText", () => {
         },
       ],
     });
-    expect(toPlainText(document)).toBe("Naam\nLeeftijd");
+    expect(toPlainText(document)).toBe("Naam\tLeeftijd");
   });
 
   it("preserves a codeBlock's own internal newlines", () => {
@@ -100,7 +100,7 @@ describe("toPlainText", () => {
         },
       ],
     });
-    expect(toPlainText(document)).toBe("Naam\nLeeftijd\nAnna\n34");
+    expect(toPlainText(document)).toBe("Naam\tLeeftijd\nAnna\t34");
   });
 
   it("drops empty table cells without leaving blank or doubled newlines", () => {
@@ -123,7 +123,30 @@ describe("toPlainText", () => {
         },
       ],
     });
-    expect(toPlainText(document)).toBe("Naam\n34");
+    expect(toPlainText(document)).toBe("Naam\n\t34");
+  });
+
+  it("puts a cell's own paragraphs on one line and drops rows with no text", () => {
+    const document = doc({
+      type: "table",
+      content: [
+        {
+          type: "tableRow",
+          content: [
+            { type: "tableCell", content: [paragraph(text("Eerste")), paragraph(text("Tweede"))] },
+            { type: "tableCell", content: [paragraph(text("Derde"))] },
+          ],
+        },
+        {
+          type: "tableRow",
+          content: [
+            { type: "tableCell", content: [paragraph()] },
+            { type: "tableCell", content: [paragraph()] },
+          ],
+        },
+      ],
+    });
+    expect(toPlainText(document)).toBe("Eerste Tweede\tDerde");
   });
 });
 
@@ -152,6 +175,17 @@ describe("deriveTitle", () => {
       ],
     });
     expect(deriveTitle(document)).toBe("Boodschappenlijst");
+  });
+
+  it("collapses the tab between cells of a first table row into a space", () => {
+    const row = {
+      type: "tableRow",
+      content: [
+        { type: "tableCell", content: [paragraph(text("Product"))] },
+        { type: "tableCell", content: [paragraph(text("Aantal"))] },
+      ],
+    };
+    expect(deriveTitle(doc({ type: "table", content: [row] }))).toBe("Product Aantal");
   });
 
   it("derives the title from a document that starts with a codeBlock, up to its first internal line", () => {

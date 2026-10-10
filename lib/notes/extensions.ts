@@ -30,17 +30,14 @@ import type { AnyExtension } from "@tiptap/react";
 // super-/subscript) are genuinely absent from StarterKit and installed
 // separately: TextAlign, Highlight, Superscript, Subscript.
 //
-// #234 pulled one slice of #235 forward on direct user instruction: the
-// EditingBar's table button is wired to `insertTable`, not left disabled.
-// `TableKit` (`@tiptap/extension-table` 3.30 -- one package in v3, unlike
-// v2's four separate `extension-table`/`-row`/`-cell`/`-header` packages,
-// confirmed against the installed package's own dist/exports) registers
-// Table/TableRow/TableCell/TableHeader with its own defaults. #235 (this
-// ticket) confirmed `resizable: false` (the default) stays as-is: cell/
-// column resize needs visible handles, and those aren't designed anywhere
-// in Pages/Notities/Breakpoints -- see docs/open-questions.md#notes-table-
-// ui-not-designed and design/notes/NoteEditor.md's table section.
-//
+// Tables (#234/#235, resizable since #330): `TableKit` (`@tiptap/extension-table`
+// 3.30, one package in v3) registers Table/TableRow/TableCell/TableHeader.
+// Column resize and `colwidth` persistence come from `table.resizable`; the
+// stable fixed layout is `app/globals.css`. Rationale: design/notes/NoteEditor.md.
+// `cellMinWidth` is the narrowest a column may be dragged and the unit a
+// mobile table scrolls in.
+export const TABLE_CELL_MIN_WIDTH = 96;
+
 // #329 (ADR-0021 s1/s3): headings are limited to H1-H3 (StarterKit's default
 // is H1-H6, but only three levels are designed and reachable from the
 // block-type menu), and `TaskList`/`TaskItem` come from `@tiptap/extension-
@@ -63,5 +60,5 @@ export const noteExtensions: AnyExtension[] = [
   Highlight,
   Superscript,
   Subscript,
-  TableKit,
+  TableKit.configure({ table: { resizable: true, cellMinWidth: TABLE_CELL_MIN_WIDTH } }),
 ];

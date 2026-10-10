@@ -36,12 +36,10 @@ export interface TipTapDocument {
 // node type (bulletList/orderedList wrappers, table, marks, text/hardBreak
 // leaves) contributes no line break of its own, it just nests. Deliberately
 // structural rather than an exhaustive TipTap schema: a heading/paragraph/
-// codeBlock/blockquote/listItem each read as one line, and a table's rows and
-// cells are walked the same way -- each tableRow and each tableCell/
-// tableHeader also ends a line, so two cells in the same row don't run
-// together as one word and a table's first cell is what a document that
-// *starts* with a table reads as its first line (see deriveTitle's test for
-// this exact case, tests/notes-document.test.ts).
+// codeBlock/blockquote/listItem each read as one line, and so does a tableRow
+// (cells tab-separated, see flatten), so a document that *starts* with a table
+// derives its title from the first row (deriveTitle's test,
+// tests/notes-document.test.ts).
 const LINE_ENDING_TYPES = new Set([
   "paragraph",
   "heading",
@@ -53,8 +51,6 @@ const LINE_ENDING_TYPES = new Set([
   // title when a note starts with a checklist, and adds noise to search.
   "taskItem",
   "tableRow",
-  "tableCell",
-  "tableHeader",
 ]);
 
 function flatten(node: TipTapNode): string {
@@ -63,6 +59,16 @@ function flatten(node: TipTapNode): string {
   // LINE_ENDING_TYPES node's trailing newline below -- both get collapsed by
   // toPlainText's regex the same way, so it doesn't need special-casing there.
   if (node.type === "hardBreak") return "\n";
+
+  // #330: a table row is one line, its cells separated by a tab (a cell's own
+  // line breaks collapse to spaces); trailing empty cells add no tabs.
+  if (node.type === "tableRow") {
+    const cells = (node.content ?? []).map((cell) =>
+      (cell.content ?? []).map(flatten).join("").replace(/\n+/g, " ").trim(),
+    );
+    const line = cells.join("\t").replace(/\t+$/, "");
+    return line.trim() === "" ? "" : `${line}\n`;
+  }
 
   const inner = (node.content ?? []).map(flatten).join("");
   return LINE_ENDING_TYPES.has(node.type) ? `${inner}\n` : inner;
@@ -104,7 +110,7 @@ const TITLE_MAX_LENGTH = 200;
  * (the migration's own file-header note).
  */
 export function deriveTitle(doc: TipTapDocument): string {
-  const firstLine = toPlainText(doc).split("\n")[0]?.trim() ?? "";
+  const firstLine = (toPlainText(doc).split("\n")[0] ?? "").replace(/\t+/g, " ").trim();
   if (firstLine.length <= TITLE_MAX_LENGTH) return firstLine;
   return `${firstLine.slice(0, TITLE_MAX_LENGTH - 1).trimEnd()}…`;
 }

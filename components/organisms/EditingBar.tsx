@@ -7,10 +7,12 @@ import { useEditorState, type Editor } from "@tiptap/react";
 import { cn } from "@/lib/ui/cn";
 import { Button } from "@/components/atoms/Button";
 import type { IconName } from "@/components/atoms/Icon";
+import { insertTable } from "@/lib/notes/table-commands";
 import { EditingBarMenu } from "./EditingBarMenu";
+import { TableSizePicker } from "./TableSizePicker";
 
 // figma: node-id=3978:14138
-// design: Claude-designed on request (#329) for the two menu buttons; the rest is Figma.
+// design: Claude-designed on request (#329 menu buttons, #330 table size picker); the rest is Figma.
 /**
  * Organism/EditingBar — Figma "EditingBar" (desktop 3978:14138, mobile
  * 3978:14870, detached frames — docs/open-questions.md#notes-editingbar-
@@ -47,7 +49,18 @@ interface EditingBarMenuDef {
   }[];
 }
 
-type BarCommand = EditingBarCommand | EditingBarMenuDef;
+// #330: the table button opens a size picker (TableSizePicker), not a command.
+interface EditingBarPickerDef {
+  id: "table";
+  icon: IconName;
+  picker: true;
+}
+
+type BarCommand = EditingBarCommand | EditingBarMenuDef | EditingBarPickerDef;
+
+function isPicker(command: BarCommand): command is EditingBarPickerDef {
+  return "picker" in command;
+}
 
 function isMenu(command: BarCommand): command is EditingBarMenuDef {
   return "options" in command;
@@ -113,11 +126,7 @@ const GROUPS: BarCommand[][] = [
       isActive: (editor) => editor.isActive("blockquote"),
       run: (editor) => editor.chain().focus().toggleBlockquote().run(),
     },
-    {
-      id: "table",
-      icon: "Table",
-      run: (editor) => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
-    },
+    { id: "table", icon: "Table", picker: true },
     {
       id: "codeBlock",
       icon: "SquareCode",
@@ -288,6 +297,7 @@ export function EditingBar({ editor, className }: EditingBarProps) {
       if (!current) return null;
       const state: Record<string, boolean | string> = {};
       for (const command of ALL_COMMANDS) {
+        if (isPicker(command)) continue;
         if (isMenu(command)) {
           state[command.id] = command.options.find((option) => option.isActive(current))?.id ?? "";
         } else if (command.isActive) {
@@ -345,6 +355,17 @@ export function EditingBar({ editor, className }: EditingBarProps) {
           return <div key={item.key} aria-hidden="true" className="h-6 w-px shrink-0 bg-stroke-lines" />;
         }
         const { command } = item;
+        if (isPicker(command)) {
+          return (
+            <TableSizePicker
+              key={command.id}
+              onInsert={(rows, cols) => insertTable(editor, rows, cols)}
+              onDismiss={() => editor.commands.focus()}
+              tabIndex={item.index === activeIndex ? 0 : -1}
+              onTriggerFocus={() => setActiveIndex(item.index)}
+            />
+          );
+        }
         if (isMenu(command)) {
           const currentId = String(activeState?.[command.id] ?? "") || command.options[0]?.id;
           const current = command.options.find((option) => option.id === currentId);

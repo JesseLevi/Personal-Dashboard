@@ -8,6 +8,7 @@ import { Placeholder } from "@tiptap/extensions";
 import { Button } from "@/components/atoms/Button";
 import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import { EditingBar } from "@/components/organisms/EditingBar";
+import { TableMenu } from "@/components/organisms/TableMenu";
 import { noteExtensions } from "@/lib/notes/extensions";
 import type { NoteRow } from "@/lib/notes/types";
 import { deleteNote, updateNoteContent } from "../actions";
@@ -170,6 +171,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
           leaves unbound -- design/notes/NoteEditor.md */}
       <div className="pb-[calc(4rem+env(safe-area-inset-bottom))] md:py-2">
         <EditorContent editor={editor} />
+        <TableMenu editor={editor} />
       </div>
     </div>
   );

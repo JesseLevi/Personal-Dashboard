@@ -247,33 +247,18 @@ html {
   margin-top: var(--spacing-stack-md);
 }
 
-/* #235: table CSS, on the same .tiptap block #263 built (that ticket's own
-   "explicitly out of scope" note pointed here). `TableKit` is already wired
-   (#234, pulled forward from this ticket) -- this is only the rendering.
-   Per user decision, kept minimal and token-bound, same as #263: every
-   value below is a real var(--color-…)/var(--spacing-…) from app/theme.css,
-   no raw hex, no raw px-spacing. No Figma source exists for any of it --
-   Pages/Notities/Breakpoints draws one toolbar button with a table icon and
-   no actual table -- see docs/open-questions.md#notes-table-ui-not-designed
-   and this ticket's own section in design/notes/NoteEditor.md. */
+/* Tables (#235, reworked in #330): every value is a var(--color-...)/
+   var(--spacing-...) from app/theme.css. Claude-designed on request, no Figma
+   source -- design/notes/NoteEditor.md (#235 and #330 sections). */
 .tiptap table {
   border-collapse: collapse;
+  /* #330: fixed layout, so a column keeps its width while typing. Columns
+     without a stored `colwidth` (every pre-#330 table) share the width
+     equally; the table's inline min-width (from TableKit's cellMinWidth)
+     makes a wide table scroll inside `.tableWrapper`. Why: design/notes/
+     NoteEditor.md (#330). */
+  table-layout: fixed;
   width: 100%;
-  /* No margin declared here on purpose, even though the surrounding block
-     is `table`: TipTap's editor NodeView (verified against the installed
-     @tiptap/extension-table's own dist, not a doc example) always wraps the
-     rendered table in `div.tableWrapper`, which is the actual direct child
-     of .tiptap and already gets `margin-top` for free from the `> * + *`
-     rule above -- exactly like every other block type in this file (h1/ul/
-     blockquote/pre/hr declare no margin of their own either). Adding a
-     second margin here on `table` itself would land on the *wrong* box:
-     `.tableWrapper` below needs `overflow-x: auto` for the mobile-overflow
-     requirement, and any non-`visible` overflow value establishes a new
-     block formatting context, which stops a child's margin from collapsing
-     into its parent's -- so a margin declared here would get trapped
-     inside the scrollable wrapper instead of producing visible spacing
-     before/after the table. design/notes/NoteEditor.md records this as a
-     deliberate deviation from a literal "margin on `table`" reading. */
 }
 
 /* TipTap's TableView always renders this exact wrapper div around the
@@ -295,6 +280,9 @@ html {
      mistake once, see app/globals.css's own history and docs/HANDOFF.md). */
   padding: var(--spacing-stack-xs) var(--spacing-inline-sm);
   vertical-align: top;
+  overflow-wrap: anywhere;
+  /* Containing block for prosemirror-tables' column-resize handle. */
+  position: relative;
 }
 
 /* Goes one step past "minimal", deliberately: without its own background a
@@ -305,6 +293,9 @@ html {
    design/notes/NoteEditor.md records this as a flagged deviation. */
 .tiptap th {
   background-color: var(--color-surface-secondary);
+  /* Same start alignment as body cells; a per-cell TextAlign still wins
+     (it sets an inline style). */
+  text-align: left;
 }
 
 /* prosemirror-tables' own cell-selection plugin decorates each selected
@@ -318,4 +309,21 @@ html {
    token (blue/red/yellow already carry other meanings elsewhere). */
 .tiptap .selectedCell {
   background-color: var(--color-surface-highlight-white-selected);
+}
+
+/* #330: prosemirror-tables inserts `.column-resize-handle` into the cell next
+   to the hovered column edge and keeps it while dragging, so it is visible on
+   hover/drag only. `.resize-cursor` is set on the editor over a resizable edge. */
+.tiptap .column-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: calc(var(--spacing-inline-xs) / -2);
+  width: var(--spacing-inline-xs);
+  background-color: var(--color-stroke-primary-hover);
+  pointer-events: none;
+}
+
+.tiptap.resize-cursor {
+  cursor: col-resize;
 }

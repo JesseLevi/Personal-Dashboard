@@ -396,20 +396,8 @@ not a loophole used here).
   other product meaning (mark highlight, priority). `.selectedCell` (two
   classes) naturally outranks `.tiptap th` (one class, one type) on CSS
   specificity, so a selected header cell still shows the selection tint.
-- **`resizable: false`** (TableKit's own default) is kept, not turned on —
-  recorded explicitly rather than left as a silent default: column resize
-  needs visible drag handles, and no such control is drawn anywhere in
-  `Pages/Notities/Breakpoints`.
-- **Row/column editing has no UI at all** — only TipTap's own
-  keyboard/ProseMirror behaviour (e.g. Tab in the last cell adds a row;
-  the standard table keymap TableKit registers for navigation/selection).
-  No add/remove-row/column control, no drag-to-reorder, no cell context
-  menu — none of that is designed. Filed:
-  `docs/open-questions.md#notes-table-ui-not-designed`, asking for a design
-  pass over the row/column controls specifically.
-- **No zebra striping, no resize handles, no per-cell menu** — all
-  considered and rejected per the same "smallest defensible surface"
-  instruction the ticket gave, same reasoning as the two points above.
+- **Superseded by #330 (below):** `resizable` is now on, and row/column
+  editing has a menu and a size picker. No zebra striping (rejected here).
 
 **No Figma source for any of this.** Same gap as the rest of this file's
 prose-typography section, restated for tables specifically:
@@ -471,3 +459,57 @@ a real browser tab-close. Same standing gap `NotitiesBoard.md`'s own
 verification section already carries for this phase (`docs/HANDOFF.md`'s
 #185) — this ticket adds the same caveat for its own new surface rather than
 claiming a stronger guarantee.
+
+## #330 — tables: stable columns, resizing, size picker, table menu (Claude-designed on request)
+
+Resolves `notes-table-ui-not-designed` (user decision 2026-10-10, ADR-0021
+s1/s3). Built from existing components and semantic tokens; no Figma step.
+
+- **Stable layout**: `TableKit.configure({ table: { resizable: true,
+  cellMinWidth: TABLE_CELL_MIN_WIDTH (96) } })` and `table-layout: fixed` on
+  `.tiptap table`. Under `auto` layout the browser re-split the widths on every
+  keystroke; with `fixed`, columns keep their width. Columns without a stored
+  `colwidth` (every pre-#330 table) share the width equally; once a column is
+  dragged, only that column gets a `colwidth` attr (prosemirror-tables
+  behaviour) and the table gets an inline width/min-width, so a wide table
+  scrolls inside `.tableWrapper` on mobile. `overflow-wrap: anywhere` on cells
+  stops a long word from forcing a column wider. Playwright check:
+  `tests/visual/table-columns.spec.ts` (widths before/after typing, on both a
+  legacy and a sized table; verified to fail with `table-layout: auto`; plus a
+  drag-resize check). `colwidth` round trip and legacy load:
+  `tests/notes-table.test.ts`. Ladle has no save/reload, so persistence is
+  proven at document level, not by reloading a page.
+- **Resize handle**: prosemirror-tables' own `.column-resize-handle` (only
+  present while hovering/dragging an edge), styled `stroke-primary-hover`,
+  width/offset from `spacing-inline-xs`; `.resize-cursor` gives `col-resize`.
+- **Header row**: `th` also gets `text-align: left` (browser default was
+  centred while body cells were left). `note-editor-content--prose` baselines
+  were regenerated for that and for the fixed layout.
+- **Table menu** (`components/organisms/TableMenu.tsx`): TipTap `BubbleMenu`
+  (`@tiptap/react/menus`, MIT) whose `shouldShow` is `isActive('table')` and
+  `(pointer: fine)`, anchored to the table's `.tableWrapper` top-left through
+  `getReferencedVirtualElement`. It holds one `Button variant="white"`
+  "Table" trigger that opens a portalled `Dropdown role="menu"` with a
+  `menuitem` row per `TABLE_COMMANDS` entry. Why a trigger plus panel and not
+  ten inline icon buttons: the icon registry has no row/column glyphs (see the
+  flag below), and labelled rows read unambiguously. Rows that do not apply
+  (`editor.can().x()` false, e.g. merge without a multi-cell selection) are
+  `aria-disabled` with `opacity-40`, still focusable. The destructive row is
+  `text-priority-urgent` on a transparent row (the filled destructive Button
+  is too loud inside a menu). Keyboard: Alt+F10 in a table focuses the
+  trigger; Enter/Space/ArrowDown/ArrowUp open; arrows/Home/End move; Escape or
+  Tab close; every command and Escape end with focus in the editor.
+- **Mobile**: no bubble on touch (it would collide with the keyboard and the
+  native callouts); #333 exposes `TABLE_COMMANDS` through the EditingBar.
+- **Shared list**: `lib/notes/table-commands.ts` (`TABLE_COMMANDS`,
+  `insertTable`, `MAX_TABLE_SIZE`); labels `components.noteTable.commands.*`.
+- **Plain text** (`lib/notes/document.ts`): a table row is one line, cells
+  tab-separated, a cell's paragraphs joined by spaces, rows without text
+  dropped (`tests/notes-document.test.ts`). A note that starts with a table
+  now derives its title from the whole first row ("A\tB"), not the first cell.
+- **Flagged gaps**: icons are generic reuses (`Plus`, `Minus`, `Heading`,
+  `Columns3`, `ArrowRightLeft`, `Trash`) because adding lucide glyphs
+  (`BetweenHorizontalStart` etc.) changes the `icon--all-icons` baseline, which
+  this ticket may not regenerate; the floating-ui `offset: 8` is a number
+  handed to the library, not a class. Missing disabled-state token/style:
+  `docs/open-questions.md#button-no-disabled-state`.
