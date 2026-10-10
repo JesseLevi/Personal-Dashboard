@@ -526,7 +526,7 @@
       "label": "Formatting toolbar",
       "undoLabel": "Undo",
       "redoLabel": "Redo",
-      "headingLabel": "Heading",
+      "blockTypeLabel": "Block type",
       "listLabel": "List",
       "blockquoteLabel": "Blockquote",
       "tableLabel": "Insert table",
@@ -544,7 +544,17 @@
       "alignLeftLabel": "Align left",
       "alignCenterLabel": "Align center",
       "alignRightLabel": "Align right",
-      "alignJustifyLabel": "Align justify"
+      "alignJustifyLabel": "Align justify",
+      "options": {
+        "paragraph": "Text",
+        "heading1": "Heading 1",
+        "heading2": "Heading 2",
+        "heading3": "Heading 3",
+        "bulletList": "Bulleted list",
+        "orderedList": "Numbered list",
+        "taskList": "Checklist",
+        "list": "List"
+      }
     },
     "ingredientSearchPanel": {
       "title": "Search ingredient",

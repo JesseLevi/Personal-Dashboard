@@ -84,36 +84,37 @@ html {
   color: var(--color-text-placeholder);
 }
 
-/* #263: TipTap content typography. Tailwind's preflight resets h1-h6 to
-   `inherit` and strips ul/ol's list-style + padding, and NoteEditor.tsx's
-   editor root applies `text-base font-semibold` uniformly (a measured Figma
-   value for note body text, not a bug) -- so every block type rendered
-   identically to a plain paragraph until this rule filled the gap. Kept
-   next to the placeholder rule above: one place for all editor-content CSS,
-   since neither can be expressed as a Tailwind utility class on the
-   generated JSON content itself. Minimal, token-bound set only, per user
-   decision -- no richer treatment, no table rule (that's #235's, landing in
-   its own PR on this same block). No Figma source exists for prose
-   typography: design/notes/NoteEditor.md,
-   docs/open-questions.md#notes-prose-typography-not-designed. */
-.tiptap h1,
-.tiptap h2,
-.tiptap h3 {
-  /* spacing-flag: app/theme.css has no font-size token (only
-     spacing/radius/color are generated) -- these three rem values are
-     Tailwind's own text-xl/text-lg/text-base steps, not invented numbers;
-     1.25rem matches PageHeader.tsx's own `<h1 className="text-xl ...">`
-     exactly. design/notes/NoteEditor.md */
-  font-weight: inherit;
+/* #263/#329: TipTap content typography. Tailwind's preflight resets h1-h6 to
+   `inherit` and strips list markers, and NoteEditor.tsx's editor root applies
+   `text-base font-semibold` (the measured Figma body style), so every block
+   type needs its own rule. Claude-designed on request (#329): sizes and
+   weights are Tailwind's own type scale via @apply (no font-size token
+   exists, docs/open-questions.md#notes-prose-typography-not-designed);
+   spacing and colours are semantic tokens. Rationale and values:
+   design/notes/NoteEditor.md. */
+.tiptap {
+  /* ~70ch reading width on desktop; mobile is bounded by the viewport. */
+  max-width: 70ch;
+  @apply leading-relaxed;
 }
 .tiptap h1 {
-  font-size: 1.25rem;
+  @apply text-3xl font-extrabold leading-tight;
 }
 .tiptap h2 {
-  font-size: 1.125rem;
+  @apply text-2xl font-bold leading-tight;
 }
 .tiptap h3 {
-  font-size: 1rem;
+  @apply text-xl font-bold leading-snug;
+}
+/* A heading starts a new section: extra space above, the normal block gap below. */
+.tiptap > * + h1 {
+  margin-top: var(--spacing-stack-xxl);
+}
+.tiptap > * + h2 {
+  margin-top: var(--spacing-stack-xl);
+}
+.tiptap > * + h3 {
+  margin-top: var(--spacing-stack-lg);
 }
 
 /* `inline-*`, not `stack-*`: this is an inline-axis property. Both groups
@@ -130,6 +131,71 @@ html {
 }
 .tiptap ol {
   list-style: decimal;
+}
+.tiptap li + li,
+.tiptap li > ul,
+.tiptap li > ol,
+.tiptap li > div > ul {
+  margin-top: var(--spacing-stack-xs);
+}
+/* ListItem wraps its text in a <p>; the item's own gap is enough. */
+.tiptap li > p {
+  margin: 0;
+}
+
+/* #329: task lists. The native checkbox is restyled to the Checkbox atom's
+   tokens (border, fill, radius, check glyph colour); 1.25rem is Tailwind's
+   size-5, the atom's 2rem box is too large for an inline line of text. */
+.tiptap ul[data-type="taskList"] {
+  list-style: none;
+  padding-inline-start: 0;
+}
+.tiptap li[data-checked] {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-inline-sm);
+}
+.tiptap li[data-checked] > label {
+  flex: none;
+  /* Centre the box on the first text line whatever the line-height. */
+  margin-top: calc((1lh - 1.25rem) / 2);
+  user-select: none;
+}
+.tiptap li[data-checked] > div {
+  flex: 1;
+  min-width: 0;
+}
+.tiptap li[data-checked] > label > input[type="checkbox"] {
+  appearance: none;
+  display: grid;
+  place-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  border: 1px solid var(--color-stroke-primary);
+  border-radius: var(--radius-control-inner);
+  background-color: var(--color-surface-highlight-white);
+  cursor: pointer;
+  transition: border-color 150ms;
+}
+.tiptap li[data-checked] > label > input[type="checkbox"]:hover {
+  border-color: var(--color-stroke-primary-hover);
+}
+.tiptap li[data-checked] > label > input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--color-stroke-primary-selected);
+  outline-offset: 2px;
+}
+.tiptap li[data-checked] > label > input[type="checkbox"]:checked::after {
+  content: "";
+  width: 1rem;
+  height: 1rem;
+  background-color: var(--color-text-secondary);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+/* Done items: muted text + strikethrough, on the item's own text only. */
+.tiptap li[data-checked][data-checked="true"] > div > p {
+  color: var(--color-text-secondary);
+  text-decoration: line-through;
 }
 
 .tiptap blockquote {

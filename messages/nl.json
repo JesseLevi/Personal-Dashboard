@@ -526,7 +526,7 @@
       "label": "Opmaakwerkbalk",
       "undoLabel": "Ongedaan maken",
       "redoLabel": "Opnieuw uitvoeren",
-      "headingLabel": "Kop",
+      "blockTypeLabel": "Bloktype",
       "listLabel": "Lijst",
       "blockquoteLabel": "Citaatblok",
       "tableLabel": "Tabel invoegen",
@@ -544,7 +544,17 @@
       "alignLeftLabel": "Links uitlijnen",
       "alignCenterLabel": "Centreren",
       "alignRightLabel": "Rechts uitlijnen",
-      "alignJustifyLabel": "Uitvullen"
+      "alignJustifyLabel": "Uitvullen",
+      "options": {
+        "paragraph": "Tekst",
+        "heading1": "Kop 1",
+        "heading2": "Kop 2",
+        "heading3": "Kop 3",
+        "bulletList": "Opsomming",
+        "orderedList": "Genummerde lijst",
+        "taskList": "Checklist",
+        "list": "Lijst"
+      }
     },
     "ingredientSearchPanel": {
       "title": "Ingrediënt zoeken",

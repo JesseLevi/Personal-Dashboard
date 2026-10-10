@@ -4,6 +4,7 @@ import Highlight from "@tiptap/extension-highlight";
 import Superscript from "@tiptap/extension-superscript";
 import Subscript from "@tiptap/extension-subscript";
 import { TableKit } from "@tiptap/extension-table";
+import { TaskItem, TaskList } from "@tiptap/extension-list";
 import type { AnyExtension } from "@tiptap/react";
 
 // The fixed TipTap extension whitelist Architecture §133 requires (#233):
@@ -39,8 +40,21 @@ import type { AnyExtension } from "@tiptap/react";
 // column resize needs visible handles, and those aren't designed anywhere
 // in Pages/Notities/Breakpoints -- see docs/open-questions.md#notes-table-
 // ui-not-designed and design/notes/NoteEditor.md's table section.
+//
+// #329 (ADR-0021 s1/s3): headings are limited to H1-H3 (StarterKit's default
+// is H1-H6, but only three levels are designed and reachable from the
+// block-type menu), and `TaskList`/`TaskItem` come from `@tiptap/extension-
+// list` (pinned to @tiptap/core's version; NOT bundled in StarterKit 3.30).
+// `a11y.checkboxLabel` is overridden because TaskItem's default label is a
+// hard-coded English string and this static whitelist has no access to
+// next-intl: the checkbox is named after the task text itself instead.
 export const noteExtensions: AnyExtension[] = [
-  StarterKit,
+  StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+  TaskList,
+  TaskItem.configure({
+    nested: true,
+    a11y: { checkboxLabel: (node) => node.textContent },
+  }),
   // `types` must be listed explicitly (TipTap has no default) -- paragraph
   // and heading are the block types StarterKit registers; `tableCell`/
   // `tableHeader` are #235's own addition so alignment set inside a cell

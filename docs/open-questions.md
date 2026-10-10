@@ -220,23 +220,15 @@ this button is built; not counted among the 20 mapped commands in
 
 `/notities/[noteId]`'s "Verwijderen" button (`3978:14809` desktop, `3978:14839` mobile) has no confirmation step drawn anywhere in `Pages/Notities/Breakpoints` — same absence `notes-category-panel-not-designed` already documents for the category panel. #233 reused the existing two-step confirm pattern verbatim (`RecipeDetailPage.tsx`'s own in-place button-row swap, itself the same shape `NoteCategoryPanel.tsx`/`CategoryPanel.tsx` already use): deleting a note is irreversible, and the app already has one established confirm idiom rather than inventing a second. Needs a real Figma confirmation state before this is considered final.
 
-### notes-prose-typography-not-designed
+### notes-prose-font-scale-no-tokens
 
-`Pages/Notities/Breakpoints`' only editor frames (`3934:32790`) draw the
-toolbar and an empty/placeholder editor body — no frame anywhere shows a
-heading, a list, a block quote or a code block actually rendered inside a
-note. #263 (a feedback ticket: those four EditingBar buttons visibly "did
-nothing" because `app/globals.css` had zero CSS for TipTap's generated
-content, on top of Tailwind's preflight stripping heading sizes and list
-markers) added a minimal, token-bound `.tiptap` content block to fix the
-visible bug, per explicit user instruction to keep it minimal rather than
-invent a richer treatment. Every value used a real token from
-`app/theme.css` except heading font-size (no such token exists at all;
-`h1` matches `PageHeader.tsx`'s own `text-xl`) — see
-`design/notes/NoteEditor.md`'s `#263` section for the full per-rule
-reasoning. Needs a real design pass over prose typography (are these the
-right sizes/weights, does a real content-heavy note need more than this)
-before the current CSS should be treated as final.
+`app/theme.css` has no font-size, font-weight or line-height tokens (only
+spacing/radius/colour are generated), so #329's prose typography uses
+Tailwind's own type scale via `@apply` in `app/globals.css`
+(`text-3xl`/`2xl`/`xl`, `font-extrabold`/`bold`, `leading-*`, `70ch` width) and
+a raw 1.25rem task-checkbox box. Same precedent as `PageHeader`'s `text-xl`.
+Needs a typography token set in Figma (and `design/tokens.json`) before these
+can be bound. → `design/notes/NoteEditor.md` (#329 section).
 
 ### notes-table-ui-not-designed
 
@@ -273,5 +265,7 @@ These were open questions that the shipped build now answers. The deviation and 
 **Built with an existing, already-approved pattern** — `category-delete-no-confirm-designed` and `category-name-no-validation-designed` (two-step confirm + disabled-Save gate), `category-icon-no-selected-state` (`aria-pressed` reusing Button's Selected semantics), `recipe-detail-mobile-overflow-menu-undesigned` and `nutrition-dropdown-content-undesigned` (labelless `Dropdown` bordered-panel popover), `ingredient-search-panel-empty-and-zero-result-states-unsourced`, `recipe-panel-verwijderen-hidden-on-create`.
 
 **Built as the least-surprising literal read** — `ingredient-name-annotation-only-on-row-two`, `recipe-panel-two-identical-voeg-toe-buttons`, `recipe-panel-personen-chevron-behaviour-unsourced`, `recipe-panel-desktop-layout-gap`, `recipe-ingredient-row-unit-label-always-shown`, `recipe-card-no-photo-placeholder`, `toggle-group-shared-track`, `winkelmand-send-no-subset-picker` (per-ingredient swipe covers single sends; only *multi*-select stays undesigned).
+
+**Notes prose (#329)** — `notes-prose-typography-not-designed` (2026-10-10, user: Claude designs it on request; H1-H3 on Tailwind's type scale, rhythm, 70ch width, task lists — `design/notes/NoteEditor.md` #329 section; the missing font tokens are the new `notes-prose-font-scale-no-tokens`).
 
 **Recipe import UI (#318, Figma section `4164:20621`)** — `import-skeleton-bars-unbound`: the skeleton bars (nodes under `4164:23681`) have no bound fill/radius/height (values equal `surface/primary/default` and 4px radius; built with those tokens, confirm in Figma). `import-link-panel-input-chevron`: the Link Input-field in `4164:23722`/`4164:23777` still draws the Dropdown variant's trailing chevron; not built. `import-description-not-stored`: ADR-0019 mentions a description field but `recipes` has no description column, so the extracted description is dropped (add a column + UI first). `import-range-and-pack-note-dropped`: the parser's `note` (range text, pack text, prep) has no column on `recipe_ingredients`, so it is only kept (in the name) for lines whose unit could not be resolved.

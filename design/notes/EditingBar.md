@@ -309,6 +309,45 @@ install guide (`if (!editor) return null` inside the selector, mirrored by
 this component's own top-level `if (!editor) return null` before rendering
 anything).
 
+## #329 — block-type and list menus (Claude-designed on request)
+
+Rows 3 (`heading`) and 4 (`list`) of the command table are no longer toggles:
+they are two menu buttons (`components/organisms/EditingBarMenu.tsx`), still
+at positions 3 and 4 so the roving-tabindex count (20) and the Figma group
+split (2/6/6/2/4) are unchanged. No Figma node exists for them.
+
+- **Block type**: Text / Heading 1 / Heading 2 / Heading 3 (`setParagraph`,
+  `setHeading`). **List**: bulleted / numbered / checklist (`toggle*List`;
+  choosing the active one toggles it off; a different one converts). The
+  trigger is `Button variant="transparent"` + the current label + trailing
+  `ChevronDown`; the list trigger reads "Lijst" when no list is active. Icons
+  reused (`Heading`, `List`, `Check`); no new `Icon` entries.
+- **Why a small `EditingBarMenu` and not `Dropdown` alone**: `Dropdown` is a
+  disclosure (inline expanding field), not a menu button, and the bar is
+  `overflow-x-auto`, which would clip any in-bar panel. The menu portals to
+  `body`, positions from the trigger rect (open upward in the lower half of
+  the viewport, right-aligned in the right half; runtime geometry passed as
+  `--menu-x`/`--menu-y` custom properties, same exception as the keyboard
+  inset) and reuses the labelless `Dropdown` as its panel (`role="menu"`) and
+  `Button variant="transparent" align="left"` as its rows
+  (`role="menuitemradio"`, `Check` trailing icon on the active one). It is a
+  private part of EditingBar, not a catalogue atom; promote it only if #331/#332
+  need the same shape.
+- **Keyboard / ARIA**: trigger `aria-haspopup="menu"`, `aria-expanded`,
+  `aria-controls`; Enter/Space/click or ArrowUp/Down open; focus lands on the
+  active row; ArrowUp/Down/Home/End move, Enter/Space select; Escape, Tab and
+  outside click close; **focus returns to the editor** (selection commands call
+  `focus()`, dismissal calls `editor.commands.focus()`). The toolbar's roving
+  tabindex now addresses `[data-toolbar-item]` buttons only, so menu rows
+  never become toolbar stops. Verified in Chromium with a throwaway
+  Playwright run (open, navigate, select, Escape, checkbox click and Space).
+- **Strings**: `components.editingBar.blockTypeLabel`, `listLabel`,
+  `options.*` in nl and en (`headingLabel` removed).
+- **Dark mode**: panel and rows use semantic tokens only; baselines
+  `editing-bar--block-type-menu-open`, `--list-menu-open` and `note-editor-content--prose` (now incl. a nested checklist)
+  (light + dark), `--at-rest`/`--with-active-button` regenerated because the
+  two triggers now carry text.
+
 ## Verification — what was and wasn't run
 
 `pnpm lint`/`typecheck`/`test`/`check:server-only`/`check:raw-spacing`/
