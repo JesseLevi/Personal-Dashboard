@@ -229,11 +229,13 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
   // synthesize (group/recipe info is server-resolved) -- a real failure
   // surfaces via actionError, never an invented success. See
   // design/notes/WinkelmandPage.md#222.
-  async function handleAddIngredients(ingredients: IngredientRow[]) {
+  // #324: plain names (hand-typed, no library row) are added by name only,
+  // the same as library picks (no reference_ingredient_id is written today).
+  async function handleAddIngredients(ingredients: IngredientRow[], plainNames: string[]) {
     setActionError(null);
     try {
-      for (const ingredient of ingredients) {
-        const result = await addShoppingListItem({ name: ingredient.name });
+      for (const name of [...ingredients.map((ingredient) => ingredient.name), ...plainNames]) {
+        const result = await addShoppingListItem({ name });
         if (!result.success) {
           setActionError(tErrors(result.error));
           return;

@@ -10,27 +10,25 @@ type Client = SupabaseClient<Database>;
  * path shared by the manual flow (createOwnIngredient in
  * app/(app)/recepten/actions.ts) and the recipe importer (#316). With a
  * `referenceId` it reuses the user's existing row for that reference
- * ingredient instead of inserting a duplicate; with `null` it always inserts
- * a self-added, unlinked ingredient. Runs on the caller's RLS-bound client.
+ * ingredient instead of inserting a duplicate. #324: `referenceId` is
+ * required, no self-added rows. Runs on the caller's RLS-bound client.
  */
 export async function findOrCreateOwnIngredient(
   supabase: Client,
   userId: string,
-  input: { name: string; referenceId: string | null },
+  input: { name: string; referenceId: string },
 ): Promise<{ ok: true; ingredient: IngredientRow } | { ok: false }> {
-  if (input.referenceId) {
-    const { data: existing, error: existingError } = await supabase
-      .from("ingredients")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("reference_id", input.referenceId)
-      .maybeSingle();
-    if (existingError) {
-      console.error("[recipes] findOrCreateOwnIngredient/existing-lookup failed:", existingError.code, existingError.message);
-      return { ok: false };
-    }
-    if (existing) return { ok: true, ingredient: existing };
+  const { data: existing, error: existingError } = await supabase
+    .from("ingredients")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("reference_id", input.referenceId)
+    .maybeSingle();
+  if (existingError) {
+    console.error("[recipes] findOrCreateOwnIngredient/existing-lookup failed:", existingError.code, existingError.message);
+    return { ok: false };
   }
+  if (existing) return { ok: true, ingredient: existing };
 
   const { data, error } = await supabase
     .from("ingredients")
