@@ -7,8 +7,10 @@ import { useEditorState, type Editor } from "@tiptap/react";
 import { cn } from "@/lib/ui/cn";
 import { Button } from "@/components/atoms/Button";
 import type { IconName } from "@/components/atoms/Icon";
+import { EditingBarMenu } from "./EditingBarMenu";
 
 // figma: node-id=3978:14138
+// design: Claude-designed on request (#329) for the two menu buttons; the rest is Figma.
 /**
  * Organism/EditingBar — Figma "EditingBar" (desktop 3978:14138, mobile
  * 3978:14870, detached frames — docs/open-questions.md#notes-editingbar-
@@ -16,7 +18,8 @@ import type { IconName } from "@/components/atoms/Icon";
  * instances (fills=[] on every measured Default node — the only variant
  * whose own Default has no background) in five groups of 2/6/6/2/4,
  * separated by `bg-stroke-lines` dividers. Full command mapping, every
- * measurement and every deviation: design/notes/EditingBar.md.
+ * measurement and every deviation: design/notes/EditingBar.md. Heading and
+ * list are menu buttons (EditingBarMenu), not toggles (#329).
  */
 export interface EditingBarProps {
   editor: Editor | null;
@@ -30,29 +33,80 @@ interface EditingBarCommand {
   run: (editor: Editor, ctx: { promptLinkUrl: () => string | null }) => void;
 }
 
+// #329: block type and list type are menu buttons, not toggles. Each option
+// has an i18n key under components.editingBar and reads/writes the document
+// through the same editor commands the markdown input rules use.
+interface EditingBarMenuDef {
+  id: "blockType" | "list";
+  icon: IconName;
+  fallbackKey: string;
+  options: {
+    id: string;
+    isActive: (editor: Editor) => boolean;
+    run: (editor: Editor) => void;
+  }[];
+}
+
+type BarCommand = EditingBarCommand | EditingBarMenuDef;
+
+function isMenu(command: BarCommand): command is EditingBarMenuDef {
+  return "options" in command;
+}
+
+const BLOCK_TYPE_MENU: EditingBarMenuDef = {
+  id: "blockType",
+  icon: "Heading",
+  fallbackKey: "paragraph",
+  options: [
+    {
+      id: "paragraph",
+      isActive: (editor) => !editor.isActive("heading"),
+      run: (editor) => editor.chain().focus().setParagraph().run(),
+    },
+    ...([1, 2, 3] as const).map((level) => ({
+      id: `heading${level}`,
+      isActive: (editor: Editor) => editor.isActive("heading", { level }),
+      run: (editor: Editor) => editor.chain().focus().setHeading({ level }).run(),
+    })),
+  ],
+};
+
+const LIST_MENU: EditingBarMenuDef = {
+  id: "list",
+  icon: "List",
+  fallbackKey: "list",
+  options: [
+    {
+      id: "bulletList",
+      isActive: (editor) => editor.isActive("bulletList"),
+      run: (editor) => editor.chain().focus().toggleBulletList().run(),
+    },
+    {
+      id: "orderedList",
+      isActive: (editor) => editor.isActive("orderedList"),
+      run: (editor) => editor.chain().focus().toggleOrderedList().run(),
+    },
+    {
+      id: "taskList",
+      isActive: (editor) => editor.isActive("taskList"),
+      run: (editor) => editor.chain().focus().toggleTaskList().run(),
+    },
+  ],
+};
+
 // Grouped 2/6/6/2/4 — Figma's own separator split (Line 2-5), identical on
 // both breakpoints. Order is the ticket's own left-to-right command list,
 // paired 1:1 with the measured glyph order; text-quote/square-code/code-xml
 // are resolved by POSITION, not by icon-name judgement — see
 // design/notes/EditingBar.md.
-const GROUPS: EditingBarCommand[][] = [
+const GROUPS: BarCommand[][] = [
   [
     { id: "undo", icon: "Undo2", run: (editor) => editor.chain().focus().undo().run() },
     { id: "redo", icon: "Redo2", run: (editor) => editor.chain().focus().redo().run() },
   ],
   [
-    {
-      id: "heading",
-      icon: "Heading",
-      isActive: (editor) => editor.isActive("heading", { level: 1 }),
-      run: (editor) => editor.chain().focus().toggleHeading({ level: 1 }).run(),
-    },
-    {
-      id: "list",
-      icon: "List",
-      isActive: (editor) => editor.isActive("bulletList"),
-      run: (editor) => editor.chain().focus().toggleBulletList().run(),
-    },
+    BLOCK_TYPE_MENU,
+    LIST_MENU,
     {
       id: "blockquote",
       icon: "TextQuote",
@@ -177,7 +231,7 @@ const ALL_COMMANDS = GROUPS.flat();
 // for no visual difference. See design/notes/EditingBar.md.
 type BarItem =
   | { type: "separator"; key: string }
-  | { type: "button"; command: EditingBarCommand; index: number };
+  | { type: "button"; command: BarCommand; index: number };
 
 const BAR_ITEMS: BarItem[] = GROUPS.reduce<{ items: BarItem[]; index: number }>(
   (acc, group, groupIndex) => {
@@ -232,9 +286,13 @@ export function EditingBar({ editor, className }: EditingBarProps) {
     editor,
     selector: ({ editor: current }) => {
       if (!current) return null;
-      const state: Record<string, boolean> = {};
+      const state: Record<string, boolean | string> = {};
       for (const command of ALL_COMMANDS) {
-        if (command.isActive) state[command.id] = command.isActive(current);
+        if (isMenu(command)) {
+          state[command.id] = command.options.find((option) => option.isActive(current))?.id ?? "";
+        } else if (command.isActive) {
+          state[command.id] = command.isActive(current);
+        }
       }
       return state;
     },
@@ -250,7 +308,7 @@ export function EditingBar({ editor, className }: EditingBarProps) {
     if (nextIndex === null) return;
     event.preventDefault();
     setActiveIndex(nextIndex);
-    const buttons = containerRef.current?.querySelectorAll<HTMLButtonElement>("button");
+    const buttons = containerRef.current?.querySelectorAll<HTMLButtonElement>("[data-toolbar-item]");
     buttons?.[nextIndex]?.focus();
   }, [activeIndex]);
 
@@ -282,24 +340,47 @@ export function EditingBar({ editor, className }: EditingBarProps) {
         className,
       )}
     >
-      {BAR_ITEMS.map((item) =>
-        item.type === "separator" ? (
-          <div key={item.key} aria-hidden="true" className="h-6 w-px shrink-0 bg-stroke-lines" />
-        ) : (
+      {BAR_ITEMS.map((item) => {
+        if (item.type === "separator") {
+          return <div key={item.key} aria-hidden="true" className="h-6 w-px shrink-0 bg-stroke-lines" />;
+        }
+        const { command } = item;
+        if (isMenu(command)) {
+          const currentId = String(activeState?.[command.id] ?? "") || command.options[0]?.id;
+          const current = command.options.find((option) => option.id === currentId);
+          const hasActive = command.id === "blockType" || Boolean(activeState?.[command.id]);
+          return (
+            <EditingBarMenu
+              key={command.id}
+              icon={command.icon}
+              menuLabel={t(`${command.id}Label`)}
+              currentLabel={t(`options.${hasActive && current ? current.id : command.fallbackKey}`)}
+              options={command.options.map((option) => ({
+                id: option.id,
+                label: t(`options.${option.id}`),
+                active: option.id === activeState?.[command.id],
+                onSelect: () => option.run(editor),
+              }))}
+              onDismiss={() => editor.commands.focus()}
+              tabIndex={item.index === activeIndex ? 0 : -1}
+              onTriggerFocus={() => setActiveIndex(item.index)}
+            />
+          );
+        }
+        return (
           <Button
-            key={item.command.id}
+            key={command.id}
             variant="transparent"
-            icon={item.command.icon}
-            aria-label={t(`${item.command.id}Label`)}
-            aria-pressed={item.command.isActive ? activeState?.[item.command.id] : undefined}
+            icon={command.icon}
+            data-toolbar-item=""
+            aria-label={t(`${command.id}Label`)}
+            aria-pressed={command.isActive ? Boolean(activeState?.[command.id]) : undefined}
             tabIndex={item.index === activeIndex ? 0 : -1}
             onFocus={() => setActiveIndex(item.index)}
-            onClick={() =>
-              item.command.run(editor, { promptLinkUrl: () => window.prompt(t("linkPromptLabel")) })
-            }
+            onClick={() => command.run(editor, { promptLinkUrl: () => window.prompt(t("linkPromptLabel")) })}
           />
-        ),
-      )}
+        );
+      })}
     </div>
   );
 }

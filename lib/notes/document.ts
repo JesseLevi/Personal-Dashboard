@@ -48,6 +48,10 @@ const LINE_ENDING_TYPES = new Set([
   "codeBlock",
   "blockquote",
   "listItem",
+  // #329: a checklist item reads as one line, same as a listItem. Deliberately
+  // NO check-box glyph prefix: a prefix would put "☐ " in front of the derived
+  // title when a note starts with a checklist, and adds noise to search.
+  "taskItem",
   "tableRow",
   "tableCell",
   "tableHeader",

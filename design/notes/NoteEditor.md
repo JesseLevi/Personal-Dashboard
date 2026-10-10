@@ -416,6 +416,47 @@ prose-typography section, restated for tables specifically:
 `Pages/Notities/Breakpoints` draws one toolbar button with a table icon and
 no table anywhere.
 
+## #329 — block types, task lists and prose typography (Claude-designed on request)
+
+Replaces the #263 minimal block (`notes-prose-typography-not-designed`,
+now resolved). User decision 2026-10-10 (ADR-0021 s1/s3): Claude designs it
+directly in code from Tailwind's type scale + semantic tokens; no Figma step.
+
+- **Extensions** (`lib/notes/extensions.ts`): StarterKit `heading.levels`
+  `[1,2,3]`; `TaskList` + `TaskItem({ nested: true })` from
+  `@tiptap/extension-list@3.30.0` (a direct dependency now, same version as
+  core; not part of StarterKit). `a11y.checkboxLabel` returns the item's own
+  text because the default label is an English literal and the whitelist is
+  static (no next-intl); the checkbox is named after its task.
+- **Type scale** (`.tiptap` in `app/globals.css`, `@apply` of Tailwind's own
+  scale; body stays `text-base font-semibold`, the measured Figma value):
+  H1 `text-3xl font-extrabold`, H2 `text-2xl font-bold`, H3 `text-xl
+  font-bold`; headings `leading-tight`/`leading-snug`, body `leading-relaxed`
+  (1.625). Sizes step 20/24/30px against 16px body; weight steps 600 -> 700
+  -> 800 so they are distinct in both axes.
+- **Rhythm**: blocks keep `--spacing-stack-md`; a heading adds space above
+  (`stack-lg` H3, `stack-xl` H2, `stack-xxl` H1); list items `stack-xs`.
+- **Reading width**: `.tiptap { max-width: 70ch }`; on mobile the viewport is
+  the limit.
+- **Task items**: the native checkbox (`appearance: none`) wears the Checkbox
+  atom's tokens (`stroke-primary` border, `surface-highlight-white` fill,
+  `text-secondary` check glyph, hover `stroke-primary-hover`, focus ring
+  `stroke-primary-selected`) at 1.25rem (Tailwind `size-5`; the atom's 2rem box
+  is too big for a text line). Checked items: `text-secondary` + line-through
+  on the item's own paragraph only. Selector is `li[data-checked]`: TipTap's
+  node view renders `li` without `data-type` (only `getHTML()` has it).
+  Check glyph is a CSS mask of lucide's `check` path, so it follows the token
+  colour in dark mode.
+- **`toPlainText`**: `taskItem` is a line-ending type, **no `☐`/`☑` prefix**
+  (decision): a prefix would leak into `deriveTitle` when a note starts with a
+  checklist and add noise to trigram search. Covered in
+  `tests/notes-document.test.ts`; input rules, nested lists, JSON round trip
+  and legacy H1+bullet notes in `tests/notes-extensions.test.ts` (jsdom).
+- **Token gaps**: no font-size/weight tokens exist (flagged:
+  `docs/open-questions.md#notes-prose-font-scale-no-tokens`); the 1.25rem
+  checkbox box, the 2px focus outline and `70ch` are raw CSS in `globals.css`
+  (not gated, not a spacing/radius token concept).
+
 ## Verification — what was and wasn't run
 
 `pnpm lint`/`typecheck`/`test`/`check:server-only`/`check:raw-spacing`/
