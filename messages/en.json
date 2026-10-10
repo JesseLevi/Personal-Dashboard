@@ -109,7 +109,8 @@
       "tabsLabel": "Section",
       "tabs": {
         "aliases": "Mappings",
-        "own": "Own ingredients"
+        "own": "Own ingredients",
+        "ownShort": "Own"
       },
       "ownBadge": "Own",
       "aliases": {

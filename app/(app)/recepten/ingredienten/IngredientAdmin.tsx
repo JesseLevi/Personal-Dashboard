@@ -1,7 +1,7 @@
 "use client";
 
 // design: Claude-designed on request (#325, #350), design/notes/IngredientAdminPage.md.
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { PageHeader } from "@/components/organisms/PageHeader";
 import { Button } from "@/components/atoms/Button";
@@ -13,6 +13,21 @@ import { AliasPanel, type AliasPanelTarget } from "./AliasPanel";
 import { OwnIngredientPanel, type OwnIngredientPanelTarget } from "./OwnIngredientPanel";
 
 type Tab = "aliases" | "own";
+
+// The full "Eigen ingrediënten" wraps in ButtonToggle below md; the short
+// label is mobile-only (#350). The label is a string, so CSS alone can't swap it.
+const DESKTOP_QUERY = "(min-width: 768px)";
+function useIsDesktop() {
+  return useSyncExternalStore(
+    (notify) => {
+      const mql = window.matchMedia(DESKTOP_QUERY);
+      mql.addEventListener("change", notify);
+      return () => mql.removeEventListener("change", notify);
+    },
+    () => window.matchMedia(DESKTOP_QUERY).matches,
+    () => false,
+  );
+}
 
 export interface IngredientAdminProps {
   title: string;
@@ -77,6 +92,7 @@ export function IngredientAdmin({
   const t = useTranslations("recipes.ingredientAdmin");
   const tUnits = useTranslations("recipes.units");
   const locale = useLocale();
+  const isDesktop = useIsDesktop();
 
   const [tab, setTab] = useState<Tab>(initialTab);
   const [query, setQuery] = useState(initialQuery);
@@ -131,7 +147,7 @@ export function IngredientAdmin({
           }}
           items={[
             { value: "aliases", icon: "Link", label: t("tabs.aliases") },
-            { value: "own", icon: "LeafyGreen", label: t("tabs.own") },
+            { value: "own", icon: "LeafyGreen", label: isDesktop ? t("tabs.own") : t("tabs.ownShort") },
           ]}
         />
         <InputField

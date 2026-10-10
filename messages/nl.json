@@ -109,7 +109,8 @@
       "tabsLabel": "Onderdeel",
       "tabs": {
         "aliases": "Koppelingen",
-        "own": "Eigen ingrediënten"
+        "own": "Eigen ingrediënten",
+        "ownShort": "Eigen"
       },
       "ownBadge": "Eigen",
       "aliases": {

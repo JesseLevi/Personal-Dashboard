@@ -7,7 +7,7 @@
 
 Claude-designed on request (#325, redesigned #350: the first version read as a different product). Mirrors Winkelmand's rhythm: one `surface-primary` plane, content in `pr-page-right-equal`, no boxed list.
 
-- `PageHeader` with exactly one filled "add" button (follows the active section). `ButtonToggle` as the section switch, full label "Eigen ingrediënten" (`w-full` on mobile, `md:max-w-md` on desktop; hugging via `w-fit` wraps because the segments are `basis-0`). `InputField` search below it.
+- `PageHeader` with exactly one filled "add" button (follows the active section). `ButtonToggle` as the section switch, full label "Eigen ingrediënten" from `md:` up and the short "Eigen" below it (`useIsDesktop`, because `ButtonToggle` labels are strings; user decision on #350) (`w-full` on mobile, `md:max-w-md` on desktop; hugging via `w-fit` wraps because the segments are `basis-0`). `InputField` search below it.
 - One muted `text-base text-text-secondary` count line above the list ("12 koppelingen", "2 van 12" while searching) replaces the two explainer paragraphs.
 - Plain rows: a local `ListRow` button (`rounded-control`, `px/py-component-md`, `hover:bg-surface-secondary`, `active:bg-surface-secondary-hover`, as the Sidebar rows), semibold truncating primary line, muted truncating secondary line, `stroke-lines` divider as a sibling between rows (like `CardContentIngredient`). No `Card`.
 - The "Eigen" mark (ADR-0013, `eigen` rows always labelled) is small muted text, no `Tag` chip, shown on every row of the Eigen section too.
@@ -30,7 +30,7 @@ Claude-designed on request (#325, redesigned #350: the first version read as a d
 
 ## Open
 
-- "Eigen ingrediënten" still wraps to two lines at 375 px (each segment gets about 157 px). Not shortened again; needs a user call (see the PR).
+- "Eigen ingrediënten" wraps to two lines at 375 px (each segment gets about 157 px), so mobile shows "Eigen" (user decision). Desktop drawer keeps its scrim: accepted by the user as consistent with the other panels.
 
 ## Not here
 
