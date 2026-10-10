@@ -547,6 +547,10 @@
     },
     "editingBar": {
       "label": "Opmaakwerkbalk",
+      "moreLabel": "Meer",
+      "backLabel": "Terug naar opmaak",
+      "tableActionsLabel": "Tabelacties",
+      "tableActionsBarLabel": "Tabelwerkbalk",
       "undoLabel": "Ongedaan maken",
       "redoLabel": "Opnieuw uitvoeren",
       "blockTypeLabel": "Bloktype",

@@ -10,6 +10,8 @@ const tableToggle = "[aria-haspopup=dialog]";
 test("size picker inserts the chosen size by keyboard and returns focus to the editor", async ({ page }) => {
   await page.goto("/?story=editing-bar--at-rest&mode=preview");
   await page.locator(".tiptap").click();
+  // The slim bar puts the panel under the click point; a stale pointer there would hover-select a cell.
+  await page.mouse.move(0, 0);
   await page.locator(tableToggle).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("grid")).toBeVisible();
