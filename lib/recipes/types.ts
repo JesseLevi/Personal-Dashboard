@@ -103,7 +103,9 @@ export type RecipesErrorCode =
   // #325 (ADR-0020 §6): non-admin caller of an ingredient-admin action; and a
   // shared alias key that already exists.
   | "forbidden"
-  | "duplicate";
+  | "duplicate"
+  // #326: a weight per unit already exists for this ingredient and unit (e.g. a NEVO row).
+  | "unit-mass-exists";
 
 export type ActionResult<T = undefined> =
   | { success: true; data: T }

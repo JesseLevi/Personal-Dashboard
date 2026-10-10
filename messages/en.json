@@ -47,7 +47,8 @@
       "invalid-image": "This image could not be processed. Please try a different photo.",
       "rate-limited": "You have reached the limit of 20 imports per hour. Try again later.",
       "forbidden": "Only admins can do this.",
-      "duplicate": "A mapping with this name already exists."
+      "duplicate": "A mapping with this name already exists.",
+      "unit-mass-exists": "This ingredient already has a weight for this unit."
     },
     "units": {
       "gram": "Gram",

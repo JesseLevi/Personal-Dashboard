@@ -47,7 +47,8 @@
       "invalid-image": "Deze afbeelding kon niet worden verwerkt. Probeer een andere foto.",
       "rate-limited": "Je hebt het maximum van 20 imports per uur bereikt. Probeer het later opnieuw.",
       "forbidden": "Alleen beheerders mogen dit doen.",
-      "duplicate": "Er bestaat al een koppeling met deze naam."
+      "duplicate": "Er bestaat al een koppeling met deze naam.",
+      "unit-mass-exists": "Dit ingrediënt heeft al een gewicht voor deze eenheid."
     },
     "units": {
       "gram": "Gram",

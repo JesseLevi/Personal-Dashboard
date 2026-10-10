@@ -221,7 +221,8 @@ export async function updateEigenIngredient(input: unknown): Promise<ActionResul
 // Nog te koppelen (#326): link a group of the admin's own unlinked lines.
 // Order: optional weight, shared alias, then the admin's own lines. The alias
 // is what the next import hits; relinking only repairs lines already saved.
-// A duplicate alias stops before any line is touched (fix it under Koppelingen).
+// An alias for the same key pointing elsewhere stops before any line is touched; one
+// pointing at the same ingredient is reused, so a retry after a partial run works.
 const RELINK_CHUNK = 200;
 
 export async function linkPendingGroup(input: unknown): Promise<ActionResult<{ relinked: number }>> {
@@ -265,7 +266,7 @@ export async function linkPendingGroup(input: unknown): Promise<ActionResult<{ r
           source_version: todayIso(),
         });
     if (inserted.error) {
-      if (inserted.error.code === UNIQUE_VIOLATION) return failure("duplicate");
+      if (inserted.error.code === UNIQUE_VIOLATION) return failure("unit-mass-exists");
       console.error("[recipes] linkPendingGroup/unit-mass failed:", inserted.error.code, inserted.error.message);
       return failure("generic");
     }
@@ -276,9 +277,23 @@ export async function linkPendingGroup(input: unknown): Promise<ActionResult<{ r
     .from("ingredient_aliases")
     .insert({ alias_normalized: key, ingredient_id: reference.id });
   if (alias.error) {
-    if (alias.error.code === UNIQUE_VIOLATION) return failure("duplicate");
-    console.error("[recipes] linkPendingGroup/alias failed:", alias.error.code, alias.error.message);
-    return failure("generic");
+    if (alias.error.code !== UNIQUE_VIOLATION) {
+      console.error("[recipes] linkPendingGroup/alias failed:", alias.error.code, alias.error.message);
+      return failure("generic");
+    }
+    // Idempotent: an alias already pointing at this ingredient (earlier partial run, or
+    // created under Koppelingen) is fine; only a different target is a real duplicate.
+    const { data: existing, error: existingError } = await supabase
+      .schema("reference")
+      .from("ingredient_aliases")
+      .select("ingredient_id")
+      .eq("alias_normalized", key)
+      .maybeSingle();
+    if (existingError) {
+      console.error("[recipes] linkPendingGroup/alias-lookup failed:", existingError.code, existingError.message);
+      return failure("generic");
+    }
+    if (existing?.ingredient_id !== reference.id) return failure("duplicate");
   }
 
   const ownIngredientId = await resolveIngredientId(supabase, session.userId, {

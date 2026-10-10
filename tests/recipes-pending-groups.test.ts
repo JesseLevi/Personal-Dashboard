@@ -29,7 +29,7 @@ type Op = { table: string; op: string; payload?: unknown; filters: [string, unkn
  * In-memory fake over recipe_ingredients (two users) that applies the eq/in
  * filters it is given, so a missing user_id filter shows up as leaked rows.
  */
-function fakeClient(opts: { aliasError?: { code: string; message: string }; massError?: { code: string; message: string } } = {}) {
+function fakeClient(opts: { existingAliasTarget?: string; aliasError?: { code: string; message: string }; massError?: { code: string; message: string } } = {}) {
   const lines: Row[] = [
     { id: "l1", user_id: "me", name: "Tomaten", ingredient_id: null, needs_review: false },
     { id: "l2", user_id: "me", name: "tomaten", ingredient_id: "x", needs_review: true },
@@ -56,6 +56,9 @@ function fakeClient(opts: { aliasError?: { code: string; message: string }; mass
         }
       }
       if (table === "ingredients") return { data: { id: REF, name_nl: "Tomaat, rauw" }, error: null };
+      if (table === "ingredient_aliases" && op === "select") {
+        return { data: opts.existingAliasTarget ? { ingredient_id: opts.existingAliasTarget } : null, error: null };
+      }
       if (table === "ingredient_aliases" && op === "insert") return { data: null, error: opts.aliasError ?? null };
       if (table === "ingredient_unit_masses" && op === "insert") return { data: null, error: opts.massError ?? null };
       return { data: null, error: null };
@@ -149,8 +152,27 @@ describe("linkPendingGroup", () => {
     expect(removal.filters).toContainEqual(["source", "eigen"]);
   });
 
-  it("stops on a duplicate alias without touching any line", async () => {
-    const { lines } = fakeClient({ aliasError: { code: "23505", message: "dup" } });
+  it("reuses an existing alias that points at the same ingredient and still relinks", async () => {
+    const { lines } = fakeClient({ aliasError: { code: "23505", message: "dup" }, existingAliasTarget: REF });
+    expect(await linkPendingGroup({ name: "tomaten", ingredientId: REF })).toEqual({
+      success: true,
+      data: { relinked: 2 },
+    });
+    expect(lines.find((row) => row.id === "l1")).toMatchObject({ ingredient_id: "own-ingredient-id", needs_review: false });
+  });
+
+  it("gives a weight-per-unit clash its own error code", async () => {
+    fakeClient({ massError: { code: "23505", message: "dup" } });
+    expect(
+      await linkPendingGroup({ name: "tomaten", ingredientId: REF, unitMass: { unit: "stuk", grams: 60 } }),
+    ).toEqual({ success: false, error: "unit-mass-exists" });
+  });
+
+  it("stops on an alias pointing at a different ingredient without touching any line", async () => {
+    const { lines } = fakeClient({
+      aliasError: { code: "23505", message: "dup" },
+      existingAliasTarget: "99999999-9999-4999-8999-999999999999",
+    });
     expect(await linkPendingGroup({ name: "tomaten", ingredientId: REF })).toEqual({ success: false, error: "duplicate" });
     expect(lines.find((row) => row.id === "l1")).toMatchObject({ ingredient_id: null });
   });
