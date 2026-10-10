@@ -777,6 +777,14 @@
         "deleteLabel": "Delete"
       }
     },
+    "noteMarkdownMenu": {
+      "menuLabel": "More options",
+      "copy": "Copy as Markdown",
+      "export": "Export as .md",
+      "copied": "Copied as Markdown",
+      "copyFailed": "Could not copy",
+      "untitled": "Untitled note"
+    },
     "noteSaveStatus": {
       "saved": "Saved",
       "saving": "Saving…",

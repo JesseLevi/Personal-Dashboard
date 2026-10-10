@@ -650,3 +650,37 @@ Resolves `notes-editingbar-link-no-url-input-designed` (user decision
   `lib/notes/details-labels.ts`, set by `NoteEditor.tsx`); a text glyph
   rotated in CSS. Collapsed content is only `hidden`, so `toPlainText` and
   search include it. Slash item `details` ("Inklapbare sectie").
+## Markdown paste, copy and export (#337)
+
+Claude-designed on request; ADR-0021 s3/s4. Storage stays TipTap JSON, markdown
+is only a paste/copy/export format.
+
+- **Lazy by construction**: `lib/notes/markdown.ts` is the only module that
+  imports `@tiptap/markdown` (marked + manager, about 60 kB in its own chunk).
+  Everything else reaches it through `await import(...)` (paste handler, note
+  menu); `tests/notes-markdown.test.ts` fails on any static import.
+  `lib/notes/markdown-detect.ts` (sync "looks like markdown?") and
+  `markdown-export.ts` (filename, download) are tiny and stay eager.
+- **Paste** (`lib/notes/markdown-paste.ts`, registered at the `useEditor` call
+  site, not in the content whitelist): only for plain text with a block marker
+  (heading, list, task, quote, fence, table separator) and no `text/html`
+  flavour; HTML pastes keep ProseMirror's default path. Not inside a code
+  block. `handlePaste` is synchronous, so it claims the paste and inserts once
+  the chunk has loaded; if loading or validation fails the raw text is
+  inserted.
+- **Safety**: parsed JSON goes through `sanitizeToSchema` (unknown nodes and
+  marks dropped, text kept; link hrefs through `isAllowedLinkUri`; result must
+  pass `Node.check()`). Raw HTML in markdown is never interpreted.
+- **Serializer entries**: nodes/marks whose extension ships no
+  `renderMarkdown` get ONE entry in `MARKDOWN_ENTRIES` (`markdown.ts`), plus a
+  fixture in `FIXTURES` (test). Superscript/subscript export as `<sup>`/`<sub>`
+  (one-way: read back as plain text). Text alignment, table column widths and
+  cell spans have no markdown form and are lost on export.
+- **Menu** (`NoteMarkdownMenu`): Ellipsis button left of "Verwijderen", same
+  panel mechanics as `TableMenu` (`usePopoverPanel`, `role="menu"`, arrows /
+  Home / End, Escape and Tab close, focus returns to the trigger). Copy shows a
+  3 s `role="status"` line under the header. Export filename: derived title,
+  sanitised by `markdownFilename` (separators and reserved characters
+  removed, no leading dots, 100 chars, `Naamloze notitie` when empty).
+- **Flagged gap**: no `Copy`/`Download` glyph in the icon registry (adding one
+  moves `icon--all-icons`), so the rows are text-only.
