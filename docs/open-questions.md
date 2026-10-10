@@ -238,6 +238,10 @@ stand-in; a disabled text/fill token (the `text-placeholder` token does not
 darken enough in dark mode, it is brighter than the enabled text) and a Button
 disabled state need a design pass. -> `design/notes/NoteEditor.md` (#330 section).
 
+### notes-slash-menu-icon-glyphs-missing
+
+The slash menu (#332) wants glyphs the `Icon` set does not have: `Pilcrow`/`Type` (Text), `Heading1`/`Heading2`/`Heading3`, `ListOrdered`, `ListTodo`/`ListChecks`. Adding lucide glyphs changes the `icon--all-icons` baseline, which #332 may not regenerate, and raw SVG is not allowed. The menu reuses `TextAlignStart` (Text), `Heading` (H1-H3), `List` (all three lists), `TextQuote`, `SquareCode`, `Table`, `Minus` (Divider); the label tells the rows apart. Register the glyphs in `components/atoms/Icon.tsx`, regenerate that baseline and switch `lib/notes/slash-items.ts`. -> `design/notes/NoteEditor.md` (#332 section).
+
 ---
 
 ## Resolved and removed

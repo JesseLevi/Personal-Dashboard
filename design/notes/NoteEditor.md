@@ -541,3 +541,42 @@ s1/s3). Built from existing components and semantic tokens; no Figma step.
   covered by `tests/notes-writing-comfort.test.ts`.
 - **No new tokens or Figma nodes:** text-secondary / priority-urgent and the
   existing `Button` only. No retry icon exists in `Icon`, so retry is text.
+
+## #332 — slash command menu (Claude-designed on request)
+
+Typing-first block insertion. Built from existing components and semantic
+tokens; no Figma step, no new atom.
+
+- **Engine**: official `@tiptap/suggestion` (pinned `3.30.0` = `@tiptap/core`).
+  `lib/notes/slash-command.ts` is the `SlashCommand` extension (editor-only UI,
+  added at the `useEditor()` call site in `NoteEditor.tsx` next to
+  `Placeholder`, not in the content whitelist). It keeps a tiny external
+  `SlashStore` in the extension storage; `SlashMenu` reads it with
+  `useSyncExternalStore`, so no `ReactRenderer`/`tippy`.
+- **Trigger**: `/` only at the start of a block or after a space
+  (`allowedPrefixes: [" "]`; `a/b` and URLs never open it) and never inside a
+  code block or inline code (`allow`). Items resolve one microtask after the
+  keystroke; the menu opens with real items only, so it never flashes "no
+  results". "Table" is not offered inside a table cell.
+- **Item list**: `lib/notes/slash-items.ts` is the single source (`id`, `icon`,
+  `aliases` nl+en, `run`; labels `components.slashMenu.items.<id>`), reused by
+  #333; later tickets append items. `filterSlashItems` ignores case, accents,
+  spaces and punctuation, matches id, aliases and the translated label, and
+  ranks prefix matches first. Tests: `tests/notes-slash.test.ts` (nl/en
+  aliases, trigger rules, `/kop2` + select gives an H2 with the typed text
+  removed).
+- **Menu**: portalled `Dropdown role="listbox"` of transparent `Button
+  role="option"` rows; the editor keeps DOM focus (the panel `preventDefault`s
+  mousedown, so the iOS keyboard stays open) and carries `aria-expanded`,
+  `aria-controls`, `aria-activedescendant`. Arrows wrap, Enter/Tab pick (Enter
+  with no results is swallowed), Escape closes, hover moves the highlight.
+- **Placement**: under the caret, flipped above when it does not fit, measured
+  against `visualViewport` (clears the iOS keyboard, #263) and against the
+  fixed mobile EditingBar (a `[role=toolbar]` below the caret is the bottom
+  edge). `--menu-x/-y/-max` custom properties as in `EditingBarMenu`;
+  `max-h` + scroll when short on room.
+- **Table**: picking it deletes the `/table` text, then shows #330's size grid
+  at the caret (`TableSizeGrid`, extracted from `TableSizePicker` and shared);
+  Escape returns focus to the editor.
+- **Placeholder**: "Typ '/' voor opties" / "Type '/' for options".
+- **Flagged**: missing glyphs, see `docs/open-questions.md#notes-slash-menu-icon-glyphs-missing`.

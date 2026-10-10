@@ -538,7 +538,7 @@
     },
     "noteEditor": {
       "backLabel": "Terug naar notities",
-      "placeholder": "Start met typen...",
+      "placeholder": "Typ '/' voor opties",
       "deleteLabel": "Verwijderen",
       "deleteConfirmLabel": "Weet je het zeker?",
       "deleteConfirmButtonLabel": "Ja, verwijderen",
@@ -576,6 +576,23 @@
         "orderedList": "Genummerde lijst",
         "taskList": "Checklist",
         "list": "Lijst"
+      }
+    },
+    "slashMenu": {
+      "label": "Blok invoegen",
+      "noResults": "Geen resultaten",
+      "items": {
+        "paragraph": "Tekst",
+        "heading1": "Kop 1",
+        "heading2": "Kop 2",
+        "heading3": "Kop 3",
+        "bulletList": "Opsomming",
+        "orderedList": "Genummerde lijst",
+        "taskList": "Checklist",
+        "blockquote": "Citaat",
+        "codeBlock": "Codeblok",
+        "table": "Tabel",
+        "divider": "Scheidingslijn"
       }
     },
     "noteTable": {

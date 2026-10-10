@@ -13,6 +13,9 @@ import { NoteWordCount } from "@/components/molecules/NoteWordCount";
 import { TableMenu } from "@/components/organisms/TableMenu";
 import { noteExtensions } from "@/lib/notes/extensions";
 import { countWords, readingMinutes, typographyForLocale } from "@/lib/notes/writing-comfort";
+import { SlashMenu } from "@/components/organisms/SlashMenu";
+import { SlashCommand } from "@/lib/notes/slash-command";
+import { SLASH_ITEMS } from "@/lib/notes/slash-items";
 import type { NoteRow } from "@/lib/notes/types";
 import { deleteNote } from "../actions";
 import { useNoteSave } from "./useNoteSave";
@@ -33,6 +36,7 @@ export interface NoteEditorProps {
 
 export function NoteEditor({ note }: NoteEditorProps) {
   const t = useTranslations("components.noteEditor");
+  const tSlash = useTranslations("components.slashMenu");
   const tErrors = useTranslations("notes.errors");
   const locale = useLocale();
   const router = useRouter();
@@ -51,6 +55,11 @@ export function NoteEditor({ note }: NoteEditorProps) {
       Placeholder.configure({ placeholder: t("placeholder") }),
       typographyForLocale(locale),
       CharacterCount.configure({ wordCounter: countWords }),
+      // "/" block menu (#332): labels are searchable in the active language.
+      SlashCommand.configure({
+        items: SLASH_ITEMS,
+        labelsFor: (item) => [tSlash(`items.${item.id}`)],
+      }),
     ],
     content: note.content,
     // Required in the App Router -- without it the server render and the
@@ -132,6 +141,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
         <div className="pt-stack-md">
           <NoteWordCount words={words} minutes={readingMinutes(words)} />
         </div>
+        <SlashMenu editor={editor} />
       </div>
     </div>
   );
