@@ -28,8 +28,8 @@ import type {
  * `onCreateOwnIngredient` are props, ADR-0011 §2) so it stays Ladle-testable
  * with no Next.js request context, and never touches Supabase itself.
  * Deliberate Figma deviation (user decision 2026-07-30): a zero-results
- * "add as new ingredient" affordance the fetched node doesn't draw — full
- * reasoning in design/notes/IngredientSearchPanel.md and the PR body.
+ * "use as plain name" affordance (#324, was "add as new ingredient") the
+ * fetched node doesn't draw — see design/notes/IngredientSearchPanel.md.
  * `level` (#149) forwards straight to `SidePanel` (`RecipePanel` passes `2`).
  */
 
@@ -38,7 +38,7 @@ const SEARCH_DEBOUNCE_MS = 300;
 type SelectedEntry =
   | { kind: "own"; key: string; name: string; ingredient: IngredientRow }
   | { kind: "reference"; key: string; name: string; ingredient: ReferenceIngredientRow }
-  | { kind: "new"; key: string; name: string };
+  | { kind: "plain"; key: string; name: string };
 
 // Builds the Map entry for a search result, branching explicitly on
 // `source` rather than casting — `result.ingredient`'s type is only known
@@ -56,8 +56,8 @@ export function ingredientSearchResultKey(result: IngredientSearchResult): strin
   return `${result.source}:${result.ingredient.id}`;
 }
 
-function newIngredientKey(name: string): string {
-  return `new:${name.trim().toLowerCase()}`;
+function plainNameKey(name: string): string {
+  return `plain:${name.trim().toLowerCase()}`;
 }
 
 // `own` rows carry the user's own free-text `name` and are never translated
@@ -79,10 +79,10 @@ export interface IngredientSearchPanelProps {
   onClose: () => void;
   /** `"use server"` action, e.g. `app/(app)/recepten/actions.ts`'s `searchIngredients` — a thin wrapper around `searchIngredientLibrary` (ADR-0011 §2). Takes the same `unknown` shape every action in this codebase does. */
   onSearch: (input: unknown) => Promise<IngredientSearchResult[]>;
-  /** `"use server"` action `createOwnIngredient` — materialises a library pick or creates a brand-new row (ADR-0011 §2/§5). */
+  /** `"use server"` action `createOwnIngredient` — materialises a library pick (`referenceId` required, ADR-0011 §2, ADR-0020 §5). */
   onCreateOwnIngredient: (input: unknown) => Promise<ActionResult<IngredientRow>>;
-  /** Fired after a successful Opslaan with every selected/materialised ingredient row, before `onClose`. Never fired on a plain close/cancel — same contract shape as `CardDetailPanel`'s `onMutated`. */
-  onSave: (ingredients: IngredientRow[]) => void;
+  /** Fired once after a successful Opslaan with every materialised ingredient row plus the "use as plain name" picks (#324: recipe/shopping-list-only names, no `public.ingredients` row), before `onClose`. Never fired on a plain close/cancel — same contract shape as `CardDetailPanel`'s `onMutated`. */
+  onSave: (ingredients: IngredientRow[], plainNames: string[]) => void;
   /** Pre-fills the search field on open. Real use: a future caller (#126) reopening this panel with text already typed elsewhere; also what makes the "filled results" Ladle story deterministic (design/notes/IngredientSearchPanel.md). */
   initialQuery?: string;
   /** `ingredientSearchResultKey` values to render pre-checked once the initial search resolves — lets a caller reopen the panel with a previous multi-select intact, and is the "checked rows" Ladle story's determinism mechanism. */
@@ -186,14 +186,14 @@ export function IngredientSearchPanel({
     });
   }
 
-  function toggleNewIngredient(name: string) {
-    const key = newIngredientKey(name);
+  function togglePlainName(name: string) {
+    const key = plainNameKey(name);
     setSelections((current) => {
       const next = new Map(current);
       if (next.has(key)) {
         next.delete(key);
       } else {
-        next.set(key, { kind: "new", key, name: name.trim() });
+        next.set(key, { kind: "plain", key, name: name.trim() });
       }
       return next;
     });
@@ -213,26 +213,30 @@ export function IngredientSearchPanel({
     setSaveError(null);
     startSaveTransition(async () => {
       const materialized: IngredientRow[] = [];
+      const plainNames: string[] = [];
       for (const entry of selections.values()) {
         if (entry.kind === "own") {
           materialized.push(entry.ingredient);
           continue;
         }
-        const referenceId = entry.kind === "reference" ? entry.ingredient.id : null;
-        const result = await onCreateOwnIngredient({ name: entry.name, referenceId });
+        if (entry.kind === "plain") {
+          plainNames.push(entry.name);
+          continue;
+        }
+        const result = await onCreateOwnIngredient({ name: entry.name, referenceId: entry.ingredient.id });
         if (!result.success) {
           setSaveError(tErrors(result.error));
           return;
         }
         materialized.push(result.data);
       }
-      onSave(materialized);
+      onSave(materialized, plainNames);
       handleClose();
     });
   }
 
   const showPrompt = results === null && !isSearching && !searchError;
-  const newKey = newIngredientKey(trimmedQuery);
+  const plainKey = plainNameKey(trimmedQuery);
 
   return (
     <SidePanel
@@ -311,13 +315,13 @@ export function IngredientSearchPanel({
             <div className="flex w-full items-center gap-2">
               <Icon name="Plus" className="text-text-secondary" />
               <p className="text-base font-semibold text-text-primary">
-                {t("addNewIngredientLabel", { name: trimmedQuery })}
+                {t("usePlainNameLabel", { name: trimmedQuery })}
               </p>
             </div>
             <Checkbox
-              checked={selections.has(newKey)}
-              aria-label={t("addNewIngredientLabel", { name: trimmedQuery })}
-              onClick={() => toggleNewIngredient(trimmedQuery)}
+              checked={selections.has(plainKey)}
+              aria-label={t("usePlainNameLabel", { name: trimmedQuery })}
+              onClick={() => togglePlainName(trimmedQuery)}
             />
           </div>
         </Card>

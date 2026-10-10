@@ -253,7 +253,7 @@ export function RecipePanel({
   const activeStepIngredientRow =
     steps.find((row) => row.localId === stepIngredientPanel.stepLocalId) ?? null;
 
-  function handleIngredientSaved(selected: IngredientRow[]) {
+  function handleIngredientSaved(selected: IngredientRow[], plainNames: string[]) {
     // Reuses #131's multi-select IngredientSearchPanel as a single-select
     // picker here — the first checked result wins, matching one row's one
     // name/ingredientId slot. See design/notes/RecipePanel.md.
@@ -271,6 +271,14 @@ export function RecipePanel({
       updateIngredientRow(ingredientSearch.rowLocalId, {
         name: picked.name,
         ingredientId: picked.id,
+        needsReview: false,
+      });
+    } else if (plainNames[0] && ingredientSearch.rowLocalId) {
+      // #324 (ADR-0020 §5): a hand-typed name stays a recipe-only name,
+      // ingredient_id null; nutrition leaves the line out (existing unlinked path).
+      updateIngredientRow(ingredientSearch.rowLocalId, {
+        name: plainNames[0],
+        ingredientId: null,
         needsReview: false,
       });
     }
