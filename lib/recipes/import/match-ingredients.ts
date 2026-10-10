@@ -4,8 +4,9 @@ import type { Database } from "@/lib/database.types";
 import { findOrCreateOwnIngredient } from "@/lib/recipes/ingredients";
 
 // Matches parsed ingredient names (#315) to the ingredient library (#316,
-// ADR-0019 §2): user alias first, then pg_trgm candidates from the SQL
-// function public.match_ingredient_candidates. Only the parser's `name` is
+// ADR-0019 §2, order amended by ADR-0020 §3): user alias first, then the
+// shared curated alias (reference.ingredient_aliases), then pg_trgm candidates
+// from the SQL function public.match_ingredient_candidates. Only the parser's `name` is
 // used; quantity and unit are never touched. A line it cannot link with
 // confidence gets needsReview=true and keeps its candidates for the LLM step
 // (#317).
@@ -197,8 +198,8 @@ export const WIDE_CANDIDATES_PER_TERM = 8;
 export const MAX_LINK_CANDIDATES = 10;
 
 /**
- * Matches every parsed name (index-aligned result). Two round trips at most:
- * one alias lookup, one RPC for the names the alias did not settle. Throws on
+ * Matches every parsed name (index-aligned result). Three round trips at
+ * most: own alias lookup, shared alias lookup, one RPC for the names the alias did not settle. Throws on
  * a database error so the import pipeline can fail loudly rather than silently
  * produce an all-review recipe.
  */
@@ -233,6 +234,27 @@ export async function matchIngredients(
     (aliasRows ?? []).map((row) => [row.alias_normalized, row.ingredient_id]),
   );
 
+  // Shared curated aliases (ADR-0020 §3): one extra query, only for the keys
+  // the user's own aliases missed. Authenticated users may read the table
+  // (RLS); alias lists never go into a prompt.
+  const missedKeys = keys.filter((key) => !aliasByKey.has(key));
+  const sharedByKey = new Map<string, { id: string; name: string }>();
+  if (missedKeys.length > 0) {
+    const { data: sharedRows, error: sharedError } = await supabase
+      .schema("reference")
+      .from("ingredient_aliases")
+      .select("alias_normalized, ingredient_id, ingredients(name_nl)")
+      .in("alias_normalized", missedKeys);
+    if (sharedError) {
+      console.error("[recipes] matchIngredients/shared-alias-lookup failed:", sharedError.code, sharedError.message);
+      throw new Error("Failed to look up shared ingredient aliases");
+    }
+    for (const row of sharedRows ?? []) {
+      const name = row.ingredients?.name_nl;
+      if (name) sharedByKey.set(row.alias_normalized, { id: row.ingredient_id, name });
+    }
+  }
+
   const pending: number[] = [];
   normalized.forEach((key, index) => {
     const ingredientId = key ? aliasByKey.get(key) : undefined;
@@ -240,6 +262,14 @@ export async function matchIngredients(
       results[index] = {
         ingredientId,
         chosen: { source: "own", id: ingredientId, name: key, score: 1 },
+        needsReview: false,
+        candidates: [],
+      };
+    } else if (key && sharedByKey.has(key)) {
+      const shared = sharedByKey.get(key)!;
+      results[index] = {
+        ingredientId: null,
+        chosen: { source: "reference", referenceId: shared.id, name: shared.name, score: 1 },
         needsReview: false,
         candidates: [],
       };
