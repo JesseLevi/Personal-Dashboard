@@ -5,6 +5,8 @@ import { createR2Store } from "./r2";
 import type { ObjectStore } from "./types";
 
 export { objectKey, keyBelongsTo, modulePrefix } from "./keys";
+export { redirectToStoredObject, STORED_OBJECT_CACHE_CONTROL } from "./deliver";
+export type { RedirectToStoredObjectOptions } from "./deliver";
 export type { ObjectStore, PutOptions, StoredObject } from "./types";
 
 let store: ObjectStore | null = null;
