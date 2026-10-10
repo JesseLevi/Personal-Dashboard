@@ -15,6 +15,7 @@
 - **Mac mini/Ollama is shelved (ADR-0018)**: Vercel + Supabase Cloud is the target, and AI goes through hosted APIs behind `lib/ai/`. #1–#5 are obsolete.
 - **#309 (recipe via URL)**: pipeline (#313–#317) and UI (#318, in review) are built. Follow-up on branch `fix/309-import-nevo-linking`: LLM search terms + best-fit NEVO choice, imported amounts kept with an estimated weight per unit stored as the user's override, translation into the user's locale, Haiku 5.5, add menu portalled (ADR-0019 §3/§4 amended). Nutrition now sums the recognised rows, with a counted/total line and "niet meegeteld" markers; the edit panel shows each row's NEVO link. Prompts are untested against the live model. Before it works on hosted: dispatch `deploy.yml` with the #312 migrations (user decision), set `ANTHROPIC_API_KEY`. `icon--all-icons` baseline needs regenerating (Globe added). Not yet exercised against a live deploy: `after()` keeping the session (checked in Next source only).
 - `[OPT]` round (#279–#304): all merged or in review except the hosted tickets #279 and #291.
+- **R2 object storage (epic #359, ADR-0024)**: #360–#363 merged. New recipe thumbnails go to R2; legacy stems still stream from the Supabase bucket. **Before the next production deploy** the user must do #360's checklist (buckets, scoped tokens, Vercel `R2_*` env), otherwise uploads/imports return `upload-failed`. Nothing has run against real R2 yet. Next: #364 (backfill, after a live check), #338, #365.
 
 ## Next
 
