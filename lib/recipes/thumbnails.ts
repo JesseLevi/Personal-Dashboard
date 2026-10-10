@@ -9,7 +9,7 @@ import {
   thumbnailVariantPath,
   type ThumbnailVariant,
 } from "@/lib/recipes/thumbnail-processing";
-import { STORED_OBJECT_CACHE_CONTROL, getObjectStore, objectKey } from "@/lib/storage";
+import { STORED_OBJECT_CACHE_CONTROL, getObjectStore, objectKey, type ObjectStore } from "@/lib/storage";
 import type { ActionResult } from "@/lib/recipes/types";
 
 // Thumbnail bytes live in R2 (ADR-0024); `recipes.thumbnail_path` stores the
@@ -49,9 +49,10 @@ export async function storeRecipeThumbnail(
   const cardKey = thumbnailVariantPath(stem, "card");
   const fullKey = thumbnailVariantPath(stem, "full");
   const options = { contentType: "image/webp", cacheControl: STORED_OBJECT_CACHE_CONTROL };
-  const store = getObjectStore();
-
+  let store: ObjectStore;
   try {
+    // Throws when R2 env is unset; map to upload-failed instead of crashing.
+    store = getObjectStore();
     await store.put(cardKey, variants.card, options);
   } catch (error) {
     console.error("[recipes] storeRecipeThumbnail (card) failed:", error instanceof Error ? error.message : error);

@@ -105,6 +105,20 @@ describe("storeRecipeThumbnail", () => {
   });
 });
 
+describe("storeRecipeThumbnail without configured storage", () => {
+  it("maps a throwing store accessor to upload-failed", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    setObjectStoreForTesting(null);
+    vi.stubEnv("R2_ACCOUNT_ID", "");
+    vi.stubEnv("R2_ACCESS_KEY_ID", "");
+    vi.stubEnv("R2_SECRET_ACCESS_KEY", "");
+    vi.stubEnv("R2_BUCKET_NAME", "");
+    expect(await storeRecipeThumbnail(A, await png())).toEqual({ success: false, error: "upload-failed" });
+    expect(log).toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+});
+
 describe("deleteRecipeThumbnail", () => {
   it("removes both R2 variants of a new stem and never touches Supabase", async () => {
     for (const v of ["card", "full"]) {
