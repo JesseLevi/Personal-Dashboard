@@ -177,6 +177,17 @@ describe("deriveTitle", () => {
     expect(deriveTitle(document)).toBe("Boodschappenlijst");
   });
 
+  it("collapses the tab between cells of a first table row into a space", () => {
+    const row = {
+      type: "tableRow",
+      content: [
+        { type: "tableCell", content: [paragraph(text("Product"))] },
+        { type: "tableCell", content: [paragraph(text("Aantal"))] },
+      ],
+    };
+    expect(deriveTitle(doc({ type: "table", content: [row] }))).toBe("Product Aantal");
+  });
+
   it("derives the title from a document that starts with a codeBlock, up to its first internal line", () => {
     const document = doc({ type: "codeBlock", content: [text("npm install\nnpm run build")] });
     expect(deriveTitle(document)).toBe("npm install");

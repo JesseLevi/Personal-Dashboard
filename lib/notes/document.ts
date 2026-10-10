@@ -110,7 +110,7 @@ const TITLE_MAX_LENGTH = 200;
  * (the migration's own file-header note).
  */
 export function deriveTitle(doc: TipTapDocument): string {
-  const firstLine = toPlainText(doc).split("\n")[0]?.trim() ?? "";
+  const firstLine = (toPlainText(doc).split("\n")[0] ?? "").replace(/\t+/g, " ").trim();
   if (firstLine.length <= TITLE_MAX_LENGTH) return firstLine;
   return `${firstLine.slice(0, TITLE_MAX_LENGTH - 1).trimEnd()}…`;
 }
