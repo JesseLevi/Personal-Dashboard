@@ -38,9 +38,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.109.1
       - name: Start local Supabase (applies migrations)
-        run: supabase start
+        # Excluded: services the job never touches (pgTAP + gen types need only
+        # postgres, auth, storage, postgrest and postgres-meta).
+        run: supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,realtime,supavisor
       - name: RLS test suite (pgTAP)
         run: supabase test db
       - name: RLS coverage gate (ADR-0009)
@@ -59,5 +61,3 @@ jobs:
           path: lib/database.types.ts
       - name: lib/database.types.ts matches the local schema, incl. reference (#190)
         run: git diff --exit-code lib/database.types.ts
-      - run: supabase stop
-        if: always()
