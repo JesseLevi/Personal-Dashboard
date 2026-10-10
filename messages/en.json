@@ -248,7 +248,11 @@
       "invalid-input": "Check the information you entered.",
       "unauthenticated": "Sign in again to continue.",
       "not-found": "This item no longer exists or isn't yours.",
-      "generic": "Something went wrong. Please try again."
+      "generic": "Something went wrong. Please try again.",
+      "invalid-file-type": "This file type is not supported. Use JPEG, PNG, WebP or GIF.",
+      "file-too-large": "This image is too large (maximum 10 MB).",
+      "invalid-image": "This image could not be processed. Please try a different one.",
+      "upload-failed": "Uploading the image failed. Please try again."
     },
     "timestamp": {
       "yesterday": "Yesterday"

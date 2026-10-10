@@ -9,6 +9,8 @@ export interface ObjectStore {
   /** Null when the key does not exist. */
   get(key: string): Promise<StoredObject | null>;
   delete(keys: string[]): Promise<void>;
+  /** Every key starting with `prefix` (all pages). */
+  list(prefix: string): Promise<string[]>;
   /** Deletes every key starting with `prefix`; returns how many. */
   deletePrefix(prefix: string): Promise<number>;
   /** Hour-stable GET URL: same key and hour give the same URL (ADR-0024 §5). */

@@ -111,3 +111,8 @@ export const moveNoteSchema = z.object({
 export const searchNotesSchema = z.object({
   query: z.string().max(200),
 });
+
+export const noteImageParamsSchema = z.object({
+  noteId: z.uuid(),
+  imageId: z.uuid(),
+});

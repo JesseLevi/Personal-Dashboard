@@ -24,6 +24,9 @@ export function createFakeObjectStore(options: { pageSize?: number } = {}): Fake
     async delete(keys) {
       for (const k of keys) objects.delete(k);
     },
+    async list(prefix) {
+      return [...objects.keys()].filter((k) => k.startsWith(prefix)).sort();
+    },
     async deletePrefix(prefix) {
       let count = 0;
       store.lastListPages = 0;

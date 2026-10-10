@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/notes/session";
+import { deleteNoteImages, sweepNoteImages, uploadNoteImageForUser } from "@/lib/notes/images";
 import { nextPosition } from "@/lib/boards/positioning";
 import { deriveTitle, extractNoteLinkIds, toPlainText } from "@/lib/notes/document";
 import {
@@ -152,7 +153,12 @@ export async function deleteCategory(input: unknown): Promise<ActionResult> {
   if ("error" in auth) return { success: false, error: auth.error };
 
   // notes.category_id is `on delete cascade` (20260813000001_note_schema.sql):
-  // deleting a category deletes its notes. No manual cleanup needed here.
+  // deleting a category deletes its notes; only their R2 images need cleanup.
+  const { data: doomed } = await supabase
+    .from("notes")
+    .select("id")
+    .eq("category_id", parsed.data.categoryId)
+    .eq("user_id", auth.userId);
   const { data, error } = await supabase
     .from("note_categories")
     .delete()
@@ -166,6 +172,8 @@ export async function deleteCategory(input: unknown): Promise<ActionResult> {
     return { success: false, error: "generic" };
   }
   if (!data) return { success: false, error: "not-found" };
+
+  for (const note of doomed ?? []) await deleteNoteImages(auth.userId, note.id);
 
   revalidatePath("/notities", "layout");
   return { success: true, data: undefined };
@@ -373,6 +381,9 @@ export async function updateNoteContent(
     return { success: false, error: "generic" };
   }
 
+  // Orphan sweep (ADR-0022 §6); never fails the save.
+  await sweepNoteImages(auth.userId, noteId, content);
+
   revalidatePath("/notities", "layout");
   return { success: true, data: { title } };
 }
@@ -399,8 +410,22 @@ export async function deleteNote(input: unknown): Promise<ActionResult> {
   }
   if (!data) return { success: false, error: "not-found" };
 
+  await deleteNoteImages(auth.userId, parsed.data.noteId);
+
   revalidatePath("/notities", "layout");
   return { success: true, data: undefined };
+}
+
+// Stores one image for a note and returns the same-origin `src` for the
+// document (#338). Callers pre-resize with lib/images/downscale-client.ts to
+// stay under Vercel's 4.5 MB body limit; the editor caller is #339.
+export async function uploadNoteImage(
+  noteId: string,
+  file: File,
+): Promise<ActionResult<{ src: string }>> {
+  const parsed = deleteNoteSchema.safeParse({ noteId });
+  if (!parsed.success || !(file instanceof File)) return { success: false, error: "invalid-input" };
+  return uploadNoteImageForUser(parsed.data.noteId, file);
 }
 
 // Drag & drop persistence (ADR-0015): one round trip via the public.move_note

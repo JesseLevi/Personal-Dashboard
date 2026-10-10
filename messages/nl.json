@@ -248,7 +248,11 @@
       "invalid-input": "Controleer de ingevoerde gegevens.",
       "unauthenticated": "Log opnieuw in om door te gaan.",
       "not-found": "Dit onderdeel bestaat niet (meer) of is niet van jou.",
-      "generic": "Er ging iets mis. Probeer het opnieuw."
+      "generic": "Er ging iets mis. Probeer het opnieuw.",
+      "invalid-file-type": "Dit bestandstype wordt niet ondersteund. Gebruik JPEG, PNG, WebP of GIF.",
+      "file-too-large": "Deze afbeelding is te groot (maximaal 10 MB).",
+      "invalid-image": "Deze afbeelding kon niet worden verwerkt. Probeer een andere.",
+      "upload-failed": "Uploaden van de afbeelding is mislukt. Probeer het opnieuw."
     },
     "timestamp": {
       "yesterday": "Gisteren"
