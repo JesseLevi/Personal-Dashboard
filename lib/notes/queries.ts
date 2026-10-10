@@ -250,3 +250,91 @@ export async function getNoteCategoryNoteCounts(): Promise<number[]> {
   }
   return embeddedCounts(data, "notes");
 }
+
+/* #340 (ADR-0023): note links ------------------------------------------- */
+
+export interface BacklinkRow {
+  id: string;
+  title: string;
+  category_id: string;
+  category_name: string;
+}
+
+interface RawBacklinkQueryRow {
+  source: {
+    id: string;
+    title: string;
+    category_id: string;
+    updated_at: string;
+    note_categories: { name: string } | null;
+  } | null;
+}
+
+/**
+ * Notes that link to `noteId` ("Gelinkt vanuit"), most recently updated
+ * first, each with its category name. Empty array for an invalid id, a
+ * signed-out caller, or a note nobody links to. RLS scopes both the link rows
+ * and the embedded source notes to the signed-in user.
+ */
+export async function getBacklinks(noteId: string): Promise<BacklinkRow[]> {
+  const parsedId = z.uuid().safeParse(noteId);
+  if (!parsedId.success) return [];
+
+  const supabase = await createSupabaseServerClient();
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return [];
+
+  const { data, error } = await supabase
+    .from("note_links")
+    .select(
+      "source:notes!note_links_source_note_id_fkey(id, title, category_id, updated_at, note_categories(name))",
+    )
+    .eq("target_note_id", parsedId.data)
+    .eq("user_id", userId)
+    .overrideTypes<RawBacklinkQueryRow[], { merge: false }>();
+
+  if (error) {
+    console.error("[notes] getBacklinks failed:", error.code, error.message);
+    throw new Error("Failed to load backlinks");
+  }
+
+  return data
+    .flatMap((row) => (row.source ? [row.source] : []))
+    .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+    .map(
+      (source): BacklinkRow => ({
+        id: source.id,
+        title: source.title,
+        category_id: source.category_id,
+        category_name: source.note_categories?.name ?? "",
+      }),
+    );
+}
+
+/**
+ * Current titles for a set of note ids, as a `{ [noteId]: title }` record, in
+ * one RLS-scoped query. Ids that don't exist (deleted target) or aren't the
+ * caller's are simply absent -- the renderer shows its "deleted note" state
+ * for those (ADR-0023 §2). Invalid ids are ignored.
+ */
+export async function resolveNoteTitles(ids: string[]): Promise<Record<string, string>> {
+  const valid = [...new Set(ids)].filter((id) => z.uuid().safeParse(id).success);
+  if (valid.length === 0) return {};
+
+  const supabase = await createSupabaseServerClient();
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return {};
+
+  const { data, error } = await supabase
+    .from("notes")
+    .select("id, title")
+    .in("id", valid)
+    .eq("user_id", userId)
+    .overrideTypes<Array<{ id: string; title: string }>, { merge: false }>();
+
+  if (error) {
+    console.error("[notes] resolveNoteTitles failed:", error.code, error.message);
+    throw new Error("Failed to resolve note titles");
+  }
+  return Object.fromEntries(data.map((note) => [note.id, note.title]));
+}

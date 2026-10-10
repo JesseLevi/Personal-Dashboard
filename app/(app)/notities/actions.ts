@@ -5,7 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/notes/session";
 import { nextPosition } from "@/lib/boards/positioning";
-import { deriveTitle, toPlainText } from "@/lib/notes/document";
+import { deriveTitle, extractNoteLinkIds, toPlainText } from "@/lib/notes/document";
 import {
   createCategorySchema,
   createNoteSchema,
@@ -352,24 +352,26 @@ export async function updateNoteContent(
   const title = deriveTitle(content);
   const contentText = toPlainText(content);
 
-  const { data, error } = await supabase
-    .from("notes")
-    // `content` (parsed by tiptapDocumentSchema, lib/notes/schemas.ts) is a
-    // TipTapDocument -- a nominal interface, not structurally an indexable
-    // `{ [key: string]: Json }`, so it needs an explicit cast at this write
-    // boundary. NoteRow's own narrowing (lib/notes/types.ts) is the read-side
-    // counterpart of this same cast.
-    .update({ content: content as unknown as Json, content_text: contentText, title })
-    .eq("id", noteId)
-    .eq("user_id", auth.userId)
-    .select("id")
-    .maybeSingle();
+  // #340 (ADR-0023): one transaction writes content/title/content_text and
+  // replaces the note's note_links set (public.save_note_content, security
+  // invoker). `content` (parsed by tiptapDocumentSchema) is a TipTapDocument
+  // -- a nominal interface, not structurally an indexable
+  // `{ [key: string]: Json }`, so it needs an explicit cast at this write
+  // boundary. Foreign/unknown target ids are dropped by the RPC.
+  const { error } = await supabase.rpc("save_note_content", {
+    p_note_id: noteId,
+    p_content: content as unknown as Json,
+    p_title: title,
+    p_content_text: contentText,
+    p_target_ids: extractNoteLinkIds(content),
+  });
 
   if (error) {
+    // NL404 = note not found / not owned by this user (see the migration).
+    if (error.code === "NL404") return { success: false, error: "not-found" };
     logDbError("updateNoteContent", error);
     return { success: false, error: "generic" };
   }
-  if (!data) return { success: false, error: "not-found" };
 
   revalidatePath("/notities", "layout");
   return { success: true, data: { title } };
