@@ -79,6 +79,17 @@ export const SLASH_ITEMS: SlashItem[] = [
     aliases: { nl: ["scheidingslijn", "lijn", "streep", "hr"], en: ["divider", "line", "rule", "separator", "hr"] },
     run: (editor) => editor.chain().focus().setHorizontalRule().run(),
   },
+  // #336
+  {
+    id: "details",
+    icon: "ChevronDown",
+    aliases: {
+      nl: ["inklapbaar", "sectie", "uitklappen", "verbergen", "details"],
+      en: ["collapsible", "section", "toggle", "accordion", "details", "spoiler"],
+    },
+    isEnabled: (editor) => !editor.isActive("details"),
+    run: (editor) => editor.chain().focus().setDetails().run(),
+  },
 ];
 
 function normalize(value: string): string {

@@ -51,6 +51,11 @@ const LINE_ENDING_TYPES = new Set([
   // title when a note starts with a checklist, and adds noise to search.
   "taskItem",
   "tableRow",
+  // #336: a collapsible section is `details` > `detailsSummary` (one line) +
+  // `detailsContent` (ordinary blocks, each ending its own line). Both are
+  // flattened whether the section is open or collapsed, so a note stays
+  // searchable by text it hides.
+  "detailsSummary",
 ]);
 
 function flatten(node: TipTapNode): string {

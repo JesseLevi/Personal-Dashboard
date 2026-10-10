@@ -595,8 +595,30 @@
         "blockquote": "Quote",
         "codeBlock": "Code block",
         "table": "Table",
-        "divider": "Divider"
+        "divider": "Divider",
+        "details": "Collapsible section"
       }
+    },
+    "codeBlock": {
+      "languageLabel": "Language",
+      "copy": "Copy",
+      "copied": "Copied",
+      "languages": {
+        "plain": "Plain text",
+        "javascript": "JavaScript",
+        "typescript": "TypeScript",
+        "json": "JSON",
+        "css": "CSS",
+        "html": "HTML",
+        "bash": "Bash",
+        "sql": "SQL",
+        "python": "Python",
+        "markdown": "Markdown"
+      }
+    },
+    "noteDetails": {
+      "expand": "Expand section",
+      "collapse": "Collapse section"
     },
     "noteBubbleMenu": {
       "label": "Text formatting",

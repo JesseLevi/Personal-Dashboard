@@ -595,8 +595,30 @@
         "blockquote": "Citaat",
         "codeBlock": "Codeblok",
         "table": "Tabel",
-        "divider": "Scheidingslijn"
+        "divider": "Scheidingslijn",
+        "details": "Inklapbare sectie"
       }
+    },
+    "codeBlock": {
+      "languageLabel": "Taal",
+      "copy": "Kopiëren",
+      "copied": "Gekopieerd",
+      "languages": {
+        "plain": "Platte tekst",
+        "javascript": "JavaScript",
+        "typescript": "TypeScript",
+        "json": "JSON",
+        "css": "CSS",
+        "html": "HTML",
+        "bash": "Bash",
+        "sql": "SQL",
+        "python": "Python",
+        "markdown": "Markdown"
+      }
+    },
+    "noteDetails": {
+      "expand": "Sectie uitklappen",
+      "collapse": "Sectie inklappen"
     },
     "noteBubbleMenu": {
       "label": "Tekstopmaak",

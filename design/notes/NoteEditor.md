@@ -624,3 +624,29 @@ Resolves `notes-editingbar-link-no-url-input-designed` (user decision
   (adding one changes the `icon--all-icons` baseline), so Open reuses `Link`
   and Remove reuses `Trash`, both with visible labels. `updateDelay={150}` on
   the bubble is a number handed to TipTap, not a class.
+
+## Code blocks and collapsible sections (#336, Claude-designed on request)
+
+- **Code block** keeps the node name `codeBlock` and attribute `language`
+  (`null` = plain), so stored blocks load unchanged (`tests/notes-code-details.test.ts`).
+  StarterKit's is off (`codeBlock: false`); `CodeBlockLowlight` is extended
+  with a React node view, `components/organisms/CodeBlockView.tsx`: a labelled
+  `Dropdown` (language, collapses on choice, focus back to the editor) and an
+  outline `Button` (copy raw `node.textContent`; label "Gekopieerd" plus the
+  `Check` glyph for 2s, mirrored in a `role="status"` region). Read-only
+  editors show the language as text. The chrome sits above the code inside
+  `.code-block` (the surface moved from `<pre>` to the wrapper).
+- **Languages** (`lib/notes/code-languages.ts`): plain, javascript, typescript,
+  json, css, html (highlight.js `xml`), bash, sql, python, markdown. Each
+  grammar is a dynamic `import()`, registered on first use; the node view loads
+  its block's grammar, then `rehighlightCodeBlocks` dispatches a
+  content-neutral, history-less, update-less transaction (the lowlight plugin
+  only recomputes on a doc change). No auto-detection. Bundle evidence: PR #336.
+- **Colours**: highlight.js classes in `app/globals.css` mapped to existing
+  text tokens only; the palette gap is `code-syntax-colour-tokens`.
+- **Details**: `Details` (attr `open`, `persist: true`) > `detailsSummary`
+  (text) + `detailsContent` (block+). The toggle is the extension's own
+  `<button>` (Enter/Space, aria-expanded, translated label via
+  `lib/notes/details-labels.ts`, set by `NoteEditor.tsx`); a text glyph
+  rotated in CSS. Collapsed content is only `hidden`, so `toPlainText` and
+  search include it. Slash item `details` ("Inklapbare sectie").

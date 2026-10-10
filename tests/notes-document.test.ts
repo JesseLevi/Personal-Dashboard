@@ -231,3 +231,42 @@ describe("task lists (#329)", () => {
     expect(toPlainText(document)).toContain("kopen");
   });
 });
+
+// #336: code blocks and collapsible sections.
+describe("code blocks and collapsible sections (#336)", () => {
+  const summary = (label: string): TipTapNode => ({ type: "detailsSummary", content: label ? [text(label)] : [] });
+  const content = (...blocks: TipTapNode[]): TipTapNode => ({ type: "detailsContent", content: blocks });
+  const details = (...children: TipTapNode[]): TipTapNode => ({ type: "details", content: children });
+
+  it("includes a code block's raw text, line by line", () => {
+    const document = doc(paragraph(text("Intro")), { type: "codeBlock", content: [text("npm i\nnpm test")] });
+    expect(toPlainText(document)).toBe("Intro\nnpm i\nnpm test");
+  });
+
+  it("includes a details summary and its content", () => {
+    const document = doc(details(summary("Meer info"), content(paragraph(text("Verborgen tekst")), paragraph(text("Tweede")))));
+    expect(toPlainText(document)).toBe("Meer info\nVerborgen tekst\nTweede");
+  });
+
+  it("includes the text of a collapsed section (open: false) and of an open one", () => {
+    for (const open of [false, true]) {
+      const document = doc({ type: "details", content: [summary("Titel"), content(paragraph(text("Zoekbaar")))], ...{ attrs: { open } } } as TipTapNode);
+      expect(toPlainText(document)).toContain("Zoekbaar");
+    }
+  });
+
+  it("includes a code block nested in a details content", () => {
+    const document = doc(details(summary("Snippet"), content({ type: "codeBlock", content: [text("const a = 1;")] })));
+    expect(toPlainText(document)).toBe("Snippet\nconst a = 1;");
+  });
+
+  it("derives the title from a leading details summary", () => {
+    const document = doc(details(summary("Uitklapper"), content(paragraph(text("Inhoud")))));
+    expect(deriveTitle(document)).toBe("Uitklapper");
+  });
+
+  it("an empty summary adds no stray blank line", () => {
+    const document = doc(details(summary(""), content(paragraph(text("Inhoud")))));
+    expect(toPlainText(document)).toBe("Inhoud");
+  });
+});
