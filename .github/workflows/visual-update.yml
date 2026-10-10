@@ -13,10 +13,6 @@ name: Visual Update
 #   gh workflow run ci-visual.yml --ref <branch>
 # Refuses to run on main.
 on:
-  # TEMPORARY (#352): lets the run happen before this file exists on main. Remove.
-  push:
-    branches: [ci/352-visual-gate-speed]
-    paths: ['.github/workflows/visual-update.yml']
   workflow_dispatch:
     inputs:
       grep:
