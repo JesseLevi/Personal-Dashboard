@@ -98,7 +98,7 @@ When a component changes in Figma: look up its node-id in `design/figma-map.json
 
 **AI/infra**: `embeddings` (source_table, source_id, chunk_index, `content_hash`, `content_text`, `embedding vector(1024)` — bge-m3, ADR-0006), `jobs` (type, payload jsonb, status enum `pending|running|done|failed`, run_at, attempts, last_error), `agent_signals` (detector, message, payload jsonb, status enum `new|dismissed`), `user_ai_keys` → Vault-backed (ADR-0002).
 
-**Storage buckets** (private, RLS'd, path prefix = user_id): `recipe-thumbnails`.
+**Object storage** (ADR-0024): binary uploads live in a private Cloudflare R2 bucket per environment, keys `<user_id>/<module>/…`, reached only through `lib/storage/`. The owning row in Postgres decides ownership. Legacy Supabase bucket `recipe-thumbnails` is retired once its objects are copied to R2.
 
 ### 4.3 Search
 
@@ -135,7 +135,7 @@ Deliberately simple: no streaming, no agent frameworks, no LangChain. A queue ta
 - **Email delivery**: magic-link auth requires SMTP for self-hosted GoTrue — configure a transactional provider (e.g. Resend/Postmark free tier) in Phase 1; without it, half the login story silently doesn't work.
 - **Secrets**: `.env` files live outside git (repo ships `.env.example`); CI secrets in GitHub Actions; `service_role` key exists only in server/worker env, never in client bundles (`import "server-only"` + CI grep, ADR-0002). Per-user AI API keys and calendar credentials in Supabase Vault via server-side functions (ADR-0002).
 - **Content rendering**: TipTap documents render exclusively through TipTap's React renderer with a fixed extension whitelist — never `dangerouslySetInnerHTML` on stored content. Agent output renders as plain text (§5, item 5).
-- **Uploads**: recipe images are content-type- and size-validated server-side, **EXIF-stripped on upload** (a photo taken in your own kitchen carries GPS metadata — a real leak), stored in private buckets, served via short-lived signed URLs.
+- **Uploads**: recipe images are content-type- and size-validated server-side, **EXIF-stripped on upload** (a photo taken in your own kitchen carries GPS metadata — a real leak), re-encoded to WebP with `sharp`, stored in private R2 (ADR-0024), served through an app route that checks ownership and redirects to a presigned URL.
 - **RLS everywhere**, verified by CI (ADR-0009).
 - **Supply chain / CI runner**: the self-hosted runner executes generated code on the machine that holds all data. Mitigations: runner under a dedicated non-admin macOS user; workflows run only from this repo's protected branches (no fork PRs); `pnpm install --frozen-lockfile` everywhere; Renovate/Dependabot with manual merge; `pnpm audit` in CI.
 - **Backups**: nightly `pg_dump` + Storage rsync, encrypted off-site copy (restic → any S3-compatible bucket); **the pgsodium/Vault root key is backed up separately from the dumps** (a dump alone restores Vault secrets as undecryptable blobs); restore drill onto staging monthly.
