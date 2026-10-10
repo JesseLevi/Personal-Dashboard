@@ -15,4 +15,4 @@ import "server-only";
 // both action files import from here, not from lib/boards/session.ts
 // directly, so the mirrored layout still holds and a future split (if
 // recipes ever need session logic boards doesn't) has an obvious home.
-export { getAuthenticatedUserId, requireUserId } from "@/lib/boards/session";
+export { getAuthenticatedUserId, isAdmin, requireUserId } from "@/lib/boards/session";

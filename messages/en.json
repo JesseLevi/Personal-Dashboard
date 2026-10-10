@@ -101,6 +101,9 @@
         "http_error": "The website returned an error.",
         "import_failed": "The import did not work."
       }
+    },
+    "ingredientAdmin": {
+      "title": "Ingredients"
     }
   },
   "shopping": {
@@ -212,7 +215,8 @@
         }
       },
       "recipes": {
-        "addCategoryLabel": "Category"
+        "addCategoryLabel": "Category",
+        "ingredientsLabel": "Ingredients"
       },
       "notes": {
         "addCategoryLabel": "Category",

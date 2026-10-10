@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { requireUserIdResult, userIdFromClaims } from "@/lib/boards/claims";
+import { isAdminFromClaims, requireUserIdResult, userIdFromClaims } from "@/lib/boards/claims";
 
 // #168: unit tests for the pure mapping logic behind lib/boards/session.ts's
 // cache()'d getAuthenticatedUserId/requireUserId. session.ts itself can't be
@@ -49,5 +49,29 @@ describe("requireUserIdResult", () => {
 
   it("returns the unauthenticated ActionResult error for a null user id", () => {
     expect(requireUserIdResult(null)).toEqual({ error: "unauthenticated" });
+  });
+});
+
+describe("isAdminFromClaims", () => {
+  const sub = "11111111-1111-1111-1111-111111111111";
+
+  it("is true for app_metadata.role admin", () => {
+    expect(isAdminFromClaims({ data: { claims: { sub, app_metadata: { role: "admin" } } }, error: null })).toBe(true);
+  });
+
+  it("is false for another role or no app_metadata", () => {
+    expect(isAdminFromClaims({ data: { claims: { sub, app_metadata: { role: "user" } } }, error: null })).toBe(false);
+    expect(isAdminFromClaims({ data: { claims: { sub } }, error: null })).toBe(false);
+  });
+
+  it("is false when signed out, on an error, or without sub", () => {
+    expect(isAdminFromClaims({ data: null, error: null })).toBe(false);
+    expect(
+      isAdminFromClaims({
+        data: { claims: { sub, app_metadata: { role: "admin" } } },
+        error: { message: "invalid JWT", status: 401 } as never,
+      }),
+    ).toBe(false);
+    expect(isAdminFromClaims({ data: { claims: { app_metadata: { role: "admin" } } }, error: null })).toBe(false);
   });
 });
