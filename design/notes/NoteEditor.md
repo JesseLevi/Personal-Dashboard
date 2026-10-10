@@ -716,6 +716,7 @@ Existing components and semantic tokens only; no Figma source.
   `moveBlock`, `duplicateBlock`, `deleteBlock` work on any document child
   without naming node types. `BlockShortcuts` binds `Mod-Shift-ArrowUp/Down`.
   The last remaining block is replaced by an empty paragraph, never removed.
+- **Code blocks and details (#336)**: handled generically (the whole block moves, copies, deletes; undo restores). Code blocks keep Turn into (`codeBlock` is a textblock); `details` is not convertible, so its Turn into group is hidden.
 - **Keyboard gap**: the handle only shows on hover, so the keyboard route is
   Mod-Shift-Up/Down; there is no key that opens the menu for the current block.
 - **Flagged**: no `GripVertical`, `Copy` or `ArrowUp`/`ArrowDown` glyph in the
