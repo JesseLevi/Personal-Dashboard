@@ -472,7 +472,7 @@
       "searchingLabel": "Zoeken...",
       "searchErrorLabel": "Zoeken mislukt. Probeer het opnieuw.",
       "noResultsLabel": "Geen ingrediënten gevonden voor \"{query}\".",
-      "addNewIngredientLabel": "\"{name}\" toevoegen als nieuw ingrediënt",
+      "usePlainNameLabel": "Gebruik als losse naam: “{name}”",
       "saveLabel": "Opslaan",
       "savingLabel": "Opslaan..."
     },
