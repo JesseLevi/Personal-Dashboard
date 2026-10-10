@@ -82,6 +82,16 @@ export function createR2Store(config: R2Config): ObjectStore {
         await deleteBatch(keys.slice(i, i + DELETE_BATCH));
       }
     },
+    async list(prefix) {
+      const keys: string[] = [];
+      let token: string | undefined;
+      do {
+        const page = await list(prefix, token);
+        keys.push(...page.keys);
+        token = page.next;
+      } while (token);
+      return keys;
+    },
     async deletePrefix(prefix) {
       let count = 0;
       let token: string | undefined;

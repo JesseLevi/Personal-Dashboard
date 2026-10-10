@@ -45,8 +45,16 @@ export type CategoryWithNotes = NoteCategoryRow & { notes: NoteSummaryRow[] };
 // 20260813000002_move_note_rpc.sql) has no cross-parent case to signal,
 // same reasoning as move_recipe's error set (note_categories, like
 // recipe_categories, have no parent entity the way board_columns have
-// boards); no thumbnail-upload codes -- notes have no image upload.
-export type NotesErrorCode = "invalid-input" | "unauthenticated" | "not-found" | "generic";
+// boards); the four image codes (#338) are only returned by uploadNoteImage.
+export type NotesErrorCode =
+  | "invalid-input"
+  | "unauthenticated"
+  | "not-found"
+  | "generic"
+  | "invalid-file-type"
+  | "file-too-large"
+  | "invalid-image"
+  | "upload-failed";
 
 export type ActionResult<T = undefined> =
   | { success: true; data: T }
