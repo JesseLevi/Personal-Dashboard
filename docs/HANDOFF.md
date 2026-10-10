@@ -28,7 +28,7 @@
 - **A migration applied by hand or via the Supabase MCP gets that route's timestamp as version**, not the filename; fix the ledger row or `db push` refuses.
 - **Never batch a migration across parallel agents** (raced 250 duplicate rows on #161).
 - **Two CI `db` jobs can't run concurrently** (fixed ports: `failed to bind host port`). Wait, then `gh run rerun <id> --failed`.
-- **Visual flake**: run the FULL suite twice before believing a failure; never bisect, never overlap runs. Lone failures up to ~22px have been noise. `threshold` stays 0. **As of 2026-10-06 the same 103/118 light baselines fail on this Mac on plain `main` too** (text-antialiasing diffs) — environmental, not code; compare against a `main` control run. The #281/#282/#283 baselines were generated in that state.
+- **Visual gate**: CI Linux job is blocking; `-linux.png` baselines are produced only by the `visual-update` workflow (`gh workflow run visual-update.yml --ref <branch>`, then run `ci-visual.yml` by hand: a GITHUB_TOKEN push triggers no CI). `-darwin.png` is git-ignored and drifts, so ignore local mismatches. `threshold` stays 0.
 - **Parallel agents share Playwright port 4310** (`reuseExistingServer`): one agent silently screenshots another's server. Serialize visual runs (lock dir) when delegating.
 - **The visual suite renders Button hover/active/focus (#282), a dark subset (#281) and `.tiptap` prose (#283)** — other components' states and dark variants are still unseen.
 - **`middleware.ts` only refreshes tokens**; the auth redirect lives in `app/(app)/layout.tsx`. `getClaims()` verifies locally, so a revoked session lives until token expiry (deliberate, #168).

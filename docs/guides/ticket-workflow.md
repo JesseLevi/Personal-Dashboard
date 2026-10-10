@@ -25,4 +25,5 @@ Don't take an agent's report at face value:
 
 - **Check the work is committed**: `git -C <worktree> status`/`log`. Agents have reported success with everything uncommitted; a killed agent's work usually survives in its worktree, so check before assuming it produced nothing.
 - **Re-run the full visual suite yourself.** An agent regenerates baselines, edits more code, never re-runs.
-- **Scoped baseline regeneration is `pnpm exec playwright test --update-snapshots -g <pattern>`** — `pnpm test:visual:update -- -g …` mis-forwards the flag and regenerates everything. `-g` only reaches stories whose *name* matches (`-g tag` misses `card--all-content-types`), so think about which stories *render* the thing.
+- **Baselines only come from CI:** `gh workflow run visual-update.yml --ref <branch> [-f grep=<pattern>]` regenerates `-linux.png` in the container and pushes to the branch; then `gh workflow run ci-visual.yml --ref <branch>`.
+- **Scoped regeneration (local, darwin-only, no longer the gate) is `pnpm exec playwright test --update-snapshots -g <pattern>`** — `pnpm test:visual:update -- -g …` mis-forwards the flag and regenerates everything. `-g` only reaches stories whose *name* matches (`-g tag` misses `card--all-content-types`), so think about which stories *render* the thing.
