@@ -60,7 +60,7 @@ evidence for pairing them 1:1, not the icon names themselves.
 | 11 | `strikethrough` | 3978:14240 | 3978:14972 | `toggleStrike` | Ticket order (position 11) |
 | 12 | `underline` | 3978:14251 | 3978:14983 | `toggleUnderline` | Ticket order (position 12) |
 | 13 | `highlighter` | 3978:14261 | 3978:14993 | `toggleHighlight` | Ticket order (position 13) |
-| 14 | `link` | 3978:14271 | 3978:15003 | `toggleLink`/`unsetLink` (no URL UI designed) | Ticket order (position 14); see open question below |
+| 14 | `link` | 3978:14271 | 3978:15003 | opens the LinkPopover (#331; was window.prompt) | Ticket order (position 14); design/notes/NoteEditor.md (#331) |
 | 15 | `superscript` | 3978:14282 | 3978:15014 | `toggleSuperscript` | Ticket order (position 15) |
 | 16 | `subscript` | 3978:14293 | 3978:15025 | `toggleSubscript` | Ticket order (position 16) |
 | 17 | `text-align-start` | 3978:14305 | 3978:15037 | `setTextAlign("left")` | Ticket order (position 17) — lucide's `TextAlign*` names, not `Align*` (#227) |

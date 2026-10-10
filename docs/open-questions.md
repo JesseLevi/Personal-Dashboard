@@ -193,17 +193,6 @@ state.
 
 Needs a real Figma frame (panel chrome, an icon set scoped to Notities, and a delete-confirmation state) before any of the three should be considered final.
 
-### notes-editingbar-link-no-url-input-designed
-
-`EditingBar`'s link button (#234, `Icon/Link`, position 14) has no URL-input
-UI designed anywhere in `Pages/Notities/Breakpoints` — no modal, no inline
-field, nothing between clicking the button and TipTap's `setLink({href})`
-needing a real URL. Built as a native `window.prompt()` (browser chrome, not
-a custom Figma-absent dialog) as the least-invention stand-in: clicking while
-a link mark is active unsets it, otherwise a prompt asks for a URL and
-`toggleLink`-equivalent logic applies it. See `design/notes/EditingBar.md`.
-Needs a real designed link-input surface before this is considered final.
-
 ### notes-editingbar-mobile-image-button-out-of-scope
 
 Mobile `EditingBar` (`3978:14870`) carries a 21st element after a 6th
@@ -252,7 +241,7 @@ These were open questions that the shipped build now answers. The deviation and 
 
 **Figma authoring artifacts, built the sensible way** — `portion-stepper-figma-draws-plus-twice` (both stepper nodes draw `Icon/Plus` twice; code renders `Minus` on decrement), `recipe-name-field-swap-icon-unusual` (`Icon/Arrow-right-left` for "open a picker", built as specified), `recipe-image-field-no-filled-state`, `input-field-text-boolean`, `checkbox-delete-state`, `settings-mobile-delete-button-not-built` (#265, 2026-08-16: the mobile Settings panel node's footer draws two buttons — "Verwijderen" (Destructive) and a typo'd "Oplsaan" (Filled) — matching desktop's `AddItem` footer shape exactly, plus the parent frame's own name ("Add recipi/Desktop") and the stray `Eenheid` annotations on the Input-field: this whole panel was copied from the Add-recipe frame and never fully re-purposed. There is nothing to delete on Settings, so a delete button was never built; both breakpoints ship desktop's single full-width `Opslaan` footer. See `design/notes/SettingsPanel.md`).
 
-**Built with an existing, already-approved pattern** — `category-delete-no-confirm-designed` and `category-name-no-validation-designed` (two-step confirm + disabled-Save gate), `category-icon-no-selected-state` (`aria-pressed` reusing Button's Selected semantics), `recipe-detail-mobile-overflow-menu-undesigned` and `nutrition-dropdown-content-undesigned` (labelless `Dropdown` bordered-panel popover), `ingredient-search-panel-empty-and-zero-result-states-unsourced`, `recipe-panel-verwijderen-hidden-on-create`.
+**Built with an existing, already-approved pattern** — `notes-editingbar-link-no-url-input-designed` (#331, 2026-10-10: Claude-designed link popover with `InputField` and `Button`, shared by bubble menu, EditingBar and Mod-K; see `design/notes/NoteEditor.md`), `category-delete-no-confirm-designed` and `category-name-no-validation-designed` (two-step confirm + disabled-Save gate), `category-icon-no-selected-state` (`aria-pressed` reusing Button's Selected semantics), `recipe-detail-mobile-overflow-menu-undesigned` and `nutrition-dropdown-content-undesigned` (labelless `Dropdown` bordered-panel popover), `ingredient-search-panel-empty-and-zero-result-states-unsourced`, `recipe-panel-verwijderen-hidden-on-create`.
 
 **Built as the least-surprising literal read** — `ingredient-name-annotation-only-on-row-two`, `recipe-panel-two-identical-voeg-toe-buttons`, `recipe-panel-personen-chevron-behaviour-unsourced`, `recipe-panel-desktop-layout-gap`, `recipe-ingredient-row-unit-label-always-shown`, `recipe-card-no-photo-placeholder`, `toggle-group-shared-track`, `winkelmand-send-no-subset-picker` (per-ingredient swipe covers single sends; only *multi*-select stays undesigned).
 

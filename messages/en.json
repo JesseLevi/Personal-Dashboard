@@ -560,7 +560,6 @@
       "underlineLabel": "Underline",
       "highlightLabel": "Highlight",
       "linkLabel": "Link",
-      "linkPromptLabel": "Enter a URL",
       "superscriptLabel": "Superscript",
       "subscriptLabel": "Subscript",
       "alignLeftLabel": "Align left",
@@ -594,6 +593,20 @@
         "table": "Table",
         "divider": "Divider"
       }
+    },
+    "noteBubbleMenu": {
+      "label": "Text formatting",
+      "turnInto": "Turn into"
+    },
+    "noteLink": {
+      "label": "Link",
+      "urlLabel": "Web address",
+      "urlPlaceholder": "example.com",
+      "invalid": "Enter a web address (http, https) or an email address.",
+      "apply": "Apply",
+      "open": "Open",
+      "edit": "Edit",
+      "remove": "Remove"
     },
     "noteTable": {
       "insertLabel": "Insert table",

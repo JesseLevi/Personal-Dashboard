@@ -580,3 +580,47 @@ tokens; no Figma step, no new atom.
   Escape returns focus to the editor.
 - **Placeholder**: "Typ '/' voor opties" / "Type '/' for options".
 - **Flagged**: missing glyphs, see `docs/open-questions.md#notes-slash-menu-icon-glyphs-missing`.
+## #331 — selection bubble menu and link popover (Claude-designed on request)
+
+Resolves `notes-editingbar-link-no-url-input-designed` (user decision
+2026-10-10, ADR-0021 s1/s6). Existing components and semantic tokens only.
+
+- **Bubble menu** (`components/organisms/NoteBubbleMenu.tsx`): TipTap
+  `BubbleMenu` above a non-empty `TextSelection` (not blank text), only for
+  `(pointer: fine)`, never in a code block, never while the table menu shows
+  (`isActive('table')`, so a text selection inside a table gets no bubble).
+  Bold, italic, underline, strikethrough, highlight, inline code (icon
+  `Button variant="transparent"`, `aria-pressed` = active), link, and "Turn
+  into": `EditingBarMenu` fed by the exported `BLOCK_TYPE_MENU` of
+  `EditingBar.tsx` (#329's option list, not copied). Button labels reuse
+  `components.editingBar.*Label`. `role="toolbar"` with roving tabindex;
+  Alt+F10 in the document focuses it, Escape returns to the editor. No bubble
+  on touch: the EditingBar remains the mobile surface (#333).
+- **Link popover** (`components/organisms/LinkPopover.tsx`), one instance per
+  editor (`NoteEditor.tsx`). Bubble menu, EditingBar and Mod-K ask for it via
+  `requestLinkPopover` (`lib/notes/link-popover.ts`, a DOM event on the editor
+  element), so none needs to know where it is mounted. Cursor on a link: the
+  URL plus Open (`window.open(..., "noopener,noreferrer")`), Edit, Remove;
+  otherwise an `InputField` with Apply (and Remove when editing). With a
+  collapsed cursor and no link, Apply inserts the URL as linked text. Invalid
+  input shows `role="alert"` copy and keeps the field. Escape closes and
+  returns focus to the editor; Tab cycles inside the panel; an outside press
+  closes. Anchor: the EditingBar's link button on desktop, the whole bar on
+  mobile (`min-width: 48rem` split; the link button may be scrolled out of
+  view), the selection for Mod-K. The panel re-measures on `visualViewport`
+  resize, so it follows the bar when the software keyboard lifts it.
+- **Link rules** (`lib/notes/link-url.ts`, `tests/notes-link-url.test.ts`):
+  one validator for the Link extension's `isAllowedUri` and the popover.
+  http, https and mailto only; bare `example.com` gets `https://`, a bare
+  address gets `mailto:`; `javascript:`, `data:`, `ftp:`, `//host`, whitespace
+  and control characters are rejected. Because the extension uses it too,
+  pasted, autolinked and already stored hrefs are filtered: a stored
+  `javascript:` link loads as plain text. `autolink: true`, `openOnClick:
+  false` (a click never navigates while editing; the popover opens the link).
+- **EditingBar**: only the link button changed (it opens the popover; the old
+  `window.prompt` and "click unlinks" toggle are gone, `linkPromptLabel`
+  removed). `measure()` in `EditingBarMenu.tsx` now takes any rect source.
+- **Flagged gaps**: no `ExternalLink`/`Unlink` glyph in the icon registry
+  (adding one changes the `icon--all-icons` baseline), so Open reuses `Link`
+  and Remove reuses `Trash`, both with visible labels. `updateDelay={150}` on
+  the bubble is a number handed to TipTap, not a class.

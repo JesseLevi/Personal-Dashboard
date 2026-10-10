@@ -10,6 +10,8 @@ import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteC
 import { EditingBar } from "@/components/organisms/EditingBar";
 import { NoteSaveStatus } from "@/components/molecules/NoteSaveStatus";
 import { NoteWordCount } from "@/components/molecules/NoteWordCount";
+import { LinkPopover } from "@/components/organisms/LinkPopover";
+import { NoteBubbleMenu } from "@/components/organisms/NoteBubbleMenu";
 import { TableMenu } from "@/components/organisms/TableMenu";
 import { noteExtensions } from "@/lib/notes/extensions";
 import { countWords, readingMinutes, typographyForLocale } from "@/lib/notes/writing-comfort";
@@ -142,6 +144,8 @@ export function NoteEditor({ note }: NoteEditorProps) {
           <NoteWordCount words={words} minutes={readingMinutes(words)} />
         </div>
         <SlashMenu editor={editor} />
+        <NoteBubbleMenu editor={editor} />
+        <LinkPopover editor={editor} />
       </div>
     </div>
   );
