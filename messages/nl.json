@@ -624,6 +624,15 @@
       "label": "Tekstopmaak",
       "turnInto": "Omzetten naar"
     },
+    "noteBlockMenu": {
+      "handleLabel": "Blokmenu",
+      "menuLabel": "Blokacties",
+      "turnInto": "Omzetten naar",
+      "duplicate": "Dupliceren",
+      "delete": "Verwijderen",
+      "moveUp": "Omhoog verplaatsen",
+      "moveDown": "Omlaag verplaatsen"
+    },
     "noteLink": {
       "label": "Link",
       "urlLabel": "Webadres",

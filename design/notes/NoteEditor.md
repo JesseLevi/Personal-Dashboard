@@ -685,3 +685,41 @@ is only a paste/copy/export format.
   removed, no leading dots, 100 chars, `Naamloze notitie` when empty).
 - **Flagged gap**: no `Copy`/`Download` glyph in the icon registry (adding one
   moves `icon--all-icons`), so the rows are text-only.
+
+## #335 — block drag handle and block menu (Claude-designed on request)
+
+Existing components and semantic tokens only; no Figma source.
+
+- **Handle** (`components/organisms/NoteBlockHandle.tsx`): `DragHandle` from
+  `@tiptap/extension-drag-handle-react` (pinned to `@tiptap/core`'s 3.30.0,
+  with its `-drag-handle` and `-node-range` peers). It is a UI component that
+  registers its own ProseMirror plugin, like `BubbleMenu`, so it is mounted in
+  `NoteEditor.tsx` and not listed in `lib/notes/extensions.ts` (that list is the
+  content schema). The handle is absolutely positioned left of the hovered
+  top-level block (`nested` off), so it takes no layout space and the reading
+  column never moves; `noteExtensions` also configures the Dropcursor
+  (`.note-dropcursor`, `stroke-secondary-active`). Rendered only for
+  `(pointer: fine)`; touch gets nothing (EditingBar is the mobile surface).
+  The drag is one ProseMirror transaction, so undo restores it. Dropping inside
+  a list nests the block as a list item: that is the editor's own drop rule.
+- **Menu**: portalled `Dropdown role="menu"` (the `EditingBarMenu` panel and
+  `measure()`). Rows: "Turn into" group (`menuitemradio`, active type checked;
+  picking the active one does nothing), then Duplicate, Move up, Move down
+  (`menuitem`, disabled at the edges) and Delete. Arrows wrap, Home/End, Escape
+  and Tab close and return focus to the editor. The handle is held visible while
+  the menu is open by dispatching the plugin's `lockDragHandle` meta.
+- **Reuse**: "Turn into" runs the options of `BLOCK_TYPE_MENU` and `LIST_MENU`
+  (`EditingBar.tsx`, #329) plus quote and code block from `SLASH_ITEMS`; labels
+  are `components.slashMenu.items.*`. Turn into is hidden for tables and other
+  non-textblock, non-list/quote blocks (`isConvertibleBlock`).
+- **Commands** (`lib/notes/block-commands.ts`, `tests/notes-block-commands.test.ts`):
+  `moveBlock`, `duplicateBlock`, `deleteBlock` work on any document child
+  without naming node types. `BlockShortcuts` binds `Mod-Shift-ArrowUp/Down`.
+  The last remaining block is replaced by an empty paragraph, never removed.
+- **Keyboard gap**: the handle only shows on hover, so the keyboard route is
+  Mod-Shift-Up/Down; there is no key that opens the menu for the current block.
+- **Flagged**: no `GripVertical`, `Copy` or `ArrowUp`/`ArrowDown` glyph in the
+  icon registry, see `docs/open-questions.md#notes-block-menu-icon-glyphs-missing`.
+- **Tests**: `tests/visual/block-handle.spec.ts` (menu actions, drag + undo,
+  shortcuts, unmoved column, no handle on touch); stories `NoteBlockHandle`
+  (hover, menu open; the menu in dark too).

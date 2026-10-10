@@ -12,6 +12,7 @@ import { NoteSaveStatus } from "@/components/molecules/NoteSaveStatus";
 import { NoteWordCount } from "@/components/molecules/NoteWordCount";
 import { LinkPopover } from "@/components/organisms/LinkPopover";
 import { NoteBubbleMenu } from "@/components/organisms/NoteBubbleMenu";
+import { NoteBlockHandle } from "@/components/organisms/NoteBlockHandle";
 import { TableMenu } from "@/components/organisms/TableMenu";
 import { noteExtensions } from "@/lib/notes/extensions";
 import { setDetailsToggleLabels } from "@/lib/notes/details-labels";
@@ -201,6 +202,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
         </div>
         <SlashMenu editor={editor} />
         <NoteBubbleMenu editor={editor} />
+        <NoteBlockHandle editor={editor} />
         <LinkPopover editor={editor} />
       </div>
     </div>

@@ -236,6 +236,9 @@ The slash menu (#332) wants glyphs the `Icon` set does not have: `Pilcrow`/`Type
 ### code-syntax-colour-tokens
 
 Code highlighting (#336) has no dedicated syntax palette. `app/globals.css` maps the highlight.js classes onto the only distinct text tokens that exist: `text-secondary` (comments), `text-highlight-blue` (keywords, types), `text-highlight-green` (strings), `text-highlight-yellow` (numbers, literals), `text-highlight-red` (titles, attributes, names) and `text-primary` (everything else). That is 5 hues for ~16 token classes, so function names and attributes share red, and red also means "urgent" elsewhere. The contrast of these `text-highlight-*` tokens on `surface-secondary` (the code block surface) was not measured and may be low, especially the yellow (orange-400) in light mode. Needs a design pass: dedicated `text/syntax/*` tokens (light and dark) with checked contrast. Also missing: a `Copy` glyph in `Icon` (the copy button is text-only, with the `Check` glyph while copied) and a `ChevronRight` glyph (the collapsible-section toggle is a text glyph rotated in CSS). -> `design/notes/NoteEditor.md` (#336 section).
+### notes-block-menu-icon-glyphs-missing
+
+The block handle and menu (#335) want `GripVertical` (the drag grip), `Copy` (Duplicate) and `ArrowUp`/`ArrowDown` (Move). The `Icon` set has none, and adding glyphs changes the `icon--all-icons` baseline. The handle reuses `EllipsisVertical` (one column of dots instead of the usual two) and the menu rows are text-only except Delete (`Trash`). Register the glyphs in `components/atoms/Icon.tsx`, regenerate that baseline and switch `components/organisms/NoteBlockHandle.tsx`. -> `design/notes/NoteEditor.md` (#335 section).
 
 ---
 
