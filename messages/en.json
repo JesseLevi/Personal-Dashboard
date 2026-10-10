@@ -109,17 +109,16 @@
       "tabsLabel": "Section",
       "tabs": {
         "aliases": "Mappings",
-        "own": "Own"
+        "own": "Own ingredients"
       },
       "ownBadge": "Own",
-      "ownNotice": "Own ingredients are separate from the NEVO database. NEVO ingredients cannot be changed here.",
-      "aliasesIntro": "A mapping turns a name from a recipe into one fixed ingredient on every later import.",
       "aliases": {
         "searchPlaceholder": "Search a mapping",
         "addLabel": "Mapping",
         "empty": "There are no mappings yet.",
         "noResults": "No mappings found for \"{query}\".",
-        "rowEditLabel": "Edit mapping: {name}"
+        "rowEditLabel": "Edit mapping: {name}",
+        "count": "{count, plural, one {# mapping} other {# mappings}}"
       },
       "own": {
         "searchPlaceholder": "Search an own ingredient",
@@ -127,14 +126,15 @@
         "empty": "There are no own ingredients yet.",
         "noResults": "No own ingredients found for \"{query}\".",
         "rowEditLabel": "Edit own ingredient: {name}",
-        "weightSummary": "1 {unit} = {grams} g"
+        "weightSummary": "1 {unit} = {grams} g",
+        "count": "{count, plural, one {# own ingredient} other {# own ingredients}}"
       },
       "aliasPanel": {
         "addTitle": "Add mapping",
         "editTitle": "Edit mapping",
-        "nameLabel": "Name in recipe",
+        "nameLabel": "Name",
         "keyPreview": "Stored as: {key}",
-        "searchLabel": "Linked ingredient",
+        "searchLabel": "Search",
         "searchPlaceholder": "Search an ingredient",
         "searchPrompt": "Search the ingredient this name should map to.",
         "searching": "Searching…",
@@ -147,7 +147,9 @@
         "deletingLabel": "Deleting…",
         "cancelLabel": "Cancel",
         "saveLabel": "Save",
-        "savingLabel": "Saving…"
+        "savingLabel": "Saving…",
+        "nameHeading": "Name in recipe",
+        "searchHeading": "Linked ingredient"
       },
       "ownPanel": {
         "addTitle": "Add own ingredient",
@@ -174,8 +176,10 @@
         "deletingLabel": "Deleting…",
         "cancelLabel": "Cancel",
         "saveLabel": "Save",
-        "savingLabel": "Saving…"
-      }
+        "savingLabel": "Saving…",
+        "namesHeading": "Names"
+      },
+      "countOf": "{shown} of {total}"
     }
   },
   "shopping": {

@@ -1,14 +1,12 @@
 "use client";
 
-// design: Claude-designed on request (#325), design/notes/IngredientAdminPage.md.
+// design: Claude-designed on request (#325, #350), design/notes/IngredientAdminPage.md.
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { PageHeader } from "@/components/organisms/PageHeader";
 import { Button } from "@/components/atoms/Button";
 import { InputField } from "@/components/atoms/InputField";
-import { Tag } from "@/components/atoms/Tag";
 import { ButtonToggle } from "@/components/molecules/ButtonToggle";
-import { Card } from "@/components/molecules/Card";
 import type { AdminAlias, AdminEigenIngredient } from "@/lib/recipes/ingredient-admin";
 import type { ActionResult, IngredientSearchResult } from "@/lib/recipes/types";
 import { AliasPanel, type AliasPanelTarget } from "./AliasPanel";
@@ -29,6 +27,8 @@ export interface IngredientAdminProps {
   onDeleteEigen: (input: unknown) => Promise<ActionResult>;
   /** Story hook: first tab shown. */
   initialTab?: Tab;
+  /** Story hook: search text on first render. */
+  initialQuery?: string;
 }
 
 interface RowProps {
@@ -47,17 +47,13 @@ function ListRow({ primary, secondary, badge, editLabel, divider, onClick }: Row
         type="button"
         aria-label={editLabel}
         onClick={onClick}
-        className="flex w-full items-center justify-between gap-inline-xl rounded-container p-component-md text-left transition-colors hover:bg-surface-highlight-white-hover active:bg-surface-highlight-white-active"
+        className="flex w-full items-center justify-between gap-inline-xl rounded-control px-component-md py-component-md text-left transition-colors hover:bg-surface-secondary active:bg-surface-secondary-hover"
       >
         <span className="flex min-w-0 flex-col gap-stack-xs">
-          <span className="text-base font-semibold text-text-primary">{primary}</span>
-          {secondary && <span className="text-base text-text-secondary">{secondary}</span>}
+          <span className="truncate text-base font-semibold text-text-primary">{primary}</span>
+          {secondary && <span className="truncate text-base text-text-secondary">{secondary}</span>}
         </span>
-        {badge && (
-          <Tag variant="highlight" className="shrink-0">
-            {badge}
-          </Tag>
-        )}
+        {badge && <span className="shrink-0 text-sm text-text-secondary">{badge}</span>}
       </button>
       {divider && <div aria-hidden="true" className="h-px w-full bg-stroke-lines" />}
     </div>
@@ -76,13 +72,14 @@ export function IngredientAdmin({
   onUpdateEigen,
   onDeleteEigen,
   initialTab = "aliases",
+  initialQuery = "",
 }: IngredientAdminProps) {
   const t = useTranslations("recipes.ingredientAdmin");
   const tUnits = useTranslations("recipes.units");
   const locale = useLocale();
 
   const [tab, setTab] = useState<Tab>(initialTab);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [aliasPanel, setAliasPanel] = useState<{ open: boolean; target: AliasPanelTarget }>({
     open: false,
     target: { mode: "create" },
@@ -123,10 +120,10 @@ export function IngredientAdmin({
           </Button>
         }
       />
-      <div className="flex w-full flex-col gap-stack-xl pt-stack-md md:max-w-3xl">
+      <div className="flex w-full flex-col gap-stack-xl pr-page-right-equal pt-stack-md md:max-w-3xl">
         <ButtonToggle
           aria-label={t("tabsLabel")}
-          className="md:max-w-sm"
+          className="w-full md:max-w-md"
           defaultValue={initialTab}
           onValueChange={(value) => {
             setTab(value as Tab);
@@ -137,7 +134,6 @@ export function IngredientAdmin({
             { value: "own", icon: "LeafyGreen", label: t("tabs.own") },
           ]}
         />
-        <p className="text-base text-text-secondary">{isAliases ? t("aliasesIntro") : t("ownNotice")}</p>
         <InputField
           id="ingredient-admin-search"
           aria-label={isAliases ? t("aliases.searchPlaceholder") : t("own.searchPlaceholder")}
@@ -148,7 +144,7 @@ export function IngredientAdmin({
         />
 
         {shownCount === 0 ? (
-          <p className="text-base font-semibold text-text-secondary">
+          <p className="py-stack-xxl text-center text-base text-text-secondary">
             {totalCount === 0
               ? isAliases
                 ? t("aliases.empty")
@@ -158,41 +154,50 @@ export function IngredientAdmin({
                 : t("own.noResults", { query: query.trim() })}
           </p>
         ) : (
-          <Card>
-            {isAliases
-              ? shownAliases.map((alias, index) => {
-                  const target = localName(alias.ingredient.nameNl, alias.ingredient.nameEn);
-                  return (
-                    <ListRow
-                      key={alias.id}
-                      primary={alias.aliasNormalized}
-                      secondary={`→ ${target}`}
-                      badge={alias.ingredient.source === "eigen" ? t("ownBadge") : undefined}
-                      editLabel={t("aliases.rowEditLabel", { name: alias.aliasNormalized })}
-                      divider={index < shownAliases.length - 1}
-                      onClick={() => setAliasPanel({ open: true, target: { mode: "edit", alias } })}
-                    />
-                  );
-                })
-              : shownEigen.map((item, index) => {
-                  const name = localName(item.nameNl, item.nameEn);
-                  const category = locale === "en" && item.categoryEn ? item.categoryEn : item.categoryNl;
-                  const weight = item.unitMass
-                    ? t("own.weightSummary", { unit: tUnits(item.unitMass.unit).toLowerCase(), grams: item.unitMass.grams })
-                    : null;
-                  return (
-                    <ListRow
-                      key={item.id}
-                      primary={name}
-                      secondary={[category, weight].filter(Boolean).join(" · ") || undefined}
-                      badge={t("ownBadge")}
-                      editLabel={t("own.rowEditLabel", { name })}
-                      divider={index < shownEigen.length - 1}
-                      onClick={() => setOwnPanel({ open: true, target: { mode: "edit", ingredient: item } })}
-                    />
-                  );
-                })}
-          </Card>
+          <div className="flex w-full flex-col gap-stack-sm">
+            <p className="text-base text-text-secondary">
+              {needle === ""
+                ? isAliases
+                  ? t("aliases.count", { count: totalCount })
+                  : t("own.count", { count: totalCount })
+                : t("countOf", { shown: shownCount, total: totalCount })}
+            </p>
+            <div className="flex w-full flex-col">
+              {isAliases
+                ? shownAliases.map((alias, index) => {
+                    const target = localName(alias.ingredient.nameNl, alias.ingredient.nameEn);
+                    return (
+                      <ListRow
+                        key={alias.id}
+                        primary={alias.aliasNormalized}
+                        secondary={`→ ${target}`}
+                        badge={alias.ingredient.source === "eigen" ? t("ownBadge") : undefined}
+                        editLabel={t("aliases.rowEditLabel", { name: alias.aliasNormalized })}
+                        divider={index < shownAliases.length - 1}
+                        onClick={() => setAliasPanel({ open: true, target: { mode: "edit", alias } })}
+                      />
+                    );
+                  })
+                : shownEigen.map((item, index) => {
+                    const name = localName(item.nameNl, item.nameEn);
+                    const category = locale === "en" && item.categoryEn ? item.categoryEn : item.categoryNl;
+                    const weight = item.unitMass
+                      ? t("own.weightSummary", { unit: tUnits(item.unitMass.unit).toLowerCase(), grams: item.unitMass.grams })
+                      : null;
+                    return (
+                      <ListRow
+                        key={item.id}
+                        primary={name}
+                        secondary={[category, weight].filter(Boolean).join(" · ") || undefined}
+                        badge={t("ownBadge")}
+                        editLabel={t("own.rowEditLabel", { name })}
+                        divider={index < shownEigen.length - 1}
+                        onClick={() => setOwnPanel({ open: true, target: { mode: "edit", ingredient: item } })}
+                      />
+                    );
+                  })}
+            </div>
+          </div>
         )}
       </div>
 

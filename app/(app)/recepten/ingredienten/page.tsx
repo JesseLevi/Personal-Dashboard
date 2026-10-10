@@ -14,7 +14,7 @@ import {
 import { IngredientAdmin } from "./IngredientAdmin";
 
 // Admin-only ingredient management (ADR-0020 §6): Koppelingen + Eigen
-// ingrediënten (#325). Everyone else gets a 404, so the route is not
+// ingrediënten (#325, #350). Everyone else gets a 404, so the route is not
 // discoverable; RLS is the real write boundary. "Nog te koppelen" lands in
 // #326. design/notes/IngredientAdminPage.md.
 export default async function IngredientAdminPage() {

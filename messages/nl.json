@@ -109,17 +109,16 @@
       "tabsLabel": "Onderdeel",
       "tabs": {
         "aliases": "Koppelingen",
-        "own": "Eigen"
+        "own": "Eigen ingrediënten"
       },
       "ownBadge": "Eigen",
-      "ownNotice": "Eigen ingrediënten staan los van de NEVO-database. NEVO-ingrediënten kun je hier niet wijzigen.",
-      "aliasesIntro": "Een koppeling vertaalt een naam uit een recept naar één vast ingrediënt, bij elke volgende import.",
       "aliases": {
         "searchPlaceholder": "Zoek een koppeling",
         "addLabel": "Koppeling",
         "empty": "Er zijn nog geen koppelingen.",
         "noResults": "Geen koppelingen gevonden voor \"{query}\".",
-        "rowEditLabel": "Koppeling bewerken: {name}"
+        "rowEditLabel": "Koppeling bewerken: {name}",
+        "count": "{count, plural, one {# koppeling} other {# koppelingen}}"
       },
       "own": {
         "searchPlaceholder": "Zoek een eigen ingrediënt",
@@ -127,14 +126,15 @@
         "empty": "Er zijn nog geen eigen ingrediënten.",
         "noResults": "Geen eigen ingrediënten gevonden voor \"{query}\".",
         "rowEditLabel": "Eigen ingrediënt bewerken: {name}",
-        "weightSummary": "1 {unit} = {grams} g"
+        "weightSummary": "1 {unit} = {grams} g",
+        "count": "{count, plural, one {# eigen ingrediënt} other {# eigen ingrediënten}}"
       },
       "aliasPanel": {
         "addTitle": "Koppeling toevoegen",
         "editTitle": "Koppeling bewerken",
-        "nameLabel": "Naam in recept",
+        "nameLabel": "Naam",
         "keyPreview": "Opgeslagen als: {key}",
-        "searchLabel": "Gekoppeld ingrediënt",
+        "searchLabel": "Zoeken",
         "searchPlaceholder": "Zoek een ingrediënt",
         "searchPrompt": "Zoek het ingrediënt waaraan deze naam gekoppeld wordt.",
         "searching": "Zoeken…",
@@ -147,7 +147,9 @@
         "deletingLabel": "Verwijderen…",
         "cancelLabel": "Annuleren",
         "saveLabel": "Opslaan",
-        "savingLabel": "Opslaan…"
+        "savingLabel": "Opslaan…",
+        "nameHeading": "Naam in recept",
+        "searchHeading": "Gekoppeld ingrediënt"
       },
       "ownPanel": {
         "addTitle": "Eigen ingrediënt toevoegen",
@@ -156,7 +158,7 @@
         "nameEnLabel": "Naam (Engels)",
         "categoryNlLabel": "Categorie (Nederlands)",
         "categoryEnLabel": "Categorie (Engels)",
-        "nutrientsLabel": "Voedingswaarden per 100 g",
+        "nutrientsLabel": "Voeding per 100 g",
         "nutrientsHint": "Laat een veld leeg als de waarde onbekend is. Leeg telt nooit als 0.",
         "kcalLabel": "Energie (kcal)",
         "proteinLabel": "Eiwit (g)",
@@ -174,8 +176,10 @@
         "deletingLabel": "Verwijderen…",
         "cancelLabel": "Annuleren",
         "saveLabel": "Opslaan",
-        "savingLabel": "Opslaan…"
-      }
+        "savingLabel": "Opslaan…",
+        "namesHeading": "Namen"
+      },
+      "countOf": "{shown} van {total}"
     }
   },
   "shopping": {

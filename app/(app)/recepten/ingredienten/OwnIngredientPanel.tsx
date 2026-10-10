@@ -1,11 +1,12 @@
 "use client";
 
-// design: Claude-designed on request (#325), design/notes/IngredientAdminPage.md.
+// design: Claude-designed on request (#325, #350), design/notes/IngredientAdminPage.md.
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { SidePanel } from "@/components/organisms/SidePanel";
 import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
+import { PanelSection, PanelTitle } from "./PanelSection";
 import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import { UNITS } from "@/lib/recipes/units";
 import type { AdminEigenIngredient } from "@/lib/recipes/ingredient-admin";
@@ -164,7 +165,7 @@ export function OwnIngredientPanel({
     ) : (
       <div className="flex gap-inline-sm">
         {ingredient && (
-          <Button variant="destructive" icon="Trash" className="grow basis-0" onClick={ask} disabled={isPending}>
+          <Button variant="destructive" icon="Trash" onClick={ask} disabled={isPending}>
             {t("deleteLabel")}
           </Button>
         )}
@@ -182,43 +183,43 @@ export function OwnIngredientPanel({
       closeLabel={tSidePanel("closeLabel")}
       footer={footer}
     >
-      <InputField label={t("nameNlLabel")} id="own-name-nl" value={form.nameNl} onChange={set("nameNl")} required />
-      <InputField label={t("nameEnLabel")} id="own-name-en" value={form.nameEn} onChange={set("nameEn")} />
-      <InputField label={t("categoryNlLabel")} id="own-category-nl" value={form.categoryNl} onChange={set("categoryNl")} />
-      <InputField label={t("categoryEnLabel")} id="own-category-en" value={form.categoryEn} onChange={set("categoryEn")} />
+      <PanelTitle>{ingredient ? t("editTitle") : t("addTitle")}</PanelTitle>
 
-      <div className="flex w-full flex-col gap-stack-md">
-        <div className="flex flex-col gap-stack-xs">
-          <p className="text-base font-semibold text-text-primary">{t("nutrientsLabel")}</p>
-          <p className="text-base text-text-secondary">{t("nutrientsHint")}</p>
-        </div>
-        <InputField label={t("kcalLabel")} id="own-kcal" inputMode="decimal" value={form.kcal} onChange={set("kcal")} />
-        <InputField label={t("proteinLabel")} id="own-protein" inputMode="decimal" value={form.protein} onChange={set("protein")} />
-        <InputField label={t("carbsLabel")} id="own-carbs" inputMode="decimal" value={form.carbs} onChange={set("carbs")} />
-        <InputField label={t("fatLabel")} id="own-fat" inputMode="decimal" value={form.fat} onChange={set("fat")} />
-        <InputField label={t("fiberLabel")} id="own-fiber" inputMode="decimal" value={form.fiber} onChange={set("fiber")} />
-      </div>
+      <PanelSection heading={t("namesHeading")}>
+        <InputField label={t("nameNlLabel")} id="own-name-nl" value={form.nameNl} onChange={set("nameNl")} required />
+        <InputField label={t("nameEnLabel")} id="own-name-en" value={form.nameEn} onChange={set("nameEn")} />
+        <InputField label={t("categoryNlLabel")} id="own-category-nl" value={form.categoryNl} onChange={set("categoryNl")} />
+        <InputField label={t("categoryEnLabel")} id="own-category-en" value={form.categoryEn} onChange={set("categoryEn")} />
+      </PanelSection>
 
-      <div className="flex w-full flex-col gap-stack-md">
-        <div className="flex flex-col gap-stack-xs">
-          <p className="text-base font-semibold text-text-primary">{t("weightLabel")}</p>
-          <p className="text-base text-text-secondary">{t("weightHint")}</p>
+      <PanelSection heading={t("nutrientsLabel")} hint={t("nutrientsHint")}>
+        <div className="grid grid-cols-2 gap-x-inline-sm gap-y-stack-md">
+          <InputField label={t("kcalLabel")} id="own-kcal" inputMode="decimal" value={form.kcal} onChange={set("kcal")} />
+          <InputField label={t("proteinLabel")} id="own-protein" inputMode="decimal" value={form.protein} onChange={set("protein")} />
+          <InputField label={t("carbsLabel")} id="own-carbs" inputMode="decimal" value={form.carbs} onChange={set("carbs")} />
+          <InputField label={t("fatLabel")} id="own-fat" inputMode="decimal" value={form.fat} onChange={set("fat")} />
+          <InputField label={t("fiberLabel")} id="own-fiber" inputMode="decimal" value={form.fiber} onChange={set("fiber")} />
         </div>
-        <InputField
-          label={t("unitLabel")}
-          id="own-unit"
-          trailingIcon="ChevronDown"
-          value={form.unit}
-          onChange={set("unit")}
-          options={[
-            { value: "", label: t("unitNone") },
-            ...WEIGHABLE_UNITS.map((unit) => ({ value: unit, label: tUnits(unit) })),
-          ]}
-        />
-        {hasUnit && (
-          <InputField label={t("gramsLabel")} id="own-grams" inputMode="decimal" value={form.grams} onChange={set("grams")} />
-        )}
-      </div>
+      </PanelSection>
+
+      <PanelSection heading={t("weightLabel")} hint={t("weightHint")}>
+        <div className="grid grid-cols-2 gap-x-inline-sm">
+          <InputField
+            label={t("unitLabel")}
+            id="own-unit"
+            trailingIcon="ChevronDown"
+            value={form.unit}
+            onChange={set("unit")}
+            options={[
+              { value: "", label: t("unitNone") },
+              ...WEIGHABLE_UNITS.map((unit) => ({ value: unit, label: tUnits(unit) })),
+            ]}
+          />
+          {hasUnit && (
+            <InputField label={t("gramsLabel")} id="own-grams" inputMode="decimal" value={form.grams} onChange={set("grams")} />
+          )}
+        </div>
+      </PanelSection>
       {error && <p className="text-base font-semibold text-priority-urgent">{error}</p>}
     </SidePanel>
   );
