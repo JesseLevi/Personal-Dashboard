@@ -4,7 +4,11 @@
 # 2. No NEXT_PUBLIC_ Supabase config — the browser never talks to Supabase.
 # 3. No dangerouslySetInnerHTML on user/model content paths (§7).
 # 4. No raw hex colors in components — tokens only (CLAUDE.md/ADR-0010).
+# 5. R2_* env vars and the S3 client (aws4fetch, @aws-sdk) only under lib/storage/ (ADR-0024 §2).
+#    scripts/, tests/, docs/ and .env.example are not scanned.
+# Optional $1 = repo root to scan (used by tests/storage.test.ts).
 set -euo pipefail
+cd "${1:-.}"
 fail=0
 
 if grep -rn "SERVICE_ROLE" app/ components/ lib/ 2>/dev/null | grep -v "lib/database.types.ts"; then
@@ -17,6 +21,12 @@ fi
 
 if grep -rn "dangerouslySetInnerHTML" app/ components/ 2>/dev/null; then
   echo "FAIL: dangerouslySetInnerHTML is forbidden on this codebase (Architecture §7)." >&2; fail=1
+fi
+
+r2_scan=(); for p in app components lib worker middleware.ts; do [[ -e "$p" ]] && r2_scan+=("$p"); done
+if [[ ${#r2_scan[@]} -gt 0 ]] && grep -rnE '\bR2_[A-Z]|aws4fetch|@aws-sdk' "${r2_scan[@]}" 2>/dev/null \
+  | grep -v '^lib/storage/'; then
+  echo "FAIL: R2_* env or S3 client referenced outside lib/storage/ (ADR-0024 §2)." >&2; fail=1
 fi
 
 # Raw-hex guard. Candidates are `#`/`%23` + 3-8 hex digits, then filtered: a
