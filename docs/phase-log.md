@@ -48,6 +48,18 @@ Merged so far: the unit library (#120 — `lib/recipes/units.ts`, the canonical 
 
 Still open: #121 (thumbnails bucket, parallel), then #126/#127 → #128. `recipes` has no `position` column by design, so the overview ships with dragging disabled — see `docs/HANDOFF.md`. `IngredientSearchPanel` exists but has no caller until #126 wires it to the ingredient name field.
 
+## R2 setup checklist (#360, ADR-0024 §6) — user runs these, hosted actions
+
+1. Cloudflare dashboard -> R2: create two buckets, `<app>-production` and `<app>-development`. Leave "r2.dev subdomain" disabled and attach no custom domain.
+2. Per bucket -> Settings -> Object lifecycle rules: add "Abort incomplete multipart uploads" after 1 day.
+3. Per bucket: no CORS policy (the browser never talks to R2).
+4. R2 -> Manage API tokens: create one token per bucket, permission *Object Read & Write*, "Apply to specific buckets only" = that bucket. Note the Access Key ID + Secret.
+5. Local `.env`: check the existing `R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY` token is scoped to the development bucket only; if it is account-wide, replace it. Set `R2_ACCOUNT_ID` and `R2_BUCKET_NAME` (development bucket).
+6. Vercel -> Settings -> Environment Variables (all four `R2_*`, no `NEXT_PUBLIC_` prefix, mark secrets Sensitive): Production = production bucket + its token; Preview = development bucket + its token.
+7. Verify (dry run first, then add `--apply`), once per bucket with that bucket's token in env:
+   `pnpm exec tsx --env-file=.env scripts/verify-r2-buckets.ts --bucket <own> --other <other> [--apply]`
+   Expect: anonymous GETs non-2xx, PUT to the other bucket 403, PUT+DELETE in own bucket OK.
+
 ## Phases 5–9: ⬜ not started
 
 One tracking ticket per phase (#29–33), all still in Backlog with no implementation work. Ticket detail per `Architecture.md` §10. The token/RLS/CI infrastructure and the worker skeleton they depend on are in place.
