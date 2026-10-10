@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
@@ -16,7 +16,8 @@ import { usePopoverPanel } from "./usePopoverPanel";
  * portalled `Dropdown` panel holding a rows x columns grid (up to
  * MAX_TABLE_SIZE each). Hover or arrow keys choose the size, the live label
  * reads "3 x 4", click or Enter inserts. Roles, keyboard contract and why
- * this is not a new atom: design/notes/EditingBar.md (#330).
+ * this is not a new atom: design/notes/EditingBar.md (#330). The grid itself
+ * is `TableSizeGrid`, also used by the slash menu (#332).
  */
 export interface TableSizePickerProps {
   onInsert: (rows: number, cols: number) => void;
@@ -29,32 +30,21 @@ export interface TableSizePickerProps {
 const SIZES = Array.from({ length: MAX_TABLE_SIZE }, (_, index) => index + 1);
 const DEFAULT_SIZE = { rows: 3, cols: 3 };
 
-export function TableSizePicker({ onInsert, onDismiss, tabIndex, onTriggerFocus }: TableSizePickerProps) {
+export interface TableSizeGridProps {
+  onChoose: (rows: number, cols: number) => void;
+  /** Escape or Tab: the caller closes and returns focus to the document. */
+  onDismiss: () => void;
+}
+
+export function TableSizeGrid({ onChoose, onDismiss }: TableSizeGridProps) {
   const t = useTranslations("components.noteTable");
-  const panelId = useId();
+  const gridRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState(DEFAULT_SIZE);
-  const { placement, isOpen, open, close, wrapperRef, panelRef } = usePopoverPanel((panel) => {
-    panel.querySelector<HTMLButtonElement>("[tabindex='0']")?.focus();
-  });
 
   const sizeLabel = (rows: number, cols: number) => t("size", { rows, cols });
 
   function focusCell(rows: number, cols: number) {
-    panelRef.current?.querySelector<HTMLButtonElement>(`[data-row='${rows}'][data-col='${cols}']`)?.focus();
-  }
-
-  function choose(rows: number, cols: number) {
-    close();
-    onInsert(rows, cols);
-  }
-
-  function handleTriggerKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault();
-      event.stopPropagation();
-      setSize(DEFAULT_SIZE);
-      open();
-    }
+    gridRef.current?.querySelector<HTMLButtonElement>(`[data-row='${rows}'][data-col='${cols}']`)?.focus();
   }
 
   function handleGridKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -68,12 +58,11 @@ export function TableSizePicker({ onInsert, onDismiss, tabIndex, onTriggerFocus 
     else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       event.stopPropagation();
-      choose(size.rows, size.cols);
+      onChoose(size.rows, size.cols);
       return;
     } else if (event.key === "Escape" || event.key === "Tab") {
       event.preventDefault();
       event.stopPropagation();
-      close();
       onDismiss();
       return;
     } else return;
@@ -81,6 +70,70 @@ export function TableSizePicker({ onInsert, onDismiss, tabIndex, onTriggerFocus 
     event.stopPropagation();
     setSize({ rows, cols });
     focusCell(rows, cols);
+  }
+
+  return (
+    <div className="flex flex-col gap-stack-sm p-component-xs">
+      <div
+        ref={gridRef}
+        role="grid"
+        aria-label={t("sizeLabel")}
+        aria-rowcount={MAX_TABLE_SIZE}
+        aria-colcount={MAX_TABLE_SIZE}
+        onKeyDown={handleGridKeyDown}
+        className="flex flex-col gap-inline-xs"
+      >
+        {SIZES.map((rows) => (
+          <div key={rows} role="row" className="flex gap-inline-xs">
+            {SIZES.map((cols) => {
+              const inRange = rows <= size.rows && cols <= size.cols;
+              const isActive = rows === size.rows && cols === size.cols;
+              return (
+                <button
+                  key={cols}
+                  type="button"
+                  role="gridcell"
+                  data-row={rows}
+                  data-col={cols}
+                  aria-label={sizeLabel(rows, cols)}
+                  aria-selected={inRange}
+                  tabIndex={isActive ? 0 : -1}
+                  onPointerEnter={(event) => {
+                    if (event.pointerType === "touch") return;
+                    setSize({ rows, cols });
+                    focusCell(rows, cols);
+                  }}
+                  onClick={() => onChoose(rows, cols)}
+                  className={cn(
+                    "chrome-touch size-6 rounded-card-inner border border-stroke-primary bg-surface-highlight-white focus:border-stroke-secondary-active",
+                    inRange && "border-stroke-primary-hover bg-surface-secondary",
+                  )}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+      <p role="status" className="text-center text-base font-semibold text-text-primary">
+        {sizeLabel(size.rows, size.cols)}
+      </p>
+    </div>
+  );
+}
+
+export function TableSizePicker({ onInsert, onDismiss, tabIndex, onTriggerFocus }: TableSizePickerProps) {
+  const t = useTranslations("components.noteTable");
+  const panelId = useId();
+  const { placement, isOpen, open, close, wrapperRef, panelRef } = usePopoverPanel((panel) => {
+    panel.querySelector<HTMLButtonElement>("[tabindex='0']")?.focus();
+  });
+
+  function handleTriggerKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      event.stopPropagation();
+      open();
+    }
   }
 
   return (
@@ -98,10 +151,7 @@ export function TableSizePicker({ onInsert, onDismiss, tabIndex, onTriggerFocus 
         onKeyDown={handleTriggerKeyDown}
         onClick={() => {
           if (isOpen) close();
-          else {
-            setSize(DEFAULT_SIZE);
-            open();
-          }
+          else open();
         }}
       />
       {placement &&
@@ -119,50 +169,16 @@ export function TableSizePicker({ onInsert, onDismiss, tabIndex, onTriggerFocus 
             )}
           >
             <Dropdown className="shadow-sm">
-              <div className="flex flex-col gap-stack-sm p-component-xs">
-                <div
-                  role="grid"
-                  aria-label={t("sizeLabel")}
-                  aria-rowcount={MAX_TABLE_SIZE}
-                  aria-colcount={MAX_TABLE_SIZE}
-                  onKeyDown={handleGridKeyDown}
-                  className="flex flex-col gap-inline-xs"
-                >
-                  {SIZES.map((rows) => (
-                    <div key={rows} role="row" className="flex gap-inline-xs">
-                      {SIZES.map((cols) => {
-                        const inRange = rows <= size.rows && cols <= size.cols;
-                        const isActive = rows === size.rows && cols === size.cols;
-                        return (
-                          <button
-                            key={cols}
-                            type="button"
-                            role="gridcell"
-                            data-row={rows}
-                            data-col={cols}
-                            aria-label={sizeLabel(rows, cols)}
-                            aria-selected={inRange}
-                            tabIndex={isActive ? 0 : -1}
-                            onPointerEnter={(event) => {
-                              if (event.pointerType === "touch") return;
-                              setSize({ rows, cols });
-                              focusCell(rows, cols);
-                            }}
-                            onClick={() => choose(rows, cols)}
-                            className={cn(
-                              "chrome-touch size-6 rounded-card-inner border border-stroke-primary bg-surface-highlight-white focus:border-stroke-secondary-active",
-                              inRange && "border-stroke-primary-hover bg-surface-secondary",
-                            )}
-                          />
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-                <p role="status" className="text-center text-base font-semibold text-text-primary">
-                  {sizeLabel(size.rows, size.cols)}
-                </p>
-              </div>
+              <TableSizeGrid
+                onChoose={(rows, cols) => {
+                  close();
+                  onInsert(rows, cols);
+                }}
+                onDismiss={() => {
+                  close();
+                  onDismiss();
+                }}
+              />
             </Dropdown>
           </div>,
           document.body,

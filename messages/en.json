@@ -538,7 +538,7 @@
     },
     "noteEditor": {
       "backLabel": "Back to notes",
-      "placeholder": "Start typing...",
+      "placeholder": "Type '/' for options",
       "deleteLabel": "Delete",
       "deleteConfirmLabel": "Are you sure?",
       "deleteConfirmButtonLabel": "Yes, delete",
@@ -576,6 +576,23 @@
         "orderedList": "Numbered list",
         "taskList": "Checklist",
         "list": "List"
+      }
+    },
+    "slashMenu": {
+      "label": "Insert block",
+      "noResults": "No results",
+      "items": {
+        "paragraph": "Text",
+        "heading1": "Heading 1",
+        "heading2": "Heading 2",
+        "heading3": "Heading 3",
+        "bulletList": "Bulleted list",
+        "orderedList": "Numbered list",
+        "taskList": "Checklist",
+        "blockquote": "Quote",
+        "codeBlock": "Code block",
+        "table": "Table",
+        "divider": "Divider"
       }
     },
     "noteTable": {
