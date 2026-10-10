@@ -122,6 +122,49 @@ describe("deleteBlock", () => {
   });
 });
 
+describe("details and code blocks (#336)", () => {
+  const detailsJson = {
+    type: "doc",
+    content: [
+      { type: "paragraph", content: [{ type: "text", text: "intro" }] },
+      {
+        type: "details",
+        attrs: { open: true },
+        content: [
+          { type: "detailsSummary", content: [{ type: "text", text: "Titel" }] },
+          { type: "detailsContent", content: [{ type: "paragraph", content: [{ type: "text", text: "inhoud" }] }] },
+        ],
+      },
+      { type: "codeBlock", attrs: { language: null }, content: [{ type: "text", text: "let a = 1" }] },
+    ],
+  };
+
+  it("moves, duplicates and deletes a details block whole, with undo", () => {
+    editor = new Editor({ extensions: noteExtensions, content: detailsJson });
+    const e = editor;
+    expect(moveBlock(e, "up", posOf(e, 1))).toBe(true);
+    expect(e.state.doc.child(0).type.name).toBe("details");
+    e.commands.undo();
+    expect(e.state.doc.child(1).type.name).toBe("details");
+
+    duplicateBlock(e, posOf(e, 1));
+    expect(e.state.doc.child(2).type.name).toBe("details");
+    expect(e.state.doc.child(2).childCount).toBe(2);
+    deleteBlock(e, posOf(e, 2));
+    expect(e.state.doc.child(2).type.name).toBe("codeBlock");
+  });
+
+  it("moves a code block and keeps Turn into for it but not for details", () => {
+    editor = new Editor({ extensions: noteExtensions, content: detailsJson });
+    const e = editor;
+    const [, details, code] = e.state.doc.children;
+    expect(isConvertibleBlock(details)).toBe(false);
+    expect(blockTypeId(code)).toBe("codeBlock");
+    expect(moveBlock(e, "up", posOf(e, 2))).toBe(true);
+    expect(e.state.doc.child(1).type.name).toBe("codeBlock");
+  });
+});
+
 describe("block type helpers", () => {
   it("names the block type and gates tables out of Turn into", () => {
     const e = make("<h2>h</h2><ul><li><p>a</p></li></ul><table><tr><td><p>c</p></td></tr></table>");

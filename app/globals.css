@@ -435,6 +435,8 @@ html {
   .tiptap [data-type="details"] > button {
     transition: none;
   }
+}
+
 /* #335: Dropcursor's line while a block is dragged (class set in
    lib/notes/extensions.ts; its inline colour is switched off there). */
 .note-dropcursor {

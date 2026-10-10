@@ -24,23 +24,23 @@ test("hover shows the handle, the menu duplicates, moves and deletes, undo resto
 
   await menu.getByRole("menuitem", { name: "Omlaag verplaatsen" }).click();
   await expect(menu).toHaveCount(0);
-  expect((await blockTexts(page))[1]).toBe(before[2]);
+  await expect.poll(async () => (await blockTexts(page))[1]).toBe(before[2]);
   await expect(page.locator(".tiptap")).toBeFocused();
   await page.keyboard.press("ControlOrMeta+z");
-  expect(await blockTexts(page)).toEqual(before);
+  await expect.poll(() => blockTexts(page)).toEqual(before);
 
   await page.locator(".tiptap > p").first().hover();
   await trigger.click();
   await page.getByRole("menuitem", { name: "Dupliceren" }).click();
-  expect(await blocks(page).count()).toBe(before.length + 1);
+  await expect(blocks(page)).toHaveCount(before.length + 1);
   await page.keyboard.press("ControlOrMeta+z");
 
   await page.locator(".tiptap > p").first().hover();
   await trigger.click();
   await page.getByRole("menuitem", { name: "Verwijderen" }).click();
-  expect(await blockTexts(page)).not.toContain(before[1]);
+  await expect.poll(() => blockTexts(page)).not.toContain(before[1]);
   await page.keyboard.press("ControlOrMeta+z");
-  expect(await blockTexts(page)).toEqual(before);
+  await expect.poll(() => blockTexts(page)).toEqual(before);
 });
 
 test("Turn into converts the block; Escape closes and returns focus to the editor", async ({ page }) => {
@@ -67,7 +67,7 @@ test("Mod-Shift-Arrow moves the block without a mouse", async ({ page }) => {
   await page.keyboard.press("ControlOrMeta+Shift+ArrowUp");
   await expect.poll(async () => (await blockTexts(page))[0]).toBe(before[1]);
   await page.keyboard.press("ControlOrMeta+Shift+ArrowDown");
-  expect(await blockTexts(page)).toEqual(before);
+  await expect.poll(() => blockTexts(page)).toEqual(before);
 });
 
 test("dragging the handle reorders a block and undo restores it", async ({ page }) => {
@@ -85,7 +85,7 @@ test("dragging the handle reorders a block and undo restores it", async ({ page 
   const after = await blockTexts(page);
   expect(after).toEqual([before[1], before[0], before[2], before[3]]);
   await page.keyboard.press("ControlOrMeta+z");
-  expect(await blockTexts(page)).toEqual(before);
+  await expect.poll(() => blockTexts(page)).toEqual(before);
 });
 
 test("the handle floats in the gutter: the reading column does not move on hover", async ({ page }) => {
@@ -106,4 +106,36 @@ test.describe("touch device", () => {
     await page.locator(".tiptap > p").first().tap();
     await expect(page.locator(handle)).toHaveCount(0);
   });
+});
+
+test("works on code blocks and details: duplicate, move, delete, undo", async ({ page }) => {
+  await page.goto("/?story=note-block-handle--code-and-details&mode=preview");
+  await expect(page.locator(".tiptap [data-type=details]")).toBeVisible();
+  const trigger = page.locator(handle);
+  const count = () => page.locator(".tiptap > *").count();
+  // intro, code, details and the trailing paragraph the editor appends.
+  await expect.poll(count).toBe(4);
+  const start = 4;
+
+  await page.locator(".tiptap > [data-type=details]").hover();
+  await trigger.click();
+  await expect(page.getByRole("menuitemradio")).toHaveCount(0);
+  await page.getByRole("menuitem", { name: "Dupliceren" }).click();
+  await expect(page.locator(".tiptap > [data-type=details]")).toHaveCount(2);
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect(page.locator(".tiptap > [data-type=details]")).toHaveCount(1);
+
+  await page.locator(".tiptap > :has(pre)").hover();
+  await trigger.click();
+  await expect(page.getByRole("menuitemradio", { name: "Codeblok" })).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("menuitem", { name: "Omhoog verplaatsen" }).click();
+  await expect(page.locator(".tiptap > *").first()).toContainText("let a = 1;");
+  await page.keyboard.press("ControlOrMeta+z");
+
+  await page.locator(".tiptap > :has(pre)").hover();
+  await trigger.click();
+  await page.getByRole("menuitem", { name: "Verwijderen" }).click();
+  await expect(page.locator(".tiptap > :has(pre)")).toHaveCount(0);
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect.poll(count).toBe(start);
 });

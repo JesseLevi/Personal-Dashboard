@@ -10,12 +10,28 @@ const content = `
 <ul><li><p>Groente</p></li><li><p>Brood</p></li></ul>
 `;
 
+const richContent = {
+  type: "doc",
+  content: [
+    { type: "paragraph", content: [{ type: "text", text: "Intro" }] },
+    { type: "codeBlock", attrs: { language: null }, content: [{ type: "text", text: "let a = 1;" }] },
+    {
+      type: "details",
+      attrs: { open: true },
+      content: [
+        { type: "detailsSummary", content: [{ type: "text", text: "Titel" }] },
+        { type: "detailsContent", content: [{ type: "paragraph", content: [{ type: "text", text: "Inhoud" }] }] },
+      ],
+    },
+  ],
+};
+
 // Hovers the second block (a synthetic mousemove at its coordinates, exactly
 // what the drag-handle plugin listens for) and optionally opens the menu.
-function HandleDemo({ openMenu = false }: { openMenu?: boolean }) {
+function HandleDemo({ openMenu = false, rich = false }: { openMenu?: boolean; rich?: boolean }) {
   const editor = useEditor({
     extensions: noteExtensions,
-    content,
+    content: rich ? richContent : content,
     immediatelyRender: false,
     editorProps: {
       attributes: { class: "text-base font-semibold text-text-primary focus:outline-none" },
@@ -53,3 +69,4 @@ function HandleDemo({ openMenu = false }: { openMenu?: boolean }) {
 
 export const HandleVisible = () => <HandleDemo />;
 export const MenuOpen = () => <HandleDemo openMenu />;
+export const CodeAndDetails = () => <HandleDemo rich />;
