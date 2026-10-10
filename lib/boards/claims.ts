@@ -12,7 +12,7 @@ import type { AuthError } from "@supabase/supabase-js";
  * actually reads -- just enough to type-check the real call in session.ts
  * without re-declaring supabase-js's full JwtPayload shape. */
 export interface GetClaimsResult {
-  data: { claims: { sub?: string } } | null;
+  data: { claims: { sub?: string; app_metadata?: { [key: string]: unknown } } } | null;
   error: AuthError | null;
 }
 
@@ -21,6 +21,14 @@ export interface GetClaimsResult {
 export function userIdFromClaims(result: GetClaimsResult): string | null {
   if (result.error || !result.data) return null;
   return result.data.claims.sub ?? null;
+}
+
+/** True only for a verified token whose `app_metadata.role` is "admin"
+ * (ADR-0020 §1). app_metadata is not user-writable, so the claim cannot be
+ * self-granted. */
+export function isAdminFromClaims(result: GetClaimsResult): boolean {
+  if (result.error || !result.data?.claims.sub) return false;
+  return result.data.claims.app_metadata?.role === "admin";
 }
 
 /** Wraps a resolved user id (or lack of one) in the `ActionResult`-shaped

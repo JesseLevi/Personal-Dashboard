@@ -60,6 +60,8 @@ export interface ReceptenBoardProps {
   title: string;
   /** Header "Categorie" trigger label (`components.pageHeader.recipes.addCategoryLabel`). */
   addCategoryLabel: string;
+  /** Admin-only "Ingrediënten" link (ADR-0020 §6); omitted for everyone else. */
+  ingredientsLabel?: string;
 }
 
 // `recipe_categories.icon` is free-text at the schema layer (deviation (a),
@@ -76,6 +78,7 @@ export function ReceptenBoard({
   categories,
   title,
   addCategoryLabel,
+  ingredientsLabel,
 }: ReceptenBoardProps) {
   const t = useTranslations("components.cardContainer");
   const tRecipe = useTranslations("components.cardContentRecipe");
@@ -243,9 +246,30 @@ export function ReceptenBoard({
       <PageHeader
         title={title}
         actions={
-          <Button icon="Plus" onClick={() => setPanel({ open: true, target: { mode: "create" } })}>
-            {addCategoryLabel}
-          </Button>
+          <div className="flex items-center gap-inline-sm md:gap-inline-xl">
+            {/* Claude-designed (#321): icon-only on mobile, labelled on desktop,
+                same split as Notities' sort button. design/notes/ReceptenBoard.md */}
+            {ingredientsLabel && (
+              <>
+                <Button
+                  icon="LibraryBig"
+                  aria-label={ingredientsLabel}
+                  className="md:hidden"
+                  onClick={() => router.push("/recepten/ingredienten")}
+                />
+                <Button
+                  icon="LibraryBig"
+                  className="hidden md:inline-flex"
+                  onClick={() => router.push("/recepten/ingredienten")}
+                >
+                  {ingredientsLabel}
+                </Button>
+              </>
+            )}
+            <Button icon="Plus" onClick={() => setPanel({ open: true, target: { mode: "create" } })}>
+              {addCategoryLabel}
+            </Button>
+          </div>
         }
       />
       {/* Drag-persist failure only (create/update/delete errors surface

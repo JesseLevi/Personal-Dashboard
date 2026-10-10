@@ -237,3 +237,7 @@ touched `BoardView.tsx` itself.
 
 - Plus button gets a `relative` wrapper and an optional `addMenu` slot (`BoardView.renderAddMenu`) for the "Via link / Handmatig" menu (`AddRecipeMenu.md`).
 - Cards render by `import_status`: `done` the normal card, `importing` `CardContentRecipeSkeleton`, `failed` `CardContentRecipeFailed`. Only `done` cards open the detail page. The board polls `router.refresh()` every 2.5 s only while a card is importing and the tab is visible (`lib/recipes/import/polling.ts`); the lazy sweep (`lib/recipes/import/sweep.ts`) runs on each board load.
+
+## "Ingrediënten" header button (#321, ADR-0020 §6)
+
+Claude-designed on request (user, 2026-10-10); no Figma node. Admin-only: `page.tsx` passes `ingredientsLabel` only when `isAdmin()`. Reuses `Button` (filled, default size) + `Icon` `LibraryBig` (lucide `library-big`, added to the Icon atom for this). Mobile: icon-only 40x40 with `aria-label`; desktop (`md:`): icon + label. Same split and wrapper gaps (`gap-inline-sm md:gap-inline-xl`) as Notities' sort button (`NotitiesBoard.md`). Order: Ingrediënten, then + Categorie (primary action stays rightmost). Navigates with `router.push`, same as the board's card clicks.

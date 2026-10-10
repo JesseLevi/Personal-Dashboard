@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { getRecipeCategoriesWithRecipes, getRecipeCategoryRecipeCounts } from "@/lib/recipes/queries";
-import { getAuthenticatedUserId } from "@/lib/recipes/session";
+import { getAuthenticatedUserId, isAdmin } from "@/lib/recipes/session";
 import { sweepStuckImports } from "@/lib/recipes/import/sweep";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ReceptenBoard } from "./ReceptenBoard";
@@ -36,13 +36,14 @@ async function ReceptenPageContent() {
   // before the board reads them, so they show as a failed card, not a skeleton.
   const userId = await getAuthenticatedUserId();
   if (userId) await sweepStuckImports(await createSupabaseServerClient(), userId);
-  const categories = await getRecipeCategoriesWithRecipes();
+  const [categories, admin] = await Promise.all([getRecipeCategoriesWithRecipes(), isAdmin()]);
 
   return (
     <ReceptenBoard
       categories={categories}
       title={t("nav.recipes")}
       addCategoryLabel={t("components.pageHeader.recipes.addCategoryLabel")}
+      ingredientsLabel={admin ? t("components.pageHeader.recipes.ingredientsLabel") : undefined}
     />
   );
 }

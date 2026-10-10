@@ -101,6 +101,9 @@
         "http_error": "De website gaf een foutmelding.",
         "import_failed": "Het importeren is niet gelukt."
       }
+    },
+    "ingredientAdmin": {
+      "title": "Ingrediënten"
     }
   },
   "shopping": {
@@ -212,7 +215,8 @@
         }
       },
       "recipes": {
-        "addCategoryLabel": "Categorie"
+        "addCategoryLabel": "Categorie",
+        "ingredientsLabel": "Ingrediënten"
       },
       "notes": {
         "addCategoryLabel": "Categorie",
