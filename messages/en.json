@@ -628,6 +628,15 @@
       "label": "Text formatting",
       "turnInto": "Turn into"
     },
+    "noteBlockMenu": {
+      "handleLabel": "Block menu",
+      "menuLabel": "Block actions",
+      "turnInto": "Turn into",
+      "duplicate": "Duplicate",
+      "delete": "Delete",
+      "moveUp": "Move up",
+      "moveDown": "Move down"
+    },
     "noteLink": {
       "label": "Link",
       "urlLabel": "Web address",

@@ -49,6 +49,7 @@ const DARK_STORIES = [
   "note-details--collapsed-and-open",
   "table-menu--menu-open",
   "note-markdown-menu--menu-open",
+  "note-block-handle--menu-open",
   "link-popover--existing-link",
   "link-popover--editing-link",
   "note-bubble-menu--selection-menu",

@@ -12,6 +12,7 @@ import { CodeBlockView } from "@/components/organisms/CodeBlockView";
 import { noteLowlight } from "./code-languages";
 import { detailsToggleLabel } from "./details-labels";
 import { LINK_PROTOCOLS, isAllowedLinkUri } from "./link-url";
+import { BlockShortcuts } from "./block-commands";
 
 // The fixed TipTap extension whitelist Architecture §133 requires (#233):
 // used by the editor (app/(app)/notities/[noteId]/NoteEditor.tsx) AND every
@@ -64,6 +65,8 @@ export const noteExtensions: AnyExtension[] = [
       protocols: LINK_PROTOCOLS,
       isAllowedUri: (url) => isAllowedLinkUri(url),
     },
+    // #335: the drop line while dragging a block is styled with tokens in app/globals.css.
+    dropcursor: { color: false, width: 2, class: "note-dropcursor" },
   }),
   TaskList,
   TaskItem.configure({
@@ -100,4 +103,6 @@ export const noteExtensions: AnyExtension[] = [
   }),
   DetailsSummary,
   DetailsContent,
+  // #335: Mod-Shift-Up/Down move the current top-level block (drag-handle alternative).
+  BlockShortcuts,
 ];

@@ -100,7 +100,7 @@ export const BLOCK_TYPE_MENU: EditingBarMenuDef = {
   ],
 };
 
-const LIST_MENU: EditingBarMenuDef = {
+export const LIST_MENU: EditingBarMenuDef = {
   id: "list",
   icon: "List",
   fallbackKey: "list",
