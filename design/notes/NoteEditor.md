@@ -650,6 +650,7 @@ Resolves `notes-editingbar-link-no-url-input-designed` (user decision
   `lib/notes/details-labels.ts`, set by `NoteEditor.tsx`); a text glyph
   rotated in CSS. Collapsed content is only `hidden`, so `toPlainText` and
   search include it. Slash item `details` ("Inklapbare sectie").
+
 ## Markdown paste, copy and export (#337)
 
 Claude-designed on request; ADR-0021 s3/s4. Storage stays TipTap JSON, markdown

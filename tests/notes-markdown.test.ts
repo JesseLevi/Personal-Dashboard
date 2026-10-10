@@ -73,6 +73,42 @@ const FIXTURES: Record<string, JSONContent[]> = {
   "code block with language": [
     { type: "codeBlock", attrs: { language: "ts" }, content: [t("const a = 1;\n\nconst b = 2;")] },
   ],
+  "code block with a lowlight language": [
+    { type: "codeBlock", attrs: { language: "typescript" }, content: [t("let a: number = 1;")] },
+  ],
+  "details (closed)": [
+    {
+      type: "details",
+      attrs: { open: false },
+      content: [
+        { type: "detailsSummary", content: [t("More <info> & stuff")] },
+        { type: "detailsContent", content: [p(t("hidden", [{ type: "bold" }]), t(" text")), { type: "bulletList", content: [{ type: "listItem", content: [p(t("point"))] }] }] },
+      ],
+    },
+  ],
+  "details (open, nested)": [
+    {
+      type: "details",
+      attrs: { open: true },
+      content: [
+        { type: "detailsSummary", content: [t("Outer")] },
+        {
+          type: "detailsContent",
+          content: [
+            p(t("before")),
+            {
+              type: "details",
+              attrs: { open: false },
+              content: [
+                { type: "detailsSummary", content: [t("Inner")] },
+                { type: "detailsContent", content: [{ type: "codeBlock", attrs: { language: "json" }, content: [t("{}")] }] },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ],
   "code block without language": [{ type: "codeBlock", content: [t("plain code")] }],
   "horizontal rule": [p(t("above")), { type: "horizontalRule" }, p(t("below"))],
   table: [

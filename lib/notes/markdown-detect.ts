@@ -12,6 +12,7 @@ const BLOCK_MARKERS: RegExp[] = [
   /^\s*[-*+]\s+\S/, // bullet
   /^\s*\d{1,9}[.)]\s+\S/, // ordered
   /^ {0,3}>\s?\S/, // quote
+  /^ {0,3}<details[\s>]/, // collapsible section
   /^ {0,3}(```|~~~)/, // code fence
   /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/, // table separator row
 ];

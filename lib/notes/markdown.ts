@@ -7,7 +7,7 @@
 // import anywhere in the `/notities` graph would put the parser in the initial
 // chunk -- tests/notes-markdown.test.ts keeps a guard on that.
 import { MarkdownManager } from "@tiptap/markdown";
-import { Mark, getSchema, type AnyExtension, type JSONContent } from "@tiptap/react";
+import { Mark, Node, getSchema, type AnyExtension, type JSONContent } from "@tiptap/react";
 import type { Node as PMNode, Schema } from "@tiptap/pm/model";
 import { noteExtensions } from "./extensions";
 import { isAllowedLinkUri } from "./link-url";
@@ -19,7 +19,62 @@ import { isAllowedLinkUri } from "./link-url";
 // ONE clearly delimited block here (e.g. #336's details/detailsSummary/
 // detailsContent), and add it to the round-trip test.
 // ---------------------------------------------------------------------------
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function unescapeHtml(text: string): string {
+  return text.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+}
+
 const MARKDOWN_ENTRIES: AnyExtension[] = [
+  // --- details / detailsSummary / detailsContent (#336): one HTML block that
+  // every markdown renderer understands. The summary is one line of text; the
+  // body is ordinary markdown between a blank line and `</details>`.
+  Node.create({
+    name: "details",
+    markdownTokenName: "details",
+    markdownTokenizer: {
+      name: "details",
+      level: "block",
+      start: (src) => src.search(/<details[\s>]/),
+      tokenize(src, _tokens, lexer) {
+        const head = /^<details(\s+open)?\s*>[ \t]*\n\s*<summary>([^\n]*?)<\/summary>[ \t]*(?:\n|$)/.exec(src);
+        if (!head) return undefined;
+        // Find the matching close, counting nested <details>.
+        const tag = /<(\/?)details[\s>]/g;
+        tag.lastIndex = head[0].length;
+        let depth = 1;
+        for (let m = tag.exec(src); m; m = tag.exec(src)) {
+          depth += m[1] ? -1 : 1;
+          if (depth === 0) {
+            const end = src.indexOf(">", m.index) + 1;
+            return {
+              type: "details",
+              raw: src.slice(0, end),
+              open: Boolean(head[1]),
+              summary: unescapeHtml(head[2] ?? ""),
+              tokens: lexer.blockTokens(src.slice(head[0].length, m.index).trim()),
+            };
+          }
+        }
+        return undefined;
+      },
+    },
+    parseMarkdown: (token, h) => {
+      const body = h.parseChildren(token.tokens ?? []);
+      const summary = String(token.summary ?? "").trim();
+      return h.createNode("details", { open: Boolean(token.open) }, [
+        h.createNode("detailsSummary", undefined, summary ? [h.createNode("text", { text: summary })] : []),
+        h.createNode("detailsContent", undefined, body.length > 0 ? body : [{ type: "paragraph" }]),
+      ]);
+    },
+    renderMarkdown: (node, h) => {
+      const [summary, content] = node.content ?? [];
+      const title = escapeHtml((summary?.content ?? []).map((child) => child.text ?? "").join(""));
+      const body = h.renderChildren(content?.content ?? [], "\n\n").trim();
+      return `<details${node.attrs?.open ? " open" : ""}>\n<summary>${title}</summary>\n\n${body}\n\n</details>`;
+    },
+  }),
   // --- superscript: no markdown syntax exists; export as inline HTML, which
   // every markdown renderer passes through. One-way (parse drops the tags and
   // keeps the text).
