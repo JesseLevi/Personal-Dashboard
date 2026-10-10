@@ -165,6 +165,8 @@ async function run(job: ImportJob, deps: PipelineDeps): Promise<void> {
     entries.map((entry) => entry.parsed),
     { name: recipe.name, steps: recipe.steps },
     locale,
+    // Alias-settled lines need no search terms (ADR-0020 §3); translation still sees every line.
+    firstPass.map((match) => match.needsReview),
   );
   const matches = await widenMatches(
     supabase,

@@ -174,7 +174,7 @@ export const PrepareSchema = z.object({
 
 const PREPARE_SYSTEM = `You prepare an imported recipe for a Dutch food composition table (NEVO). ${SYSTEM_RULES}
 For each entry in "ingredients" return one item with its "i":
-- searchTerms: 1 to ${MAX_SEARCH_TERMS} short Dutch names of the base food as NEVO would list it, most specific first, without quantity, unit, brand or cutting words. Examples: "red onions, diced" -> ["ui rode", "rode ui", "ui"]; "extra virgin olive oil" -> ["olijfolie", "olie olijf"]; "kipfilet in reepjes" -> ["kipfilet"]; "2 teentjes knoflook" -> ["knoflook"].
+- searchTerms: only if wantsSearchTerms is true, otherwise []. Then 1 to ${MAX_SEARCH_TERMS} short Dutch names of the base food as NEVO would list it, most specific first, without quantity, unit, brand or cutting words. Examples: "red onions, diced" -> ["ui rode", "rode ui", "ui"]; "extra virgin olive oil" -> ["olijfolie", "olie olijf"]; "kipfilet in reepjes" -> ["kipfilet"]; "2 teentjes knoflook" -> ["knoflook"].
 - reparsed: only if needsParse is true: quantity (number or null, a range's lower bound), unit (one of allowedUnits or null), the ingredient name without quantity or unit, and an optional short note. Otherwise null.
 - name and note: only if the recipe is NOT written in the target language: the ingredient name (without quantity or unit) and its note translated into the target language, note null when there is none. Otherwise both null.
 translated: only if the recipe is NOT written in the target language: the title and every step translated into the target language, the same number of steps in the same order, nothing added or left out. Otherwise null.`;
@@ -201,6 +201,8 @@ export async function prepareRecipe(
   lines: ParsedIngredient[],
   recipe: { name: string; steps: string[] },
   targetLanguage: Locale,
+  /** Index-aligned; false = an alias already settled the line, so no search terms are requested. Default: all lines. */
+  wantsSearchTerms: boolean[] = [],
 ): Promise<PrepareResult> {
   const base = (degraded: ImportAiErrorCode | null): PrepareResult => ({
     lines: lines.map((parsed) => ({ parsed, searchTerms: [] })),
@@ -222,6 +224,7 @@ export async function prepareRecipe(
       raw: parsed.raw.slice(0, 300),
       name: parsed.name.slice(0, 120),
       needsParse: needsParse(parsed),
+      wantsSearchTerms: wantsSearchTerms[i] ?? true,
     })),
     steps: usedSteps.map((text) => text.slice(0, 2000)),
   };
@@ -272,7 +275,10 @@ export async function prepareRecipe(
       parsed = { ...parsed, name: translatedName, note: translatedNote || null };
     }
 
-    const searchTerms = [...new Set(item.searchTerms.map((t) => sanitizePlainText(t, 60).toLowerCase()).filter(Boolean))];
+    const searchTerms =
+      (wantsSearchTerms[item.i] ?? true)
+        ? [...new Set(item.searchTerms.map((t) => sanitizePlainText(t, 60).toLowerCase()).filter(Boolean))]
+        : [];
     result.lines[item.i] = { parsed, searchTerms };
   }
 

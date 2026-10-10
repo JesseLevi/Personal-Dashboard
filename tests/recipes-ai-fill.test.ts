@@ -79,6 +79,16 @@ describe("prepareRecipe", () => {
     expect(result.lines[0]!.searchTerms).toEqual(["ui", "ui rauw"]);
   });
 
+  it("requests no search terms for alias-settled lines, and the payload never grows with aliases", async () => {
+    const { prompts } = fakeProvider(() => prepAnswer([prep(0, { searchTerms: ["ignored"] }), prep(1, { searchTerms: ["ui"] })]));
+    const result = await prepareRecipe([parsed("tomaten"), parsed("onion")], RECIPE, "nl", [false, true]);
+    const payload = payloadOf(prompts[0]!.prompt);
+    expect(payload.ingredients.map((l: { wantsSearchTerms: boolean }) => l.wantsSearchTerms)).toEqual([false, true]);
+    expect(payload.ingredients).toHaveLength(2); // translation still sees every line
+    expect(result.lines.map((l) => l.searchTerms)).toEqual([[], ["ui"]]);
+    expect(prompts[0]!.prompt).not.toMatch(/alias/i);
+  });
+
   it("translates an English recipe: names, notes, title and every step", async () => {
     fakeProvider(() =>
       prepAnswer([prep(0, { name: "ui", note: "gesnipperd", searchTerms: ["ui"] })], {

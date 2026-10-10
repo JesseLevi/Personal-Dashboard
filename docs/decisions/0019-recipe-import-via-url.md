@@ -1,6 +1,6 @@
 # ADR-0019: Recipe import via URL
 
-**Status**: Accepted (2026-10-07, epic #309, #311). Amended 2026-10-07 (user decision): §4 linking, grams and translation. **Amends** `Vision.md` (Recepten: import moves from "buiten scope" to in scope). Builds on ADR-0018 (hosted inference, no worker host); first user of its `lib/ai/` seam and cost guardrails.
+**Status**: Accepted (2026-10-07, epic #309, #311). Amended 2026-10-07 (user decision): §4 linking, grams and translation. §2 matching order amended by ADR-0020. **Amends** `Vision.md` (Recepten: import moves from "buiten scope" to in scope). Builds on ADR-0018 (hosted inference, no worker host); first user of its `lib/ai/` seam and cost guardrails.
 
 ## Context
 

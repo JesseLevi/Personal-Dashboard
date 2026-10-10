@@ -160,9 +160,25 @@ describe("decideMatch", () => {
 
 type Rows = { data: unknown; error: { code: string; message: string } | null };
 
-function fakeClient(opts: { aliases?: Rows; rpc?: Rows; upsert?: Rows }) {
-  const calls = { rpc: vi.fn(), upsert: vi.fn(), aliasIn: vi.fn(), insert: vi.fn() };
+function fakeClient(opts: { aliases?: Rows; shared?: Rows; rpc?: Rows; upsert?: Rows }) {
+  const calls = { rpc: vi.fn(), upsert: vi.fn(), aliasIn: vi.fn(), sharedIn: vi.fn(), insert: vi.fn() };
   const client = {
+    schema: (name: string) => {
+      if (name !== "reference") throw new Error(`unexpected schema ${name}`);
+      return {
+        from: (table: string) => {
+          if (table !== "ingredient_aliases") throw new Error(`unexpected reference table ${table}`);
+          return {
+            select: () => ({
+              in: (...args: unknown[]) => {
+                calls.sharedIn(...args);
+                return Promise.resolve(opts.shared ?? { data: [], error: null });
+              },
+            }),
+          };
+        },
+      };
+    },
     from: (table: string) => {
       if (table === "ingredient_aliases") {
         return {
@@ -223,6 +239,61 @@ describe("matchIngredients", () => {
     const [result] = await matchIngredients(client, "user-1", ["Bosuien"]);
     expect(result).toMatchObject({ ingredientId: "ing-1", needsReview: false, candidates: [] });
     expect(calls.rpc).not.toHaveBeenCalled();
+  });
+
+  it("a shared alias links a reference candidate without trigram or review", async () => {
+    const { client, calls } = fakeClient({
+      shared: {
+        data: [{ alias_normalized: "tomaat", ingredient_id: "ref-tomaat", ingredients: { name_nl: "Tomaat rauw" } }],
+        error: null,
+      },
+    });
+    const [result] = await matchIngredients(client, "user-1", ["tomaten"]);
+    expect(result).toMatchObject({
+      ingredientId: null,
+      needsReview: false,
+      chosen: { source: "reference", referenceId: "ref-tomaat", name: "Tomaat rauw" },
+    });
+    expect(calls.rpc).not.toHaveBeenCalled();
+  });
+
+  it("an own alias beats a shared alias and the shared lookup only gets the missed keys", async () => {
+    const { client, calls } = fakeClient({
+      aliases: { data: [{ alias_normalized: "tomaat", ingredient_id: "ing-own" }], error: null },
+      shared: {
+        data: [
+          { alias_normalized: "tomaat", ingredient_id: "ref-tomaat", ingredients: { name_nl: "Tomaat rauw" } },
+          { alias_normalized: "ui", ingredient_id: "ref-ui", ingredients: { name_nl: "Ui rauw" } },
+        ],
+        error: null,
+      },
+    });
+    const [a, b] = await matchIngredients(client, "user-1", ["tomaten", "uien"]);
+    expect(a).toMatchObject({ ingredientId: "ing-own", chosen: { source: "own" } });
+    expect(b.chosen).toMatchObject({ source: "reference", referenceId: "ref-ui" });
+    expect(calls.sharedIn).toHaveBeenCalledTimes(1);
+    expect(calls.sharedIn).toHaveBeenCalledWith("alias_normalized", ["ui"]);
+  });
+
+  it("a shared alias beats a trigram candidate; only the rest goes to the RPC", async () => {
+    const { client, calls } = fakeClient({
+      shared: {
+        data: [{ alias_normalized: "tomaat", ingredient_id: "ref-tomaat", ingredients: { name_nl: "Tomaat rauw" } }],
+        error: null,
+      },
+      rpc: { data: [row(0, "reference", "ref-boter", "Boter", 1), row(0, "reference", "ref-other", "Tomaat saus", 1)], error: null },
+    });
+    const [a, b] = await matchIngredients(client, "user-1", ["tomaten", "boter"]);
+    expect(a.chosen).toMatchObject({ referenceId: "ref-tomaat" });
+    expect(calls.rpc).toHaveBeenCalledWith("match_ingredient_candidates", { p_names: ["boter"], p_limit: 5 });
+    expect(b.needsReview).toBe(true); // two exact references tie in the fake RPC: margin rule, not the alias
+  });
+
+  it("throws on a shared alias lookup error", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { client } = fakeClient({ shared: { data: null, error: { code: "42501", message: "nope" } } });
+    await expect(matchIngredients(client, "user-1", ["boter"])).rejects.toThrow();
+    spy.mockRestore();
   });
 
   it("only sends names without an alias to the RPC, keeping order", async () => {
