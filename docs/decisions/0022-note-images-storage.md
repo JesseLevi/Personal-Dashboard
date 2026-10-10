@@ -1,6 +1,6 @@
 # ADR-0022: Images in notes
 
-**Status**: Accepted (2026-10-10, user decision). Extends ADR-0021. Mirrors the `recipe-thumbnails` pattern (#121, #171/#174): private bucket, RLS on `storage.objects`, server-side re-encode, delivery through an app route.
+**Status**: Accepted (2026-10-10, user decision). §2 and the storage part of §4 are amended by ADR-0024: images live in R2, not a Supabase bucket. Extends ADR-0021. Mirrors the `recipe-thumbnails` pattern (#121, #171/#174): private bucket, RLS on `storage.objects`, server-side re-encode, delivery through an app route.
 
 ## Context
 
