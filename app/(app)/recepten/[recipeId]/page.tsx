@@ -3,6 +3,8 @@ import {
   getRecipeCategoriesWithRecipes,
   getRecipeWithIngredientsAndSteps,
 } from "@/lib/recipes/queries";
+import { getAuthenticatedUserId } from "@/lib/recipes/session";
+import { presignRecipeThumbnails } from "@/lib/recipes/thumbnails";
 import { RecipeDetailPage } from "./RecipeDetailPage";
 
 // #127: recipe detail route — Figma "Recept/Mobile" (3778:5427) / "Recept/
@@ -15,9 +17,8 @@ import { RecipeDetailPage } from "./RecipeDetailPage";
 // already returns `null` for both. Full reasoning: design/notes/
 // RecipeDetailPage.md.
 //
-// #171: the hero thumbnail is no longer resolved here — `RecipeDetailPage`
-// builds the `/api/recipe-thumbnail` URL itself straight from `recipe`'s own
-// `thumbnail_path`/`updated_at`. See design/notes/CardContentRecipe.md.
+// #391: the hero is presigned here (R2, hour-stable); `RecipeDetailPage` falls
+// back to `/api/recipe-thumbnail` on error. See design/notes/RecipeDetailPage.md.
 export default async function RecipeDetailRoute({
   params,
 }: {
@@ -34,5 +35,14 @@ export default async function RecipeDetailRoute({
   // Keyed on recipe.id so navigating straight from one recipe's detail page
   // to another's (no ticketed UI does this today) fully remounts rather than
   // reusing local state (portions, delete-confirm) from the previous recipe.
-  return <RecipeDetailPage key={recipe.id} recipe={recipe} categories={categories} />;
+  // #391: the row is already loaded for the session user, so presign here.
+  const thumbnails = await presignRecipeThumbnails(await getAuthenticatedUserId(), [recipe], "full");
+  return (
+    <RecipeDetailPage
+      key={recipe.id}
+      recipe={recipe}
+      categories={categories}
+      thumbnailUrl={thumbnails[recipe.id] ?? null}
+    />
+  );
 }

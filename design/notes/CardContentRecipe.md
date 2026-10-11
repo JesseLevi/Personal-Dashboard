@@ -158,3 +158,7 @@ itemSpacing 8px) has no bound variable in the fetched node.
 
 `scripts/check-raw-spacing.sh` now enforces an explicit `spacing-flag:`
 marker. Added to the existing comment above; no reasoning changed.
+
+## TICKET #391 (2026-10-11): presigned thumbnails
+
+`app/(app)/recepten/page.tsx` presigns every card (`presignRecipeThumbnails`, lib/recipes/thumbnails.ts) and passes `thumbnailUrls` (recipe id to URL) to `ReceptenBoard`; `imageUrl` is that URL, so a normal load makes no `/api/recipe-thumbnail` request. The route stays as the fallback: `imageFallbackUrl` (`recipeThumbnailRouteUrl`, lib/recipes/thumbnail-url.ts) is swapped in once on `<img>` `onError` (`useImageFallback`, lib/ui/image-fallback.ts; a failing fallback does not loop) for tabs left open past the 2 h presign expiry. The fallback `v` is the stem uuid, not `updated_at`, so it changes only when the photo does. The component now carries `"use client"` for the error state; markup and tokens unchanged, no visual change. The R2 origin is preconnected via react-dom `preconnect` (origin from `objectStoreOrigin()` in lib/storage). ADR-0024 section 5 amendment.

@@ -13,6 +13,7 @@ import { isIconName } from "@/components/atoms/Icon";
 import { isImportErrorCode } from "@/lib/recipes/enums";
 import { hasImportingRecipe } from "@/lib/recipes/import/polling";
 import { hostOf } from "@/lib/recipes/import/url";
+import { recipeThumbnailRouteUrl } from "@/lib/recipes/thumbnail-url";
 import { applyItemMove, type CardMove } from "@/lib/boards/optimistic";
 import type { CategoryWithRecipes, RecipeRow } from "@/lib/recipes/types";
 import { CategoryPanel, type CategoryPanelTarget } from "@/app/(app)/_components/CategoryPanel";
@@ -62,6 +63,8 @@ export interface ReceptenBoardProps {
   addCategoryLabel: string;
   /** Admin-only "Ingrediënten" link (ADR-0020 §6); omitted for everyone else. */
   ingredientsLabel?: string;
+  /** Presigned card-thumbnail URLs by recipe id, minted in the page render (#391). */
+  thumbnailUrls?: Record<string, string>;
 }
 
 // `recipe_categories.icon` is free-text at the schema layer (deviation (a),
@@ -79,6 +82,7 @@ export function ReceptenBoard({
   title,
   addCategoryLabel,
   ingredientsLabel,
+  thumbnailUrls = {},
 }: ReceptenBoardProps) {
   const t = useTranslations("components.cardContainer");
   const tRecipe = useTranslations("components.cardContentRecipe");
@@ -222,14 +226,12 @@ export function ReceptenBoard({
     return (
       <CardContentRecipe
         name={recipe.title}
-        // #171: `/api/recipe-thumbnail` route, not a resolved signed
-        // URL — a recipe with no `thumbnail_path` gets no `imageUrl` at
-        // all (decided here, not by letting the request 404), so
-        // CardContentRecipe still renders its "no photo" placeholder.
-        // See design/notes/CardContentRecipe.md.
-        imageUrl={
-          recipe.thumbnail_path
-            ? `/api/recipe-thumbnail/${recipe.id}?v=${recipe.updated_at}&size=card`
+        // #391: presigned in the page render; the route URL is the onError
+        // fallback. See design/notes/CardContentRecipe.md.
+        imageUrl={thumbnailUrls[recipe.id]}
+        imageFallbackUrl={
+          thumbnailUrls[recipe.id] && recipe.thumbnail_path
+            ? recipeThumbnailRouteUrl(recipe.id, recipe.thumbnail_path, "card")
             : undefined
         }
         duration={

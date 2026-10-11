@@ -322,3 +322,7 @@ Full mechanism: `docs/incidents.md` (2026-08-18).
 ## Nutrition from recognised ingredients only (Claude-designed on request, 2026-10-07)
 
 User decision: the macros are the sum of the rows the calculator can weigh and that have NEVO values (`summarizeRecipeNutrition`, lib/recipes/nutrition.ts); a row it cannot is left out, never counted as 0. It is never silent: when rows are missing, a `text-base font-semibold text-text-secondary` line under the NutritionalData row reads "Op basis van {counted} van {total} ingrediënten" (same style as SourceLink), and each such ingredient card carries the existing highlight Tag marker "niet meegeteld" (takes precedence over "controleren"), which opens the edit panel. Rows without a quantity ("naar smaak") are neither counted nor flagged. No new tokens or components.
+
+## Presigned hero (#391, 2026-10-11)
+
+`[recipeId]/page.tsx` presigns the `full` variant for the already-loaded recipe and passes `thumbnailUrl`; the hero `<img>` uses it with a one-shot `onError` swap to `/api/recipe-thumbnail/<id>?v=<stem uuid>&size=full` (`useImageFallback`). Missing R2 config or a foreign stem gives `null`, so the existing placeholder renders. Same mechanism and rationale as `CardContentRecipe.md` (#391); no visual change.
