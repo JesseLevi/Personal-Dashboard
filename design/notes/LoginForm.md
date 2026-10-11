@@ -9,7 +9,8 @@
   below):** `LogIn/Desktop` `3929:25202`, `LogIn/Mobile` `3929:25182`,
   `LogIn/Mobile/Step-01` `3934:32620`, `LogIn/Mobile/Step-03` `3933:32343`,
   `LogIn/Mobile/Error` `3985:10266`, `LogIn/Mobile/InloglinkSend`
-  `3989:13128`. **Fix round, same ticket:** `LogIn/Mobile/Step-03/Error`
+  `3989:13128`. **#407:** `Step-01` `4221:14843`, `Step-02` `4221:14891`
+  (see "Greeting heading"). **Fix round, same ticket:** `LogIn/Mobile/Step-03/Error`
   `3991:13224` — see "Terug/Inloggen row" below.
 - Page-level composition (Server Component + one colocated client
   component), same precedent as `CategoryPanel.tsx` — not added to
@@ -167,25 +168,41 @@ The greeting text's own Figma fill is `#000000` (pure black), while the
 per the token-scale rule (no new token for a 1-off value this close to an
 existing one) — flagged here as the ticket asked, not silently reconciled.
 
-## Greeting — server clock, client-corrected
+## Greeting heading — name arrives after Doorgaan (#407, ADR-0031)
 
-Annotation on `3930:25897` (Dev Mode, dropped by the MCP payload and fetched
-via REST separately from the geometry call): 00:00–05:00 Goeienacht,
-05:00–12:00 Goeiemorgen, 12:00–18:00 Goeiemiddag, 18:00–00:00 Goeieavond.
-`lib/auth/greeting.ts`'s `greetingKeyForHour` is the single source both
-`page.tsx` (server clock, `new Date().getHours()`) and `LoginForm.tsx` (a
-`useEffect` reading the visitor's own clock post-mount) call, so the two
-never disagree on where an hour falls. The initial client render uses the
-same `serverGreetingKey` prop the server rendered with, so the correction is
-an ordinary post-mount state update rather than a real hydration mismatch —
-`suppressHydrationWarning` is kept on the element regardless, per the
-ticket's explicit instruction, as a defensive measure against edge cases
-(e.g. a statically-cached response whose baked-in server time has gone
-stale by the time a real visitor hydrates it).
+Replaces the time-of-day greeting (`greetingKeyForHour`, `lib/auth/greeting.ts`,
+`auth.greeting.night..evening` and `suppressHydrationWarning` are gone).
+Figma section `4221:14942`: `LogIn/Mobile/Step-01` `4221:14843`, heading
+`4221:14845` "Hey, welkom bij Atlas"; `LogIn/Mobile/Step-02` `4221:14891`,
+heading `4221:14940` "Hey Carlotta, welkom bij Atlas". Same text style as
+before (Inter 20 semibold), so the h1 classes are unchanged.
 
-Shipped as four whole sentences per locale (`auth.greeting.night/morning/
-afternoon/evening`), not a composed string, per ADR-0007 and the ticket's
-own instruction.
+- **Technique (user-designed animation):** `GreetingHeading` is a centered
+  flex row of three parts: `Hey` | name part (leading space + name) |
+  `, welkom bij Atlas`. The name part is an inline grid going
+  `grid-cols-[0fr]` -> `[1fr]` plus opacity 0 -> 1 (child `overflow-hidden
+  whitespace-pre`, like `ErrorLine`); the centered row pushes the outer parts
+  apart. `transition-[grid-template-columns,opacity]`. Trap: Tailwind v4
+  translate utilities set `translate`, not `transform`, so any arbitrary
+  transition list must name `translate` (and `grid-template-columns`) explicitly.
+- **Accessibility:** visual row is `aria-hidden`; an `sr-only` span carries
+  the full sentence, so the h1 name is exactly "Hey, welkom bij Atlas" or
+  "Hey Carlotta, welkom bij Atlas" (the collapsed name never leaks).
+- **Long names:** the name part is `min-w-0` with `text-ellipsis`, so the
+  row shrinks the name instead of overflowing. The row is capped by its column
+  (370px at 402px wide), not 312px, because the real sentence is ~300px.
+  Cosmetic: a truncated name shows "..." followed by a space before the comma.
+- **Lookup flow:** on a valid Doorgaan the lookup starts beside the step slide
+  (never delays it): Turnstile token (`useTurnstile.ts`, invisible widget,
+  `action: login_greeting`, `execution: execute`, ~5s timeout, reset after each
+  token) then `lookupGreetingName`. Same e-mail after Terug keeps the name, no
+  re-query; a different one collapses the old name first, then looks up. Stale
+  responses are dropped; null or a throw keeps the plain greeting, no error UI.
+  No site key = no script, null token.
+- **Measured (Ladle, 402px, 600ms mock):** name width 0 -> 78.8px over ~200ms,
+  opacity 0 -> 1; "Hey" x 103.8 -> 64.5, tail x 140.3 -> 179.6 (both move apart).
+- **Open difference:** the Step-02 frame has no Terug button, but the built
+  Step-03 pane keeps the Terug/Inloggen row (buttons out of scope for #407).
 
 ## Terug/Inloggen row — the back trigger is now designed (fix round)
 
@@ -313,15 +330,8 @@ it never looked past `LoginForm`'s own boundary.
 
 ## Visual-baseline clock freeze
 
-`LoginForm`'s greeting corrects to the *visitor's* local clock in a
-post-mount effect, which would otherwise make its own Ladle screenshots
-flip text depending on what time of day `pnpm test:visual` happens to run.
-Rather than special-casing this one story, `tests/visual/ladle.visual.spec.
-ts` now freezes every story's clock once (`page.clock.setFixedTime(...)`,
-Playwright's Clock API) to a fixed 14:00 timestamp before navigating —
-harmless to every other story, since none of the rest read the clock, and
-it conveniently lands in the same "afternoon" bucket the Figma reference
-frames themselves sample ("Goeiemiddag en welkom").
+No longer needed by LoginForm (the heading is not clock-dependent); the
+freeze in `tests/visual/*.spec.ts` stays, harmless.
 
 ## `accent` token — now fully orphaned
 

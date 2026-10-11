@@ -824,6 +824,10 @@ export type Database = {
       }
       ensure_user_defaults: { Args: never; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
+      login_greeting_name: {
+        Args: { p_client_key: string; p_email: string }
+        Returns: string
+      }
       match_ingredient_candidates: {
         Args: { p_limit?: number; p_names: string[] }
         Returns: {

@@ -81,7 +81,7 @@ test.describe("Ladle story dark-mode visual baselines", () => {
 
   for (const storyId of DARK_STORIES) {
     test(`${storyId} (dark)`, async ({ page }) => {
-      // Same clock freeze as the light suite (LoginForm greeting, #158).
+      // Same clock freeze as the light suite.
       await page.clock.setFixedTime(new Date("2026-01-01T14:00:00"));
       await page.goto(`/?story=${storyId}&mode=preview&theme=dark`);
       await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");

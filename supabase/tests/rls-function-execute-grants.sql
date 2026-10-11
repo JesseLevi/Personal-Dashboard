@@ -15,6 +15,9 @@ create temporary view own_public_functions as
   join pg_namespace n on n.oid = p.pronamespace
   where n.nspname = 'public'
     and pg_get_userbyid(p.proowner) = 'postgres'
+    -- ADR-0031: the one deliberate anon-callable function; its grants are
+    -- asserted in rls-login-greeting.sql.
+    and p.oid <> 'public.login_greeting_name(text,text)'::regprocedure
     and not exists (
       select 1 from pg_depend d
       where d.classid = 'pg_proc'::regclass and d.objid = p.oid and d.deptype = 'e'

@@ -46,14 +46,8 @@ test.describe("Ladle story visual baselines", () => {
 
   for (const storyId of storyIds) {
     test(storyId, async ({ page }) => {
-      // #158: LoginForm.tsx corrects its time-of-day greeting to the
-      // visitor's local clock in a post-mount effect, which would otherwise
-      // make its baselines flip text depending on when this suite runs.
-      // Frozen once here (harmless to every other story, none of which read
-      // the clock) rather than added per-story — the zero-tolerance
-      // threshold below can't absorb a text change. 14:00 lands in the
-      // "afternoon" bucket, matching the Figma reference frames' own sample
-      // copy ("Goeiemiddag en welkom").
+      // Fixed clock keeps baselines stable across runs. Do not remove: doing
+      // so shifted the editing-bar / link-popover baselines (#407).
       await page.clock.setFixedTime(new Date("2026-01-01T14:00:00"));
       await page.goto(`/?story=${storyId}&mode=preview`);
 

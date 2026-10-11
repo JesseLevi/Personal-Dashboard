@@ -1,6 +1,6 @@
-// figma: node-id=3934:32620 (Step-01), 3933:32343 (Step-03), 3985:10266
-// (Error), 3989:13128 (InloglinkSend), 3991:13224 (Step-03/Error, fix
-// round — the Terug/Inloggen row) — see design/notes/LoginForm.md.
+// figma: node-id=4221:14843 (Step-01), 4221:14891 (Step-02, heading with name),
+// 3933:32343 (Step-03), 3985:10266 (Error), 3989:13128 (InloglinkSend),
+// 3991:13224 (Step-03/Error) — see design/notes/LoginForm.md.
 import { LoginForm } from "./LoginForm";
 import type { MagicLinkState, PasswordLoginState } from "./actions";
 
@@ -25,12 +25,52 @@ async function mockSendMagicLink(
   return { status: "idle" };
 }
 
-// LogIn/Mobile/Step-01 (3934:32620) — first load, empty email field.
+// Mock for the greeting-lookup server action (ADR-0031): resolves after `ms`.
+const mockLookupGreetingName = (name: string | null, ms = 0) =>
+  async (input: { email: string; turnstileToken: string | null }) => {
+    console.log("lookupGreetingName", input);
+    await new Promise((resolve) => setTimeout(resolve, ms));
+    return { name };
+  };
+
+// LogIn/Mobile/Step-01 (4221:14843) — first load, plain heading.
 export const Step1Email = () => (
   <LoginForm
     signInWithPasswordAction={mockSignInWithPassword}
     sendMagicLinkAction={mockSendMagicLink}
-    serverGreetingKey="afternoon"
+    lookupGreetingNameAction={mockLookupGreetingName(null)}
+  />
+);
+
+// LogIn/Mobile/Step-02 (4221:14891) — heading with the resolved first name.
+// Seeded straight into the password pane, as the frame shows no Terug.
+export const Step2GreetingName = () => (
+  <LoginForm
+    signInWithPasswordAction={mockSignInWithPassword}
+    sendMagicLinkAction={mockSendMagicLink}
+    lookupGreetingNameAction={mockLookupGreetingName("Carlotta")}
+    initialStep="password"
+    initialGreetingName="Carlotta"
+  />
+);
+
+// Watch the animation: submit a valid e-mail; "Carlotta" arrives after ~600ms.
+export const GreetingNameArrivesLate = () => (
+  <LoginForm
+    signInWithPasswordAction={mockSignInWithPassword}
+    sendMagicLinkAction={mockSendMagicLink}
+    lookupGreetingNameAction={mockLookupGreetingName("Carlotta", 600)}
+  />
+);
+
+// Long name: the heading truncates instead of overflowing its column.
+export const GreetingLongName = () => (
+  <LoginForm
+    signInWithPasswordAction={mockSignInWithPassword}
+    sendMagicLinkAction={mockSendMagicLink}
+    lookupGreetingNameAction={mockLookupGreetingName("Maximiliaan-Alexandrina")}
+    initialStep="password"
+    initialGreetingName="Maximiliaan-Alexandrina"
   />
 );
 
@@ -39,7 +79,7 @@ export const Step3Password = () => (
   <LoginForm
     signInWithPasswordAction={mockSignInWithPassword}
     sendMagicLinkAction={mockSendMagicLink}
-    serverGreetingKey="afternoon"
+    lookupGreetingNameAction={mockLookupGreetingName(null)}
     initialStep="password"
   />
 );
@@ -51,7 +91,7 @@ export const Step3Error = () => (
   <LoginForm
     signInWithPasswordAction={mockSignInWithPassword}
     sendMagicLinkAction={mockSendMagicLink}
-    serverGreetingKey="afternoon"
+    lookupGreetingNameAction={mockLookupGreetingName(null)}
     initialStep="password"
     initialState={{ password: { status: "error", errorKey: "invalid-credentials" } }}
   />
@@ -63,7 +103,7 @@ export const MagicLinkSent = () => (
   <LoginForm
     signInWithPasswordAction={mockSignInWithPassword}
     sendMagicLinkAction={mockSendMagicLink}
-    serverGreetingKey="afternoon"
+    lookupGreetingNameAction={mockLookupGreetingName(null)}
     initialStep="password"
     initialState={{ magicLink: { status: "sent" } }}
   />
