@@ -14,6 +14,7 @@ import { LinkPopover } from "@/components/organisms/LinkPopover";
 import { NoteBubbleMenu } from "@/components/organisms/NoteBubbleMenu";
 import { NoteBlockHandle } from "@/components/organisms/NoteBlockHandle";
 import { TableMenu } from "@/components/organisms/TableMenu";
+import { NoteTableHandles } from "@/components/organisms/NoteTableHandles";
 import { noteExtensionsWith } from "@/lib/notes/extensions";
 import { buildNoteLinkResolution } from "@/lib/notes/note-link"; // #341
 import { NoteLinkSuggestion } from "@/lib/notes/note-link-suggestion"; // #341
@@ -270,6 +271,7 @@ export function NoteEditor({ note, linkTitles, backlinks }: NoteEditorProps) {
         )}
         <EditorContent editor={editor} />
         <TableMenu editor={editor} />
+        <NoteTableHandles editor={editor} />
         <div className="pt-stack-md">
           <NoteWordCount words={words} minutes={readingMinutes(words)} />
         </div>

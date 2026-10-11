@@ -860,3 +860,5 @@ ADR-0021 s3. From existing tokens; no new component (`NoteTableOfContents` is a 
 - **Tests**: `tests/notes-toc.test.ts`; stories `NoteTableOfContents` (`Default`, `FirstActive`), plus a
   dark baseline. Flagged: `docs/open-questions.md#notes-toc-rail-undesigned`. Not verified: scrolling
   against a real long note signed in (nothing has run signed in).
+
+Reorder handles and the Table-button placement fix (#387): design/notes/NoteTableHandles.md.
