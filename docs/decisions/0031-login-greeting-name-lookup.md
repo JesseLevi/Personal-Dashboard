@@ -2,7 +2,7 @@
 
 **Status**: Accepted (decided by the user on 2026-10-11, issue #407)
 
-**Authored by**: Claude Code (Opus 5.5), recording a decision the user made after being shown the alternatives. This is a conscious exception to priority 1 ("secure from the ground up") and to #158's rule that step 1 of the login never checks whether an address exists.
+This is a conscious exception to priority 1 ("secure from the ground up") and to #158's rule that step 1 of the login never checks whether an address exists.
 
 ## Context
 
@@ -20,7 +20,7 @@ The user chose (c): Atlas is a small app for friends and family, and the feature
 
 1. **One RPC, the only path to the name**: `public.login_greeting_name(p_email text, p_client_key text) returns text`.
    - `security definer` with `set search_path = ''`. It reads `auth.users` and `public.profiles`, so it cannot be `invoker`; it is the repo's first definer function callable by `anon`.
-   - It returns only the first word of `profiles.display_name`, trimmed, or `null`.
+   - It returns only the first word of `profiles.display_name` (the first name since #404), trimmed, or `null`.
    - `null` is returned for an unknown address, a null or empty name, and an exceeded rate limit. The caller cannot tell these apart.
    - `revoke execute ... from public`; grant execute to `anon` only.
 2. **The rate limit lives in the database, not in the app**, so a direct PostgREST call is throttled too.
@@ -34,7 +34,7 @@ The user chose (c): Atlas is a small app for friends and family, and the feature
    - Rows older than 1 hour are deleted on each call (indexed on `attempted_at`).
    - The lookup matches `auth.users.email` exactly (GoTrue stores it lowercase) and skips deleted and banned users.
    - The address is stored only as a hash, never in clear text.
-3. **The server action is the only caller.** The browser never talks to Supabase (ADR-0003).
+3. **The server action is the only caller.** The browser never talks to Supabase (ADR-0033).
    - The anon key is server-only in this app (no `NEXT_PUBLIC_` Supabase vars), which is what makes granting `anon` acceptable.
    - The action derives `p_client_key` as `sha256(<client IP> + LOGIN_GREETING_SALT)`. The IP is `x-real-ip` (set by Vercel), else the first `x-forwarded-for` entry. The IP itself is never stored. A salt shorter than 16 characters fails closed.
    - It calls the RPC through a stateless anon client (`lib/supabase/anon.ts`, no cookies or session), so the role is always `anon`.
@@ -56,7 +56,7 @@ The user chose (c): Atlas is a small app for friends and family, and the feature
 - The Cloudflare widget must be invisible/non-interactive and have its own hostname allowlist in the Cloudflare dashboard.
 - The Supabase Cloud "Exposed schemas" setting must not include `private`.
 - A legitimate user who mistypes repeatedly may stop seeing their name for 15 minutes. The login itself is unaffected.
-- `display_name` is not yet editable in the UI (#9). Until it is, names must be filled in by hand for the feature to show anything.
+- The greeting shows nothing for users who have not set a first name in Settings (#398, #404).
 - New environment variables (`TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `LOGIN_GREETING_SALT`) must be set in Vercel. Until then, production fails closed and shows the generic greeting.
 - Tests:
   - `supabase/tests` asserts that `anon` cannot read or write `private.login_greeting_attempts`;

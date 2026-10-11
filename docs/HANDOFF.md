@@ -5,12 +5,12 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
 ## State (2026-10-11)
 
 - Atlas is in production use by real accounts. Phases 0–6 are done: account, Te doen, Recepten (incl. URL import and nutrition), Winkelmand, Notities (full editor round, images, note links).
-- Open PR **#411** (#407, login greeting, ADR-0031). Before it works on production it needs:
+- **#411 (login greeting, ADR-0031) is merged.** It needs, on production:
   - its migration (`20261011000003`);
   - Turnstile keys and `LOGIN_GREETING_SALT` in Vercel (`docs/operations.md`).
-  
-  It also carries ADR-0031. Two edits to that ADR are not on the PR yet: cite ADR-0033 instead of ADR-0003, and replace the line "display_name not editable" with "set via Settings (#398/#404)". `design/notes/LoginForm.md` should be condensed to the contract shape once #411 is merged.
-- **Docs reform #412**:
+
+  Until then the greeting fails closed and shows the generic text.
+- **Docs reform #412** is merged:
   - ADR index;
   - ADR-0032 (deploy), ADR-0033 (server-only data), ADR-0034 (Claude designs UI);
   - Architecture rewritten to the current state;

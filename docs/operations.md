@@ -16,7 +16,7 @@ Hosted settings that code review cannot see. Every change here is a hosted write
 | `SUPABASE_SERVICE_ROLE_KEY` | server-only maintenance modules | Never on a user's request path |
 | `ANTHROPIC_API_KEY` | `lib/ai/` | Unset = recipe import runs degraded |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` | `lib/storage/` | Production bucket + its bucket-scoped token |
-| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `LOGIN_GREETING_SALT` | login greeting (ADR-0031, PR #411) | Missing = greeting fails closed |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `LOGIN_GREETING_SALT` | login greeting (ADR-0031, #411) | Missing = greeting fails closed |
 
 ## Supabase Cloud (one project, production)
 
@@ -59,7 +59,7 @@ Expect anonymous GETs to fail, a PUT to the other bucket to return 403, and PUT 
 
 ## Cloudflare Turnstile
 
-Not set up yet. It is needed for the login greeting (PR #411):
+Not set up yet. It is needed for the login greeting (#411):
 - an invisible widget with production site and secret keys;
 - local, CI and Ladle use Cloudflare's documented test keys.
 
