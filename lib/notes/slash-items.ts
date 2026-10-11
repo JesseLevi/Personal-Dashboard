@@ -1,5 +1,6 @@
 import type { Editor } from "@tiptap/react";
 import type { IconName } from "@/components/atoms/Icon";
+import { openImagePicker } from "./image-upload";
 
 // The one list of block-insert commands (#332). The slash menu
 // (components/organisms/SlashMenu.tsx) renders it today; the slim EditingBar
@@ -89,6 +90,13 @@ export const SLASH_ITEMS: SlashItem[] = [
     },
     isEnabled: (editor) => !editor.isActive("details"),
     run: (editor) => editor.chain().focus().setDetails().run(),
+  },
+  // #339: opens the system file picker; the upload is lib/notes/image-upload.ts.
+  {
+    id: "image",
+    icon: "Image",
+    aliases: { nl: ["afbeelding", "foto", "plaatje", "beeld"], en: ["image", "picture", "photo", "upload"] },
+    run: (editor) => openImagePicker(editor),
   },
 ];
 

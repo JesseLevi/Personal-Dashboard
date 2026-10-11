@@ -25,7 +25,9 @@ import { deriveTitle, type TipTapDocument } from "@/lib/notes/document"; // #337
 import { SlashCommand } from "@/lib/notes/slash-command";
 import { SLASH_ITEMS } from "@/lib/notes/slash-items";
 import type { NoteRow } from "@/lib/notes/types";
-import { deleteNote } from "../actions";
+import { NoteImageUpload } from "@/lib/notes/image-upload"; // #339
+import { downscaleImageFile } from "@/lib/images/downscale-client"; // #339
+import { deleteNote, uploadNoteImage } from "../actions";
 import { useNoteSave } from "./useNoteSave";
 
 // #233 note-editor page body — Figma "Desktop/Notes/Edit" (3934:33463) /
@@ -48,6 +50,7 @@ export function NoteEditor({ note }: NoteEditorProps) {
   const tErrors = useTranslations("notes.errors");
   const tDetails = useTranslations("components.noteDetails");
   const tMarkdown = useTranslations("components.noteMarkdownMenu"); // #337
+  const tImage = useTranslations("components.noteImage"); // #339
   const locale = useLocale();
   // #336: the collapsible-section toggle is plain DOM; give it translated labels.
   setDetailsToggleLabels({ open: tDetails("expand"), close: tDetails("collapse") });
@@ -59,6 +62,9 @@ export function NoteEditor({ note }: NoteEditorProps) {
 
   const { status, change, retry, discard } = useNoteSave(note.id);
 
+  // #339: a failed or rejected image upload shows its error here; nothing is inserted.
+  const [imageError, setImageError] = useState<string | null>(null);
+
   const editor = useEditor({
     extensions: [
       ...noteExtensions,
@@ -67,6 +73,12 @@ export function NoteEditor({ note }: NoteEditorProps) {
       Placeholder.configure({ placeholder: t("placeholder") }),
       typographyForLocale(locale),
       MarkdownPaste, // #337: plain-text markdown paste -> rich blocks
+      NoteImageUpload.configure({
+        upload: (file) => uploadNoteImage(note.id, file),
+        prepare: downscaleImageFile,
+        onError: (code) => setImageError(tErrors(code)),
+        uploadingLabel: tImage("uploading"),
+      }),
       CharacterCount.configure({ wordCounter: countWords }),
       // "/" block menu (#332): labels are searchable in the active language.
       SlashCommand.configure({
@@ -100,6 +112,12 @@ export function NoteEditor({ note }: NoteEditorProps) {
     const timer = setTimeout(() => setMarkdownNotice(null), 3000);
     return () => clearTimeout(timer);
   }, [markdownNotice]);
+
+  useEffect(() => {
+    if (!imageError) return;
+    const timer = setTimeout(() => setImageError(null), 8000);
+    return () => clearTimeout(timer);
+  }, [imageError]);
 
   async function serializeNote() {
     if (!editor) return null;
@@ -175,6 +193,12 @@ export function NoteEditor({ note }: NoteEditorProps) {
       {markdownNotice && (
         <p role="status" className="text-sm font-semibold text-text-secondary">
           {markdownNotice}
+        </p>
+      )}
+
+      {imageError && (
+        <p role="alert" className="text-base font-semibold text-priority-urgent">
+          {imageError}
         </p>
       )}
 

@@ -442,3 +442,41 @@ html {
 .note-dropcursor {
   background-color: var(--color-stroke-secondary-active);
 }
+
+/* #339: images (NoteImageView.tsx) and the upload placeholder
+   (lib/notes/image-upload.ts). Claude-designed on request, tokens only --
+   design/notes/NoteEditor.md (#339). The picture never exceeds the text
+   column; the selected ring is the same border token the form fields use. */
+.tiptap .note-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-card-inner);
+}
+.tiptap .note-image-selected img,
+.tiptap .note-image-selected .note-image-broken {
+  /* spacing-flag: outline width is a structural 2px, same class of value as
+     the blockquote rule above. design/notes/NoteEditor.md */
+  outline: 2px solid var(--color-stroke-primary-selected);
+  outline-offset: 2px;
+}
+.tiptap .note-image-broken,
+.tiptap .note-image-uploading {
+  background-color: var(--color-surface-secondary);
+  border-radius: var(--radius-card-inner);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-component-sm) var(--spacing-component-md);
+}
+.tiptap .note-image-uploading {
+  animation: note-image-pulse 1.5s ease-in-out infinite;
+}
+@keyframes note-image-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tiptap .note-image-uploading {
+    animation: none;
+  }
+}

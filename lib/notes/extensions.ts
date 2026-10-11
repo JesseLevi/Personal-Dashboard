@@ -7,12 +7,17 @@ import { TableKit } from "@tiptap/extension-table";
 import { TaskItem, TaskList } from "@tiptap/extension-list";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { Details, DetailsContent, DetailsSummary } from "@tiptap/extension-details";
+import Image from "@tiptap/extension-image";
+import FileHandler from "@tiptap/extension-file-handler";
+import { NodeSelection } from "@tiptap/pm/state";
 import { ReactNodeViewRenderer, type AnyExtension } from "@tiptap/react";
 import { CodeBlockView } from "@/components/organisms/CodeBlockView";
+import { NoteImageView } from "@/components/organisms/NoteImageView";
 import { noteLowlight } from "./code-languages";
 import { detailsToggleLabel } from "./details-labels";
 import { LINK_PROTOCOLS, isAllowedLinkUri } from "./link-url";
 import { BlockShortcuts } from "./block-commands";
+import { NOTE_IMAGE_MIME_TYPES, isNoteImageSrc, requestImageUpload } from "./image-upload";
 
 // The fixed TipTap extension whitelist Architecture §133 requires (#233):
 // used by the editor (app/(app)/notities/[noteId]/NoteEditor.tsx) AND every
@@ -52,6 +57,43 @@ export const TABLE_CELL_MIN_WIDTH = 96;
 // `a11y.checkboxLabel` is overridden because TaskItem's default label is a
 // hard-coded English string and this static whitelist has no access to
 // next-intl: the checkbox is named after the task text itself instead.
+// #339 (ADR-0022): a block `image` with `src` + `alt`. `src` is only ever the
+// same-origin /api/note-image route (#338): pasted HTML, markdown and the
+// `![](...)` input rule can not introduce an external picture. The node view
+// (components/organisms/NoteImageView.tsx) adds the alt-text field, delete and
+// the broken-image state; Enter on a selected image moves focus to that field.
+const NoteImage = Image.extend({
+  addAttributes() {
+    return { src: { default: null }, alt: { default: null } };
+  },
+  parseHTML() {
+    return [{ tag: 'img[src^="/api/note-image/"]' }];
+  },
+  addInputRules() {
+    return [];
+  },
+  parseMarkdown: (token, helpers) =>
+    isNoteImageSrc(token.href)
+      ? helpers.createNode("image", { src: token.href, alt: token.text || null })
+      : helpers.createNode("paragraph", undefined, [helpers.createNode("text", { text: token.raw ?? "" })]),
+  addNodeView() {
+    return ReactNodeViewRenderer(NoteImageView);
+  },
+  addKeyboardShortcuts() {
+    return {
+      Enter: ({ editor }) => {
+        const { selection } = editor.state;
+        if (!(selection instanceof NodeSelection) || selection.node.type.name !== "image" || !editor.isEditable) {
+          return false;
+        }
+        const field = (editor.view.nodeDOM(selection.from) as HTMLElement | null)?.querySelector("input");
+        field?.focus();
+        return Boolean(field);
+      },
+    };
+  },
+});
+
 export const noteExtensions: AnyExtension[] = [
   // #331: links are limited to http/https/mailto (lib/notes/link-url.ts is the
   // one validator); the link popover, not a click, opens/edits a link.
@@ -103,6 +145,18 @@ export const noteExtensions: AnyExtension[] = [
   }),
   DetailsSummary,
   DetailsContent,
+  NoteImage,
+  // #339: pasted and dropped image files go to the editor-only `requestImageUpload`
+  // storage (lib/notes/image-upload.ts), added at the useEditor() call site.
+  FileHandler.configure({
+    allowedMimeTypes: NOTE_IMAGE_MIME_TYPES,
+    onPaste: (editor, files) => {
+      requestImageUpload(editor, files);
+    },
+    onDrop: (editor, files, pos) => {
+      requestImageUpload(editor, files, pos);
+    },
+  }),
   // #335: Mod-Shift-Up/Down move the current top-level block (drag-handle alternative).
   BlockShortcuts,
 ];

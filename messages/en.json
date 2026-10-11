@@ -574,6 +574,7 @@
       "alignCenterLabel": "Align center",
       "alignRightLabel": "Align right",
       "alignJustifyLabel": "Align justify",
+      "imageLabel": "Image",
       "options": {
         "paragraph": "Text",
         "heading1": "Heading 1",
@@ -600,8 +601,16 @@
         "codeBlock": "Code block",
         "table": "Table",
         "divider": "Divider",
-        "details": "Collapsible section"
+        "details": "Collapsible section",
+        "image": "Image"
       }
+    },
+    "noteImage": {
+      "broken": "Image not available",
+      "altLabel": "Alt text",
+      "altPlaceholder": "Describe the image",
+      "deleteLabel": "Delete image",
+      "uploading": "Uploading image..."
     },
     "codeBlock": {
       "languageLabel": "Language",

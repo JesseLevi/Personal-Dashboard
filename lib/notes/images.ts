@@ -4,7 +4,10 @@ import sharp from "sharp";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/notes/session";
 import { STORED_OBJECT_CACHE_CONTROL, getObjectStore, objectKey } from "@/lib/storage";
+import { MAX_NOTE_IMAGE_BYTES } from "@/lib/notes/image-upload";
 import type { ActionResult } from "@/lib/notes/types";
+
+export { MAX_NOTE_IMAGE_BYTES };
 
 // Note images live in R2 (ADR-0022 as amended by ADR-0024) under
 // `<user_id>/notes/<note_id>/<image_id>.webp`; the document stores only the
@@ -12,7 +15,6 @@ import type { ActionResult } from "@/lib/notes/types";
 // lib/images/downscale-client.ts first (Vercel's 4.5 MB body limit); the
 // editor caller is #339.
 
-export const MAX_NOTE_IMAGE_BYTES = 10 * 1024 * 1024;
 export const MAX_NOTE_IMAGE_EDGE = 2000;
 const SWEEP_INTERVAL_MS = 60_000;
 // Fresh uploads may not be in a saved document yet; the sweep leaves them.

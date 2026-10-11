@@ -270,3 +270,25 @@ describe("code blocks and collapsible sections (#336)", () => {
     expect(toPlainText(document)).toBe("Inhoud");
   });
 });
+
+describe("images (#339)", () => {
+  const image = (alt?: unknown): TipTapNode => ({ type: "image", attrs: { src: "/api/note-image/a/b", alt } });
+
+  it("puts the alt text on a line of its own, so it is searchable", () => {
+    expect(toPlainText(doc(paragraph(text("Voor")), image("Een rode fiets"), paragraph(text("Na"))))).toBe(
+      "Voor\nEen rode fiets\nNa",
+    );
+  });
+
+  it("adds nothing for an image without alt text", () => {
+    expect(toPlainText(doc(paragraph(text("Voor")), image(null), image(""), image("  "), image(5)))).toBe("Voor");
+  });
+
+  it("collapses whitespace in the alt text", () => {
+    expect(toPlainText(doc(image("een\n  fiets")))).toBe("een fiets");
+  });
+
+  it("derives the title from the alt text of a leading image", () => {
+    expect(deriveTitle(doc(image("Zomervakantie"), paragraph(text("Tekst"))))).toBe("Zomervakantie");
+  });
+});

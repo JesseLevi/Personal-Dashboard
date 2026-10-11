@@ -70,6 +70,9 @@ const FIXTURES: Record<string, JSONContent[]> = {
     },
   ],
   blockquote: [{ type: "blockquote", content: [p(t("quoted"))] }],
+  "image with alt": [
+    { type: "image", attrs: { src: "/api/note-image/11111111-1111-1111-1111-111111111111/22222222-2222-2222-2222-222222222222", alt: "Een foto" } },
+  ],
   "code block with language": [
     { type: "codeBlock", attrs: { language: "ts" }, content: [t("const a = 1;\n\nconst b = 2;")] },
   ],
@@ -142,6 +145,13 @@ const FIXTURES: Record<string, JSONContent[]> = {
     ),
   ],
 };
+
+describe("images (#339)", () => {
+  it("does not turn an external markdown image into an image node", () => {
+    const parsed = markdownToDoc("![x](https://example.com/a.png)");
+    expect(JSON.stringify(parsed)).not.toContain('"type":"image"');
+  });
+});
 
 describe("round trip: document -> markdown -> document", () => {
   it.each(Object.entries(FIXTURES))("%s", (_name, content) => {
@@ -263,6 +273,7 @@ describe("paste handler", () => {
   function pasteInto(target: Editor, data: Record<string, string>): boolean {
     const clipboardData = {
       types: Object.keys(data),
+      files: [],
       getData: (type: string) => data[type] ?? "",
     } as unknown as DataTransfer;
     const event = { clipboardData, preventDefault() {} } as unknown as ClipboardEvent;

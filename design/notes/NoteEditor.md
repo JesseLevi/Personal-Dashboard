@@ -724,3 +724,59 @@ Existing components and semantic tokens only; no Figma source.
 - **Tests**: `tests/visual/block-handle.spec.ts` (menu actions, drag + undo,
   shortcuts, unmoved column, no handle on touch); stories `NoteBlockHandle`
   (hover, menu open; the menu in dark too).
+
+## #339 — images in the editor (Claude-designed on request)
+
+Components reused: `Button` (`destructive` + `Trash`, `transparent` bar button),
+`InputField` (alt text), `Icon` (`Image`). Tokens: `surface-secondary`,
+`text-secondary`, `stroke-primary-selected`, `radius-card-inner`, `spacing-component-*`.
+No new component beyond the node view `components/organisms/NoteImageView.tsx`
+(nothing existing renders a TipTap node).
+
+- **Node**: block `image` with `src` and `alt` only (`NoteImage` in
+  `lib/notes/extensions.ts`, `@tiptap/extension-image` 3.30.0 = `@tiptap/core`).
+  `src` is only ever `/api/note-image/<note>/<image>` (#338): `parseHTML` accepts
+  just that prefix, the markdown input rule is off and `parseMarkdown` turns an
+  external `![](https://...)` into a plain paragraph, so no route can introduce
+  an external picture (privacy, ADR-0022). Width options are left out.
+  Markdown export is the extension's own `![alt](src)` (round-trip fixture).
+- **Insert paths** all end in `requestImageUpload` (`lib/notes/image-upload.ts`):
+  paste and drop through `@tiptap/extension-file-handler` (allowed types jpeg,
+  png, webp, gif), the slash item `image` (appended to `SLASH_ITEMS`) and the
+  EditingBar (mobile button, desktop overflow row), the last two via
+  `openImagePicker` (a hidden `<input type=file>` appended to `body` while the
+  dialog is open). Several files upload in parallel, each with its own placeholder.
+- **Upload flow**: the extension `NoteImageUpload` (editor-only, added in
+  `NoteEditor.tsx` with the #338 action `uploadNoteImage(noteId, file)`) validates
+  type and the 10 MB cap (`validateImageFile`, same limits as the server), shows
+  a placeholder, runs `downscaleImageFile` (Vercel's 4.5 MB body limit) and the
+  action. The placeholder is a ProseMirror **widget decoration**, never a node: on
+  failure it is simply removed and the error code is shown (`role="alert"`, the
+  `notes.errors.*` strings, auto-dismissed after 8 s), so a failed upload can not
+  leave a broken node or reach autosave. Success replaces the widget (and the empty
+  paragraph the cursor was in) with the `image` node in one transaction; the
+  trailing empty paragraph comes from StarterKit's trailing node.
+  The insert position is a block boundary after the cursor's block (an empty
+  paragraph is replaced); it is mapped through edits made during the upload.
+- **Selected**: `NoteImageView` shows an outline in `stroke-primary-selected` and,
+  in an editable document, an alt-text `InputField` plus a destructive delete
+  `Button`. Enter or blur commits (empty becomes `null`), Escape discards; both
+  return focus to the document. **Enter on a selected image focuses the field**
+  (keyboard route in, `NoteImage.addKeyboardShortcuts`); Backspace/Delete on the
+  selection removes the image natively. A pointer or arrow-key selection both work.
+- **Broken**: `onError` swaps the picture for a `surface-secondary` block with
+  `Icon/Image` and "Afbeelding niet beschikbaar" (`role="img"`, named with the alt
+  text). Reset when `src` changes. Missing object = the route's 404.
+- **Search**: `toPlainText` writes the alt text as a line of its own
+  (`tests/notes-document.test.ts`), so it lands in `content_text`; a note that
+  opens with an image takes its alt as title.
+- **Tests**: `tests/notes-image-upload.test.ts` (validation, placeholder
+  lifecycle, failure, src guard), `tests/visual/note-image.spec.ts` (states,
+  alt edit, Escape, delete, keyboard, mobile/desktop entry points); stories
+  `NoteImageView` (`Uploading`, `WithImage`, `Broken`, `Selected`).
+- **Flagged**: there is no `ImageOff` glyph in `Icon` (the broken state reuses
+  `Image`), and no spinner for the placeholder (a pulsing block with text; the
+  pulse stops under `prefers-reduced-motion`). `docs/open-questions.md#notes-image-states-glyph-and-spinner`.
+  Not verified: a real phone's file picker and camera roll, and R2 itself (nothing
+  has run against real R2, see `docs/HANDOFF.md`).
+

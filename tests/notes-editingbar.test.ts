@@ -15,9 +15,14 @@ describe("slim EditingBar", () => {
     expect(OLD_BAR.filter((id) => !reachable.has(id))).toEqual([]);
   });
 
+  it("offers the image insert on desktop (overflow row) and mobile (labelled bar button), #339", () => {
+    expect(OVERFLOW_COMMAND_IDS).toContain("image");
+    expect(BAR_COMMAND_IDS.at(-1)).toBe("image");
+  });
+
   it("keeps the essentials on the bar itself", () => {
     expect(BAR_COMMAND_IDS).toEqual([
-      "undo", "redo", "blockType", "list", "table", "bold", "italic", "link", "overflow",
+      "undo", "redo", "blockType", "list", "table", "bold", "italic", "link", "overflow", "image",
     ]);
   });
 });
