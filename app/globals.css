@@ -273,11 +273,15 @@ html {
    instead of blowing out the page width. */
 .tiptap .tableWrapper {
   overflow-x: auto;
+  border: 1px solid var(--color-stroke-lines);
+  border-radius: var(--radius-control);
 }
 
 .tiptap td,
 .tiptap th {
-  border: 1px solid var(--color-stroke-lines);
+  /* Inner grid lines only: the wrapper draws the outer, rounded border. */
+  border: 0 solid var(--color-stroke-lines);
+  border-width: 0 1px 1px 0;
   /* Block/inline split, not top/bottom/left/right: `--spacing-stack-*` is
      the vertical-axis group, `--spacing-inline-*` the horizontal one --
      both resolve to the same pixels today, so a swapped axis here would be
@@ -288,6 +292,13 @@ html {
   overflow-wrap: anywhere;
   /* Containing block for prosemirror-tables' column-resize handle. */
   position: relative;
+}
+
+.tiptap tr > :last-child {
+  border-right-width: 0;
+}
+.tiptap tr:last-child > * {
+  border-bottom-width: 0;
 }
 
 /* Goes one step past "minimal", deliberately: without its own background a
@@ -309,11 +320,10 @@ html {
    selection mechanism invented here. `.tiptap .selectedCell` (two classes)
    outranks `.tiptap th` (one class, one type) on specificity alone, so a
    selected header cell shows the selection tint regardless of source
-   order. Reuses the existing "selected" surface token
-   (surface-highlight-white-selected) rather than a colour-coded highlight
-   token (blue/red/yellow already carry other meanings elsewhere). */
+   order. Uses the blue highlight surface so a selection never reads as a header row
+   (surface-secondary). */
 .tiptap .selectedCell {
-  background-color: var(--color-surface-highlight-white-selected);
+  background-color: var(--color-surface-highlight-blue);
 }
 
 /* #330: prosemirror-tables inserts `.column-resize-handle` into the cell next

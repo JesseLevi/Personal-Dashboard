@@ -125,6 +125,37 @@ export function NoteBlockHandle({ editor }: NoteBlockHandleProps) {
     editor.view.dispatch(editor.state.tr.setMeta("lockDragHandle", isOpen));
   }, [editor, finePointer, isOpen]);
 
+  // The handle sits in the gutter, outside the text column, so a vertical drag
+  // never crosses the editor and ProseMirror would find no drop position.
+  // Re-dispatch gutter drag events onto the editor with x clamped inside the
+  // column: the drop then follows the pointer's height.
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || !finePointer) return;
+    const view = editor.view;
+    function redirect(event: DragEvent) {
+      const source = event.target as Node | null;
+      if (!view.dragging || !event.dataTransfer || (source && view.dom.contains(source))) return;
+      const rect = view.dom.getBoundingClientRect();
+      event.preventDefault();
+      event.stopPropagation();
+      view.dom.dispatchEvent(
+        new DragEvent(event.type, {
+          bubbles: true,
+          cancelable: true,
+          clientX: Math.min(Math.max(event.clientX, rect.left + 1), rect.right - 1),
+          clientY: Math.min(Math.max(event.clientY, rect.top + 1), rect.bottom - 1),
+          dataTransfer: event.dataTransfer,
+        }),
+      );
+    }
+    document.addEventListener("dragover", redirect, true);
+    document.addEventListener("drop", redirect, true);
+    return () => {
+      document.removeEventListener("dragover", redirect, true);
+      document.removeEventListener("drop", redirect, true);
+    };
+  }, [editor, finePointer]);
+
   if (!editor || !finePointer) return null;
 
   function openMenu() {
@@ -181,6 +212,7 @@ export function NoteBlockHandle({ editor }: NoteBlockHandleProps) {
       <DragHandle
         editor={editor}
         className="pr-inline-xs"
+        computePositionConfig={{ placement: "left", strategy: "absolute" }}
         onNodeChange={({ node, pos }) => {
           hovered.current = node ? { node, pos } : hovered.current;
         }}
