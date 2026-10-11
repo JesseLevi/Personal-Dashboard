@@ -183,7 +183,7 @@ function slideBlock(editor: Editor, pos: number, handle: HTMLElement, startY: nu
     cleanup();
     if (!commit) return;
     moveBlockToIndex(editor, target, block!.from);
-    editor.commands.focus();
+    editor.view.focus();
   }
   function onCancel() {
     cleanup();
