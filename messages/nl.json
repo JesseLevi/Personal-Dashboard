@@ -617,6 +617,9 @@
       "title": "Gelinkt vanuit",
       "untitled": "Zonder titel"
     },
+    "noteTableOfContents": {
+      "title": "Inhoud"
+    },
     "noteImage": {
       "broken": "Afbeelding niet beschikbaar",
       "altLabel": "Alternatieve tekst",

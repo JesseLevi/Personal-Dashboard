@@ -617,6 +617,9 @@
       "title": "Linked from",
       "untitled": "Untitled"
     },
+    "noteTableOfContents": {
+      "title": "Contents"
+    },
     "noteImage": {
       "broken": "Image not available",
       "altLabel": "Alt text",
