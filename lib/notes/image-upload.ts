@@ -10,8 +10,9 @@ import { Plugin, PluginKey, type EditorState } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import type { Node as PMNode, NodeType } from "@tiptap/pm/model";
 import type { ActionResult } from "./types";
+import { MAX_NOTE_IMAGE_BYTES } from "./image-limits";
 
-export const MAX_NOTE_IMAGE_BYTES = 10 * 1024 * 1024;
+export { MAX_NOTE_IMAGE_BYTES };
 export const NOTE_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 export const NOTE_IMAGE_ACCEPT = NOTE_IMAGE_MIME_TYPES.join(",");
 

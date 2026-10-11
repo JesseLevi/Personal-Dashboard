@@ -4,7 +4,7 @@ import sharp from "sharp";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/notes/session";
 import { STORED_OBJECT_CACHE_CONTROL, getObjectStore, objectKey } from "@/lib/storage";
-import { MAX_NOTE_IMAGE_BYTES } from "@/lib/notes/image-upload";
+import { MAX_NOTE_IMAGE_BYTES } from "@/lib/notes/image-limits";
 import type { ActionResult } from "@/lib/notes/types";
 
 export { MAX_NOTE_IMAGE_BYTES };
