@@ -1,171 +1,27 @@
-# SettingsPanel (`app/(app)/_components/SettingsPanel.tsx`)
+# SettingsPanel
+Figma: desktop drawer `4160:33196` (inside a frame misleadingly named "Add recipi/Desktop"; the content is genuinely Settings), mobile pull-up panel `4160:34064`. Name fields: Claude-designed on request (#398, #404) · Code: `app/(app)/_components/SettingsPanel.tsx`
 
-- **Code:** `app/(app)/_components/SettingsPanel.tsx` (page-level composition
-  of `SidePanel` + the new `ButtonToggle` molecule + `InputField` + `Button`
-  — not a new atomic-design leaf, so **not** added to `design/figma-map.json`,
-  same precedent as `BoardPanel.tsx`/`CardDetailPanel.tsx`).
-- **Node IDs:** desktop drawer `4160:33196` (400×874, inside a frame
-  misleadingly named "Add recipi/Desktop" — content is genuinely Settings,
-  confirmed by its children below, not a copy-paste error in the node
-  reference), mobile pull-up panel `4160:34064` (402×360, "Pull-up panel").
-  Dev Mode annotations already read off these nodes (carried over from the
-  ticket brief, not re-fetched — see `design/notes/SidePanel.md`'s own note
-  on the sandbox's REST/`curl` restriction): mobile = "Slides in from
-  bottom", its footer = "This part is sticky, Z-index: 999".
+## Anatomy
+Page-level composition, not a leaf component, so not in `design/figma-map.json` (same precedent as `BoardPanel.tsx` / `CardDetailPanel.tsx`). It reuses `SidePanel` outright (its `md:` split means one JSX tree for both breakpoints), no new organism (#265). Children in order:
+- `ButtonToggle` "Kleurenthema": three segments, Systeem (`SunMoon`) / Licht (`Sun`) / Donker (`Moon`), wired to `next-themes` `setTheme`. `app/layout.tsx`'s `ThemeProvider` (#206) is untouched.
+- `InputField` "Taal": composed, not extended. `options`, `leadingIcon` (flag `NL`/`UK`, swapped per selection; the file has no US flag) and `trailingIcon="ChevronDown"` cover it with zero `InputField` changes. Figma's `State: Selected` is a captured-mid-interaction sample, not a request to force a focused look.
+- `InputField` Voornaam, then Achternaam (Claude-designed, #398, #404): same atoms and semantic tokens, no new tokens. `display_name` holds the first name (the sidebar shows it); `last_name` is nullable. Max `DISPLAY_NAME_MAX_LENGTH` (40) each, app-level only. `autoComplete` given-name / family-name.
+- Inline error `<p>` (`text-priority-urgent`) from `profile.errors.*`.
+- Footer: one full-width filled `Save` Button, label switches to `savingLabel` while pending.
 
-Built #265. **Reuses `Organism/SidePanel` outright** — no new organism, per
-the ticket's explicit instruction and directly answering the "would a
-PullUpPanel/Drawer organism be useful" designer annotation (it already
-exists). `SidePanel`'s own `md:`-prefixed single-markup mobile/desktop split
-means this file writes one JSX tree, not two.
+## Deliberate decisions
+- One full-width Opslaan footer on both breakpoints. Desktop draws one button; mobile draws a second destructive "Verwijderen" plus a typo "Oplsaan", residue of the Add-recipe panel this was copied from. No delete-account button (#265).
+- The footer Button has no `grow basis-0`. Unlike `BoardPanel`/`CardDetailPanel`, which wrap buttons in a `flex gap-inline-sm` row, this Button is a direct child of `SidePanel`'s `flex-col` footer; `grow basis-0` acts on the vertical axis there and collapsed it to 24px instead of 40px. A lone footer button already stretches to full width (#265).
+- Save order: `updateLocale` first, then ONE `updateName` write for both names (skipped when both trimmed values equal the current ones), then `setTheme`, then close. Server calls are the only part that can fail, `setTheme` cannot. On any failure the panel stays open with the inline error and neither theme nor close happens. Never render success unconditionally (the `AnimatedAddToBasketButton` lesson, #233). `updateLocale` already calls `revalidatePath("/", "layout")` itself (#162).
+- Empty or whitespace names become `null` (#404).
+- `lastName` comes from the separate, error-swallowing `getLastName` query, not `getProfileForNav`, so a hosted DB without the #404 migration only loses this field (#404).
+- No avatar upload, no email/password fields: undesigned (`design/notes/Sidebar.md` covers the read-only avatar/initials side) (#265).
+- `Eenheid` annotations on the Taal container are leftovers from the Add-recipe frame; ignored per the ticket (#265).
 
-## Measured content (both nodes fetched via `figma_execute`/`boundVariables`, not the hosted MCP)
+## Gotchas
+- `ButtonToggle` is uncontrolled (`defaultValue` only) and `next-themes`' `theme` is `undefined` until mount, while `SidePanel` keeps its children mounted (inert) when closed. A one-time `themeReady` flip keys a single `ButtonToggle` remount so it picks up the real theme; never key it on every click or the indicator animation breaks.
+- `pendingLocale`, `pendingFirstName` and `pendingLastName` each re-sync via `useEffect` when their server prop changes. The panel never unmounts on same-layout navigation, and `updateLocale`'s revalidation re-renders `AppLayout` with the new values into the same mounted instance; without the effect a reopened panel shows stale values. Safe on the save path (same-value no-op).
+- No Ladle story or visual baseline: the panel imports server actions and `next-themes`.
 
-Both nodes share the same four children in the same order: `Top` (pull
-handle + close button, no title text — matches `SidePanel`'s own sr-only
-title contract exactly, no code change needed there), `Button/Toggle`
-INSTANCE (368×80, `Titel: true`, text "Kleurenthema"), `Input-field`
-INSTANCE (368/370×80, `Field: "Taal"`), `Bottom` (footer).
-
-**Kleurenthema toggle** (`4160:33400` desktop / `4160:34265` mobile — the
-molecule's own instance, not the component definition; that's `4160:33335`,
-see `design/notes/ButtonToggle.md`): three segments, `componentProperties`
-confirmed one by one — `Systeem`/`Icon/Sun-moon`, `Licht`/`Icon/Sun`,
-`Donker`/`Icon/Moon`, all `Style=Transparent, State=Default`. Wired to
-`next-themes`' `setTheme("system"|"light"|"dark")` — `app/layout.tsx`'s
-existing `ThemeProvider attribute="data-theme" defaultTheme="system"
-enableSystem` (#206) is untouched, per the brief.
-
-**Taal field** (`4160:33206` desktop / `4160:34266` mobile): `Field: "Taal"`,
-`Content: "Nederlands"`, `Leading-icon: true` → `Icon/NL` (node `4160:34392`),
-`Trailing-icon: true` → `Icon/Chevron-down` (node `3687:4444`, confirmed by
-name — not assumed from the generic "Choose trailing-icon" property key),
-`State: "Selected"`. **Composed, not extended**: `InputField`'s existing
-`options`/`leadingIcon`/`trailingIcon` props already cover this exactly —
-`<InputField options={[...]} leadingIcon={pendingLocale === "nl" ? "NL" :
-"UK"} trailingIcon="ChevronDown" .../>` — the leading icon just swaps per
-the current selection, a plain prop computation, zero `InputField.tsx`
-changes. `State: "Selected"` in Figma reads as "this static sample was
-captured mid-interaction" (the same `:focus-within` mapping
-`design/notes/InputField.md` already documents for every other Selected
-sample), not a request to force the field to always look focused — no
-`InputField.tsx` change needed for that either. `Eenheid` annotations on
-this same Input-field container (mentioned in the ticket) are a leftover
-from the Add-recipe frame this panel was copied from, per the ticket's own
-"ignore" instruction — not acted on.
-
-**Footer** (`Bottom`, node `4160:33207` desktop / `4160:34080` mobile) —
-**this is the one place the two breakpoints genuinely disagree**, and the
-disagreement is a Figma authoring artifact, not a design decision:
-
-| | Desktop (`4160:33207`) | Mobile (`4160:34080`) |
-|---|---|---|
-| Buttons | 1 × `Button/Default`, 368px (full width), `Style=Filled`, text "Opslaan" | 2 × `Button/Default`, 180px each: `Style=Destructive` text **"Verwijderen"**, icon a trash glyph; `Style=Filled` text **"Oplsaan"** (typo) |
-
-Three independent signals agree this is residue, not a real second action:
-(1) the desktop node — the same panel, same footer role — has only one
-button; (2) the parent frame is literally named "Add recipi/Desktop", i.e.
-this whole panel started life as a copy of the Add-recipe SidePanel, whose
-footer legitimately has a destructive delete option; (3) "Oplsaan" is a
-typo nobody would ship as final copy. Per the ticket's explicit decision:
-**built desktop's single full-width `Opslaan` footer on both breakpoints**
-— `footer` is one `<Button variant="filled" icon="Save" className="grow
-basis-0">`, same `grow basis-0` single-button convention every other
-`SidePanel` footer in this codebase already uses (`BoardPanel.tsx`,
-`CardDetailPanel.tsx`). Deviation recorded at
-`docs/open-questions.md#settings-mobile-delete-button-not-built`.
-
-## Footer `grow basis-0` bugfix (post-#265, `fix/account-dropdown-clicks`)
-
-The Opslaan `Button` shipped with `className="grow basis-0"` directly on
-itself, reasoning (wrongly) that it matched `BoardPanel.tsx`/
-`CardDetailPanel.tsx`'s footer convention. It doesn't: those footers wrap
-their button(s) in a nested `<div className="flex gap-inline-sm">` row, so
-`grow`/`basis-0` act on that row's horizontal main axis. This footer had no
-such row — the Button was a direct child of `SidePanel`'s own footer, which
-is `flex flex-col` (vertical main axis). `grow basis-0` on a flex-col's
-direct child sizes it on the *vertical* axis instead, collapsing the button
-from Figma's 40px (`Button/Default` in `4160:33208`, `hSize: FILL`) down to
-a measured 24px. `SidePanel.tsx`'s own footer comment already states the
-fix: "a lone button already fills 100% for free" — the column's default
-`align-items: stretch` already gives a single direct-child button full
-width, no opt-in needed. Removed the className; the misleading comment
-above it (claiming `grow basis-0` was the shared convention here) is
-corrected to explain why this footer is the one exception. `SidePanel.tsx`
-itself was not touched — its footer container was already correct.
-
-## Save: locale first, then theme, then close
-
-`handleSave()` calls `updateLocale({ locale: pendingLocale })`
-(`lib/profile/actions.ts`, #162) **before** `setTheme(pendingTheme)`
-(`next-themes`) — deliberately ordered, not arbitrary: `updateLocale` is the
-only part of "Save" that can actually fail (a real server round trip);
-`setTheme` is a synchronous, can't-fail localStorage/DOM write. On failure,
-the panel stays open with a visible inline error (`profile.errors.*`,
-mirroring `boards.errors`/`notes.errors`'s existing three-code shape) and
-neither the theme nor the panel-close happens — **never renders success
-unconditionally**, the explicit lesson `docs/HANDOFF.md` records for
-`AnimatedAddToBasketButton` (#233). `updateLocale` already calls
-`revalidatePath("/", "layout")` itself (its own header comment), so no
-extra revalidation is needed here.
-
-## `ButtonToggle` is uncontrolled — the sync-on-mount subtlety
-
-`ButtonToggle` (the new molecule) only accepts `defaultValue`, matching the
-old atom's own precedent — no controlled `value` prop. `next-themes`'
-`useTheme()` returns `theme: undefined` until the client mounts (its own
-documented hydration-mismatch guard). Since `SidePanel` keeps its children
-mounted (but `inert`) even while closed, `ButtonToggle` would otherwise
-freeze its very first (pre-hydration) `defaultValue` — "system" — forever,
-even once the real persisted theme (e.g. "dark") resolves a moment later.
-
-Fixed with a one-time resync: a `themeReady` boolean flips exactly once,
-the first render where `theme` is defined, and keys a **single** forced
-`ButtonToggle` remount at that point (`key={themeReady ? "theme-ready" :
-"theme-loading"}`) so its `defaultValue` picks up the resolved value. Every
-click after that never touches the key, so the indicator's own slide
-animation is never interrupted by a remount. In practice this resync
-happens well before a user could ever open the panel (it requires clicking
-through the Sidebar account row and the dropdown first), so it is a
-correctness fix for the general case, not a fix for an observed flash.
-
-**`pendingLocale` needed the analogous fix for a real (not just
-theoretical) reason.** `SettingsPanel` never unmounts on a same-layout
-route change — Next.js keeps one shared layout instance across navigations
-— and `updateLocale` itself triggers exactly that: its own
-`revalidatePath("/", "layout")` re-renders `AppLayout` with the fresh
-`profiles.locale` value after every successful save, flowing a new
-`currentLocale` prop into the same mounted `SettingsPanel`. Without a
-`useEffect(() => setPendingLocale(currentLocale), [currentLocale])`, a
-reopened panel would keep showing whatever `pendingLocale` was initialized
-to on first mount, forever — the exact same "uncontrolled state doesn't
-resync on prop change" trap, just triggered by this component's own save
-flow instead of an external event. Safe on the save path too: by the time
-the effect fires there, `pendingLocale` already equals the incoming value,
-so it's a same-value no-op, not a stomp.
-
-## Voornaam + Achternaam fields — Claude-designed on request (#398, #404)
-
-Claude-designed on request, no Figma node: the user asked for a name input
-(#398), then a split into first + last name (#404). Two single-line
-`InputField`s (Voornaam / Achternaam, First name / Last name) are the
-**bottom** inputs: toggle, language, Voornaam, Achternaam. Same atoms and
-semantic tokens as Taal; no new tokens or components. `display_name` holds
-the first name (sidebar shows it); `last_name` is new (nullable). Saved by
-Opslaan: `updateLocale` first, then ONE `updateName` write for both (skipped
-when both trimmed values are unchanged); the panel closes and the theme
-applies only when every write succeeded, else the inline error shows.
-Empty/whitespace becomes `null`; max 40 chars each (app-level, no DB
-constraint). Seeded from `AppShellNav`'s `displayName` / `lastName`, re-synced
-on prop change like `pendingLocale`. `lastName` comes from the separate,
-error-swallowing `getLastName` query, not `getProfileForNav`, so a hosted DB
-without the #404 migration only loses this field. No Ladle story / visual
-baseline: the panel imports server actions and next-themes (flagged in PR).
-
-## Not built
-
-- **No email/password fields** — Figma draws only Kleurenthema + Taal (the
-  name fields are the #398/#404 Claude-designed exception above).
-- **No delete-account button** — see the footer table above.
-- **No avatar upload** — undesigned, out of scope (`design/notes/Sidebar.md`'s
-  own #265 entry covers the read-only avatar/initials side).
+## Open
+- `docs/open-questions.md#settings-mobile-delete-button-not-built`

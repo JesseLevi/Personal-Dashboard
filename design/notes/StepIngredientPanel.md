@@ -1,48 +1,20 @@
 # StepIngredientPanel
+Figma: `Add recipi/ingredient/Mobile` · node `3749:3091`, panel `3749:3241` · Code: `components/organisms/StepIngredientPanel.tsx`
 
-- **Code:** `components/organisms/StepIngredientPanel.tsx` (+ `.stories.tsx`)
-- **Node IDs:** `3749:3091` ("Add recipi/ingredient/Mobile"), panel `3749:3241`.
+## Anatomy
+`SidePanel` (`level={2}`) holding a `Card` of `CardContentIngredient` rows (name, quantity+unit Tag, Checkbox), footer with one "Opslaan" button (`Save` icon). The node has no search field and no visible title. Opened by a step's "+ Ingrediënt" pill in `RecipePanel`.
 
-Built #149, closing the `step-ingredient-pill-panel-undesigned` open question (removed from `docs/open-questions.md`) — #126 left the step field's "+ Ingrediënt" pill `disabled` because this panel had no Figma source at the time; it does now.
+## Deliberate decisions
+- Never touches Supabase. The recipe may be unsaved (create mode), so no `recipe_ingredients` ids exist yet. The panel selects from `RecipePanel`'s local ingredient-row state (`localId`, never a database id) and returns `onSave(selectedIds: string[])`. `RecipePanel` translates localIds into `ingredientRefs` (payload array indexes) at save time (ADR-0029/0030). It imports no `"use server"` module, so it stays Ladle-testable. (#149)
+- `level={2}`: the node draws a full-screen scrim (`rgba(12,10,9,0.6)`) over the whole artboard including the panel that opened this one, so the second scrim must dim `RecipePanel` too. (#149)
+- `title` is required by `SidePanel` for `aria-labelledby` but rendered `sr-only`; the node has no heading. (#149)
+- Rows with an empty `name` are filtered out (a freshly appended blank row is not an ingredient yet); this matches the filter `RecipePanel` applies when building `ingredientRefs`. (#149)
+- Reset-on-open, not remount: one persistent DOM node; `selected` re-seeds from `selectedIds` when `open` flips false -> true, so the open/close transition keeps a painted frame to interpolate from (same pattern as `RecipePanel`/`CardDetailPanel`). (#103)
+- `divider` on every row except the last (`index < length - 1`).
 
-## Structure read from the fetched node
+## Token gaps and flags
+- Footer row gap 8px -> `gap-inline-sm` (`spacing/inline/gap-sm`, from "Bottom" child `3749:3250`). Panel chrome lives in `SidePanel.tsx`. (#205)
 
-A full-screen `Overlay` rectangle (`rgba(12,10,9,0.6)`, `0,0`, `402×874` — the same size as the whole artboard) sits **under** the second "Pull-up panel" (`3749:3241`) and **over** everything else, including whatever panel opened this one. That is the literal reading behind `SidePanel`'s new `level` prop (`design/notes/SidePanel.md`'s #149 entry) — without it, two same-`z-40`/`z-50` panels would only stack correctly by DOM paint order, and this node explicitly draws the second scrim covering the first panel too, not just the page.
-
-Below the handle+X strip: a `Card` whose children are `Card-content/Ingredient` instances — name, a grey `Tag` reading quantity+unit ("1250 Gram", "2 Scoops", "1 Stuk"), an unchecked `Checkbox` — and a footer with one "Opslaan" button (`Save` icon). **No search field, no visible title** anywhere in the node.
-
-## Why it never touches Supabase
-
-The recipe this panel's ingredients belong to may not be saved yet (create mode) — `recipe_ingredients` rows, and therefore real `id`s to link a `recipe_step_ingredients` row against, might not exist. So this panel selects from `RecipePanel`'s own **local** ingredient-row state (`localId`, never a database id) and hands the selection back via `onSave(selectedIds: string[])` — `RecipePanel` is the one that later translates those `localId`s into `ingredientRefs` (payload-array indexes) at save time (`app/(app)/recepten/RecipePanel.tsx`'s own header comment has the full translation). Same "props in, callback out" shape `IngredientSearchPanel` already uses for `onSearch`/`onCreateOwnIngredient` (ADR-0011 §2) — this file never imports a `"use server"` module, so it stays Ladle-testable with no Next.js request context.
-
-## No title, no visible title text
-
-Same reasoning as every other `SidePanel` caller: `title` is required for `aria-labelledby` but rendered `sr-only`, since the fetched node has no heading layer. `components.stepIngredientPanel.title` exists only for screen readers.
-
-## Empty-name rows filtered
-
-`RecipePanel`'s ingredient rows can be blank (a freshly appended row before the user types a name) — those never render here (`ingredients.filter((i) => i.name.trim() !== "")`), matching the same filter `RecipePanel`'s own save payload applies before building `ingredientRefs`. An ingredient typed after this panel was already open for a given step is picked up the next time it's opened (the list is a plain prop, re-derived from `RecipePanel`'s live state on every render).
-
-## Reset-on-open, not remount
-
-Same #103/#105 pattern `RecipePanel.tsx`/`CardDetailPanel.tsx` use: the panel keeps one persistent DOM node and only re-seeds its internal `selected` set from `selectedIds` when `open` flips `false → true`, so the open/close CSS transition always has a previously-painted frame to interpolate from.
-
-## `divider` on every row, no last-child exception
-
-Same precedent `IngredientSearchPanel.tsx` already established for `CardContentIngredient`'s `divider` prop (see that component's own doc comment) — applied unconditionally, matching the fetched node rather than guessing a "no divider after the last row" convention it doesn't draw.
-
-## #153: squashed footer button — bare child of `SidePanel`'s column footer
-
-User feedback: "Onderaan de opslaan button is platgedrukt. Heeft niet de juiste verticale padding." Root cause: `SidePanel.tsx`'s footer container is `flex flex-col` (own #103 comment: a column's `align-items: stretch` gives a lone composer button full width for free). This file passed its "Opslaan" `Button` with `className="grow basis-0"` as a **bare direct child** of that column — `flex-basis: 0` then applies on the *column's* (block) axis, collapsing the button to ~0 height, not the row-axis share-of-width it's meant for. `RecipePanel.tsx`/`CategoryPanel.tsx`/`CardDetailPanel.tsx`/`BoardPanel.tsx`/`IngredientSearchPanel.tsx` all wrap their footer button(s) in their own `<div className="flex gap-2">` row first — checked every other `footer=` call site in the repo (`grep -rn "footer=" components app`) and this was the only bare one. Fixed by wrapping in the same `<div className="flex gap-2">` row, matching every other caller exactly rather than inventing a StepIngredientPanel-specific shape.
-
-## Ladle stories
-
-`Empty` (no pre-selection), `WithSelection` (two of three real rows pre-checked), `Interactive` (stateful, exercises checkbox toggling + `onSave`'s payload via `console.log`). All three sample lists include one empty-name row to make the filter visible in the story fixture, not just asserted in code. Wrapped in `<div className="min-h-screen">` — `SidePanel.stories.tsx`'s own known trap (a bare static `SidePanel` story crops to a 1280x64 sliver).
-
-## TICKET #205 (2026-08-12): spacing token
-
-Footer `gap-2`→`gap-inline-sm`. Measured via `figma_execute`/
-`boundVariables` on "Pull-up panel" (3749:3241)'s own "Bottom" child
-(3749:3250): `itemSpacing`→`spacing/inline/gap-sm`. The panel's own
-chrome (padding/radius/root gap) lives in `SidePanel.tsx`, not here — see
-that component's own #205 entry.
+## Gotchas
+- The "Opslaan" button must sit inside its own `<div className="flex gap-inline-sm">` row. `SidePanel`'s footer is `flex-col`; a bare `grow basis-0` child applies `flex-basis: 0` on the column axis and collapses to ~0 height (squashed button). Every other `footer=` call site wraps in a row. (#153)
+- Ladle stories (`Empty`, `WithSelection`, `Interactive`) include one empty-name row to show the filter, and wrap in `min-h-screen` because a bare static `SidePanel` story crops to a 1280x64 sliver.

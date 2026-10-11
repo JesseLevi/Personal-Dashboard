@@ -1,8 +1,7 @@
 # ADR-0026: `boards.is_favorite` — at most one favourite board per user
 
-**Status**: Proposed (retroactive; the underlying choice was approved by the user 2026-07-23, issue #91)
+**Status**: Accepted (retroactive record; the underlying choice was approved by the user 2026-07-23, issue #91; ratified 2026-10-11, #412)
 
-**Authored by**: Claude Code (Opus 5.5), at the instruction of ticket #292, as a retroactive write-up. Same provenance caveat as ADR-0011/0013/0014: this is not the architecture layer's own output. The choice below is already shipped and was approved by the user at the time; what is **proposed** here is the written record, for the architecture layer to accept, amend or reject.
 
 ## Context
 
@@ -20,7 +19,7 @@
 - The index is not deferrable, so a toggle must clear the old favourite **before** setting the new one. `toggleBoardFavorite` originally did this as two sequential statements from the server action; a failure between them could leave zero favourites (never two — the index guarantees that half). Note the migration's own comment says the app flips the old favourite off "in the same transaction", which the code never did (flagged in the PR for #292). Issue #286 (PR #297, `20260817000001_toggle_board_favorite_rpc.sql`, open when this ADR was written) replaces it with one `toggle_board_favorite` RPC following the ADR-0015 pattern (`security invoker`, `search_path = ''`, ownership guard, `MV404`), making the toggle atomic. Origin of the pattern: ADR-0030.
 - The UI never exposes an *un*-favourite affordance (the star on the favourite board is disabled, `design/notes/TeDoenBoard.md`), yet the action toggles symmetrically and could set zero favourites if called directly. Harmless because of the `?? boards[0]` fallback; recorded here, not fixed.
 - Deleting the favourite board is not handled by the schema. Board delete was deliberately not built in #95 (`design/notes/TeDoenBoard.md`), so the case cannot occur today; whoever builds it must decide who becomes favourite.
-- `Architecture.md` §4.2 is stale on this point.
+- `Architecture.md` §4 reflects this since #412.
 
 ## Migration
 

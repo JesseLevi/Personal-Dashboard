@@ -1,6 +1,6 @@
 # Design tokens: per-state colour convention (ADR-0010)
 
-Read on demand from `CLAUDE.md` → "Design tokens". This file records the convention
+Read on demand from `docs/guides/ui-components.md` → "Tokens". This file records the convention
 every component's state colours follow, plus the concrete matrix behind it.
 
 History: ticket #52 introduced a three-state tier (Default/Hover/Selected).

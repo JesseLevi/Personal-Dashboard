@@ -1,6 +1,6 @@
 # ADR-0010: Design tokens as a synced artifact; machine-readable Figma↔code traceability
 
-**Status**: Accepted
+**Status**: Accepted. **Amended by ADR-0034 (2026-10-11)**: the token pipeline (§1) stands; `figma-map.json` and the `// figma:` header (§2, §4) apply only to Figma-sourced components, because Claude designs UI in code by default.
 
 ## Context
 

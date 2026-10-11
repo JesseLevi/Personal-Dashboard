@@ -1,187 +1,166 @@
-# Architecture — Atlas
+# Architecture: Atlas
 
-**Status**: Draft for ticket generation (Opus) and execution (Claude Code/Sonnet).
-**Inputs**: `Vision.md` (product scope), `CLAUDE.md` (build conventions), Figma "Notion - V2" dev page (node 3670-3261), user decisions 2026-07-20 (recorded in ADRs).
-**ADRs**: `docs/decisions/` — referenced as ADR-NNNN throughout. Where this document and an ADR conflict, the ADR wins.
-
----
+This document describes the **current** system. Why each piece is the way it is lives in the ADRs (`docs/decisions/README.md` is the index). An ADR that changes the system updates this file in the same PR. History stays in the ADRs and git, not here.
 
 ## 1. System context
 
-> **Shelved topology (ADR-0018).** The diagram below is the original Mac-mini design and will most likely never be built. The platform runs on **Vercel (Next.js) + Supabase Cloud** (§8 "Current", ADR-0012). AI features call hosted inference APIs through `lib/ai/`; there is no Ollama and no always-on worker host. The diagram stays only because older ADRs refer to it.
-
 ```
-                    ┌──────────────────────────── Mac mini M4 (homeserver) ───────────────────────────┐
-Browser ── HTTPS ── Cloudflare Tunnel ── Next.js app (staging + prod instances)                       │
-                    │                        │            │                                           │
-                    │                        │            ├── Supabase self-hosted (Docker,          │
-                    │                        │            │     bound to 127.0.0.1 only)             │
-                    │                        │            │     Postgres + Auth + RLS + pgvector      │
-                    │                        │            │     + Vault + Storage + pg_cron           │
-                    │                        │            └── Ollama (native macOS, 127.0.0.1 only)   │
-                    │                        │                  chat model 14–27B quantized           │
-                    │                        │                  embeddings: bge-m3                    │
-                    │                        └── Worker (Node process): job queue consumer            │
-                    └─────────────────────────────────────────────────────────────────────────────────┘
+Browser (PWA) ──HTTPS──► Next.js on Vercel (fra1)
+                          ├── Supabase Cloud: Postgres + Auth + RLS  (RLS-bound client per request)
+                          ├── Cloudflare R2: uploaded images         (lib/storage, presigned GET)
+                          ├── Anthropic API: Claude Haiku            (lib/ai, recipe import)
+                          └── public web pages                       (lib/net/safe-fetch, recipe import)
 ```
 
-The browser talks to Supabase exclusively through the Next.js server (server components / server actions / route handlers), not directly.
+- The browser only talks to Atlas (ADR-0033). There is one hosted environment, production. Builds, promotion and migrations follow ADR-0032. Hosted settings that live outside the repo are listed in `docs/operations.md`.
+- Async work: short tasks run after the response via Next.js `after()`. There is no always-on worker (ADR-0018 §4). `worker/` is a skeleton.
 
 ## 2. Repository layout
 
-Single repo, single Next.js package, worker as a second entrypoint in the same package (no monorepo tooling — one person maintains this).
-
 ```
-app/                    # Next.js App Router routes
-components/
-  atoms/                # mirrors Figma "Atoms" section
-  molecules/            # mirrors Figma "Molecules" section
-  organisms/            # mirrors Figma "Organisms" section
-lib/                    # supabase clients, zod schemas, utils
-i18n/                   # next-intl request config (request.ts)
-worker/                 # job consumer (embeddings, agent, calendar sync) — run with tsx
-supabase/
-  migrations/           # every schema change, via Supabase CLI (ADR-0009)
-  tests/                # RLS test suite (ADR-0009)
-  seed.sql
-docs/decisions/         # ADRs
-messages/               # i18n message catalogs: nl.json, en.json (ADR-0007)
+app/                  App Router. (app)/ = signed-in routes: te-doen, recepten, winkelmand, notities
+  api/                image delivery routes (recipe-thumbnail, note-image)
+components/           design system: atoms/ molecules/ organisms/ (Atomic Design)
+lib/                  server and shared logic, one folder per domain or seam:
+  supabase/           server client (RLS-bound)   ai/       inference seam (ADR-0018)
+  storage/            R2 seam (ADR-0024)          net/      safe-fetch, the SSRF guard
+  auth/ profile/      session, greeting, profile  defaults/ ensure_user_defaults call
+  boards/ notes/ recipes/ shopping/   domain queries, schemas, pure logic
+  ui/                 cn() and UI helpers
+messages/             nl.json, en.json (ADR-0007)
+supabase/migrations/  every schema change     supabase/tests/  pgTAP RLS suite
+design/               tokens.json, figma-variables/, figma-map.json, notes/<Component>.md
+scripts/              CI gates, token sync, data imports (NEVO, USDA)
+tests/                Vitest; tests/visual = Playwright screenshot suite over Ladle
+worker/               job-consumer skeleton (unused until a scheduled-work mechanism is chosen)
 ```
 
-## 3. Frontend
+## 3. Frontend and design system
 
-- **Next.js App Router**, React Server Components by default, mutations via Server Actions with `zod` validation. No client-side data library until a concrete need appears.
-- **Tailwind CSS v4** (CSS-first `@theme`), utility classes only (see CLAUDE.md). The theme is **generated from `design/tokens.json`** — see §3.2 / ADR-0010; nobody edits theme values by hand.
-- Component variants via **CVA** (`class-variance-authority`): the Figma Button matrix (Style × State) maps to a CVA `variant` prop for Style; **State (Hover/Active) maps to CSS pseudo-classes, never to React props**. Figma boolean props (e.g. `With icon`) become optional React props/slots; Figma SLOT nodes become `children` or named slot props.
-- **Icons**: one `Icon` atom wrapping `lucide-react` (the Figma icon set matches lucide names: Croissant, Infinity, Lightbulb, Shirt, …); size/stroke come from tokens. Custom SVG only when lucide has no match.
-- **Design-system workbench**: **Ladle** with one story per atom/molecule/organism, plus Playwright screenshot baselines committed to the repo — every Figma re-sync shows up as a reviewable visual diff (ADR-0010).
-- **Kanban drag & drop**: `dnd-kit` (MIT).
-- **Rich text**: TipTap (Notities — UI in a later round, schema now).
-- **Calendar UI**: NOT CalendarKit — that library is React Native-only and cannot run in this stack. Recommended replacement: **Schedule-X** (MIT, web-native). Decision + fallback in ADR-0008. UI build waits for Figma designs regardless.
-- **i18n**: `next-intl`, NL default, EN second (ADR-0007). No hardcoded user-facing strings, including in this round's NL-only UI.
+- **Rendering**: React Server Components by default. Mutations go through Server Actions with zod validation. There is no client data library.
+- **Styling**: Tailwind v4 with semantic tokens only. `design/figma-variables/` (Figma export) feeds `design/tokens.json`, `pnpm sync:tokens` generates `app/theme.css`, and CI checks the chain for drift (ADR-0010). Dark mode follows the OS via `next-themes` (`data-theme`).
+- **Components**: built with CVA. Variant axes are props; Hover/Active/Focus are CSS states, never props. Composition mirrors the design hierarchy: atoms ← molecules ← organisms ← `app/`. Icons go only through the `Icon` atom (lucide).
+- **Design source** (ADR-0034): Claude designs UI in code from existing components and tokens. A Figma design the user names is implemented exactly.
+- **Every component** gets a Ladle story, a visual baseline and a `design/notes/<Component>.md` contract.
+- **Libraries**: dnd-kit (drag and drop), TipTap 3 with official MIT extensions only (ADR-0021), Floating UI (menus), next-intl (i18n), Schedule-X for the Agenda (ADR-0008).
+- **PWA**: per-section web manifests, so Te doen, Recepten, Winkelmand and Notities can each be a home-screen icon.
 
-### 3.1 Figma → code naming map
-
-Figma contains spelling variants; code uses corrected English. **`design/figma-map.json` is the canonical map** (component name ↔ file path ↔ node-id) — per ADR-0010, it is the single source of truth, not this document. Per-component design notes (recorded discrepancies, token gaps, ticket history) live one file per component in `design/notes/<Component>.md`. **Every component file carries its Figma node-id in a header comment** (`// figma: node-id=3670:3261`) so re-syncing is mechanical. **Opus must include the relevant `figma-map.json` mapping (Figma name, code path, node-id) in every UI ticket** rather than have the executing agent re-derive it.
-
-### 3.2 Design tokens: `tokens.json` as the single source (ADR-0010)
-
-Pipeline: Figma variables (primitive → semantic) → `design/tokens.json` in the repo (synced via Figma MCP/API, `pnpm sync:tokens`) → generated `app/theme.css` (Tailwind v4 `@theme`) → utility classes. The six Figma text styles are Tailwind-native (`text-xs/normal` → `text-xs`, etc.); colors sit on Tailwind's stone scale plus named semantic tokens (priority colors red/orange/blue/green with pastel backgrounds). Components reference **semantic** token classes, never primitives directly and never inline hex (CLAUDE.md). A token change in Figma is therefore a re-sync + a reviewable diff, with zero component edits.
-
-Semantic token names are canonical Figma variable paths (ticket #203): CSS name = Figma variable path with `color/` stripped, `Stroke` lowercased, and trailing `/default` dropped (e.g. `color/surface/primary/default` → `surface-primary`). Product-facing aliases (`priority-urgent`, `priority-urgent-bg`, `priority-medium`, `priority-medium-bg`, `priority-low`, `priority-low-bg`, `tag-highlight`, `tag-highlight-bg`) are a separate alias tier: each resolves to a semantic token (`--color-priority-urgent: var(--color-text-highlight-red);`), never straight to a primitive, so a product-meaning change (e.g. "urgent becomes orange") is a one-line re-point instead of a find-replace through `components/`. The retired `accent` token (`#8A38F5`, never a Figma variable) is gone as of #203 — its sole remaining consumer (`Icon.stories.tsx`'s Sizes demo) was moved onto `text-highlight-blue`.
-
-### 3.3 Component update loop
-
-When a component changes in Figma: look up its node-id in `design/figma-map.json` → fetch via Figma MCP → update the component's CVA classes/structure → Ladle screenshot diff shows exactly what changed → PR. This loop is the maintenance contract; tickets that add components must also add their map entry, header annotation, and story.
-
-## 4. Data architecture
+## 4. Data model
 
 ### 4.1 Conventions
 
-- snake_case, plural table names, `uuid` PKs (`gen_random_uuid()`), `created_at`/`updated_at` (trigger-maintained).
-- **Every table**: `user_id uuid not null references auth.users(id) on delete cascade` (ADR-0001) + RLS enabled + the standard four policies (`select/insert/update/delete using/with check user_id = (select auth.uid())`). No exceptions; CI enforces this (ADR-0009).
-- Schema changes only via `supabase/migrations` (ADR-0009). Types generated with `supabase gen types typescript` into `lib/database.types.ts`.
+- snake_case, plural tables, `uuid` primary keys, `created_at`/`updated_at` (trigger-maintained).
+- **Every `public` table** has `user_id uuid not null references auth.users on delete cascade`, RLS with the four standard policies, explicit grants, and a pgTAP test in `supabase/tests` (ADR-0001/0009). `pnpm check:rls-coverage` fails on any gap.
+- **`reference` schema**: shared, non-user data with no `user_id`. Select for everyone. Writes only through migrations, except admin-written `eigen` rows and shared aliases (ADR-0011/0020).
+- **`private` schema**: not exposed by PostgREST; written only by definer functions (ADR-0031).
+- **Small closed sets** are text with a check constraint (`priority`, `size`, `source`). Units are the shared enum `public.recipe_unit` (ADR-0028).
+- **Ordering** uses fractional `position` (numeric midpoint), mirrored in TypeScript and SQL (ADR-0015).
+- **Multi-statement writes** are `security invoker` RPCs with `search_path = ''`, an explicit ownership guard, and execute granted only to `authenticated`: `replace_recipe_contents`, `move_card`, `move_recipe`, `move_note`, `toggle_board_favorite`, `save_note_content` (ADR-0015/0030).
+- **Per-user defaults** are seeded by triggers at signup and lazily by `ensure_user_defaults()` (ADR-0017).
+- `lib/database.types.ts` is generated in CI. Never hand-edit it.
 
-### 4.2 Tables per module
+### 4.2 Tables
 
-**Auth/profile**: `profiles` (PK = auth.users id, `display_name`, `locale`).
+| Area | Tables |
+| --- | --- |
+| Account | `profiles` (`display_name` = first name, `last_name`, `locale`), `user_seeds` |
+| Te doen | `boards` (`is_favorite`, one per user), `board_columns` (`icon`), `cards` (`priority`, `size`, `due_at`, `source`), `labels`, `card_labels` |
+| Recepten | `recipe_categories` (`icon`), `recipes` (`thumbnail_path`, `source_url`, `import_status`, `import_error`), `recipe_ingredients` (`ingredient_id`, `unit`, `group_label`, `needs_review`), `recipe_steps`, `recipe_step_ingredients`, `tags`, `recipe_tags` |
+| Ingredient library | `ingredients` (user layer, nullable `reference_id`), `ingredient_unit_masses` (user overrides), `ingredient_aliases` (user) |
+| Reference | `reference.ingredients` (NEVO + `eigen`, nutrients per 100 g, bilingual names/categories), `reference.ingredient_unit_masses` (NEVO portions, USDA), `reference.ingredient_aliases` (admin) |
+| Winkelmand | `shopping_list_items` (`ingredient_id`, `unit`, `checked`, `recipe_id` provenance) |
+| Notities | `note_categories`, `notes` (`content` TipTap JSON, derived `title` + `content_text`), `note_links` (derived on save) |
 
-**Kanban (Te-Doen)**: `boards`, `board_columns` (board_id, name, position), `cards` (column_id, title, description, priority enum `urgent|medium|mid|low`, due_at nullable, position, `source` enum default `'manual'` — ADR-0005), `labels` (board-scoped), `card_labels`.
-
-**Notities** (schema this round, UI later): `notes` (title, `content jsonb` TipTap doc, `content_text` generated/maintained plain text for search + embedding), `tags` (user-scoped, shared with recipes), `note_tags`.
-
-**Recepten**: `recipe_categories` (user-defined, name, position — the "kanban" columns of the recipe overview), `recipes` (title, category_id, servings int, thumbnail_path, time_minutes), `recipe_ingredients` (recipe_id, name, quantity numeric nullable, unit text nullable, position), `recipe_steps` (recipe_id, position, instruction), `recipe_tags`.
-
-**Boodschappenlijst**: `shopping_list_items` (name, quantity, unit, `checked bool`, `section` text nullable for supermarket grouping, `recipe_id` nullable provenance link, position). Portion scaling happens at "send to list" time in the app layer (scale quantity by servings factor); the list stores resolved values.
-
-**Agenda** (schema this round, UI later): `calendar_events` (title, starts_at, ends_at, all_day, location, description, `source` enum `manual|sync` — ADR-0005, `calendar_account_id` nullable, `external_id` nullable, unique on (calendar_account_id, external_id)), `calendar_accounts` (provider enum `google|caldav|ics`, display_name, `vault_secret_id` — credentials in Vault per ADR-0002 pattern, `sync_state jsonb`, last_synced_at).
-
-**AI/infra**: `embeddings` (source_table, source_id, chunk_index, `content_hash`, `content_text`, `embedding vector(1024)` — bge-m3, ADR-0006), `jobs` (type, payload jsonb, status enum `pending|running|done|failed`, run_at, attempts, last_error), `agent_signals` (detector, message, payload jsonb, status enum `new|dismissed`), `user_ai_keys` → Vault-backed (ADR-0002).
-
-**Object storage** (ADR-0024): binary uploads live in a private Cloudflare R2 bucket per environment, keys `<user_id>/<module>/…`, reached only through `lib/storage/`. The owning row in Postgres decides ownership. The legacy Supabase thumbnail bucket is retired (#384).
+Planned for Phase 7: `calendar_events` and `calendar_accounts` (§7).
 
 ### 4.3 Search
 
-Textual search: `pg_trgm` ILIKE indexes on `notes.content_text`, `recipes.title`, `recipe_ingredients.name` (works across NL/EN without language-specific FTS config). Semantic search: §5.
+Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredient matching runs own alias, then shared alias, then `pg_trgm` (`match_ingredient_candidates`), then the LLM (ADR-0020). Semantic search is Phase 8 (§6).
 
-## 5. AI & search pipeline (ADR-0006)
+### 4.4 Object storage
 
-One generic pipeline; no module-specific embedding code.
+- R2 holds image bytes under keys `<user_id>/<module>/…`. The owning row in Postgres decides ownership (ADR-0024).
+- Uploads are re-encoded server-side with `sharp`: magic-byte check, WebP, EXIF stripped.
+- Delivery is an app route that checks session and ownership, then redirects to an hour-stable presigned URL. Server-rendered pages may presign directly (#391).
+- There are no RLS policies on objects, so Vitest ownership tests per consumer replace them.
 
-> **Host reopened (ADR-0018).** The pipeline shape below stands. But "Ollama" now means *the hosted provider behind `lib/ai/`*, picked in Phase 8, and the worker's host is undecided (`after()` for short work, a managed cron/function mechanism for the rest).
+## 5. Security model
 
-1. **Enqueue**: DB triggers on `notes` and `recipes`(+ingredients/steps) insert a `jobs` row (`embed`, `{source_table, source_id}`) on insert/update.
-2. **Worker** (Node, `worker/`, host undecided — ADR-0018 §4): polls `jobs` with `FOR UPDATE SKIP LOCKED` (service_role). For `embed` jobs: build canonical text → compare `content_hash` (skip if unchanged) → chunk → Ollama `/api/embed` (bge-m3) → upsert `embeddings`.
-3. **Semantic search**: route handler embeds the query via Ollama, then calls a **security-invoker** Postgres function `search_semantic(query_embedding, scope, limit)` doing pgvector cosine top-k — RLS applies automatically because the function runs as the calling user.
-4. **AI-agent**: `pg_cron` runs SQL detectors (e.g. cards stale in a column > N days, overdue due_at, recurring themes via vector neighbors) → inserts candidate rows into `jobs` (`agent`) → worker assembles context (signal + related content via vector search) → **one** Ollama chat call → stores the natural-language result in `agent_signals`. Surfaced via an API endpoint + minimal list UI; a designed dashboard surface is a later round (needs Figma).
-5. **Prompt-injection containment**: user content (notes, recipes, sync'd event titles) flows into LLM prompts. The agent therefore has **no tools and no write access to anything but its own `agent_signals` row**, and agent output is rendered as plain text (never markdown-to-HTML). Worst case for an injected note is a misleading message, never an action.
+- **Isolation**: RLS on every user table, tested in CI (ADR-0009). Access decisions live in policies, not in app code, so a future sharing model is a policy change (ADR-0001).
+- **Boundaries** (ADR-0033):
+  - no `NEXT_PUBLIC_` Supabase variables;
+  - `service_role` only in server-only modules, never in a request on a user's behalf;
+  - one server-only module per external seam;
+  - `check:server-only` enforces these.
+- **Auth**:
+  - Supabase Auth with password or magic link; self-signup disabled.
+  - `middleware.ts` only refreshes tokens; the redirect lives in `app/(app)/layout.tsx`.
+  - `getClaims()` verifies locally, so a revoked session lasts until token expiry (#168).
+  - Admins: `app_metadata.role = 'admin'` (ADR-0020).
+- **Untrusted input**:
+  - user URLs go through `safe-fetch`: https only, DNS-pinned, private ranges blocked, 3 redirects, 3 MB, 10 s;
+  - rich text renders only through TipTap's whitelist; never `dangerouslySetInnerHTML`;
+  - LLM output is zod-validated and rendered as plain text.
+- **AI guardrails** (ADR-0018 §3):
+  - deterministic code first;
+  - schema-constrained output;
+  - per-user rate limit;
+  - provider spend cap;
+  - degraded mode without a key.
+- **Known accepted trade-off**: the login greeting reveals a first name for a known address, throttled (ADR-0031).
+- **Backups**: Supabase Cloud backups cover Postgres. R2 has no second copy (ADR-0024).
 
-**Recipe import (ADR-0019, #309)** is the first `lib/ai/` consumer: deterministic extraction/parsing/matching first, two Claude Haiku 5.5 calls (search terms/translation, then NEVO linking and grams), run via `after()`.
+## 6. AI and async work
 
-Deliberately simple: no streaming, no agent frameworks, no LangChain. A queue table, a poller, and two inference calls (embed + chat) behind `lib/ai/`.
+- **Today**: `lib/ai/` exposes one provider-neutral function (prompt + zod schema in, validated object out). It runs Claude Haiku via Anthropic. Its only consumer is the recipe import pipeline, which runs in `after()` with a lazy sweep for stuck rows (ADR-0019).
+- **Phase 8 shape** (ADR-0006, amended by 0018), with the model and host still open:
+  - triggers enqueue `embed` jobs for notes and recipes;
+  - a handler builds canonical text, skips unchanged content by hash, chunks, embeds and upserts `embeddings`;
+  - `search_semantic()` is `security invoker`, so RLS filters results.
+- **Phase 9 shape**:
+  - SQL detectors produce candidate signals;
+  - one LLM call phrases each signal into `agent_signals`;
+  - the agent has no tools and no writes beyond its own rows, and its output is plain text.
+- **Open decisions** (each needs an ADR before its phase starts):
+  1. the runtime for scheduled and longer work (candidates: Vercel Cron → route handler, Supabase Cron + Edge Functions, or a lazy "sync when stale" on page load in the ADR-0017 style);
+  2. the hosted multilingual embedding model and its dimension;
+  3. the privacy stance on sending notes to a provider (ADR-0018 requires it to be explicit).
 
-## 6. External calendar sync (ADR-0008)
+## 7. Agenda (Phase 7, planned)
 
-**This round: read-only import.** Provider abstraction with three implementations, cheapest first: `ics` (public/secret ICS URL — no OAuth), `caldav` (`tsdav`, MIT), `google` (OAuth offline refresh token). Credentials/tokens stored via the Vault pattern (ADR-0002). Worker job `calendar:sync` per account on an interval: incremental where supported (Google syncToken, CalDAV ctag/etag) → upsert `calendar_events` with `source='sync'`. Sync'd events are read-only in the UI. Two-way sync is explicitly a later round.
+- **Schema** (ADR-0005/0008):
+  - `calendar_events`: title, `starts_at`/`ends_at` as `timestamptz`, `all_day` flag, location, description, `source` `manual|sync`, nullable `calendar_account_id` + `external_id`, unique per account.
+  - `calendar_accounts`: provider `ics|caldav|google`, display name, `vault_secret_id`, `sync_state`, `last_synced_at`.
+  - Keep a clear owning container, so a shared calendar can come later (ADR-0001).
+- **Sync**:
+  - read-only import, providers in order `ics` → `caldav` (`tsdav`) → `google` (OAuth refresh token);
+  - credentials, including secret ICS URLs, in Vault (ADR-0002);
+  - fetches through `safe-fetch`;
+  - recurring events expanded into instances within −30 d / +400 d;
+  - synced rows are read-only in the UI.
+- **Deadlines** from `cards.due_at` overlay at query time; they are never copied.
+- **UI**: Schedule-X themed with semantic tokens, Claude-designed (ADR-0034).
+- **Sync trigger** depends on open decision 1 in §6.
 
-- **SSRF guard (mandatory)**: user-supplied URLs (ICS/CalDAV, recipe pages for #309, ADR-0019) are fetched server-side, where internal and cloud-metadata endpoints must stay unreachable. Fetches must be https-only, resolve DNS first and reject private/loopback/link-local ranges, cap redirects (re-validating each hop), and enforce response size/time limits. This ships in the same ticket as the first provider, not later.
-- **Recurring events**: expanded into concrete event instances at sync time within a rolling window (e.g. −30d/+400d); no RRULE storage or evaluation in-app this round. Manual events have no recurrence yet (not in Vision scope).
-- All timestamps `timestamptz`; all-day events flagged, not midnight-encoded.
+## 8. Testing and CI gates
 
-## 7. Security
+- **Vitest** covers pure logic: units, positioning, parsing, import, storage ownership.
+- **pgTAP** covers RLS isolation and function grants.
+- **Playwright** screenshots Ladle stories:
+  - light + a dark subset, Button states;
+  - the Linux CI baselines are the gate;
+  - regenerate them with the `visual-update` workflow.
+- **Gates** (`pnpm check:*`):
+  - `rls-coverage`, `server-only`, `raw-spacing`, `comment-budget`, `retired-tokens`, `tokens-drift`, `doc-budget`;
+  - key parity between `nl.json` and `en.json`.
 
-- **Shelved with the Mac mini (ADR-0018)**: Cloudflare Tunnel exposure (ADR-0003, superseded), strict localhost binding (`scripts/check-localhost-binding.sh`), the self-hosted CI runner, and restic/Vault-root-key backups. Supabase Cloud's backups cover that role (ADR-0012). The bullets below that still mention them are history.
-- **AI cost & injection guardrails (ADR-0018 §3)**: deterministic code first; LLM output schema-constrained + zod-validated, rendered as plain text; per-user rate limit; hard spend cap in the provider console.
-- **Email delivery**: magic-link auth requires SMTP for self-hosted GoTrue — configure a transactional provider (e.g. Resend/Postmark free tier) in Phase 1; without it, half the login story silently doesn't work.
-- **Secrets**: `.env` files live outside git (repo ships `.env.example`); CI secrets in GitHub Actions; `service_role` key exists only in server/worker env, never in client bundles (`import "server-only"` + CI grep, ADR-0002). Per-user AI API keys and calendar credentials in Supabase Vault via server-side functions (ADR-0002).
-- **Content rendering**: TipTap documents render exclusively through TipTap's React renderer with a fixed extension whitelist — never `dangerouslySetInnerHTML` on stored content. Agent output renders as plain text (§5, item 5).
-- **Uploads**: recipe images are content-type- and size-validated server-side, **EXIF-stripped on upload** (a photo taken in your own kitchen carries GPS metadata — a real leak), re-encoded to WebP with `sharp`, stored in private R2 (ADR-0024), served through an app route that checks ownership and redirects to a presigned URL.
-- **RLS everywhere**, verified by CI (ADR-0009).
-- **Supply chain / CI runner**: the self-hosted runner executes generated code on the machine that holds all data. Mitigations: runner under a dedicated non-admin macOS user; workflows run only from this repo's protected branches (no fork PRs); `pnpm install --frozen-lockfile` everywhere; Renovate/Dependabot with manual merge; `pnpm audit` in CI.
-- **Backups**: nightly `pg_dump` + Storage rsync, encrypted off-site copy (restic → any S3-compatible bucket); **the pgsodium/Vault root key is backed up separately from the dumps** (a dump alone restores Vault secrets as undecryptable blobs); restore drill onto staging monthly.
-- **Observability**: worker and backup jobs ping a dead-man's-switch (e.g. Healthchecks.io); the failure mode of a solo-maintained homeserver is silence, not errors.
+## 9. Phases
 
-## 8. Environments & CI/CD
-
-**ADR-0012 and ADR-0018 are authoritative.** Vercel + Supabase Cloud is the target topology, not an interim. The Mac-mini plan at the end of this section is shelved and will most likely never be built. Both decisions are the user's and have not yet been ratified by the architecture layer.
-
-### Current (ADR-0012): Vercel + Supabase Cloud
-
-- **Local dev**: `supabase start` (CLI), `next dev`. Ollama is optional for experiments, never required (ADR-0018 §6).
-- **Hosted**: Vercel hosts the Next.js app (production + per-PR preview deployments, via its GitHub integration). Supabase Cloud hosts the single hosted project's Postgres + Auth + RLS + Storage. There is currently one hosted environment (production) — no separate on-demand staging stack exists yet under this topology; ADR-0012 doesn't add one.
-- **CI (GitHub Actions)**: `ci.yml` is unchanged — lint → typecheck → unit tests (`--frozen-lockfile`) → token-drift check → `supabase db reset` + RLS suite (ADR-0009, against an ephemeral local container) → build. This proves migrations are sound; it does not deploy them anywhere. The **Ladle/Playwright screenshot diff (ADR-0010) is wired in** as `pnpm test:visual` (#6); its CI job's arming status is tracked in `docs/HANDOFF.md`, not here.
-- **CD**: production promotion is manual (ADR-0012, amended 2026-08-02) — the user promotes a specific Vercel deployment to production themselves once they've confirmed it works, rather than every merge going live automatically. Vercel's own Git-triggered production build stays disabled via `vercel.json`'s `ignoreCommand` regardless (preview deployments per PR are unaffected). `deploy.yml` still exists as an on-demand (`workflow_dispatch`-only) tool: a `migrate` job applies pending migrations to the hosted Supabase project (`supabase db push`, forward-only, never `db reset`), then a `deploy` job can build and push to Vercel production, when the user chooses to run it. See ADR-0012 §3 for the original race-condition reasoning (still why migrations must land before matching code, just enforced by the user's own sequencing now) and §4 for the security trade-off of giving CI production-schema access.
-- **AI & async work (ADR-0018)**: hosted inference APIs, pay-per-use, behind `lib/ai/`. Short async work runs via Next.js `after()`. The worker's managed host (cron/functions) is decided when Phase 7/8 starts.
-
-### Shelved (ADR-0018): self-hosted Mac mini
-
-- **Staging + prod**: two Supabase Docker stacks + two app instances on the Mac mini, separate tunnel hostnames. **Capacity note**: prod Supabase + Ollama (a 14B q4 model ≈ 9 GB) already stress a 16 GB machine — staging runs **on-demand** (started for deploy verification/restore drills, stopped otherwise), and model size follows available RAM, not ambition.
-- **CD**: self-hosted runner on the Mac mini (hardened per §7); deploy = migrate then restart app/worker; staging on merge to `main`, prod on tag.
-- None of this infrastructure was ever built (#1–#5 never started). Reviving it requires a new ADR (ADR-0018 §1).
-
-## 9. Testing
-
-- **Vitest** for unit (portion scaling, chunking, sync mapping are the high-value targets).
-- **RLS suite** (ADR-0009): for every table, assert user A cannot read/write user B's rows; a CI script diffs the table list against the test list and fails on gaps.
-- **Playwright**: one smoke flow per shipped module (login → create → see → mutate).
-
-## 10. Build order (ADR-0004) — the ticket phasing for Opus
-
-Dependencies: Login gates everything; Recepten → Boodschappenlijst is the only hard module dependency; embedding pipeline gates semantic search and agent; agent benefits from real data existing first.
-
-- **Phase 0 — Foundation**: repo scaffold (Next.js, Tailwind v4, CVA, next-intl, Ladle, CI skeleton), `design/tokens.json` sync + generated theme + `design/figma-map.json` (ADR-0010), Supabase local + migrations setup, RLS test harness, localhost-binding check script, Cloudflare Tunnel + staging/prod stacks, backup job incl. Vault root key + dead-man's-switch pings.
-- **Phase 1 — Auth**: Supabase Auth (email/password + magic link), `profiles`, minimal login UI with existing atoms (no Figma design exists — keep deliberately plain, ADR-0004).
-- **Phase 2 — Design system core**: atoms + molecules from Figma (Button, Tag, InputField, Checkbox, icons, Card family), Sidebar + CardContainer organisms. Every component ticket carries its Figma node-id.
-- **Phase 3 — Te-Doen (Kanban)**: schema + board UI (designed), dnd-kit, labels/filtering. Includes `source` column (ADR-0005).
-- **Phase 4 — Recepten**: schema + overview (category kanban), recipe detail, add-recipe flow incl. ingredients (all designed), thumbnails bucket.
-- **Phase 5 — Boodschappenlijst**: schema + Winkelmand UI (designed), "send ingredients to list" with portion scaling, sectie-grouping.
-- **Phase 6 — Notities**: schema + overzicht (category kanban) + textual search + TipTap editor — a full UI phase since the designs landed (2026-08-13). Kleding was dropped from the platform in the same restructuring (ADR-0016).
-- **Phase 7 — Agenda**: `calendar_events`/`calendar_accounts` schema + agenda UI + the calendar-sync backend (provider abstraction, ics → caldav → google order, Vault credential flow, sync worker job).
-- **Phase 8 — AI pipeline**: jobs + worker + embeddings + triggers, semantic search over recipes and notes, pg_trgm textual search.
-- **Phase 9 — AI-agent**: pg_cron detectors, agent job type, `agent_signals` + minimal surface.
-
-Each phase must end shippable; later phases must not block earlier ones from deploying.
-
-## 11. Deferred / future rounds
-
-Mail-integratie (the `source` field is its only present-day footprint — ADR-0005), Agenda UI (awaiting Figma), two-way calendar sync, household sharing (requires migration under ADR-0001 — accepted trade-off), dashboard/agent surface design, weekmenu, native app, Home Assistant.
+| Phase | Status |
+| --- | --- |
+| 0 Foundation, 1 Account, 2 Design system | ✅ (SMTP for magic links on hosted is open, #10) |
+| 3 Te doen, 4 Recepten (incl. import, nutrition), 5 Winkelmand, 6 Notities | ✅ in production use |
+| 7 Agenda | 🔜 next (#33) |
+| 8 AI pipeline: embeddings and semantic search | backlog (#31) |
+| 9 Assistent: agent signals | backlog (#32) |
+| Later | sharing between members, weekmenu, mail integration (`Vision.md`) |

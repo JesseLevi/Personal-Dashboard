@@ -1,8 +1,7 @@
 # ADR-0027: `recipe_categories.icon` and `recipe_ingredients.group_label`
 
-**Status**: Proposed (retroactive; the underlying choices were approved by the user 2026-07-29/30, issue #119)
+**Status**: Accepted (retroactive record; the underlying choices were approved by the user 2026-07-29/30, issue #119; ratified 2026-10-11, #412)
 
-**Authored by**: Claude Code (Opus 5.5), at the instruction of ticket #292, as a retroactive write-up. Same provenance caveat as ADR-0011/0013/0014: this is not the architecture layer's own output. The choices below are already shipped and were approved by the user at the time; what is **proposed** here is the written record, for the architecture layer to accept, amend or reject.
 
 **Grouped** because both are small additive columns that exist only because the Figma design draws something `Architecture.md` §4.2 has no field for, both were listed together as deviations (a) and (b) in #119, and neither has a rationale beyond "the design shows it". Two separate ADRs would be near-identical.
 
@@ -24,7 +23,7 @@
 - A group is a string repeated across rows: renaming a group rewrites every row in it, a typo creates a new group, and a group cannot carry its own ordering or metadata. Accepted as the price of not building a table with no UI. If group management is ever designed, extracting a table needs a migration and a new ADR.
 - Group order is derived from ingredient `position`, not stored.
 - Why `icon` is `text` rather than something constrained: not recorded beyond "same as `board_columns.icon`".
-- `Architecture.md` §4.2 is stale on both columns.
+- `Architecture.md` §4 reflects this since #412.
 
 ## Migration
 

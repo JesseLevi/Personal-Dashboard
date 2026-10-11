@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Doc-size guard for docs/HANDOFF.md and docs/guides/*.md (#295).
+# Doc-size guard for docs/HANDOFF.md, Architecture.md, CLAUDE.md and docs/guides/*.md (#295, #412).
 #
 # HANDOFF.md once grew to 55 KB despite the "one screen" rule in CLAUDE.md;
 # only a gate keeps it small. Guides get a per-file byte budget (~25% headroom
@@ -12,13 +12,16 @@ set -euo pipefail
 root="${1:-.}"
 
 HANDOFF_BUDGET=6144
+# Always-loaded or planning docs: current state only, history lives in ADRs and git (#412).
+CLAUDE_BUDGET=6144
+ARCH_BUDGET=14336
 
 # One obvious home for the guide budgets (bytes). Raise deliberately, in review.
 guide_budget() {
   case "$1" in
-    data-layer.md)      echo 8400 ;;
-    ticket-workflow.md) echo 4400 ;;
-    ui-components.md)   echo 12800 ;;
+    data-layer.md)      echo 9000 ;;
+    ticket-workflow.md) echo 4000 ;;
+    ui-components.md)   echo 9000 ;;
     *)                  echo "" ;;
   esac
 }
@@ -34,6 +37,19 @@ if [[ -f "$handoff" ]]; then
     fail=1
   fi
 fi
+
+check_top() {
+  local f="$root/$1" b="$2"
+  [[ -f "$f" ]] || return 0
+  local s
+  s=$(size "$f")
+  if (( s > b )); then
+    echo "FAIL: $1 — $s bytes, budget $b. Keep it current-state only; move history to an ADR or git." >&2
+    fail=1
+  fi
+}
+check_top CLAUDE.md "$CLAUDE_BUDGET"
+check_top Architecture.md "$ARCH_BUDGET"
 
 for f in "$root"/docs/guides/*.md; do
   [[ -e "$f" ]] || continue
@@ -54,4 +70,4 @@ done
 if [[ $fail -eq 1 ]]; then
   exit 1
 fi
-echo "OK: HANDOFF and guides within size budgets."
+echo "OK: HANDOFF, CLAUDE.md, Architecture.md and guides within size budgets."

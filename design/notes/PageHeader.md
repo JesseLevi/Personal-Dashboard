@@ -1,167 +1,24 @@
 # PageHeader
+Figma: "Header" frame (plain `FRAME`, not a Component/ComponentSet; duplicated per page design) · node `3878:7959` (Te-Doen desktop, the only one exercising both slots); Recepten `3672:1580`, Te-Doen mobile `3680:1438` · Code: `components/organisms/PageHeader.tsx`
 
-- **Code:** `components/organisms/PageHeader.tsx`
-- **Node ID:** `3878:7959` (Te-Doen desktop "Header" frame — chosen as the
-  canonical reference because it's the only one of the three fetched Header
-  frames that exercises both slots; Recepten's is `3672:1580`, Te-Doen
-  mobile's is `3680:1438`)
+## Anatomy
+`<header>`: row, `justify-between`, `items-center`, right padding `pr-page-right-equal`. Left block (`flex items-center gap-inline-lg`) holds the `<h1>` (`text-xl font-semibold text-text-primary`) plus `titleAdornments`; `actions` sits at the far right. Te-Doen fills adornments with icon-only chevron-down (board switcher) and star (favourite) Buttons and actions with a sort Button; Recepten fills only actions with a Plus "Categorie" Button.
 
-Built #88. Not a Figma Component/ComponentSet — every fetched "Header" is a
-plain `FRAME`, duplicated per page design rather than instanced from a shared
-component. The ticket asked for it to be built as slots (`titleAdornments`,
-`actions`) rather than a fixed button set, since the two page designs fill it
-with different controls; that generalisation is this ticket's own call, not
-something read directly off a single Figma node — flagged here per
-`docs/guides/ui-components.md`'s "never build what isn't in Figma" since it's
-the one place this ticket deviates from a literal 1:1 read.
+## Deliberate decisions
+- Built as slots (`titleAdornments`, `actions`), not a fixed button set, because the two pages fill the header with different controls. This generalisation is this codebase's call, not read off one Figma node (#88).
+- `title` is caller-supplied data, never a translation key, because on Te-Doen it is the active board's real name (the user can rename it). Recepten is the exception: no board switcher, so its title is a fixed label (`nav.recipes`). Same shape, different source; do not conflate them (#88).
+- No row-level gap on `<header>`: `justify-between` spaces the blocks, and Figma's frame has no row gap (#88).
+- Sticky (`sticky bg-surface-primary`, no prop, applies to every caller). Figma only states the structure (Header and Carousel are siblings under `Main`, header height fixed at 40); "stays visible on vertical scroll" is this codebase's own read. The opaque background is needed because cards scroll underneath (#102).
+- `z-10` on the header. Without it the header painted in "stack level 0" with every `position: relative` sibling, and later DOM order won, so a caller's `z-[999]` dropdown (Winkelmand Sorteer) rendered behind later ingredient rows (swipe-to-delete wrappers are `relative`). Any positive z-index lifts the header and its inner stacking context above those siblings. `z-10` and not higher on purpose: it must stay under `AppShellNav`'s `z-30`/`z-40`/`z-50` layers so the mobile drawer still covers the header (#179).
+- `top-[env(safe-area-inset-top)]`, not `top-0` and not a padding idiom: with the iOS PWA `black-translucent` status bar, a stuck header would sit under the clock. `top` only applies once the header is stuck, while padding (as `Sidebar`/`SidePanel` use, since those are permanently at the edge) would add a gap on every unscrolled load. No `max()` needed; `env()` resolves to 0 without an inset. Unverified on real hardware. Audit of all top-of-shell elements: `design/notes/AppShell.md` (#172).
+- `chrome-touch` class: header chrome is not reading content, so on coarse pointers it gets no text selection or callout (see `app/globals.css`) (#172).
+- Radius/spacing tokens: `gap-inline-lg` read via `boundVariables` on `3878:7959` ("Onderwerp" child `itemSpacing` = `spacing/inline/gap-lg`). Right padding uses the page-padding token `pr-page-right-equal` (16 mobile / 128 desktop) per the ticket's page-padding rule (#205).
 
-## Structure (fetched via MCP, all three nodes)
+## Token gaps and flags
+- The root frame's own `itemSpacing` and `paddingRight` (128px) are unbound in the node; the page-padding tokens supersede them (#205).
 
-All three Header frames share: `row`, `justifyContent: space-between`,
-`alignItems: center` (Recepten's frame omits an explicit `alignItems` but
-renders visually identical — its children are a `hug`-sized title and a
-40px-tall button, same as the others), sizing `fill`/`hug`. Right padding is
-the "pull the header content in from the Carousel's edge-to-edge cards"
-padding — `128px` desktop, `16px` mobile — measured against the app-shell
-padding when #88 built the route group (see that PR).
-
-- **Title container** ("Onderwerp" in Te-Doen's node, unnamed in Recepten's):
-  `row`, `alignItems: center`, `gap: 16px` → `flex items-center gap-4`. Holds
-  the `<h1>` plus `titleAdornments`.
-- **Title text**: `text-xl/semibold`, fill `#0C0A09` → `text-xl font-semibold
-  text-text` per the ticket, confirmed directly against the fetched
-  `textStyle`/`fills` on all three title nodes.
-- **Title adornments** (Te-Doen only): two icon-only `Button/Default`
-  instances, `Icon/Chevron-down` (board switcher) and `Icon/Star`
-  (favourite), both `With text: false` → Button's default icon-only 40×40
-  box. Neither Chevron nor Star wires to real behaviour yet (no board-switch
-  UI, no favourite persistence) — both are inert buttons with an aria-label,
-  same "not invented here" scope-limit as Sidebar's nav buttons before real
-  routing existed.
-- **Actions**: Te-Doen's is `Icon/Arrow-up-down` + text "Sorteer " (`Button
-  variant="filled" icon="ArrowUpDown"`, no sort logic wired — out of scope);
-  Recepten's is `Icon/Plus` + text "Categorie " (`Button icon="Plus"`, no
-  category-creation flow wired — out of scope, #28).
-
-## `title` is data, not chrome — except once
-
-Per the ticket: on Te-Doen, `title` is the *active board's real name* — "Te
-doen" is just the seeded default board, not a fixed label, so it must never
-be an i18n key (that would fight the user's own board rename). The stub route
-(`app/(app)/te-doen/page.tsx`) hardcodes the literal `"Te doen"` — matching
-`seed_default_board()`'s literal seed value exactly — as a placeholder until
-board-fetching lands (#90 BoardView / #92). It stays the same word in every
-locale on purpose, since board names are user data and were never meant to
-localise.
-
-Recepten is the deliberate exception: it has no board switcher, so its title
-*is* a fixed page label, not board data — `nav.recipes` in
-`messages/{nl,en}.json`, actually translated. Two different sources landing
-on the same design shape (a `<h1>` in the same slot) is exactly why the
-ticket called this out: don't let the two conflate just because they render
-identically.
-
-## i18n
-
-New keys, both catalogs, identical key sets: `nav.recipes` (Recepten's
-translated title) and `components.pageHeader.{todo.boardSwitcherLabel,
-todo.favoriteLabel, todo.sortLabel, recipes.addCategoryLabel}` (the four
-button labels above — three aria-labels, one visible button text). Sidebar's
-own `components.sidebar.items.*` are reused as-is by the app shell, not
-duplicated here.
-
-## Not built (deliberately)
-
-- Sort behaviour, board switching, favourite persistence, category creation —
-  all just render an inert button with the right label; the ticket's scope is
-  shell + header slots, not the actions themselves.
-- A wrapping `gap` between the title block and `actions` was deliberately
-  left off `<header>` (only the title block has its own `gap-4`) —
-  `justify-between` already spaces them, and Figma's own Header frame has no
-  row-level gap.
-
-## Ladle
-
-`PageHeader.stories.tsx`: `TeDoen` (title adornments + sort action) and
-`Recepten` (category action only) — the two shapes the ticket asked the story
-to cover.
-
-## Sticky header (issue 102, 2026-07-25)
-
-Re-fetched via Figma MCP (`3680:1442` board frame, depth 2): `Main` is
-`Header` and `Carousel` as **siblings**, both direct children of `Main`'s own
-column — Header is `sizing: {horizontal: fill, vertical: fixed}` height 40,
-Carousel is a separate `fill`/`hug` row below it. That sibling split (Header
-never wraps Carousel, and vice versa) is the actual, verifiable Figma
-requirement; `position: sticky` itself is not something Figma nodes can
-encode (no `position`/`sticky` field exists in the payload for any node,
-same "Figma states structure, not the CSS mechanism" gap `Sidebar.md`'s
-`position: fixed` entry also hit) — applying it is this codebase's own read
-of "blijft zichtbaar bij verticaal scrollen," not a literal Figma property.
-
-**Applied to `<header>` itself, unconditionally** — `sticky top-0
-bg-surface-muted`, no new prop. This affects every caller (Te-Doen, Recepten,
-both stories) identically; no opt-out was added since the ticket's ask
-("maak de volledige header sticky") has no stated exception and a sticky
-header with nothing to scroll past (Recepten's current stub) is simply inert,
-not broken. `bg-surface-muted` matches the token `main` itself already uses
-(`AppShellNav.tsx`) — needed because cards scroll *underneath* the sticky box
-and would otherwise show through a transparent header.
-
-**No explicit `z-index` — superseded by #179, see below.** Originally: `position: sticky` with `z-index: auto` does not
-establish a new stacking context, so `TeDoenHeader.tsx`'s `z-[999]`
-board-switcher/sort dropdown panels (its own file, not touched here) are
-never capped by anything this component sets. The header still paints above
-the (non-positioned, `position: static`) scrolling cards below it purely
-because it's a *positioned* element (sticky counts) among unpositioned
-siblings — verified in a real browser (Playwright MCP, 1440px + 402px) by
-scrolling a populated board under the header and confirming the header
-opaquely occludes the cards with no z-index set at all, and separately that
-an open board-switcher/sort dropdown still renders above the scrolling board
-after this change. See `design/notes/TeDoenBoard.md`/`Carousel.md` for the
-horizontal-scroll-containment half of this same ticket.
-
-## #179 (2026-08-09) — explicit `z-10` added, the "no z-index" reasoning above only held by accident
-
-Bug report (winkelmand ticket #179): the new Winkelmand `Sorteer` dropdown, built with the identical `absolute … z-[999]` pattern `TeDoenHeader.tsx`'s own sort menu already uses, rendered *behind* the ingredient rows below it — clicks meant for a "Voedingsgroep" option landed on the row underneath instead. Root-caused in a real browser (Playwright), not guessed: `CardContentIngredient`'s `swipeToDelete` branch wraps each row in its own `position: relative` div (needed for the swipe gesture's `overflow-hidden`/absolute Trash button). Per the CSS painting-order algorithm (CSS 2.1 Appendix E), *any* positioned descendant with `z-index: auto` — including `position: relative` with no z-index set — paints in the same "stack level 0" bucket as this header's own `position: sticky`, and within that bucket, later-DOM-order wins. Since every ingredient row is a later sibling of the header under the same parent (`main`), each row's own stacking context out-paints the header's — including the header's z-999 popover, which only ever competed *inside* the header's own stacking-context boundary, never against siblings outside it.
-
-The #102 entry above wasn't wrong for what it tested (Te-Doen's plain, non-positioned board-column divs) — it just tested a case that happens not to have any positioned sibling. Winkelmand's does. Fixed with an explicit `z-10` on the `<header>` itself: any positive z-index promotes an element out of "stack level 0" into a strictly-later-painted bucket, so the header (and everything inside its own stacking context, including a caller's own high z-index dropdown) now paints above *every* stack-level-0 sibling regardless of DOM order or whether that sibling happens to be positioned. `z-10` (not `z-999`) is a deliberate choice, not a copy of the dropdown's own value: it only needs to clear stack-level-0 siblings, and staying well under `AppShellNav.tsx`'s existing `z-30`/`z-40`/`z-50` layers (desktop sidebar, mobile scrim, mobile drawer) keeps the mobile drawer able to cover the header when open, unchanged.
-
-Verified in a real browser (Playwright, `/winkelmand` with seeded test data): before the fix, a raw click on the "Voedingsgroep" option was intercepted by the ingredient row underneath (confirmed via the exact `intercepts pointer events` failure Playwright reports); after, the same click registers on the dropdown option and the row selection updates. Re-checked Te-Doen's own sort/board-switcher dropdowns after this change — no regression (nothing there was ever positioned, so this was a no-op for that page, but the header now stacks correctly by construction rather than by accident, which is the actual fix this entry is written to prevent regressing again).
-
-**Visual baseline:** both `PageHeader` stories regenerate (`bg-surface-muted`
-replaces what used to be a transparent header showing the Ladle Provider's
-own `bg-surface` through it) — `page-header--te-doen` and
-`page-header--recepten`, scoped-regenerated together, not the full suite.
-
-## #172 — `top-[env(safe-area-inset-top)]` replaces `top-0`
-
-iOS standalone PWA work chose `statusBarStyle: "black-translucent"` (full
-content behind the status bar), which means this header's sticky top edge
-pins flush to the physical top of the viewport once scrolled — exactly where
-the iOS clock/status bar sits. `top-0` → `top-[env(safe-area-inset-top)]`
-fixes it. Deliberately not the `pt-[max(1rem,env(safe-area-inset-top))]`
-padding idiom `Sidebar.tsx`/`SidePanel.tsx` use for their own safe-area
-padding: those elements are *permanently* at the edge (fixed sidebar,
-bottom-sheet footer), so a constant padding is correct. This header is only
-*intermittently* at the edge — normal document flow until scrolled, sticky
-after — and `position: sticky`'s `top` offset only affects the element once
-it's actually stuck; it has zero effect on layout while unstuck. Padding
-would have added a second, unwanted gap on top of `AppShellNav.tsx`'s own
-top padding every time a page loads unscrolled; `top` adds nothing until the
-header actually needs it. No `max()` wrapper needed either — unlike the
-padding idiom there's no base value to protect, `env()` alone resolves to 0
-with no inset. Unverified on real hardware. Full audit of every top-of-shell
-element: `design/notes/AppShell.md`.
-
-## TICKET #205 (2026-08-12): radius/spacing tokens
-
-`pr-4 md:pr-32`→`pr-page-right-equal`, per the ticket's own page-padding
-rule — no node lookup needed (the 16/128 split is unambiguous and already
-lives in `app/theme.css`). `gap-4` (title + adornments row) → `gap-inline-lg`,
-measured via `figma_execute`/`boundVariables` on the fetched node
-(3878:7959, "Onderwerp" child: `itemSpacing`→`spacing/inline/gap-lg`). The
-root frame's OWN `itemSpacing`/`paddingRight` are unbound in the fetched
-node (128px right padding has no Figma variable at that specific node) —
-irrelevant here since the page-padding tokens already supersede it per the
-ticket's own rule.
+## Gotchas
+- Adornment and action buttons are inert apart from what each page wires: the chevron and star have only an aria-label, no board-switch or favourite persistence in this component. Category creation is wired by the page (#28).
+- A page-level dropdown inside the header must rely on this component's `z-10` stacking context; do not add a lower z-index to the header or move dropdowns out expecting them to beat siblings.
+- Both stories (`page-header--te-doen`, `page-header--recepten`) are visual baselines; the header's background change regenerates them together.
+- Horizontal-scroll containment of the board half of the sticky work: `design/notes/TeDoenBoard.md` and `Carousel.md`.

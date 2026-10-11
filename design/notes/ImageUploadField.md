@@ -1,39 +1,20 @@
 # ImageUploadField
+Figma: `Atom/Input-field` instance (component `3705:4386`, set `3705:4402`) · nodes `3968:11192` (desktop "Add recipi/Desktop") / `3953:9875` (mobile) · Code: `components/molecules/ImageUploadField.tsx`
 
-- **Code:** `components/molecules/ImageUploadField.tsx`
-- **Node ID:** `3968:11192` (desktop, "Add recipi/Desktop" #3717:2493) / `3953:9875` (mobile, "Add recipi/Mobile" #3717:2844) — both are the same `Atom/Input-field` instance (component `3705:4386`, set `3705:4402`, already mapped as `Atom/Input-field`), not a separate Figma component. `figma-map.json`'s `molecules_composed` section (not `molecules`) reflects that: there is no distinct componentId to point at, only a specific instance's props.
+## Anatomy
+Not a distinct Figma component: a specific `Atom/Input-field` instance (`figma-map.json` lists it under `molecules_composed`). Props: `Leading-icon` `Image`, `Trekking-icon` `Plus`, Content "Selecteer afbeelding". Code layers a transparent, full-box `<input type="file">` (`z-10`, `accept` jpeg/png/webp) over an `aria-hidden`, `readOnly`, `tabIndex={-1}` `InputField` instance. The component only selects a `File` and hands it to the caller via `onFileSelect`; validation, re-encoding and the R2 upload live in `lib/recipes/thumbnail-validation.ts`, `thumbnail-processing.ts` and `thumbnails.ts` (server-only).
 
-Built #121 (recipe thumbnail storage ticket; stored in R2 since ADR-0024). Instance properties fetched from both breakpoints: `Leading-icon: true` (`Icon/Image`, confirmed by rendering the candidate lucide `Image` export and comparing its path against the Figma glyph — rounded square, circle "sun", mountain triangle — before adding it to `Icon.tsx`'s union), `Trekking-icon: true` (`Icon/Plus`, already mapped), `Content: "Selecteer afbeelding"`, `Title: true`, `Field: "Personen"`.
+## Deliberate decisions
+- A client molecule wrapping the atom, not a new atom or a `type="file"` branch on `InputField`: that atom's scope is text/textarea (#121).
+- No visible label. Figma's bound Title reads "Personen" in both breakpoints (the instance was copied from the servings input and only `Content` was edited). Rendering it would be wrong and inventing a label is not ours to do, so the accessible name comes from the caller's `ariaLabel` on the real file input (`components.imageUploadField.selectImage`) (#121).
+- The selected file's name replaces the placeholder in the same box. Figma samples only the empty state, so this is our own interpretation (#121).
+- Native OS picker satisfies the ticket's "files or Photos app" ask: the image-only `accept` already makes iOS Safari and Android Chrome show Photo Library / Take Photo / Files. No custom dropdown exists in Figma, so none was built (#121).
+- Hover/active/focus use `group-*`, not `peer-*`: the outer `relative` div is `group` and `InputField`'s `boxClassName` carries `group-hover:border-stroke-primary-hover group-active:border-stroke-primary-active group-focus-within:border-stroke-primary-selected`. The file input and `InputField` are siblings and the bordered box is a grandchild of the sibling, so `peer-*`'s sibling combinator can never reach it (tried, did not work); `group-*` compiles to a descendant selector that does (#166).
 
-## DEVIATION flagged — the bound Title text is wrong, not rendered
+## Gotchas
+- `group-focus-within`, not `group-focus`: the group is a `<div>`, never focusable itself. `group-active` works because `:active` bubbles to ancestors while the pointer is held on the transparent input.
+- Keep the wrapper as the only unnamed `group` in this subtree; a nested `group` would hijack the variants.
+- The transparent input is what the browser hit-tests, so the `InputField` box's own `:hover`/`:active` never fire; do not rely on them.
 
-The `Field` property driving the visible Title text is `"Personen"` in **both** breakpoints — not a locale/translation issue, the instance was duplicated from the adjacent "Personen" (servings) input and its `Content` was edited to `"Selecteer afbeelding"` without also fixing `Field`. Rendering "Personen" above an image picker would be actively wrong, not merely undesigned, so this component renders **no visible label at all** rather than either (a) trusting the broken bound text or (b) inventing a replacement label Figma never specified — both would violate "never silently redesign". The accessible name instead comes from `ariaLabel` on the real `<input type="file">` (caller-supplied, `components.imageUploadField.selectImage` in both catalogs). Flagged in `docs/open-questions.md#recipe-image-field-personen-label` for a real label from design.
-
-## No "file selected" state modeled
-
-The fetched node only samples one static state (empty, placeholder text visible). Showing the selected file's name in the same box in place of the placeholder is this component's own interpretation — same "omit/replace the unmodeled state" treatment `CardContentRecipe.md` already applies to its `imageUrl`/`duration` props, not a guess dressed up as a Figma fact.
-
-## Why a client molecule wrapping the atom, not a new atom
-
-`Atom/Input-field` (`InputField.tsx`) mostly stays untouched — a Server Component, `<input type="text">`. A file picker needs a real `<input type="file">`, which `InputField` doesn't support and shouldn't grow a `type="file"` branch for (its whole scope elsewhere is text/textarea). `ImageUploadField` layers a transparent, full-box `<input type="file">` over an `aria-hidden`, `readOnly`, `tabIndex={-1}` `InputField` instance instead of reimplementing the visual shell.
-
-## TICKET #166 (2026-08-08) — hover/active/focus states were never actually reaching the box
-
-**Corrects this note's own prior claim.** The line just above used to say `InputField`'s `hover:`/`active:`/`focus-within:` CSS "keeps working unmodified because the real focusable element ... sits inside the same box." That was never verified and is wrong: the file input and `InputField` are **siblings** under the outer `relative` div (`InputField` renders its own separate subtree), not ancestor/descendant — so `:focus-within` on `InputField`'s bordered box cannot see a sibling's focus, and `:hover`/`:active` on that box never fire either, since the transparent file input (`z-10`) is the element the browser hit-tests, not the box beneath it. The ticket's bug report ("geef afbeelding input field zelfde hover/active/focus states als text input field") is exactly this — confirmed by reasoning about the DOM structure, not by re-fetching Figma (no new geometry involved, this is a CSS-selector bug in existing code).
-
-**First fix attempt (same PR, superseded below): `peer-*`.** `InputField` gained an opt-in `boxClassName` prop, and this component marked the real file input `peer` with `boxClassName="peer-hover:...peer-active:...peer-focus:..."`. **This did not work either — round 2 feedback ("nogsteeds", still) confirmed it in a real browser.** Root cause: `peer-*` compiles to Tailwind's general-sibling combinator (`.peer:hover ~ .peer-hover\:...`), which only matches an element that is *itself* a sibling of `.peer` — `boxClassName` lands on `InputField`'s own bordered box, a **grandchild** of the sibling (`InputField`'s outer wrapper div is the actual sibling; the bordered box is nested one level inside it), and a sibling combinator can never reach a descendant of a sibling. This is the exact case `InputField.tsx`'s own `boxClassName` doc comment now names directly.
-
-**Working fix: `group`/`group-hover`, not `peer`.** `group-*` variants compile to a *descendant* selector (`.group:hover .group-hover\:...`), which reaches a nested descendant regardless of depth — the property that actually matches this DOM shape. The outer `relative` div is now also `group` (Tailwind's default unnamed group; no collision risk — `ImageUploadField` is a leaf usage with no nested `group` inside it, confirmed by grepping `components/`/`app/` for other `group`/`group-*` usage, none found). `boxClassName="group-hover:border-border-hover group-active:border-border-input-active group-focus-within:border-border-selected"` reuses the same three tokens as the failed attempt. Two differences from it, both deliberate:
-
-- `group-active` (not `group-hover`'s naive twin `peer-active`) works because CSS `:active` bubbles to ancestor elements while the mouse button is held on a descendant — verified in a real browser (Playwright, `pnpm dev`, RecipePanel's "Afbeelding" field, mousedown over the file input): the group div itself matches `:active`.
-- `group-focus-within` (not `group-focus`) is required because the *group* is a `<div>`, which is never itself focusable — only `:focus-within` (which also matches when a descendant holds focus) can reach a focused descendant through an ancestor. `peer-focus` was correct in the failed attempt because there the peer *was* the focused element itself, not a container of one.
-
-`peer` is removed from the file input entirely — no longer load-bearing, and its own DOM-order requirement ("peer must render before its sibling") no longer applies either. Browser-verified end to end (Playwright, `pnpm dev`, `/recepten` create panel, Afbeelding field): hover shows `border-border-hover`; mousedown shows `border-border-input-active`; Tab-focusing the file input shows `border-border-selected` — all now visible on the previously-dead bordered box.
-
-## Native OS picker satisfies the ticket's "Photos/Files" ask
-
-The ticket text: "if possible, input an image from files or the Apple/Google Photos app on phone; if that's more convenient, use a dropdown first to choose between files or the Apple/Google Photos app." `accept="image/jpeg,image/png,image/webp"` on a real `<input type="file">` already makes iOS Safari and Android Chrome present their native Photo Library / Take Photo / Files chooser — no custom dropdown exists in the fetched node for this control, and Figma shows no such UI, so none was built. This is the "if possible" branch of the ticket resolved by platform behaviour, not the fallback dropdown.
-
-## Upload/signing logic lives elsewhere
-
-Validation, EXIF-stripping and the actual storage upload/signed-URL calls are `lib/recipes/thumbnail-validation.ts` (pure, tested in `tests/recipes-thumbnails.test.ts`) and `lib/recipes/thumbnails.ts` (`server-only`) — this component only selects a `File` and hands it to the caller via `onFileSelect`; it does not call the upload action itself, so it stays reusable from any future form (`#126`'s add-recipe flow is the first expected caller, not built by this ticket).
+## Open
+- `docs/open-questions.md#recipe-image-field-personen-label`

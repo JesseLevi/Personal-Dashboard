@@ -1,6 +1,6 @@
 # ADR-0008: Calendar — read-only sync first; Schedule-X instead of CalendarKit
 
-**Status**: Accepted (supersedes the CalendarKit line in Vision.md §2.5)
+**Status**: Accepted (supersedes the CalendarKit line in Vision.md §2.5). For Phase 7 (2026-10-11): the Agenda UI is Claude-designed in code (ADR-0034), not waiting for Figma. User URLs are fetched through the existing `lib/net/safe-fetch` (ADR-0019 §5). Scheduled sync runs on the managed mechanism ADR-0018 §4 leaves open, not on an always-on worker.
 
 ## Context
 

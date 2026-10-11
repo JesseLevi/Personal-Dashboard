@@ -1,66 +1,91 @@
-# Guide: UI components (Figma → code)
+# Guide: UI components
 
-Read this before building or changing anything in `components/` or `app/`'s UI. Referenced from `CLAUDE.md`.
+Read this before building or changing anything in `components/` or the UI in `app/`.
 
-## Design system: Figma → code, Atomic Design
+## Where a design comes from (ADR-0034)
 
-The Figma file ("Notion - V2") is the source of truth for UI, mirrored 1:1 into `components/{atoms,molecules,organisms}/` (folder ↔ section map: `Architecture.md` §2). Rules:
+**Default: you design it in code.**
+- Compose existing components first, with semantic tokens only.
+- Before adding a component, check `components/{atoms,molecules,organisms}` and the design notes for something that fits. A new component is the exception: it must add real value, and its note says why no existing one fit.
+- No new tokens or primitives without asking. The scale is closed. Flag a missing token in the note; never hardcode it.
+- Header comment: `// design: Claude-designed (#NNN)`. Add a Ladle story, a visual baseline and `design/notes/<Component>.md`. Send the user a screenshot of every new surface.
+- Design for both breakpoints (mobile 320–430 px, desktop) and both themes. Use the existing interaction patterns: `SidePanel` for edit panels, `Dropdown` + `usePopoverPosition` for menus, `DeleteConfirm` for destructive actions, skeletons for loading.
 
-- **Component names match Figma layer names.** `Atom/Button` → `components/atoms/Button.tsx`; `Card-content/Recipi` → `components/molecules/CardContentRecipe.tsx` (translate NL→EN in code, keep the mapping obvious).
-- **Before building or changing a UI component, fetch its dev-ready node from Figma first.** Don't guess spacing, colour or type scale from memory or a screenshot. Note the node-id in the PR/commit.
-  - **Tools.** The `figma-console` bridge (`figma_get_status` with `probe: true` first — it must report "[PD] Personal Dashboard"; `figma_execute` for bindings/geometry) talks to the Desktop Bridge plugin over a local WebSocket: no rate limit, and the only route that exposes `boundVariables`. The hosted Figma MCP (`get_design_context`, `get_screenshot`, `get_metadata`) is rate-limited (Starter plan, no full seat) and dies after a few calls.
-  - **A resolved value never identifies a token — read `boundVariables` off the node.** `radius/control-outer` and `radius/card` are both 12; 4/8/12/16 each appear in all three spacing groups; and a ramp step's *name* is not the *state* it is used in (`Button/White` and `Button/Destructive` bind Hover → `…/selected` and Active → `…/hover`; #204 got this wrong, #213 fixed it). Resolve each id via `figma.variables.getVariableByIdAsync()`:
-
-    ```js
-    const n = await figma.getNodeByIdAsync('<nodeId>');
-    const bv = n.boundVariables || {};   // .fills .strokes .topLeftRadius .itemSpacing .paddingLeft/Top
-    // COMPONENT_SET: n.children are the variants — read each one's own bindings.
-    ```
-  - **Dev Mode annotations are not in the MCP payload.** Read them via the REST API (`GET https://api.figma.com/v1/files/<fileKey>/nodes?ids=<nodeId>`, header `X-Figma-Token` with a personal access token from env/`.mcp.json`; `annotations[].label` per node). Check them whenever a ticket touches interaction (click targets, motion, drag, empty/first-load states). Geometry from the bridge/MCP, behaviour from annotations.
-  - **The agent that writes the component does the fetch itself** — first tool call of the build. When delegating, tell the subagent to fetch its node; never paste a pre-digested summary instead.
-  - **Pixel-parity is verified, not assumed.** Render the Ladle story, compare it with the Figma screenshot, record the check (and any intentional deviation) in the PR. The blocking gate is the CI Linux job (`ci-visual.yml`). When a design change is intended, regenerate baselines with the `visual-update` workflow (`gh workflow run visual-update.yml --ref <branch> [-f grep=<pattern>]`, then `gh workflow run ci-visual.yml --ref <branch>`) and review the PNGs like any diff. A local `pnpm test:visual` is optional: macOS `-darwin.png` baselines are git-ignored and drift with the OS.
-  - **Visual flake: run the FULL suite twice, never bisect.** Identical code gives fail-then-pass across full runs, and isolation changes rasterization. Never let two runs overlap. `threshold` stays 0 (it catches grey-on-grey); `maxDiffPixels` is 16 (Skia rounded-corner AA is not bit-reproducible, ±1 channel). Flake can exceed 16 (seen: 22px on a branch touching no `components/`), so re-run the full suite before believing a lone failure.
-  - **Gate blind spots**: hover/active/focus-visible is rendered only for Button (`tests/visual/states.visual.spec.ts`, #282), `.tiptap` prose only via `note-editor-content--prose` (#283), and dark mode only for the subset below. A green suite says nothing about other components' state tokens or dark values — verify those by eye.
-  - **Dark baselines (#281)**: `tests/visual/dark.visual.spec.ts` screenshots 24 stories (every component reading `stroke-primary`/`stroke-lines`/`overlay`/`stroke-secondary-active`, plus Tag/Step/Card/PortionStepper for the surface/text ramps) under `[data-theme="dark"]` (`?theme=dark`), as `<story>-dark-chromium-linux.png` (in the repo). Adding a dark-overriding story means adding its id to `DARK_STORIES`; update with `visual-update` (`-f grep=dark`). Proof it bites: breaking dark `stroke-primary` fails 16 of 24.
-  - **Icons: Figma layer names are the exact lucide export names** (`Icon/Ellipsis`, not `Icon/Dots`). **Never trust the name alone** — render the candidate export and compare its paths against the Figma node (same-named exports can be false friends: lucide's `Cross` is a medical glyph, not an X). If no lucide export matches, it is an Architecture-level call (custom SVG vs Figma vector) — flag it, never hand-draw. Details and the story-coverage gap → `design/notes/Icon.md`.
-- **Never build a component that doesn't exist in Figma yet.** If a ticket needs undesigned UI, stop and flag it (send it back through the Fable/Figma loop) rather than inventing a layout. The same goes for a state: don't invent one the fetched node lacks (e.g. Checkbox's "delete") — leave the gap flagged in `design/notes/<Component>.md`.
-- **Claude-designed UI — only on an explicit request.** The user may ask you to design a component, state or screen yourself, in the conversation or on the ticket. Asking you to *build* a ticket is not that request. When asked:
-  1. Build it from **existing** components and **bound semantic variables** only. No new tokens or primitives without asking, because the scale is closed.
-  2. Design it directly in code; no Figma step. Instead of `// figma: node-id=…`, the header says `// design: Claude-designed on request (#NNN)`. It still gets a Ladle story and a visual baseline, and a screenshot goes to the user for review.
-  3. Record "Claude-designed on request (#NNN)" plus the components and tokens it reuses in `design/notes/<Component>.md`.
-- **Compose exactly as Figma nests** — if Figma builds `Card-container` from `Card` instances wrapping `Card-content/*` in a slot, the React tree mirrors it. Dependencies flow one way: atoms ← molecules ← organisms ← `app/`.
-- **Variants via CVA**: Figma variant properties (Style, Type) → CVA props; **State (Hover/Active/pressed) → CSS pseudo-classes, never props**; Figma booleans (`With icon`) → optional props; SLOT nodes → `children`/named slots.
-- **An optimistic success animation can hide a broken write path** (`AnimatedAddToBasketButton` played "Toegevoegd" regardless of `ActionResult`). Show success only on a successful result; an undesigned failure display is flagged, not invented.
-
-The full component update loop (node-id → fetch → update → Ladle diff → PR) is `Architecture.md` §3.3 / ADR-0010.
-
-## Component code conventions (house style)
-
-- **Server Component by default.** A presentational atom/molecule (no handlers, no hooks) must NOT carry `"use client"`; add it only when the component itself owns state/handlers. Precedent: `Dropdown` owns its open state; `Checkbox` stays a Server Component and is interactive via `<button role="checkbox">`.
-- **`className` merging**: every component merges the caller's `className` through `cn()` from `@/lib/ui/cn` (clsx + tailwind-merge, configured with the token names generated from `app/theme.css` by `pnpm sync:tokens`) — for cva components `cn(xVariants({ ... }), className)`, never cva's own `class`/`className` arg (it does not dedupe). Later conflicting utilities win, so a bare `hidden` on a `Button` works. Never import `clsx` directly, concatenate by hand or drop a caller's `className`. A new token namespace needs adding in `lib/ui/cn.ts` (`tests/cn.test.ts` covers every family).
-- **Icons go through the `Icon` atom only** — the single module importing `lucide-react`. `IconName` is the Figma vocabulary (spelling-corrected), identical to lucide's export names so each entry is a direct lookup. Decorative icons get `aria-hidden`; an icon that IS the control's label gets the accessible name on the wrapping control.
-- **Accessibility is part of the atom**: form-shaped atoms expose semantics (`Checkbox` = `role="checkbox"` + `aria-checked`, not a bare styled `<div>`). Decide input-vs-role deliberately and note it in the PR.
-- **Ladle stories use Tailwind utilities, never inline `style={{…}}`** — token classes, not raw px/hex. `pnpm ladle:build` (not `ladle build`).
-- **Raw hex never appears in `components/`, not even in comments** (`check:server-only` greps the whole file). Describe colours by primitive/token name; exact Figma hex belongs in `design/notes/<Component>.md` (not grepped).
-- **A token gap is flagged, never papered over.** If Figma uses a value with no matching *semantic* token, reuse the nearest token for the correct pixels **and** record the gap in `design/notes/<Component>.md` with a one-line pointer in the component. Never hardcode the hex or silently normalise the design.
-- **Raw radius/spacing utilities are gated**: `pnpm check:raw-spacing` fails on raw `rounded-{sm..3xl}`, `gap-N`, `space-{x,y}-N`, `p{,x,y,l,r,t,b}-N` in `components/**/*.tsx` and `app/**/*.tsx` (not `*.stories.tsx`). Convert to the semantic token wherever the node's `boundVariables` bind one (measured, never inferred). Where a value is genuinely unbound, has no Figma node, or is a native-element reset (`p-0` on a `<textarea>`), flag it:
-
+**When the user names a Figma design, implement it exactly**, unless they say otherwise:
+- **The agent that writes the component fetches the node itself**, as the first step of the build. Use the `figma-console` bridge (`figma_get_status` with `probe: true` must report the `[PD] Personal Dashboard` file). It has no rate limit and is the only route to `boundVariables`. The hosted Figma MCP dies after a few calls.
+- **A resolved value never identifies a token. Read `boundVariables`.**
+  - `radius/control-outer` and `radius/card` are both 12, and 4/8/12/16 appear in all three spacing groups.
+  - A ramp step's *name* is not the *state* it is used in: `Button/White` binds Hover → `…/selected` (#213).
+  ```js
+  const n = await figma.getNodeByIdAsync('<nodeId>');
+  const bv = n.boundVariables || {};   // fills, strokes, radii, itemSpacing, padding*
+  // COMPONENT_SET: read each variant child's own bindings.
   ```
-  // spacing-flag: <short reason> — design/notes/<Component>.md
-  ```
+- **Dev Mode annotations** are not in the MCP payload. Read them via REST (`GET /v1/files/<key>/nodes?ids=<id>`, header `X-Figma-Token`). Check them whenever interaction is involved.
+- **Record the node** in `design/figma-map.json` (one line per component) and in the `// figma: node-id=…` header. Note any deliberate deviation in the design note.
 
-  The marker and the `design/notes/` pointer must both sit in the contiguous comment block **directly above** the flagged line (the gate only looks upward; a trailing same-line comment does not count). Figma can bind different tokens per axis on wrap containers (`itemSpacing` vs `counterAxisSpacing`) — measure both.
-- **Comments in component source are a budget.** `pnpm check:comment-budget` (CI): max 30% comment lines per file (files under 25 comment lines exempt), max 15 lines per block, no ticket narration (a bare `(#68)` pointer is fine).
-  - *In the component*: the `// figma: node-id=…` line; a header of ≤ ~8 lines naming the Figma component and mapping variant axes onto props/slots/CSS states; a sentence or two wherever the code is non-obvious enough that an editor would break it; active token-gap flags. Cite, don't repeat: `// Selected only sets color, so it composes with hover/active. See design/notes/Button.md.`
-  - *In `design/notes/<Component>.md`* (the design record, `design/notes/README.md`): history, measurements, state/pixel matrix, rejected alternatives.
-  - Never explain what the code plainly states or restate a rule from `CLAUDE.md` or this guide.
+## Composition and variants
 
-## Design tokens (ADR-0010)
+- Atoms ← molecules ← organisms ← `app/`. Dependencies flow one way, and the tree mirrors the design's nesting.
+- **CVA**:
+  - variant axes (Style, Type) become props;
+  - **states (Hover/Active/Focus/pressed) become CSS pseudo-classes, never props**;
+  - booleans become optional props;
+  - slots become `children` or named slots.
+- **Show success only on a successful result.** An optimistic animation once hid a broken write path (`AnimatedAddToBasketButton`).
 
-Pipeline: Figma variables → `design/tokens.json` (`pnpm sync:tokens`) → generated `app/theme.css` (Tailwind v4 `@theme`) → utilities (`Architecture.md` §3.2). Never hand-edit generated theme files; `pnpm check:tokens-drift` checks the mirror against `design/figma-variables/`. Renamed/removed tokens go in `design/retired-tokens.json`; `pnpm check:retired-tokens` (#285) fails on their `--color-*`/utility forms anywhere in the repo, `.ladle/` and configs included.
+## House style
 
-- **Figma text styles are Tailwind-native**: `text-xl/semibold` → `text-xl font-semibold`.
-- **The token scale is closed.** A Figma value with no scale/semantic equivalent: ask the user before inventing a one-off.
-- **`design/figma-map.json` is the component↔node-id map** (name → path → node-id only; every component carries `// figma: node-id=...`). Per-component record = `design/notes/<Component>.md`. Adding a component = map entry + note file + header annotation + Ladle story, same PR.
-- **Colour states live in `docs/design-tokens.md`** (the `role`/`role-hover`/`role-active`/`border-selected` scale, why Selected must compose with Hover/Active, token-change log). Read it before adding state styling.
-- `accent` no longer exists. Dark mode follows the OS via `next-themes` (`data-theme`); there is no `dark:` utility anywhere (`design/notes/AppShell.md`).
+- **Server Component by default.** Add `"use client"` only where the component itself owns state, handlers or hooks.
+- **`className` merging**:
+  - always use `cn()` from `@/lib/ui/cn` (clsx + tailwind-merge, configured with the generated token names);
+  - for CVA, write `cn(xVariants({...}), className)`, never CVA's own `className` arg;
+  - a new token namespace needs adding in `lib/ui/cn.ts`.
+- **Icons go only through the `Icon` atom** (the single `lucide-react` importer).
+  - `IconName` entries equal lucide export names. Never trust a name alone; render and compare, because lucide's `Cross` is a medical glyph.
+  - Decorative icons get `aria-hidden`. An icon-only control carries the accessible name.
+- **Accessibility is part of the component.**
+  - Use real semantics (`role="checkbox"` + `aria-checked`, not a styled div).
+  - Menus are keyboard-operable with correct roles and return focus on close.
+  - Keep the visible text as the accessible name rather than adding a duplicate `aria-label`.
+- **No inline styles and no raw hex in `components/`, comments included** (`check:server-only` greps them).
+  - The only exception is runtime geometry from `usePopoverPosition`, flagged in place.
+  - Ladle stories use utilities too.
+- **Raw radius/spacing utilities are gated** (`check:raw-spacing`): use the semantic spacing/radius token.
+  - Genuinely unbound values carry `// spacing-flag: <reason> — design/notes/<Component>.md` in the comment block directly above the line.
+- **Comments are a budget** (`check:comment-budget`: at most 30% comment lines, blocks at most 15 lines, no ticket narration).
+  - A component carries a short header (source, variant mapping) and a sentence where code is non-obvious.
+  - Everything else goes in the design note.
+
+## Design notes (`design/notes/<Component>.md`)
+
+A note is the component's **contract**, not its history. Sections: Anatomy, Deliberate decisions, Token gaps and flags, Gotchas, Open (slugs in `docs/open-questions.md`). Keep it at about 5 KB or less.
+
+When you change a component, rewrite the bullets that changed. Don't append ticket narration: git and the PR already hold that.
+
+## Tokens (ADR-0010)
+
+- **Pipeline**: Figma variables export (`design/figma-variables/`) → `design/tokens.json` → `pnpm sync:tokens` → `app/theme.css` → utilities.
+- **Never hand-edit `theme.css`.**
+- **CI gates**:
+  - `check:tokens-drift` checks the mirror;
+  - `check:retired-tokens` fails on renamed/removed tokens anywhere (list: `design/retired-tokens.json`).
+- **Figma text styles** are Tailwind-native: `text-xl/semibold` → `text-xl font-semibold`.
+- **Colour states** (role / hover / active / selected, and why Selected must compose with Hover and Active) are in `docs/design-tokens.md`. Read it before adding state styling.
+- **Dark mode**: follows the OS via `next-themes` (`data-theme`). There is no `dark:` utility anywhere.
+
+## Visual tests
+
+- **The gate is CI's Linux job** (`ci-visual.yml`) over Ladle stories.
+  - Regenerate baselines with `gh workflow run visual-update.yml --ref <branch> [-f grep=<pattern>]`, then run `ci-visual.yml` by hand (a bot push triggers no CI).
+  - Review the PNGs like any diff.
+  - Local `-darwin.png` baselines are git-ignored and drift, so ignore local mismatches.
+- **Flake**: `threshold` stays 0 and `maxDiffPixels` 16. Run the full suite twice before believing a lone failure; never bisect, because isolation changes rasterization.
+- **Blind spots**:
+  - interaction states are rendered only for Button (`states.visual.spec.ts`);
+  - `.tiptap` prose only via `note-editor-content--prose`;
+  - dark mode only for the `DARK_STORIES` subset in `dark.visual.spec.ts`. A new dark-sensitive story belongs in that list.
+  
+  Check other states and dark values by eye.
+- **Scoped local regeneration**: `pnpm exec playwright test --update-snapshots -g <pattern>`, not `pnpm test:visual:update -- -g` (which regenerates everything). `-g` matches story names, not what they render.
+- **`pnpm ladle:build`** for a non-interactive build. `pnpm ladle` is the dev server.

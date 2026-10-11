@@ -1,6 +1,6 @@
 # ADR-0018: Shelve the Mac-mini/self-hosted target and local Ollama inference
 
-**Status**: Accepted by the user (2026-10-07). Not yet ratified by the architecture layer (Fable) — same provenance as ADR-0012. **Supersedes** ADR-0003 (Cloudflare Tunnel exposure — it only ever applied to the Mac mini). **Amends** ADR-0006 (the embedding model host is reopened; the pipeline shape stands), ADR-0012 §6 (the Mac-mini path is no longer "future/optional" but shelved), `Architecture.md` §1/§5/§7/§8, `Vision.md` (Technische context), and `CLAUDE.md` priorities 2–3.
+**Status**: Accepted by the user (2026-10-07). **Supersedes** ADR-0003 (Cloudflare Tunnel exposure — it only ever applied to the Mac mini). **Amends** ADR-0006 (the embedding model host is reopened; the pipeline shape stands), ADR-0012 §6 (the Mac-mini path is no longer "future/optional" but shelved), `Architecture.md` §1/§5/§7/§8, `Vision.md` (Technische context), and `CLAUDE.md` priorities 2–3.
 
 ## Context
 

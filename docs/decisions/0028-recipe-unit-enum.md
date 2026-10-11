@@ -1,8 +1,7 @@
 # ADR-0028: `public.recipe_unit` — one Postgres enum for every unit column
 
-**Status**: Proposed (retroactive; the underlying choice was approved by the user 2026-07-29, issues #119/#120/#130)
+**Status**: Accepted (retroactive record; the underlying choice was approved by the user 2026-07-29, issues #119/#120/#130; ratified 2026-10-11, #412)
 
-**Authored by**: Claude Code (Opus 5.5), at the instruction of ticket #292, as a retroactive write-up. Same provenance caveat as ADR-0011/0013/0014: this is not the architecture layer's own output. The choice below is already shipped and was approved by the user at the time; what is **proposed** here is the written record, for the architecture layer to accept, amend or reject.
 
 **Overlap**: ADR-0011 §3 decides per-ingredient mass per unit (lookup, user → reference → unresolved) and ADR-0014 amends it to allow volume↔mass conversion; both consume this enum but neither records why the enum exists or why one is shared. This ADR covers only the type. Conversion semantics stay in ADR-0011/0014.
 
@@ -23,7 +22,7 @@
 - One type across recipes, masses and the shopping list keeps merges and joins type-safe and prevents a second, drifting unit vocabulary.
 - Imports can only map to units in the enum (ADR-0013: only `eetlepel`, `theelepel`, `stuk` overlap with NEVO's `Maat`).
 - **Not recoverable**: why an enum rather than a lookup table or text+check (the pattern used for `cards.size`, ADR-0025). The tickets state only "Postgres-enum in plaats van vrije text"; the trade-off against alternatives was not written down.
-- `Architecture.md` §4.2 (`unit text nullable`) is stale.
+- `Architecture.md` §4 reflects this since #412.
 
 ## Migration
 

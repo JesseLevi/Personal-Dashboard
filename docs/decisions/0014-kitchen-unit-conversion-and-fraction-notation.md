@@ -4,7 +4,6 @@
 
 **Amends**: ADR-0011 §3 (which barred volume↔mass conversion outright) and ADR-0013's #163 amendment (which deferred all volume units to "Layer 2"). Closes `docs/open-questions.md#fraction-notation-vs-decimal-formatter`.
 
-**Authored by**: Claude Code (Opus 5), at the user's explicit instruction, with the four open decisions in #164 delegated to it by name. Same provenance caveat as ADR-0011 and ADR-0013: this is not the architecture layer's own output, and a later reader should weigh it accordingly.
 
 ## Context
 

@@ -1,6 +1,6 @@
 # ADR-0020: Curated ingredient mappings and an admin role
 
-**Status**: Accepted (user decision, 2026-10-10). **Amends** ADR-0011 §1 (the `reference` schema is no longer migration-only for the tables named in §2) and ADR-0019 §2 (matching order). **Authored by**: Claude Code at the user's explicit instruction, on the same footing as ADR-0013.
+**Status**: Accepted (user decision, 2026-10-10). **Amends** ADR-0011 §1 (the `reference` schema is no longer migration-only for the tables named in §2) and ADR-0019 §2 (matching order).
 
 ## Context
 

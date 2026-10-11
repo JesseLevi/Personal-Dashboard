@@ -4,7 +4,6 @@
 
 **Amends**: ADR-0011 §5, which barred NEVO from this repository outright. That prohibition is lifted. Everything else in ADR-0011 — the `reference` schema's rules (§1), the two-layer ingredient library (§2), user-first mass resolution (§3), `NULL` never meaning `0` (§4), and the extended RLS coverage gate (§6) — stands unchanged.
 
-**Authored by**: Claude Code, at the user's explicit instruction, on the same footing and with the same caveat as ADR-0011 itself: every other ADR in this directory comes from the architecture layer, these two do not. That provenance is recorded deliberately so a later reader can weigh it accordingly.
 
 ## Context
 

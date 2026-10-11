@@ -1,8 +1,7 @@
 # ADR-0029: `recipe_step_ingredients` — linking steps to ingredients
 
-**Status**: Proposed (retroactive; the underlying choice was approved by the user 2026-08-01, issue #149)
+**Status**: Accepted (retroactive record; the underlying choice was approved by the user 2026-08-01, issue #149; ratified 2026-10-11, #412)
 
-**Authored by**: Claude Code (Opus 5.5), at the instruction of ticket #292, as a retroactive write-up. Same provenance caveat as ADR-0011/0013/0014: this is not the architecture layer's own output. The choice below is already shipped and was approved by the user at the time; what is **proposed** here is the written record, for the architecture layer to accept, amend or reject.
 
 ## Context
 
@@ -23,7 +22,7 @@ A join table `public.recipe_step_ingredients (step_id → recipe_steps, recipe_i
 - Because the RPC replaces ingredients wholesale (new ids each save), `recipe_ingredients.id` is **not stable across edits** and links are rebuilt on every save. Any future table that stores a `recipe_ingredients.id` long-term must account for that.
 - An out-of-range `ingredientRef` is skipped silently, not raised, so a client racing a link edit against an ingredient removal degrades gracefully instead of failing the whole write.
 - Alternatives (an id-array column on `recipe_steps`, free-text mentions) are **not recorded** in the ticket or migration; the join table follows the existing `card_labels`/`recipe_tags` shape. Why the alternatives were rejected is not recoverable.
-- `Architecture.md` §4.2 is stale.
+- `Architecture.md` §4 reflects this since #412.
 
 ## Migration
 
