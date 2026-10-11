@@ -1,5 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
+import { preconnect } from "react-dom";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import { validateThumbnailFile } from "@/lib/recipes/thumbnail-validation";
 import {
@@ -7,7 +8,14 @@ import {
   thumbnailVariantPath,
   type ThumbnailVariant,
 } from "@/lib/recipes/thumbnail-processing";
-import { STORED_OBJECT_CACHE_CONTROL, getObjectStore, objectKey, type ObjectStore } from "@/lib/storage";
+import {
+  STORED_OBJECT_CACHE_CONTROL,
+  getObjectStore,
+  keyBelongsTo,
+  objectKey,
+  objectStoreOrigin,
+  type ObjectStore,
+} from "@/lib/storage";
 import type { ActionResult } from "@/lib/recipes/types";
 
 // Thumbnail bytes live in R2 (ADR-0024); `recipes.thumbnail_path` stores the
@@ -82,4 +90,44 @@ export async function deleteRecipeThumbnail(stem: string): Promise<void> {
   } catch (error) {
     console.error("[recipes] deleteRecipeThumbnail failed:", error instanceof Error ? error.message : error);
   }
+}
+
+/**
+ * Presigned GET URL for one variant of `stem`, for a server render that already
+ * loaded the owning row for `userId` (ADR-0024 §5 amendment). Null, never a
+ * throw, when the stem is not the user's or R2 is not configured.
+ */
+export async function presignRecipeThumbnail(
+  userId: string,
+  stem: string | null | undefined,
+  size: ThumbnailVariant,
+): Promise<string | null> {
+  if (!stem) return null;
+  const key = thumbnailVariantPath(stem, size);
+  if (!keyBelongsTo(userId, key)) return null;
+  try {
+    return await getObjectStore().presignGet(key);
+  } catch (error) {
+    console.error("[recipes] presignRecipeThumbnail failed:", error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
+/** `recipe id -> presigned URL` for the recipes that have a resolvable thumbnail. */
+export async function presignRecipeThumbnails(
+  userId: string | null,
+  recipes: { id: string; thumbnail_path: string | null }[],
+  size: ThumbnailVariant,
+): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  if (!userId) return out;
+  await Promise.all(
+    recipes.map(async (r) => {
+      const url = await presignRecipeThumbnail(userId, r.thumbnail_path, size);
+      if (url) out[r.id] = url;
+    }),
+  );
+  const origin = Object.keys(out).length > 0 ? objectStoreOrigin() : null;
+  if (origin) preconnect(origin);
+  return out;
 }

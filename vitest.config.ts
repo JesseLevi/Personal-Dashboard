@@ -6,6 +6,7 @@ export default defineConfig({
   // #94) can use the same absolute-import convention every other lib/boards
   // file already uses (queries.ts -> session.ts, actions.ts -> positioning.ts),
   // instead of a one-off relative import just for testability.
+  esbuild: { jsx: "automatic" },
   resolve: {
     alias: { "@": path.resolve(__dirname, ".") },
   },

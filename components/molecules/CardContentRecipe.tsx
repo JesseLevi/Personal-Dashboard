@@ -1,5 +1,8 @@
 // figma: node-id=3628:67
+"use client";
+
 import { cn } from "@/lib/ui/cn";
+import { useImageFallback } from "@/lib/ui/image-fallback";
 import { Icon } from "../atoms/Icon";
 
 /**
@@ -15,6 +18,8 @@ import { Icon } from "../atoms/Icon";
 export interface CardContentRecipeProps {
   /** Figma "Thumbnail" IMAGE fill — recipe photo URL. Optional: a recipe without a stored photo yet renders a `bg-surface-primary` placeholder square instead — a real, nullable state the fetched node doesn't draw (#124, design/notes/CardContentRecipe.md). */
   imageUrl?: string;
+  /** Swapped in once if `imageUrl` fails to load (expired presigned URL); design/notes/CardContentRecipe.md. */
+  imageFallbackUrl?: string;
   /** Accessible name for the thumbnail. Decorative (`""`) by default since the recipe name is already rendered as adjacent text; pass an explicit value to override. Ignored when `imageUrl` is absent (the placeholder square is itself `aria-hidden`). */
   imageAlt?: string;
   /** Figma TEXT "Amandel Pasta" — recipe name. */
@@ -26,16 +31,19 @@ export interface CardContentRecipeProps {
 
 export function CardContentRecipe({
   imageUrl,
+  imageFallbackUrl,
   imageAlt,
   name,
   duration,
   className,
 }: CardContentRecipeProps) {
+  const image = useImageFallback(imageUrl ?? "", imageFallbackUrl);
   return (
     <div className={cn("flex w-full gap-inline-lg", className)}>
       {imageUrl ? (
         <img
-          src={imageUrl}
+          src={image.src}
+          onError={image.onError}
           alt={imageAlt ?? ""}
           width={96}
           height={96}

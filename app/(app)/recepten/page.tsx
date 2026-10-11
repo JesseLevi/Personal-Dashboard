@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { getRecipeCategoriesWithRecipes, getRecipeCategoryRecipeCounts } from "@/lib/recipes/queries";
 import { getAuthenticatedUserId, isAdmin } from "@/lib/recipes/session";
 import { sweepStuckImports } from "@/lib/recipes/import/sweep";
+import { presignRecipeThumbnails } from "@/lib/recipes/thumbnails";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ReceptenBoard } from "./ReceptenBoard";
 import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
@@ -19,11 +20,9 @@ import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 // design/notes/ReceptenBoard.md for why this deviates from Te-Doen's
 // Header/Board split.
 //
-// #171: thumbnails are no longer resolved here. Each card now points at
-// `/api/recipe-thumbnail/<recipeId>` (app/api/recipe-thumbnail/[recipeId]/
-// route.ts) directly, so the browser caches the bytes under a stable URL
-// instead of this page re-minting a signed URL — and re-paying egress for
-// the same pixels — on every render. See design/notes/CardContentRecipe.md.
+// #391: card thumbnails are presigned here (local crypto, hour-stable URLs),
+// with the `/api/recipe-thumbnail` route as onError fallback. See
+// design/notes/CardContentRecipe.md.
 //
 // #170: the fetch + ReceptenBoard render moved into `ReceptenPageContent`
 // so the default export itself never awaits anything — `<Suspense>` here is
@@ -38,9 +37,16 @@ async function ReceptenPageContent() {
   if (userId) await sweepStuckImports(await createSupabaseServerClient(), userId);
   const [categories, admin] = await Promise.all([getRecipeCategoriesWithRecipes(), isAdmin()]);
 
+  const thumbnailUrls = await presignRecipeThumbnails(
+    userId,
+    categories.flatMap((c) => c.recipes),
+    "card",
+  );
+
   return (
     <ReceptenBoard
       categories={categories}
+      thumbnailUrls={thumbnailUrls}
       title={t("nav.recipes")}
       addCategoryLabel={t("components.pageHeader.recipes.addCategoryLabel")}
       ingredientsLabel={admin ? t("components.pageHeader.recipes.ingredientsLabel") : undefined}

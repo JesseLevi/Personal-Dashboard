@@ -17,6 +17,15 @@ export function getObjectStore(): ObjectStore {
   return store;
 }
 
+/** R2 origin for `preconnect`, or null when storage is not configured. */
+export function objectStoreOrigin(): string | null {
+  try {
+    return `https://${readR2Config().accountId}.r2.cloudflarestorage.com`;
+  } catch {
+    return null;
+  }
+}
+
 /** Test-only: inject a fake (createFakeObjectStore); null resets. */
 export function setObjectStoreForTesting(next: ObjectStore | null): void {
   store = next;

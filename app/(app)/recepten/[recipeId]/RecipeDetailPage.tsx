@@ -15,6 +15,8 @@ import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import { formatQuantityFraction } from "@/lib/recipes/kitchen-units";
 import { summarizeRecipeNutrition, type RecipeIngredientNutritionInput } from "@/lib/recipes/nutrition";
 import { scaleIngredientRows } from "@/lib/recipes/scaling";
+import { recipeThumbnailRouteUrl } from "@/lib/recipes/thumbnail-url";
+import { useImageFallback } from "@/lib/ui/image-fallback";
 import type { UnitSystem } from "@/lib/recipes/units";
 import type {
   RecipeCategoryRow,
@@ -73,16 +75,19 @@ function groupIngredients(ingredients: RecipeIngredientWithNutrition[]): Ingredi
 export interface RecipeDetailPageProps {
   recipe: RecipeWithIngredientsAndSteps;
   categories: RecipeCategoryRow[];
+  /** Presigned "full" hero URL minted in the page render (#391); null/absent -> placeholder. */
+  thumbnailUrl?: string | null;
 }
 
-export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) {
-  // #171: `/api/recipe-thumbnail` route, not a resolved signed URL —
-  // `null` for a recipe with no stored photo yet, same as before. `v` is
-  // `recipe.updated_at` so the URL changes whenever the photo (or anything
-  // else on the row) changes. See design/notes/CardContentRecipe.md.
-  const thumbnailUrl = recipe.thumbnail_path
-    ? `/api/recipe-thumbnail/${recipe.id}?v=${recipe.updated_at}&size=full`
-    : null;
+export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null }: RecipeDetailPageProps) {
+  // #391: presigned hero; the route URL is the one-shot onError fallback.
+  // See design/notes/RecipeDetailPage.md.
+  const hero = useImageFallback(
+    thumbnailUrl ?? "",
+    thumbnailUrl && recipe.thumbnail_path
+      ? recipeThumbnailRouteUrl(recipe.id, recipe.thumbnail_path, "full")
+      : undefined,
+  );
   const t = useTranslations("components.recipeDetailPage");
   const tUnits = useTranslations("recipes.units");
   // #164/#157: short unit labels for the per-step Tags only (Figma draws
@@ -315,7 +320,8 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
           the byte arrives. */}
       {thumbnailUrl ? (
         <img
-          src={thumbnailUrl}
+          src={hero.src}
+          onError={hero.onError}
           alt=""
           width={1280}
           height={640}
