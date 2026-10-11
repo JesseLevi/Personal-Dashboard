@@ -9,7 +9,7 @@ import { TextSelection } from "@tiptap/pm/state";
 import { Button } from "@/components/atoms/Button";
 import type { IconName } from "@/components/atoms/Icon";
 import { requestLinkPopover } from "@/lib/notes/link-popover";
-import { BLOCK_TYPE_MENU } from "./EditingBar";
+import { ALIGN_MENU, BLOCK_TYPE_MENU } from "./EditingBar";
 import { EditingBarMenu } from "./EditingBarMenu";
 
 // design: Claude-designed on request (#331)
@@ -24,7 +24,7 @@ export interface NoteBubbleMenuProps {
 }
 
 interface MarkDef {
-  id: "bold" | "italic" | "underline" | "strikethrough" | "highlight" | "code";
+  id: "bold" | "italic" | "underline" | "strikethrough" | "highlight";
   mark: string;
   icon: IconName;
   toggle: (editor: Editor) => void;
@@ -36,11 +36,10 @@ const MARKS: MarkDef[] = [
   { id: "underline", mark: "underline", icon: "Underline", toggle: (e) => e.chain().focus().toggleUnderline().run() },
   { id: "strikethrough", mark: "strike", icon: "Strikethrough", toggle: (e) => e.chain().focus().toggleStrike().run() },
   { id: "highlight", mark: "highlight", icon: "Highlighter", toggle: (e) => e.chain().focus().toggleHighlight().run() },
-  { id: "code", mark: "code", icon: "CodeXml", toggle: (e) => e.chain().focus().toggleCode().run() },
 ];
 
-// Marks, link, then the "Turn into" menu: the toolbar's roving-focus order.
-const ITEM_COUNT = MARKS.length + 2;
+// Marks, link, the "Turn into" menu, then alignment: the toolbar's roving-focus order.
+const ITEM_COUNT = MARKS.length + 3;
 
 function shouldShowBubble(editor: Editor): boolean {
   const { selection, doc } = editor.state;
@@ -69,6 +68,7 @@ export function NoteBubbleMenu({ editor }: NoteBubbleMenuProps) {
         marks: MARKS.map((def) => current.isActive(def.mark)),
         link: current.isActive("link"),
         blockType: BLOCK_TYPE_MENU.options.find((option) => option.isActive(current))?.id ?? "paragraph",
+        align: ALIGN_MENU.options.find((option) => option.isActive(current))?.id ?? "alignLeft",
       };
     },
   });
@@ -108,6 +108,9 @@ export function NoteBubbleMenu({ editor }: NoteBubbleMenuProps) {
   }
 
   const blockType = BLOCK_TYPE_MENU.options.find((option) => option.id === state?.blockType);
+  const align = ALIGN_MENU.options.find((option) => option.id === state?.align) ?? ALIGN_MENU.options[0];
+  // Keep the menu inside the page column: the viewport edge sits under the sidebar.
+  const boundary = editor.view.dom.parentElement?.parentElement ?? undefined;
 
   return (
     <BubbleMenu
@@ -115,7 +118,7 @@ export function NoteBubbleMenu({ editor }: NoteBubbleMenuProps) {
       pluginKey="selectionBubbleMenu"
       updateDelay={150}
       shouldShow={({ editor: current }) => shouldShowBubble(current)}
-      options={{ placement: "top", offset: 8, flip: true, shift: true }}
+      options={{ placement: "top", offset: 8, flip: true, shift: { padding: 8, boundary } }}
     >
       <div
         ref={barRef}
@@ -150,6 +153,7 @@ export function NoteBubbleMenu({ editor }: NoteBubbleMenuProps) {
         />
         <EditingBarMenu
           icon={BLOCK_TYPE_MENU.icon}
+          iconOnly
           menuLabel={tBubble("turnInto")}
           currentLabel={t(`options.${blockType?.id ?? "paragraph"}`)}
           options={BLOCK_TYPE_MENU.options.map((option) => ({
@@ -162,6 +166,22 @@ export function NoteBubbleMenu({ editor }: NoteBubbleMenuProps) {
           onDismiss={() => editor.commands.focus()}
           tabIndex={MARKS.length + 1 === activeIndex ? 0 : -1}
           onTriggerFocus={() => setActiveIndex(MARKS.length + 1)}
+        />
+        <EditingBarMenu
+          icon={align?.icon ?? ALIGN_MENU.icon}
+          iconOnly
+          menuLabel={t("alignLabel")}
+          currentLabel={t(`options.${align?.id ?? "alignLeft"}`)}
+          options={ALIGN_MENU.options.map((option) => ({
+            id: option.id,
+            icon: option.icon,
+            label: t(`options.${option.id}`),
+            active: option.id === state?.align,
+            onSelect: () => option.run(editor),
+          }))}
+          onDismiss={() => editor.commands.focus()}
+          tabIndex={MARKS.length + 2 === activeIndex ? 0 : -1}
+          onTriggerFocus={() => setActiveIndex(MARKS.length + 2)}
         />
       </div>
     </BubbleMenu>

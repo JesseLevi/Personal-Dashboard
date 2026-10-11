@@ -93,8 +93,9 @@ html {
    spacing and colours are semantic tokens. Rationale and values:
    design/notes/NoteEditor.md. */
 .tiptap {
-  /* ~70ch reading width on desktop; mobile is bounded by the viewport. */
+  /* ~70ch reading width, centered on desktop; mobile is bounded by the viewport. */
   max-width: 70ch;
+  margin-inline: auto;
   @apply leading-relaxed;
 }
 .tiptap h1 {
