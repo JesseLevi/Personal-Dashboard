@@ -79,6 +79,8 @@ export interface AppShellNavProps {
   displayName: string | null;
   /** #265: `profiles.avatar_url` — null renders the Sidebar's initials fallback. No upload UI yet. */
   avatarUrl: string | null;
+  /** #404: `profiles.last_name` (`getLastName`) — seeds SettingsPanel's Achternaam field. */
+  lastName: string | null;
   /** #265: current locale, seeds SettingsPanel's Taal field. */
   locale: Locale;
 }
@@ -91,7 +93,7 @@ export interface AppShellNavProps {
 // own, so importing it here pulls it into the client bundle — the boundary
 // stops at this file, which is why the layout above stays a Server
 // Component and does the Supabase call.
-export function AppShellNav({ children, displayName, avatarUrl, locale }: AppShellNavProps) {
+export function AppShellNav({ children, displayName, lastName, avatarUrl, locale }: AppShellNavProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
@@ -317,6 +319,7 @@ export function AppShellNav({ children, displayName, avatarUrl, locale }: AppShe
         onClose={() => setSettingsOpen(false)}
         currentLocale={locale}
         currentDisplayName={displayName}
+        currentLastName={lastName}
       />
     </div>
   );

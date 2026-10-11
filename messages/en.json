@@ -339,7 +339,6 @@
     },
     "settingsPanel": {
       "title": "Settings",
-      "nameLabel": "Name",
       "themeLabel": "Color theme",
       "themeOptions": {
         "system": "System",
@@ -351,6 +350,8 @@
         "nl": "Dutch",
         "en": "English"
       },
+      "firstNameLabel": "First name",
+      "lastNameLabel": "Last name",
       "saveLabel": "Save",
       "savingLabel": "Saving..."
     },

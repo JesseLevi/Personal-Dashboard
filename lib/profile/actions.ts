@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/profile/session";
-import { updateDisplayNameSchema, updateLocaleSchema } from "@/lib/profile/schemas";
+import { updateNameSchema, updateLocaleSchema } from "@/lib/profile/schemas";
 import type { ActionResult } from "@/lib/profile/types";
 
 // Write side of #162 -- deliberately its own module with no page/component
@@ -51,10 +51,12 @@ export async function updateLocale(input: unknown): Promise<ActionResult> {
   return { success: true, data: undefined };
 }
 
-// #398: same pattern as updateLocale. `input` must parse as
-// { displayName: string } (updateDisplayNameSchema); empty -> null.
-export async function updateDisplayName(input: unknown): Promise<ActionResult> {
-  const parsed = updateDisplayNameSchema.safeParse(input);
+// #398/#404: same pattern as updateLocale. `input` must parse as
+// { firstName: string, lastName: string } (updateNameSchema); empty -> null.
+// First name -> profiles.display_name, last name -> profiles.last_name, one
+// update. Fails with "generic" until the #404 migration is applied.
+export async function updateName(input: unknown): Promise<ActionResult> {
+  const parsed = updateNameSchema.safeParse(input);
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
   const auth = await requireUserId();
@@ -63,11 +65,11 @@ export async function updateDisplayName(input: unknown): Promise<ActionResult> {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("profiles")
-    .update({ display_name: parsed.data.displayName })
+    .update({ display_name: parsed.data.firstName, last_name: parsed.data.lastName })
     .eq("id", auth.userId);
 
   if (error) {
-    console.error("[profile] updateDisplayName failed:", error.code, error.message);
+    console.error("[profile] updateName failed:", error.code, error.message);
     return { success: false, error: "generic" };
   }
 
