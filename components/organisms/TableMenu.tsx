@@ -31,6 +31,25 @@ function tableWrapperAt(editor: Editor): HTMLElement | null {
   return element?.closest<HTMLElement>(".tableWrapper") ?? element?.closest<HTMLElement>("table") ?? null;
 }
 
+const TABLE_MENU_GAP = 16;
+
+// Keeps the trigger clear of the in-flow desktop EditingBar: when the spot
+// above the table would sit under the bar (table is the first block) it goes
+// below the table, or just under the bar when the table's end is off-screen.
+function triggerOffset(editor: Editor, floating: { width: number; height: number }) {
+  const wrapper = tableWrapperAt(editor);
+  const bar = document.querySelector("[data-editing-bar]");
+  if (!wrapper || !bar) return TABLE_MENU_GAP;
+  const table = wrapper.getBoundingClientRect();
+  const barRect = bar.getBoundingClientRect();
+  const top = table.top - TABLE_MENU_GAP - floating.height;
+  const covered =
+    top < barRect.bottom && top + floating.height > barRect.top && table.left < barRect.right && table.left + floating.width > barRect.left;
+  if (!covered) return TABLE_MENU_GAP;
+  if (table.bottom + TABLE_MENU_GAP + floating.height <= window.innerHeight) return -(table.height + TABLE_MENU_GAP + floating.height);
+  return table.top - floating.height - (barRect.bottom + TABLE_MENU_GAP / 4);
+}
+
 export function TableMenu({ editor }: TableMenuProps) {
   const t = useTranslations("components.noteTable");
   const panelId = useId();
@@ -101,7 +120,7 @@ export function TableMenu({ editor }: TableMenuProps) {
         const target = tableWrapperAt(editor);
         return target ? { getBoundingClientRect: () => target.getBoundingClientRect() } : null;
       }}
-      options={{ placement: "top-start", offset: 8, flip: true, shift: true }}
+      options={{ placement: "top-start", offset: ({ rects }) => triggerOffset(editor, rects.floating), flip: true, shift: true }}
     >
       <span ref={wrapperRef} className="contents">
         <Button

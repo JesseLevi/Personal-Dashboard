@@ -570,6 +570,7 @@ export function EditingBar({ editor, className, mobile }: EditingBarProps) {
     <div
       ref={containerRef}
       role="toolbar"
+      data-editing-bar=""
       aria-label={tableMode ? t("tableActionsBarLabel") : t("label")}
       aria-orientation="horizontal"
       onKeyDown={handleKeyDown}
