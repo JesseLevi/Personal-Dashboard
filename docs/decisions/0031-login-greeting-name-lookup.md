@@ -47,6 +47,7 @@ The user chose (c): Atlas is a small app for friends and family, and the feature
    - The action always resolves to `{ name: string | null }` and pads its total duration to a fixed minimum (500 ms), so timing does not separate known from unknown addresses.
    - The login flow itself (password, magic link) is unchanged and still never reveals existence.
 6. **No new user-facing strings carry the name.** It is rendered as text (React escapes it).
+7. **Lookup while typing (#416).** The lookup also fires on a valid address after a 250 ms typing pause or on blur, so probing no longer needs a click on Doorgaan; the limits are unchanged.
 
 ## Consequences
 

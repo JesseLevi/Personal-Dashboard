@@ -6,6 +6,8 @@ import {
   useId,
   useRef,
   useState,
+  type ChangeEvent,
+  type FocusEvent,
   type FormEvent,
   type KeyboardEvent,
 } from "react";
@@ -13,7 +15,7 @@ import { cn } from "@/lib/ui/cn";
 import { useTranslations } from "next-intl";
 import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
-import { magicLinkSchema } from "@/lib/auth/schemas";
+import { GREETING_LOOKUP_DEBOUNCE_MS, parseGreetingAddress } from "@/lib/auth/greeting-address";
 import { useTurnstile } from "./useTurnstile";
 import type { MagicLinkState, PasswordLoginState } from "./actions";
 
@@ -80,6 +82,7 @@ export function LoginForm({
   const lookupSeq = useRef(0);
   const lookedUpEmail = useRef<string | null>(null);
   const greetingShown = useRef(Boolean(initialGreetingName));
+  const debounceTimer = useRef<number | null>(null);
   const { containerRef: turnstileRef, getToken } = useTurnstile(turnstileSiteKey);
 
   const [step, setStep] = useState<"email" | "password">(initialStep);
@@ -116,22 +119,47 @@ export function LoginForm({
     document.getElementById(id)?.focus({ preventScroll: true });
   }, [step, emailInputId, passwordInputId]);
 
+  function clearDebounce() {
+    if (debounceTimer.current !== null) {
+      window.clearTimeout(debounceTimer.current);
+      debounceTimer.current = null;
+    }
+  }
+  useEffect(() => clearDebounce, []);
+
   function handleEmailSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    clearDebounce();
     // Format-only, client-side, per #158: no existence check on the address
     // (an "unknown account" error here would make this screen a
     // user-enumeration oracle) — a valid format always proceeds to step 3.
-    const parsed = magicLinkSchema.safeParse({
-      email: new FormData(event.currentTarget).get("email"),
-    });
-    if (!parsed.success) {
+    const address = parseGreetingAddress(new FormData(event.currentTarget).get("email"));
+    if (address === null) {
       setEmailError(t("errors.invalid-email-format"));
       return;
     }
     setEmailError(null);
-    setEmail(parsed.data.email);
+    setEmail(address);
     setStep("password");
-    void startGreetingLookup(parsed.data.email);
+    void startGreetingLookup(address);
+  }
+
+  // #416: look the name up while typing. Valid + 250ms idle (or blur) starts the
+  // lookup; an invalid/empty value does nothing, so the shown name stays while a
+  // typo is corrected. Autofill fires onChange too. Dedupe lives in startGreetingLookup.
+  function handleEmailChange(event: ChangeEvent<HTMLInputElement>) {
+    clearDebounce();
+    const address = parseGreetingAddress(event.target.value);
+    if (address === null) return;
+    debounceTimer.current = window.setTimeout(() => {
+      debounceTimer.current = null;
+      void startGreetingLookup(address);
+    }, GREETING_LOOKUP_DEBOUNCE_MS);
+  }
+  function handleEmailBlur(event: FocusEvent<HTMLInputElement>) {
+    clearDebounce();
+    const address = parseGreetingAddress(event.target.value);
+    if (address !== null) void startGreetingLookup(address);
   }
 
   // Runs beside the step slide, never delaying it. Same e-mail as the last
@@ -204,6 +232,8 @@ export function LoginForm({
                 type="email"
                 placeholder={t("emailPlaceholder")}
                 autoComplete="email"
+                onChange={handleEmailChange}
+                onBlur={handleEmailBlur}
                 aria-invalid={emailError ? true : undefined}
                 aria-describedby={emailError ? emailErrorId : undefined}
               />

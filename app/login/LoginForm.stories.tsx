@@ -63,6 +63,21 @@ export const GreetingNameArrivesLate = () => (
   />
 );
 
+// #416: type a valid e-mail (no submit): "Carlotta" resolves ~600ms after typing
+// stops. Every lookup call is recorded on window.__greetingLookups for the browser check.
+const spyLookup = mockLookupGreetingName("Carlotta", 600);
+export const GreetingWhileTyping = () => (
+  <LoginForm
+    signInWithPasswordAction={mockSignInWithPassword}
+    sendMagicLinkAction={mockSendMagicLink}
+    lookupGreetingNameAction={async (input) => {
+      const w = window as unknown as { __greetingLookups?: string[] };
+      (w.__greetingLookups ??= []).push(input.email);
+      return spyLookup(input);
+    }}
+  />
+);
+
 // Long name: the heading truncates instead of overflowing its column.
 export const GreetingLongName = () => (
   <LoginForm

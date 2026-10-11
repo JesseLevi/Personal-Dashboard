@@ -204,6 +204,13 @@ before (Inter 20 semibold), so the h1 classes are unchanged.
 - **Open difference:** the Step-02 frame has no Terug button, but the built
   Step-03 pane keeps the Terug/Inloggen row (buttons out of scope for #407).
 
+## Name already on step 1 (#416, deliberate Figma deviation)
+
+Figma shows the name only in Step-02. At the user's explicit request the lookup
+now also starts while typing (valid address, 250ms idle, or blur), so the name
+can appear on step 1. An invalid/empty field keeps the shown name (no flicker
+while fixing a typo). Doorgaan reuses the lookup via the same-address dedupe.
+
 ## Terug/Inloggen row — the back trigger is now designed (fix round)
 
 `LogIn/Mobile/Step-03/Error` (`3991:13224`), fetched in a fix round after
