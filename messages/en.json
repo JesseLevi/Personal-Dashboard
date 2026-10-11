@@ -14,10 +14,8 @@
   },
   "auth": {
     "greeting": {
-      "night": "Good night and welcome",
-      "morning": "Good morning and welcome",
-      "afternoon": "Good afternoon and welcome",
-      "evening": "Good evening and welcome"
+      "lead": "Hey",
+      "tail": ", welcome to Atlas"
     },
     "emailPlaceholder": "Email",
     "passwordPlaceholder": "Password",

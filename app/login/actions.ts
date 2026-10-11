@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { magicLinkSchema, passwordLoginSchema } from "@/lib/auth/schemas";
+import { lookupGreetingName as lookupGreetingNameImpl } from "@/lib/auth/greeting-lookup";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // #158 rewrote both actions from redirect-with-querystring to the
@@ -63,6 +64,15 @@ export async function sendMagicLink(
   if (error) return { status: "error", errorKey: "magic-link-failed" };
 
   return { status: "sent" };
+}
+
+// ADR-0031: first name for the login heading. Turnstile-gated, rate-limited
+// in the database, fails closed to `{ name: null }` — see lib/auth/greeting-lookup.ts.
+export async function lookupGreetingName(
+  email: string,
+  turnstileToken: string,
+): Promise<{ name: string | null }> {
+  return lookupGreetingNameImpl({ email, token: turnstileToken });
 }
 
 // No UI calls this since #158 removed the placeholder homepage's sign-out

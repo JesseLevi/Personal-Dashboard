@@ -167,25 +167,41 @@ The greeting text's own Figma fill is `#000000` (pure black), while the
 per the token-scale rule (no new token for a 1-off value this close to an
 existing one) — flagged here as the ticket asked, not silently reconciled.
 
-## Greeting — server clock, client-corrected
+## Heading — "Hey [name], welkom bij Atlas" (#407, ADR-0031)
 
-Annotation on `3930:25897` (Dev Mode, dropped by the MCP payload and fetched
-via REST separately from the geometry call): 00:00–05:00 Goeienacht,
-05:00–12:00 Goeiemorgen, 12:00–18:00 Goeiemiddag, 18:00–00:00 Goeieavond.
-`lib/auth/greeting.ts`'s `greetingKeyForHour` is the single source both
-`page.tsx` (server clock, `new Date().getHours()`) and `LoginForm.tsx` (a
-`useEffect` reading the visitor's own clock post-mount) call, so the two
-never disagree on where an hour falls. The initial client render uses the
-same `serverGreetingKey` prop the server rendered with, so the correction is
-an ordinary post-mount state update rather than a real hydration mismatch —
-`suppressHydrationWarning` is kept on the element regardless, per the
-ticket's explicit instruction, as a defensive measure against edge cases
-(e.g. a statically-cached response whose baked-in server time has gone
-stale by the time a real visitor hydrates it).
+Replaces the time-of-day greeting (`greetingKeyForHour`, `auth.greeting.night/
+morning/afternoon/evening`, the `suppressHydrationWarning` and the Ladle
+clock freeze are gone). Figma section `4221:14942`: `LogIn/Mobile/Step-01`
+`4221:14843` (heading text `4221:14845`, "Hey, welkom bij Atlas") and
+`LogIn/Mobile/Step-02` `4221:14891` (heading text `4221:14940`, "Hey
+Carlotta, welkom bij Atlas"). Same text style as before (Inter 20 / semibold),
+so the `<h1>` classes are unchanged.
 
-Shipped as four whole sentences per locale (`auth.greeting.night/morning/
-afternoon/evening`), not a composed string, per ADR-0007 and the ticket's
-own instruction.
+- Animation (designed by the user in conversation): three inline parts in a
+  centred row, `auth.greeting.lead` / the name / `auth.greeting.tail`. The
+  name part is an `inline-grid` whose column opens `0fr` -> `1fr` over an
+  `overflow-hidden` child, plus opacity 0 -> 1, `duration-base ease-base`,
+  `motion-reduce:transition-none` (same technique as `ErrorLine`). The row is
+  centred, so the growing width pushes "Hey" left and the tail right.
+- Spaces: the name carries one leading nbsp (a regular space would collapse
+  at the start of the grid item); nothing else adds space, so collapsed it
+  reads "Hey, welkom" with no gap before the comma. `align-top` keeps the
+  baselines aligned (measured: same glyph row).
+- Accessibility: the `<h1>` has an `aria-label` with the whole sentence;
+  Chrome otherwise inserts spaces around the inline-grid ("Hey  Carlotta ,").
+- Lookup: a valid "Doorgaan" starts `lookupGreetingName` beside the step
+  slide (never awaited by it). Same address after Terug keeps the name; a
+  different one animates it out, then looks up again; stale results are
+  dropped; a null name or any failure keeps the plain heading, no error UI.
+  The invisible Turnstile widget lives in `app/login/useTurnstile.ts`
+  (site key via prop from `page.tsx`, no key = no widget = no lookup).
+- Measured in Ladle with a stubbed widget: width 0 -> ~79px (Carlotta) over
+  ~200ms with the opacity rising in step, "Hey" left and the tail right by
+  ~40px each; switching address collapses to 0 and opens again.
+- Open difference: Step-02 (`4221:14891`) has no Terug button, only the
+  full-width Inloggen. The code keeps the Terug/Inloggen row (`3991:13224`);
+  noticed, not changed, awaiting a design decision.
+- Ladle: `NameResolved` story seeds `initialGreetingName`.
 
 ## Terug/Inloggen row — the back trigger is now designed (fix round)
 
@@ -310,18 +326,6 @@ Inloggen row) and, separately, against real `/login` screenshots at
 1440×868, 1280×800, 820×1180 and 402×820 — see "Page layout" above for
 what that second check caught that the first pixel check couldn't, since
 it never looked past `LoginForm`'s own boundary.
-
-## Visual-baseline clock freeze
-
-`LoginForm`'s greeting corrects to the *visitor's* local clock in a
-post-mount effect, which would otherwise make its own Ladle screenshots
-flip text depending on what time of day `pnpm test:visual` happens to run.
-Rather than special-casing this one story, `tests/visual/ladle.visual.spec.
-ts` now freezes every story's clock once (`page.clock.setFixedTime(...)`,
-Playwright's Clock API) to a fixed 14:00 timestamp before navigating —
-harmless to every other story, since none of the rest read the clock, and
-it conveniently lands in the same "afternoon" bucket the Figma reference
-frames themselves sample ("Goeiemiddag en welkom").
 
 ## `accent` token — now fully orphaned
 

@@ -14,14 +14,13 @@ import { useTranslations } from "next-intl";
 import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
 import { magicLinkSchema } from "@/lib/auth/schemas";
-import { greetingKeyForHour, type GreetingKey } from "@/lib/auth/greeting";
 import type { MagicLinkState, PasswordLoginState } from "./actions";
+import { useTurnstile } from "./useTurnstile";
 
 // Login/Mobile+Desktop (3929:25181). StepAnimation (3934:32745): two panes
-// share one grid cell and each slides (no fade) by the Figma rail distance
-// (357px = 312px pane + 45px gap). No scroll container, so focus() can't
-// scroll it; a padded edge-fade mask (not overflow-hidden) keeps focus rings
-// whole. Record: design/notes/LoginForm.md.
+// share one grid cell and slide by the Figma rail distance (357px). Heading
+// name (4221:14843/4221:14891, ADR-0031) opens between "Hey" and the tail.
+// Record: design/notes/LoginForm.md.
 
 const PANE_CLASS =
   "col-start-1 row-start-1 transition-[translate] duration-[var(--duration-base)] ease-base motion-reduce:transition-none";
@@ -38,8 +37,15 @@ export interface LoginFormProps {
     prevState: MagicLinkState,
     formData: FormData,
   ) => Promise<MagicLinkState>;
-  /** Greeting bucket computed from the request's own (server) clock; corrected to the visitor's local clock after mount — see the useEffect below. */
-  serverGreetingKey: GreetingKey;
+  /** ADR-0031: first-name lookup for the heading; resolves `{ name: null }` on any failure. */
+  lookupGreetingNameAction: (
+    email: string,
+    turnstileToken: string,
+  ) => Promise<{ name: string | null }>;
+  /** Turnstile site key (server env, not NEXT_PUBLIC_). Absent = no widget, no lookup. */
+  turnstileSiteKey?: string;
+  /** Ladle-only: heading name already resolved on mount. */
+  initialGreetingName?: string;
   /**
    * Ladle-only: which StepAnimation pane is visible on mount. A real visit
    * always starts at "email" (the default); the Ladle baselines for step 3,
@@ -55,21 +61,37 @@ export interface LoginFormProps {
 export function LoginForm({
   signInWithPasswordAction,
   sendMagicLinkAction,
-  serverGreetingKey,
+  lookupGreetingNameAction,
+  turnstileSiteKey,
+  initialGreetingName,
   initialStep = "email",
   initialState,
 }: LoginFormProps) {
   const t = useTranslations("auth");
 
-  // Server renders with the request's own clock; this corrects to the
-  // visitor's local clock once mounted. The initial client render matches
-  // the server output exactly (same serverGreetingKey), so the correction
-  // is an ordinary post-mount state update, not a hydration diff — the
-  // element still carries suppressHydrationWarning as instructed.
-  const [greetingKey, setGreetingKey] = useState(serverGreetingKey);
-  useEffect(() => {
-    setGreetingKey(greetingKeyForHour(new Date().getHours()));
-  }, []);
+  // The text outlives `nameVisible` so the name animates out with its
+  // letters still in place; it is only replaced while hidden.
+  const [nameText, setNameText] = useState(initialGreetingName ?? "");
+  const [nameVisible, setNameVisible] = useState(Boolean(initialGreetingName));
+  const lookedUpEmail = useRef<string | null>(null);
+  const lookupId = useRef(0);
+  const { containerRef: turnstileRef, getToken } = useTurnstile(turnstileSiteKey);
+
+  // Runs beside the step slide, never awaited by it. A stale or failed
+  // lookup just leaves the plain greeting; there is no error UI.
+  async function startLookup(address: string) {
+    const id = ++lookupId.current;
+    try {
+      const token = await getToken();
+      if (!token || id !== lookupId.current) return;
+      const { name } = await lookupGreetingNameAction(address, token);
+      if (!name || id !== lookupId.current) return;
+      setNameText(name);
+      setNameVisible(true);
+    } catch {
+      // fall through: plain greeting
+    }
+  }
 
   const [step, setStep] = useState<"email" | "password">(initialStep);
   const [email, setEmail] = useState("");
@@ -120,6 +142,16 @@ export function LoginForm({
     setEmailError(null);
     setEmail(parsed.data.email);
     setStep("password");
+
+    // Same address after Terug keeps the name; a different one clears it
+    // (animating out) before the new lookup starts.
+    const address = parsed.data.email.trim().toLowerCase();
+    if (turnstileSiteKey && lookedUpEmail.current !== address) {
+      lookedUpEmail.current = address;
+      lookupId.current++;
+      setNameVisible(false);
+      void startLookup(address);
+    }
   }
 
   // Undesigned (no Figma trigger for "back to email") — Escape plus a
@@ -138,9 +170,34 @@ export function LoginForm({
 
   return (
     <div className="flex w-full flex-col items-center">
-      <h1 className="text-xl font-semibold text-text-primary" suppressHydrationWarning>
-        {t(`greeting.${greetingKey}`)}
+      {/* "Hey" + [name] + tail as inline parts in a centred row: the name's
+          width opens from 0, which pushes "Hey" left and the tail right.
+          The leading nbsp is the only space (a regular one would collapse). */}
+      <h1
+        aria-label={`${t("greeting.lead")}${nameVisible ? ` ${nameText}` : ""}${t("greeting.tail")}`}
+        className="text-center text-xl font-semibold text-text-primary"
+      >
+        <span>{t("greeting.lead")}</span>
+        <span
+          aria-hidden
+          className={cn(
+            "inline-grid align-top transition-[grid-template-columns] duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+            nameVisible ? "grid-cols-[1fr]" : "grid-cols-[0fr]",
+          )}
+        >
+          <span
+            className={cn(
+              "overflow-hidden whitespace-nowrap transition-opacity duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+              nameVisible ? "opacity-100" : "opacity-0",
+            )}
+          >
+            {" "}
+            {nameText}
+          </span>
+        </span>
+        <span>{t("greeting.tail")}</span>
       </h1>
+      {turnstileSiteKey ? <div ref={turnstileRef} /> : null}
 
       {/* 16px padding, offset by negative margin + mt (24px - 16px): room for
           focus rings inside the mask's border box, layout unchanged. */}

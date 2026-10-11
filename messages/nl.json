@@ -14,10 +14,8 @@
   },
   "auth": {
     "greeting": {
-      "night": "Goeienacht en welkom",
-      "morning": "Goeiemorgen en welkom",
-      "afternoon": "Goeiemiddag en welkom",
-      "evening": "Goeieavond en welkom"
+      "lead": "Hey",
+      "tail": ", welkom bij Atlas"
     },
     "emailPlaceholder": "E-mail",
     "passwordPlaceholder": "Wachtwoord",
