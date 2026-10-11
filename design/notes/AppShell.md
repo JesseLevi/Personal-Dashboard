@@ -457,14 +457,13 @@ fixes this upstream — the `other` entry would then be redundant, not wrong.
 
 ## `name`/`short_name`/`appleWebApp.title` — not translated
 
-`app/layout.tsx`'s existing `metadata.title` ("Personal Dashboard") was
+`app/layout.tsx`'s existing `metadata.title` ("Atlas") was
 already a literal string, not a next-intl key, before this ticket. Manifest
 `name`/`short_name` and `appleWebApp.title` follow the same precedent
 deliberately: a manifest is a static route with no locale to key off (no
 request context), and a product name reads as an identifier (closer to a
-package name) rather than translatable UI copy. `short_name: "Dashboard"` —
-`name`'s full "Personal Dashboard" would truncate on the iOS home-screen
-label. ADR-0007 covers UI strings; this isn't read as being in scope for it,
+package name) rather than translatable UI copy. `short_name` equals `name` ("Atlas"); the short
+product name fits the iOS home-screen label without truncating. ADR-0007 covers UI strings; this isn't read as being in scope for it,
 but it's a deliberate call, not an oversight, and is flagged here per
 `docs/guides/ui-components.md`'s convention for exactly this kind of call.
 

@@ -17,11 +17,11 @@ import "./globals.css";
 // generates for app/manifest.ts, kept because the ticket calls for it
 // directly and it costs nothing extra.
 export const metadata: Metadata = {
-  title: "Personal Dashboard",
+  title: "Atlas",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "Personal Dashboard",
+    title: "Atlas",
     statusBarStyle: "black-translucent",
   },
   // `other` works around a live Next 15.5 bug (confirmed against installed

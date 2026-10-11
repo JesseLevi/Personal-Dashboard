@@ -17,8 +17,8 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
-    name: "Personal Dashboard",
-    short_name: "Dashboard",
+    name: "Atlas",
+    short_name: "Atlas",
     start_url: "/te-doen",
     scope: "/",
     display: "standalone",

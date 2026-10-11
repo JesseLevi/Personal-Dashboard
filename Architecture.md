@@ -1,4 +1,4 @@
-# Architecture — Personal Dashboard
+# Architecture — Atlas
 
 **Status**: Draft for ticket generation (Opus) and execution (Claude Code/Sonnet).
 **Inputs**: `Vision.md` (product scope), `CLAUDE.md` (build conventions), Figma "Notion - V2" dev page (node 3670-3261), user decisions 2026-07-20 (recorded in ADRs).

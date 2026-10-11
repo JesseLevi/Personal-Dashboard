@@ -1,4 +1,4 @@
-Visiedocument: Personal dashboard
+Visiedocument: Atlas
 
 1. Kernvisie
 Een persoonlijk levensmanagement-platform, primair voor mezelf als solo-gebruiker, dat alle informatie voor mijn dagelijks leven op één centrale, LLM-doorzoekbare plek samenbrengt. Het probleem dat het oplost is decision fatigue: te veel losse apps en losse beslismomenten, te weinig overzicht over wat er speelt en wat er moet gebeuren. Geen productiviteitssysteem om het systeem — het doel is een rustiger hoofd en meer grip op de dag.
