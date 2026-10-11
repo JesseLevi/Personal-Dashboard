@@ -35,5 +35,4 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
 - `lib/defaults/ensure.ts`: the regenerated types now contain `ensure_user_defaults`, so the typed cast can go.
 - #10 SMTP for magic links on hosted.
 - Check on hosted that migrations `20261011000001` (drop thumbnail bucket, #384) and `20261011000002` (`last_name`, #404) are applied. A dispatch needs the user's go.
-- Confirm `ANTHROPIC_API_KEY` and the Console spend cap are set in production. Recipe import runs degraded without them.
 - `components/molecules/CardContentIngredient.stories.tsx` has a stale comment about the removed Active pill. `next.config.ts` points to a lucide fix in `design/notes/Icon.md` that the note never had.
