@@ -17,12 +17,14 @@ import { magicLinkSchema } from "@/lib/auth/schemas";
 import { greetingKeyForHour, type GreetingKey } from "@/lib/auth/greeting";
 import type { MagicLinkState, PasswordLoginState } from "./actions";
 
-// Login/Mobile+Desktop (3929:25181). StepAnimation (3934:32745) is a single
-// 668px rail: Step-01 pane at x=0, Step-03 pane 357px to the right (312px
-// pane + 45px gap), a 312px window clips the rest — the rail translates by
-// that same 357px, the window never resizes. Full record (measurements, the
-// collapsible-error technique, the undesigned back-to-email affordance):
-// design/notes/LoginForm.md.
+// Login/Mobile+Desktop (3929:25181). StepAnimation (3934:32745): two panes
+// share one grid cell and each slides + fades by the Figma rail distance
+// (357px = 312px pane + 45px gap). No scroll container, so focus() can't
+// scroll it; a padded edge-fade mask (not overflow-hidden) keeps focus rings
+// whole. Record: design/notes/LoginForm.md.
+
+const PANE_CLASS =
+  "col-start-1 row-start-1 transition-[transform,opacity] duration-[var(--duration-base)] ease-base motion-reduce:transition-none";
 
 const IDLE_PASSWORD_STATE: PasswordLoginState = { status: "idle" };
 const IDLE_MAGIC_LINK_STATE: MagicLinkState = { status: "idle" };
@@ -100,7 +102,7 @@ export function LoginForm({
       return;
     }
     const id = step === "password" ? passwordInputId : emailInputId;
-    document.getElementById(id)?.focus();
+    document.getElementById(id)?.focus({ preventScroll: true });
   }, [step, emailInputId, passwordInputId]);
 
   function handleEmailSubmit(event: FormEvent<HTMLFormElement>) {
@@ -140,16 +142,16 @@ export function LoginForm({
         {t(`greeting.${greetingKey}`)}
       </h1>
 
-      <div className="mt-6 w-[312px] overflow-hidden">
-        <div
-          className={cn(
-            "flex transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
-            // 357px — see the header comment above (StepAnimation rail shift).
-            step === "password" && "-translate-x-[357px]",
-          )}
-        >
+      {/* 16px padding, offset by negative margin + mt (24px - 16px): room for
+          focus rings inside the mask's border box, layout unchanged. */}
+      <div className="-mx-component-lg -mb-component-lg mt-stack-sm p-component-lg [mask-image:linear-gradient(to_right,transparent,black_var(--spacing-component-lg),black_calc(100%-var(--spacing-component-lg)),transparent)]">
+        <div className="grid w-[312px]">
           {/* Step 1 — E-mail (3934:32746) */}
-          <div className="w-[312px] shrink-0" aria-hidden={step !== "email"} inert={step !== "email"}>
+          <div
+            className={cn(PANE_CLASS, step === "email" ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-[357px] opacity-0")}
+            aria-hidden={step !== "email"}
+            inert={step !== "email"}
+          >
             <form onSubmit={handleEmailSubmit} noValidate>
               <InputField
                 id={emailInputId}
@@ -172,7 +174,7 @@ export function LoginForm({
               full-width "Inloggen" button unconditionally, not only while
               an error shows) */}
           <div
-            className="ml-[45px] w-[312px] shrink-0"
+            className={cn(PANE_CLASS, step === "password" ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-[357px] opacity-0")}
             aria-hidden={step !== "password"}
             inert={step !== "password"}
             onKeyDown={handlePasswordPaneKeyDown}
