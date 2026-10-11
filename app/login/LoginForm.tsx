@@ -18,13 +18,13 @@ import { greetingKeyForHour, type GreetingKey } from "@/lib/auth/greeting";
 import type { MagicLinkState, PasswordLoginState } from "./actions";
 
 // Login/Mobile+Desktop (3929:25181). StepAnimation (3934:32745): two panes
-// share one grid cell and each slides + fades by the Figma rail distance
+// share one grid cell and each slides (no fade) by the Figma rail distance
 // (357px = 312px pane + 45px gap). No scroll container, so focus() can't
 // scroll it; a padded edge-fade mask (not overflow-hidden) keeps focus rings
 // whole. Record: design/notes/LoginForm.md.
 
 const PANE_CLASS =
-  "col-start-1 row-start-1 transition-[transform,opacity] duration-[var(--duration-base)] ease-base motion-reduce:transition-none";
+  "col-start-1 row-start-1 transition-[translate] duration-[var(--duration-base)] ease-base motion-reduce:transition-none";
 
 const IDLE_PASSWORD_STATE: PasswordLoginState = { status: "idle" };
 const IDLE_MAGIC_LINK_STATE: MagicLinkState = { status: "idle" };
@@ -148,7 +148,7 @@ export function LoginForm({
         <div className="grid w-[312px]">
           {/* Step 1 — E-mail (3934:32746) */}
           <div
-            className={cn(PANE_CLASS, step === "email" ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-[357px] opacity-0")}
+            className={cn(PANE_CLASS, step === "email" ? "translate-x-0" : "pointer-events-none -translate-x-[357px]")}
             aria-hidden={step !== "email"}
             inert={step !== "email"}
           >
@@ -174,7 +174,7 @@ export function LoginForm({
               full-width "Inloggen" button unconditionally, not only while
               an error shows) */}
           <div
-            className={cn(PANE_CLASS, step === "password" ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-[357px] opacity-0")}
+            className={cn(PANE_CLASS, step === "password" ? "translate-x-0" : "pointer-events-none translate-x-[357px]")}
             aria-hidden={step !== "password"}
             inert={step !== "password"}
             onKeyDown={handlePasswordPaneKeyDown}
