@@ -272,7 +272,7 @@ export function NoteEditor({ note, linkTitles, backlinks }: NoteEditorProps) {
         <EditorContent editor={editor} />
         <TableMenu editor={editor} />
         <NoteTableHandles editor={editor} />
-        <div className="pt-stack-md">
+        <div className="mx-auto max-w-[70ch] pt-stack-md text-base font-medium">
           <NoteWordCount words={words} minutes={readingMinutes(words)} />
         </div>
         {backlinks.length > 0 && (

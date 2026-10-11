@@ -117,8 +117,13 @@ function slideBlock(editor: Editor, pos: number, handle: HTMLElement, startY: nu
     handle.style.transform = `translateY(${dy}px)`;
   }
 
+  // ProseMirror re-renders a block whose style attribute changes, wiping the
+  // drag transforms; pause its DOM observer for the duration of the drag.
+  const observer = (view as unknown as { domObserver?: { stop(): void; start(): void } }).domObserver;
+
   function start() {
     active = true;
+    observer?.stop();
     onDragged();
     editor.view.dispatch(editor.state.tr.setMeta("lockDragHandle", true));
     document.body.style.cursor = "grabbing";
@@ -169,6 +174,7 @@ function slideBlock(editor: Editor, pos: number, handle: HTMLElement, startY: nu
       el.style.pointerEvents = "";
     });
     handle.style.transform = "";
+    if (active) observer?.start();
     if (active && !editor.isDestroyed) editor.view.dispatch(editor.state.tr.setMeta("lockDragHandle", false));
   }
 

@@ -325,6 +325,10 @@ html {
 .tiptap .selectedCell {
   background-color: var(--color-surface-highlight-blue);
 }
+/* Dark: a stone step between the page surface and the grid lines instead of blue. */
+[data-theme="dark"] .tiptap .selectedCell {
+  background-color: var(--color-surface-secondary-hover);
+}
 
 /* #330: prosemirror-tables inserts `.column-resize-handle` into the cell next
    to the hovered column edge and keeps it while dragging, so it is visible on
