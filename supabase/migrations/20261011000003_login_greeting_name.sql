@@ -18,6 +18,9 @@ create table private.login_greeting_attempts (
 create index login_greeting_attempts_key_attempted_at_idx
   on private.login_greeting_attempts (key, attempted_at);
 
+create index login_greeting_attempts_attempted_at_idx
+  on private.login_greeting_attempts (attempted_at);
+
 comment on table private.login_greeting_attempts is
   'Rate-limit counter for public.login_greeting_name (ADR-0031). Holds only hashed keys (ip:<hash>, email:<sha256>, global), no user data, hence no user_id (ADR-0009 exception, asserted by supabase/tests/rls-login-greeting.sql). Rows older than 1 hour are purged on each call.';
 
@@ -42,14 +45,17 @@ declare
   v_global_count bigint;
   v_name text;
 begin
+  -- Cheap early exits before anything is written.
+  if pg_catalog.length(coalesce(p_email, '')) > 254
+     or pg_catalog.length(coalesce(p_client_key, '')) > 128 then
+    return null;
+  end if;
+
   delete from private.login_greeting_attempts
   where attempted_at < pg_catalog.now() - interval '1 hour';
 
-  -- Record this attempt under all three keys first, so the counts below
-  -- include it (a blocked attempt still counts and extends the lockout).
-  insert into private.login_greeting_attempts (key)
-  values (v_ip_key), (v_email_key), (v_global_key);
-
+  -- Count first; limits are "allowed calls per 15 minutes". A blocked call
+  -- records nothing, so it is cheap and does not extend a lockout.
   select
     pg_catalog.count(*) filter (where a.key = v_ip_key),
     pg_catalog.count(*) filter (where a.key = v_email_key),
@@ -59,15 +65,21 @@ begin
   where a.key in (v_ip_key, v_email_key, v_global_key)
     and a.attempted_at > pg_catalog.now() - interval '15 minutes';
 
-  if v_ip_count > 10 or v_email_count > 5 or v_global_count > 200 then
+  if v_ip_count >= 10 or v_email_count >= 5 or v_global_count >= 200 then
     return null;
   end if;
 
+  insert into private.login_greeting_attempts (key)
+  values (v_ip_key), (v_email_key), (v_global_key);
+
+  -- GoTrue stores e-mails lowercased, so this equality uses the unique index.
   select p.display_name
   into v_name
   from auth.users u
   join public.profiles p on p.id = u.id
-  where pg_catalog.lower(u.email) = v_email
+  where u.email = v_email
+    and u.deleted_at is null
+    and (u.banned_until is null or u.banned_until <= pg_catalog.now())
   limit 1;
 
   -- First whitespace-separated word of the trimmed name, or null.

@@ -39,19 +39,21 @@ let scriptPromise: Promise<TurnstileApi | null> | null = null;
 function loadTurnstile(): Promise<TurnstileApi | null> {
   if (window.turnstile) return Promise.resolve(window.turnstile);
   scriptPromise ??= new Promise<TurnstileApi | null>((resolve) => {
-    const timer = window.setTimeout(() => resolve(null), SCRIPT_TIMEOUT_MS);
     const script = document.createElement("script");
+    const fail = () => {
+      window.clearTimeout(timer);
+      script.remove();
+      scriptPromise = null; // a later lookup may retry
+      resolve(null);
+    };
+    const timer = window.setTimeout(fail, SCRIPT_TIMEOUT_MS);
     script.src = SCRIPT_SRC;
     script.async = true;
     script.onload = () => {
       window.clearTimeout(timer);
       resolve(window.turnstile ?? null);
     };
-    script.onerror = () => {
-      window.clearTimeout(timer);
-      scriptPromise = null;
-      resolve(null);
-    };
+    script.onerror = fail;
     document.head.appendChild(script);
   });
   return scriptPromise;
@@ -64,6 +66,8 @@ export function useTurnstile(siteKey: string | null | undefined) {
   const apiRef = useRef<TurnstileApi | null>(null);
   const readyRef = useRef<Promise<boolean> | null>(null);
   const pendingRef = useRef<((token: string | null) => void) | null>(null);
+  const callIdRef = useRef(0);
+  const aliveRef = useRef(false);
 
   const settle = useCallback((token: string | null) => {
     const resolve = pendingRef.current;
@@ -71,12 +75,18 @@ export function useTurnstile(siteKey: string | null | undefined) {
     resolve?.(token);
   }, []);
 
-  useEffect(() => {
-    if (!siteKey) return;
-    let cancelled = false;
-    readyRef.current = loadTurnstile().then((api) => {
+  // Loads the script and renders the widget once; a failed attempt clears the
+  // cached promise so the next getToken() tries again.
+  const ensureReady = useCallback((): Promise<boolean> | null => {
+    if (!siteKey) return null;
+    if (readyRef.current) return readyRef.current;
+    const attempt: Promise<boolean> = loadTurnstile().then((api) => {
       const container = containerRef.current;
-      if (cancelled || !api || !container) return false;
+      if (readyRef.current !== attempt) return false; // superseded or torn down
+      if (!aliveRef.current || !api || !container) {
+        readyRef.current = null;
+        return false;
+      }
       apiRef.current = api;
       widgetIdRef.current = api.render(container, {
         sitekey: siteKey,
@@ -89,23 +99,33 @@ export function useTurnstile(siteKey: string | null | undefined) {
       });
       return true;
     });
+    readyRef.current = attempt;
+    return attempt;
+  }, [siteKey, settle]);
+
+  useEffect(() => {
+    if (!siteKey) return;
+    aliveRef.current = true;
+    void ensureReady();
     return () => {
-      cancelled = true;
+      aliveRef.current = false;
       settle(null);
       if (apiRef.current && widgetIdRef.current) apiRef.current.remove(widgetIdRef.current);
       widgetIdRef.current = null;
       apiRef.current = null;
       readyRef.current = null;
     };
-  }, [siteKey, settle]);
+  }, [siteKey, ensureReady, settle]);
 
   const getToken = useCallback(async (): Promise<string | null> => {
-    if (!siteKey || !readyRef.current) return null;
+    const ready = ensureReady();
+    if (!ready) return null;
+    const callId = ++callIdRef.current;
     try {
-      if (!(await readyRef.current)) return null;
+      if (!(await ready)) return null;
       const api = apiRef.current;
       const widgetId = widgetIdRef.current;
-      if (!api || !widgetId) return null;
+      if (!api || !widgetId || callId !== callIdRef.current) return null;
       settle(null);
       const token = await new Promise<string | null>((resolve) => {
         const timer = window.setTimeout(() => settle(null), TOKEN_TIMEOUT_MS);
@@ -115,12 +135,14 @@ export function useTurnstile(siteKey: string | null | undefined) {
         };
         api.execute(widgetId);
       });
-      api.reset(widgetId);
+      // Only reset if no newer lookup has started meanwhile; resetting would
+      // cancel its challenge.
+      if (callId === callIdRef.current) api.reset(widgetId);
       return token;
     } catch {
       return null;
     }
-  }, [siteKey, settle]);
+  }, [ensureReady, settle]);
 
   return { containerRef, getToken };
 }

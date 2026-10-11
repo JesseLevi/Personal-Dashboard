@@ -15,7 +15,9 @@
   "auth": {
     "greeting": {
       "hey": "Hey",
-      "tail": ", welkom bij Atlas"
+      "tail": ", welkom bij Atlas",
+      "plain": "Hey, welkom bij Atlas",
+      "named": "Hey {name}, welkom bij Atlas"
     },
     "emailPlaceholder": "E-mail",
     "passwordPlaceholder": "Wachtwoord",

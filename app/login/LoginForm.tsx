@@ -177,6 +177,11 @@ export function LoginForm({
       <GreetingHeading
         hey={t("greeting.hey")}
         tail={t("greeting.tail")}
+        srText={
+          greetingVisible && greetingName !== ""
+            ? t("greeting.named", { name: greetingName })
+            : t("greeting.plain")
+        }
         name={greetingName}
         visible={greetingVisible}
       />
@@ -326,18 +331,20 @@ function ErrorLine({ id, message }: { id: string; message: string | null }) {
 function GreetingHeading({
   hey,
   tail,
+  srText,
   name,
   visible,
 }: {
   hey: string;
   tail: string;
+  srText: string;
   name: string;
   visible: boolean;
 }) {
   const shown = visible && name !== "";
   return (
     <h1 className="max-w-full text-xl font-semibold text-text-primary">
-      <span className="sr-only">{`${hey}${shown ? ` ${name}` : ""}${tail}`}</span>
+      <span className="sr-only">{srText}</span>
       <span aria-hidden className="flex max-w-full items-baseline justify-center">
         <span className="shrink-0 whitespace-nowrap">{hey}</span>
         <span

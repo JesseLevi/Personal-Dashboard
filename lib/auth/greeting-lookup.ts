@@ -3,25 +3,40 @@ import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { magicLinkSchema } from "@/lib/auth/schemas";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseAnonClient } from "@/lib/supabase/anon";
 
 // ADR-0031: login greeting name lookup. Fail closed on every problem and
 // return the same `{ name: null }` shape. Never log email, name, IP or token.
 
+const MIN_SALT_LENGTH = 16;
 const MIN_DURATION_MS = 500;
 const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 const EXPECTED_ACTION = "login_greeting";
 // Cloudflare's documented always-pass secret. Its Siteverify reply does not
 // carry our action or hostname (dummy values), so those two checks are skipped
-// for this secret only; success is still required.
+// for this secret only; success is still required. Never honoured in
+// production: there it counts as a misconfiguration and verification fails.
 const TURNSTILE_TEST_SECRET = "1x0000000000000000000000000000000AA";
 
 const inputSchema = z.object({
-  email: magicLinkSchema.shape.email,
+  email: magicLinkSchema.shape.email.max(254),
   turnstileToken: z.string().min(1).max(2048).nullable(),
 });
 
 export type GreetingResult = { name: string | null };
+
+// Lowercase, any port stripped (Siteverify reports the bare hostname).
+const normalizeHost = (value: string) =>
+  value.trim().toLowerCase().replace(/:\d+$/, "");
+
+function allowedHostnames(requestHost: string | null): string[] {
+  const configured = (process.env.TURNSTILE_ALLOWED_HOSTNAMES ?? "")
+    .split(",")
+    .map(normalizeHost)
+    .filter(Boolean);
+  if (configured.length > 0) return configured;
+  return requestHost ? [normalizeHost(requestHost)] : [];
+}
 
 const sha256Hex = (value: string) =>
   createHash("sha256").update(value).digest("hex");
@@ -32,6 +47,8 @@ async function verifyTurnstile(
   ip: string,
   host: string | null,
 ): Promise<boolean> {
+  const isTestSecret = secret === TURNSTILE_TEST_SECRET;
+  if (isTestSecret && process.env.VERCEL_ENV === "production") return false;
   try {
     const res = await fetch(SITEVERIFY_URL, {
       method: "POST",
@@ -46,8 +63,12 @@ async function verifyTurnstile(
       hostname?: string;
     };
     if (body.success !== true) return false;
-    if (secret === TURNSTILE_TEST_SECRET) return true;
-    return body.action === EXPECTED_ACTION && !!host && body.hostname === host;
+    if (isTestSecret) return true;
+    return (
+      body.action === EXPECTED_ACTION &&
+      typeof body.hostname === "string" &&
+      allowedHostnames(host).includes(normalizeHost(body.hostname))
+    );
   } catch {
     return false;
   }
@@ -60,7 +81,7 @@ async function lookup(input: unknown): Promise<GreetingResult> {
   }
   const secret = process.env.TURNSTILE_SECRET_KEY;
   const salt = process.env.LOGIN_GREETING_SALT;
-  if (!secret || !salt) return { name: null };
+  if (!secret || !salt || salt.length < MIN_SALT_LENGTH) return { name: null };
 
   const h = await headers();
   // Vercel sets x-real-ip itself; x-forwarded-for is only a fallback.
@@ -73,7 +94,7 @@ async function lookup(input: unknown): Promise<GreetingResult> {
   const ok = await verifyTurnstile(secret, parsed.data.turnstileToken, ip, host);
   if (!ok) return { name: null };
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAnonClient();
   const { data, error } = await supabase.rpc("login_greeting_name", {
     p_email: parsed.data.email,
     p_client_key: sha256Hex(ip + salt),
