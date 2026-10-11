@@ -80,11 +80,13 @@ the equivalent REST image-render endpoint was used for the pixel check
   full rail (`3929:25182`, `3934:32620`, `3989:13128`). Visible window is
   312px wide; the rail translates by 357px, the window never resizes.
   Built (#396) as two panes stacked in one `grid` cell (`col-start-1
-  row-start-1`), each animating its own `transform` + `opacity` (house
-  convention `transition-[transform,opacity] duration-[var(--duration-base)]
-  ease-base motion-reduce:transition-none`): active `translate-x-0`, inactive
+  row-start-1`), each a pure slide, no fade (`transition-[translate]
+  duration-[var(--duration-base)] ease-base motion-reduce:transition-none`;
+  the inactive pane sits outside the mask box, so it is invisible). Trap: in
+  Tailwind v4 `translate-x-*` sets the `translate` property, so an arbitrary
+  transition list must name `translate`, not `transform`. Active `translate-x-0`, inactive
   email `-translate-x-[357px]`, inactive password `translate-x-[357px]`, both
-  `opacity-0 pointer-events-none` + `inert`. Replaced the translated flex rail
+  `pointer-events-none` + `inert`. Replaced the translated flex rail
   inside `overflow-hidden` because (1) `focus()` on the still-offscreen
   password input made the browser scroll the overflow-hidden window
   (`scrollLeft`), stacking on the transform (double shift, timing-dependent)
