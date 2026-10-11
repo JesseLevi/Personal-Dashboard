@@ -106,6 +106,10 @@ html {
 .tiptap h3 {
   @apply text-xl font-bold leading-snug;
 }
+/* #342: a heading the table-of-contents rail scrolls to keeps clear space above it. */
+.tiptap :is(h1, h2, h3) {
+  scroll-margin-top: var(--spacing-stack-xl);
+}
 /* A heading starts a new section: extra space above, the normal block gap below. */
 .tiptap > * + h1 {
   margin-top: var(--spacing-stack-xxl);

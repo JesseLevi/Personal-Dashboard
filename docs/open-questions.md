@@ -233,6 +233,10 @@ The block handle and menu (#335) want `GripVertical` (the drag grip), `Copy` (Du
 
 The image states (#339) have two small gaps. The broken-image block wants an `ImageOff` glyph; `Icon` has only `Image`, so it reuses that (adding a glyph changes the `icon--all-icons` baseline). The upload placeholder wants a spinner; `Icon` has a `Loader` glyph but no spin treatment for it exists in the design system, so the placeholder is a pulsing `surface-secondary` block with text (static under `prefers-reduced-motion`). Needs a design call on both. -> `design/notes/NoteEditor.md` (#339 section).
 
+### notes-toc-rail-undesigned
+
+Figma draws no table-of-contents rail (#342). It is Claude-designed on request from `text-secondary`/`text-primary`, `surface-secondary` steps, `stroke-lines`, `radius-control` and `component-*` spacing. Two values have no token: the rail width (`w-44`, 11rem) and the sticky top offset (`top-stack-xl` is a stack gap reused as a page offset), and the `xl` (1280px) breakpoint below which the rail is hidden (the reading column is 70ch and the rail sits in the free space to its right). Needs a design call on the rail's width and the narrowest viewport it should appear on; a mobile "Inhoud" menu was left out. -> `design/notes/NoteEditor.md` (#342 section).
+
 ---
 
 ## Resolved and removed

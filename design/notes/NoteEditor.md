@@ -826,3 +826,34 @@ ADR-0023. All from existing components and bound semantic tokens.
   Not verified: a real phone's keyboard with the menu, and a note-to-note click
   against hosted data (nothing has run signed in).
 
+
+## #342 — table of contents rail (Claude-designed on request)
+
+ADR-0021 s3. From existing tokens; no new component (`NoteTableOfContents` is a list of links).
+
+- **Packages**: `@tiptap/extension-table-of-contents` and `@tiptap/extension-unique-id`, both 3.30.0
+  (same as `@tiptap/core`), both MIT on npm (the table-of-contents `license` field reads
+  "SEE LICENSE IN LICENSE.md"; that file is the MIT text). `UniqueID` is limited to `heading`.
+- **Attributes**: a heading gains `id` and `data-toc-id`, both additive. A note without them loads
+  unchanged (`tests/notes-toc.test.ts`); the ids are assigned in the editor's deferred `create`
+  handler. `NoteEditor` ignores updates until `settled`, so opening an old note does not save it or
+  bump its updated time; the ids reach the database with the first real edit. `toPlainText`,
+  `deriveTitle`, `extractNoteLinkIds` (#340) and the markdown export (#337) ignore them (tested), and
+  the server's `tiptapDocumentSchema` passes unknown attrs through. `scrollParent: undefined`
+  switches off the extension's own window scroll listener; the extension's `offsetTop` based
+  active flag is not used.
+- **Rail** (`NoteTableOfContents`, `lib/notes/use-note-toc.ts`): `nav` labelled "Inhoud", H1-H3 as
+  links (`href="#id"`; plain click scrolls, a modified click keeps the browser's behaviour). Level
+  indent via `component-md`/`component-lg`; active item `surface-secondary` + `text-primary` +
+  `aria-current="location"`, others `text-secondary` with the hover/active surface steps; a
+  `stroke-lines` rule on the left. Empty headings are skipped. Shown from `MIN_TOC_HEADINGS` (3).
+- **No layout shift**: the `aside` is `absolute` (out of flow) in the free space right of the 70ch
+  column, `w-44`, desktop `xl:` only, `sticky` inside. The editor column is never pushed or
+  narrowed whether the rail exists or not. Hidden below `xl`; mobile has no menu (left out).
+- **Behaviour**: active = last heading within the top quarter of the viewport (the last one at the
+  page bottom); a click selects its item at once until the next scroll. Activating moves the caret
+  into the heading (`focus(pos + 1)`, no jump) and scrolls it into view, `smooth` unless
+  `prefers-reduced-motion`. `.tiptap` headings carry `scroll-margin-top: stack-xl`.
+- **Tests**: `tests/notes-toc.test.ts`; stories `NoteTableOfContents` (`Default`, `FirstActive`), plus a
+  dark baseline. Flagged: `docs/open-questions.md#notes-toc-rail-undesigned`. Not verified: scrolling
+  against a real long note signed in (nothing has run signed in).

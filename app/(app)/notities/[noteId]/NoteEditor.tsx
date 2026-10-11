@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
@@ -19,6 +19,9 @@ import { buildNoteLinkResolution } from "@/lib/notes/note-link"; // #341
 import { NoteLinkSuggestion } from "@/lib/notes/note-link-suggestion"; // #341
 import { NoteLinkMenu } from "@/components/organisms/NoteLinkMenu"; // #341
 import { NoteBacklinks, type NoteBacklink } from "@/components/organisms/NoteBacklinks"; // #341
+import { NoteTableOfContents } from "@/components/organisms/NoteTableOfContents"; // #342
+import { useNoteToc } from "@/lib/notes/use-note-toc"; // #342
+import { MIN_TOC_HEADINGS } from "@/lib/notes/toc"; // #342
 import { setDetailsToggleLabels } from "@/lib/notes/details-labels";
 import { countWords, readingMinutes, typographyForLocale } from "@/lib/notes/writing-comfort";
 import { SlashMenu } from "@/components/organisms/SlashMenu";
@@ -73,6 +76,9 @@ export function NoteEditor({ note, linkTitles, backlinks }: NoteEditorProps) {
   // #339: a failed or rejected image upload shows its error here; nothing is inserted.
   const [imageError, setImageError] = useState<string | null>(null);
 
+  // #342: false until the editor has finished creating (see useEditor's onCreate below).
+  const settled = useRef(false);
+
   // #341: note links show their target's current title (resolved on the server
   // when the note opened); a click navigates client-side. Built once per mount.
   const [extensions] = useState(() => [
@@ -119,8 +125,22 @@ export function NoteEditor({ note, linkTitles, backlinks }: NoteEditorProps) {
         class: "text-base font-semibold text-text-primary focus:outline-none",
       },
     },
-    onUpdate: ({ editor: current }) => change(current.getJSON()),
+    // #342: the heading ids a note gets when it opens are not a content change, so
+    // they must not trigger a save (which would bump the note's "updated" time).
+    // The TableOfContents/UniqueID extensions assign them synchronously inside the
+    // editor's deferred `create` handlers; `settled` flips right after, so every
+    // later update is a real edit and carries the ids to the database.
+    onCreate: () => {
+      setTimeout(() => {
+        settled.current = true;
+      }, 0);
+    },
+    onUpdate: ({ editor: current }) => {
+      if (settled.current) change(current.getJSON());
+    },
   });
+
+  const { items: tocItems, activeId: tocActiveId, select: selectHeading } = useNoteToc(editor);
 
   const words = useEditorState({
     editor,
@@ -241,7 +261,18 @@ export function NoteEditor({ note, linkTitles, backlinks }: NoteEditorProps) {
           again. md:py-2 mirrors the desktop Content frame's own itemSpacing/
           paddingY (node 4067:20020, 8px), a real measured value that Figma
           leaves unbound -- design/notes/NoteEditor.md */}
-      <div className="pb-[calc(4rem+env(safe-area-inset-bottom))] md:py-2">
+      <div className="relative pb-[calc(4rem+env(safe-area-inset-bottom))] md:py-2">
+        {/* #342: the rail is out of flow (absolute, in the free space right of the
+            70ch reading column), so it never pushes or narrows the column when
+            it appears or disappears. Desktop only, from 3 headings. The sticky
+            top matches the page's top gutter. design/notes/NoteEditor.md */}
+        {tocItems.length >= MIN_TOC_HEADINGS && (
+          <aside className="pointer-events-none absolute inset-y-0 right-0 hidden w-44 xl:block">
+            <div className="pointer-events-auto sticky top-stack-xl max-h-[80vh] overflow-y-auto">
+              <NoteTableOfContents items={tocItems} activeId={tocActiveId} onSelect={selectHeading} />
+            </div>
+          </aside>
+        )}
         <EditorContent editor={editor} />
         <TableMenu editor={editor} />
         <div className="pt-stack-md">

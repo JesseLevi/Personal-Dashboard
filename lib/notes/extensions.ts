@@ -9,6 +9,8 @@ import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { Details, DetailsContent, DetailsSummary } from "@tiptap/extension-details";
 import Image from "@tiptap/extension-image";
 import FileHandler from "@tiptap/extension-file-handler";
+import { TableOfContents } from "@tiptap/extension-table-of-contents";
+import { UniqueID } from "@tiptap/extension-unique-id";
 import Mention, { type MentionOptions } from "@tiptap/extension-mention";
 import { NodeSelection } from "@tiptap/pm/state";
 import { ReactNodeViewRenderer, mergeAttributes, type AnyExtension } from "@tiptap/react";
@@ -20,6 +22,7 @@ import { NOTE_LINK_NODE_TYPE } from "./document";
 import { EMPTY_NOTE_LINK_RESOLUTION, type NoteLinkResolution } from "./note-link";
 import { detailsToggleLabel } from "./details-labels";
 import { LINK_PROTOCOLS, isAllowedLinkUri } from "./link-url";
+import { CreationQuiet } from "./creation-quiet";
 import { BlockShortcuts } from "./block-commands";
 import { NOTE_IMAGE_MIME_TYPES, isNoteImageSrc, requestImageUpload } from "./image-upload";
 
@@ -223,6 +226,16 @@ export const noteExtensions: AnyExtension[] = [
   BlockShortcuts,
   // #341: links to other notes.
   NoteLink,
+  // #342: heading ids for the table-of-contents rail. `UniqueID` is limited to
+  // headings; `TableOfContents` keeps the heading list (`editor.storage.
+  // tableOfContents.content`) and adds its own `data-toc-id` attribute. Both
+  // are additive attributes: a note without them loads unchanged and gets ids
+  // on its next save (lib/notes/toc.ts). `scrollParent: undefined` switches off
+  // the extension's own scroll listener -- the rail tracks the active heading
+  // itself (components/organisms/NoteTableOfContents.tsx).
+  CreationQuiet,
+  UniqueID.configure({ types: ["heading"] }),
+  TableOfContents.configure({ anchorTypes: ["heading"], scrollParent: undefined }),
 ];
 
 /** The whitelist with this editor's note-link resolution (current titles, deleted targets, navigation). */
