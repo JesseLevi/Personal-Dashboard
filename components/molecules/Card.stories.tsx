@@ -18,6 +18,15 @@ export const WithTitle = () => (
   <Card title="Titel">{placeholderContent}</Card>
 );
 
+// `contentClassName` swaps the Type slot's surface (the loading skeletons bind
+// surface-primary / surface-secondary) — design/notes/Card.md.
+export const SurfaceOverride = () => (
+  <div className="flex w-full flex-col gap-4">
+    <Card contentClassName="bg-surface-primary">{placeholderContent}</Card>
+    <Card contentClassName="bg-surface-secondary">{placeholderContent}</Card>
+  </div>
+);
+
 export const WithStep = () => <Card step={1}>{placeholderContent}</Card>;
 
 // #160: `settings` slot (the ingredients Card's Pas-aan trigger). Rendered

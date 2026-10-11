@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { requireUserIdResult, userIdFromClaims } from "@/lib/boards/claims";
+import { isAdminFromClaims, requireUserIdResult, userIdFromClaims } from "@/lib/boards/claims";
 
 // Shared by lib/boards/queries.ts and app/(app)/te-doen/actions.ts (and, via
 // lib/recipes/session.ts's re-export, every recipes/shopping call site too):
@@ -33,10 +33,19 @@ import { requireUserIdResult, userIdFromClaims } from "@/lib/boards/claims";
 // The claims -> userId mapping itself lives in lib/boards/claims.ts (a pure,
 // "server-only"-free module) so it's unit-testable — see tests/
 // boards-claims.test.ts.
-export const getAuthenticatedUserId = cache(async (): Promise<string | null> => {
+const getClaims = cache(async () => {
   const supabase = await createSupabaseServerClient();
-  const result = await supabase.auth.getClaims();
-  return userIdFromClaims(result);
+  return supabase.auth.getClaims();
+});
+
+export const getAuthenticatedUserId = cache(async (): Promise<string | null> => {
+  return userIdFromClaims(await getClaims());
+});
+
+// ADR-0020 §1: admin = `app_metadata.role === "admin"` on the verified token.
+// UI gate only; RLS (`public.is_admin()`) is the real write boundary.
+export const isAdmin = cache(async (): Promise<boolean> => {
+  return isAdminFromClaims(await getClaims());
 });
 
 // Server Action guard: resolves the signed-in user id in the

@@ -17,6 +17,9 @@ on:
     # a rendered pixel.
     paths:
       - 'components/**'
+      # App-level panels with their own stories (CardDetailPanel, BoardPanel) (#191)
+      - 'app/**/*.stories.tsx'
+      - 'app/(app)/te-doen/*Panel.tsx'
       - '.ladle/**'
       - 'tests/visual/**'
       - 'app/theme.css'
@@ -47,14 +50,11 @@ jobs:
   # (`threshold: 0.2`) silently blinds this gate to grey-on-grey token
   # regressions, which is this project's most common visual defect.
   #
-  # KNOWN GAP 2 (platform, see ticket #6 report): the baselines committed in
-  # tests/visual/**/*-darwin.png were captured on the (Docker-less) macOS dev
-  # machine, not in this container, so this job's Linux run has no matching
-  # `-linux.png` baselines yet and is expected to fail until those are
-  # generated inside this same container image. `continue-on-error: true`
-  # keeps that failure visible without blocking unrelated PRs in the
-  # meantime — remove it once real Linux baselines are committed.
-  # → tracked by #260, which makes this gate real (Linux baselines).
+  # KNOWN GAP 2 (platform): none - the baselines in
+  # tests/visual/**/*-linux.png are generated inside this same container
+  # image by the `visual-update` workflow (never by hand). `*-darwin.png` is
+  # local-only and git-ignored; it never counts. A red run uploads the HTML
+  # report and test-results (actual/expected/diff) as an artifact.
   visual:
     runs-on: ubuntu-latest
     container:
@@ -69,4 +69,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Ladle story screenshot baselines
         run: pnpm test:visual
-        continue-on-error: true
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

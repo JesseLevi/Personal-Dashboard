@@ -316,6 +316,7 @@ export function AppShellNav({ children, displayName, avatarUrl, locale }: AppShe
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         currentLocale={locale}
+        currentDisplayName={displayName}
       />
     </div>
   );

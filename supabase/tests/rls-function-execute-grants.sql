@@ -38,7 +38,9 @@ select ok(
   has_function_privilege('authenticated', 'public.move_card(uuid, uuid, int)', 'EXECUTE')
   and has_function_privilege('authenticated', 'public.move_recipe(uuid, uuid, int)', 'EXECUTE')
   and has_function_privilege('authenticated', 'public.move_note(uuid, uuid, int)', 'EXECUTE')
-  and has_function_privilege('authenticated', 'public.replace_recipe_contents(uuid, jsonb, jsonb)', 'EXECUTE'),
+  and has_function_privilege('authenticated', 'public.save_note_content(uuid, jsonb, text, text, uuid[])', 'EXECUTE')
+  and has_function_privilege('authenticated', 'public.replace_recipe_contents(uuid, jsonb, jsonb)', 'EXECUTE')
+  and has_function_privilege('authenticated', 'public.match_ingredient_candidates(text[], int)', 'EXECUTE'),
   'authenticated keeps EXECUTE on the RPCs'
 );
 

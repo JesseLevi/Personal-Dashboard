@@ -1,6 +1,7 @@
 import { cn } from "@/lib/ui/cn";
 import { Button } from "../atoms/Button";
 import { InputField } from "../atoms/InputField";
+import { Tag } from "../atoms/Tag";
 import type { UnitCode } from "@/lib/recipes/units";
 
 /**
@@ -40,6 +41,10 @@ export interface RecipeIngredientRowProps {
   removeLabel: string;
   /** Disables the delete Button without hiding it — Figma never draws a "last remaining row" state, so the caller (RecipePanel.tsx) disables removal at exactly one row rather than letting the list go empty. */
   removeDisabled?: boolean;
+  /** #318 (Claude-designed on request): "controleren" marker above an imported line the importer was unsure about. Pressing it opens the same ingredient picker as the name field (`onNameClick`). Omit when the line is fine. */
+  reviewLabel?: string;
+  /** Claude-designed on request (2026-10-07): one line under the fields naming what the nutrition calculator uses for this row (e.g. "NEVO: Selderij bleek- rauw · 17 kcal per 100 g"), or that it is not counted. Omit to hide. */
+  linkInfo?: string;
   className?: string;
 }
 
@@ -62,15 +67,24 @@ export function RecipeIngredientRow({
   onRemove,
   removeLabel,
   removeDisabled,
+  reviewLabel,
+  linkInfo,
   className,
 }: RecipeIngredientRowProps) {
   const selectOptions = unitOptions.map((option) => ({ value: option.code, label: option.label }));
 
   return (
-    // spacing-flag: `gap-2` — this component has no Figma node to bind
-    // against (see "Why no design/figma-map.json entry" in
-    // design/notes/RecipeIngredientRow.md).
-    <div className={cn("flex w-full items-start gap-2", className)}>
+    <div className={cn("flex w-full flex-col gap-stack-sm", className)}>
+      {reviewLabel ? (
+        // design: Claude-designed on request (#318), design/notes/RecipeIngredientRow.md.
+        <button type="button" className="w-fit" onClick={onNameClick}>
+          <Tag variant="highlight">{reviewLabel}</Tag>
+        </button>
+      ) : null}
+      {/* spacing-flag: `gap-2` — this component has no Figma node to bind
+          against (see "Why no design/figma-map.json entry" in
+          design/notes/RecipeIngredientRow.md). */}
+      <div className="flex w-full items-start gap-2">
       <div className="w-full min-w-0 flex-1">
         {showLabels ? (
           <InputField
@@ -170,6 +184,11 @@ export function RecipeIngredientRow({
           />
         </div>
       </div>
+      </div>
+      {linkInfo ? (
+        // design: Claude-designed on request (2026-10-07), design/notes/RecipeIngredientRow.md.
+        <p className="text-base font-normal text-text-secondary">{linkInfo}</p>
+      ) : null}
     </div>
   );
 }

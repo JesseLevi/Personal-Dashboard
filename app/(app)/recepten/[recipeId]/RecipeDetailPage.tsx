@@ -13,7 +13,7 @@ import { CardContentIngredient } from "@/components/molecules/CardContentIngredi
 import { CardContentStep } from "@/components/molecules/CardContentStep";
 import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import { formatQuantityFraction } from "@/lib/recipes/kitchen-units";
-import { computeRecipeNutritionPerPerson, type RecipeIngredientNutritionInput } from "@/lib/recipes/nutrition";
+import { summarizeRecipeNutrition, type RecipeIngredientNutritionInput } from "@/lib/recipes/nutrition";
 import { scaleIngredientRows } from "@/lib/recipes/scaling";
 import type { UnitSystem } from "@/lib/recipes/units";
 import type {
@@ -32,6 +32,8 @@ import {
   updateRecipe,
   uploadRecipeThumbnail,
 } from "../actions";
+import { confirmIngredientMatch } from "../import-actions";
+import { SourceLink } from "./SourceLink";
 import { addIngredientToShoppingList, sendRecipeToShoppingList } from "../../winkelmand/actions";
 
 // #127/#160 recipe detail route body — V2 Figma "Recept/Mobile" (3997:14737)
@@ -207,7 +209,13 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
     unitMassGrams: ingredient.unitMassGrams,
     nutrients: ingredient.nutrients,
   }));
-  const nutritionPerPerson = computeRecipeNutritionPerPerson(nutritionInputs, recipe.servings);
+  const nutrition = summarizeRecipeNutrition(nutritionInputs, recipe.servings);
+  const nutritionPerPerson = nutrition.perPerson;
+  // Totals are based on the recognised rows only (lib/recipes/nutrition.ts);
+  // the rest is marked per row so the user can link it in the edit panel.
+  const notCountedIds = new Set(
+    recipe.ingredients.filter((_, i) => nutrition.rowStatus[i] === "not-counted").map((ingredient) => ingredient.id),
+  );
 
   return (
     <div className="flex w-full flex-col items-stretch gap-page-stack pr-page-right-equal">
@@ -333,6 +341,13 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
           fiberG={nutritionPerPerson.fiberG}
           servings={portions}
         />
+        {nutrition.counted < nutrition.countable && (
+          // design: Claude-designed on request (2026-10-07), design/notes/RecipeDetailPage.md.
+          <p className="text-base font-semibold text-text-secondary">
+            {t("nutritionCoverage", { counted: nutrition.counted, total: nutrition.countable })}
+          </p>
+        )}
+        <SourceLink url={recipe.source_url} label={t("sourceLabel")} />
       </div>
 
       {/* spacing-flag: Figma's "Main" frame keeps ingredient-group Cards as flat vertical siblings (page-stack=24, node 3997:14738/3997:15173) — only one ingredient-group Card exists in the fetched design, so no bound relationship covers this wrapper's md:flex-row (row-axis) gap — design/notes/RecipeDetailPage.md */}
@@ -363,6 +378,16 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
                 name={ingredient.name}
                 quantity={formatQuantityFraction(ingredient.quantity, ingredient.unit, tUnits(ingredient.unit))}
                 divider={index < group.ingredients.length - 1}
+                reviewLabel={
+                  notCountedIds.has(ingredient.id)
+                    ? t("notCountedLabel")
+                    : ingredient.needs_review
+                      ? t("needsReviewLabel")
+                      : undefined
+                }
+                onReviewClick={
+                  notCountedIds.has(ingredient.id) || ingredient.needs_review ? () => setEditOpen(true) : undefined
+                }
                 swipeAction="cart"
                 onAddToCart={() => handleAddIngredientToCart(ingredient.id)}
                 addToCartLabel={t("addIngredientToBasketLabel", { name: ingredient.name })}
@@ -422,6 +447,7 @@ export function RecipeDetailPage({ recipe, categories }: RecipeDetailPageProps) 
         }}
         onSearchIngredients={searchIngredients}
         onCreateOwnIngredient={createOwnIngredient}
+        onConfirmIngredientMatch={confirmIngredientMatch}
         onUploadThumbnail={uploadRecipeThumbnail}
         onMutated={() => router.refresh()}
       />

@@ -6,6 +6,11 @@
   bridge, `boundVariables` on every relevant node — never inferred from a
   resolved value (`docs/incidents.md` #204/#213).
 
+> **Superseded layout (#333).** The 20-button bar below is the Figma/#234
+> record. The shipped bar is the slim one in "#333 — slim, context-aware bar"
+> at the end of this file; the command table below is still the source for
+> icons, node ids and the original order.
+
 ## Structural trap, confirmed before anything else was measured
 
 Every one of the twenty toolbar buttons is a **detached** `FRAME` named
@@ -60,7 +65,7 @@ evidence for pairing them 1:1, not the icon names themselves.
 | 11 | `strikethrough` | 3978:14240 | 3978:14972 | `toggleStrike` | Ticket order (position 11) |
 | 12 | `underline` | 3978:14251 | 3978:14983 | `toggleUnderline` | Ticket order (position 12) |
 | 13 | `highlighter` | 3978:14261 | 3978:14993 | `toggleHighlight` | Ticket order (position 13) |
-| 14 | `link` | 3978:14271 | 3978:15003 | `toggleLink`/`unsetLink` (no URL UI designed) | Ticket order (position 14); see open question below |
+| 14 | `link` | 3978:14271 | 3978:15003 | opens the LinkPopover (#331; was window.prompt) | Ticket order (position 14); design/notes/NoteEditor.md (#331) |
 | 15 | `superscript` | 3978:14282 | 3978:15014 | `toggleSuperscript` | Ticket order (position 15) |
 | 16 | `subscript` | 3978:14293 | 3978:15025 | `toggleSubscript` | Ticket order (position 16) |
 | 17 | `text-align-start` | 3978:14305 | 3978:15037 | `setTextAlign("left")` | Ticket order (position 17) — lucide's `TextAlign*` names, not `Align*` (#227) |
@@ -82,10 +87,8 @@ above) — one `GROUPS` config in `EditingBar.tsx` renders both.
 3. **Mobile has a 21st element the ticket never mentions**, after `Line 6`:
    `3978:15082`, a real `Button/Default` **instance** (not detached, unlike
    the other twenty), 133px wide, with a visible text label "Afbeelding" and
-   `Icon/Image`. No image-insertion TipTap extension exists in
-   `lib/notes/extensions.ts`. **Out of scope for #234** — not built, not
-   counted among the 20 rows above.
-   `docs/open-questions.md#notes-editingbar-mobile-image-button-out-of-scope`.
+   `Icon/Image`. Out of scope for #234 (no image extension then), not counted
+   among the 20 rows above. **Built in #339**: see the "#339" section below.
 
 ## Assumptions made where the ticket is silent (not flagged as ambiguous by the ticket itself)
 
@@ -309,8 +312,167 @@ install guide (`if (!editor) return null` inside the selector, mirrored by
 this component's own top-level `if (!editor) return null` before rendering
 anything).
 
+## #329 — block-type and list menus (Claude-designed on request)
+
+Rows 3 (`heading`) and 4 (`list`) of the command table are no longer toggles:
+they are two menu buttons (`components/organisms/EditingBarMenu.tsx`), still
+at positions 3 and 4 so the roving-tabindex count (20) and the Figma group
+split (2/6/6/2/4) are unchanged. No Figma node exists for them.
+
+- **Block type**: Text / Heading 1 / Heading 2 / Heading 3 (`setParagraph`,
+  `setHeading`). **List**: bulleted / numbered / checklist (`toggle*List`;
+  choosing the active one toggles it off; a different one converts). The
+  trigger is `Button variant="transparent"` + the current label + trailing
+  `ChevronDown`; the list trigger reads "Lijst" when no list is active. Icons
+  reused (`Heading`, `List`, `Check`); no new `Icon` entries.
+- **Why a small `EditingBarMenu` and not `Dropdown` alone**: `Dropdown` is a
+  disclosure (inline expanding field), not a menu button, and the bar is
+  `overflow-x-auto`, which would clip any in-bar panel. The menu portals to
+  `body`, positions from the trigger rect (open upward in the lower half of
+  the viewport, right-aligned in the right half; runtime geometry passed as
+  `--menu-x`/`--menu-y` custom properties, same exception as the keyboard
+  inset) and reuses the labelless `Dropdown` as its panel (`role="menu"`) and
+  `Button variant="transparent" align="left"` as its rows
+  (`role="menuitemradio"`, `Check` trailing icon on the active one). It is a
+  private part of EditingBar, not a catalogue atom; promote it only if #331/#332
+  need the same shape.
+- **Keyboard / ARIA**: trigger `aria-haspopup="menu"`, `aria-expanded`,
+  `aria-controls`; Enter/Space/click or ArrowUp/Down open; focus lands on the
+  active row; ArrowUp/Down/Home/End move, Enter/Space select; Escape, Tab and
+  outside click close; **focus returns to the editor** (selection commands call
+  `focus()`, dismissal calls `editor.commands.focus()`). The toolbar's roving
+  tabindex now addresses `[data-toolbar-item]` buttons only, so menu rows
+  never become toolbar stops. Verified in Chromium with a throwaway
+  Playwright run (open, navigate, select, Escape, checkbox click and Space).
+- **Strings**: `components.editingBar.blockTypeLabel`, `listLabel`,
+  `options.*` in nl and en (`headingLabel` removed).
+- **Dark mode**: panel and rows use semantic tokens only; baselines
+  `editing-bar--block-type-menu-open`, `--list-menu-open` and `note-editor-content--prose` (now incl. a nested checklist)
+  (light + dark), `--at-rest`/`--with-active-button` regenerated because the
+  two triggers now carry text.
+
+## #330 — table size picker (Claude-designed on request)
+
+The `table` button (position 6, count and group split unchanged) no longer
+inserts a fixed 3x3: it opens `components/organisms/TableSizePicker.tsx`, a
+`Button variant="transparent" icon="Table"` trigger plus a portalled, labelless
+`Dropdown` panel (placement and dismissal shared with `EditingBarMenu` through
+`usePopoverPanel`). The panel is a `role="grid"` of 8x8 `gridcell` buttons
+(`aria-label` "3 x 4", `aria-selected` for the highlighted range) and a
+`role="status"` line with the live size. Highlight: `surface-secondary` fill +
+`stroke-primary-hover` border, focused cell `stroke-secondary-active`.
+
+- **Keyboard**: trigger opens on Enter/Space/click/ArrowDown/ArrowUp; roving
+  tabindex on the grid, arrows move (no wrap), Home/End jump to column 1/8,
+  Enter/Space insert the highlighted size, Escape/Tab close; focus returns to
+  the editor in every case. Default size 3 x 3 (what the button inserted
+  before). Header row on.
+- **Mouse / touch**: hover (mouse only) moves the highlight and focus; a click
+  or tap inserts at once. Touch has no hover, so the highlight is only a
+  preview there; no stepper variant was built.
+- **Why not a new atom**: the grid is specific to this one control; promote it
+  only if another picker needs it. Cell size `size-6` has no spacing token
+  (a raw size utility, not covered by `check:raw-spacing`).
+- Strings: `components.noteTable.insertLabel`, `sizeLabel`, `size`
+  (`{rows} x {cols}`); `editingBar.tableLabel` was removed. Table actions on
+  mobile arrive with #333 from `lib/notes/table-commands.ts`.
+
+## #333 — slim, context-aware bar (Claude-designed on request)
+
+Deliberate departure from Figma (user-requested redesign, ADR-0021 section 1;
+`docs/open-questions.md#notes-editingbar-detached-from-components`). With the
+bubble menu (#331) and slash menu (#332) the 20-button bar duplicated most of
+what is now one gesture away. Stories: `AtRest`, `WithActiveButton`,
+`OverflowOpen`, `Mobile`, `MobileInTable` (+ the two #329 menu stories).
+
+### Desktop grouping: 2 | 3 | 3 | align | image | More (#386 order, eleven roving stops)
+
+1. **Undo, redo.** History has no other surface and is shortcut-poor on touch.
+2. **Block type, list, table.** The structure group. Each is a menu or picker
+   whose contents no bubble/slash gesture replaces while the cursor is idle;
+   they stay one click from an empty line.
+3. **Bold, italic, link.** The three marks used constantly and the only ones
+   that make sense with a collapsed cursor (typing mode). On desktop they
+   duplicate the bubble menu on purpose: the bubble needs a selection, the
+   bar works before typing and is the discoverable list. Link keeps opening
+   the shared LinkPopover (`requestLinkPopover`).
+4. **More** (`Ellipsis`, `EditingBarOverflow`, always the last item). Two
+   separated sections: *insert* (quote, code block, divider; filtered from
+   `SLASH_ITEMS`, labels from `components.slashMenu.items`) and *format*
+   (underline, strikethrough, highlight, inline code, superscript, subscript;
+   alignment and image moved onto the bar in #386). Rarely used
+   on a typical note; the format rows are also in the bubble on desktop but
+   mobile has no bubble, so they must live here. Rows are `menuitemcheckbox`
+   with `aria-checked` and a trailing `Check`; divider is a plain `menuitem`.
+   The slash list is the single source for insert rows, so a new block there
+   needs no edit here (divider is the one row the old bar never had).
+
+### Mobile (`< md`, or `mobile` prop in stories)
+
+- Default: the same eleven items; the bar scrolls horizontally if narrow.
+- **Cursor in a table:** the bar swaps to *Back* (`ArrowLeft`) | the ten
+  `TABLE_COMMANDS` (`lib/notes/table-commands.ts`, #330) as icon + text buttons
+  (the icons repeat: four `Plus`, two `Minus`, so text is required). Disabled
+  rows are `aria-disabled` like the desktop table menu. Toolbar label becomes
+  "Tabelwerkbalk".
+- **Way back:** Back returns to the default bar and focuses the editor; the
+  table slot then shows a *Table actions* button (replaces the size picker, no
+  nested tables) that swaps again. Leaving the table resets this, so the
+  default bar is back and the table slot is the picker again.
+- Motion/inset: unchanged `fixed bottom` bar and the #263 `useKeyboardInset`
+  lift, applied to both bar modes since it sits on the same root element.
+
+### Keyboard
+
+One toolbar, one tab stop. Left/Right/Home/End rove over `[data-toolbar-item]`
+**counted from the DOM**, so the default bar, the table bar and the overflow
+trigger all work with the same handler; the stop resets to the first item when
+the mode swaps. Overflow: Enter/Space/click or ArrowUp/Down open, focus lands on
+the first row, arrows/Home/End move, Escape/Tab/outside click close and focus
+returns to the editor. Rows never join the toolbar ring.
+
+### Not verified
+
+No real iOS device: the mobile layout is exercised in Chromium with the
+`mobile` prop (forced behaviour in a `w-96` frame), the viewport branch
+(`matchMedia`) only through code reading and the existing `md:` classes.
+
 ## Verification — what was and wasn't run
 
 `pnpm lint`/`typecheck`/`test`/`check:server-only`/`check:raw-spacing`/
 `check:comment-budget` and the full `pnpm test:visual` results are reported
 in the PR, not restated here.
+
+## #339 / #386 — the "Afbeelding" button
+
+`Button` `transparent` with `Icon/Image` (`3978:15082` for the mobile label),
+opening the system file picker (`openImagePicker`, `lib/notes/image-upload.ts`).
+Since #386 it is always on the bar: labelled "Afbeelding"
+(`components.editingBar.imageLabel`) on mobile, icon-only with the same
+`aria-label` on desktop (keeps the desktop bar compact). It is no longer an
+overflow row (`INSERT_ITEMS` excludes `image`; the slash menu keeps its item).
+Full image design record: `design/notes/NoteEditor.md` (#339 section).
+
+## #386 — polish round (Claude-designed on request)
+
+- **Order**: undo redo | block list table | bold italic link | align | image |
+  More. `BAR_COMMAND_IDS` is that order; the reachability test also counts the
+  align menu's options. More stays last on mobile and desktop.
+- **Desktop hugs its content**: `md:mx-auto md:w-fit md:max-w-full` on the
+  toolbar root (centred in the flex-column page body). Mobile keeps the fixed
+  full-width bottom bar.
+- **Option icons**: `EditingBarMenuOption.icon` (optional). Block type:
+  `Pilcrow`, `Heading1-3`; list: `List`, `ListOrdered`, `ListTodo`; align:
+  `TextAlignStart/Center/End/Justify`. The bubble menu's "Turn into" shares
+  `BLOCK_TYPE_MENU`, so it gets them too. The new lucide icons are registered
+  in `Icon.tsx` (moves `icon--all-icons`).
+- **Align dropdown** (`ALIGN_MENU`, `EditingBarMenu` with `iconOnly`): trigger =
+  current alignment icon + `ChevronDown`, label as `sr-only` text plus
+  `aria-label` "Tekstuitlijning: <current>". Rendered through the labelled
+  Button branch (icon-only Button cannot carry a trailing icon). Same
+  keyboard contract as the other menus; one roving stop.
+- **Separators in popovers**: row and separator widths were already equal
+  (measured), but the line stopped short of the panel border, which read as
+  narrower than the rows. It now bleeds to the panel edge
+  (`-mx-component-xs`) in the overflow and in `NoteMarkdownMenu`.
+- Stories: `AlignMenuOpen` added; `OverflowOpen` targets the new last stop.

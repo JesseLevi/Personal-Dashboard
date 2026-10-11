@@ -56,9 +56,16 @@ export const createColumnSchema = z.object({
   icon,
 });
 
+// `icon` is optional so a name-only rename stays valid; when sent it is
+// validated like createColumnSchema's.
 export const renameColumnSchema = z.object({
   columnId: z.uuid(),
   name,
+  icon: icon.optional(),
+});
+
+export const deleteColumnSchema = z.object({
+  columnId: z.uuid(),
 });
 
 export const createCardSchema = z.object({

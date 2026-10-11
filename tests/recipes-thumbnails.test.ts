@@ -7,7 +7,7 @@ import {
 } from "@/lib/recipes/thumbnail-validation";
 import { renderThumbnailVariants, thumbnailVariantPath } from "@/lib/recipes/thumbnail-processing";
 
-// #121: validation for the recipe-thumbnails upload path. Tested here (not
+// #121: validation for the recipe thumbnail upload path. Tested here (not
 // lib/recipes/thumbnails.ts, which is `import "server-only"` and throws
 // outside a server/react-server context, including plain Node/Vitest) --
 // same split as tests/recipes-units.test.ts vs. queries.ts.

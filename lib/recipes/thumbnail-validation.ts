@@ -1,5 +1,5 @@
-// Pure, framework-free validation for #121's private `recipe-thumbnails`
-// bucket -- same split as lib/recipes/units.ts (pure, tested directly in
+// Pure, framework-free validation for #121's recipe thumbnail uploads
+// (stored in R2 via lib/storage) -- same split as lib/recipes/units.ts (pure, tested directly in
 // tests/) vs. lib/recipes/queries.ts (`import "server-only"`, not directly
 // testable since that package throws outside a server/react-server
 // context, including plain Node/Vitest). lib/recipes/thumbnails.ts is the

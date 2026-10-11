@@ -294,7 +294,7 @@ describe("token → theme pipeline (ADR-0010)", () => {
       const css = generateTheme(tokens);
       const dark = css.slice(css.indexOf('[data-theme="dark"]'));
       expect(dark).toContain("--color-surface-primary: var(--color-stone-900);");
-      expect(dark).toContain("--color-stroke-lines: var(--color-stone-400);");
+      expect(dark).toContain("--color-stroke-lines: var(--color-stone-600);");
     });
   });
 });

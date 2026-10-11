@@ -1,7 +1,6 @@
-import { BoardSkeleton } from "../../_components/PageSkeleton";
+import { BoardSkeleton } from "../../_components/skeletons/BoardSkeleton";
 
-// #170: same route-segment Suspense fallback as `/te-doen`'s own loading.tsx
-// — see that file's comment.
+// Same fallback as `/te-doen`'s own loading.tsx.
 export default function Loading() {
-  return <BoardSkeleton />;
+  return <BoardSkeleton variant="todo" />;
 }

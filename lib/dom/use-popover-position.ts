@@ -16,7 +16,10 @@
 // clips them via its own `overflow-hidden`, so `fixed` buys nothing there;
 // portalling would pull the popover's buttons out of SidePanel's focus trap
 // and its outside-pointerdown containment checks). See
-// design/notes/SidePanel.md.
+// design/notes/SidePanel.md. Exception: `strategy: "fixed"` is for a
+// popover its caller portals to <body> because every clipping ancestor is
+// too small (AddRecipeMenu in an empty, overflow-x carousel column); it is
+// clamped to the viewport only.
 
 import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 import {
@@ -50,11 +53,13 @@ export interface UsePopoverPositionOptions {
   gap?: number;
   /** min px kept between the popover and the clipping boundary's edges. */
   gutter?: number;
+  /** "fixed": viewport coordinates, for a popover portalled out of its clipping ancestors. Default "absolute". */
+  strategy?: "absolute" | "fixed";
 }
 
 export interface PopoverPositionResult {
   /** Spread onto the popover's own element. `visibility: hidden` until the first measurement lands, so there's no flash at the wrong spot. */
-  style: { position: "absolute"; left: number; top: number; visibility?: "hidden" };
+  style: { position: "absolute" | "fixed"; left: number; top: number; visibility?: "hidden" };
   direction: PopoverDirection;
 }
 
@@ -120,7 +125,7 @@ function samePlacement(a: Placement | null, b: Placement): boolean {
 export function usePopoverPosition(
   wrapperRef: RefObject<HTMLElement | null>,
   popoverRef: RefObject<HTMLElement | null>,
-  { open, anchor, prefer, gap = DEFAULT_GAP, gutter = DEFAULT_GUTTER }: UsePopoverPositionOptions,
+  { open, anchor, prefer, gap = DEFAULT_GAP, gutter = DEFAULT_GUTTER, strategy = "absolute" }: UsePopoverPositionOptions,
 ): PopoverPositionResult {
   const [placement, setPlacement] = useState<Placement | null>(null);
 
@@ -130,7 +135,7 @@ export function usePopoverPosition(
     if (!wrapperEl || !popoverEl) return;
     const triggerRect = toRect(wrapperEl);
     const popoverRect = popoverEl.getBoundingClientRect();
-    const bounds = findBounds(wrapperEl);
+    const bounds = strategy === "fixed" ? findBounds(document.documentElement) : findBounds(wrapperEl);
     const result = computePopoverPlacement({
       trigger: triggerRect,
       popover: { width: popoverRect.width, height: popoverRect.height },
@@ -140,11 +145,12 @@ export function usePopoverPosition(
       gap,
       gutter,
     });
-    // Convert viewport coords -> offsets relative to the wrapper, since the
-    // popover stays `position: absolute` inside it.
+    // Absolute: convert viewport coords -> offsets relative to the wrapper,
+    // since the popover stays inside it. Fixed: viewport coords as-is.
+    const fixed = strategy === "fixed";
     const next: Placement = {
-      left: result.left - triggerRect.left,
-      top: result.top - triggerRect.top,
+      left: fixed ? result.left : result.left - triggerRect.left,
+      top: fixed ? result.top : result.top - triggerRect.top,
       direction: result.direction,
     };
     setPlacement((prev) => (samePlacement(prev, next) ? prev : next));
@@ -186,10 +192,10 @@ export function usePopoverPosition(
   }, [open]);
 
   if (!placement) {
-    return { style: { position: "absolute", left: 0, top: 0, visibility: "hidden" }, direction: prefer };
+    return { style: { position: strategy, left: 0, top: 0, visibility: "hidden" }, direction: prefer };
   }
   return {
-    style: { position: "absolute", left: placement.left, top: placement.top },
+    style: { position: strategy, left: placement.left, top: placement.top },
     direction: placement.direction,
   };
 }

@@ -1,8 +1,7 @@
 # BoardPanel (`app/(app)/te-doen/BoardPanel.tsx`)
 
-- **Code:** `app/(app)/te-doen/BoardPanel.tsx` (no `.stories.tsx` — flagged as a
-  zero-Ladle/visual-coverage gap by `design/notes/CardDetailPanel.md`'s #106
-  entry; #191 is the open ticket for it).
+- **Code:** `app/(app)/te-doen/BoardPanel.tsx`; stories in
+  `BoardPanel.stories.tsx` (#191, below).
 - **Node IDs:** `3878:9047` (mobile AddBoard, "Te doen/Mobile/AddBoard") and
   `3878:9060` (desktop AddBoard, "Te doen/Desktop/AddBoard") — same nodes
   `TeDoenBoard.md` already references for the page-level wiring; this file
@@ -31,3 +30,13 @@ documents for its own footer (`#103` entry there).
 
 No flags, no design discrepancy: this file's single raw utility converted
 cleanly and pixel-identically (`gap-2` = 8px = `spacing/inline/gap-sm`).
+
+## #191 — Ladle/visual coverage
+
+`BoardPanel.stories.tsx` adds `CreateBoard` (empty Name, Save disabled) and
+`EditBoard` (Name prefilled). Server actions are passed in as mock props, so
+no `useRouter()`/Supabase is needed under Ladle. Each story sits in a
+`min-h-screen` wrapper: SidePanel is `position: fixed`, so without it the
+baseline collapses to a 1280x64 sliver instead of 1280x784 (commit 6e10fb5).
+`ci-visual.yml` now also triggers on `app/**/*.stories.tsx` and
+`app/(app)/te-doen/*Panel.tsx`.

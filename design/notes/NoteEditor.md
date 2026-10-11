@@ -2,7 +2,7 @@
 
 - **Code:** `page.tsx` (Server Component, `getNote(noteId)`), `NoteEditor.tsx`
   (`"use client"`, the whole page body), `loading.tsx` (Suspense fallback,
-  `PageSkeleton.tsx`'s new `NoteEditorSkeleton`), `lib/notes/extensions.ts`
+  `skeletons/NoteEditorSkeleton.tsx`), `lib/notes/extensions.ts`
   (the fixed TipTap extension whitelist, Architecture §133), a small
   `.tiptap p.is-editor-empty:first-child::before` rule in `app/globals.css`
   (Placeholder's own documented CSS mechanism — no Tailwind utility covers
@@ -133,10 +133,11 @@ Filed: `docs/open-questions.md#notes-delete-has-no-confirmation`.
 | `Main` | `paddingLeft`/`Top`/`Right`/`Bottom` | `spacing/layout/page-padding-*` | Already supplied by `AppShellNav.tsx`'s `<main>` (left/top/bottom) + this page's own `pr-page-right-equal` (right) — same split every other page in this route group uses |
 | Back/Delete buttons | padding, radius, fill | `spacing/component/padding-sm`, `radius/control`, `color/surface/{secondary,highlight/red}/default` | Already `Button.tsx`'s own `variant="filled"`/`"destructive"` classes — no new binding |
 | Mobile `Content` (`3978:14850`) | `itemSpacing` | `spacing/stack/stack-md` (12px) | Not reproduced — the wrapper renders a single child (`<EditorContent>`), so a gap between siblings has no visual effect; recorded for completeness only |
-| Placeholder text (`4067:20021`/`4067:20017`) | `fills`, `fontSize`, `fontWeight`, `lineHeight`, `fontFamily` | `color/text/base/placeholder`, `font/size/base`, `font/weight/semibold`, `font/leading/6`, `font/family/sans` | `text-base font-semibold` (Tailwind's built-in pairing, `font/leading/6` = `text-base`'s default line-height) + `text-text-placeholder`; the CSS placeholder rule in `app/globals.css` reads `var(--color-text-placeholder)` directly since it's outside Tailwind's utility layer |
+| Placeholder text (`4067:20021`/`4067:20017`) | `fills`, `fontSize`, `fontWeight`, `lineHeight`, `fontFamily` | `color/text/base/placeholder`, `font/size/base`, `font/weight/semibold`, `font/leading/6`, `font/family/sans` | `text-base font-semibold` (Tailwind's built-in pairing, `font/leading/6` = `text-base`'s default line-height; the typed text is `font-medium` since #386) + `text-text-placeholder`; the CSS placeholder rule in `app/globals.css` reads `var(--color-text-placeholder)` directly since it's outside Tailwind's utility layer |
 
-The editor's real (typed) text reuses the same `text-base font-semibold`
-pairing with `text-text-primary` instead of the placeholder token — no
+The editor's real (typed) text uses `text-base font-medium` (#386; was
+`font-semibold`, headings and bold marks keep their own weights) with
+the same size with `text-text-primary` instead of the placeholder token — no
 separate Figma node draws "typed" text (the frame only ever shows the empty
 placeholder state), so this is the direct, undesigned-but-obvious
 continuation of the placeholder's own type scale, not a separate
@@ -246,7 +247,7 @@ extension was broken, missing, or mis-wired.** The actual gap: `app/
 globals.css` had exactly one rule for editor content (the `#233`
 placeholder pseudo-element) and nothing else — Tailwind's preflight resets
 every heading to `inherit` font-size and strips `ul`/`ol`'s `list-style` and
-padding, and this page's own editor root (`text-base font-semibold
+padding, and this page's own editor root (`text-base font-medium
 text-text-primary`, above) applies one flat size/weight to the whole
 document regardless of node type. A toggled `<h1>`, `<li>`, `<blockquote>`
 and `<pre>` all rendered pixel-identical to a plain `<p>` — the state was
@@ -267,7 +268,7 @@ tinted `<code>` background) — so every ruling below states the token used
 and, where none exists, why:
 
 - **`h1`/`h2`/`h3` — distinguished by size only**, not weight: the editor
-  root is already `font-semibold`, so re-bolding headings would add nothing.
+  root is a flat `font-medium`; headings carry their own bold/extrabold weight in `globals.css`.
   `h1: 1.25rem` deliberately matches `PageHeader.tsx`'s own `<h1
   className="text-xl ...">` — the one heading size already established
   elsewhere in this app. `h2`/`h3` step down (`1.125rem`/`1rem`, Tailwind's
@@ -396,25 +397,54 @@ not a loophole used here).
   other product meaning (mark highlight, priority). `.selectedCell` (two
   classes) naturally outranks `.tiptap th` (one class, one type) on CSS
   specificity, so a selected header cell still shows the selection tint.
-- **`resizable: false`** (TableKit's own default) is kept, not turned on —
-  recorded explicitly rather than left as a silent default: column resize
-  needs visible drag handles, and no such control is drawn anywhere in
-  `Pages/Notities/Breakpoints`.
-- **Row/column editing has no UI at all** — only TipTap's own
-  keyboard/ProseMirror behaviour (e.g. Tab in the last cell adds a row;
-  the standard table keymap TableKit registers for navigation/selection).
-  No add/remove-row/column control, no drag-to-reorder, no cell context
-  menu — none of that is designed. Filed:
-  `docs/open-questions.md#notes-table-ui-not-designed`, asking for a design
-  pass over the row/column controls specifically.
-- **No zebra striping, no resize handles, no per-cell menu** — all
-  considered and rejected per the same "smallest defensible surface"
-  instruction the ticket gave, same reasoning as the two points above.
+- **Superseded by #330 (below):** `resizable` is now on, and row/column
+  editing has a menu and a size picker. No zebra striping (rejected here).
 
 **No Figma source for any of this.** Same gap as the rest of this file's
 prose-typography section, restated for tables specifically:
 `Pages/Notities/Breakpoints` draws one toolbar button with a table icon and
 no table anywhere.
+
+## #329 — block types, task lists and prose typography (Claude-designed on request)
+
+Replaces the #263 minimal block (`notes-prose-typography-not-designed`,
+now resolved). User decision 2026-10-10 (ADR-0021 s1/s3): Claude designs it
+directly in code from Tailwind's type scale + semantic tokens; no Figma step.
+
+- **Extensions** (`lib/notes/extensions.ts`): StarterKit `heading.levels`
+  `[1,2,3]`; `TaskList` + `TaskItem({ nested: true })` from
+  `@tiptap/extension-list@3.30.0` (a direct dependency now, same version as
+  core; not part of StarterKit). `a11y.checkboxLabel` returns the item's own
+  text because the default label is an English literal and the whitelist is
+  static (no next-intl); the checkbox is named after its task.
+- **Type scale** (`.tiptap` in `app/globals.css`, `@apply` of Tailwind's own
+  scale; body stays `text-base font-semibold`, the measured Figma value):
+  H1 `text-3xl font-extrabold`, H2 `text-2xl font-bold`, H3 `text-xl
+  font-bold`; headings `leading-tight`/`leading-snug`, body `leading-relaxed`
+  (1.625). Sizes step 20/24/30px against 16px body; weight steps 600 -> 700
+  -> 800 so they are distinct in both axes.
+- **Rhythm**: blocks keep `--spacing-stack-md`; a heading adds space above
+  (`stack-lg` H3, `stack-xl` H2, `stack-xxl` H1); list items `stack-xs`.
+- **Reading width**: `.tiptap { max-width: 70ch }`; on mobile the viewport is
+  the limit.
+- **Task items**: the native checkbox (`appearance: none`) wears the Checkbox
+  atom's tokens (`stroke-primary` border, `surface-highlight-white` fill,
+  `text-secondary` check glyph, hover `stroke-primary-hover`, focus ring
+  `stroke-primary-selected`) at 1.25rem (Tailwind `size-5`; the atom's 2rem box
+  is too big for a text line). Checked items: `text-secondary` + line-through
+  on the item's own paragraph only. Selector is `li[data-checked]`: TipTap's
+  node view renders `li` without `data-type` (only `getHTML()` has it).
+  Check glyph is a CSS mask of lucide's `check` path, so it follows the token
+  colour in dark mode.
+- **`toPlainText`**: `taskItem` is a line-ending type, **no `☐`/`☑` prefix**
+  (decision): a prefix would leak into `deriveTitle` when a note starts with a
+  checklist and add noise to trigram search. Covered in
+  `tests/notes-document.test.ts`; input rules, nested lists, JSON round trip
+  and legacy H1+bullet notes in `tests/notes-extensions.test.ts` (jsdom).
+- **Token gaps**: no font-size/weight tokens exist (flagged:
+  `docs/open-questions.md#notes-prose-font-scale-no-tokens`); the 1.25rem
+  checkbox box, the 2px focus outline and `70ch` are raw CSS in `globals.css`
+  (not gated, not a spacing/radius token concept).
 
 ## Verification — what was and wasn't run
 
@@ -430,3 +460,405 @@ a real browser tab-close. Same standing gap `NotitiesBoard.md`'s own
 verification section already carries for this phase (`docs/HANDOFF.md`'s
 #185) — this ticket adds the same caveat for its own new surface rather than
 claiming a stronger guarantee.
+
+## #330 — tables: stable columns, resizing, size picker, table menu (Claude-designed on request)
+
+Resolves `notes-table-ui-not-designed` (user decision 2026-10-10, ADR-0021
+s1/s3). Built from existing components and semantic tokens; no Figma step.
+
+- **Stable layout**: `TableKit.configure({ table: { resizable: true,
+  cellMinWidth: TABLE_CELL_MIN_WIDTH (96) } })` and `table-layout: fixed` on
+  `.tiptap table`. Under `auto` layout the browser re-split the widths on every
+  keystroke; with `fixed`, columns keep their width. Columns without a stored
+  `colwidth` (every pre-#330 table) share the width equally; once a column is
+  dragged, only that column gets a `colwidth` attr (prosemirror-tables
+  behaviour) and the table gets an inline width/min-width, so a wide table
+  scrolls inside `.tableWrapper` on mobile. `overflow-wrap: anywhere` on cells
+  stops a long word from forcing a column wider. Playwright check:
+  `tests/visual/table-columns.spec.ts` (widths before/after typing, on both a
+  legacy and a sized table; verified to fail with `table-layout: auto`; plus a
+  drag-resize check). `colwidth` round trip and legacy load:
+  `tests/notes-table.test.ts`. Ladle has no save/reload, so persistence is
+  proven at document level, not by reloading a page.
+- **Resize handle**: prosemirror-tables' own `.column-resize-handle` (only
+  present while hovering/dragging an edge), styled `stroke-primary-hover`,
+  width/offset from `spacing-inline-xs`; `.resize-cursor` gives `col-resize`.
+- **Header row**: `th` also gets `text-align: left` (browser default was
+  centred while body cells were left). `note-editor-content--prose` baselines
+  were regenerated for that and for the fixed layout.
+- **Table menu** (`components/organisms/TableMenu.tsx`): TipTap `BubbleMenu`
+  (`@tiptap/react/menus`, MIT) whose `shouldShow` is `isActive('table')` and
+  `(pointer: fine)`, anchored to the table's `.tableWrapper` top-left through
+  `getReferencedVirtualElement`. It holds one `Button variant="white"`
+  "Table" trigger that opens a portalled `Dropdown role="menu"` with a
+  `menuitem` row per `TABLE_COMMANDS` entry. Why a trigger plus panel and not
+  ten inline icon buttons: the icon registry has no row/column glyphs (see the
+  flag below), and labelled rows read unambiguously. Rows that do not apply
+  (`editor.can().x()` false, e.g. merge without a multi-cell selection) are
+  `aria-disabled` with `opacity-40`, still focusable. The destructive row is
+  `text-priority-urgent` on a transparent row (the filled destructive Button
+  is too loud inside a menu). Keyboard: Alt+F10 in a table focuses the
+  trigger; Enter/Space/ArrowDown/ArrowUp open; arrows/Home/End move; Escape or
+  Tab close; every command and Escape end with focus in the editor.
+- **Mobile**: no bubble on touch (it would collide with the keyboard and the
+  native callouts); #333 exposes `TABLE_COMMANDS` through the EditingBar.
+- **Shared list**: `lib/notes/table-commands.ts` (`TABLE_COMMANDS`,
+  `insertTable`, `MAX_TABLE_SIZE`); labels `components.noteTable.commands.*`.
+- **Plain text** (`lib/notes/document.ts`): a table row is one line, cells
+  tab-separated, a cell's paragraphs joined by spaces, rows without text
+  dropped (`tests/notes-document.test.ts`). A note that starts with a table
+  now derives its title from the whole first row ("A\tB"), not the first cell.
+- **Flagged gaps**: icons are generic reuses (`Plus`, `Minus`, `Heading`,
+  `Columns3`, `ArrowRightLeft`, `Trash`) because adding lucide glyphs
+  (`BetweenHorizontalStart` etc.) changes the `icon--all-icons` baseline, which
+  this ticket may not regenerate; the floating-ui `offset: 8` is a number
+  handed to the library, not a class. Missing disabled-state token/style:
+  `docs/open-questions.md#button-no-disabled-state`.
+
+## #334 — writing comfort (Claude-designed on request)
+
+- **Typography placement:** `Typography` is wired at the `NoteEditor.tsx` call
+  site via `typographyForLocale(useLocale())` (`lib/notes/writing-comfort.ts`),
+  like Placeholder. It only adds input rules and changes no stored structure,
+  so `lib/notes/extensions.ts` stays the single content-structure source.
+  nl: `„ ”` / `‚ ’`; every other locale: `“ ”` / `‘ ’`. Em dash, arrows, ½ etc.
+  are the extension defaults; input rules never fire inside code.
+  `@tiptap/extension-typography` is pinned to `3.30.0` (= `@tiptap/core`).
+- **Word count:** `CharacterCount` (from `@tiptap/extensions`) with `countWords`
+  (whitespace split; the default splits on spaces only). Reading time is
+  `ceil(words / 200)`, at least 1 once there is text. Strings are ICU plurals
+  in `components.noteWordCount`. Shown as a meta line under the editor
+  (`NoteWordCount`), desktop and mobile.
+- **Save status:** `lib/notes/save-controller.ts` (`SaveController`) owns the
+  debounce, in-flight tracking and status; `useNoteSave.ts` binds it to
+  `updateNoteContent`. Status becomes "saved" only from a resolved
+  `{ success: true }`, a rejected call counts as failure, and a newer edit
+  during a write keeps it at "saving". The error state is a destructive Button
+  ("Niet opgeslagen — opnieuw proberen") that re-sends the failed snapshot.
+  `beforeunload` warns while status is not "saved". `NoteSaveStatus` sits in the
+  header row between back and delete (hidden during the delete confirm);
+  `EditingBar` is untouched. Tests: `tests/notes-save-controller.test.ts`.
+- **TrailingNode:** on by default in StarterKit 3.30 (`trailingNode !== false`);
+  covered by `tests/notes-writing-comfort.test.ts`.
+- **No new tokens or Figma nodes:** text-secondary / priority-urgent and the
+  existing `Button` only. No retry icon exists in `Icon`, so retry is text.
+
+## #332 — slash command menu (Claude-designed on request)
+
+Typing-first block insertion. Built from existing components and semantic
+tokens; no Figma step, no new atom.
+
+- **Engine**: official `@tiptap/suggestion` (pinned `3.30.0` = `@tiptap/core`).
+  `lib/notes/slash-command.ts` is the `SlashCommand` extension (editor-only UI,
+  added at the `useEditor()` call site in `NoteEditor.tsx` next to
+  `Placeholder`, not in the content whitelist). It keeps a tiny external
+  `SlashStore` in the extension storage; `SlashMenu` reads it with
+  `useSyncExternalStore`, so no `ReactRenderer`/`tippy`.
+- **Trigger**: `/` only at the start of a block or after a space
+  (`allowedPrefixes: [" "]`; `a/b` and URLs never open it) and never inside a
+  code block or inline code (`allow`). Items resolve one microtask after the
+  keystroke; the menu opens with real items only, so it never flashes "no
+  results". "Table" is not offered inside a table cell.
+- **Item list**: `lib/notes/slash-items.ts` is the single source (`id`, `icon`,
+  `aliases` nl+en, `run`; labels `components.slashMenu.items.<id>`), reused by
+  #333; later tickets append items. `filterSlashItems` ignores case, accents,
+  spaces and punctuation, matches id, aliases and the translated label, and
+  ranks prefix matches first. Tests: `tests/notes-slash.test.ts` (nl/en
+  aliases, trigger rules, `/kop2` + select gives an H2 with the typed text
+  removed).
+- **Menu**: portalled `Dropdown role="listbox"` of transparent `Button
+  role="option"` rows; the editor keeps DOM focus (the panel `preventDefault`s
+  mousedown, so the iOS keyboard stays open) and carries `aria-expanded`,
+  `aria-controls`, `aria-activedescendant`. Arrows wrap, Enter/Tab pick (Enter
+  with no results is swallowed), Escape closes, hover moves the highlight.
+- **Placement**: under the caret, flipped above when it does not fit, measured
+  against `visualViewport` (clears the iOS keyboard, #263) and against the
+  fixed mobile EditingBar (a `[role=toolbar]` below the caret is the bottom
+  edge). `--menu-x/-y/-max` custom properties as in `EditingBarMenu`;
+  `max-h` + scroll when short on room.
+- **Table**: picking it deletes the `/table` text, then shows #330's size grid
+  at the caret (`TableSizeGrid`, extracted from `TableSizePicker` and shared);
+  Escape returns focus to the editor.
+- **Placeholder**: "Typ '/' voor opties" / "Type '/' for options".
+- **Flagged**: missing glyphs, see `docs/open-questions.md#notes-slash-menu-icon-glyphs-missing`.
+## #331 — selection bubble menu and link popover (Claude-designed on request)
+
+Resolves `notes-editingbar-link-no-url-input-designed` (user decision
+2026-10-10, ADR-0021 s1/s6). Existing components and semantic tokens only.
+
+- **Bubble menu** (`components/organisms/NoteBubbleMenu.tsx`): TipTap
+  `BubbleMenu` above a non-empty `TextSelection` (not blank text), only for
+  `(pointer: fine)`, never in a code block, never while the table menu shows
+  (`isActive('table')`, so a text selection inside a table gets no bubble).
+  Bold, italic, underline, strikethrough, highlight, inline code (icon
+  `Button variant="transparent"`, `aria-pressed` = active), link, and "Turn
+  into": `EditingBarMenu` fed by the exported `BLOCK_TYPE_MENU` of
+  `EditingBar.tsx` (#329's option list, not copied). Button labels reuse
+  `components.editingBar.*Label`. `role="toolbar"` with roving tabindex;
+  Alt+F10 in the document focuses it, Escape returns to the editor. No bubble
+  on touch: the EditingBar remains the mobile surface (#333).
+- **Link popover** (`components/organisms/LinkPopover.tsx`), one instance per
+  editor (`NoteEditor.tsx`). Bubble menu, EditingBar and Mod-K ask for it via
+  `requestLinkPopover` (`lib/notes/link-popover.ts`, a DOM event on the editor
+  element), so none needs to know where it is mounted. Cursor on a link: the
+  URL plus Open (`window.open(..., "noopener,noreferrer")`), Edit, Remove;
+  otherwise an `InputField` with Apply (and Remove when editing). With a
+  collapsed cursor and no link, Apply inserts the URL as linked text. Invalid
+  input shows `role="alert"` copy and keeps the field. Escape closes and
+  returns focus to the editor; Tab cycles inside the panel; an outside press
+  closes. Anchor: the EditingBar's link button on desktop, the whole bar on
+  mobile (`min-width: 48rem` split; the link button may be scrolled out of
+  view), the selection for Mod-K. The panel re-measures on `visualViewport`
+  resize, so it follows the bar when the software keyboard lifts it.
+- **Link rules** (`lib/notes/link-url.ts`, `tests/notes-link-url.test.ts`):
+  one validator for the Link extension's `isAllowedUri` and the popover.
+  http, https and mailto only; bare `example.com` gets `https://`, a bare
+  address gets `mailto:`; `javascript:`, `data:`, `ftp:`, `//host`, whitespace
+  and control characters are rejected. Because the extension uses it too,
+  pasted, autolinked and already stored hrefs are filtered: a stored
+  `javascript:` link loads as plain text. `autolink: true`, `openOnClick:
+  false` (a click never navigates while editing; the popover opens the link).
+- **EditingBar**: only the link button changed (it opens the popover; the old
+  `window.prompt` and "click unlinks" toggle are gone, `linkPromptLabel`
+  removed). `measure()` in `EditingBarMenu.tsx` now takes any rect source.
+- **Flagged gaps**: no `ExternalLink`/`Unlink` glyph in the icon registry
+  (adding one changes the `icon--all-icons` baseline), so Open reuses `Link`
+  and Remove reuses `Trash`, both with visible labels. `updateDelay={150}` on
+  the bubble is a number handed to TipTap, not a class.
+
+## Code blocks and collapsible sections (#336, Claude-designed on request)
+
+- **Code block** keeps the node name `codeBlock` and attribute `language`
+  (`null` = plain), so stored blocks load unchanged (`tests/notes-code-details.test.ts`).
+  StarterKit's is off (`codeBlock: false`); `CodeBlockLowlight` is extended
+  with a React node view, `components/organisms/CodeBlockView.tsx`: a labelled
+  `Dropdown` (language, collapses on choice, focus back to the editor) and an
+  outline `Button` (copy raw `node.textContent`; label "Gekopieerd" plus the
+  `Check` glyph for 2s, mirrored in a `role="status"` region). Read-only
+  editors show the language as text. The chrome sits above the code inside
+  `.code-block` (the surface moved from `<pre>` to the wrapper).
+- **Languages** (`lib/notes/code-languages.ts`): plain, javascript, typescript,
+  json, css, html (highlight.js `xml`), bash, sql, python, markdown. Each
+  grammar is a dynamic `import()`, registered on first use; the node view loads
+  its block's grammar, then `rehighlightCodeBlocks` dispatches a
+  content-neutral, history-less, update-less transaction (the lowlight plugin
+  only recomputes on a doc change). No auto-detection. Bundle evidence: PR #336.
+- **Colours**: highlight.js classes in `app/globals.css` mapped to existing
+  text tokens only; the palette gap is `code-syntax-colour-tokens`.
+- **Details**: `Details` (attr `open`, `persist: true`) > `detailsSummary`
+  (text) + `detailsContent` (block+). The toggle is the extension's own
+  `<button>` (Enter/Space, aria-expanded, translated label via
+  `lib/notes/details-labels.ts`, set by `NoteEditor.tsx`); a text glyph
+  rotated in CSS. Collapsed content is only `hidden`, so `toPlainText` and
+  search include it. Slash item `details` ("Inklapbare sectie").
+
+## Markdown paste, copy and export (#337)
+
+Claude-designed on request; ADR-0021 s3/s4. Storage stays TipTap JSON, markdown
+is only a paste/copy/export format.
+
+- **Lazy by construction**: `lib/notes/markdown.ts` is the only module that
+  imports `@tiptap/markdown` (marked + manager, about 60 kB in its own chunk).
+  Everything else reaches it through `await import(...)` (paste handler, note
+  menu); `tests/notes-markdown.test.ts` fails on any static import.
+  `lib/notes/markdown-detect.ts` (sync "looks like markdown?") and
+  `markdown-export.ts` (filename, download) are tiny and stay eager.
+- **Paste** (`lib/notes/markdown-paste.ts`, registered at the `useEditor` call
+  site, not in the content whitelist): only for plain text with a block marker
+  (heading, list, task, quote, fence, table separator) and no `text/html`
+  flavour; HTML pastes keep ProseMirror's default path. Not inside a code
+  block. `handlePaste` is synchronous, so it claims the paste and inserts once
+  the chunk has loaded; if loading or validation fails the raw text is
+  inserted.
+- **Safety**: parsed JSON goes through `sanitizeToSchema` (unknown nodes and
+  marks dropped, text kept; link hrefs through `isAllowedLinkUri`; result must
+  pass `Node.check()`). Raw HTML in markdown is never interpreted.
+- **Serializer entries**: nodes/marks whose extension ships no
+  `renderMarkdown` get ONE entry in `MARKDOWN_ENTRIES` (`markdown.ts`), plus a
+  fixture in `FIXTURES` (test). Superscript/subscript export as `<sup>`/`<sub>`
+  (one-way: read back as plain text). Text alignment, table column widths and
+  cell spans have no markdown form and are lost on export.
+- **Menu** (`NoteMarkdownMenu`): Ellipsis button in the header, same
+  panel mechanics as `TableMenu` (`usePopoverPanel`, `role="menu"`, arrows /
+  Home / End, Escape and Tab close, focus returns to the trigger). Copy shows a
+  3 s `role="status"` line under the header. Export filename: derived title,
+  sanitised by `markdownFilename` (separators and reserved characters
+  removed, no leading dots, 100 chars, `Naamloze notitie` when empty).
+- **Icons and delete (#386)**: Copy as Markdown = `Copy`, Export = `Download`
+  (registered in `Icon.tsx`). "Verwijderen" is the last row after a separator,
+  `text-priority-urgent` + `Trash`, and starts the unchanged inline
+  `DeleteConfirm` flow (the header no longer has a separate delete button).
+
+## #335 — block drag handle and block menu (Claude-designed on request)
+
+Existing components and semantic tokens only; no Figma source.
+
+- **Handle** (`components/organisms/NoteBlockHandle.tsx`): `DragHandle` from
+  `@tiptap/extension-drag-handle-react` (pinned to `@tiptap/core`'s 3.30.0,
+  with its `-drag-handle` and `-node-range` peers). It is a UI component that
+  registers its own ProseMirror plugin, like `BubbleMenu`, so it is mounted in
+  `NoteEditor.tsx` and not listed in `lib/notes/extensions.ts` (that list is the
+  content schema). The handle is absolutely positioned left of the hovered
+  top-level block (`nested` off), so it takes no layout space and the reading
+  column never moves; `noteExtensions` also configures the Dropcursor
+  (`.note-dropcursor`, `stroke-secondary-active`). Rendered only for
+  `(pointer: fine)`; touch gets nothing (EditingBar is the mobile surface).
+  The drag is one ProseMirror transaction, so undo restores it. Dropping inside
+  a list nests the block as a list item: that is the editor's own drop rule.
+- **Menu**: portalled `Dropdown role="menu"` (the `EditingBarMenu` panel and
+  `measure()`). Rows: "Turn into" group (`menuitemradio`, active type checked;
+  picking the active one does nothing), then Duplicate, Move up, Move down
+  (`menuitem`, disabled at the edges) and Delete. Arrows wrap, Home/End, Escape
+  and Tab close and return focus to the editor. The handle is held visible while
+  the menu is open by dispatching the plugin's `lockDragHandle` meta.
+- **Reuse**: "Turn into" runs the options of `BLOCK_TYPE_MENU` and `LIST_MENU`
+  (`EditingBar.tsx`, #329) plus quote and code block from `SLASH_ITEMS`; labels
+  are `components.slashMenu.items.*`. Turn into is hidden for tables and other
+  non-textblock, non-list/quote blocks (`isConvertibleBlock`).
+- **Commands** (`lib/notes/block-commands.ts`, `tests/notes-block-commands.test.ts`):
+  `moveBlock`, `duplicateBlock`, `deleteBlock` work on any document child
+  without naming node types. `BlockShortcuts` binds `Mod-Shift-ArrowUp/Down`.
+  The last remaining block is replaced by an empty paragraph, never removed.
+- **Code blocks and details (#336)**: handled generically (the whole block moves, copies, deletes; undo restores). Code blocks keep Turn into (`codeBlock` is a textblock); `details` is not convertible, so its Turn into group is hidden.
+- **Keyboard gap**: the handle only shows on hover, so the keyboard route is
+  Mod-Shift-Up/Down; there is no key that opens the menu for the current block.
+- **Flagged**: no `GripVertical`, `Copy` or `ArrowUp`/`ArrowDown` glyph in the
+  icon registry, see `docs/open-questions.md#notes-block-menu-icon-glyphs-missing`.
+- **Tests**: `tests/visual/block-handle.spec.ts` (menu actions, drag + undo,
+  shortcuts, unmoved column, no handle on touch); stories `NoteBlockHandle`
+  (hover, menu open; the menu in dark too).
+
+## #339 — images in the editor (Claude-designed on request)
+
+Components reused: `Button` (`destructive` + `Trash`, `transparent` bar button),
+`InputField` (alt text), `Icon` (`Image`). Tokens: `surface-secondary`,
+`text-secondary`, `stroke-primary-selected`, `radius-card-inner`, `spacing-component-*`.
+No new component beyond the node view `components/organisms/NoteImageView.tsx`
+(nothing existing renders a TipTap node).
+
+- **Node**: block `image` with `src` and `alt` only (`NoteImage` in
+  `lib/notes/extensions.ts`, `@tiptap/extension-image` 3.30.0 = `@tiptap/core`).
+  `src` is only ever `/api/note-image/<note>/<image>` (#338): `parseHTML` accepts
+  just that prefix, the markdown input rule is off and `parseMarkdown` turns an
+  external `![](https://...)` into a plain paragraph, so no route can introduce
+  an external picture (privacy, ADR-0022). Width options are left out.
+  Markdown export is the extension's own `![alt](src)` (round-trip fixture).
+- **Insert paths** all end in `requestImageUpload` (`lib/notes/image-upload.ts`):
+  paste and drop through `@tiptap/extension-file-handler` (allowed types jpeg,
+  png, webp, gif), the slash item `image` (appended to `SLASH_ITEMS`) and the
+  EditingBar (mobile button, desktop overflow row), the last two via
+  `openImagePicker` (a hidden `<input type=file>` appended to `body` while the
+  dialog is open). Several files upload in parallel, each with its own placeholder.
+- **Upload flow**: the extension `NoteImageUpload` (editor-only, added in
+  `NoteEditor.tsx` with the #338 action `uploadNoteImage(noteId, file)`) validates
+  type and the 10 MB cap (`validateImageFile`, same limits as the server), shows
+  a placeholder, runs `downscaleImageFile` (Vercel's 4.5 MB body limit) and the
+  action. The placeholder is a ProseMirror **widget decoration**, never a node: on
+  failure it is simply removed and the error code is shown (`role="alert"`, the
+  `notes.errors.*` strings, auto-dismissed after 8 s), so a failed upload can not
+  leave a broken node or reach autosave. Success replaces the widget (and the empty
+  paragraph the cursor was in) with the `image` node in one transaction; the
+  trailing empty paragraph comes from StarterKit's trailing node.
+  The insert position is a block boundary after the cursor's block (an empty
+  paragraph is replaced); it is mapped through edits made during the upload.
+- **Selected**: `NoteImageView` shows an outline in `stroke-primary-selected` and,
+  in an editable document, an alt-text `InputField` plus a destructive delete
+  `Button`. Enter or blur commits (empty becomes `null`), Escape discards; both
+  return focus to the document. **Enter on a selected image focuses the field**
+  (keyboard route in, `NoteImage.addKeyboardShortcuts`); Backspace/Delete on the
+  selection removes the image natively. A pointer or arrow-key selection both work.
+- **Broken**: `onError` swaps the picture for a `surface-secondary` block with
+  `Icon/Image` and "Afbeelding niet beschikbaar" (`role="img"`, named with the alt
+  text). Reset when `src` changes. Missing object = the route's 404.
+- **Search**: `toPlainText` writes the alt text as a line of its own
+  (`tests/notes-document.test.ts`), so it lands in `content_text`; a note that
+  opens with an image takes its alt as title.
+- **Tests**: `tests/notes-image-upload.test.ts` (validation, placeholder
+  lifecycle, failure, src guard), `tests/visual/note-image.spec.ts` (states,
+  alt edit, Escape, delete, keyboard, mobile/desktop entry points); stories
+  `NoteImageView` (`Uploading`, `WithImage`, `Broken`, `Selected`).
+- **Flagged**: there is no `ImageOff` glyph in `Icon` (the broken state reuses
+  `Image`), and no spinner for the placeholder (a pulsing block with text; the
+  pulse stops under `prefers-reduced-motion`). `docs/open-questions.md#notes-image-states-glyph-and-spinner`.
+  Not verified: a real phone's file picker and camera roll, and R2 itself (nothing
+  has run against real R2, see `docs/HANDOFF.md`).
+
+## #341 — note links: `[[` menu, link chip, "Gelinkt vanuit" (Claude-designed on request)
+
+ADR-0023. All from existing components and bound semantic tokens.
+
+- **Node**: `noteLink` (`NoteLink` in `lib/notes/extensions.ts`), an inline atom on
+  the official `Mention` with attributes `noteId` (uuid) and `label` (the target's
+  title when inserted). These are exactly what `extractNoteLinkIds` hands to
+  `save_note_content` (#340; `tests/notes-note-link.test.ts` pins it). Mention's own
+  suggestion plugin and keyboard shortcut are switched off: the `[[` trigger is the
+  editor-only `NoteLinkSuggestion` (`lib/notes/note-link-suggestion.ts`, official
+  `@tiptap/suggestion`, 200 ms debounce, `allowSpaces`, query capped at 80 characters,
+  never inside code), so a read-only renderer carries no menu. Markdown export
+  writes `[[label]]`; it is one-way (import leaves the text).
+- **Resolution** (`lib/notes/note-link.ts`): `page.tsx` calls `resolveNoteTitles` for
+  the ids in the document and `getBacklinks` once; `NoteEditor` builds the
+  resolution (`noteExtensionsWith`) once per mount. A renamed target shows its new
+  title on the next open. An id the server could not resolve is **deleted**: muted
+  chip "Verwijderde notitie", a `span`, not clickable. A link inserted in the
+  session is never "deleted" and shows its stored label.
+- **Chip** (`NoteLinkView`, `.tiptap .note-link*` in `app/globals.css`): inline text
+  size and weight, `surface-secondary` fill (hover/active steps), `radius-control-inner`,
+  `component-xs` padding. It is a real `<a href="/notities/<id>">`: focusable with
+  Tab, Enter or click opens it (client-side via `router.push`; a modified click keeps
+  the browser's new-tab behaviour). Selected/focus ring is `stroke-primary-selected`
+  (flagged 2px, same as the image ring). `Tag` was not reused: it is a 40px block pill.
+- **Menu** (`NoteLinkMenu`): a labelless `Dropdown` `role="listbox"` of transparent
+  `Button` `role="option"` rows (icon `Notebook`, title, category muted), placed by
+  the slash menu's `usePlacement`/`panelClasses` (caret, visual viewport). Focus
+  stays in the editor, which carries `aria-haspopup/expanded/controls/activedescendant`.
+  Arrows move, Enter/Tab insert the link plus a space, Escape closes (the suggestion
+  plugin). While a search runs the previous rows stay and Enter waits; no rows shows
+  "Geen notities gevonden"; an empty query lists the most recently updated notes
+  (`findNoteLinkTargets`: title match, current note excluded, eight rows). Slash item
+  `noteLink` ("Link naar notitie", last in `SLASH_ITEMS`) types `[[`.
+- **Backlinks** (`NoteBacklinks`): a `section` labelled "Gelinkt vanuit" below the
+  word count, a list of links (title, category muted), hidden when empty.
+- **Server**: action `searchNoteLinkTargets` (zod-parsed, auth checked) over
+  `findNoteLinkTargets` in `lib/notes/queries.ts`; no schema change.
+- **Tests**: `tests/notes-note-link.test.ts` (attrs, HTML round-trip, resolution,
+  trigger, select, slash item, markdown), `tests/notes-document.test.ts` (label in
+  plain text and title); stories `NoteLinkMenu` (`Open`, `Filtered`, `NoResults`,
+  `Searching`), `NoteLinkView` (`Links`, `DeletedLink`), `NoteBacklinks`.
+- **Flagged**: no inline chip in Figma (`docs/open-questions.md#notes-link-chip-undesigned`).
+  Not verified: a real phone's keyboard with the menu, and a note-to-note click
+  against hosted data (nothing has run signed in).
+
+
+## #342 — table of contents rail (Claude-designed on request)
+
+ADR-0021 s3. From existing tokens; no new component (`NoteTableOfContents` is a list of links).
+
+- **Packages**: `@tiptap/extension-table-of-contents` and `@tiptap/extension-unique-id`, both 3.30.0
+  (same as `@tiptap/core`), both MIT on npm (the table-of-contents `license` field reads
+  "SEE LICENSE IN LICENSE.md"; that file is the MIT text). `UniqueID` is limited to `heading`.
+- **Attributes**: a heading gains `id` and `data-toc-id`, both additive. A note without them loads
+  unchanged (`tests/notes-toc.test.ts`); the ids are assigned in the editor's deferred `create`
+  handler. `NoteEditor` ignores updates until `settled`, so opening an old note does not save it or
+  bump its updated time; the ids reach the database with the first real edit. `toPlainText`,
+  `deriveTitle`, `extractNoteLinkIds` (#340) and the markdown export (#337) ignore them (tested), and
+  the server's `tiptapDocumentSchema` passes unknown attrs through. `scrollParent: undefined`
+  switches off the extension's own window scroll listener; the extension's `offsetTop` based
+  active flag is not used.
+- **Rail** (`NoteTableOfContents`, `lib/notes/use-note-toc.ts`): `nav` labelled "Inhoud", H1-H3 as
+  links (`href="#id"`; plain click scrolls, a modified click keeps the browser's behaviour). Level
+  indent via `component-md`/`component-lg`; active item `surface-secondary` + `text-primary` +
+  `aria-current="location"`, others `text-secondary` with the hover/active surface steps; a
+  `stroke-lines` rule on the left. Empty headings are skipped. Shown from `MIN_TOC_HEADINGS` (3).
+- **No layout shift**: the `aside` is `absolute` (out of flow) in the free space right of the 70ch
+  column, `w-44`, desktop `xl:` only, `sticky` inside. The editor column is never pushed or
+  narrowed whether the rail exists or not. Hidden below `xl`; mobile has no menu (left out).
+- **Behaviour**: active = last heading within the top quarter of the viewport (the last one at the
+  page bottom); a click selects its item at once until the next scroll. Activating moves the caret
+  into the heading (`focus(pos + 1)`, no jump) and scrolls it into view, `smooth` unless
+  `prefers-reduced-motion`. `.tiptap` headings carry `scroll-margin-top: stack-xl`.
+- **Tests**: `tests/notes-toc.test.ts`; stories `NoteTableOfContents` (`Default`, `FirstActive`), plus a
+  dark baseline. Flagged: `docs/open-questions.md#notes-toc-rail-undesigned`. Not verified: scrolling
+  against a real long note signed in (nothing has run signed in).
+
+Reorder handles and the Table-button placement fix (#387): design/notes/NoteTableHandles.md.

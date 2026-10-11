@@ -44,9 +44,21 @@ guesses at what it's for — tracked meanwhile on `design/tokens.json`'s
 
 `app/login/page.tsx`'s right-hand panel is a static `<Image>` (`/login/login-visual-{mobile,desktop}.png`) — a light-mode render of the product. Since #206 the login page itself follows the OS theme, so on a dark system that light PNG now sits against a stone-900 page. The page's own tokens switch correctly; only the asset doesn't. A dark counterpart has to be exported from Figma — building one in code would be inventing UI the design doesn't have. Until then this is cosmetic and confined to `/login`.
 
-### loading-skeleton-undesigned
+### skeleton-breathe-timing-unsourced
 
-No Figma frame shows a loading/skeleton state for any page (Te-doen, Recepten, recipe detail) — Dev Mode has no "loading" variant on any of the fetched board/board-column nodes. #170's `loading.tsx`/`<Suspense>` fallbacks (`app/(app)/_components/PageSkeleton.tsx`) therefore reuse the real `CardContainer`/`Card` shells as-is (semantic tokens only, `animate-pulse` on a plain placeholder bar) rather than drawing a bespoke skeleton look. Needs a real frame from design if a more considered loading state is ever wanted.
+The loading skeletons "breathe" (opacity 1 -> 0.4 -> 1, 1.6s ease-in-out, infinite, tuned from 2.4s/0.55 because short loads made that cycle invisible on the stone-100 page bg; `--animate-breathe` in `app/globals.css`, off under `prefers-reduced-motion`). The frames (4164:25190/25197/26042/26088) carry no motion spec, so duration and depth are this codebase's own picks, and unlike `semantic.duration.base` they are not a token (`--duration-*` is no Tailwind namespace). Needs ratification, like `sidebar-motion-timing-unsourced`.
+
+### skeleton-column-header-desktop-visible
+
+The Recepten desktop frame (4164:25197) draws the column headers visible ("Ontbijt 4", icon, buttons); the mobile frame (4164:25190) draws them at opacity 0. Column names, counts and icons are data, unknown while loading, so the skeleton hides the header row at both breakpoints (height kept) rather than render invented names. Needs a design call whether desktop should show real-looking placeholder text.
+
+### skeleton-predates-recipe-page-v2
+
+The recipe-detail frames (4164:26042/26088) predate the shipped page body (#160): they draw a "- 6 personen +" stepper row where the page renders `NutritionalDataRow` (six pills, wrapping to several rows on mobile), draw ingredient/step cards with `Title=No` where the page renders a title row (plus the Pas-aan button on the first card), and draw column widths 314 where `BoardView` uses 296/320. The skeleton follows the frames, so on the recipe page the content below the title shifts when the data arrives (mobile most). Needs updated frames, or a decision to hide a title row/nutrition row instead.
+
+### note-editor-skeleton-undesigned
+
+No loading frame exists for the note editor. `NoteEditorSkeleton` renders only the editor's own (inert) back-button row and nothing below it. Needs a frame if more is wanted.
 
 ### no-pointer-affordance
 
@@ -58,10 +70,6 @@ Two components still have no mouse-over feedback at all, and Figma defines none.
 ### sidebar-motion-timing-unsourced
 
 `semantic.duration.base` (200ms) and `semantic.easing.base` (ease-out cubic-bezier) are this codebase's own defaults — the ticket's reference frame (`3859:6647`) carries no prototype timing data, and Figma's Smart Animate lives on prototype connections that don't exist here. Needs ratification. Migration is also incomplete: `Sidebar.tsx` and `Dropdown`'s chevron use the tokens, but `Dropdown`'s grid-rows transition and `ButtonToggle`'s track slide still hardcode the literal `duration-200 ease-out`.
-
-### english-nav-labels-overflow
-
-Dutch nav labels are pixel-perfect at 40px per row; English is not — "Shopping basket" wraps and spills outside its button on the Sidebar's fixed 198px rail. Figma only ever shows Dutch. Needs a content or design call (shorter label, truncation, taller rows, or a wider rail), deliberately not invented in code.
 
 ### dropdown-row-not-fully-clickable
 
@@ -104,6 +112,10 @@ Mobile/Sort (`4052:13689`) draws the Sort button icon-only but has no Dropdown c
 ### winkelmand-mobile-header-content-overflows-320px
 
 Independent of the dropdown: at a 320px viewport (dropdown closed), the header row's own content — title `"Winkelmand"` + icon-only Sort button + `"Verwijder alles"` — already exceeds the viewport width (`document.body.scrollWidth` measures `339px` against a `320px` viewport), causing horizontal scroll. No wrap is applied and neither button shrinks below its min-content width. Predates #182 (the old full-text mobile Sort button would have made it worse, not better) and is unrelated to the Sort dropdown's anchor — flagged here rather than fixed, since a real fix (wrap, truncate, icon-only "Verwijder alles" on mobile, or a narrower minimum supported width) is a design call, not a page-ticket's to invent. See `design/notes/WinkelmandPage.md#182` for the measured thresholds. **#222 pt.4 adds a fourth control (an icon-only "+ Item" button, leading the row) to the same fetched mobile `Knoppen` frame** — Figma's own node draws it icon-only there too, so the row's minimum content width grows again, not shrinks. Not re-measured against a real viewport this ticket (same "flag, don't invent a fix" call as before); worth a real pixel re-check whenever this question is finally resolved.
+
+### winkelmand-empty-state-add-button-not-in-figma
+
+By user instruction the empty Winkelmand header carries the "+ Item" button (icon-only mobile) before "Leeg mand"; Figma's EmptyState "Knoppen" (`4049:11175`/`4049:11167`) draws only the Destructive button. Code and Figma disagree until the designer updates it. → `design/notes/WinkelmandPage.md`.
 
 ### winkelmand-merged-line-keeps-first-recipes-group
 
@@ -171,6 +183,8 @@ state.
 
 `EditingBar` (desktop `3978:14138`, mobile `3978:14870`) is not built from design-system components: every toolbar button is named `Button/Default` but is a detached `FRAME`, not a `Button` instance — each carries a placeholder text layer `"Categorie "` and a stray, invisible trailing `Icon/Plus` instance left over from wherever the frame was copied from. The twenty icons inside are likewise loose frames, not `Icon/*` instances. Measured 2026-08-13 via the `figma-console` bridge while adding the twenty icons to `IconName` for #227. Nothing to fix in code — #234 (EditingBar) builds on real `Button`/`Icon` components regardless, per this repo's normal convention — but the Figma file itself should eventually be rebuilt on real instances so a future re-measurement of this toolbar isn't reading detached frames again.
 
+**Intentional deviation (#333, 2026-10-10).** The shipped bar no longer matches these frames: by user request it is slimmed to undo/redo, block type, list, table, bold, italic, link and a "More" overflow, and on mobile it swaps to table actions inside a table (`design/notes/EditingBar.md`, "#333"). The Figma frames still show the old 20-button bar; they should be redrawn from the code (or marked as superseded) when the file is next rebuilt.
+
 ### notes-category-panel-not-designed
 
 `Pages/Notities/Breakpoints` (`3934:32790`) contains only the seven overview/editor frames — no category-add/rename/delete panel of its own. #232 built the Notities category panel by reusing `/recepten`'s panel shape one-to-one (one shared `CategoryPanel` since #287) (`design/notes/CategoryPanel.md`) rather than inventing a new panel, but three sub-parts have no Figma source and were resolved by precedent, not design:
@@ -181,72 +195,47 @@ state.
 
 Needs a real Figma frame (panel chrome, an icon set scoped to Notities, and a delete-confirmation state) before any of the three should be considered final.
 
-### notes-editingbar-link-no-url-input-designed
-
-`EditingBar`'s link button (#234, `Icon/Link`, position 14) has no URL-input
-UI designed anywhere in `Pages/Notities/Breakpoints` — no modal, no inline
-field, nothing between clicking the button and TipTap's `setLink({href})`
-needing a real URL. Built as a native `window.prompt()` (browser chrome, not
-a custom Figma-absent dialog) as the least-invention stand-in: clicking while
-a link mark is active unsets it, otherwise a prompt asks for a URL and
-`toggleLink`-equivalent logic applies it. See `design/notes/EditingBar.md`.
-Needs a real designed link-input surface before this is considered final.
-
-### notes-editingbar-mobile-image-button-out-of-scope
-
-Mobile `EditingBar` (`3978:14870`) carries a 21st element after a 6th
-separator line that desktop doesn't have: `3978:15082`, a real `Button/
-Default` **instance** (not a detached frame like the other twenty), 133px
-wide, with a visible text label "Afbeelding" and `Icon/Image`. No TipTap
-image extension is installed in `lib/notes/extensions.ts` and none was added
-for #234 — image insertion is out of scope for this ticket, per direct user
-instruction. Needs a real ticket (extension install, upload/insert flow) before
-this button is built; not counted among the 20 mapped commands in
-`design/notes/EditingBar.md`.
-
 ### notes-delete-has-no-confirmation
 
 `/notities/[noteId]`'s "Verwijderen" button (`3978:14809` desktop, `3978:14839` mobile) has no confirmation step drawn anywhere in `Pages/Notities/Breakpoints` — same absence `notes-category-panel-not-designed` already documents for the category panel. #233 reused the existing two-step confirm pattern verbatim (`RecipeDetailPage.tsx`'s own in-place button-row swap, itself the same shape `NoteCategoryPanel.tsx`/`CategoryPanel.tsx` already use): deleting a note is irreversible, and the app already has one established confirm idiom rather than inventing a second. Needs a real Figma confirmation state before this is considered final.
 
-### notes-prose-typography-not-designed
+### notes-prose-font-scale-no-tokens
 
-`Pages/Notities/Breakpoints`' only editor frames (`3934:32790`) draw the
-toolbar and an empty/placeholder editor body — no frame anywhere shows a
-heading, a list, a block quote or a code block actually rendered inside a
-note. #263 (a feedback ticket: those four EditingBar buttons visibly "did
-nothing" because `app/globals.css` had zero CSS for TipTap's generated
-content, on top of Tailwind's preflight stripping heading sizes and list
-markers) added a minimal, token-bound `.tiptap` content block to fix the
-visible bug, per explicit user instruction to keep it minimal rather than
-invent a richer treatment. Every value used a real token from
-`app/theme.css` except heading font-size (no such token exists at all;
-`h1` matches `PageHeader.tsx`'s own `text-xl`) — see
-`design/notes/NoteEditor.md`'s `#263` section for the full per-rule
-reasoning. Needs a real design pass over prose typography (are these the
-right sizes/weights, does a real content-heavy note need more than this)
-before the current CSS should be treated as final.
+`app/theme.css` has no font-size, font-weight or line-height tokens (only
+spacing/radius/colour are generated), so #329's prose typography uses
+Tailwind's own type scale via `@apply` in `app/globals.css`
+(`text-3xl`/`2xl`/`xl`, `font-extrabold`/`bold`, `leading-*`, `70ch` width) and
+a raw 1.25rem task-checkbox box. Same precedent as `PageHeader`'s `text-xl`.
+Needs a typography token set in Figma (and `design/tokens.json`) before these
+can be bound. → `design/notes/NoteEditor.md` (#329 section).
 
-### notes-table-ui-not-designed
+### button-no-disabled-state
 
-`Pages/Notities/Breakpoints` (`3934:32790`) draws no table anywhere — the
-only table-related node in the whole section is `EditingBar`'s own toolbar
-button with a table icon (`4067:20040`). Not designed: how a rendered table
-should look (border weight/colour, whether the header row is visually
-distinguished, cell padding, zebra striping or not, how it behaves when
-wider than the viewport on mobile), any UI to add or remove a row/column
-(TipTap ships the commands, not a control surface), whether columns should
-be user-resizable, or a cell's selection/focus treatment. #235 built the
-smallest defensible surface on top of this gap: `.tiptap table`/`td`/`th`
-rules in `app/globals.css`, entirely on existing semantic tokens (no new
-token, no raw hex/px), with the header row given `surface-secondary` as a
-background so `withHeaderRow: true` isn't visually silent (recorded as a
-deliberate one-token deviation from "minimal" in `design/notes/
-NoteEditor.md`'s table section) — and `TableKit.resizable` left at its
-`false` default, since resize handles need a design that doesn't exist.
-Row/column editing has no UI at all: only TipTap's own keyboard/ProseMirror
-behaviour (e.g. Tab in the last cell adds a row). Needs a real design pass
-for the row/column controls, and ideally a Figma frame that actually draws
-a table, before any of the current CSS should be treated as final.
+`Button` has no designed disabled look (Figma draws none, no token). #330's table
+menu marks rows that do not apply with `aria-disabled` and `opacity-40` as a
+stand-in; a disabled text/fill token (the `text-placeholder` token does not
+darken enough in dark mode, it is brighter than the enabled text) and a Button
+disabled state need a design pass. -> `design/notes/NoteEditor.md` (#330 section).
+
+### notes-slash-menu-icon-glyphs-missing
+
+The slash menu (#332) wants glyphs the `Icon` set does not have: `Pilcrow`/`Type` (Text), `Heading1`/`Heading2`/`Heading3`, `ListOrdered`, `ListTodo`/`ListChecks`. Adding lucide glyphs changes the `icon--all-icons` baseline, which #332 may not regenerate, and raw SVG is not allowed. The menu reuses `TextAlignStart` (Text), `Heading` (H1-H3), `List` (all three lists), `TextQuote`, `SquareCode`, `Table`, `Minus` (Divider); the label tells the rows apart. Register the glyphs in `components/atoms/Icon.tsx`, regenerate that baseline and switch `lib/notes/slash-items.ts`. -> `design/notes/NoteEditor.md` (#332 section).
+
+### code-syntax-colour-tokens
+
+Code highlighting (#336) has no dedicated syntax palette. `app/globals.css` maps the highlight.js classes onto the only distinct text tokens that exist: `text-secondary` (comments), `text-highlight-blue` (keywords, types), `text-highlight-green` (strings), `text-highlight-yellow` (numbers, literals), `text-highlight-red` (titles, attributes, names) and `text-primary` (everything else). That is 5 hues for ~16 token classes, so function names and attributes share red, and red also means "urgent" elsewhere. The contrast of these `text-highlight-*` tokens on `surface-secondary` (the code block surface) was not measured and may be low, especially the yellow (orange-400) in light mode. Needs a design pass: dedicated `text/syntax/*` tokens (light and dark) with checked contrast. Also missing: a `Copy` glyph in `Icon` (the copy button is text-only, with the `Check` glyph while copied) and a `ChevronRight` glyph (the collapsible-section toggle is a text glyph rotated in CSS). -> `design/notes/NoteEditor.md` (#336 section).
+
+### notes-block-menu-icon-glyphs-missing
+
+The block handle and menu (#335) want `GripVertical` (the drag grip), `Copy` (Duplicate) and `ArrowUp`/`ArrowDown` (Move). The `Icon` set has none, and adding glyphs changes the `icon--all-icons` baseline. The handle reuses `EllipsisVertical` (one column of dots instead of the usual two) and the menu rows are text-only except Delete (`Trash`). Register the glyphs in `components/atoms/Icon.tsx`, regenerate that baseline and switch `components/organisms/NoteBlockHandle.tsx`. -> `design/notes/NoteEditor.md` (#335 section).
+
+### notes-image-states-glyph-and-spinner
+
+The image states (#339) have two small gaps. The broken-image block wants an `ImageOff` glyph; `Icon` has only `Image`, so it reuses that (adding a glyph changes the `icon--all-icons` baseline). The upload placeholder wants a spinner; `Icon` has a `Loader` glyph but no spin treatment for it exists in the design system, so the placeholder is a pulsing `surface-secondary` block with text (static under `prefers-reduced-motion`). Needs a design call on both. -> `design/notes/NoteEditor.md` (#339 section).
+
+### notes-toc-rail-undesigned
+
+Figma draws no table-of-contents rail (#342). It is Claude-designed on request from `text-secondary`/`text-primary`, `surface-secondary` steps, `stroke-lines`, `radius-control` and `component-*` spacing. Two values have no token: the rail width (`w-44`, 11rem) and the sticky top offset (`top-stack-xl` is a stack gap reused as a page offset), and the `xl` (1280px) breakpoint below which the rail is hidden (the reading column is 70ch and the rail sits in the free space to its right). Needs a design call on the rail's width and the narrowest viewport it should appear on; a mobile "Inhoud" menu was left out. -> `design/notes/NoteEditor.md` (#342 section).
 
 ---
 
@@ -254,10 +243,20 @@ a table, before any of the current CSS should be treated as final.
 
 These were open questions that the shipped build now answers. The deviation and its reasoning live in the component's own `design/notes/<Component>.md`; an old `#slug` link that lands here was one of them.
 
-**Decided by the user or by measurement** — `touch-hold-duration-deviates-from-figma` (750ms, chosen after real-device testing showed Figma's 2s felt broken), `unit-dropdown-list-not-drawn` and `recipe-panel-unit-list-etc-unsourced` (the 17-code `UNIT_CODES` list is a user decision, 2026-07-29), `ios-safari-fixed-viewport-unverified` (now tracked as a verification ticket, not a design gap), `button-vs-input-active-border` (#204, 2026-08-11: fetched both nodes' Active state side by side — `Stroke/secondary/active` for Button/Outline, `Stroke/primary/active` for Input-field, two distinct correctly-bound Figma variables, never a divergence to reconcile; `stroke-primary-active` keeps its own name), `token-names-are-hex-derived` (#203, 2026-08-11: the premise was simply wrong — `get_variable_defs` does return variable names, verified on 3623:4346 and 3705:4402. Every semantic token now carries its real Figma variable path and id, `design/figma-variables/` holds the exported collections, and `pnpm check:tokens-drift` keeps the two in step), `dark-mode-is-placeholder-only` (#204 narrowed this 2026-08-11, #206 closes it 2026-08-12: real Figma dark frames/variables back every semantic colour token's dark value as of #204 — two deliberately-accepted quirks remain (Distructive hover/press/selected collapsing to one red-50, White's Active reading lighter than Hover), not flagged for a fix. The one part this slug's own text still called open — "only Ladle sets `data-theme`, an app-level theme switch is a separate architectural decision" — is what #206 resolves: `next-themes` now sets `data-theme` from system preference app-wide, no switch UI (not in Figma, not built). Full reasoning in `design/notes/AppShell.md`), `transparent-binding-unverified` (#213, 2026-08-12: re-measured via the figma-console-mcp plugin bridge — `figma.variables`/`boundVariables` read directly on Transparent's own Hover/Active nodes, a WebSocket bridge with no Starter-plan rate limit, so the fetch is now repeatable by anyone rather than resting on a single subagent's report. Confirms exactly what the report claimed: `surface-highlight-white-hover`/`-active`, not `surface-secondary/*`. Nothing changed — the binding was already right — only the method is now reproducible; see `design/notes/Button.md`'s #213 entry), `per-page-home-screen-icon-unverified` (#223, 2026-08-13: the one thing this dev machine could not answer — whether iOS treats N manifests sharing an origin, each with its own `id`, as N independently-routed home-screen installs — the user verified on their own iPhone. It does: adding Te-Doen, Recepten and Winkelmand to the home screen gives three distinct icons that each open their own page, exactly as designed. Nothing is reverted; the build stands as shipped. Full build record in `design/notes/AppShell.md`'s "#223 vervolg" section).
+**Decided by the user or by measurement** — `english-nav-labels-overflow` (2026-10-07: user shortened EN `Shopping basket` to `Basket`; fits the 198px rail on one line), `loading-skeleton-undesigned` (2026-10-07: Figma frames 4164:25190/25197/26042/26088 now exist; implemented as `design/notes/Skeletons.md`, residual gaps are the four `skeleton-*`/`note-editor-skeleton-*` questions above), `touch-hold-duration-deviates-from-figma` (750ms, chosen after real-device testing showed Figma's 2s felt broken), `unit-dropdown-list-not-drawn` and `recipe-panel-unit-list-etc-unsourced` (the 17-code `UNIT_CODES` list is a user decision, 2026-07-29), `ios-safari-fixed-viewport-unverified` (now tracked as a verification ticket, not a design gap), `button-vs-input-active-border` (#204, 2026-08-11: fetched both nodes' Active state side by side — `Stroke/secondary/active` for Button/Outline, `Stroke/primary/active` for Input-field, two distinct correctly-bound Figma variables, never a divergence to reconcile; `stroke-primary-active` keeps its own name), `token-names-are-hex-derived` (#203, 2026-08-11: the premise was simply wrong — `get_variable_defs` does return variable names, verified on 3623:4346 and 3705:4402. Every semantic token now carries its real Figma variable path and id, `design/figma-variables/` holds the exported collections, and `pnpm check:tokens-drift` keeps the two in step), `dark-mode-is-placeholder-only` (#204 narrowed this 2026-08-11, #206 closes it 2026-08-12: real Figma dark frames/variables back every semantic colour token's dark value as of #204 — two deliberately-accepted quirks remain (Distructive hover/press/selected collapsing to one red-50, White's Active reading lighter than Hover), not flagged for a fix. The one part this slug's own text still called open — "only Ladle sets `data-theme`, an app-level theme switch is a separate architectural decision" — is what #206 resolves: `next-themes` now sets `data-theme` from system preference app-wide, no switch UI (not in Figma, not built). Full reasoning in `design/notes/AppShell.md`), `transparent-binding-unverified` (#213, 2026-08-12: re-measured via the figma-console-mcp plugin bridge — `figma.variables`/`boundVariables` read directly on Transparent's own Hover/Active nodes, a WebSocket bridge with no Starter-plan rate limit, so the fetch is now repeatable by anyone rather than resting on a single subagent's report. Confirms exactly what the report claimed: `surface-highlight-white-hover`/`-active`, not `surface-secondary/*`. Nothing changed — the binding was already right — only the method is now reproducible; see `design/notes/Button.md`'s #213 entry), `per-page-home-screen-icon-unverified` (#223, 2026-08-13: the one thing this dev machine could not answer — whether iOS treats N manifests sharing an origin, each with its own `id`, as N independently-routed home-screen installs — the user verified on their own iPhone. It does: adding Te-Doen, Recepten and Winkelmand to the home screen gives three distinct icons that each open their own page, exactly as designed. Nothing is reverted; the build stands as shipped. Full build record in `design/notes/AppShell.md`'s "#223 vervolg" section).
 
 **Figma authoring artifacts, built the sensible way** — `portion-stepper-figma-draws-plus-twice` (both stepper nodes draw `Icon/Plus` twice; code renders `Minus` on decrement), `recipe-name-field-swap-icon-unusual` (`Icon/Arrow-right-left` for "open a picker", built as specified), `recipe-image-field-no-filled-state`, `input-field-text-boolean`, `checkbox-delete-state`, `settings-mobile-delete-button-not-built` (#265, 2026-08-16: the mobile Settings panel node's footer draws two buttons — "Verwijderen" (Destructive) and a typo'd "Oplsaan" (Filled) — matching desktop's `AddItem` footer shape exactly, plus the parent frame's own name ("Add recipi/Desktop") and the stray `Eenheid` annotations on the Input-field: this whole panel was copied from the Add-recipe frame and never fully re-purposed. There is nothing to delete on Settings, so a delete button was never built; both breakpoints ship desktop's single full-width `Opslaan` footer. See `design/notes/SettingsPanel.md`).
 
-**Built with an existing, already-approved pattern** — `category-delete-no-confirm-designed` and `category-name-no-validation-designed` (two-step confirm + disabled-Save gate), `category-icon-no-selected-state` (`aria-pressed` reusing Button's Selected semantics), `recipe-detail-mobile-overflow-menu-undesigned` and `nutrition-dropdown-content-undesigned` (labelless `Dropdown` bordered-panel popover), `ingredient-search-panel-empty-and-zero-result-states-unsourced`, `recipe-panel-verwijderen-hidden-on-create`.
+**Built with an existing, already-approved pattern** — `notes-editingbar-link-no-url-input-designed` (#331, 2026-10-10: Claude-designed link popover with `InputField` and `Button`, shared by bubble menu, EditingBar and Mod-K; see `design/notes/NoteEditor.md`), `category-delete-no-confirm-designed` and `category-name-no-validation-designed` (two-step confirm + disabled-Save gate), `category-icon-no-selected-state` (`aria-pressed` reusing Button's Selected semantics), `recipe-detail-mobile-overflow-menu-undesigned` and `nutrition-dropdown-content-undesigned` (labelless `Dropdown` bordered-panel popover), `ingredient-search-panel-empty-and-zero-result-states-unsourced`, `recipe-panel-verwijderen-hidden-on-create`.
 
 **Built as the least-surprising literal read** — `ingredient-name-annotation-only-on-row-two`, `recipe-panel-two-identical-voeg-toe-buttons`, `recipe-panel-personen-chevron-behaviour-unsourced`, `recipe-panel-desktop-layout-gap`, `recipe-ingredient-row-unit-label-always-shown`, `recipe-card-no-photo-placeholder`, `toggle-group-shared-track`, `winkelmand-send-no-subset-picker` (per-ingredient swipe covers single sends; only *multi*-select stays undesigned).
+
+**Notes tables (#330)** — `notes-table-ui-not-designed` (2026-10-10, user: Claude designs it on request; stable fixed layout, resizable columns, size picker, table menu — `design/notes/NoteEditor.md` #330 section; the generic icon reuse and the missing disabled style are recorded there and as `button-no-disabled-state`).
+
+**Notes prose (#329)** — `notes-prose-typography-not-designed` (2026-10-10, user: Claude designs it on request; H1-H3 on Tailwind's type scale, rhythm, 70ch width, task lists — `design/notes/NoteEditor.md` #329 section; the missing font tokens are the new `notes-prose-font-scale-no-tokens`).
+
+**Recipe import UI (#318, Figma section `4164:20621`)** — `import-skeleton-bars-unbound`: the skeleton bars (nodes under `4164:23681`) have no bound fill/radius/height (values equal `surface/primary/default` and 4px radius; built with those tokens, confirm in Figma). `import-link-panel-input-chevron`: the Link Input-field in `4164:23722`/`4164:23777` still draws the Dropdown variant's trailing chevron; not built. `import-description-not-stored`: ADR-0019 mentions a description field but `recipes` has no description column, so the extracted description is dropped (add a column + UI first). `import-range-and-pack-note-dropped`: the parser's `note` (range text, pack text, prep) has no column on `recipe_ingredients`, so it is only kept (in the name) for lines whose unit could not be resolved.
+
+**Notes links (#341)** — `notes-link-chip-undesigned` (2026-10-11): Figma draws no inline chip, link menu or "Gelinkt vanuit" list; Claude-designed on request from `surface-secondary` steps, `stroke-primary-selected` and the slash menu's listbox pattern (`design/notes/NoteEditor.md` #341). `Tag` (a 40px pill) did not fit inline, so there is no shared chip component and no chip-sized token; the 2px focus ring is a flagged raw width.
+
+**Notes images (#339)** — `notes-editingbar-mobile-image-button-out-of-scope` (2026-10-11: built as the last item of the mobile bar and as an overflow row on desktop; the `figma-console` bridge was unreachable, so the node was not re-fetched — `design/notes/EditingBar.md` #339 section).

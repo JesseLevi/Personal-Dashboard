@@ -22,6 +22,7 @@ Session start: read **`docs/HANDOFF.md`** (state, next steps; ≤ 6KB). On finis
 
 - **Not the architecture layer** — flag ADR/Figma-design-system conflicts, don't silently redesign.
 - **Never build UI absent from Figma** — fetch the dev-ready node first; never guess from memory or a screenshot. For any *token binding*, use the `figma-console` bridge and read `boundVariables` off the node — a resolved value never identifies a token (`docs/guides/ui-components.md`).
+- **You design a component, state or screen only when the user explicitly asks you to** — in the conversation or on the ticket. A gap you discover yourself is still flagged, never filled. When asked, design it directly in code from existing components + semantic tokens. No Figma step is needed (`docs/guides/ui-components.md` → "Claude-designed UI").
 - **Tailwind v4 utilities + semantic tokens only** — no inline styles/raw hex in `components/` (incl. comments; `check:server-only` greps the file). Missing token → flag, never hardcode.
 - **All data access via Next.js server code** — browser never talks to Supabase directly; `service_role` never leaves server/worker modules (ADR-0002/0003).
 - **Every table**: `user_id` FK + RLS policy + an RLS test in `supabase/tests`, same PR (ADR-0009). Schema changes only via `supabase/migrations`.
@@ -34,8 +35,8 @@ Session start: read **`docs/HANDOFF.md`** (state, next steps; ≤ 6KB). On finis
 When a ticket forces a trade-off, resolve it in this order:
 
 1. Secure from the ground up (RLS, server-only data access, no secret leakage)
-2. Runs fully locally (Mac mini + Ollama — no cloud dependencies in core paths)
-3. Clean migration path to cloud hosting later (Supabase Cloud, hosted inference)
+2. Cheap to run on managed hosting (Vercel + Supabase Cloud; deterministic code before any LLM call, hosted inference pay-per-use with a spend cap — ADR-0018)
+3. Portable — provider-neutral seams (`lib/ai/`, plain Postgres) so a host or AI provider can be swapped
 4. Multi-language from the ground up (never hardcode strings)
 5. LLM-readable by design (predictable structure, canonical text columns, semantic tokens)
 6. Readable for humans — clear file and folder structure
@@ -53,7 +54,7 @@ When a ticket forces a trade-off, resolve it in this order:
 - `pnpm lint` / `pnpm typecheck` / `pnpm test` — ESLint, tsc, Vitest
 - `pnpm sync:tokens` — regenerate `app/theme.css` from `design/tokens.json` (run after every token edit; CI fails on drift)
 - `pnpm ladle` — design-system workbench (`pnpm ladle:build` for a non-interactive build; `pnpm ladle build` hangs)
-- `pnpm test:visual` / `pnpm test:visual:update` — Playwright screenshot baselines; run before every component PR (CI's job is non-blocking until Linux baselines exist)
+- `pnpm test:visual` / `pnpm test:visual:update` — Playwright screenshot baselines; the CI Linux job is the blocking gate. Regenerate baselines with the `visual-update` workflow (`gh workflow run visual-update.yml --ref <branch>`); a local run is optional (`-darwin.png` is git-ignored)
 - `pnpm worker` — job queue consumer (needs `.env` with service_role)
-- `pnpm db:reset` / `pnpm test:rls` / `pnpm db:types` — Supabase (needs Docker: CI or the server, not this dev machine)
+- `pnpm db:reset` / `pnpm test:rls` / `pnpm db:types` — Supabase (needs Docker: CI only, not this dev machine)
 - `pnpm check:rls-coverage` / `pnpm check:server-only` / `pnpm check:raw-spacing` / `pnpm check:comment-budget` / `pnpm check:retired-tokens` / `pnpm check:doc-budget` — CI gates, also runnable locally

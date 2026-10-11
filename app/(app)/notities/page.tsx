@@ -1,8 +1,9 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
-import { loadNotitiesPageData } from "./notes-data";
+import { loadNotitiesColumnCounts, loadNotitiesPageData } from "./notes-data";
 import { NotitiesBoard } from "./NotitiesBoard";
-import { BoardSkeleton } from "../_components/PageSkeleton";
+import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 
 // #230/#231: categorie-kanban + zoeken uit de database, exact zoals
 // /recepten (#124) en /te-doen (#93) dat opzetten. `BoardView`'s
@@ -11,10 +12,12 @@ import { BoardSkeleton } from "../_components/PageSkeleton";
 // notes-data.ts) en aan `NotitiesBoard.tsx` ("use client") doorgeeft.
 // `?sort=`/`?q=` worden hier gelezen (zelfde patroon als app/(app)/te-doen/
 // page.tsx) omdat het los staat van de trage databasefetch hieronder --
-// alleen die laatste zit in <Suspense>. Geen `metadata.manifest` hier:
-// #223's vervolg bouwde alleen Te-Doen/Recepten/Winkelmand een eigen Web App
-// Manifest; Notities heeft nog geen route.ts daarvoor (wel al een
-// favicon/apple-icon, #245) en dat toevoegen staat niet in dit ticket.
+// alleen die laatste zit in <Suspense>. Eigen Web App Manifest (#390): zie
+// app/(app)/winkelmand/page.tsx en design/notes/AppShell.md.
+export const metadata: Metadata = {
+  manifest: "/notities/manifest.webmanifest",
+};
+
 async function NotitiesPageContent({
   sortParam,
   queryParam,
@@ -38,6 +41,24 @@ async function NotitiesPageContent({
   );
 }
 
+// Loading stage 2: header-only skeleton (outer fallback) until the per-category
+// note counts are in; search mode has no columns and keeps header-only.
+// See design/notes/Skeletons.md.
+async function NotitiesPageStream({
+  sortParam,
+  queryParam,
+}: {
+  sortParam?: string;
+  queryParam?: string;
+}) {
+  const counts = await loadNotitiesColumnCounts(queryParam);
+  return (
+    <Suspense fallback={<BoardSkeleton variant="notes" counts={counts} />}>
+      <NotitiesPageContent sortParam={sortParam} queryParam={queryParam} />
+    </Suspense>
+  );
+}
+
 export default async function NotitiesPage({
   searchParams,
 }: {
@@ -45,8 +66,8 @@ export default async function NotitiesPage({
 }) {
   const { sort, q } = await searchParams;
   return (
-    <Suspense fallback={<BoardSkeleton />}>
-      <NotitiesPageContent sortParam={sort} queryParam={q} />
+    <Suspense fallback={<BoardSkeleton variant="notes" />}>
+      <NotitiesPageStream sortParam={sort} queryParam={q} />
     </Suspense>
   );
 }

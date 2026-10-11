@@ -1,4 +1,4 @@
-// Documents the CURRENT .tiptap CSS, not a design approval: Figma has no design (notes-prose-typography-not-designed, notes-table-ui-not-designed).
+// Prose sample, every block type: .tiptap CSS is Claude-designed on request (#329, design/notes/NoteEditor.md); table styling since #330 (design/notes/NoteEditor.md).
 import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
 
@@ -10,6 +10,10 @@ const content = `
 <p>Gewone alinea met <code>inline code</code> erin.</p>
 <ul><li><p>Eerste punt</p></li><li><p>Tweede punt</p></li></ul>
 <ol><li><p>Eerste stap</p></li><li><p>Tweede stap</p></li></ol>
+<ul data-type="taskList">
+<li data-type="taskItem" data-checked="false"><div><p>Mails beantwoorden</p><ul data-type="taskList"><li data-type="taskItem" data-checked="true"><div><p>Klant bellen</p></div></li><li data-type="taskItem" data-checked="false"><div><p>Offerte sturen</p></div></li></ul></div></li>
+<li data-type="taskItem" data-checked="true"><div><p>Tafel reserveren</p></div></li>
+</ul>
 <blockquote><p>Een citaat in de notitie.</p></blockquote>
 <pre><code>const a = 1;
 const b = 2;</code></pre>
@@ -27,7 +31,7 @@ export const Prose = () => {
     immediatelyRender: false,
     editable: false,
     editorProps: {
-      attributes: { class: "text-base font-semibold text-text-primary focus:outline-none" },
+      attributes: { class: "text-base font-medium text-text-primary focus:outline-none" },
     },
   });
   return (

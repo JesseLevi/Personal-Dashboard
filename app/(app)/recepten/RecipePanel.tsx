@@ -12,7 +12,13 @@ import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteC
 import { ImageUploadField } from "@/components/molecules/ImageUploadField";
 import { RecipeIngredientRow } from "@/components/molecules/RecipeIngredientRow";
 import { isIconName } from "@/components/atoms/Icon";
-import { UNIT_CODES, formatQuantity, type UnitCode } from "@/lib/recipes/units";
+import { UNIT_CODES, formatQuantity, magnitudeOf, type UnitCode } from "@/lib/recipes/units";
+import {
+  buildContentsPayload,
+  keepsNeedsReview,
+  type IngredientRowState,
+  type StepRowState,
+} from "@/lib/recipes/panel-payload";
 import { downscaleImageFile } from "@/lib/images/downscale-client";
 import type {
   ActionResult,
@@ -37,23 +43,6 @@ import type {
 export type RecipePanelTarget =
   | { mode: "create"; categoryId: string }
   | { mode: "edit"; recipe: RecipeWithIngredientsAndSteps };
-
-interface IngredientRowState {
-  localId: string;
-  name: string;
-  quantity: number | null;
-  unit: UnitCode | "";
-  ingredientId: string | null;
-  /** The `recipe_ingredients.id` this row was loaded from (edit mode only) — used once, at construction, to seed a step's `ingredientLocalIds` from the recipe's own `steps[].ingredientIds` (#149). Never sent in the save payload; `null` for a freshly typed/added row. */
-  sourceId: string | null;
-}
-
-interface StepRowState {
-  localId: string;
-  instruction: string;
-  /** Selected ingredient rows for this step, by their local `IngredientRowState.localId` — translated into payload `ingredientRefs` (indexes) at save time, never sent as-is. See `buildContentsPayload` below. */
-  ingredientLocalIds: string[];
-}
 
 // Fallback icon for a category whose stored icon isn't a real `IconName` —
 // same gap and same fallback ReceptenBoard.tsx already applies.
@@ -85,6 +74,10 @@ function emptyIngredientRow(): IngredientRowState {
     unit: "gram",
     ingredientId: null,
     sourceId: null,
+    groupLabel: null,
+    needsReview: false,
+    link: null,
+    loaded: null,
   };
 }
 
@@ -102,6 +95,19 @@ function ingredientRowsFromRecipe(recipe: RecipeWithIngredientsAndSteps): Ingred
     unit: row.unit as UnitCode,
     ingredientId: row.ingredient_id,
     sourceId: row.id,
+    groupLabel: row.group_label,
+    needsReview: row.needs_review,
+    link:
+      row.ingredient_id && row.linkedIngredientName
+        ? {
+            name: row.linkedIngredientName,
+            isNevo: row.referenceIngredientId !== null,
+            kcalPer100g: row.nutrients.kcalPer100g,
+            gramsPerUnit: row.unitMassGrams,
+            unit: row.unit as UnitCode,
+          }
+        : null,
+    loaded: { name: row.name, quantity: row.quantity, unit: row.unit as UnitCode, ingredientId: row.ingredient_id },
   }));
 }
 
@@ -140,6 +146,8 @@ export interface RecipePanelProps {
   onDeleteRecipe: (input: unknown) => Promise<ActionResult>;
   onSearchIngredients: (input: unknown) => Promise<IngredientSearchResult[]>;
   onCreateOwnIngredient: (input: unknown) => Promise<ActionResult<IngredientRow>>;
+  /** `"use server"` action `confirmIngredientMatch` (#316/#318): called when the user fixes a "controleren" line through the ingredient picker. Optional so create-only hosts can omit it. */
+  onConfirmIngredientMatch?: (input: unknown) => Promise<ActionResult>;
   /** `"use server"` action `uploadRecipeThumbnail` (`app/(app)/recepten/actions.ts`) — called before create/update whenever a new thumbnail file was picked (#149). */
   onUploadThumbnail: (formData: FormData) => Promise<ActionResult<{ path: string }>>;
   /** Fired after a successful create/update/delete, before `onClose`. Never fired on a plain close/cancel. */
@@ -156,6 +164,7 @@ export function RecipePanel({
   onDeleteRecipe,
   onSearchIngredients,
   onCreateOwnIngredient,
+  onConfirmIngredientMatch,
   onUploadThumbnail,
   onMutated,
 }: RecipePanelProps) {
@@ -163,6 +172,7 @@ export function RecipePanel({
   const tSidePanel = useTranslations("components.sidePanel");
   const tUnits = useTranslations("recipes.units");
   const tErrors = useTranslations("recipes.errors");
+  const tLink = useTranslations("components.recipePanel.link");
   const tImageUpload = useTranslations("components.imageUploadField");
 
   const recipe = target.mode === "edit" ? target.recipe : null;
@@ -229,6 +239,28 @@ export function RecipePanel({
 
   const unitOptions = UNIT_CODES.map((code) => ({ code, label: tUnits(code) }));
 
+  // Claude-designed on request (2026-10-07): what the nutrition calculator
+  // uses for a row, so a wrong NEVO link or a missing one is visible here.
+  // Grams per unit only while the unit is still the one it was loaded for.
+  function linkInfo(row: IngredientRowState): string | undefined {
+    if (!row.link) return row.name.trim() || row.ingredientId ? tLink("none") : undefined;
+    const parts = [tLink(row.link.isNevo ? "nevo" : "own", { name: row.link.name })];
+    if (row.link.kcalPer100g !== null) {
+      parts.push(tLink("kcal", { kcal: Math.round(row.link.kcalPer100g) }));
+    } else if (row.ingredientId === row.loaded?.ingredientId) {
+      parts.push(tLink("noNutrition"));
+    }
+    if (row.link.gramsPerUnit !== null && row.unit !== "" && row.unit === row.link.unit && magnitudeOf(row.unit) !== "mass") {
+      parts.push(
+        tLink("unitMass", {
+          unit: tUnits(row.unit).toLocaleLowerCase(),
+          grams: Math.round(row.link.gramsPerUnit * 10) / 10,
+        }),
+      );
+    }
+    return parts.join(" · ");
+  }
+
   function updateIngredientRow(localId: string, patch: Partial<IngredientRowState>) {
     setIngredients((current) =>
       current.map((row) => (row.localId === localId ? { ...row, ...patch } : row)),
@@ -255,46 +287,39 @@ export function RecipePanel({
   const activeStepIngredientRow =
     steps.find((row) => row.localId === stepIngredientPanel.stepLocalId) ?? null;
 
-  function handleIngredientSaved(selected: IngredientRow[]) {
+  function handleIngredientSaved(selected: IngredientRow[], plainNames: string[]) {
     // Reuses #131's multi-select IngredientSearchPanel as a single-select
     // picker here — the first checked result wins, matching one row's one
     // name/ingredientId slot. See design/notes/RecipePanel.md.
     const picked = selected[0];
     if (picked && ingredientSearch.rowLocalId) {
+      // #318: picking an ingredient for a still-flagged imported line confirms
+      // it: the server clears needs_review and remembers the imported name as
+      // an alias (confirmIngredientMatch). The pick itself is saved with the form.
+      const flaggedRow = ingredients.find((row) => row.localId === ingredientSearch.rowLocalId);
+      if (flaggedRow && keepsNeedsReview(flaggedRow) && flaggedRow.sourceId && onConfirmIngredientMatch) {
+        void onConfirmIngredientMatch({ recipeIngredientId: flaggedRow.sourceId, ingredientId: picked.id }).then((result) => {
+          if (!result.success) setError(tErrors(result.error));
+        });
+      }
+      // A name of the user's own ("Selderij") stays when only the link
+      // changes; a name that just mirrored the old link follows the new one.
+      const keepName = flaggedRow !== undefined && flaggedRow.name.trim() !== "" && flaggedRow.name !== flaggedRow.link?.name;
       updateIngredientRow(ingredientSearch.rowLocalId, {
-        name: picked.name,
+        name: keepName ? flaggedRow.name : picked.name,
         ingredientId: picked.id,
+        needsReview: false,
+        link: { name: picked.name, isNevo: picked.reference_id !== null, kcalPer100g: null, gramsPerUnit: null, unit: "" },
+      });
+    } else if (plainNames[0] && ingredientSearch.rowLocalId) {
+      // #324 (ADR-0020 §5): a hand-typed name stays a recipe-only name,
+      // ingredient_id null; nutrition leaves the line out (existing unlinked path).
+      updateIngredientRow(ingredientSearch.rowLocalId, {
+        name: plainNames[0],
+        ingredientId: null,
+        needsReview: false,
       });
     }
-  }
-
-  // Ingredients/steps are built together, not by two independent filters
-  // (#149): a step's `ingredientRefs` are indexes into the payload's
-  // `ingredients` array, and that array only contains rows that survive the
-  // empty-name filter — so the index map must be built from the FILTERED
-  // list, never the raw `ingredients` state (an index computed before
-  // filtering would point at the wrong row, or at a row that got dropped
-  // entirely). See `lib/recipes/schemas.ts`'s `ingredientRefs` comment for
-  // the receiving end of this contract.
-  function buildContentsPayload() {
-    const filteredIngredients = ingredients.filter((row) => row.name.trim() !== "");
-    const indexByLocalId = new Map(filteredIngredients.map((row, index) => [row.localId, index]));
-    return {
-      ingredients: filteredIngredients.map((row) => ({
-        name: row.name.trim(),
-        quantity: row.quantity,
-        unit: row.unit || "gram",
-        ingredientId: row.ingredientId,
-      })),
-      steps: steps
-        .filter((row) => row.instruction.trim() !== "")
-        .map((row) => ({
-          instruction: row.instruction.trim(),
-          ingredientRefs: row.ingredientLocalIds
-            .map((localId) => indexByLocalId.get(localId))
-            .filter((index): index is number => index !== undefined),
-        })),
-    };
   }
 
   function handleSave() {
@@ -333,7 +358,7 @@ export function RecipePanel({
         servings,
         timeMinutes: timeMinutes === "" ? null : timeMinutes,
         ...(thumbnailPath !== undefined ? { thumbnailPath } : {}),
-        ...buildContentsPayload(),
+        ...buildContentsPayload(ingredients, steps),
       };
       const result =
         target.mode === "create"
@@ -521,6 +546,8 @@ export function RecipePanel({
                 onRemove={() => handleRemoveIngredientRow(row.localId)}
                 removeLabel={t("fields.removeIngredientLabel")}
                 removeDisabled={ingredients.length <= 1}
+                reviewLabel={keepsNeedsReview(row) ? t("fields.needsReviewLabel") : undefined}
+                linkInfo={linkInfo(row)}
               />
             </div>
           ))}

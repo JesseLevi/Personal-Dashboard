@@ -1,12 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/recipes/session";
 import { nextPosition } from "@/lib/boards/positioning";
 import { searchIngredientLibrary } from "@/lib/recipes/queries";
+import { findOrCreateOwnIngredient } from "@/lib/recipes/ingredients";
+import { replaceRecipeContents } from "@/lib/recipes/contents";
 import {
   uploadRecipeThumbnail as uploadRecipeThumbnailToStorage,
   deleteRecipeThumbnail,
@@ -80,8 +81,6 @@ import type { Database } from "@/lib/database.types";
 // none of it does.
 
 type Client = SupabaseClient<Database>;
-type IngredientLine = z.infer<typeof createRecipeSchema>["ingredients"][number];
-type StepLine = z.infer<typeof createRecipeSchema>["steps"][number];
 
 // requireUserId used to be defined locally here (identically in
 // app/(app)/te-doen/actions.ts and app/(app)/winkelmand/actions.ts) taking a
@@ -127,65 +126,6 @@ async function lastRecipePosition(
     .limit(1)
     .maybeSingle();
   return data?.position ?? null;
-}
-
-// Replaces every recipe_ingredients/recipe_steps/recipe_step_ingredients row
-// for `recipeId` with `ingredients`/`steps`, via one call to the
-// public.replace_recipe_contents RPC (#149, see the module header comment)
-// — a real Postgres transaction, not the old two-statement delete-then-
-// insert pairs. Still rejects the whole write from this layer (returns
-// `{ ok: false }`, the RPC is never called, nothing is touched) if any
-// line's ingredientId doesn't belong to this user — the same "don't trust
-// the client for ownership" check moveCard applies to columnId, applied
-// here to recipe_ingredients.ingredient_id. This check stays in this file
-// rather than folding into the RPC because it's a cross-table check against
-// public.ingredients, unrelated to the RPC's own recipe-ownership guard.
-async function replaceRecipeContents(
-  supabase: Client,
-  userId: string,
-  recipeId: string,
-  ingredients: IngredientLine[],
-  steps: StepLine[],
-): Promise<{ ok: true } | { ok: false }> {
-  const ingredientIds = [
-    ...new Set(
-      ingredients
-        .map((line) => line.ingredientId)
-        .filter((id): id is string => id != null),
-    ),
-  ];
-  if (ingredientIds.length > 0) {
-    const { data: owned, error: ownedError } = await supabase
-      .from("ingredients")
-      .select("id")
-      .eq("user_id", userId)
-      .in("id", ingredientIds);
-    if (ownedError) {
-      logDbError("replaceRecipeContents/ownership-check", ownedError);
-      return { ok: false };
-    }
-    if ((owned?.length ?? 0) !== ingredientIds.length) return { ok: false };
-  }
-
-  const { error } = await supabase.rpc("replace_recipe_contents", {
-    p_recipe_id: recipeId,
-    p_ingredients: ingredients.map((line) => ({
-      name: line.name,
-      quantity: line.quantity,
-      unit: line.unit,
-      ingredientId: line.ingredientId ?? null,
-      groupLabel: line.groupLabel ?? null,
-    })),
-    p_steps: steps.map((line) => ({
-      instruction: line.instruction,
-      ingredientRefs: line.ingredientRefs,
-    })),
-  });
-  if (error) {
-    logDbError("replaceRecipeContents", error);
-    return { ok: false };
-  }
-  return { ok: true };
 }
 
 // ============================================================================
@@ -456,7 +396,7 @@ export async function deleteRecipe(input: unknown): Promise<ActionResult> {
   if ("error" in auth) return { success: false, error: auth.error };
 
   // #149: read thumbnail_path before deleting the row, so a stored
-  // recipe-thumbnails object doesn't outlive the recipe it belonged to. Not
+  // R2 thumbnail object doesn't outlive the recipe it belonged to. Not
   // fatal if this lookup comes back empty/errored — the delete below still
   // runs and reports its own not-found/generic error the normal way.
   const { data: existing, error: existingError } = await supabase
@@ -544,13 +484,10 @@ export async function moveRecipe(
 
 /**
  * Creates a `public.ingredients` row for the signed-in user (ADR-0011 §2).
- * `referenceId: null` is the ticket's explicit "search yielded nothing, add
- * as new" case; a set `referenceId` is the companion case the ADR names in
- * the same breath — "picking a library ingredient materialises (or reuses)
- * a user-owned row that links to the reference row" — reusing an existing
- * row for that reference_id instead of inserting a duplicate. One function
- * covers both, matching the ticket's own dependency note that #131 "calls
- * the search function and the create function above" (singular).
+ * "Picking a library ingredient materialises (or reuses) a user-owned row
+ * that links to the reference row" — reusing an existing row for that
+ * reference_id instead of inserting a duplicate. #324 (ADR-0020 §5):
+ * `referenceId` is required; a hand-typed name never creates a row.
  */
 export async function createOwnIngredient(
   input: unknown,
@@ -562,39 +499,12 @@ export async function createOwnIngredient(
   const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
-  if (parsed.data.referenceId) {
-    const { data: existing, error: existingError } = await supabase
-      .from("ingredients")
-      .select("*")
-      .eq("user_id", auth.userId)
-      .eq("reference_id", parsed.data.referenceId)
-      .maybeSingle();
-    if (existingError) {
-      logDbError("createOwnIngredient/existing-lookup", existingError);
-      return { success: false, error: "generic" };
-    }
-    if (existing) return { success: true, data: existing };
-  }
-
-  const { data, error } = await supabase
-    .from("ingredients")
-    .insert({
-      user_id: auth.userId,
-      reference_id: parsed.data.referenceId,
-      name: parsed.data.name,
-    })
-    .select()
-    .single();
-
-  if (error || !data) {
-    if (error) logDbError("createOwnIngredient", error);
-    return { success: false, error: "generic" };
-  }
-
+  const result = await findOrCreateOwnIngredient(supabase, auth.userId, parsed.data);
+  if (!result.ok) return { success: false, error: "generic" };
   // No revalidatePath: this manages the ingredient library, not the
   // /recepten route — it's called from within the recipe write flow
   // (#126/#131), whose own actions already revalidate it.
-  return { success: true, data };
+  return { success: true, data: result.ingredient };
 }
 
 /**
@@ -616,7 +526,7 @@ export async function searchIngredients(input: unknown): Promise<IngredientSearc
 }
 
 // ============================================================================
-// #121: recipe-thumbnails upload
+// #121: recipe thumbnail upload (R2)
 // ============================================================================
 
 /**

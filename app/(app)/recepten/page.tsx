@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
-import { getRecipeCategoriesWithRecipes } from "@/lib/recipes/queries";
+import { getRecipeCategoriesWithRecipes, getRecipeCategoryRecipeCounts } from "@/lib/recipes/queries";
+import { getAuthenticatedUserId, isAdmin } from "@/lib/recipes/session";
+import { sweepStuckImports } from "@/lib/recipes/import/sweep";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ReceptenBoard } from "./ReceptenBoard";
-import { BoardSkeleton } from "../_components/PageSkeleton";
+import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 
 // #124: real categorie-kanban, replacing the #28 stub. `BoardView`'s
 // `renderItem` can't cross the Server->Client boundary, so this stays a thin
@@ -29,14 +32,31 @@ import { BoardSkeleton } from "../_components/PageSkeleton";
 // app/(app)/te-doen/page.tsx's <TeDoenPageBody> wrap.
 async function ReceptenPageContent() {
   const t = await getTranslations();
-  const categories = await getRecipeCategoriesWithRecipes();
+  // #318 / ADR-0019 §1: stuck `importing` rows (> 5 min) become failed/timeout
+  // before the board reads them, so they show as a failed card, not a skeleton.
+  const userId = await getAuthenticatedUserId();
+  if (userId) await sweepStuckImports(await createSupabaseServerClient(), userId);
+  const [categories, admin] = await Promise.all([getRecipeCategoriesWithRecipes(), isAdmin()]);
 
   return (
     <ReceptenBoard
       categories={categories}
       title={t("nav.recipes")}
       addCategoryLabel={t("components.pageHeader.recipes.addCategoryLabel")}
+      ingredientsLabel={admin ? t("components.pageHeader.recipes.ingredientsLabel") : undefined}
     />
+  );
+}
+
+// Loading stage 2: header-only skeleton (outer fallback) until the per-category
+// recipe counts are in, then the exact-shaped skeleton while the full fetch runs.
+// See design/notes/Skeletons.md.
+async function ReceptenPageStream() {
+  const counts = await getRecipeCategoryRecipeCounts();
+  return (
+    <Suspense fallback={<BoardSkeleton variant="recipes" counts={counts} />}>
+      <ReceptenPageContent />
+    </Suspense>
   );
 }
 
@@ -47,10 +67,15 @@ export const metadata: Metadata = {
   manifest: "/recepten/manifest.webmanifest",
 };
 
+// #318: `after()` in startRecipeImport shares the invoking route's max
+// duration, and a Server Action takes it from the page that calls it. The
+// pipeline is bounded well inside this (fetch 10 s, one LLM call, no retries).
+export const maxDuration = 60;
+
 export default function ReceptenPage() {
   return (
-    <Suspense fallback={<BoardSkeleton />}>
-      <ReceptenPageContent />
+    <Suspense fallback={<BoardSkeleton variant="recipes" />}>
+      <ReceptenPageStream />
     </Suspense>
   );
 }

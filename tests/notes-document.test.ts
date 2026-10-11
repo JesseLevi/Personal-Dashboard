@@ -69,7 +69,7 @@ describe("toPlainText", () => {
         },
       ],
     });
-    expect(toPlainText(document)).toBe("Naam\nLeeftijd");
+    expect(toPlainText(document)).toBe("Naam\tLeeftijd");
   });
 
   it("preserves a codeBlock's own internal newlines", () => {
@@ -100,7 +100,7 @@ describe("toPlainText", () => {
         },
       ],
     });
-    expect(toPlainText(document)).toBe("Naam\nLeeftijd\nAnna\n34");
+    expect(toPlainText(document)).toBe("Naam\tLeeftijd\nAnna\t34");
   });
 
   it("drops empty table cells without leaving blank or doubled newlines", () => {
@@ -123,7 +123,30 @@ describe("toPlainText", () => {
         },
       ],
     });
-    expect(toPlainText(document)).toBe("Naam\n34");
+    expect(toPlainText(document)).toBe("Naam\n\t34");
+  });
+
+  it("puts a cell's own paragraphs on one line and drops rows with no text", () => {
+    const document = doc({
+      type: "table",
+      content: [
+        {
+          type: "tableRow",
+          content: [
+            { type: "tableCell", content: [paragraph(text("Eerste")), paragraph(text("Tweede"))] },
+            { type: "tableCell", content: [paragraph(text("Derde"))] },
+          ],
+        },
+        {
+          type: "tableRow",
+          content: [
+            { type: "tableCell", content: [paragraph()] },
+            { type: "tableCell", content: [paragraph()] },
+          ],
+        },
+      ],
+    });
+    expect(toPlainText(document)).toBe("Eerste Tweede\tDerde");
   });
 });
 
@@ -154,6 +177,17 @@ describe("deriveTitle", () => {
     expect(deriveTitle(document)).toBe("Boodschappenlijst");
   });
 
+  it("collapses the tab between cells of a first table row into a space", () => {
+    const row = {
+      type: "tableRow",
+      content: [
+        { type: "tableCell", content: [paragraph(text("Product"))] },
+        { type: "tableCell", content: [paragraph(text("Aantal"))] },
+      ],
+    };
+    expect(deriveTitle(doc({ type: "table", content: [row] }))).toBe("Product Aantal");
+  });
+
   it("derives the title from a document that starts with a codeBlock, up to its first internal line", () => {
     const document = doc({ type: "codeBlock", content: [text("npm install\nnpm run build")] });
     expect(deriveTitle(document)).toBe("npm install");
@@ -171,5 +205,115 @@ describe("deriveTitle", () => {
   it("does not truncate a first line at or under the cap", () => {
     const exactLine = "b".repeat(200);
     expect(deriveTitle(doc(paragraph(text(exactLine))))).toBe(exactLine);
+  });
+});
+
+describe("task lists (#329)", () => {
+  const task = (label: string, ...nested: TipTapNode[]): TipTapNode => ({
+    type: "taskItem",
+    content: [paragraph(text(label)), ...nested],
+  });
+  const taskList = (...items: TipTapNode[]): TipTapNode => ({ type: "taskList", content: items });
+
+  it("reads each task item as one line, without a checkbox prefix", () => {
+    const document = doc(taskList(task("Melk kopen"), task("Brood kopen")));
+    expect(toPlainText(document)).toBe("Melk kopen\nBrood kopen");
+  });
+
+  it("flattens nested task lists one line per item", () => {
+    const document = doc(taskList(task("Boodschappen", taskList(task("Melk"), task("Kaas")))));
+    expect(toPlainText(document)).toBe("Boodschappen\nMelk\nKaas");
+  });
+
+  it("derives the title from a leading task item, so search finds checklist text", () => {
+    const document = doc(taskList(task("Melk kopen")));
+    expect(deriveTitle(document)).toBe("Melk kopen");
+    expect(toPlainText(document)).toContain("kopen");
+  });
+});
+
+// #336: code blocks and collapsible sections.
+describe("code blocks and collapsible sections (#336)", () => {
+  const summary = (label: string): TipTapNode => ({ type: "detailsSummary", content: label ? [text(label)] : [] });
+  const content = (...blocks: TipTapNode[]): TipTapNode => ({ type: "detailsContent", content: blocks });
+  const details = (...children: TipTapNode[]): TipTapNode => ({ type: "details", content: children });
+
+  it("includes a code block's raw text, line by line", () => {
+    const document = doc(paragraph(text("Intro")), { type: "codeBlock", content: [text("npm i\nnpm test")] });
+    expect(toPlainText(document)).toBe("Intro\nnpm i\nnpm test");
+  });
+
+  it("includes a details summary and its content", () => {
+    const document = doc(details(summary("Meer info"), content(paragraph(text("Verborgen tekst")), paragraph(text("Tweede")))));
+    expect(toPlainText(document)).toBe("Meer info\nVerborgen tekst\nTweede");
+  });
+
+  it("includes the text of a collapsed section (open: false) and of an open one", () => {
+    for (const open of [false, true]) {
+      const document = doc({ type: "details", content: [summary("Titel"), content(paragraph(text("Zoekbaar")))], ...{ attrs: { open } } } as TipTapNode);
+      expect(toPlainText(document)).toContain("Zoekbaar");
+    }
+  });
+
+  it("includes a code block nested in a details content", () => {
+    const document = doc(details(summary("Snippet"), content({ type: "codeBlock", content: [text("const a = 1;")] })));
+    expect(toPlainText(document)).toBe("Snippet\nconst a = 1;");
+  });
+
+  it("derives the title from a leading details summary", () => {
+    const document = doc(details(summary("Uitklapper"), content(paragraph(text("Inhoud")))));
+    expect(deriveTitle(document)).toBe("Uitklapper");
+  });
+
+  it("an empty summary adds no stray blank line", () => {
+    const document = doc(details(summary(""), content(paragraph(text("Inhoud")))));
+    expect(toPlainText(document)).toBe("Inhoud");
+  });
+});
+
+describe("images (#339)", () => {
+  const image = (alt?: unknown): TipTapNode => ({ type: "image", attrs: { src: "/api/note-image/a/b", alt } });
+
+  it("puts the alt text on a line of its own, so it is searchable", () => {
+    expect(toPlainText(doc(paragraph(text("Voor")), image("Een rode fiets"), paragraph(text("Na"))))).toBe(
+      "Voor\nEen rode fiets\nNa",
+    );
+  });
+
+  it("adds nothing for an image without alt text", () => {
+    expect(toPlainText(doc(paragraph(text("Voor")), image(null), image(""), image("  "), image(5)))).toBe("Voor");
+  });
+
+  it("collapses whitespace in the alt text", () => {
+    expect(toPlainText(doc(image("een\n  fiets")))).toBe("een fiets");
+  });
+
+  it("derives the title from the alt text of a leading image", () => {
+    expect(deriveTitle(doc(image("Zomervakantie"), paragraph(text("Tekst"))))).toBe("Zomervakantie");
+  });
+});
+
+describe("note links (#341)", () => {
+  const link = (label: unknown): TipTapNode => ({
+    type: "noteLink",
+    attrs: { noteId: "11111111-1111-4111-8111-111111111111", label },
+  });
+
+  it("reads a link as its label, inline with the surrounding text", () => {
+    expect(toPlainText(doc(paragraph(text("Zie "), link("Boodschappen"), text(" voor meer"))))).toBe(
+      "Zie Boodschappen voor meer",
+    );
+  });
+
+  it("adds nothing for a link without a usable label", () => {
+    expect(toPlainText(doc(paragraph(text("Zie"), link(null), link(5))))).toBe("Zie");
+  });
+
+  it("collapses whitespace in the label", () => {
+    expect(toPlainText(doc(paragraph(link("een\n  titel"))))).toBe("een titel");
+  });
+
+  it("derives the title from a leading link", () => {
+    expect(deriveTitle(doc(paragraph(link("Weekplan"), text(" ideeën"))))).toBe("Weekplan ideeën");
   });
 });

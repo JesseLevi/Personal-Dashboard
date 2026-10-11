@@ -12,6 +12,7 @@ import {
   createCardSchema,
   createColumnSchema,
   deleteCardSchema,
+  deleteColumnSchema,
   moveCardSchema,
   renameBoardSchema,
   renameColumnSchema,
@@ -263,7 +264,11 @@ export async function renameColumn(input: unknown): Promise<ActionResult> {
 
   const { data, error } = await supabase
     .from("board_columns")
-    .update({ name: parsed.data.name })
+    .update(
+      parsed.data.icon === undefined
+        ? { name: parsed.data.name }
+        : { name: parsed.data.name, icon: parsed.data.icon },
+    )
     .eq("id", parsed.data.columnId)
     .eq("user_id", auth.userId)
     .select("id")
@@ -271,6 +276,33 @@ export async function renameColumn(input: unknown): Promise<ActionResult> {
 
   if (error) {
     logDbError("renameColumn", error);
+    return { success: false, error: "generic" };
+  }
+  if (!data) return { success: false, error: "not-found" };
+
+  revalidatePath("/te-doen", "layout");
+  return { success: true, data: undefined };
+}
+
+export async function deleteColumn(input: unknown): Promise<ActionResult> {
+  const parsed = deleteColumnSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const supabase = await createSupabaseServerClient();
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  // cards.column_id is `on delete cascade`: the column's cards go with it.
+  const { data, error } = await supabase
+    .from("board_columns")
+    .delete()
+    .eq("id", parsed.data.columnId)
+    .eq("user_id", auth.userId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    logDbError("deleteColumn", error);
     return { success: false, error: "generic" };
   }
   if (!data) return { success: false, error: "not-found" };

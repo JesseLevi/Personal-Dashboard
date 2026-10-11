@@ -54,8 +54,8 @@ role, not a new colour.
 
 **`recipes.thumbnail_path` is not consulted at all yet — every card renders
 the placeholder unconditionally**, even a recipe with a stored path. Not an
-oversight: #121 (private `recipe-thumbnails` bucket) isn't built, and per
-`Architecture.md` §7 the bucket is private and only ever served via
+oversight: #121's thumbnails weren't wired at the time (they now live in R2, ADR-0024), and per
+`Architecture.md` §7 storage is private and only ever served via
 short-lived signed URLs — never a public URL a client component like
 `ReceptenBoard.tsx` could construct itself. Resolving a real `thumbnail_path`
 into an `imageUrl` needs a server-side signed-URL step that doesn't exist
@@ -107,9 +107,9 @@ that option open, at the cost of shipping some bytes CSS still crops.
 
 **Why `next/image` is deliberately NOT used, on either variant.** Next's
 image optimizer fetches the source URL itself, server-side, with no access
-to the requesting browser's cookies. `recipe-thumbnails` is a private bucket
-(Architecture.md §7) — every read is authenticated per-request via the
-RLS-bound Supabase client (ADR-0002/0003), not a public or signed-forever
+to the requesting browser's cookies. Thumbnails live in a private R2 bucket
+(ADR-0024) — every read is authenticated per-request via the
+same-origin `/api/recipe-thumbnail` route (ADR-0002/0003), not a public or signed-forever
 URL. The optimizer's cookie-less fetch can never authenticate that read, so
 there is no way to hand it a URL it could actually resolve. The two
 alternatives that WOULD let it work — a `service_role` read (bypasses RLS
@@ -120,22 +120,10 @@ ADR-0002/0003's "service_role never leaves server/worker modules" /
 a same-origin, cookie-authenticated route is the only shape that keeps the
 bucket private end-to-end.
 
-**The route: `app/api/recipe-thumbnail/[recipeId]/route.ts` (#171, chunk 2).**
-Replaces the #149-era pattern of resolving every thumbnail to a signed URL
-server-side in `page.tsx` (`getRecipeThumbnailSignedUrls`, now deleted — it
-had no remaining caller once the board pointed at this route) and handing
-the board a `thumbnailUrls: Record<recipeId, url>` map. That pattern
-re-minted a fresh, one-shot signed URL on every page render/`router.refresh()`
-— cacheable by nothing, since a signed URL's whole point is to expire. The
-route instead authenticates the request itself (same RLS-bound client, same
-`stem.startsWith(userId/)` fail-fast guard as `thumbnails.ts`'s helpers) and
-streams the stored WebP bytes back under a **stable** URL:
-`/api/recipe-thumbnail/<recipeId>?size=card|full&v=<recipes.updated_at>`.
-`Cache-Control: private, max-age=86400, immutable` — `private` because this
-is a per-user asset that must never enter a shared/CDN cache; `immutable`
-is safe specifically because `v` (an opaque cache-buster, `recipes.updated_at`)
-changes the URL whenever the row — and therefore potentially the photo —
-changes, so the browser never needs to revalidate a URL it's already cached.
+**The route: `app/api/recipe-thumbnail/[recipeId]/route.ts` (#171, #363).**
+Stable URL `/api/recipe-thumbnail/<recipeId>?size=card|full&v=<recipes.updated_at>`
+(`v` is an opaque cache-buster). Delivery (session + ownership check, 302 to a
+presigned R2 URL, Supabase fallback for legacy stems) lives in ADR-0024 §5/§7.
 
 **Placeholder decided server-side, not by a 404.** Both `ReceptenBoard.tsx`
 and `RecipeDetailPage.tsx` build the request URL themselves and only do so

@@ -1,6 +1,6 @@
 # ADR-0003: Cloudflare Tunnel exposure; Supabase and Ollama LAN-only
 
-**Status**: Accepted (user decision, 2026-07-20)
+**Status**: Superseded by ADR-0018 (2026-10-07). The Mac mini it protects is shelved and will most likely never be built. Kept for history.
 
 ## Context
 

@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
+import { embeddedCounts } from "@/lib/ui/embedded-counts";
 import type {
   BoardColumnWithCards,
   BoardRow,
@@ -114,4 +115,32 @@ export async function getBoardWithColumns(
     }));
 
   return { ...board, columns };
+}
+
+/**
+ * Cards per column of one board, in column `position` order — a cheap
+ * count-only read for the loading skeleton (embedded `cards(count)`, no card
+ * rows). Empty array if the id is invalid or the caller is signed out.
+ */
+export async function getBoardColumnCardCounts(boardId: string): Promise<number[]> {
+  const parsedId = z.uuid().safeParse(boardId);
+  if (!parsedId.success) return [];
+
+  const supabase = await createSupabaseServerClient();
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return [];
+
+  const { data, error } = await supabase
+    .from("board_columns")
+    .select("id, cards(count)")
+    .eq("board_id", parsedId.data)
+    .eq("user_id", userId)
+    .order("position", { ascending: true })
+    .overrideTypes<Array<{ id: string; cards: Array<{ count: number }> }>, { merge: false }>();
+
+  if (error) {
+    console.error("[boards] getBoardColumnCardCounts failed:", error.code, error.message);
+    throw new Error("Failed to load board column counts");
+  }
+  return embeddedCounts(data, "cards");
 }

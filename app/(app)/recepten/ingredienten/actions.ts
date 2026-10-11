@@ -1,0 +1,348 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { isAdmin, requireUserId } from "@/lib/recipes/session";
+import { normalizeIngredientName, resolveIngredientId } from "@/lib/recipes/import/match-ingredients";
+import { fetchOwnPendingLines } from "@/lib/recipes/ingredient-admin";
+import {
+  createAliasSchema,
+  createEigenIngredientSchema,
+  deleteAliasSchema,
+  deleteEigenIngredientSchema,
+  linkPendingGroupSchema,
+  updateAliasSchema,
+  updateEigenIngredientSchema,
+} from "@/lib/recipes/ingredient-admin-schemas";
+import type { ActionResult, RecipesErrorCode } from "@/lib/recipes/types";
+import type { Database } from "@/lib/database.types";
+
+// Admin ingredient management (#325, ADR-0020 §2/§4/§6). Every action:
+//   1. rejects non-admins with "forbidden" (UI gate; RLS is the real boundary);
+//   2. validates input with zod;
+//   3. writes through the signed-in user's RLS-bound client -- never service_role.
+// `eigen` rows are the only reference rows an admin may change (RLS enforces
+// source = 'eigen'; the explicit filters below make a mismatch a clean not-found).
+
+type RecipeUnit = Database["public"]["Enums"]["recipe_unit"];
+
+const PAGE = "/recepten/ingredienten";
+const UNIQUE_VIOLATION = "23505";
+
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+async function adminClient() {
+  if (!(await isAdmin())) return null;
+  return createSupabaseServerClient();
+}
+
+type Client = NonNullable<Awaited<ReturnType<typeof adminClient>>>;
+type EigenInput = ReturnType<typeof createEigenIngredientSchema.parse>;
+
+function failure(error: RecipesErrorCode) {
+  return { success: false, error } as const;
+}
+
+// ---------------------------------------------------------------------------
+// Koppelingen (reference.ingredient_aliases)
+// ---------------------------------------------------------------------------
+
+export async function createAlias(input: unknown): Promise<ActionResult<{ id: string }>> {
+  const supabase = await adminClient();
+  if (!supabase) return failure("forbidden");
+  const parsed = createAliasSchema.safeParse(input);
+  if (!parsed.success) return failure("invalid-input");
+  const key = normalizeIngredientName(parsed.data.name);
+  if (key === "") return failure("invalid-input");
+
+  const { data, error } = await supabase
+    .schema("reference")
+    .from("ingredient_aliases")
+    .insert({ alias_normalized: key, ingredient_id: parsed.data.ingredientId })
+    .select("id")
+    .single();
+  if (error) {
+    if (error.code === UNIQUE_VIOLATION) return failure("duplicate");
+    console.error("[recipes] createAlias failed:", error.code, error.message);
+    return failure("generic");
+  }
+  revalidatePath(PAGE);
+  return { success: true, data: { id: data.id } };
+}
+
+export async function updateAlias(input: unknown): Promise<ActionResult> {
+  const supabase = await adminClient();
+  if (!supabase) return failure("forbidden");
+  const parsed = updateAliasSchema.safeParse(input);
+  if (!parsed.success) return failure("invalid-input");
+  const key = normalizeIngredientName(parsed.data.name);
+  if (key === "") return failure("invalid-input");
+
+  const { data, error } = await supabase
+    .schema("reference")
+    .from("ingredient_aliases")
+    .update({ alias_normalized: key, ingredient_id: parsed.data.ingredientId })
+    .eq("id", parsed.data.aliasId)
+    .select("id");
+  if (error) {
+    if (error.code === UNIQUE_VIOLATION) return failure("duplicate");
+    console.error("[recipes] updateAlias failed:", error.code, error.message);
+    return failure("generic");
+  }
+  if (data.length === 0) return failure("not-found");
+  revalidatePath(PAGE);
+  return { success: true, data: undefined };
+}
+
+export async function deleteAlias(input: unknown): Promise<ActionResult> {
+  const supabase = await adminClient();
+  if (!supabase) return failure("forbidden");
+  const parsed = deleteAliasSchema.safeParse(input);
+  if (!parsed.success) return failure("invalid-input");
+
+  const { data, error } = await supabase
+    .schema("reference")
+    .from("ingredient_aliases")
+    .delete()
+    .eq("id", parsed.data.aliasId)
+    .select("id");
+  if (error) {
+    console.error("[recipes] deleteAlias failed:", error.code, error.message);
+    return failure("generic");
+  }
+  if (data.length === 0) return failure("not-found");
+  revalidatePath(PAGE);
+  return { success: true, data: undefined };
+}
+
+// ---------------------------------------------------------------------------
+// Eigen ingrediënten (reference.ingredients, source = 'eigen')
+// ---------------------------------------------------------------------------
+
+function ingredientColumns(input: EigenInput) {
+  return {
+    name_nl: input.nameNl,
+    name_en: input.nameEn,
+    category_nl: input.categoryNl,
+    category_en: input.categoryEn,
+    kcal_per_100g: input.kcal,
+    protein_g_per_100g: input.protein,
+    carbs_g_per_100g: input.carbs,
+    fat_g_per_100g: input.fat,
+    fiber_g_per_100g: input.fiber,
+    source_version: todayIso(),
+  };
+}
+
+// Replaces the single optional eigen weight-per-unit of one ingredient.
+async function replaceUnitMass(
+  supabase: Client,
+  ingredientId: string,
+  unitMass: EigenInput["unitMass"],
+): Promise<boolean> {
+  const removed = await supabase
+    .schema("reference")
+    .from("ingredient_unit_masses")
+    .delete()
+    .eq("ingredient_id", ingredientId)
+    .eq("source", "eigen");
+  if (removed.error) return false;
+  if (!unitMass) return true;
+  const inserted = await supabase
+    .schema("reference")
+    .from("ingredient_unit_masses")
+    .insert({
+      ingredient_id: ingredientId,
+      unit: unitMass.unit as RecipeUnit,
+      grams: unitMass.grams,
+      source: "eigen",
+      source_version: todayIso(),
+    });
+  return !inserted.error;
+}
+
+export async function createEigenIngredient(input: unknown): Promise<ActionResult<{ id: string }>> {
+  const supabase = await adminClient();
+  if (!supabase) return failure("forbidden");
+  const parsed = createEigenIngredientSchema.safeParse(input);
+  if (!parsed.success) return failure("invalid-input");
+
+  const { data, error } = await supabase
+    .schema("reference")
+    .from("ingredients")
+    .insert({ ...ingredientColumns(parsed.data), source: "eigen", nutrient_basis: "per_100g" })
+    .select("id")
+    .single();
+  if (error) {
+    console.error("[recipes] createEigenIngredient failed:", error.code, error.message);
+    return failure("generic");
+  }
+  if (!(await replaceUnitMass(supabase, data.id, parsed.data.unitMass))) {
+    // Compensate so a half-saved ingredient never lingers without its weight.
+    await supabase
+      .schema("reference")
+      .from("ingredients")
+      .delete()
+      .eq("id", data.id)
+      .eq("source", "eigen");
+    return failure("generic");
+  }
+  revalidatePath(PAGE);
+  return { success: true, data: { id: data.id } };
+}
+
+export async function updateEigenIngredient(input: unknown): Promise<ActionResult> {
+  const supabase = await adminClient();
+  if (!supabase) return failure("forbidden");
+  const parsed = updateEigenIngredientSchema.safeParse(input);
+  if (!parsed.success) return failure("invalid-input");
+
+  const { data, error } = await supabase
+    .schema("reference")
+    .from("ingredients")
+    .update(ingredientColumns(parsed.data))
+    .eq("id", parsed.data.ingredientId)
+    .eq("source", "eigen")
+    .select("id");
+  if (error) {
+    console.error("[recipes] updateEigenIngredient failed:", error.code, error.message);
+    return failure("generic");
+  }
+  if (data.length === 0) return failure("not-found");
+  if (!(await replaceUnitMass(supabase, parsed.data.ingredientId, parsed.data.unitMass))) {
+    return failure("generic");
+  }
+  revalidatePath(PAGE);
+  return { success: true, data: undefined };
+}
+
+// Nog te koppelen (#326): link a group of the admin's own unlinked lines.
+// Order: optional weight, shared alias, then the admin's own lines. The alias
+// is what the next import hits; relinking only repairs lines already saved.
+// An alias for the same key pointing elsewhere stops before any line is touched; one
+// pointing at the same ingredient is reused, so a retry after a partial run works.
+const RELINK_CHUNK = 200;
+
+export async function linkPendingGroup(input: unknown): Promise<ActionResult<{ relinked: number }>> {
+  const supabase = await adminClient();
+  if (!supabase) return failure("forbidden");
+  const parsed = linkPendingGroupSchema.safeParse(input);
+  if (!parsed.success) return failure("invalid-input");
+  const key = normalizeIngredientName(parsed.data.name);
+  if (key === "") return failure("invalid-input");
+  const session = await requireUserId();
+  if ("error" in session) return failure("unauthenticated");
+
+  const { data: reference, error: referenceError } = await supabase
+    .schema("reference")
+    .from("ingredients")
+    .select("id, name_nl")
+    .eq("id", parsed.data.ingredientId)
+    .maybeSingle();
+  if (referenceError) {
+    console.error("[recipes] linkPendingGroup/reference failed:", referenceError.code, referenceError.message);
+    return failure("generic");
+  }
+  if (!reference) return failure("not-found");
+
+  const unitMass = parsed.data.unitMass;
+  if (unitMass) {
+    const removed = await supabase
+      .schema("reference")
+      .from("ingredient_unit_masses")
+      .delete()
+      .eq("ingredient_id", reference.id)
+      .eq("unit", unitMass.unit as RecipeUnit)
+      .eq("source", "eigen");
+    const inserted = removed.error
+      ? removed
+      : await supabase.schema("reference").from("ingredient_unit_masses").insert({
+          ingredient_id: reference.id,
+          unit: unitMass.unit as RecipeUnit,
+          grams: unitMass.grams,
+          source: "eigen",
+          source_version: todayIso(),
+        });
+    if (inserted.error) {
+      if (inserted.error.code === UNIQUE_VIOLATION) return failure("unit-mass-exists");
+      console.error("[recipes] linkPendingGroup/unit-mass failed:", inserted.error.code, inserted.error.message);
+      return failure("generic");
+    }
+  }
+
+  const alias = await supabase
+    .schema("reference")
+    .from("ingredient_aliases")
+    .insert({ alias_normalized: key, ingredient_id: reference.id });
+  if (alias.error) {
+    if (alias.error.code !== UNIQUE_VIOLATION) {
+      console.error("[recipes] linkPendingGroup/alias failed:", alias.error.code, alias.error.message);
+      return failure("generic");
+    }
+    // Idempotent: an alias already pointing at this ingredient (earlier partial run, or
+    // created under Koppelingen) is fine; only a different target is a real duplicate.
+    const { data: existing, error: existingError } = await supabase
+      .schema("reference")
+      .from("ingredient_aliases")
+      .select("ingredient_id")
+      .eq("alias_normalized", key)
+      .maybeSingle();
+    if (existingError) {
+      console.error("[recipes] linkPendingGroup/alias-lookup failed:", existingError.code, existingError.message);
+      return failure("generic");
+    }
+    if (existing?.ingredient_id !== reference.id) return failure("duplicate");
+  }
+
+  const ownIngredientId = await resolveIngredientId(supabase, session.userId, {
+    source: "reference",
+    referenceId: reference.id,
+    name: reference.name_nl,
+    score: 1,
+  });
+  if (!ownIngredientId) return failure("generic");
+
+  const ids = (await fetchOwnPendingLines(supabase, session.userId))
+    .filter((line) => normalizeIngredientName(line.name) === key)
+    .map((line) => line.id);
+  for (let start = 0; start < ids.length; start += RELINK_CHUNK) {
+    const { error } = await supabase
+      .from("recipe_ingredients")
+      .update({ ingredient_id: ownIngredientId, needs_review: false })
+      .eq("user_id", session.userId)
+      .in("id", ids.slice(start, start + RELINK_CHUNK));
+    if (error) {
+      console.error("[recipes] linkPendingGroup/relink failed:", error.code, error.message);
+      return failure("generic");
+    }
+  }
+  revalidatePath(PAGE);
+  revalidatePath("/recepten");
+  return { success: true, data: { relinked: ids.length } };
+}
+
+// Users' public.ingredients.reference_id goes to null (FK set null) and the
+// ingredient's aliases and unit masses cascade (ADR-0020 §4).
+export async function deleteEigenIngredient(input: unknown): Promise<ActionResult> {
+  const supabase = await adminClient();
+  if (!supabase) return failure("forbidden");
+  const parsed = deleteEigenIngredientSchema.safeParse(input);
+  if (!parsed.success) return failure("invalid-input");
+
+  const { data, error } = await supabase
+    .schema("reference")
+    .from("ingredients")
+    .delete()
+    .eq("id", parsed.data.ingredientId)
+    .eq("source", "eigen")
+    .select("id");
+  if (error) {
+    console.error("[recipes] deleteEigenIngredient failed:", error.code, error.message);
+    return failure("generic");
+  }
+  if (data.length === 0) return failure("not-found");
+  revalidatePath(PAGE);
+  return { success: true, data: undefined };
+}

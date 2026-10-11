@@ -15,12 +15,14 @@ Standard scaffold (Next.js 15 App Router, TS strict, Tailwind v4 via PostCSS, pn
 | Figma↔code map | `design/figma-map.json` | Canonical per ADR-0010 — the component inventory, not `Architecture.md` §3.1 or this file. Records node-ids and Figma→code name translations; the per-component design notes and flagged discrepancies live in `design/notes/<Component>.md` |
 | RLS harness | `supabase/tests/000-rls-enabled.sql`, `rls-profiles.sql` | pgTAP; `rls-profiles.sql` is the copy-me template for new tables |
 | CI gates | `scripts/check-rls-coverage.sh`, `check-server-only.sh` | Coverage gate fails on a table without an RLS test; greps block service_role misplacement, `NEXT_PUBLIC_SUPABASE*`, `dangerouslySetInnerHTML`, and raw hex in `components/` (comments included) |
-| Localhost-binding check | `scripts/check-localhost-binding.sh` | Run **on the server**, not here; wire into the deploy workflow |
+| Localhost-binding check | `scripts/check-localhost-binding.sh` | Shelved with the Mac mini (ADR-0018); not run anywhere |
 | Supabase server client | `lib/supabase/server.ts` | `server-only`, cookie-based, deliberately no `NEXT_PUBLIC_` vars (ADR-0003) |
 | Worker skeleton | `worker/index.ts` | Poll loop + backoff + heartbeat only. Calls `claim_next_job()`, a SQL function that **ships with the Phase 7 jobs migration (#31)** — the worker is incomplete by design; don't "fix" it earlier |
 | CI pipeline | `.github/workflows/ci.yml` (app), `ci-visual.yml` (visual), `ci-db.yml` (db) | Split into three files (#259, was one `ci.yml` with three jobs) so each carries its own `paths:` filter — safe with no branch protection/rulesets on this Free-plan repo, since a `paths:`-skipped workflow can't leave a required check stuck pending. All three: `pull_request`-only (no `push: [main]` — a merge no longer re-runs the suite on the merge commit) + `workflow_dispatch` + `concurrency: cancel-in-progress`. `app` no longer runs `pnpm build` (Vercel already builds every push as a Preview and reports it as a commit status; `pnpm typecheck` remains the TS gate). Projected ≈720 min/month against the 2000 limit, down from ≈4150 projected pre-#259. |
 
 ### ⬜ Phase 0 remainder — all server-side, ticketed as #1–#6
+
+> **Mac-mini items #1–#5 are shelved (ADR-0018)**: the platform stays on Vercel + Supabase Cloud. Of the text below only the non-Mac-mini items still apply.
 
 Mac mini Supabase stacks (#1, incl. `GOTRUE_DISABLE_SIGNUP=true` — no self-signup; matches `shouldCreateUser: false` in the app), Cloudflare Tunnel + Access (#2), Ollama (#3), restic backups incl. **separately backed-up Vault root key** (#4), hardened self-hosted runner + deploy workflow (#5), Playwright screenshot baselines (#6).
 
@@ -45,6 +47,22 @@ Schema (`boards`/`board_columns`/`cards`/`labels`/`card_labels`), server actions
 Merged so far: the unit library (#120 — `lib/recipes/units.ts`, the canonical 17-code list plus same-magnitude `convert()`/`scaleQuantity()`/`formatQuantity()`), the two-layer ingredient library and the `reference` schema (#130, `ADR-0011`), the recipe schema (#119 — `recipe_categories`/`recipes`/`recipe_ingredients`/`recipe_steps`, sharing the `public.recipe_unit` enum), the data layer (#122 — `lib/recipes/queries.ts` + `app/(app)/recepten/actions.ts`), the portion-stepper molecule (#123), the `/recepten` category-kanban page (#124 — `ReceptenBoard.tsx` driving the generic `BoardView`), the category add/rename/delete panel (#125 — `CategoryPanel.tsx`, 8-icon curated picker), and the ingredient search panel (#131 — `components/organisms/IngredientSearchPanel.tsx` + the `searchIngredients` action; `CardContentIngredient` gained optional `quantity`/`divider`).
 
 Still open: #121 (thumbnails bucket, parallel), then #126/#127 → #128. `recipes` has no `position` column by design, so the overview ships with dragging disabled — see `docs/HANDOFF.md`. `IngredientSearchPanel` exists but has no caller until #126 wires it to the ingredient name field.
+
+## R2 object storage (epic #359, ADR-0024): ✅ live; #384 migration pending deploy
+
+Merged: the `lib/storage/` seam (#361), the delivery helper (#362), recipe thumbnails on R2 (#363), the note-image backend (#338; UI is #339), and docs and the backup decision (Option B: no off-site sync, #365). The hosted setup is done and the one-time backfill ran (13 recipes, 28 objects); production holds only R2 stems. #384 removes the Supabase thumbnail bucket, its policies, the read fallback and the backfill scripts; its migration (`20261011000001`) takes effect only after a user-dispatched `deploy.yml` (target `migrate` or `both`).
+
+## R2 setup checklist (#360, ADR-0024 §6) — user runs these, hosted actions
+
+1. Cloudflare dashboard -> R2: create two buckets, `<app>-production` and `<app>-development`. Leave "r2.dev subdomain" disabled and attach no custom domain.
+2. Per bucket -> Settings -> Object lifecycle rules: add "Abort incomplete multipart uploads" after 1 day.
+3. Per bucket: no CORS policy (the browser never talks to R2).
+4. R2 -> Manage API tokens: create one token per bucket, permission *Object Read & Write*, "Apply to specific buckets only" = that bucket. Note the Access Key ID + Secret.
+5. Local `.env`: check the existing `R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY` token is scoped to the development bucket only; if it is account-wide, replace it. Set `R2_ACCOUNT_ID` and `R2_BUCKET_NAME` (development bucket).
+6. Vercel -> Settings -> Environment Variables (all four `R2_*`, no `NEXT_PUBLIC_` prefix, mark secrets Sensitive): Production = production bucket + its token; Preview = development bucket + its token.
+7. Verify (dry run first, then add `--apply`), once per bucket with that bucket's token in env:
+   `pnpm exec tsx --env-file=.env scripts/verify-r2-buckets.ts --bucket <own> --other <other> [--apply]`
+   Expect: anonymous GETs non-2xx, PUT to the other bucket 403, PUT+DELETE in own bucket OK.
 
 ## Phases 5–9: ⬜ not started
 

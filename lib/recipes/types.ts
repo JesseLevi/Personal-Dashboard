@@ -44,6 +44,8 @@ export type RecipeIngredientWithNutrition = RecipeIngredientRow & {
   kitchenUnitMasses: KitchenUnitMasses;
   /** #179: `public.ingredients.reference_id` for this row's linked ingredient -- the same lookup `nutrients` already resolves, exposed directly so `sendRecipeToShoppingList` (app/(app)/winkelmand/actions.ts) can carry it onto `shopping_list_items.reference_ingredient_id` without a second round trip. Null for an unlinked row. */
   referenceIngredientId: string | null;
+  /** Name of the linked library ingredient (for a NEVO one its NEVO name, e.g. "Selderij bleek- rauw"), shown in the edit panel so a wrong link is visible. Null for an unlinked row. */
+  linkedIngredientName: string | null;
 };
 
 export type RecipeWithIngredientsAndSteps = RecipeRow & {
@@ -77,7 +79,7 @@ export type IngredientSearchResult =
 // no recipes equivalent in this ticket's scope (no cross-category move
 // action exists yet), so it isn't copied over unused.
 // "invalid-file-type"/"file-too-large"/"upload-failed" are #121's
-// recipe-thumbnails upload additions (lib/recipes/thumbnail-validation.ts /
+// recipe thumbnail (R2) upload additions (lib/recipes/thumbnail-validation.ts /
 // thumbnails.ts) -- kept in this shared union rather than a second
 // thumbnail-specific ActionResult, same reasoning as the rest of this file.
 // "invalid-image" is #174/#171's addition: unlike the other thumbnail
@@ -95,7 +97,15 @@ export type RecipesErrorCode =
   | "invalid-file-type"
   | "file-too-large"
   | "upload-failed"
-  | "invalid-image";
+  | "invalid-image"
+  // #318: the 20-imports-per-hour limit (lib/recipes/import/rate-limit.ts).
+  | "rate-limited"
+  // #325 (ADR-0020 §6): non-admin caller of an ingredient-admin action; and a
+  // shared alias key that already exists.
+  | "forbidden"
+  | "duplicate"
+  // #326: a weight per unit already exists for this ingredient and unit (e.g. a NEVO row).
+  | "unit-mass-exists";
 
 export type ActionResult<T = undefined> =
   | { success: true; data: T }

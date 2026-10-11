@@ -1,82 +1,218 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { CSSProperties, KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { useEditorState, type Editor } from "@tiptap/react";
 import { cn } from "@/lib/ui/cn";
 import { Button } from "@/components/atoms/Button";
 import type { IconName } from "@/components/atoms/Icon";
+import { openImagePicker } from "@/lib/notes/image-upload";
+import { requestLinkPopover } from "@/lib/notes/link-popover";
+import { SLASH_ITEMS } from "@/lib/notes/slash-items";
+import { insertTable, TABLE_COMMANDS } from "@/lib/notes/table-commands";
+import { EditingBarMenu } from "./EditingBarMenu";
+import { EditingBarOverflow } from "./EditingBarOverflow";
+import { TableSizePicker } from "./TableSizePicker";
 
 // figma: node-id=3978:14138
+// design: Claude-designed on request (#329 menus, #330 table picker, #333 slim bar); deliberately departs from Figma.
 /**
- * Organism/EditingBar — Figma "EditingBar" (desktop 3978:14138, mobile
- * 3978:14870, detached frames — docs/open-questions.md#notes-editingbar-
- * detached-from-components). Twenty icon-only `Button variant="transparent"`
- * instances (fills=[] on every measured Default node — the only variant
- * whose own Default has no background) in five groups of 2/6/6/2/4,
- * separated by `bg-stroke-lines` dividers. Full command mapping, every
- * measurement and every deviation: design/notes/EditingBar.md.
+ * Organism/EditingBar — started from Figma "EditingBar" (desktop 3978:14138,
+ * mobile 3978:14870, detached frames — docs/open-questions.md#notes-editingbar-
+ * detached-from-components), slimmed in #333: nine essentials (undo/redo,
+ * block type, list, table, bold, italic, link) plus a "More" overflow; on
+ * mobile the bar swaps to table actions while the cursor is in a table.
+ * Command map, grouping reasoning and every measurement:
+ * design/notes/EditingBar.md.
  */
 export interface EditingBarProps {
   editor: Editor | null;
   className?: string;
+  /** Forces the mobile behaviour (table-actions swap) regardless of viewport; for stories. */
+  mobile?: boolean;
 }
 
 interface EditingBarCommand {
   id: string;
   icon: IconName;
   isActive?: (editor: Editor) => boolean;
-  run: (editor: Editor, ctx: { promptLinkUrl: () => string | null }) => void;
+  run: (editor: Editor, ctx: { openLink: () => void }) => void;
 }
 
-// Grouped 2/6/6/2/4 — Figma's own separator split (Line 2-5), identical on
-// both breakpoints. Order is the ticket's own left-to-right command list,
-// paired 1:1 with the measured glyph order; text-quote/square-code/code-xml
-// are resolved by POSITION, not by icon-name judgement — see
-// design/notes/EditingBar.md.
-const GROUPS: EditingBarCommand[][] = [
-  [
-    { id: "undo", icon: "Undo2", run: (editor) => editor.chain().focus().undo().run() },
-    { id: "redo", icon: "Redo2", run: (editor) => editor.chain().focus().redo().run() },
-  ],
-  [
+// #329: block type and list type are menu buttons, not toggles. Each option
+// has an i18n key under components.editingBar and reads/writes the document
+// through the same editor commands the markdown input rules use.
+export interface EditingBarMenuDef {
+  id: "blockType" | "list" | "align";
+  icon: IconName;
+  fallbackKey: string;
+  /** Icon-only trigger showing the current option's icon (#386). */
+  iconOnly?: boolean;
+  options: {
+    id: string;
+    icon: IconName;
+    isActive: (editor: Editor) => boolean;
+    run: (editor: Editor) => void;
+  }[];
+}
+
+// #330: the table button opens a size picker (TableSizePicker), not a command.
+interface EditingBarPickerDef {
+  id: "table";
+  icon: IconName;
+  picker: true;
+}
+
+// #339/#386: the "Afbeelding" button, always on the bar: labelled on desktop,
+// icon-only on mobile.
+interface EditingBarImageDef {
+  id: "image";
+  icon: IconName;
+  imageButton: true;
+}
+
+// #333: the "More" overflow (EditingBarOverflow).
+interface EditingBarOverflowDef {
+  id: "overflow";
+  icon: IconName;
+  overflow: true;
+}
+
+type BarCommand = EditingBarCommand | EditingBarMenuDef | EditingBarPickerDef | EditingBarOverflowDef | EditingBarImageDef;
+
+function isPicker(command: BarCommand): command is EditingBarPickerDef {
+  return "picker" in command;
+}
+
+function isMenu(command: BarCommand): command is EditingBarMenuDef {
+  return "options" in command;
+}
+
+function isImageButton(command: BarCommand): command is EditingBarImageDef {
+  return "imageButton" in command;
+}
+
+function isOverflow(command: BarCommand): command is EditingBarOverflowDef {
+  return "overflow" in command;
+}
+
+// Also the bubble menu's "Turn into" list (NoteBubbleMenu.tsx).
+export const BLOCK_TYPE_MENU: EditingBarMenuDef = {
+  id: "blockType",
+  icon: "Heading",
+  fallbackKey: "paragraph",
+  options: [
     {
-      id: "heading",
-      icon: "Heading",
-      isActive: (editor) => editor.isActive("heading", { level: 1 }),
-      run: (editor) => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+      id: "paragraph",
+      icon: "Pilcrow",
+      isActive: (editor) => !editor.isActive("heading"),
+      run: (editor) => editor.chain().focus().setParagraph().run(),
     },
+    ...([1, 2, 3] as const).map((level) => ({
+      id: `heading${level}`,
+      icon: (["Heading1", "Heading2", "Heading3"] as const)[level - 1],
+      isActive: (editor: Editor) => editor.isActive("heading", { level }),
+      run: (editor: Editor) => editor.chain().focus().setHeading({ level }).run(),
+    })),
+  ],
+};
+
+export const LIST_MENU: EditingBarMenuDef = {
+  id: "list",
+  icon: "List",
+  fallbackKey: "list",
+  options: [
     {
-      id: "list",
+      id: "bulletList",
       icon: "List",
       isActive: (editor) => editor.isActive("bulletList"),
       run: (editor) => editor.chain().focus().toggleBulletList().run(),
     },
     {
-      id: "blockquote",
-      icon: "TextQuote",
-      isActive: (editor) => editor.isActive("blockquote"),
-      run: (editor) => editor.chain().focus().toggleBlockquote().run(),
+      id: "orderedList",
+      icon: "ListOrdered",
+      isActive: (editor) => editor.isActive("orderedList"),
+      run: (editor) => editor.chain().focus().toggleOrderedList().run(),
     },
     {
-      id: "table",
-      icon: "Table",
-      run: (editor) => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
-    },
-    {
-      id: "codeBlock",
-      icon: "SquareCode",
-      isActive: (editor) => editor.isActive("codeBlock"),
-      run: (editor) => editor.chain().focus().toggleCodeBlock().run(),
-    },
-    {
-      id: "code",
-      icon: "CodeXml",
-      isActive: (editor) => editor.isActive("code"),
-      run: (editor) => editor.chain().focus().toggleCode().run(),
+      id: "taskList",
+      icon: "ListTodo",
+      isActive: (editor) => editor.isActive("taskList"),
+      run: (editor) => editor.chain().focus().toggleTaskList().run(),
     },
   ],
+};
+
+// "More": inline formats not on the bar (the desktop bubble menu has them too,
+// but mobile has no bubble).
+const FORMAT_COMMANDS: EditingBarCommand[] = [
+  {
+    id: "underline",
+    icon: "Underline",
+    isActive: (editor) => editor.isActive("underline"),
+    run: (editor) => editor.chain().focus().toggleUnderline().run(),
+  },
+  {
+    id: "strikethrough",
+    icon: "Strikethrough",
+    isActive: (editor) => editor.isActive("strike"),
+    run: (editor) => editor.chain().focus().toggleStrike().run(),
+  },
+  {
+    id: "highlight",
+    icon: "Highlighter",
+    isActive: (editor) => editor.isActive("highlight"),
+    run: (editor) => editor.chain().focus().toggleHighlight().run(),
+  },
+  {
+    id: "code",
+    icon: "CodeXml",
+    isActive: (editor) => editor.isActive("code"),
+    run: (editor) => editor.chain().focus().toggleCode().run(),
+  },
+  {
+    id: "superscript",
+    icon: "Superscript",
+    isActive: (editor) => editor.isActive("superscript"),
+    run: (editor) => editor.chain().focus().toggleSuperscript().run(),
+  },
+  {
+    id: "subscript",
+    icon: "Subscript",
+    isActive: (editor) => editor.isActive("subscript"),
+    run: (editor) => editor.chain().focus().toggleSubscript().run(),
+  },
+];
+
+// #386: its own icon-only dropdown on the bar (the trigger shows the current alignment).
+export const ALIGN_MENU: EditingBarMenuDef = {
+  id: "align",
+  icon: "TextAlignStart",
+  fallbackKey: "alignLeft",
+  iconOnly: true,
+  options: (
+    [
+      ["alignLeft", "TextAlignStart", "left"],
+      ["alignCenter", "TextAlignCenter", "center"],
+      ["alignRight", "TextAlignEnd", "right"],
+      ["alignJustify", "TextAlignJustify", "justify"],
+    ] as const
+  ).map(([id, icon, textAlign]) => ({
+    id,
+    icon,
+    isActive: (editor: Editor) => editor.isActive({ textAlign }),
+    run: (editor: Editor) => editor.chain().focus().setTextAlign(textAlign).run(),
+  })),
+};
+
+// Block inserts in "More" come from the slash menu's own list (#332), so a new
+// block type there needs no second edit here.
+const INSERT_ITEMS = SLASH_ITEMS.filter((item) => ["blockquote", "codeBlock", "divider"].includes(item.id));
+
+// 3 | 3 | align | image | 2 | More. Reasoning and the old-command map: design/notes/EditingBar.md.
+const GROUPS: BarCommand[][] = [
+  [BLOCK_TYPE_MENU, LIST_MENU, { id: "table", icon: "Table", picker: true }],
   [
     {
       id: "bold",
@@ -91,93 +227,36 @@ const GROUPS: EditingBarCommand[][] = [
       run: (editor) => editor.chain().focus().toggleItalic().run(),
     },
     {
-      id: "strikethrough",
-      icon: "Strikethrough",
-      isActive: (editor) => editor.isActive("strike"),
-      run: (editor) => editor.chain().focus().toggleStrike().run(),
-    },
-    {
-      id: "underline",
-      icon: "Underline",
-      isActive: (editor) => editor.isActive("underline"),
-      run: (editor) => editor.chain().focus().toggleUnderline().run(),
-    },
-    {
-      id: "highlight",
-      icon: "Highlighter",
-      isActive: (editor) => editor.isActive("highlight"),
-      run: (editor) => editor.chain().focus().toggleHighlight().run(),
-    },
-    {
       id: "link",
       icon: "Link",
       isActive: (editor) => editor.isActive("link"),
-      // No link-input UI exists anywhere in Figma for this file (docs/open-
-      // questions.md#notes-editingbar-link-no-url-input-designed) — a native
-      // window.prompt is the least-invention stand-in, not a custom dialog.
-      run: (editor, { promptLinkUrl }) => {
-        if (editor.isActive("link")) {
-          editor.chain().focus().unsetLink().run();
-          return;
-        }
-        const url = promptLinkUrl();
-        if (!url) return;
-        editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
-      },
+      // Opens the shared LinkPopover (#331); no window.prompt.
+      run: (_editor, { openLink }) => openLink(),
     },
   ],
+  [ALIGN_MENU],
+  [{ id: "image", icon: "Image", imageButton: true }],
   [
-    {
-      id: "superscript",
-      icon: "Superscript",
-      isActive: (editor) => editor.isActive("superscript"),
-      run: (editor) => editor.chain().focus().toggleSuperscript().run(),
-    },
-    {
-      id: "subscript",
-      icon: "Subscript",
-      isActive: (editor) => editor.isActive("subscript"),
-      run: (editor) => editor.chain().focus().toggleSubscript().run(),
-    },
+    { id: "undo", icon: "Undo2", run: (editor) => editor.chain().focus().undo().run() },
+    { id: "redo", icon: "Redo2", run: (editor) => editor.chain().focus().redo().run() },
   ],
-  [
-    {
-      id: "alignLeft",
-      icon: "TextAlignStart",
-      isActive: (editor) => editor.isActive({ textAlign: "left" }),
-      run: (editor) => editor.chain().focus().setTextAlign("left").run(),
-    },
-    {
-      id: "alignCenter",
-      icon: "TextAlignCenter",
-      isActive: (editor) => editor.isActive({ textAlign: "center" }),
-      run: (editor) => editor.chain().focus().setTextAlign("center").run(),
-    },
-    {
-      id: "alignRight",
-      icon: "TextAlignEnd",
-      isActive: (editor) => editor.isActive({ textAlign: "right" }),
-      run: (editor) => editor.chain().focus().setTextAlign("right").run(),
-    },
-    {
-      id: "alignJustify",
-      icon: "TextAlignJustify",
-      isActive: (editor) => editor.isActive({ textAlign: "justify" }),
-      run: (editor) => editor.chain().focus().setTextAlign("justify").run(),
-    },
-  ],
+  [{ id: "overflow", icon: "Ellipsis", overflow: true }],
 ];
 
-const ALL_COMMANDS = GROUPS.flat();
+/** Ids of the bar's own buttons and of every overflow row (reachability test). */
+export const BAR_COMMAND_IDS = GROUPS.flat().map((command) => command.id);
+export const OVERFLOW_COMMAND_IDS = [
+  ...INSERT_ITEMS.map((item) => item.id),
+  ...FORMAT_COMMANDS.map((command) => command.id),
+];
 
-// Flattened once at module scope into Figma's own flat child order (buttons
-// and separator LINEs alternating as direct siblings, one shared
-// itemSpacing) rather than nesting a wrapper div per group — that would add
-// a DOM level Figma doesn't have and double the unbound-gap spacing-flag
-// for no visual difference. See design/notes/EditingBar.md.
+const ALL_COMMANDS = [...GROUPS.flat(), ...FORMAT_COMMANDS];
+
+// Flattened once at module scope (buttons and separators as direct siblings,
+// one shared gap) rather than a wrapper div per group.
 type BarItem =
   | { type: "separator"; key: string }
-  | { type: "button"; command: EditingBarCommand; index: number };
+  | { type: "button"; command: BarCommand; index: number };
 
 const BAR_ITEMS: BarItem[] = GROUPS.reduce<{ items: BarItem[]; index: number }>(
   (acc, group, groupIndex) => {
@@ -219,29 +298,86 @@ function useKeyboardInset() {
   return inset;
 }
 
-export function EditingBar({ editor, className }: EditingBarProps) {
+// Below the `md` breakpoint (48rem), where the bar is the fixed bottom bar.
+const DESKTOP_QUERY = "(min-width: 48rem)";
+
+function subscribeViewport(onChange: () => void) {
+  const query = window.matchMedia(DESKTOP_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+function useIsMobileViewport() {
+  return useSyncExternalStore(
+    subscribeViewport,
+    () => !window.matchMedia(DESKTOP_QUERY).matches,
+    () => false,
+  );
+}
+
+// #331: on the mobile bar (fixed to the bottom) the popover anchors to the
+// whole bar, whose link button may be scrolled out of view; on desktop to the button.
+function linkAnchor(button: HTMLElement, bar: HTMLElement | null) {
+  return window.matchMedia(DESKTOP_QUERY).matches ? button : (bar ?? button);
+}
+
+export function EditingBar({ editor, className, mobile }: EditingBarProps) {
   const t = useTranslations("components.editingBar");
+  const tTable = useTranslations("components.noteTable");
+  const tSlash = useTranslations("components.slashMenu.items");
   const containerRef = useRef<HTMLDivElement>(null);
   const keyboardInset = useKeyboardInset();
+  const viewportIsMobile = useIsMobileViewport();
+  const isMobile = mobile ?? viewportIsMobile;
   // Roving tabindex (ARIA APG toolbar pattern, see design/notes/EditingBar.md
   // for why this was chosen over a plain button row): one tab stop for the
-  // whole bar, Left/Right/Home/End move focus among the 20 buttons.
+  // whole bar, Left/Right/Home/End move focus among its buttons.
   const [activeIndex, setActiveIndex] = useState(0);
+  // Mobile in a table: the user went "back" to the default bar for now.
+  const [tableDismissed, setTableDismissed] = useState(false);
+  const focusFirstAfterSwap = useRef(false);
 
   const activeState = useEditorState({
     editor,
     selector: ({ editor: current }) => {
       if (!current) return null;
-      const state: Record<string, boolean> = {};
+      const state: Record<string, boolean | string> = { inTable: current.isActive("table") };
       for (const command of ALL_COMMANDS) {
-        if (command.isActive) state[command.id] = command.isActive(current);
+        if (isPicker(command) || isOverflow(command) || isImageButton(command)) continue;
+        if (isMenu(command)) {
+          state[command.id] = command.options.find((option) => option.isActive(current))?.id ?? "";
+        } else if (command.isActive) {
+          state[command.id] = command.isActive(current);
+        }
       }
+      state.blockquote = current.isActive("blockquote");
+      state.codeBlock = current.isActive("codeBlock");
+      state.tableEnabled = TABLE_COMMANDS.filter((command) => command.isEnabled(current))
+        .map((command) => command.id)
+        .join(",");
       return state;
     },
   });
 
+  const inTable = Boolean(activeState?.inTable);
+  const tableMode = isMobile && inTable && !tableDismissed;
+
+  useEffect(() => {
+    if (!inTable) setTableDismissed(false);
+  }, [inTable]);
+
+  // The two bars have different button counts: restart the roving stop.
+  useEffect(() => {
+    setActiveIndex(0);
+    if (!focusFirstAfterSwap.current) return;
+    focusFirstAfterSwap.current = false;
+    containerRef.current?.querySelector<HTMLElement>("[data-toolbar-item]")?.focus();
+  }, [tableMode]);
+
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
-    const count = ALL_COMMANDS.length;
+    const buttons = containerRef.current?.querySelectorAll<HTMLButtonElement>("[data-toolbar-item]");
+    const count = buttons?.length ?? 0;
+    if (count === 0) return;
     let nextIndex: number | null = null;
     if (event.key === "ArrowRight") nextIndex = (activeIndex + 1) % count;
     else if (event.key === "ArrowLeft") nextIndex = (activeIndex - 1 + count) % count;
@@ -250,17 +386,192 @@ export function EditingBar({ editor, className }: EditingBarProps) {
     if (nextIndex === null) return;
     event.preventDefault();
     setActiveIndex(nextIndex);
-    const buttons = containerRef.current?.querySelectorAll<HTMLButtonElement>("button");
     buttons?.[nextIndex]?.focus();
   }, [activeIndex]);
 
   if (!editor) return null;
 
+  function overflowSections() {
+    const current = editor;
+    if (!current) return [];
+    const toggle = (command: EditingBarCommand) => ({
+      id: command.id,
+      icon: command.icon,
+      label: t(`${command.id}Label`),
+      active: Boolean(activeState?.[command.id]),
+      onSelect: () => command.run(current, { openLink: () => {} }),
+    });
+    return [
+      INSERT_ITEMS.map((item) => ({
+        id: item.id,
+        icon: item.icon,
+        label: tSlash(item.id),
+        active: item.id === "divider" ? undefined : Boolean(activeState?.[item.id]),
+        onSelect: () => item.run?.(current),
+      })),
+      FORMAT_COMMANDS.map(toggle),
+    ];
+  }
+
+  function renderDefaultItems(current: Editor) {
+    return BAR_ITEMS.map((item) => {
+      if (item.type === "separator") {
+        return <div key={item.key} aria-hidden="true" className="h-6 w-px shrink-0 bg-stroke-lines" />;
+      }
+      const { command } = item;
+      const tabIndex = item.index === activeIndex ? 0 : -1;
+      if (isImageButton(command)) {
+        const imageProps = {
+          variant: "transparent",
+          icon: command.icon,
+          "data-toolbar-item": "",
+          tabIndex,
+          onFocus: () => setActiveIndex(item.index),
+          onClick: () => openImagePicker(current),
+        } as const;
+        return isMobile ? (
+          <Button key={command.id} {...imageProps} aria-label={t("imageLabel")} />
+        ) : (
+          <Button key={command.id} {...imageProps}>
+            {t("imageLabel")}
+          </Button>
+        );
+      }
+      if (isOverflow(command)) {
+        return (
+          <EditingBarOverflow
+            key={command.id}
+            menuLabel={t("moreLabel")}
+            sections={overflowSections()}
+            onDismiss={() => current.commands.focus()}
+            tabIndex={tabIndex}
+            onTriggerFocus={() => setActiveIndex(item.index)}
+          />
+        );
+      }
+      if (isPicker(command)) {
+        // Mobile with the cursor in a table: this slot reopens the table actions.
+        if (isMobile && inTable) {
+          return (
+            <Button
+              key={command.id}
+              variant="transparent"
+              icon={command.icon}
+              data-toolbar-item=""
+              aria-label={t("tableActionsLabel")}
+              tabIndex={tabIndex}
+              onFocus={() => setActiveIndex(item.index)}
+              onClick={() => {
+                focusFirstAfterSwap.current = true;
+                setTableDismissed(false);
+              }}
+            />
+          );
+        }
+        return (
+          <TableSizePicker
+            key={command.id}
+            onInsert={(rows, cols) => insertTable(current, rows, cols)}
+            onDismiss={() => current.commands.focus()}
+            tabIndex={tabIndex}
+            onTriggerFocus={() => setActiveIndex(item.index)}
+          />
+        );
+      }
+      if (isMenu(command)) {
+        const currentId = String(activeState?.[command.id] ?? "") || command.options[0]?.id;
+        const selected = command.options.find((option) => option.id === currentId);
+        const hasActive = command.id === "blockType" || Boolean(activeState?.[command.id]);
+        return (
+          <EditingBarMenu
+            key={command.id}
+            icon={selected?.icon ?? command.icon}
+            iconOnly={command.iconOnly}
+            menuLabel={t(`${command.id}Label`)}
+            currentLabel={t(`options.${hasActive && selected ? selected.id : command.fallbackKey}`)}
+            options={command.options.map((option) => ({
+              id: option.id,
+              icon: option.icon,
+              label: t(`options.${option.id}`),
+              active: option.id === activeState?.[command.id],
+              onSelect: () => option.run(current),
+            }))}
+            onDismiss={() => current.commands.focus()}
+            tabIndex={tabIndex}
+            onTriggerFocus={() => setActiveIndex(item.index)}
+          />
+        );
+      }
+      return (
+        <Button
+          key={command.id}
+          variant="transparent"
+          icon={command.icon}
+          data-toolbar-item=""
+          aria-label={t(`${command.id}Label`)}
+          aria-pressed={command.isActive ? Boolean(activeState?.[command.id]) : undefined}
+          tabIndex={tabIndex}
+          onFocus={() => setActiveIndex(item.index)}
+          onClick={(event) =>
+            command.run(current, {
+              openLink: () => requestLinkPopover(current, linkAnchor(event.currentTarget, containerRef.current)),
+            })
+          }
+        />
+      );
+    });
+  }
+
+  function renderTableItems(current: Editor) {
+    const enabled = String(activeState?.tableEnabled ?? "").split(",");
+    return (
+      <>
+        <Button
+          variant="transparent"
+          icon="ArrowLeft"
+          data-toolbar-item=""
+          aria-label={t("backLabel")}
+          tabIndex={activeIndex === 0 ? 0 : -1}
+          onFocus={() => setActiveIndex(0)}
+          onClick={() => {
+            setTableDismissed(true);
+            current.commands.focus();
+          }}
+        />
+        <div aria-hidden="true" className="h-6 w-px shrink-0 bg-stroke-lines" />
+        {TABLE_COMMANDS.map((command, index) => {
+          const isEnabled = enabled.includes(command.id);
+          return (
+            <Button
+              key={command.id}
+              variant="transparent"
+              icon={command.icon}
+              data-toolbar-item=""
+              aria-disabled={!isEnabled}
+              tabIndex={activeIndex === index + 1 ? 0 : -1}
+              onFocus={() => setActiveIndex(index + 1)}
+              className={cn(
+                command.destructive && "text-priority-urgent",
+                "aria-disabled:cursor-not-allowed aria-disabled:opacity-40 aria-disabled:hover:bg-transparent aria-disabled:active:bg-transparent",
+              )}
+              onClick={() => {
+                if (isEnabled) command.run(current);
+              }}
+            >
+              {tTable(`commands.${command.id}`)}
+            </Button>
+          );
+        })}
+      </>
+    );
+  }
+
   return (
     <div
       ref={containerRef}
       role="toolbar"
-      aria-label={t("label")}
+      data-editing-bar=""
+      aria-label={tableMode ? t("tableActionsBarLabel") : t("label")}
       aria-orientation="horizontal"
       onKeyDown={handleKeyDown}
       // #263: runtime geometry, not styling (colour/spacing) -- same
@@ -274,7 +585,7 @@ export function EditingBar({ editor, className }: EditingBarProps) {
         // both unbound on 3978:14138/3978:14870 (paddingLeft/Right and the
         // corner radius ARE bound, see the token classes below) —
         // design/notes/EditingBar.md
-        "flex items-center gap-2 overflow-x-auto rounded-card bg-surface-highlight-white px-component-xs py-1",
+        "flex items-center gap-2 overflow-x-auto md:mx-auto md:w-fit md:max-w-full rounded-card bg-surface-highlight-white px-component-xs py-1",
         "fixed bottom-[env(safe-area-inset-bottom)] left-page-left right-page-right-equal z-10",
         "translate-y-[calc(var(--keyboard-inset,0px)*-1)] transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
         "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
@@ -282,24 +593,7 @@ export function EditingBar({ editor, className }: EditingBarProps) {
         className,
       )}
     >
-      {BAR_ITEMS.map((item) =>
-        item.type === "separator" ? (
-          <div key={item.key} aria-hidden="true" className="h-6 w-px shrink-0 bg-stroke-lines" />
-        ) : (
-          <Button
-            key={item.command.id}
-            variant="transparent"
-            icon={item.command.icon}
-            aria-label={t(`${item.command.id}Label`)}
-            aria-pressed={item.command.isActive ? activeState?.[item.command.id] : undefined}
-            tabIndex={item.index === activeIndex ? 0 : -1}
-            onFocus={() => setActiveIndex(item.index)}
-            onClick={() =>
-              item.command.run(editor, { promptLinkUrl: () => window.prompt(t("linkPromptLabel")) })
-            }
-          />
-        ),
-      )}
+      {tableMode ? renderTableItems(editor) : renderDefaultItems(editor)}
     </div>
   );
 }

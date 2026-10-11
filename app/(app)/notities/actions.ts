@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/notes/session";
+import { deleteNoteImages, sweepNoteImages, uploadNoteImageForUser } from "@/lib/notes/images";
 import { nextPosition } from "@/lib/boards/positioning";
-import { deriveTitle, toPlainText } from "@/lib/notes/document";
+import { deriveTitle, extractNoteLinkIds, toPlainText } from "@/lib/notes/document";
 import {
   createCategorySchema,
   createNoteSchema,
@@ -14,8 +15,10 @@ import {
   moveNoteSchema,
   renameCategorySchema,
   reorderCategorySchema,
+  searchNoteLinkTargetsSchema,
   updateNoteContentSchema,
 } from "@/lib/notes/schemas";
+import { findNoteLinkTargets, type NoteLinkTarget } from "@/lib/notes/queries";
 import type { ActionResult, NoteCategoryRow, NoteRow } from "@/lib/notes/types";
 import type { Database, Json } from "@/lib/database.types";
 
@@ -152,7 +155,12 @@ export async function deleteCategory(input: unknown): Promise<ActionResult> {
   if ("error" in auth) return { success: false, error: auth.error };
 
   // notes.category_id is `on delete cascade` (20260813000001_note_schema.sql):
-  // deleting a category deletes its notes. No manual cleanup needed here.
+  // deleting a category deletes its notes; only their R2 images need cleanup.
+  const { data: doomed } = await supabase
+    .from("notes")
+    .select("id")
+    .eq("category_id", parsed.data.categoryId)
+    .eq("user_id", auth.userId);
   const { data, error } = await supabase
     .from("note_categories")
     .delete()
@@ -166,6 +174,8 @@ export async function deleteCategory(input: unknown): Promise<ActionResult> {
     return { success: false, error: "generic" };
   }
   if (!data) return { success: false, error: "not-found" };
+
+  for (const note of doomed ?? []) await deleteNoteImages(auth.userId, note.id);
 
   revalidatePath("/notities", "layout");
   return { success: true, data: undefined };
@@ -352,24 +362,29 @@ export async function updateNoteContent(
   const title = deriveTitle(content);
   const contentText = toPlainText(content);
 
-  const { data, error } = await supabase
-    .from("notes")
-    // `content` (parsed by tiptapDocumentSchema, lib/notes/schemas.ts) is a
-    // TipTapDocument -- a nominal interface, not structurally an indexable
-    // `{ [key: string]: Json }`, so it needs an explicit cast at this write
-    // boundary. NoteRow's own narrowing (lib/notes/types.ts) is the read-side
-    // counterpart of this same cast.
-    .update({ content: content as unknown as Json, content_text: contentText, title })
-    .eq("id", noteId)
-    .eq("user_id", auth.userId)
-    .select("id")
-    .maybeSingle();
+  // #340 (ADR-0023): one transaction writes content/title/content_text and
+  // replaces the note's note_links set (public.save_note_content, security
+  // invoker). `content` (parsed by tiptapDocumentSchema) is a TipTapDocument
+  // -- a nominal interface, not structurally an indexable
+  // `{ [key: string]: Json }`, so it needs an explicit cast at this write
+  // boundary. Foreign/unknown target ids are dropped by the RPC.
+  const { error } = await supabase.rpc("save_note_content", {
+    p_note_id: noteId,
+    p_content: content as unknown as Json,
+    p_title: title,
+    p_content_text: contentText,
+    p_target_ids: extractNoteLinkIds(content),
+  });
 
   if (error) {
+    // NL404 = note not found / not owned by this user (see the migration).
+    if (error.code === "NL404") return { success: false, error: "not-found" };
     logDbError("updateNoteContent", error);
     return { success: false, error: "generic" };
   }
-  if (!data) return { success: false, error: "not-found" };
+
+  // Orphan sweep (ADR-0022 §6); never fails the save.
+  await sweepNoteImages(auth.userId, noteId, content);
 
   revalidatePath("/notities", "layout");
   return { success: true, data: { title } };
@@ -397,8 +412,40 @@ export async function deleteNote(input: unknown): Promise<ActionResult> {
   }
   if (!data) return { success: false, error: "not-found" };
 
+  await deleteNoteImages(auth.userId, parsed.data.noteId);
+
   revalidatePath("/notities", "layout");
   return { success: true, data: undefined };
+}
+
+// #341 (ADR-0023): candidates for the editor's `[[` menu. Read-only, so no
+// revalidatePath; the browser reaches Supabase only through this action.
+export async function searchNoteLinkTargets(
+  input: unknown,
+): Promise<ActionResult<NoteLinkTarget[]>> {
+  const parsed = searchNoteLinkTargetsSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  try {
+    return { success: true, data: await findNoteLinkTargets(parsed.data.query, parsed.data.noteId) };
+  } catch {
+    return { success: false, error: "generic" };
+  }
+}
+
+// Stores one image for a note and returns the same-origin `src` for the
+// document (#338). Callers pre-resize with lib/images/downscale-client.ts to
+// stay under Vercel's 4.5 MB body limit; the editor caller is #339.
+export async function uploadNoteImage(
+  noteId: string,
+  file: File,
+): Promise<ActionResult<{ src: string }>> {
+  const parsed = deleteNoteSchema.safeParse({ noteId });
+  if (!parsed.success || !(file instanceof File)) return { success: false, error: "invalid-input" };
+  return uploadNoteImageForUser(parsed.data.noteId, file);
 }
 
 // Drag & drop persistence (ADR-0015): one round trip via the public.move_note

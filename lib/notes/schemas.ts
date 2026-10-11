@@ -111,3 +111,14 @@ export const moveNoteSchema = z.object({
 export const searchNotesSchema = z.object({
   query: z.string().max(200),
 });
+
+// #341: the `[[` menu's server action input.
+export const searchNoteLinkTargetsSchema = z.object({
+  noteId: z.uuid(),
+  query: z.string().max(200),
+});
+
+export const noteImageParamsSchema = z.object({
+  noteId: z.uuid(),
+  imageId: z.uuid(),
+});

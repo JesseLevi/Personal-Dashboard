@@ -1,5 +1,5 @@
 import "server-only";
-import { getNoteCategoriesWithNotes, searchNotes } from "@/lib/notes/queries";
+import { getNoteCategoriesWithNotes, getNoteCategoryNoteCounts, searchNotes } from "@/lib/notes/queries";
 import { isNoteSortOption, sortNotesForView, type NoteSortOption } from "@/lib/notes/sort";
 import { effectiveNotesSearchQuery } from "@/lib/notes/search";
 import type { CategoryWithNotes, NoteSummaryRow } from "@/lib/notes/types";
@@ -55,4 +55,13 @@ export async function loadNotitiesPageData(
     })),
     sort,
   };
+}
+
+// Skeleton stage: notes per category. Search mode (`?q=`) is a flat result
+// list, so there are no columns to count: `undefined` = header-only skeleton.
+export async function loadNotitiesColumnCounts(
+  queryParam: string | undefined,
+): Promise<number[] | undefined> {
+  if (effectiveNotesSearchQuery(queryParam ?? "") !== "") return undefined;
+  return getNoteCategoryNoteCounts();
 }

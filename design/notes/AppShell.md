@@ -165,8 +165,8 @@ as distinct generated static routes, the last one despite Notities having
 no `page.tsx` — same "inert until #232, then free" status as its existing
 `icon.png`.
 
-**Per-page manifest — shipped for Te-Doen, Recepten, Winkelmand; Notities
-deferred.** Each page gets its own Route Handler
+**Per-page manifest — shipped for Te-Doen, Recepten, Winkelmand (and Notities,
+#390, see below).** Each page gets its own Route Handler
 (`app/(app)/<route>/manifest.webmanifest/route.ts`, returning
 `MetadataRoute.Manifest` JSON with the `application/manifest+json`
 content-type) linked from that page's own `page.tsx` via a
@@ -182,6 +182,7 @@ shipped it — nothing about the existing PWA identity regresses.
 | `te-doen/manifest.webmanifest` | `/te-doen` | `/te-doen` | `/` | `te-doen-{192,512}.png` |
 | `recepten/manifest.webmanifest` | `/recepten` | `/recepten` | `/` | `recepten-{192,512}.png` |
 | `winkelmand/manifest.webmanifest` | `/winkelmand` | `/winkelmand` | `/` | `winkelmand-{192,512}.png` |
+| `notities/manifest.webmanifest` (#390) | `/notities` | `/notities` | `/` | `notities-{192,512}.png` |
 
 `id` and `start_url` are unique per manifest — that's the pair the research
 above named as the actual disambiguator between "multiple installs of one
@@ -282,6 +283,14 @@ back into the standing #185 gap where it belongs — it was never specific to
 this ticket.
 
 ### Notities: favicon + apple-icon shipped, manifest wiring still unwired
+
+**Update (#390): the Notities manifest now ships.** `notities/manifest.webmanifest/route.ts`
++ `metadata.manifest` on `notities/page.tsx` and `notities/[noteId]/page.tsx` (a
+single note added to the home screen lands in Notities; Te-Doen/Recepten detail
+pages don't link one). Icons `public/icons/notities-{192,512}.png` were
+rendered with the Playwright recipe below from the lucide `notebook` glyph
+(`#78706A` on `#F5F5F4`, 128/180 of the canvas; matches `apple-icon.png`
+within 3/255) because Figma was unreachable. The text below is historical.
 
 **Update (#230, 2026-08-13): `app/(app)/notities/page.tsx` now exists**, so
 the blocker described below — "there's nowhere to put a `metadata.manifest`
@@ -496,7 +505,7 @@ but it's a deliberate call, not an oversight, and is flagged here per
   the streamed board data. It adds no network request (bundled inline) and
   is a handful of synchronous statements — `curl`'d the SSR'd `/te-doen` and
   `/recepten` HTML directly: the script tag lands in the first flushed
-  chunk, before the `PageSkeleton` fallback markup, in both. Did not have an
+  chunk, before the skeleton fallback markup, in both. Did not have an
   authenticated browser session to capture a Lighthouse/TTFB trace against a
   real login (see #185's standing gap) — the "no added network cost, no
   added render-blocking work beyond one inline script" argument above is

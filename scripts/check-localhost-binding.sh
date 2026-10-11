@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SHELVED (ADR-0018): the Mac mini this guards is not being built; nothing runs
+# this script. Kept until someone decides to delete it.
+#
 # Architecture §7: Supabase's Docker publishes on 0.0.0.0 by default; on the
 # Mac mini every published port must be bound to 127.0.0.1, and Ollama must
 # run with OLLAMA_HOST=127.0.0.1. Run this ON THE SERVER after any

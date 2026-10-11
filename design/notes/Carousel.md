@@ -249,3 +249,7 @@ overflow-x-auto/no-w-full reasoning, `-ml-*`/`pl-*`/`pr-*` bleed mechanics,
 scrollbar hiding) already lives above in this file (#90/#110), the blocks
 were reduced to a single pointer line each rather than duplicating that
 record a second time in the component.
+
+## `BOARD_COLUMN_WIDTH` export (skeletons)
+
+The board column width (`w-74 md:w-80`) now lives here and is imported by `BoardView` and the board loading skeleton, so they cannot drift. See `design/notes/Skeletons.md`.

@@ -175,6 +175,38 @@ export type Database = {
           },
         ]
       }
+      ingredient_aliases: {
+        Row: {
+          alias_normalized: string
+          created_at: string
+          id: string
+          ingredient_id: string
+          user_id: string
+        }
+        Insert: {
+          alias_normalized: string
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          user_id: string
+        }
+        Update: {
+          alias_normalized?: string
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_aliases_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingredient_unit_masses: {
         Row: {
           created_at: string
@@ -308,6 +340,39 @@ export type Database = {
         }
         Relationships: []
       }
+      note_links: {
+        Row: {
+          source_note_id: string
+          target_note_id: string
+          user_id: string
+        }
+        Insert: {
+          source_note_id: string
+          target_note_id: string
+          user_id: string
+        }
+        Update: {
+          source_note_id?: string
+          target_note_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_links_source_note_id_fkey"
+            columns: ["source_note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_links_target_note_id_fkey"
+            columns: ["target_note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes: {
         Row: {
           category_id: string
@@ -416,6 +481,7 @@ export type Database = {
           id: string
           ingredient_id: string | null
           name: string
+          needs_review: boolean
           position: number
           quantity: number | null
           recipe_id: string
@@ -429,6 +495,7 @@ export type Database = {
           id?: string
           ingredient_id?: string | null
           name: string
+          needs_review?: boolean
           position: number
           quantity?: number | null
           recipe_id: string
@@ -442,6 +509,7 @@ export type Database = {
           id?: string
           ingredient_id?: string | null
           name?: string
+          needs_review?: boolean
           position?: number
           quantity?: number | null
           recipe_id?: string
@@ -596,8 +664,11 @@ export type Database = {
           category_id: string
           created_at: string
           id: string
+          import_error: string | null
+          import_status: Database["public"]["Enums"]["recipe_import_status"]
           position: number
           servings: number
+          source_url: string | null
           thumbnail_path: string | null
           time_minutes: number | null
           title: string
@@ -608,8 +679,11 @@ export type Database = {
           category_id: string
           created_at?: string
           id?: string
+          import_error?: string | null
+          import_status?: Database["public"]["Enums"]["recipe_import_status"]
           position: number
           servings?: number
+          source_url?: string | null
           thumbnail_path?: string | null
           time_minutes?: number | null
           title: string
@@ -620,8 +694,11 @@ export type Database = {
           category_id?: string
           created_at?: string
           id?: string
+          import_error?: string | null
+          import_status?: Database["public"]["Enums"]["recipe_import_status"]
           position?: number
           servings?: number
+          source_url?: string | null
           thumbnail_path?: string | null
           time_minutes?: number | null
           title?: string
@@ -715,11 +792,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_seeds: {
+        Row: {
+          seed_key: string
+          seeded_at: string
+          user_id: string
+        }
+        Insert: {
+          seed_key: string
+          seeded_at?: string
+          user_id: string
+        }
+        Update: {
+          seed_key?: string
+          seeded_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      apply_seed: {
+        Args: { p_key: string; p_user_id: string }
+        Returns: boolean
+      }
+      ensure_user_defaults: { Args: never; Returns: undefined }
+      is_admin: { Args: never; Returns: boolean }
+      match_ingredient_candidates: {
+        Args: { p_limit?: number; p_names: string[] }
+        Returns: {
+          id: string
+          input_index: number
+          name: string
+          score: number
+          source: string
+        }[]
+      }
       move_card: {
         Args: { p_card_id: string; p_column_id: string; p_target_index: number }
         Returns: number
@@ -744,9 +855,30 @@ export type Database = {
         Args: { p_ingredients: Json; p_recipe_id: string; p_steps: Json }
         Returns: undefined
       }
+      save_note_content: {
+        Args: {
+          p_content: Json
+          p_content_text: string
+          p_note_id: string
+          p_target_ids: string[]
+          p_title: string
+        }
+        Returns: undefined
+      }
+      seed_board_for: { Args: { p_user_id: string }; Returns: undefined }
+      seed_keys: { Args: never; Returns: string[] }
+      seed_note_categories_for: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
+      seed_recipe_categories_for: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       toggle_board_favorite: { Args: { p_board_id: string }; Returns: boolean }
     }
     Enums: {
+      recipe_import_status: "importing" | "done" | "failed"
       recipe_unit:
         | "gram"
         | "kilogram"
@@ -772,6 +904,38 @@ export type Database = {
   }
   reference: {
     Tables: {
+      ingredient_aliases: {
+        Row: {
+          alias_normalized: string
+          created_at: string
+          id: string
+          ingredient_id: string
+          updated_at: string
+        }
+        Insert: {
+          alias_normalized: string
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          updated_at?: string
+        }
+        Update: {
+          alias_normalized?: string
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_aliases_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingredient_unit_masses: {
         Row: {
           grams: number
@@ -994,6 +1158,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      recipe_import_status: ["importing", "done", "failed"],
       recipe_unit: [
         "gram",
         "kilogram",

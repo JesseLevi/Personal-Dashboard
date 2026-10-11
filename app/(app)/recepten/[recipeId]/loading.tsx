@@ -1,8 +1,7 @@
-import { RecipeDetailSkeleton } from "../../_components/PageSkeleton";
+import { RecipeDetailSkeleton } from "../../_components/skeletons/RecipeDetailSkeleton";
 
-// #170: route-segment Suspense fallback for the recipe detail page — see
-// app/(app)/te-doen/loading.tsx for the general story, PageSkeleton.tsx for
-// why this reuses `Card` rather than a bespoke skeleton.
+// Route-segment Suspense fallback for the recipe detail page —
+// design/notes/Skeletons.md.
 export default function Loading() {
   return <RecipeDetailSkeleton />;
 }

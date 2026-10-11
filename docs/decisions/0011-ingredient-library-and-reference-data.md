@@ -1,6 +1,6 @@
 # ADR-0011: Canonical ingredient library, unit mass resolution, and a `reference` schema for shared data
 
-**Status**: Accepted (user decisions, 2026-07-29 and 2026-07-30)
+**Status**: Accepted (user decisions, 2026-07-29 and 2026-07-30). §1 amended by ADR-0020 (2026-10-10): admins may write `eigen` rows and shared aliases in `reference`; NEVO/USDA rows stay migration-only.
 
 **Authored by**: Claude Code (Opus 5), at the user's explicit instruction. Every other ADR in this directory comes from the architecture layer (`docs/guides/ticket-workflow.md`); this one does not, and that provenance is recorded here deliberately so a later reader can weigh it accordingly.
 

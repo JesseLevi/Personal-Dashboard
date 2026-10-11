@@ -18,11 +18,11 @@ export default defineConfig({
   // absorbs that noise directly, so a retry only doubles the cost of a run
   // and hides genuine flake behind a silent second attempt (#259). Always 0.
   retries: 0,
-  // Single worker: story pages mount into a shared Ladle SPA shell, and
-  // running many story navigations at full concurrency against one preview
-  // server buys nothing on a component workbench this small while adding
-  // scheduling noise to screenshot timing.
-  workers: 1,
+  // 2 workers on CI (2-vCPU runner), 1 locally. Each test navigates its own
+  // story page against one shared preview server, so parallelism is safe and
+  // roughly halves the wall time. Run the gate twice on one commit after
+  // changing this: any flake shows up as a red run (see #352).
+  workers: process.env.CI ? 2 : 1,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
 
   use: {
@@ -67,7 +67,7 @@ export default defineConfig({
       //
       // Cross-OS rasterization differences are far larger than this and must
       // still be solved by matching environments, never by widening further —
-      // see the CI job's comment in .github/workflows/ci.yml.
+      // see the CI job's comment in .github/workflows/ci-visual.yml.
       threshold: 0,
       maxDiffPixels: 16,
     },
@@ -85,5 +85,21 @@ export default defineConfig({
     timeout: 120_000,
   },
 
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        // Deterministic text rendering: no subpixel hinting, no LCD
+        // antialiasing, fixed colour profile (#352).
+        launchOptions: {
+          args: [
+            "--font-render-hinting=none",
+            "--disable-lcd-text",
+            "--force-color-profile=srgb",
+          ],
+        },
+      },
+    },
+  ],
 });

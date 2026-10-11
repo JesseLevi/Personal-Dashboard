@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { TeDoenPageBody } from "./TeDoenPageBody";
-import { BoardSkeleton } from "../_components/PageSkeleton";
+import { TeDoenPageStream } from "./TeDoenPageStream";
+import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 
 // #95: no boardId segment here — TeDoenPageBody/board-data.ts fall back to
 // the user's favourite board, same behaviour this route always had (see
@@ -28,8 +28,8 @@ export default async function TeDoenPage({
 }) {
   const { sort } = await searchParams;
   return (
-    <Suspense fallback={<BoardSkeleton />}>
-      <TeDoenPageBody sortParam={sort} />
+    <Suspense fallback={<BoardSkeleton variant="todo" />}>
+      <TeDoenPageStream sortParam={sort} />
     </Suspense>
   );
 }

@@ -33,6 +33,10 @@ export interface CardContentIngredientBaseProps {
   onCheckedToggle?: () => void;
   /** `stroke-lines` below this row — pass `true` for every row except the list's last (the component can't see its siblings; only the caller knows). */
   divider?: boolean;
+  /** #318 (Claude-designed on request): "controleren" marker under the name of an imported line the importer was unsure about. Omit when the line is fine. */
+  reviewLabel?: string;
+  /** Makes the marker a button (e.g. opens the edit panel where the ingredient can be fixed). */
+  onReviewClick?: () => void;
   className?: string;
 }
 
@@ -85,6 +89,8 @@ export function CardContentIngredient({
   addToCartLabel,
   swipeAction,
   divider,
+  reviewLabel,
+  onReviewClick,
   className,
 }: CardContentIngredientProps) {
   const content = (
@@ -99,7 +105,21 @@ export function CardContentIngredient({
           the Tag until its own text wrapped. name absorbs the deficit
           (wraps) instead; Tag stays one line at its natural width. See
           design/notes/CardContentIngredient.md. */}
-      <p className="min-w-0 text-base font-semibold text-text-primary">{name}</p>
+      {reviewLabel ? (
+        // design: Claude-designed on request (#318), design/notes/CardContentIngredient.md.
+        <div className="flex min-w-0 flex-col items-start gap-stack-sm">
+          <p className="text-base font-semibold text-text-primary">{name}</p>
+          {onReviewClick ? (
+            <button type="button" onClick={onReviewClick}>
+              <Tag variant="highlight">{reviewLabel}</Tag>
+            </button>
+          ) : (
+            <Tag variant="highlight">{reviewLabel}</Tag>
+          )}
+        </div>
+      ) : (
+        <p className="min-w-0 text-base font-semibold text-text-primary">{name}</p>
+      )}
       {quantity !== undefined && (
         <Tag variant="neutral" className="shrink-0">
           {quantity}

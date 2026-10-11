@@ -9,7 +9,7 @@ import { useSortable, isSortable } from "@dnd-kit/react/sortable";
 import { move } from "@dnd-kit/helpers";
 import { CollisionPriority } from "@dnd-kit/abstract";
 import { PointerSensor, PointerActivationConstraints } from "@dnd-kit/dom";
-import { Carousel } from "./Carousel";
+import { Carousel, BOARD_COLUMN_WIDTH } from "./Carousel";
 import { CardContainer } from "./CardContainer";
 import { Card } from "../molecules/Card";
 import { Button } from "../atoms/Button";
@@ -51,16 +51,15 @@ export interface BoardViewProps<TItem extends { id: string }> {
   emptyLabel: string;
   /** Fired with a column id from that column's add button (header, or its empty-state button). */
   onAddItem?: (columnId: string) => void;
+  /** #318: a popover (e.g. the recipe "Via link / Handmatig" menu) rendered inside that column's Plus-button wrapper. */
+  renderAddMenu?: (columnId: string) => ReactNode;
   onEditColumn?: (columnId: string) => void;
+  /** Muted (30% opacity + line-through) card, decided per item against the column it currently sits in (live, so also mid-drag). See design/notes/BoardView.md. */
+  isItemMuted?: (item: TItem, columnId: string) => boolean;
   /** #95: disables both dragging and dropping everywhere (still renders the same DOM/DragDropProvider — only `useSortable`/`useDroppable`'s own `disabled` flips). Set by a caller whose current view is sorted rather than manual/position order, where a drop's resulting index would be meaningless against the stored `position`. See design/notes/TeDoenBoard.md for the full reasoning. */
   dragDisabled?: boolean;
   className?: string;
 }
-
-// Board columns measure 296px (mobile) / 320px (desktop) in the fetched
-// nodes — a different fixed width than Carousel's own Recipe-sourced 280px
-// default, hence the explicit override. See design/notes/Carousel.md.
-const BOARD_COLUMN_WIDTH = "w-74 md:w-80";
 
 // #115: dnd-kit calls this fresh on every pointerdown with the real event,
 // so branching on `event.pointerType` — not a device-wide `matchMedia` read
@@ -103,6 +102,7 @@ function SortableCard({
   index,
   columnId,
   disabled,
+  muted,
   onClick,
   children,
 }: {
@@ -110,6 +110,7 @@ function SortableCard({
   index: number;
   columnId: string;
   disabled?: boolean;
+  muted?: boolean;
   onClick?: () => void;
   children: ReactNode;
 }) {
@@ -140,6 +141,7 @@ function SortableCard({
         // Reasoning: design/notes/BoardView.md.
         "[@media(any-pointer:coarse)]:touch-manipulation [@media(any-pointer:coarse)]:select-none touch-callout-none",
         disabled ? "cursor-default" : "cursor-grab",
+        muted && "opacity-30 line-through",
         isDragging && "opacity-40",
       )}
     >
@@ -161,10 +163,13 @@ function BoardColumnView<TItem extends { id: string }>({
   emptyLabel,
   dragDisabled,
   onAddItem,
+  renderAddMenu,
   onEditColumn,
   onItemClick,
+  isItemMuted,
 }: {
   column: BoardColumn<TItem>;
+  renderAddMenu?: (columnId: string) => ReactNode;
   items: TItem[];
   renderItem: (item: TItem) => ReactNode;
   addLabel: string;
@@ -174,6 +179,7 @@ function BoardColumnView<TItem extends { id: string }>({
   onAddItem?: (columnId: string) => void;
   onEditColumn?: (columnId: string) => void;
   onItemClick?: (item: TItem) => void;
+  isItemMuted?: (item: TItem, columnId: string) => boolean;
 }) {
   const { ref: dropRef } = useDroppable({
     id: column.id,
@@ -192,6 +198,7 @@ function BoardColumnView<TItem extends { id: string }>({
       addLabel={addLabel}
       editLabel={editLabel}
       onAdd={handleAdd}
+      addMenu={renderAddMenu?.(column.id)}
       onEdit={onEditColumn ? () => onEditColumn(column.id) : undefined}
       emptyState={
         isEmpty ? (
@@ -221,6 +228,7 @@ function BoardColumnView<TItem extends { id: string }>({
               index={index}
               columnId={column.id}
               disabled={dragDisabled}
+              muted={isItemMuted?.(item, column.id)}
               onClick={onItemClick ? () => onItemClick(item) : undefined}
             >
               {renderItem(item)}
@@ -241,8 +249,10 @@ export function BoardView<TItem extends { id: string }>({
   emptyLabel,
   dragDisabled,
   onAddItem,
+  renderAddMenu,
   onEditColumn,
   onItemClick,
+  isItemMuted,
   className,
 }: BoardViewProps<TItem>) {
   const [itemsByColumn, setItemsByColumn] = useState(() =>
@@ -306,8 +316,10 @@ export function BoardView<TItem extends { id: string }>({
             emptyLabel={emptyLabel}
             dragDisabled={dragDisabled}
             onAddItem={onAddItem}
+            renderAddMenu={renderAddMenu}
             onEditColumn={onEditColumn}
             onItemClick={onItemClick}
+            isItemMuted={isItemMuted}
           />
         ))}
       </Carousel>

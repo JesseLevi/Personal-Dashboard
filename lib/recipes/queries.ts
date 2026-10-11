@@ -2,9 +2,11 @@ import "server-only";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { embeddedCounts } from "@/lib/ui/embedded-counts";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import {
   EMPTY_BRIDGE_UNIT_GRAMS,
+  bridgeUnitGramsFrom,
   resolveMassWithBridge,
   type BridgeUnitGrams,
 } from "@/lib/recipes/mass-resolution";
@@ -69,7 +71,8 @@ export async function getRecipeCategoriesWithRecipes(): Promise<CategoryWithReci
       id, user_id, name, icon, position, created_at, updated_at,
       recipes (
         id, user_id, category_id, title, servings, thumbnail_path,
-        time_minutes, position, created_at, updated_at
+        time_minutes, position, created_at, updated_at,
+        source_url, import_status, import_error
       )
     `,
     )
@@ -125,28 +128,6 @@ export async function getRecipeCategoriesWithRecipes(): Promise<CategoryWithReci
  * see the guard below) — its numbers exist but aren't per-100g, so they're
  * unknown to this per-100g pipeline rather than silently misread.
  */
-/**
- * Builds one ownership layer's `BridgeUnitGrams` (mass-resolution.ts) from
- * a `unit -> grams` lookup already fetched for one ingredient — shared by
- * `nutritionInputsForIngredients`' batched map lookup and
- * `resolveIngredientUnitMass`'s single-ingredient row list below. Only
- * `milliliter`/`eetlepel`/`theelepel` are ever populated here
- * (`tablespoon`/`teaspoon` stay `null`): this app's recipes are authored
- * in Dutch `eetlepel`/`theelepel`, not US `tablespoon`/`teaspoon`, so
- * fetching those two extra units for every ingredient would be dead
- * weight — `resolveMassWithBridge` itself stays fully bidirectional for
- * tests/future callers, this is just what the two query sites below
- * choose to feed it.
- */
-function bridgeUnitGramsFrom(gramsForUnit: (unit: string) => number | null): BridgeUnitGrams {
-  return {
-    milliliter: gramsForUnit("milliliter"),
-    eetlepel: gramsForUnit("eetlepel"),
-    theelepel: gramsForUnit("theelepel"),
-    tablespoon: null,
-    teaspoon: null,
-  };
-}
 
 // #164/#157 slice 2: grams-per-cup/tablespoon/teaspoon/fluid_ounce for one
 // ingredient, resolved via the exact same resolveMassWithBridge/userBridge/
@@ -193,6 +174,7 @@ async function nutritionInputsForIngredients(
       unitMassGrams: number | null;
       kitchenUnitMasses: KitchenUnitMasses;
       referenceIngredientId: string | null;
+      linkedIngredientName: string | null;
     }
   >
 > {
@@ -203,6 +185,7 @@ async function nutritionInputsForIngredients(
       unitMassGrams: number | null;
       kitchenUnitMasses: KitchenUnitMasses;
       referenceIngredientId: string | null;
+      linkedIngredientName: string | null;
     }
   >();
   const ingredientIds = [
@@ -212,7 +195,7 @@ async function nutritionInputsForIngredients(
 
   const { data: ownRows, error: ownError } = await supabase
     .from("ingredients")
-    .select("id, reference_id")
+    .select("id, reference_id, name")
     .eq("user_id", userId)
     .in("id", ingredientIds);
   if (ownError) {
@@ -239,6 +222,7 @@ async function nutritionInputsForIngredients(
   }
 
   const referenceIdByIngredientId = new Map(ownRows.map((row) => [row.id, row.reference_id] as const));
+  const nameByIngredientId = new Map(ownRows.map((row) => [row.id, row.name] as const));
   const referenceIds = [
     ...new Set(ownRows.map((row) => row.reference_id).filter((id): id is string => id !== null)),
   ];
@@ -342,6 +326,7 @@ async function nutritionInputsForIngredients(
       // #179: same referenceIdByIngredientId lookup nutrients already used,
       // exposed on the row rather than recomputed by a caller.
       referenceIngredientId: referenceId,
+      linkedIngredientName: nameByIngredientId.get(ingredientId) ?? null,
     });
   }
 
@@ -372,9 +357,10 @@ export async function getRecipeWithIngredientsAndSteps(
       `
       id, user_id, category_id, title, servings, thumbnail_path,
       time_minutes, position, created_at, updated_at,
+      source_url, import_status, import_error,
       recipe_ingredients (
         id, user_id, recipe_id, ingredient_id, name, quantity, unit,
-        position, group_label, created_at, updated_at
+        position, group_label, needs_review, created_at, updated_at
       ),
       recipe_steps (
         id, user_id, recipe_id, position, instruction, created_at, updated_at,
@@ -414,6 +400,7 @@ export async function getRecipeWithIngredientsAndSteps(
           unitMassGrams: null,
           kitchenUnitMasses: EMPTY_KITCHEN_UNIT_MASSES,
           referenceIngredientId: null,
+          linkedIngredientName: null,
         }),
       })),
     steps: [...recipe_steps]
@@ -667,4 +654,27 @@ export async function resolveIngredientUnitMass(
   );
 
   return resolveMassWithBridge(unit, null, referenceExact, userBridge, referenceBridge);
+}
+
+/**
+ * Recipes per category in `position` order — count-only read for the loading
+ * skeleton (embedded `recipes(count)`). Empty array if signed out.
+ */
+export async function getRecipeCategoryRecipeCounts(): Promise<number[]> {
+  const supabase = await createSupabaseServerClient();
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return [];
+
+  const { data, error } = await supabase
+    .from("recipe_categories")
+    .select("id, recipes(count)")
+    .eq("user_id", userId)
+    .order("position", { ascending: true })
+    .overrideTypes<Array<{ id: string; recipes: Array<{ count: number }> }>, { merge: false }>();
+
+  if (error) {
+    console.error("[recipes] getRecipeCategoryRecipeCounts failed:", error.code, error.message);
+    throw new Error("Failed to load recipe category counts");
+  }
+  return embeddedCounts(data, "recipes");
 }

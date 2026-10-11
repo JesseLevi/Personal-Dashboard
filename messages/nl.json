@@ -44,7 +44,11 @@
       "invalid-file-type": "Kies een JPEG-, PNG- of WebP-afbeelding.",
       "file-too-large": "Deze afbeelding is te groot (max 10 MB).",
       "upload-failed": "De afbeelding kon niet worden geüpload. Probeer het opnieuw.",
-      "invalid-image": "Deze afbeelding kon niet worden verwerkt. Probeer een andere foto."
+      "invalid-image": "Deze afbeelding kon niet worden verwerkt. Probeer een andere foto.",
+      "rate-limited": "Je hebt het maximum van 20 imports per uur bereikt. Probeer het later opnieuw.",
+      "forbidden": "Alleen beheerders mogen dit doen.",
+      "duplicate": "Er bestaat al een koppeling met deze naam.",
+      "unit-mass-exists": "Dit ingrediënt heeft al een gewicht voor deze eenheid."
     },
     "units": {
       "gram": "Gram",
@@ -83,6 +87,124 @@
       "snufje": "snufje",
       "scoop": "scoop",
       "naar_smaak": "naar smaak"
+    },
+    "import": {
+      "errors": {
+        "timeout": "Het importeren duurde te lang.",
+        "no_content": "Op deze pagina is geen tekst gevonden.",
+        "ai_unavailable": "De slimme import is niet beschikbaar voor deze pagina.",
+        "ai_failed": "Het uitlezen van de pagina is niet gelukt.",
+        "no_recipe_found": "Op deze pagina is geen recept gevonden.",
+        "rate_limited": "Je hebt het maximum aantal imports per uur bereikt.",
+        "invalid_url": "Deze link kon niet worden geopend.",
+        "blocked_address": "Deze link is niet toegestaan.",
+        "too_large": "Deze pagina is te groot om te importeren.",
+        "bad_content_type": "Deze link verwijst niet naar een webpagina.",
+        "too_many_redirects": "Deze link stuurt te vaak door.",
+        "http_error": "De website gaf een foutmelding.",
+        "import_failed": "Het importeren is niet gelukt."
+      }
+    },
+    "ingredientAdmin": {
+      "title": "Ingrediënten",
+      "tabsLabel": "Onderdeel",
+      "tabs": {
+        "aliases": "Koppelingen",
+        "own": "Eigen ingrediënten",
+        "ownShort": "Eigen",
+        "aliasesShort": "Alias",
+        "pending": "Nog te koppelen",
+        "pendingShort": "Open"
+      },
+      "ownBadge": "Eigen",
+      "aliases": {
+        "searchPlaceholder": "Zoek een koppeling",
+        "addLabel": "Koppeling",
+        "empty": "Er zijn nog geen koppelingen.",
+        "noResults": "Geen koppelingen gevonden voor \"{query}\".",
+        "rowEditLabel": "Koppeling bewerken: {name}",
+        "count": "{count, plural, one {# koppeling} other {# koppelingen}}"
+      },
+      "own": {
+        "searchPlaceholder": "Zoek een eigen ingrediënt",
+        "addLabel": "Ingrediënt",
+        "empty": "Er zijn nog geen eigen ingrediënten.",
+        "noResults": "Geen eigen ingrediënten gevonden voor \"{query}\".",
+        "rowEditLabel": "Eigen ingrediënt bewerken: {name}",
+        "weightSummary": "1 {unit} = {grams} g",
+        "count": "{count, plural, one {# eigen ingrediënt} other {# eigen ingrediënten}}"
+      },
+      "aliasPanel": {
+        "addTitle": "Koppeling toevoegen",
+        "editTitle": "Koppeling bewerken",
+        "nameLabel": "Naam",
+        "keyPreview": "Opgeslagen als: {key}",
+        "searchLabel": "Zoeken",
+        "searchPlaceholder": "Zoek een ingrediënt",
+        "searchPrompt": "Zoek het ingrediënt waaraan deze naam gekoppeld wordt.",
+        "searching": "Zoeken…",
+        "searchError": "Zoeken lukt nu niet. Probeer het opnieuw.",
+        "noResults": "Geen ingrediënten gevonden voor \"{query}\".",
+        "selectedLabel": "Gekozen: {name}",
+        "deleteLabel": "Verwijderen",
+        "deleteConfirmLabel": "Deze koppeling verwijderen? Bij de volgende import wordt de naam weer op de gewone manier gematcht.",
+        "deleteConfirmButtonLabel": "Ja, verwijderen",
+        "deletingLabel": "Verwijderen…",
+        "cancelLabel": "Annuleren",
+        "saveLabel": "Opslaan",
+        "savingLabel": "Opslaan…",
+        "nameHeading": "Naam in recept",
+        "searchHeading": "Gekoppeld ingrediënt"
+      },
+      "ownPanel": {
+        "addTitle": "Eigen ingrediënt toevoegen",
+        "editTitle": "Eigen ingrediënt bewerken",
+        "nameNlLabel": "Naam (Nederlands)",
+        "nameEnLabel": "Naam (Engels)",
+        "categoryNlLabel": "Categorie (Nederlands)",
+        "categoryEnLabel": "Categorie (Engels)",
+        "nutrientsLabel": "Voeding per 100 g",
+        "nutrientsHint": "Laat een veld leeg als de waarde onbekend is. Leeg telt nooit als 0.",
+        "kcalLabel": "Energie (kcal)",
+        "proteinLabel": "Eiwit (g)",
+        "carbsLabel": "Koolhydraten (g)",
+        "fatLabel": "Vet (g)",
+        "fiberLabel": "Vezels (g)",
+        "weightLabel": "Gewicht per eenheid",
+        "weightHint": "Optioneel, bijvoorbeeld 1 stuk = 60 g.",
+        "unitLabel": "Eenheid",
+        "unitNone": "Geen",
+        "gramsLabel": "Gewicht (g)",
+        "deleteLabel": "Verwijderen",
+        "deleteConfirmLabel": "Dit eigen ingrediënt verwijderen? Het wordt losgekoppeld van de ingrediënten van gebruikers en de bijbehorende koppelingen worden verwijderd.",
+        "deleteConfirmButtonLabel": "Ja, verwijderen",
+        "deletingLabel": "Verwijderen…",
+        "cancelLabel": "Annuleren",
+        "saveLabel": "Opslaan",
+        "savingLabel": "Opslaan…",
+        "namesHeading": "Namen"
+      },
+      "countOf": "{shown} van {total}",
+      "pending": {
+        "searchPlaceholder": "Zoek een regel zonder koppeling",
+        "empty": "Alles is gekoppeld. Nieuwe regels zonder koppeling verschijnen hier.",
+        "noResults": "Geen regels gevonden voor \"{query}\".",
+        "rowLinkLabel": "Koppel: {name}",
+        "count": "{count, plural, one {# naam} other {# namen}} om te koppelen",
+        "lines": "{count, plural, one {# regel} other {# regels}} in je recepten"
+      },
+      "pendingPanel": {
+        "title": "Koppel \"{name}\"",
+        "lines": "{count, plural, one {# regel} other {# regels}} in je recepten worden gekoppeld. Een volgende import vindt deze naam direct.",
+        "searchPrompt": "Zoek het ingrediënt waar deze naam bij hoort.",
+        "weightHeading": "Gewicht per eenheid",
+        "weightHint": "Optioneel, bijvoorbeeld 1 stuk = 60 g. Dan hoeft de import minder te schatten.",
+        "unitLabel": "Eenheid",
+        "unitNone": "Geen",
+        "gramsLabel": "Gewicht (g)",
+        "linkLabel": "Koppelen",
+        "linkingLabel": "Koppelen…"
+      }
     }
   },
   "shopping": {
@@ -126,7 +248,11 @@
       "invalid-input": "Controleer de ingevoerde gegevens.",
       "unauthenticated": "Log opnieuw in om door te gaan.",
       "not-found": "Dit onderdeel bestaat niet (meer) of is niet van jou.",
-      "generic": "Er ging iets mis. Probeer het opnieuw."
+      "generic": "Er ging iets mis. Probeer het opnieuw.",
+      "invalid-file-type": "Dit bestandstype wordt niet ondersteund. Gebruik JPEG, PNG, WebP of GIF.",
+      "file-too-large": "Deze afbeelding is te groot (maximaal 10 MB).",
+      "invalid-image": "Deze afbeelding kon niet worden verwerkt. Probeer een andere.",
+      "upload-failed": "Uploaden van de afbeelding is mislukt. Probeer het opnieuw."
     },
     "timestamp": {
       "yesterday": "Gisteren"
@@ -183,6 +309,7 @@
         "favoriteActiveLabel": "Favoriete bord",
         "addBoardOptionLabel": "Toevoegen",
         "sortLabel": "Sorteer",
+        "addCategoryLabel": "Categorie",
         "emptyBoardTitle": "Geen bord",
         "emptyBoardBody": "Er is nog geen bord om te tonen.",
         "sortOptions": {
@@ -193,7 +320,8 @@
         }
       },
       "recipes": {
-        "addCategoryLabel": "Categorie"
+        "addCategoryLabel": "Categorie",
+        "ingredientsLabel": "Ingrediënten"
       },
       "notes": {
         "addCategoryLabel": "Categorie",
@@ -211,6 +339,7 @@
     },
     "settingsPanel": {
       "title": "Instellingen",
+      "nameLabel": "Naam",
       "themeLabel": "Kleurenthema",
       "themeOptions": {
         "system": "Systeem",
@@ -377,24 +506,60 @@
         "Image": "Media"
       }
     },
-    "noteEditor": {
-      "backLabel": "Terug naar notities",
-      "placeholder": "Start met typen...",
+    "todoColumnPanel": {
+      "addTitle": "Categorie toevoegen",
+      "editTitle": "Categorie hernoemen",
+      "fields": {
+        "nameLabel": "Naam",
+        "iconLabel": "Icoon"
+      },
+      "saveLabel": "Opslaan",
+      "savingLabel": "Opslaan...",
       "deleteLabel": "Verwijderen",
       "deleteConfirmLabel": "Weet je het zeker?",
       "deleteConfirmButtonLabel": "Ja, verwijderen",
       "deletingLabel": "Verwijderen...",
       "cancelLabel": "Annuleren",
-      "saveErrorLabel": "Opslaan mislukt. Je wijzigingen zijn niet bewaard."
+      "iconLabels": {
+        "Lightbulb": "Idee",
+        "AlarmClockCheck": "Klaar",
+        "Loader": "Bezig",
+        "CircleCheck": "Afgerond",
+        "Star": "Favoriet",
+        "Calendar": "Kalender",
+        "Timer": "Timer",
+        "Flame": "Urgent",
+        "Check": "Vinkje",
+        "Columns3": "Kolommen",
+        "FolderClosed": "Map",
+        "Notebook": "Notitieboek",
+        "ShoppingBasket": "Boodschappen",
+        "BicepsFlexed": "Sport",
+        "User": "Persoonlijk",
+        "Shirt": "Kleding",
+        "Image": "Media",
+        "Scroll": "Document"
+      }
+    },
+    "noteEditor": {
+      "backLabel": "Terug naar notities",
+      "placeholder": "Typ '/' voor opties",
+      "deleteConfirmLabel": "Weet je het zeker?",
+      "deleteConfirmButtonLabel": "Ja, verwijderen",
+      "deletingLabel": "Verwijderen...",
+      "cancelLabel": "Annuleren"
     },
     "editingBar": {
       "label": "Opmaakwerkbalk",
+      "moreLabel": "Meer",
+      "backLabel": "Terug naar opmaak",
+      "tableActionsLabel": "Tabelacties",
+      "tableActionsBarLabel": "Tabelwerkbalk",
       "undoLabel": "Ongedaan maken",
       "redoLabel": "Opnieuw uitvoeren",
-      "headingLabel": "Kop",
+      "blockTypeLabel": "Bloktype",
       "listLabel": "Lijst",
       "blockquoteLabel": "Citaatblok",
-      "tableLabel": "Tabel invoegen",
       "codeBlockLabel": "Codeblok",
       "codeLabel": "Inline code",
       "boldLabel": "Vet",
@@ -403,13 +568,133 @@
       "underlineLabel": "Onderstrepen",
       "highlightLabel": "Markeren",
       "linkLabel": "Link",
-      "linkPromptLabel": "Voer een URL in",
       "superscriptLabel": "Superscript",
       "subscriptLabel": "Subscript",
-      "alignLeftLabel": "Links uitlijnen",
-      "alignCenterLabel": "Centreren",
-      "alignRightLabel": "Rechts uitlijnen",
-      "alignJustifyLabel": "Uitvullen"
+      "alignLabel": "Uitlijning",
+      "imageLabel": "Afbeelding",
+      "options": {
+        "alignLeft": "Links uitlijnen",
+        "alignCenter": "Centreren",
+        "alignRight": "Rechts uitlijnen",
+        "alignJustify": "Uitvullen",
+        "paragraph": "Tekst",
+        "heading1": "Kop 1",
+        "heading2": "Kop 2",
+        "heading3": "Kop 3",
+        "bulletList": "Opsomming",
+        "orderedList": "Genummerde lijst",
+        "taskList": "Checklist",
+        "list": "Lijst"
+      }
+    },
+    "slashMenu": {
+      "label": "Blok invoegen",
+      "noResults": "Geen resultaten",
+      "items": {
+        "paragraph": "Tekst",
+        "heading1": "Kop 1",
+        "heading2": "Kop 2",
+        "heading3": "Kop 3",
+        "bulletList": "Opsomming",
+        "orderedList": "Genummerde lijst",
+        "taskList": "Checklist",
+        "blockquote": "Citaat",
+        "codeBlock": "Codeblok",
+        "table": "Tabel",
+        "divider": "Scheidingslijn",
+        "details": "Inklapbare sectie",
+        "image": "Afbeelding",
+        "noteLink": "Link naar notitie"
+      }
+    },
+    "noteRef": {
+      "menuLabel": "Link naar notitie",
+      "noResults": "Geen notities gevonden",
+      "searching": "Zoeken...",
+      "untitled": "Zonder titel",
+      "deleted": "Verwijderde notitie"
+    },
+    "noteBacklinks": {
+      "title": "Gelinkt vanuit",
+      "untitled": "Zonder titel"
+    },
+    "noteTableOfContents": {
+      "title": "Inhoud"
+    },
+    "noteImage": {
+      "broken": "Afbeelding niet beschikbaar",
+      "altLabel": "Alternatieve tekst",
+      "altPlaceholder": "Beschrijf de afbeelding",
+      "deleteLabel": "Afbeelding verwijderen",
+      "uploading": "Afbeelding uploaden..."
+    },
+    "codeBlock": {
+      "languageLabel": "Taal",
+      "copy": "Kopiëren",
+      "copied": "Gekopieerd",
+      "languages": {
+        "plain": "Platte tekst",
+        "javascript": "JavaScript",
+        "typescript": "TypeScript",
+        "json": "JSON",
+        "css": "CSS",
+        "html": "HTML",
+        "bash": "Bash",
+        "sql": "SQL",
+        "python": "Python",
+        "markdown": "Markdown"
+      }
+    },
+    "noteDetails": {
+      "expand": "Sectie uitklappen",
+      "collapse": "Sectie inklappen"
+    },
+    "noteBubbleMenu": {
+      "label": "Tekstopmaak",
+      "turnInto": "Omzetten naar"
+    },
+    "noteBlockMenu": {
+      "handleLabel": "Blokmenu",
+      "menuLabel": "Blokacties",
+      "turnInto": "Omzetten naar",
+      "duplicate": "Dupliceren",
+      "delete": "Verwijderen",
+      "moveUp": "Omhoog verplaatsen",
+      "moveDown": "Omlaag verplaatsen"
+    },
+    "noteLink": {
+      "label": "Link",
+      "urlLabel": "Webadres",
+      "urlPlaceholder": "voorbeeld.nl",
+      "invalid": "Voer een webadres (http, https) of e-mailadres in.",
+      "apply": "Toepassen",
+      "open": "Openen",
+      "edit": "Bewerken",
+      "remove": "Verwijderen"
+    },
+    "noteTable": {
+      "insertLabel": "Tabel invoegen",
+      "sizeLabel": "Tabelgrootte",
+      "size": "{rows} × {cols}",
+      "menuLabel": "Tabel",
+      "rowHandleLabel": "Slepen om rij te verplaatsen",
+      "columnHandleLabel": "Slepen om kolom te verplaatsen",
+      "commands": {
+        "addRowBefore": "Rij erboven invoegen",
+        "addRowAfter": "Rij eronder invoegen",
+        "addColumnBefore": "Kolom links invoegen",
+        "addColumnAfter": "Kolom rechts invoegen",
+        "deleteRow": "Rij verwijderen",
+        "deleteColumn": "Kolom verwijderen",
+        "moveRowUp": "Rij omhoog verplaatsen",
+        "moveRowDown": "Rij omlaag verplaatsen",
+        "moveColumnLeft": "Kolom naar links verplaatsen",
+        "moveColumnRight": "Kolom naar rechts verplaatsen",
+        "toggleHeaderRow": "Koprij aan/uit",
+        "mergeCells": "Cellen samenvoegen",
+        "splitCell": "Cel splitsen",
+        "deleteTable": "Tabel verwijderen"
+      }
     },
     "ingredientSearchPanel": {
       "title": "Ingrediënt zoeken",
@@ -418,7 +703,7 @@
       "searchingLabel": "Zoeken...",
       "searchErrorLabel": "Zoeken mislukt. Probeer het opnieuw.",
       "noResultsLabel": "Geen ingrediënten gevonden voor \"{query}\".",
-      "addNewIngredientLabel": "\"{name}\" toevoegen als nieuw ingrediënt",
+      "usePlainNameLabel": "Gebruik als losse naam: “{name}”",
       "saveLabel": "Opslaan",
       "savingLabel": "Opslaan..."
     },
@@ -439,7 +724,8 @@
         "ingredientUnitPlaceholder": "Kies eenheid",
         "removeIngredientLabel": "Verwijder ingrediënt",
         "stepLabel": "Stap {number}",
-        "stepPlaceholder": "Typ hier een instructie..."
+        "stepPlaceholder": "Typ hier een instructie...",
+        "needsReviewLabel": "controleren"
       },
       "addRowLabel": "Voeg toe",
       "stepIngredientPillLabel": "Ingrediënt",
@@ -450,7 +736,15 @@
       "deleteConfirmLabel": "Weet je het zeker?",
       "deleteConfirmButtonLabel": "Ja, verwijderen",
       "deletingLabel": "Verwijderen...",
-      "cancelLabel": "Annuleren"
+      "cancelLabel": "Annuleren",
+      "link": {
+        "nevo": "NEVO: {name}",
+        "own": "Eigen ingrediënt: {name}",
+        "none": "Niet gekoppeld, telt niet mee in de voedingswaarden",
+        "kcal": "{kcal} kcal per 100 g",
+        "noNutrition": "geen voedingswaarden, telt niet mee",
+        "unitMass": "1 {unit} ≈ {grams} g"
+      }
     },
     "stepIngredientPanel": {
       "title": "Ingrediënten kiezen voor deze stap",
@@ -487,7 +781,11 @@
         "fiberUnit": "gr.",
         "servingsUnit": "pers.",
         "nevoAttribution": "Based on data from NEVO online version 2025/9.0, RIVM, Bilthoven and other data sources"
-      }
+      },
+      "needsReviewLabel": "controleren",
+      "notCountedLabel": "niet meegeteld",
+      "nutritionCoverage": "Op basis van {counted} van {total} ingrediënten",
+      "sourceLabel": "Bron:"
     },
     "pasAanPanel": {
       "title": "Pas aan",
@@ -500,6 +798,46 @@
     },
     "imageUploadField": {
       "selectImage": "Selecteer afbeelding"
+    },
+    "recipeImport": {
+      "menu": {
+        "viaLinkLabel": "Via link",
+        "manualLabel": "Handmatig"
+      },
+      "linkPanel": {
+        "title": "Recept toevoegen via link",
+        "linkLabel": "Link",
+        "linkPlaceholder": "Voeg een receptpagina toe",
+        "saveLabel": "Opslaan",
+        "savingLabel": "Bezig met opslaan...",
+        "invalidUrl": "Voer een geldige link in die met https begint."
+      },
+      "skeleton": {
+        "loadingLabel": "Recept wordt geïmporteerd..."
+      },
+      "failed": {
+        "title": "Import mislukt",
+        "retryLabel": "Opnieuw proberen",
+        "deleteLabel": "Verwijderen"
+      }
+    },
+    "noteMarkdownMenu": {
+      "menuLabel": "Meer opties",
+      "copy": "Kopieer als Markdown",
+      "export": "Exporteer als .md",
+      "delete": "Verwijderen",
+      "copied": "Gekopieerd als Markdown",
+      "copyFailed": "Kopiëren is niet gelukt",
+      "untitled": "Naamloze notitie"
+    },
+    "noteSaveStatus": {
+      "saved": "Opgeslagen",
+      "saving": "Opslaan…",
+      "error": "Niet opgeslagen — opnieuw proberen"
+    },
+    "noteWordCount": {
+      "words": "{count, plural, one {# woord} other {# woorden}}",
+      "readingTime": "{count, plural, =0 {0 min lezen} other {# min lezen}}"
     }
   }
 }

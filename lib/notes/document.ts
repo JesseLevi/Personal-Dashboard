@@ -25,6 +25,7 @@ export interface TipTapNode {
   type: string;
   content?: TipTapNode[];
   text?: string;
+  attrs?: Record<string, unknown>;
 }
 
 export interface TipTapDocument {
@@ -36,21 +37,26 @@ export interface TipTapDocument {
 // node type (bulletList/orderedList wrappers, table, marks, text/hardBreak
 // leaves) contributes no line break of its own, it just nests. Deliberately
 // structural rather than an exhaustive TipTap schema: a heading/paragraph/
-// codeBlock/blockquote/listItem each read as one line, and a table's rows and
-// cells are walked the same way -- each tableRow and each tableCell/
-// tableHeader also ends a line, so two cells in the same row don't run
-// together as one word and a table's first cell is what a document that
-// *starts* with a table reads as its first line (see deriveTitle's test for
-// this exact case, tests/notes-document.test.ts).
+// codeBlock/blockquote/listItem each read as one line, and so does a tableRow
+// (cells tab-separated, see flatten), so a document that *starts* with a table
+// derives its title from the first row (deriveTitle's test,
+// tests/notes-document.test.ts).
 const LINE_ENDING_TYPES = new Set([
   "paragraph",
   "heading",
   "codeBlock",
   "blockquote",
   "listItem",
+  // #329: a checklist item reads as one line, same as a listItem. Deliberately
+  // NO check-box glyph prefix: a prefix would put "☐ " in front of the derived
+  // title when a note starts with a checklist, and adds noise to search.
+  "taskItem",
   "tableRow",
-  "tableCell",
-  "tableHeader",
+  // #336: a collapsible section is `details` > `detailsSummary` (one line) +
+  // `detailsContent` (ordinary blocks, each ending its own line). Both are
+  // flattened whether the section is open or collapsed, so a note stays
+  // searchable by text it hides.
+  "detailsSummary",
 ]);
 
 function flatten(node: TipTapNode): string {
@@ -59,6 +65,29 @@ function flatten(node: TipTapNode): string {
   // LINE_ENDING_TYPES node's trailing newline below -- both get collapsed by
   // toPlainText's regex the same way, so it doesn't need special-casing there.
   if (node.type === "hardBreak") return "\n";
+
+  // #339: an image contributes its alt text as a line of its own, so images
+  // are searchable (and a note that opens with one gets that title).
+  if (node.type === "image") {
+    const alt = typeof node.attrs?.alt === "string" ? node.attrs.alt.replace(/\s+/g, " ").trim() : "";
+    return alt ? `${alt}\n` : "";
+  }
+
+  // #341: a note link reads as its label (the target's title when inserted),
+  // so search and embeddings see the linked title (ADR-0023 s6).
+  if (node.type === NOTE_LINK_NODE_TYPE) {
+    return typeof node.attrs?.label === "string" ? node.attrs.label.replace(/\s+/g, " ").trim() : "";
+  }
+
+  // #330: a table row is one line, its cells separated by a tab (a cell's own
+  // line breaks collapse to spaces); trailing empty cells add no tabs.
+  if (node.type === "tableRow") {
+    const cells = (node.content ?? []).map((cell) =>
+      (cell.content ?? []).map(flatten).join("").replace(/\n+/g, " ").trim(),
+    );
+    const line = cells.join("\t").replace(/\t+$/, "");
+    return line.trim() === "" ? "" : `${line}\n`;
+  }
 
   const inner = (node.content ?? []).map(flatten).join("");
   return LINE_ENDING_TYPES.has(node.type) ? `${inner}\n` : inner;
@@ -100,7 +129,38 @@ const TITLE_MAX_LENGTH = 200;
  * (the migration's own file-header note).
  */
 export function deriveTitle(doc: TipTapDocument): string {
-  const firstLine = toPlainText(doc).split("\n")[0]?.trim() ?? "";
+  const firstLine = (toPlainText(doc).split("\n")[0] ?? "").replace(/\t+/g, " ").trim();
   if (firstLine.length <= TITLE_MAX_LENGTH) return firstLine;
   return `${firstLine.slice(0, TITLE_MAX_LENGTH - 1).trimEnd()}…`;
+}
+
+/* #340 (ADR-0023): note links ------------------------------------------- */
+
+/** The inline node type the editor uses for a link to another note (#341). */
+export const NOTE_LINK_NODE_TYPE = "noteLink";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+interface LinkAwareNode {
+  type: string;
+  attrs?: { noteId?: unknown };
+  content?: LinkAwareNode[];
+}
+
+/**
+ * Distinct target note ids of every `noteLink` node in the document, in
+ * document order. Attribute values that aren't uuids are skipped, so a
+ * malformed node never reaches the `save_note_content` RPC's uuid[] argument.
+ */
+export function extractNoteLinkIds(doc: TipTapDocument): string[] {
+  const ids = new Set<string>();
+  const walk = (node: LinkAwareNode) => {
+    if (node.type === NOTE_LINK_NODE_TYPE) {
+      const id = node.attrs?.noteId;
+      if (typeof id === "string" && UUID_RE.test(id)) ids.add(id.toLowerCase());
+    }
+    for (const child of node.content ?? []) walk(child);
+  };
+  for (const node of doc.content ?? []) walk(node as LinkAwareNode);
+  return [...ids];
 }

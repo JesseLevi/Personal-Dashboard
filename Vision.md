@@ -14,12 +14,11 @@ Alles hier is al besloten. Fable mag dit gebruiken als gegeven, niet heroverwege
 	•	Zoveel mogelijk gebruikmaken van open source software.
 2.5 Voorgestelde tech stack
 Fable mag dit bekritiseren en met betere suggesties komen.
-	•	Techstack: Next.js (App Router), self-hosted Supabase, Tailwind CSS, TipTap, Schedule-X (oorspronkelijk CalendarKit, maar dat bleek React Native-only — zie ADR-0008).
+	•	Techstack: Next.js (App Router), Supabase (Cloud), Tailwind CSS, TipTap, Schedule-X (oorspronkelijk CalendarKit, maar dat bleek React Native-only — zie ADR-0008).
 	•	Data-laag: Supabase
-	•	Deploy: Mac mini M4 als homeserver, GitHub Actions, staging/productie-instances. Toekomstig eventueel een hosting provider.
+	•	Deploy: Vercel (Next.js) + Supabase Cloud, GitHub Actions (ADR-0012). De Mac mini als homeserver is geparkeerd en wordt waarschijnlijk niet meer gebouwd (ADR-0018).
 	•	Design tokens: Figma: primitive tokens (gebaseerd op Tailwind)→ semantic tokens → Tailwind, via Figma MCP (zie CLAUDE.md voor de Code Syntax-conventie).
-	•	Lokale AI: Mac mini als homeserver, Ollama native op macOS, 14–27B quantized model. Embeddings via bge-m3/nomic-embed-text — niet Supabase's ingebouwde gte-small, die alleen Engels ondersteunt en van lagere kwaliteit is.
-	•	Migratiepad: self-hosted Supabase migreert schoon naar Supabase Cloud, Ollama wordt vervangen door een gehoste inference-API, mocht dit ooit verder gaan dan persoonlijk gebruik.
+	•	AI: gehoste inference-API's, betalen per gebruik, achter één provider-neutrale laag (lib/ai/). Eerst gewone code, dan pas een LLM-call, met een bestedingslimiet (ADR-0018). Embeddings moeten meertalig zijn (niet Supabase's alleen-Engelse gte-small); welk gehost model, wordt in fase 8 gekozen.
 3. Modules / pagina's
 Login pagina
 	•	Doel: toegang tot het platform, sessie- en accountbeheer.
@@ -66,7 +65,8 @@ Recepten
 	•	Automatische portie-schaling
 	•	Data die het aanraakt/produceert: recipes (titel, categorie, ingrediënten, tags)
 	•	Raakt deze modules: Boodschappenlijst (ingrediënten worden hieraan toegevoegd).
-	•	Uitdrukkelijk buiten scope (voor nu): weekmenu-planning/kalenderkoppeling, voedingswaarde-informatie, importeren/scrapen van externe recepten.
+	•	Uitdrukkelijk buiten scope (voor nu): weekmenu-planning/kalenderkoppeling, voedingswaarde-informatie.
+	•	Recept importeren via URL (in scope, ADR-0019): URL plakken → opgeslagen recept; deterministisch eerst (JSON-LD/parser), LLM alleen voor gaten.
 Boodschappenlijst
 	•	Doel: een lopende boodschappenlijst bijhouden, handmatig of vanuit recepten gevuld.
 	•	Kernacties:
@@ -89,8 +89,8 @@ Mail-integratie
 
 4. Cross-cutting concerns
 	•	Multi-user data-isolatie: user_id-foreign keys per tabel + Row Level Security in Supabase. Per-account versleutelde API-keys voor AI-features, opslag via Supabase Vault. Openstaande vraag: hoe modelleer je gedeelde data (bv. één boodschappenlijst voor een huishouden) zonder de per-user RLS-aanpak te breken?
-	•	AI-agent: krijgt signalen primair uit Kanban (taken/patronen) en uit vrije tekst in notities/recepten (thematische herkenning via vector search). Pipeline: scheduled SQL-detectors voor structurele/temporele patronen → pgvector similarity search voor semantische herkenning → één LLM-call (Ollama) die relevantie beoordeelt en de output in natuurlijke taal formuleert. Bewust simpel gehouden zodat een klein lokaal model het aankan.
-	•	Vector-backend: content uit notities en recepten wordt ge-embed via Ollama. Gequeried door de AI-agent voor relevantie-detectie, en op termijn voor cross-module search/RAG vanuit een chat-achtige interface.
+	•	AI-agent: krijgt signalen primair uit Kanban (taken/patronen) en uit vrije tekst in notities/recepten (thematische herkenning via vector search). Pipeline: scheduled SQL-detectors voor structurele/temporele patronen → pgvector similarity search voor semantische herkenning → één LLM-call (gehoste API, ADR-0018) die relevantie beoordeelt en de output in natuurlijke taal formuleert. Bewust simpel gehouden, zodat een klein en goedkoop model het aankan.
+	•	Vector-backend: content uit notities en recepten wordt ge-embed via een gehoste embedding-API (ADR-0018). Gequeried door de AI-agent voor relevantie-detectie, en op termijn voor cross-module search/RAG vanuit een chat-achtige interface.
 5. Open architectuurvragen — HIER is Fable voor nodig
 	•	Encrypted per-account API-keys: volledig via Supabase Vault, of met een extra applicatielaag ertussen — en welke RLS-policy-implicaties heeft elke keuze?
 	⁃	Bouwvolgorde: Login, Kanban, Notities en Agenda zijn relatief onafhankelijk, maar Recepten → Boodschappenlijst heeft een echte dependency. Wat is de verstandigste bouwvolgorde gegeven die ene harde koppeling?

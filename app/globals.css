@@ -1,6 +1,26 @@
 @import "tailwindcss";
 @import "./theme.css";
 
+/* Loading skeletons (app/(app)/_components/skeletons/): an opacity
+   "breathe" on the placeholder surfaces — no gradient, no translate. Figma
+   carries no motion spec, so duration and depth are this codebase's own
+   picks: docs/open-questions.md#skeleton-breathe-timing-unsourced.
+   `--duration-*` is not a Tailwind theme namespace (design/tokens.json
+   semantic.duration), hence the literal here rather than a token. */
+@theme {
+  --animate-breathe: breathe 1.6s ease-in-out infinite;
+
+  @keyframes breathe {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
+}
+
 /* #115 (components/organisms/BoardView.tsx SortableCard): iOS Safari's
    native long-press callout/text-selection has no Tailwind utility
    (`-webkit-touch-callout` isn't part of the utility set) and would
@@ -26,6 +46,13 @@ html {
      every tappable component here already renders its own hover/active
      state, so the browser default is pure noise on top of it. */
   -webkit-tap-highlight-color: transparent;
+}
+
+/* No browser focus outline anywhere (user request, 2026-10-07). Components'
+   own designed focus states (Button, InputField) still render. */
+*:focus,
+*:focus-visible {
+  outline: none;
 }
 
 /* Chrome only (nav, buttons, headers) — never user content (recipe text,
@@ -57,36 +84,42 @@ html {
   color: var(--color-text-placeholder);
 }
 
-/* #263: TipTap content typography. Tailwind's preflight resets h1-h6 to
-   `inherit` and strips ul/ol's list-style + padding, and NoteEditor.tsx's
-   editor root applies `text-base font-semibold` uniformly (a measured Figma
-   value for note body text, not a bug) -- so every block type rendered
-   identically to a plain paragraph until this rule filled the gap. Kept
-   next to the placeholder rule above: one place for all editor-content CSS,
-   since neither can be expressed as a Tailwind utility class on the
-   generated JSON content itself. Minimal, token-bound set only, per user
-   decision -- no richer treatment, no table rule (that's #235's, landing in
-   its own PR on this same block). No Figma source exists for prose
-   typography: design/notes/NoteEditor.md,
-   docs/open-questions.md#notes-prose-typography-not-designed. */
-.tiptap h1,
-.tiptap h2,
-.tiptap h3 {
-  /* spacing-flag: app/theme.css has no font-size token (only
-     spacing/radius/color are generated) -- these three rem values are
-     Tailwind's own text-xl/text-lg/text-base steps, not invented numbers;
-     1.25rem matches PageHeader.tsx's own `<h1 className="text-xl ...">`
-     exactly. design/notes/NoteEditor.md */
-  font-weight: inherit;
+/* #263/#329: TipTap content typography. Tailwind's preflight resets h1-h6 to
+   `inherit` and strips list markers, and NoteEditor.tsx's editor root applies
+   `text-base font-medium` (#386; Figma measured font-semibold), so every block
+   type needs its own rule. Claude-designed on request (#329): sizes and
+   weights are Tailwind's own type scale via @apply (no font-size token
+   exists, docs/open-questions.md#notes-prose-typography-not-designed);
+   spacing and colours are semantic tokens. Rationale and values:
+   design/notes/NoteEditor.md. */
+.tiptap {
+  /* ~70ch reading width, centered on desktop; mobile is bounded by the viewport. */
+  max-width: 70ch;
+  margin-inline: auto;
+  @apply leading-relaxed;
 }
 .tiptap h1 {
-  font-size: 1.25rem;
+  @apply text-3xl font-extrabold leading-tight;
 }
 .tiptap h2 {
-  font-size: 1.125rem;
+  @apply text-2xl font-bold leading-tight;
 }
 .tiptap h3 {
-  font-size: 1rem;
+  @apply text-xl font-bold leading-snug;
+}
+/* #342: a heading the table-of-contents rail scrolls to keeps clear space above it. */
+.tiptap :is(h1, h2, h3) {
+  scroll-margin-top: var(--spacing-stack-xl);
+}
+/* A heading starts a new section: extra space above, the normal block gap below. */
+.tiptap > * + h1 {
+  margin-top: var(--spacing-stack-xxl);
+}
+.tiptap > * + h2 {
+  margin-top: var(--spacing-stack-xl);
+}
+.tiptap > * + h3 {
+  margin-top: var(--spacing-stack-lg);
 }
 
 /* `inline-*`, not `stack-*`: this is an inline-axis property. Both groups
@@ -103,6 +136,71 @@ html {
 }
 .tiptap ol {
   list-style: decimal;
+}
+.tiptap li + li,
+.tiptap li > ul,
+.tiptap li > ol,
+.tiptap li > div > ul {
+  margin-top: var(--spacing-stack-xs);
+}
+/* ListItem wraps its text in a <p>; the item's own gap is enough. */
+.tiptap li > p {
+  margin: 0;
+}
+
+/* #329: task lists. The native checkbox is restyled to the Checkbox atom's
+   tokens (border, fill, radius, check glyph colour); 1.25rem is Tailwind's
+   size-5, the atom's 2rem box is too large for an inline line of text. */
+.tiptap ul[data-type="taskList"] {
+  list-style: none;
+  padding-inline-start: 0;
+}
+.tiptap li[data-checked] {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-inline-sm);
+}
+.tiptap li[data-checked] > label {
+  flex: none;
+  /* Centre the box on the first text line whatever the line-height. */
+  margin-top: calc((1lh - 1.25rem) / 2);
+  user-select: none;
+}
+.tiptap li[data-checked] > div {
+  flex: 1;
+  min-width: 0;
+}
+.tiptap li[data-checked] > label > input[type="checkbox"] {
+  appearance: none;
+  display: grid;
+  place-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  border: 1px solid var(--color-stroke-primary);
+  border-radius: var(--radius-control-inner);
+  background-color: var(--color-surface-highlight-white);
+  cursor: pointer;
+  transition: border-color 150ms;
+}
+.tiptap li[data-checked] > label > input[type="checkbox"]:hover {
+  border-color: var(--color-stroke-primary-hover);
+}
+.tiptap li[data-checked] > label > input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--color-stroke-primary-selected);
+  outline-offset: 2px;
+}
+.tiptap li[data-checked] > label > input[type="checkbox"]:checked::after {
+  content: "";
+  width: 1rem;
+  height: 1rem;
+  background-color: var(--color-text-secondary);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+/* Done items: muted text + strikethrough, on the item's own text only. */
+.tiptap li[data-checked][data-checked="true"] > div > p {
+  color: var(--color-text-secondary);
+  text-decoration: line-through;
 }
 
 .tiptap blockquote {
@@ -154,33 +252,18 @@ html {
   margin-top: var(--spacing-stack-md);
 }
 
-/* #235: table CSS, on the same .tiptap block #263 built (that ticket's own
-   "explicitly out of scope" note pointed here). `TableKit` is already wired
-   (#234, pulled forward from this ticket) -- this is only the rendering.
-   Per user decision, kept minimal and token-bound, same as #263: every
-   value below is a real var(--color-…)/var(--spacing-…) from app/theme.css,
-   no raw hex, no raw px-spacing. No Figma source exists for any of it --
-   Pages/Notities/Breakpoints draws one toolbar button with a table icon and
-   no actual table -- see docs/open-questions.md#notes-table-ui-not-designed
-   and this ticket's own section in design/notes/NoteEditor.md. */
+/* Tables (#235, reworked in #330): every value is a var(--color-...)/
+   var(--spacing-...) from app/theme.css. Claude-designed on request, no Figma
+   source -- design/notes/NoteEditor.md (#235 and #330 sections). */
 .tiptap table {
   border-collapse: collapse;
+  /* #330: fixed layout, so a column keeps its width while typing. Columns
+     without a stored `colwidth` (every pre-#330 table) share the width
+     equally; the table's inline min-width (from TableKit's cellMinWidth)
+     makes a wide table scroll inside `.tableWrapper`. Why: design/notes/
+     NoteEditor.md (#330). */
+  table-layout: fixed;
   width: 100%;
-  /* No margin declared here on purpose, even though the surrounding block
-     is `table`: TipTap's editor NodeView (verified against the installed
-     @tiptap/extension-table's own dist, not a doc example) always wraps the
-     rendered table in `div.tableWrapper`, which is the actual direct child
-     of .tiptap and already gets `margin-top` for free from the `> * + *`
-     rule above -- exactly like every other block type in this file (h1/ul/
-     blockquote/pre/hr declare no margin of their own either). Adding a
-     second margin here on `table` itself would land on the *wrong* box:
-     `.tableWrapper` below needs `overflow-x: auto` for the mobile-overflow
-     requirement, and any non-`visible` overflow value establishes a new
-     block formatting context, which stops a child's margin from collapsing
-     into its parent's -- so a margin declared here would get trapped
-     inside the scrollable wrapper instead of producing visible spacing
-     before/after the table. design/notes/NoteEditor.md records this as a
-     deliberate deviation from a literal "margin on `table`" reading. */
 }
 
 /* TipTap's TableView always renders this exact wrapper div around the
@@ -190,11 +273,15 @@ html {
    instead of blowing out the page width. */
 .tiptap .tableWrapper {
   overflow-x: auto;
+  border: 1px solid var(--color-stroke-lines);
+  border-radius: var(--radius-control);
 }
 
 .tiptap td,
 .tiptap th {
-  border: 1px solid var(--color-stroke-lines);
+  /* Inner grid lines only: the wrapper draws the outer, rounded border. */
+  border: 0 solid var(--color-stroke-lines);
+  border-width: 0 1px 1px 0;
   /* Block/inline split, not top/bottom/left/right: `--spacing-stack-*` is
      the vertical-axis group, `--spacing-inline-*` the horizontal one --
      both resolve to the same pixels today, so a swapped axis here would be
@@ -202,6 +289,16 @@ html {
      mistake once, see app/globals.css's own history and docs/HANDOFF.md). */
   padding: var(--spacing-stack-xs) var(--spacing-inline-sm);
   vertical-align: top;
+  overflow-wrap: anywhere;
+  /* Containing block for prosemirror-tables' column-resize handle. */
+  position: relative;
+}
+
+.tiptap tr > :last-child {
+  border-right-width: 0;
+}
+.tiptap tr:last-child > * {
+  border-bottom-width: 0;
 }
 
 /* Goes one step past "minimal", deliberately: without its own background a
@@ -212,6 +309,9 @@ html {
    design/notes/NoteEditor.md records this as a flagged deviation. */
 .tiptap th {
   background-color: var(--color-surface-secondary);
+  /* Same start alignment as body cells; a per-cell TextAlign still wins
+     (it sets an inline style). */
+  text-align: left;
 }
 
 /* prosemirror-tables' own cell-selection plugin decorates each selected
@@ -220,9 +320,210 @@ html {
    selection mechanism invented here. `.tiptap .selectedCell` (two classes)
    outranks `.tiptap th` (one class, one type) on specificity alone, so a
    selected header cell shows the selection tint regardless of source
-   order. Reuses the existing "selected" surface token
-   (surface-highlight-white-selected) rather than a colour-coded highlight
-   token (blue/red/yellow already carry other meanings elsewhere). */
+   order. Uses the blue highlight surface so a selection never reads as a header row
+   (surface-secondary). */
 .tiptap .selectedCell {
-  background-color: var(--color-surface-highlight-white-selected);
+  background-color: var(--color-surface-highlight-blue);
+}
+
+/* #330: prosemirror-tables inserts `.column-resize-handle` into the cell next
+   to the hovered column edge and keeps it while dragging, so it is visible on
+   hover/drag only. `.resize-cursor` is set on the editor over a resizable edge. */
+.tiptap .column-resize-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: calc(var(--spacing-inline-xs) / -2);
+  width: var(--spacing-inline-xs);
+  background-color: var(--color-stroke-primary-hover);
+  pointer-events: none;
+}
+
+.tiptap.resize-cursor {
+  cursor: col-resize;
+}
+
+/* #336: code blocks (CodeBlockView.tsx wraps the <pre> in .code-block, which
+   carries the surface, so the inner <pre> drops its own) and syntax colours.
+   Only existing semantic text tokens are used -- there is no dedicated syntax
+   palette, see docs/open-questions.md#code-syntax-colour-tokens. */
+.tiptap .code-block {
+  background-color: var(--color-surface-secondary);
+  border-radius: var(--radius-card-inner);
+  padding: var(--spacing-component-sm) var(--spacing-component-md);
+}
+.tiptap .code-block pre {
+  background-color: transparent;
+  border-radius: 0;
+  padding: 0;
+}
+.tiptap .hljs-comment,
+.tiptap .hljs-quote,
+.tiptap .hljs-meta {
+  color: var(--color-text-secondary);
+}
+.tiptap .hljs-keyword,
+.tiptap .hljs-selector-tag,
+.tiptap .hljs-doctag,
+.tiptap .hljs-built_in,
+.tiptap .hljs-type {
+  color: var(--color-text-highlight-blue);
+}
+.tiptap .hljs-string,
+.tiptap .hljs-regexp,
+.tiptap .hljs-addition {
+  color: var(--color-text-highlight-green);
+}
+.tiptap .hljs-number,
+.tiptap .hljs-literal,
+.tiptap .hljs-symbol,
+.tiptap .hljs-bullet {
+  color: var(--color-text-highlight-yellow);
+}
+.tiptap .hljs-title,
+.tiptap .hljs-section,
+.tiptap .hljs-attr,
+.tiptap .hljs-attribute,
+.tiptap .hljs-name,
+.tiptap .hljs-selector-class,
+.tiptap .hljs-selector-id,
+.tiptap .hljs-deletion {
+  color: var(--color-text-highlight-red);
+}
+.tiptap .hljs-emphasis {
+  font-style: italic;
+}
+.tiptap .hljs-strong {
+  font-weight: 700;
+}
+
+/* #336: collapsible section. The extension's node view renders
+   div[data-type=details] > button (toggle) + div (summary + detailsContent);
+   `.is-open` is its open class and the content carries `hidden` while closed
+   (it stays in the document, so search still finds it). */
+.tiptap [data-type="details"] {
+  display: flex;
+  gap: var(--spacing-inline-sm);
+  align-items: flex-start;
+  border: 1px solid var(--color-stroke-primary);
+  border-radius: var(--radius-card-inner);
+  padding: var(--spacing-component-sm) var(--spacing-component-md);
+}
+.tiptap [data-type="details"] > button {
+  flex-shrink: 0;
+  display: grid;
+  place-content: center;
+  width: 1.5rem;
+  /* Aligns the toggle with the summary's first text line. */
+  height: 1lh;
+  border-radius: var(--radius-control-inner);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: transform 150ms, color 150ms;
+}
+.tiptap [data-type="details"] > button:hover {
+  color: var(--color-text-primary);
+}
+.tiptap [data-type="details"] > button:focus-visible {
+  outline: 2px solid var(--color-stroke-primary-selected);
+  outline-offset: 2px;
+}
+.tiptap [data-type="details"].is-open > button {
+  transform: rotate(90deg);
+}
+.tiptap [data-type="details"] > div {
+  flex: 1;
+  min-width: 0;
+}
+.tiptap [data-type="details"] summary {
+  display: block;
+  list-style: none;
+  font-weight: 700;
+}
+.tiptap [data-type="detailsContent"] {
+  padding-top: var(--spacing-stack-sm);
+}
+.tiptap [data-type="detailsContent"] > * + * {
+  margin-top: var(--spacing-stack-md);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tiptap [data-type="details"] > button {
+    transition: none;
+  }
+}
+
+/* #335: Dropcursor's line while a block is dragged (class set in
+   lib/notes/extensions.ts; its inline colour is switched off there). */
+.note-dropcursor {
+  background-color: var(--color-stroke-secondary-active);
+}
+
+/* #341: note links (NoteLinkView.tsx). Claude-designed on request, tokens
+   only -- design/notes/NoteEditor.md (#341). A chip that reads as inline text:
+   same size and weight as its line, a filled background marks it as a link
+   (links elsewhere in a note are underlined; this one is a different thing).
+   Deleted target: muted, no pointer. */
+.tiptap .note-link {
+  border-radius: var(--radius-control-inner);
+  background-color: var(--color-surface-secondary);
+  color: var(--color-text-primary);
+  padding: 0 var(--spacing-component-xs);
+  text-decoration: none;
+  cursor: pointer;
+}
+.tiptap .note-link:hover {
+  background-color: var(--color-surface-secondary-hover);
+}
+.tiptap .note-link:active {
+  background-color: var(--color-surface-secondary-active);
+}
+.tiptap .note-link:focus-visible,
+.tiptap .note-link-selected {
+  /* spacing-flag: outline width is a structural 2px, same class of value as
+     the image ring below. design/notes/NoteEditor.md */
+  outline: 2px solid var(--color-stroke-primary-selected);
+  outline-offset: 2px;
+}
+.tiptap .note-link-deleted {
+  background-color: var(--color-surface-primary);
+  color: var(--color-text-secondary);
+  cursor: default;
+}
+
+/* #339: images (NoteImageView.tsx) and the upload placeholder
+   (lib/notes/image-upload.ts). Claude-designed on request, tokens only --
+   design/notes/NoteEditor.md (#339). The picture never exceeds the text
+   column; the selected ring is the same border token the form fields use. */
+.tiptap .note-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-card-inner);
+}
+.tiptap .note-image-selected img,
+.tiptap .note-image-selected .note-image-broken {
+  /* spacing-flag: outline width is a structural 2px, same class of value as
+     the blockquote rule above. design/notes/NoteEditor.md */
+  outline: 2px solid var(--color-stroke-primary-selected);
+  outline-offset: 2px;
+}
+.tiptap .note-image-broken,
+.tiptap .note-image-uploading {
+  background-color: var(--color-surface-secondary);
+  border-radius: var(--radius-card-inner);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-component-sm) var(--spacing-component-md);
+}
+.tiptap .note-image-uploading {
+  animation: note-image-pulse 1.5s ease-in-out infinite;
+}
+@keyframes note-image-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tiptap .note-image-uploading {
+    animation: none;
+  }
 }

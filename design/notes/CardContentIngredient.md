@@ -214,3 +214,9 @@ run (a new story, not a regenerate of an existing one) — left for the
 orchestrator's centralized run per this session's scope change, not
 regenerated here.
 
+
+## "controleren" marker (Claude-designed on request, #318)
+
+Optional `reviewLabel` (+ `onReviewClick` makes it a button): a `Tag variant="highlight"` under the name, for an imported line with `needs_review`. Existing `Tag` only, no new tokens. On the detail page pressing it opens the edit panel. Story `NeedsReview`.
+
+Same marker, label "niet meegeteld", for a line the nutrition totals leave out (2026-10-07, see design/notes/RecipeDetailPage.md). Story `NotCounted`.

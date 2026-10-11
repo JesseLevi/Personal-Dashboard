@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getNote } from "@/lib/notes/queries";
+import { getBacklinks, getNote, resolveNoteTitles } from "@/lib/notes/queries";
+import { extractNoteLinkIds } from "@/lib/notes/document";
 import { NoteEditor } from "./NoteEditor";
 
 // #233: note editor route — Figma "Desktop/Notes/Edit" (3934:33463) /
@@ -9,6 +11,11 @@ import { NoteEditor } from "./NoteEditor";
 // `notFound()` covers both "note doesn't exist" and "not this user's note",
 // same precedent as app/(app)/recepten/[recipeId]/page.tsx. Full reasoning:
 // design/notes/NoteEditor.md.
+// #390: same manifest as /notities, so adding a single note to the home screen lands in Notities.
+export const metadata: Metadata = {
+  manifest: "/notities/manifest.webmanifest",
+};
+
 export default async function NoteEditorRoute({
   params,
 }: {
@@ -22,5 +29,11 @@ export default async function NoteEditorRoute({
   // Keyed on note.id, same reasoning as RecipeDetailRoute's own `key`: a
   // future in-editor link straight from one note to another must fully
   // remount rather than reuse TipTap/local state from the previous note.
-  return <NoteEditor key={note.id} note={note} />;
+  // #341: current titles of the linked notes (a missing one is a deleted target) and "Gelinkt vanuit".
+  const [linkTitles, backlinks] = await Promise.all([
+    resolveNoteTitles(extractNoteLinkIds(note.content)),
+    getBacklinks(note.id),
+  ]);
+
+  return <NoteEditor key={note.id} note={note} linkTitles={linkTitles} backlinks={backlinks} />;
 }

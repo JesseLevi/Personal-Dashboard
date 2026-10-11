@@ -10,9 +10,11 @@
 
 - `main` is green after #277. Per-ticket status lives on the board.
 - Phases 0–3 done. Phases 4 (Recepten) and 5 (Boodschappenlijst) mid-flight per the board.
-- Phase 6 (Notities) is code-complete (#225–#235, #263). Left: a **design round** (rendered table, prose typography, row/column controls — `notes-table-ui-not-designed`, `notes-prose-typography-not-designed`; plus #265's two undesigned values in `design/notes/ButtonToggle.md`, `Sidebar.md`). Treat that shipped CSS as provisional.
-- Phase 7+ (Agenda, AI) is backlog. #1–#5, #9–#11 need real accounts: don't start unprompted.
-- `[OPT]` round (#279–#304): all merged or in review except the hosted tickets #279 and #291.
+- Phase 6 (Notities) is code-complete (#225–#235, #263). **Editor round planned** (epic #328, tickets #329–#342, ADR-0021/0022/0023): UI is Claude-designed on request, executed one ticket at a time in the epic's order; it closes `notes-prose-typography-not-designed` (done, #329) and `notes-table-ui-not-designed` (done, #330).
+- Phase 7+ (Agenda, AI) is backlog. #9–#11 need real accounts: don't start unprompted.
+- **Mac mini/Ollama is shelved (ADR-0018)**: Vercel + Supabase Cloud is the target, and AI goes through hosted APIs behind `lib/ai/`. #1–#5 are obsolete.
+- **#309 (recipe via URL)**: pipeline (#313–#317) and UI (#318, in review) are built. Follow-up on branch `fix/309-import-nevo-linking`: LLM search terms + best-fit NEVO choice, imported amounts kept with an estimated weight per unit stored as the user's override, translation into the user's locale, Haiku 5.5, add menu portalled (ADR-0019 §3/§4 amended). Nutrition now sums the recognised rows, with a counted/total line and "niet meegeteld" markers; the edit panel shows each row's NEVO link. Prompts are untested against the live model. Before it works on hosted: dispatch `deploy.yml` with the #312 migrations (user decision), set `ANTHROPIC_API_KEY`. `icon--all-icons` baseline needs regenerating (Globe added). Not yet exercised against a live deploy: `after()` keeping the session (checked in Next source only).
+- **R2 object storage (epic #359, ADR-0024)**: live in production, thumbnails served from R2. #384 (drop the Supabase thumbnail bucket and fallback) is in review; its migration only applies after the user dispatches `deploy.yml` (target `migrate` or `both`).
 
 ## Next
 
@@ -26,7 +28,7 @@
 - **A migration applied by hand or via the Supabase MCP gets that route's timestamp as version**, not the filename; fix the ledger row or `db push` refuses.
 - **Never batch a migration across parallel agents** (raced 250 duplicate rows on #161).
 - **Two CI `db` jobs can't run concurrently** (fixed ports: `failed to bind host port`). Wait, then `gh run rerun <id> --failed`.
-- **Visual flake**: run the FULL suite twice before believing a failure; never bisect, never overlap runs. Lone failures up to ~22px have been noise. `threshold` stays 0. **As of 2026-10-06 the same 103/118 light baselines fail on this Mac on plain `main` too** (text-antialiasing diffs) — environmental, not code; compare against a `main` control run. The #281/#282/#283 baselines were generated in that state.
+- **Visual gate**: CI Linux job is blocking; `-linux.png` baselines are produced only by the `visual-update` workflow (`gh workflow run visual-update.yml --ref <branch>`, then run `ci-visual.yml` by hand: a GITHUB_TOKEN push triggers no CI). `-darwin.png` is git-ignored and drifts, so ignore local mismatches. `threshold` stays 0.
 - **Parallel agents share Playwright port 4310** (`reuseExistingServer`): one agent silently screenshots another's server. Serialize visual runs (lock dir) when delegating.
 - **The visual suite renders Button hover/active/focus (#282), a dark subset (#281) and `.tiptap` prose (#283)** — other components' states and dark variants are still unseen.
 - **`middleware.ts` only refreshes tokens**; the auth redirect lives in `app/(app)/layout.tsx`. `getClaims()` verifies locally, so a revoked session lives until token expiry (deliberate, #168).
@@ -41,5 +43,5 @@
 
 ## Environment still to set up (outside this repo)
 
-- **Mac mini (#1–#5)**: Docker + two Supabase stacks on 127.0.0.1 (`scripts/check-localhost-binding.sh`); `cloudflared` + Access; Ollama (`OLLAMA_HOST=127.0.0.1`, `bge-m3` + a chat model); hardened self-hosted runner; restic backups incl. Vault root key.
-- **Accounts (free tier)**: Cloudflare; SMTP (Resend); Healthchecks.io; S3-compatible bucket (e.g. B2).
+- **Anthropic API key** in Vercel env (`ANTHROPIC_API_KEY`) plus a monthly spend cap in the Console. Needed before #309's LLM step reaches production.
+- **SMTP (Resend, free tier)** for magic links.

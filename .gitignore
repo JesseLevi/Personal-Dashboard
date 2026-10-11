@@ -53,3 +53,7 @@ screenshots/
 # SR Legacy CSV bundles from https://fdc.nal.usda.gov/download-datasets.
 # The derived seed migration is committed; the upstream dump is not.
 /usda/
+
+# Local-only macOS screenshot baselines; the Linux CI job is the gate (#352)
+tests/visual/**/*-darwin.png
+.vercel

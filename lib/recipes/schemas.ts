@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isUnitCode } from "@/lib/recipes/units";
+import { importUrlSchema } from "@/lib/recipes/import/url";
 
 // Validates every server-action input in app/(app)/recepten/actions.ts
 // (#122), same pattern and same split (shape/format here, ownership checked
@@ -36,6 +37,9 @@ const recipeIngredientLine = z.object({
   // migration comment.
   ingredientId: z.uuid().nullable().optional(),
   groupLabel: z.string().trim().min(1).max(100).nullable().optional(),
+  // #312: import flags a line the parser/matcher was unsure about; omitted
+  // (manual edits) means false.
+  needsReview: z.boolean().optional(),
 });
 
 const recipeStepLine = z.object({
@@ -160,14 +164,13 @@ export const moveRecipeSchema = z.object({
   targetIndex: z.int().nonnegative(),
 });
 
-// ADR-0011 §2's "add as new ingredient" / "materialise a picked library
-// ingredient" action (lib/recipes/queries.ts header comment explains why one
-// function covers both). referenceId null = self-added, unlinked ingredient;
-// referenceId set = pick from reference.ingredients, reusing an existing
-// per-user row for that reference_id if one already exists.
+// ADR-0011 §2's "materialise a picked library ingredient" action: a pick from
+// reference.ingredients, reusing an existing per-user row for that
+// reference_id if one exists. #324 (ADR-0020 §5): no self-added rows any
+// more -- referenceId is required; a hand-typed name stays a plain name.
 export const createOwnIngredientSchema = z.object({
   name,
-  referenceId: z.uuid().nullable(),
+  referenceId: z.uuid(),
 });
 
 // #131's IngredientSearchPanel search box. searchIngredientLibrary
@@ -177,4 +180,22 @@ export const createOwnIngredientSchema = z.object({
 // the server-side boundary shouldn't rely on that client behaviour).
 export const searchIngredientsSchema = z.object({
   query: z.string().max(200),
+});
+
+// #316: the user fixed a needs_review import line by picking one of their own
+// ingredients. The alias key comes from the stored recipe_ingredients.name
+// server-side, never from the client.
+export const confirmIngredientMatchSchema = z.object({
+  recipeIngredientId: z.uuid(),
+  ingredientId: z.uuid(),
+});
+
+// #318: "Via link". The URL is also re-validated by safe-fetch (#313).
+export const startRecipeImportSchema = z.object({
+  categoryId: z.uuid(),
+  url: importUrlSchema,
+});
+
+export const retryRecipeImportSchema = z.object({
+  recipeId: z.uuid(),
 });
