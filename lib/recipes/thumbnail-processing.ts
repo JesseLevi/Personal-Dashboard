@@ -1,6 +1,6 @@
 // #174/#171: server-side re-encode pipeline for recipe thumbnails. Recipe
-// photos were being stored full-resolution (avg 790 kB) in the private
-// `recipe-thumbnails` bucket and rendered into a 96x96 CSS slot -- on
+// photos were being stored full-resolution (avg 790 kB) in object
+// storage (now R2, lib/storage) and rendered into a 96x96 CSS slot -- on
 // Supabase's free plan, egress (5 GB/month uncached), not storage, is the
 // binding constraint, so every signed-URL download of a full-res original
 // was paying for pixels nobody sees. This module re-encodes each upload
@@ -40,11 +40,6 @@ import sharp from "sharp";
 
 export const THUMBNAIL_VARIANTS = ["card", "full"] as const;
 export type ThumbnailVariant = (typeof THUMBNAIL_VARIANTS)[number];
-
-/** True for a pre-R2 stem (`<user_id>/<uuid>`, Supabase bucket); false for `<user_id>/recipes/<uuid>` (R2). ADR-0024 §7. */
-export function isLegacyThumbnailStem(stem: string): boolean {
-  return stem.split("/").length === 2;
-}
 
 /** Storage object key for one variant of a thumbnail `stem` (stem convention: ADR-0024 §3). */
 export function thumbnailVariantPath(stem: string, variant: ThumbnailVariant): string {

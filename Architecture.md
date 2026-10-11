@@ -98,7 +98,7 @@ When a component changes in Figma: look up its node-id in `design/figma-map.json
 
 **AI/infra**: `embeddings` (source_table, source_id, chunk_index, `content_hash`, `content_text`, `embedding vector(1024)` — bge-m3, ADR-0006), `jobs` (type, payload jsonb, status enum `pending|running|done|failed`, run_at, attempts, last_error), `agent_signals` (detector, message, payload jsonb, status enum `new|dismissed`), `user_ai_keys` → Vault-backed (ADR-0002).
 
-**Object storage** (ADR-0024): binary uploads live in a private Cloudflare R2 bucket per environment, keys `<user_id>/<module>/…`, reached only through `lib/storage/`. The owning row in Postgres decides ownership. Legacy Supabase bucket `recipe-thumbnails` is retired once its objects are copied to R2.
+**Object storage** (ADR-0024): binary uploads live in a private Cloudflare R2 bucket per environment, keys `<user_id>/<module>/…`, reached only through `lib/storage/`. The owning row in Postgres decides ownership. The legacy Supabase thumbnail bucket is retired (#384).
 
 ### 4.3 Search
 

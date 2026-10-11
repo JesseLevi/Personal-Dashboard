@@ -48,9 +48,9 @@ Merged so far: the unit library (#120 — `lib/recipes/units.ts`, the canonical 
 
 Still open: #121 (thumbnails bucket, parallel), then #126/#127 → #128. `recipes` has no `position` column by design, so the overview ships with dragging disabled — see `docs/HANDOFF.md`. `IngredientSearchPanel` exists but has no caller until #126 wires it to the ingredient name field.
 
-## R2 object storage (epic #359, ADR-0024): 🔶 code merged, hosted setup pending
+## R2 object storage (epic #359, ADR-0024): ✅ live; #384 migration pending deploy
 
-Merged: the `lib/storage/` seam (#361), the delivery helper (#362), recipe thumbnails on R2 with a Supabase read fallback for legacy stems (#363), the backfill script `pnpm backfill:thumbnails-r2` (#364 part 1), and the note-image backend (#338; UI is #339). Docs and backup decision (Option B: no off-site sync) in #365. Nothing has run against real R2 yet. Open: #364 part 2 (drop the `recipe-thumbnails` bucket and policies, remove the fallback, retire the old backfill script, update `check:rls-coverage`), only after the hosted `--apply` is verified and shipped through a user-dispatched `deploy.yml`.
+Merged: the `lib/storage/` seam (#361), the delivery helper (#362), recipe thumbnails on R2 (#363), the note-image backend (#338; UI is #339), and docs and the backup decision (Option B: no off-site sync, #365). The hosted setup is done and the one-time backfill ran (13 recipes, 28 objects); production holds only R2 stems. #384 removes the Supabase thumbnail bucket, its policies, the read fallback and the backfill scripts; its migration (`20261011000001`) takes effect only after a user-dispatched `deploy.yml` (target `migrate` or `both`).
 
 ## R2 setup checklist (#360, ADR-0024 §6) — user runs these, hosted actions
 

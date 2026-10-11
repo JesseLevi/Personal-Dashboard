@@ -6,8 +6,6 @@ vi.mock("server-only", () => ({}));
 const session = vi.hoisted(() => ({ userId: null as string | null }));
 const db = vi.hoisted(() => ({
   rows: [] as { id: string; user_id: string; thumbnail_path: string | null }[],
-  remove: vi.fn<(keys: string[]) => Promise<{ error: { message: string } | null }>>(async () => ({ error: null })),
-  download: vi.fn<(key: string) => Promise<{ data: Blob | null; error: null }>>(async () => ({ data: new Blob(["legacy"]), error: null })),
 }));
 
 vi.mock("@/lib/recipes/session", () => ({ getAuthenticatedUserId: async () => session.userId }));
@@ -29,7 +27,6 @@ vi.mock("@/lib/supabase/server", () => ({
       };
       return q;
     },
-    storage: { from: () => ({ remove: db.remove, download: db.download }) },
   }),
 }));
 
@@ -43,7 +40,6 @@ const B = "7c1d0a52-1b3e-4f0a-8c44-9d2e5b6a7f10";
 const RECIPE = "3f1c2a40-6b7d-4e8a-9c10-5a2b3c4d5e6f";
 const U = "11111111-2222-4333-8444-555555555555";
 const newStem = `${A}/recipes/${U}`;
-const legacyStem = `${A}/${U}`;
 
 let store: ReturnType<typeof createFakeObjectStore>;
 
@@ -52,8 +48,6 @@ beforeEach(() => {
   setObjectStoreForTesting(store);
   session.userId = A;
   db.rows = [];
-  db.remove.mockClear();
-  db.download.mockClear();
 });
 afterEach(() => {
   setObjectStoreForTesting(null);
@@ -120,20 +114,12 @@ describe("storeRecipeThumbnail without configured storage", () => {
 });
 
 describe("deleteRecipeThumbnail", () => {
-  it("removes both R2 variants of a new stem and never touches Supabase", async () => {
+  it("removes both R2 variants of a stem", async () => {
     for (const v of ["card", "full"]) {
       await store.put(`${newStem}_${v}.webp`, new Uint8Array(1), { contentType: "image/webp" });
     }
     await deleteRecipeThumbnail(newStem);
     expect(store.objects.size).toBe(0);
-    expect(db.remove).not.toHaveBeenCalled();
-  });
-
-  it("sends a legacy stem to the Supabase bucket, not R2", async () => {
-    const del = vi.spyOn(store, "delete");
-    await deleteRecipeThumbnail(legacyStem);
-    expect(db.remove).toHaveBeenCalledWith([`${legacyStem}_card.webp`, `${legacyStem}_full.webp`]);
-    expect(del).not.toHaveBeenCalled();
   });
 
   it("ignores a stem outside the caller's prefix and swallows store errors", async () => {
@@ -157,26 +143,16 @@ describe("GET /api/recipe-thumbnail/[recipeId]", () => {
     expect((await call()).status).toBe(401);
   });
 
-  it("404 for another user's recipe, with no redirect or download", async () => {
+  it("404 for another user's recipe, with no redirect", async () => {
     db.rows = [{ id: RECIPE, user_id: B, thumbnail_path: `${B}/recipes/${U}` }];
     expect((await call()).status).toBe(404);
-    expect(db.download).not.toHaveBeenCalled();
   });
 
-  it("302 to the presigned R2 URL for the owner's new stem", async () => {
+  it("302 to the presigned R2 URL for the owner's stem", async () => {
     db.rows = [{ id: RECIPE, user_id: A, thumbnail_path: newStem }];
     const res = await call("full");
     expect(res.status).toBe(302);
     expect(res.headers.get("Location")).toBe(await store.presignGet(`${newStem}_full.webp`));
-    expect(db.download).not.toHaveBeenCalled();
-  });
-
-  it("streams a legacy stem from Supabase with 200", async () => {
-    db.rows = [{ id: RECIPE, user_id: A, thumbnail_path: legacyStem }];
-    const res = await call();
-    expect(res.status).toBe(200);
-    expect(db.download).toHaveBeenCalledWith(`${legacyStem}_card.webp`);
-    expect(res.headers.get("Content-Type")).toBe("image/webp");
   });
 
   it("404 when the recipe has no thumbnail", async () => {

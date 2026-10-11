@@ -396,7 +396,7 @@ export async function deleteRecipe(input: unknown): Promise<ActionResult> {
   if ("error" in auth) return { success: false, error: auth.error };
 
   // #149: read thumbnail_path before deleting the row, so a stored
-  // recipe-thumbnails object doesn't outlive the recipe it belonged to. Not
+  // R2 thumbnail object doesn't outlive the recipe it belonged to. Not
   // fatal if this lookup comes back empty/errored — the delete below still
   // runs and reports its own not-found/generic error the normal way.
   const { data: existing, error: existingError } = await supabase
@@ -526,7 +526,7 @@ export async function searchIngredients(input: unknown): Promise<IngredientSearc
 }
 
 // ============================================================================
-// #121: recipe-thumbnails upload
+// #121: recipe thumbnail upload (R2)
 // ============================================================================
 
 /**

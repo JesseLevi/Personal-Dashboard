@@ -54,8 +54,8 @@ role, not a new colour.
 
 **`recipes.thumbnail_path` is not consulted at all yet — every card renders
 the placeholder unconditionally**, even a recipe with a stored path. Not an
-oversight: #121 (private `recipe-thumbnails` bucket) isn't built, and per
-`Architecture.md` §7 the bucket is private and only ever served via
+oversight: #121's thumbnails weren't wired at the time (they now live in R2, ADR-0024), and per
+`Architecture.md` §7 storage is private and only ever served via
 short-lived signed URLs — never a public URL a client component like
 `ReceptenBoard.tsx` could construct itself. Resolving a real `thumbnail_path`
 into an `imageUrl` needs a server-side signed-URL step that doesn't exist
@@ -107,9 +107,9 @@ that option open, at the cost of shipping some bytes CSS still crops.
 
 **Why `next/image` is deliberately NOT used, on either variant.** Next's
 image optimizer fetches the source URL itself, server-side, with no access
-to the requesting browser's cookies. `recipe-thumbnails` is a private bucket
-(Architecture.md §7) — every read is authenticated per-request via the
-RLS-bound Supabase client (ADR-0002/0003), not a public or signed-forever
+to the requesting browser's cookies. Thumbnails live in a private R2 bucket
+(ADR-0024) — every read is authenticated per-request via the
+same-origin `/api/recipe-thumbnail` route (ADR-0002/0003), not a public or signed-forever
 URL. The optimizer's cookie-less fetch can never authenticate that read, so
 there is no way to hand it a URL it could actually resolve. The two
 alternatives that WOULD let it work — a `service_role` read (bypasses RLS

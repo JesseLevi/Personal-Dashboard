@@ -1,10 +1,8 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import { validateThumbnailFile } from "@/lib/recipes/thumbnail-validation";
 import {
-  isLegacyThumbnailStem,
   renderThumbnailVariants,
   thumbnailVariantPath,
   type ThumbnailVariant,
@@ -13,9 +11,7 @@ import { STORED_OBJECT_CACHE_CONTROL, getObjectStore, objectKey, type ObjectStor
 import type { ActionResult } from "@/lib/recipes/types";
 
 // Thumbnail bytes live in R2 (ADR-0024); `recipes.thumbnail_path` stores the
-// stem `<user_id>/recipes/<uuid>`. Legacy `<user_id>/<uuid>` stems still point
-// at the Supabase bucket until #364 drops it.
-const LEGACY_BUCKET = "recipe-thumbnails";
+// stem `<user_id>/recipes/<uuid>`.
 
 /** Validates and stores a manually picked thumbnail for the signed-in user; returns the stem, never a URL. */
 export async function uploadRecipeThumbnail(file: File): Promise<ActionResult<{ path: string }>> {
@@ -82,13 +78,7 @@ export async function deleteRecipeThumbnail(stem: string): Promise<void> {
 
   const keys = [thumbnailVariantPath(stem, "card"), thumbnailVariantPath(stem, "full")];
   try {
-    if (isLegacyThumbnailStem(stem)) {
-      const supabase = await createSupabaseServerClient();
-      const { error } = await supabase.storage.from(LEGACY_BUCKET).remove(keys);
-      if (error) console.error("[recipes] deleteRecipeThumbnail (legacy) failed:", error.message);
-    } else {
-      await getObjectStore().delete(keys);
-    }
+    await getObjectStore().delete(keys);
   } catch (error) {
     console.error("[recipes] deleteRecipeThumbnail failed:", error instanceof Error ? error.message : error);
   }
