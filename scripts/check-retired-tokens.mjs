@@ -29,7 +29,7 @@ const PREFIXES = [
 // Docs history, generated/raw exports and the list itself are exempt.
 const EXCLUDE = [
   /^design\/retired-tokens\.json$/,
-  /^docs\/(incidents\.md|HANDOFF\.md|phase-log\.md|decisions\/)/,
+  /^docs\/(incidents\.md|HANDOFF\.md|decisions\/)/,
   /^design\/(notes\/|figma-variables\/)/,
   /^(screenshots|test-results|\.claude\/worktrees|node_modules|\.next|\.git)\//,
   /(^|\/)pnpm-lock\.yaml$/,

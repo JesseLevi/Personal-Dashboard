@@ -1,23 +1,12 @@
 # Design notes
 
-`design/figma-map.json` is the machine lookup — Figma component name, code
-path, and node-id only (ADR-0010). It stays small on purpose: every component
-ticket edits it.
+One file per component, named after its code file (`design/notes/Sidebar.md` for `components/organisms/Sidebar.tsx`). A note is the component's **contract**, the things someone changing it must know so they don't undo a deliberate decision:
 
-This directory is the per-component design record: the discrepancy log,
-flagged token gaps, verified pixel measurements, and ticket-by-ticket
-change history that used to live in `figma-map.json`'s `notes` field. One
-file per component, named after its code file
-(`design/notes/<ComponentFile>.md`, e.g. `design/notes/Sidebar.md` for
-`components/organisms/Sidebar.tsx`), each headed with the component's Figma
-name, code path, and node-id.
+- header: source (Figma node, or "Claude-designed (#NNN)") and code path
+- **Anatomy**: composition, and how variant axes map to props, slots and CSS states
+- **Deliberate decisions**: departures from Figma or from the obvious approach, with why
+- **Token gaps and flags**: every `spacing-flag`/`GAP` the code points to
+- **Gotchas**: a11y, interaction, browser and test traps
+- **Open**: `docs/open-questions.md#<slug>` links
 
-The split matters for parallel work: a component PR touches only its own
-note file, so agents building different components never conflict on this
-record the way every ticket used to conflict on the single JSON file.
-
-Note text is a faithful copy of the original changelog entries — preserved
-verbatim, not summarised. Some entries record raw hex values; that's fine
-here (`design/` is not covered by `check:server-only`'s raw-hex grep, which
-only scans `components/`) but raw hex must never be copied from these notes
-into a component file.
+Keep it at about 5 KB or less. When a component changes, rewrite the affected bullets instead of appending; history lives in git and the PRs. Raw hex is allowed here (the gate only scans `components/`), but never copy it into a component. `design/figma-map.json` stays the machine lookup for Figma-sourced components (name, path, node-id only).

@@ -33,6 +33,12 @@ describe("check-doc-budget", () => {
     expect(r.stderr).toContain("don't append");
   });
 
+  it("fails an oversized Architecture.md", () => {
+    const r = run({ "Architecture.md": 20000 });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("Architecture.md");
+  });
+
   it("fails an oversized guide", () => {
     const r = run({ "docs/guides/ticket-workflow.md": 9000 });
     expect(r.status).toBe(1);

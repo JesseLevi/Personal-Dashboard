@@ -1,8 +1,7 @@
 # ADR-0030: `replace_recipe_contents` — the first RPC and the transactional replace pattern
 
-**Status**: Proposed (retroactive; the underlying choice was approved by the user 2026-08-01, issue #149)
+**Status**: Accepted (retroactive record; the underlying choice was approved by the user 2026-08-01, issue #149; ratified 2026-10-11, #412)
 
-**Authored by**: Claude Code (Opus 5.5), at the instruction of ticket #292, as a retroactive write-up. Same provenance caveat as ADR-0011/0013/0014: this is not the architecture layer's own output. The choice below is already shipped and was approved by the user at the time; what is **proposed** here is the written record, for the architecture layer to accept, amend or reject.
 
 **Overlap**: ADR-0015 already cites this function as the precedent for `move_card`/`move_recipe` and records the standing "atomic multi-step write → RPC" pattern. This ADR records the *origin* decision and the replace-shaped specifics; it does not restate ADR-0015.
 

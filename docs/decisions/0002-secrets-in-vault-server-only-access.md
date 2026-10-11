@@ -1,6 +1,6 @@
 # ADR-0002: Per-user secrets in Supabase Vault, accessed server-side only
 
-**Status**: Accepted
+**Status**: Accepted. The Vault pattern still applies to per-user credentials (calendar accounts in Phase 7, mail later). Per-user AI keys are not planned: AI runs on one app-level key with a spend cap (ADR-0018). The server-only access rule now lives in ADR-0033.
 
 ## Context
 

@@ -1,110 +1,29 @@
-# Atom/Tag
+# Tag
+Figma: `Tag` component set · node `3626:4515` · Code: `components/atoms/Tag.tsx`
 
-- **Code:** `components/atoms/Tag.tsx`
-- **Node ID:** `3626:4515`
+## Anatomy
+Inline-flex pill, fixed `h-10`, `px-component-md`, `rounded-control`, `text-base font-semibold`. Figma's `Color` axis maps to a semantic `variant` instead of colour names:
 
-Figma 'Color' axis → semantic CVA variant: Grey→neutral, Red→urgent,
-Blue→medium, Green→low, Yellow→highlight (no priority meaning) (matches
-card priority enum).
+| Figma Color | `variant` |
+|---|---|
+| Grey | `neutral` (default) |
+| Red | `urgent` |
+| Blue | `medium` |
+| Green | `low` |
+| Yellow | `highlight` |
 
-## #97 — priority scale collapses to Low/Medium/Urgent, Medium turns blue
+`urgent` / `medium` / `low` mirror the card `priority` enum; `neutral` and `highlight` sit outside it.
 
-The card `priority` enum drops `mid` down to three values (Low/Medium/
-Urgent), per the Dev Mode annotation on the Priority field (node
-`3779:4856`: "On click open dropdown component with all Priority options:
-Low, Medium, Urgent") plus the user's 2026-07-23 decision that `medium`
-takes over the blue colour `mid` used to have. Mapping change:
+## Deliberate decisions
+- Priority scale is Low / Medium / Urgent (Dev Mode annotation on the Priority field, node `3779:4856`); `medium` took over the blue `mid` used to have, and `mid` was removed outright (tokens `priority-mid(-bg)` deleted, not left dead). (#97)
+- Yellow is kept and named `highlight`, not removed and not given a priority-shaped name (`warning`, `attention`): no product decision has assigned Yellow a business meaning, and such a name would invent one. It is backed by `tag-highlight(-bg)` (orange primitives, the pixels `priority-medium` used to hold). (#97)
+- Padding and radius were converted to tokens after reading `boundVariables` on every `Color` variant: `px-component-md` (`spacing/component/padding-md`), `rounded-control` (`radius/control`). (#205)
+- Anti-squeeze `shrink-0` is consumer-owned, not an atom class: only CardContentIngredient shares a horizontal flex row with growing text (it passes `className="shrink-0"` and `min-w-0` on the sibling). CardContentTicket and CardContentStep stack Tags on their own `flex-wrap` row. Detail in `design/notes/CardContentIngredient.md`. (#222)
 
-| Figma Color | old `variant` | new `variant` |
-|---|---|---|
-| Grey | `neutral` | `neutral` (unchanged) |
-| Red | `urgent` | `urgent` (unchanged) |
-| Yellow | `medium` | `highlight` (no priority meaning) |
-| Blue | `mid` | `medium` |
-| Green | `low` | `low` (unchanged) |
+## Token gaps and flags
+- `gap-2` (8 px) stays raw, marked `spacing-flag:` in the code: the node binds `itemSpacing` to Figma variable `spacing/mini`, which `design/tokens.json` does not mirror. Its value equals `inline-sm` and `component-sm`, but those are different variables and must not be aliased by value. (#205, #218)
+- Figma per-instance sample text (e.g. Blue says "Mid", Grey "300 gr") is leftover canvas content, not a binding to the `Color` axis; never use it as a naming signal.
 
-Re-fetched the node (`3626:4515`) before touching anything, per the ticket's
-own instruction. The component set still has all five `Color` values —
-Grey, Red, Yellow, Blue, Green — so the axis itself hasn't shrunk in Figma,
-only the app's priority semantics layered on top of two of its members.
-(The per-instance sample text — Yellow's says "Medium", Blue's says "Mid",
-Grey's says "300 gr" — is leftover placeholder content from whichever card
-each instance was last dragged onto in the Figma canvas, not a live binding
-to the Color axis; Grey's unrelated "300 gr" is the tell. Not used as a
-naming signal.)
-
-**Yellow decision: kept, renamed `highlight`, not removed.** Grepped every
-consumer (`components/`, `app/`) for `variant="mid"` and for any yellow/
-attention-styled Tag before deciding — none exist; nothing on a card
-currently renders yellow. Kept it anyway rather than dropping it, to stay
-consistent with how every other atom in this codebase mirrors Figma's full
-variant axis regardless of current consumer count (`Atom/Button` keeps all
-five `Style` values the same way). Named it `highlight` rather than a
-priority-shaped word (`warning`, `attention`) deliberately: no product
-decision has assigned Yellow a business meaning yet, and a priority-sounding
-name would silently invent one. `highlight` only describes that it's a
-non-priority, non-neutral accent tag. Token-wise this also means `variant`
-is no longer a 1:1 alias for the priority enum — `neutral` and `highlight`
-both sit outside it, `urgent`/`medium`/`low` inside it — same shape as
-before #97 (`neutral` was already the odd one out).
-
-**`mid` removed, not deprecated-in-place.** No call site outside
-`Tag.stories.tsx` used `variant="mid"`, so there was nothing to migrate.
-`design/tokens.json`'s `priority-mid`/`priority-mid-bg` tokens are deleted
-(not left dead) — `priority-medium`/`priority-medium-bg` now resolve to the
-blue primitives that `priority-mid` used to hold, and a new
-`tag-highlight`/`tag-highlight-bg` pair (orange primitives, the same pixels
-`priority-medium` used to hold) backs `highlight`. Full before/after in
-`docs/incidents.md` ("Token changes — #97").
-
-**Divergence from `Architecture.md` §4.2 and the card `priority` enum**:
-§4.2 still documents `urgent|medium|mid|low` — a deliberate, user-confirmed
-scope gap, not an oversight. Not fixed here (architecture is Fable's layer,
-per `docs/guides/ticket-workflow.md`); the schema ticket updates the actual
-`priority` enum and an ADR should follow. Flagged, not silently resolved.
-
-Visual baselines regenerated scoped (`pnpm test:visual:update -g tag`):
-`tag--all-variants`, `tag--medium`, `tag--low`, `tag--neutral`,
-`tag--urgent`, new `tag--highlight`; `tag--mid`'s baseline PNG deleted (no
-story renders it anymore). Out of scope for this ticket, flagged for
-awareness: `Card`'s `all-content-types` story and `CardContentTicket`'s
-stories also render `variant="medium"` Tags, so their existing baselines
-now show a colour mismatch (blue vs. the old orange) next time
-`pnpm test:visual` runs full — not regenerated here per the ticket's scoped
-instruction, needs a follow-up pass.
-
-## TICKET #205 (2026-08-12): radius/spacing tokens
-
-Measured via `figma_execute`/`boundVariables` on each `Color=*` variant of
-the component set (3626:4515), not inferred from pixels. `px-3` (12px) →
-`px-component-md` (`paddingLeft`/`paddingRight` both bind
-`spacing/component/padding-md`). `rounded-lg` (8px) → `rounded-control`
-(`topLeftRadius` etc. bind `radius/control`).
-
-**Flagged gap, left unconverted:** `gap-2` (8px, `itemSpacing`) binds
-`spacing/mini` — a Figma variable with no counterpart anywhere in
-`design/tokens.json`'s Semantics/Responsive collection. Its value happens to
-equal both `inline-sm` and `component-sm`, which is exactly why it is NOT
-aliased onto either (#205's own core rule: read the binding, never the
-value) — `spacing/mini` is a distinct variable this pipeline doesn't mirror.
-Stays a raw `gap-2` until a future token-sync pass adds the variable or a
-designer rebinds it.
-
-## TICKET #218 (2026-08-12): spacing gate
-
-`scripts/check-raw-spacing.sh` now enforces an explicit `spacing-flag:`
-marker. Added to the existing comment above; no reasoning changed.
-
-## TICKET #222 point 6 (2026-08-16): consumer-owned `shrink-0`, atom untouched
-
-`CardContentIngredient.tsx`'s content row shares one horizontal flex line
-between the ingredient name and this atom; with neither protected, a long
-name's larger content-basis squeezed the Tag until its own text wrapped
-inside its fixed `h-10` — reported as a two-line Tag. Fixed at the call site
-(`<Tag className="shrink-0">` + `min-w-0` on the sibling `<p>`), not here,
-after checking this atom's other real consumers first: `CardContentTicket.tsx`
-and `CardContentStep.tsx` both stack their Tag(s) on their own `flex-wrap`
-row *below* the text (`flex-col` + gap), never sharing a horizontal flex row
-with growing text the way `CardContentIngredient.tsx` does. The squeeze is a
-property of that one layout, not of this atom, so no base class changed here.
-Full reasoning in `design/notes/CardContentIngredient.md`.
+## Gotchas
+- `Architecture.md` section 4.2 still documents `urgent|medium|mid|low`; a user-confirmed scope gap (architecture is not this layer). Flagged, not resolved here. (#97)
+- Card `all-content-types` and `CardContentTicket` stories render `variant="medium"` Tags; their visual baselines show blue instead of the old orange until regenerated. (#97)
