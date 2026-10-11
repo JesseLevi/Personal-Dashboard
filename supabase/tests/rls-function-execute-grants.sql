@@ -5,7 +5,7 @@
 -- rls-move-note-rpc.sql and rls-recipe_step_ingredients.sql.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(5);
+select plan(7);
 
 -- Every non-extension function postgres owns in public.
 create temporary view own_public_functions as
@@ -22,9 +22,17 @@ create temporary view own_public_functions as
 
 select is(
   (select array_agg(sig order by sig) from own_public_functions
-   where has_function_privilege('anon', oid, 'EXECUTE')),
+   where has_function_privilege('anon', oid, 'EXECUTE')
+     and sig not like '%login_greeting_name%'),
   null,
-  'anon has EXECUTE on none of our public functions'
+  'anon has EXECUTE on none of our public functions (bar the ADR-0031 login RPC)'
+);
+
+-- ADR-0031 (#407): the one deliberate exception, anon only.
+select ok(
+  has_function_privilege('anon', 'public.login_greeting_name(text, text)', 'EXECUTE')
+  and not has_function_privilege('authenticated', 'public.login_greeting_name(text, text)', 'EXECUTE'),
+  'login_greeting_name is executable by anon and not by authenticated'
 );
 
 select is(
@@ -52,6 +60,15 @@ language sql as $$ select 1 $$;
 select ok(
   not has_function_privilege('anon', 'public.zz_test_future_function()', 'EXECUTE'),
   'a newly created public function is not executable by anon'
+);
+
+select ok(
+  not exists (
+    select 1 from pg_proc p, aclexplode(p.proacl) a
+    where p.proname = 'login_greeting_name' and p.pronamespace = 'public'::regnamespace
+      and a.grantee = 0
+  ),
+  'login_greeting_name is not granted to PUBLIC'
 );
 
 set local role anon;
