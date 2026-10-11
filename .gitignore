@@ -56,3 +56,4 @@ screenshots/
 
 # Local-only macOS screenshot baselines; the Linux CI job is the gate (#352)
 tests/visual/**/*-darwin.png
+.vercel

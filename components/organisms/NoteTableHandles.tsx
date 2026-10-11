@@ -12,7 +12,7 @@ import { canMoveColumn, canMoveRow, moveTableLine, type MoveKind, type TableInfo
 // design: Claude-designed on request (#387)
 /**
  * Grip handles for reordering table rows (left edge) and columns (top edge),
- * shown while a fine pointer is over a table. A grip is dragged with the
+ * shown for the hovered cell's row and column while a fine pointer is over a table. A grip is dragged with the
  * pointer; the drop is one `moveTableLine` call. Keyboard and touch use the
  * move commands in TABLE_COMMANDS. Geometry is measured at runtime and handed
  * to Tailwind as CSS custom properties. Record: design/notes/NoteTableHandles.md.
@@ -106,12 +106,18 @@ export function NoteTableHandles({ editor }: NoteTableHandlesProps) {
   );
   const [layout, setLayout] = useState<Layout | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
+  const [hover, setHover] = useState<{ row: number; col: number } | null>(null);
+  const hoverRef = useRef<{ row: number; col: number } | null>(null);
   const layoutRef = useRef<Layout | null>(null);
   const dragRef = useRef<Drag | null>(null);
 
   const show = useCallback((next: Layout | null) => {
     layoutRef.current = next;
     setLayout(next);
+    if (!next) {
+      hoverRef.current = null;
+      setHover(null);
+    }
   }, []);
 
   const setDragState = useCallback((next: Drag | null) => {
@@ -132,6 +138,14 @@ export function NoteTableHandles({ editor }: NoteTableHandlesProps) {
         return;
       }
       if (layoutRef.current?.table !== table) show(measureTable(table));
+      // Only the grips of the hovered cell's row and column show.
+      const cell = element?.closest<HTMLTableCellElement>("td, th");
+      const row = cell?.parentElement instanceof HTMLTableRowElement ? cell.parentElement.rowIndex : -1;
+      if (!cell || row < 0) return;
+      const prev = hoverRef.current;
+      if (prev?.row === row && prev.col === cell.cellIndex) return;
+      hoverRef.current = { row, col: cell.cellIndex };
+      setHover(hoverRef.current);
     }
     function remeasure() {
       const current = layoutRef.current;
@@ -230,7 +244,7 @@ export function NoteTableHandles({ editor }: NoteTableHandlesProps) {
     <div className="pointer-events-none fixed inset-0">
       {rowsMovable &&
         rows.map((row, index) =>
-          layout.header && index === 0 ? null : (
+          (layout.header && index === 0) || (hover?.row !== index && !(drag?.kind === "row" && drag.from === index)) ? null : (
             <button
               key={`row-${index}`}
               type="button"
@@ -254,6 +268,7 @@ export function NoteTableHandles({ editor }: NoteTableHandlesProps) {
         cols.map((col, index) => {
           const center = (col.left + col.right) / 2;
           if (center < layout.left || center > layout.right) return null;
+          if (hover?.col !== index && !(drag?.kind === "column" && drag.from === index)) return null;
           return (
             <button
               key={`col-${index}`}

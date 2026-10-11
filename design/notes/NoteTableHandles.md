@@ -25,8 +25,9 @@ step. Table menu background: `design/notes/NoteEditor.md` (#330).
 
 ## Handles (`components/organisms/NoteTableHandles.tsx`)
 
-- Desktop fine pointer only. Shown while the pointer is over a table in the
-  editor (one document `pointermove` listener, handles stay while over a grip).
+- Desktop fine pointer only. Only the grips of the hovered cell's row and
+  column show, not all at once (one document `pointermove` listener; the
+  last hovered cell stays while the pointer is over a grip or a dragged grip).
 - Row grips straddle the table's left edge (`GripVertical`), column grips
   straddle the top edge (`GripHorizontal`). Straddling, not in the gutter,
   because the block drag handle (#335) already owns the gutter beside row 0.
