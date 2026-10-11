@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getBacklinks, getNote, resolveNoteTitles } from "@/lib/notes/queries";
 import { extractNoteLinkIds } from "@/lib/notes/document";
@@ -10,6 +11,11 @@ import { NoteEditor } from "./NoteEditor";
 // `notFound()` covers both "note doesn't exist" and "not this user's note",
 // same precedent as app/(app)/recepten/[recipeId]/page.tsx. Full reasoning:
 // design/notes/NoteEditor.md.
+// #390: same manifest as /notities, so adding a single note to the home screen lands in Notities.
+export const metadata: Metadata = {
+  manifest: "/notities/manifest.webmanifest",
+};
+
 export default async function NoteEditorRoute({
   params,
 }: {
