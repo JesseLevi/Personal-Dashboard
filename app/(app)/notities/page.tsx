@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { loadNotitiesColumnCounts, loadNotitiesPageData } from "./notes-data";
@@ -11,10 +12,12 @@ import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 // notes-data.ts) en aan `NotitiesBoard.tsx` ("use client") doorgeeft.
 // `?sort=`/`?q=` worden hier gelezen (zelfde patroon als app/(app)/te-doen/
 // page.tsx) omdat het los staat van de trage databasefetch hieronder --
-// alleen die laatste zit in <Suspense>. Geen `metadata.manifest` hier:
-// #223's vervolg bouwde alleen Te-Doen/Recepten/Winkelmand een eigen Web App
-// Manifest; Notities heeft nog geen route.ts daarvoor (wel al een
-// favicon/apple-icon, #245) en dat toevoegen staat niet in dit ticket.
+// alleen die laatste zit in <Suspense>. Eigen Web App Manifest (#390): zie
+// app/(app)/winkelmand/page.tsx en design/notes/AppShell.md.
+export const metadata: Metadata = {
+  manifest: "/notities/manifest.webmanifest",
+};
+
 async function NotitiesPageContent({
   sortParam,
   queryParam,
