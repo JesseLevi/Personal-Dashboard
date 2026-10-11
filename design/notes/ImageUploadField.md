@@ -3,7 +3,7 @@
 - **Code:** `components/molecules/ImageUploadField.tsx`
 - **Node ID:** `3968:11192` (desktop, "Add recipi/Desktop" #3717:2493) / `3953:9875` (mobile, "Add recipi/Mobile" #3717:2844) — both are the same `Atom/Input-field` instance (component `3705:4386`, set `3705:4402`, already mapped as `Atom/Input-field`), not a separate Figma component. `figma-map.json`'s `molecules_composed` section (not `molecules`) reflects that: there is no distinct componentId to point at, only a specific instance's props.
 
-Built #121 (`recipe-thumbnails` storage ticket). Instance properties fetched from both breakpoints: `Leading-icon: true` (`Icon/Image`, confirmed by rendering the candidate lucide `Image` export and comparing its path against the Figma glyph — rounded square, circle "sun", mountain triangle — before adding it to `Icon.tsx`'s union), `Trekking-icon: true` (`Icon/Plus`, already mapped), `Content: "Selecteer afbeelding"`, `Title: true`, `Field: "Personen"`.
+Built #121 (recipe thumbnail storage ticket; stored in R2 since ADR-0024). Instance properties fetched from both breakpoints: `Leading-icon: true` (`Icon/Image`, confirmed by rendering the candidate lucide `Image` export and comparing its path against the Figma glyph — rounded square, circle "sun", mountain triangle — before adding it to `Icon.tsx`'s union), `Trekking-icon: true` (`Icon/Plus`, already mapped), `Content: "Selecteer afbeelding"`, `Title: true`, `Field: "Personen"`.
 
 ## DEVIATION flagged — the bound Title text is wrong, not rendered
 

@@ -4,15 +4,13 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import {
   THUMBNAIL_VARIANTS,
-  isLegacyThumbnailStem,
   thumbnailVariantPath,
   type ThumbnailVariant,
 } from "@/lib/recipes/thumbnail-processing";
 import { redirectToStoredObject } from "@/lib/storage";
 
 // Same-origin thumbnail URL (`?size=...&v=<updated_at>`) for a plain <img>
-// (never next/image). New stems: 302 to a presigned R2 URL (ADR-0024 §5).
-// Legacy stems: streamed from the Supabase bucket until #364 removes it.
+// (never next/image). 302 to a presigned R2 URL (ADR-0024 §5).
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ recipeId: string }> },
@@ -31,7 +29,7 @@ export async function GET(
   const userId = await getAuthenticatedUserId();
   if (!userId) return new NextResponse(null, { status: 401 });
 
-  // RLS-bound lookup, run once; the R2 branch reuses it via ownerCheck.
+  // RLS-bound lookup, run once; reused via ownerCheck.
   const { data: recipe, error: recipeError } = await supabase
     .from("recipes")
     .select("thumbnail_path")
@@ -49,27 +47,8 @@ export async function GET(
     return new NextResponse(null, { status: 404 });
   }
 
-  if (!isLegacyThumbnailStem(stem)) {
-    return redirectToStoredObject({
-      userId,
-      ownerCheck: async () => thumbnailVariantPath(stem, size),
-    });
-  }
-
-  const { data: file, error: downloadError } = await supabase.storage
-    .from("recipe-thumbnails")
-    .download(thumbnailVariantPath(stem, size));
-
-  if (downloadError || !file) {
-    console.error("[recipes] recipe-thumbnail route download failed:", downloadError?.message);
-    return new NextResponse(null, { status: 404 });
-  }
-
-  return new NextResponse(file, {
-    status: 200,
-    headers: {
-      "Content-Type": "image/webp",
-      "Cache-Control": "private, max-age=86400, immutable",
-    },
+  return redirectToStoredObject({
+    userId,
+    ownerCheck: async () => thumbnailVariantPath(stem, size),
   });
 }

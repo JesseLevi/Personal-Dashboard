@@ -16,7 +16,6 @@
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "worker": "tsx worker/index.ts",
-    "backfill:thumbnails-r2": "tsx --conditions react-server --env-file=.env scripts/backfill-recipe-thumbnails-to-r2.ts",
     "db:reset": "supabase db reset",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --local --schema public,reference > lib/database.types.ts",

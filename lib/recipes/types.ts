@@ -79,7 +79,7 @@ export type IngredientSearchResult =
 // no recipes equivalent in this ticket's scope (no cross-category move
 // action exists yet), so it isn't copied over unused.
 // "invalid-file-type"/"file-too-large"/"upload-failed" are #121's
-// recipe-thumbnails upload additions (lib/recipes/thumbnail-validation.ts /
+// recipe thumbnail (R2) upload additions (lib/recipes/thumbnail-validation.ts /
 // thumbnails.ts) -- kept in this shared union rather than a second
 // thumbnail-specific ActionResult, same reasoning as the rest of this file.
 // "invalid-image" is #174/#171's addition: unlike the other thumbnail

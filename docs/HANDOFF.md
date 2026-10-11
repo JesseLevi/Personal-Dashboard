@@ -14,7 +14,7 @@
 - Phase 7+ (Agenda, AI) is backlog. #9–#11 need real accounts: don't start unprompted.
 - **Mac mini/Ollama is shelved (ADR-0018)**: Vercel + Supabase Cloud is the target, and AI goes through hosted APIs behind `lib/ai/`. #1–#5 are obsolete.
 - **#309 (recipe via URL)**: pipeline (#313–#317) and UI (#318, in review) are built. Follow-up on branch `fix/309-import-nevo-linking`: LLM search terms + best-fit NEVO choice, imported amounts kept with an estimated weight per unit stored as the user's override, translation into the user's locale, Haiku 5.5, add menu portalled (ADR-0019 §3/§4 amended). Nutrition now sums the recognised rows, with a counted/total line and "niet meegeteld" markers; the edit panel shows each row's NEVO link. Prompts are untested against the live model. Before it works on hosted: dispatch `deploy.yml` with the #312 migrations (user decision), set `ANTHROPIC_API_KEY`. `icon--all-icons` baseline needs regenerating (Globe added). Not yet exercised against a live deploy: `after()` keeping the session (checked in Next source only).
-- **R2 object storage (epic #359, ADR-0024)**: code merged (#360–#364 part 1, #338; docs #365); thumbnails read R2, then the Supabase bucket. Nothing has run against real R2. Next, user: run #360's checklist (`docs/phase-log.md`) **before the next production deploy**, else uploads/imports return `upload-failed`; then the backfill (dry run, then `--apply`); then #364 part 2 (drop bucket, remove fallback).
+- **R2 object storage (epic #359, ADR-0024)**: live in production, thumbnails served from R2. #384 (drop the Supabase thumbnail bucket and fallback) is in review; its migration only applies after the user dispatches `deploy.yml` (target `migrate` or `both`).
 
 ## Next
 
@@ -45,4 +45,3 @@
 
 - **Anthropic API key** in Vercel env (`ANTHROPIC_API_KEY`) plus a monthly spend cap in the Console. Needed before #309's LLM step reaches production.
 - **SMTP (Resend, free tier)** for magic links.
-- **Cloudflare R2** (`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`) in Vercel env: buckets, scoped tokens (#360 checklist).
