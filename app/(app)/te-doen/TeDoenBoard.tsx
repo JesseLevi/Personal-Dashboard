@@ -43,7 +43,7 @@ export function TeDoenBoard({ board, dragDisabled }: TeDoenBoardProps) {
   const { exiting } = useTeDoenBoardSwitch();
   const reduced = usePrefersReducedMotion();
 
-  // #413: enter fade only when this mount follows a board switch, and only
+  // Enter fade only when this mount follows a board switch, and only
   // until it has played (a lingering animation fill keeps a filter on the
   // columns, which breaks drag overlays).
   const [entering, setEntering] = useState(() => wantsBoardEnter(board.id));

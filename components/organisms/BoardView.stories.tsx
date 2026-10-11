@@ -194,7 +194,7 @@ export const LastColumnMuted = () => (
   />
 );
 
-// #413: board switch. Exit fade on the current board, then the other board
+// Board switch. Exit fade on the current board, then the other board
 // mounts with the enter fade; the motion is dropped once it has played.
 export const BoardSwitch = () => {
   const [board, setBoard] = useState<"tickets" | "recipes">("tickets");

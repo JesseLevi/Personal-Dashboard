@@ -110,7 +110,7 @@ export function LoginForm({
     initialState?.magicLink ?? IDLE_MAGIC_LINK_STATE,
   );
 
-  // Exit (#413): the session cookie is already set when the action returns success.
+  // Exit: the session cookie is already set when the action returns success.
   const exiting = passwordState.status === "success";
   // React resets the form once the action settles; seeding defaultValue keeps the dots visible while they blur out.
   const [typedPassword, setTypedPassword] = useState("");

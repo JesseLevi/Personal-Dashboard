@@ -21,7 +21,7 @@
   }
 }
 
-/* #413 blur fade (lib/ui/blur-fade.ts, design/notes/BlurFade.md). Duration,
+/* Blur fade (lib/ui/blur-fade.ts, design/notes/BlurFade.md). Duration,
    easing and stagger are local picks (no motion spec in Figma, no token
    namespace for them); keep BLUR_FADE in blur-fade.ts in step. */
 :root {

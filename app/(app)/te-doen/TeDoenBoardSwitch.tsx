@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { useRouter } from "next/navigation";
 import { blurOutTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 
-// #413: board switch = exit fade, then navigation, then enter fade on the
+// Board switch = exit fade, then navigation, then enter fade on the
 // new board's mount. Reasoning: design/notes/TeDoenBoard.md.
 interface TeDoenBoardSwitchApi {
   /** True from the click until the page shows another board; the columns stay hidden. */

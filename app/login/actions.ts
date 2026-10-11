@@ -9,7 +9,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 // `useActionState` shape `(prevState, formData) => Promise<State>` so
 // LoginForm.tsx's two-step animation can keep its step client-side across a
 // submission instead of losing it on a full navigation. Password success
-// returns `{ status: "success" }` (#413): LoginForm plays its exit animation,
+// returns `{ status: "success" }`: LoginForm plays its exit animation,
 // then navigates, so the session cookie is already set when it does.
 
 export type PasswordLoginState =
