@@ -122,7 +122,7 @@ export function NoteEditor({ note, linkTitles, backlinks }: NoteEditorProps) {
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        class: "text-base font-semibold text-text-primary focus:outline-none",
+        class: "text-base font-medium text-text-primary focus:outline-none",
       },
     },
     // #342: the heading ids a note gets when it opens are not a content change, so
@@ -224,12 +224,7 @@ export function NoteEditor({ note, linkTitles, backlinks }: NoteEditorProps) {
             labels={{ prompt: t("deleteConfirmLabel"), cancel: t("cancelLabel"), confirm: t("deleteConfirmButtonLabel"), deleting: t("deletingLabel") }}
           />
         ) : (
-          <div className="flex items-center gap-inline-sm">
-            <NoteMarkdownMenu onCopy={handleCopyMarkdown} onExport={handleExportMarkdown} disabled={!editor} />
-            <Button variant="destructive" icon="Trash" onClick={() => askDelete()}>
-              {t("deleteLabel")}
-            </Button>
-          </div>
+          <NoteMarkdownMenu onCopy={handleCopyMarkdown} onExport={handleExportMarkdown} onDelete={() => askDelete()} disabled={!editor} />
         )}
       </div>
 

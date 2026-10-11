@@ -86,7 +86,7 @@ html {
 
 /* #263/#329: TipTap content typography. Tailwind's preflight resets h1-h6 to
    `inherit` and strips list markers, and NoteEditor.tsx's editor root applies
-   `text-base font-semibold` (the measured Figma body style), so every block
+   `text-base font-medium` (#386; Figma measured font-semibold), so every block
    type needs its own rule. Claude-designed on request (#329): sizes and
    weights are Tailwind's own type scale via @apply (no font-size token
    exists, docs/open-questions.md#notes-prose-typography-not-designed);

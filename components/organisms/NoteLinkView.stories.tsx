@@ -26,7 +26,7 @@ function NoteLinkDoc({ content, titles }: { content: TipTapDocument; titles: Rec
     content,
     immediatelyRender: false,
     editorProps: {
-      attributes: { class: "text-base font-semibold text-text-primary focus:outline-none" },
+      attributes: { class: "text-base font-medium text-text-primary focus:outline-none" },
     },
   });
   return (

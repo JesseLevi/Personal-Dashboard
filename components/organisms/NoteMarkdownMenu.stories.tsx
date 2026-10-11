@@ -1,9 +1,8 @@
 // design: Claude-designed on request (#337)
 import { useEffect, useRef } from "react";
-import { Button } from "@/components/atoms/Button";
 import { NoteMarkdownMenu } from "./NoteMarkdownMenu";
 
-// Mirrors the note header: the menu button sits right-aligned next to "Verwijderen".
+// Mirrors the note header: the menu button sits right-aligned in the header.
 function Demo({ open }: { open: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -13,10 +12,7 @@ function Demo({ open }: { open: boolean }) {
   }, [open]);
   return (
     <div ref={ref} className="flex min-h-48 w-full items-start justify-end gap-4">
-      <NoteMarkdownMenu onCopy={() => {}} onExport={() => {}} />
-      <Button variant="destructive" icon="Trash">
-        Delete
-      </Button>
+      <NoteMarkdownMenu onCopy={() => {}} onExport={() => {}} onDelete={() => {}} />
     </div>
   );
 }

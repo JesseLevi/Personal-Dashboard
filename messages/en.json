@@ -543,7 +543,6 @@
     "noteEditor": {
       "backLabel": "Back to notes",
       "placeholder": "Type '/' for options",
-      "deleteLabel": "Delete",
       "deleteConfirmLabel": "Are you sure?",
       "deleteConfirmButtonLabel": "Yes, delete",
       "deletingLabel": "Deleting...",
@@ -570,12 +569,13 @@
       "linkLabel": "Link",
       "superscriptLabel": "Superscript",
       "subscriptLabel": "Subscript",
-      "alignLeftLabel": "Align left",
-      "alignCenterLabel": "Align center",
-      "alignRightLabel": "Align right",
-      "alignJustifyLabel": "Align justify",
+      "alignLabel": "Text alignment",
       "imageLabel": "Image",
       "options": {
+        "alignLeft": "Align left",
+        "alignCenter": "Align center",
+        "alignRight": "Align right",
+        "alignJustify": "Align justify",
         "paragraph": "Text",
         "heading1": "Heading 1",
         "heading2": "Heading 2",
@@ -818,6 +818,7 @@
       "menuLabel": "More options",
       "copy": "Copy as Markdown",
       "export": "Export as .md",
+      "delete": "Delete",
       "copied": "Copied as Markdown",
       "copyFailed": "Could not copy",
       "untitled": "Untitled note"

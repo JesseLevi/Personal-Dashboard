@@ -109,7 +109,7 @@ export function EditingBarOverflow({ menuLabel, sections, onDismiss, tabIndex, o
             <Dropdown role="menu" aria-label={menuLabel} className="shadow-sm">
               {sections.map((section, sectionIndex) => (
                 <Fragment key={sectionIndex}>
-                  {sectionIndex > 0 && <div role="separator" className="h-px w-full bg-stroke-lines" />}
+                  {sectionIndex > 0 && <div role="separator" className="-mx-component-xs h-px w-auto shrink-0 bg-stroke-lines" />}
                   {section.map((item) => (
                     <Button
                       key={item.id}

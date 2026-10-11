@@ -154,6 +154,7 @@ export function NoteBubbleMenu({ editor }: NoteBubbleMenuProps) {
           currentLabel={t(`options.${blockType?.id ?? "paragraph"}`)}
           options={BLOCK_TYPE_MENU.options.map((option) => ({
             id: option.id,
+            icon: option.icon,
             label: t(`options.${option.id}`),
             active: option.id === state?.blockType,
             onSelect: () => option.run(editor),
