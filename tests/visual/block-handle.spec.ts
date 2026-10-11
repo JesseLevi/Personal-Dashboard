@@ -84,6 +84,7 @@ test("dragging the handle reorders a block and undo restores it", async ({ page 
   await page.mouse.up();
   const after = await blockTexts(page);
   expect(after).toEqual([before[1], before[0], before[2], before[3]]);
+  await expect(page.locator(".tiptap")).toBeFocused();
   await page.keyboard.press("ControlOrMeta+z");
   await expect.poll(() => blockTexts(page)).toEqual(before);
 });
