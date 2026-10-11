@@ -133,10 +133,11 @@ Filed: `docs/open-questions.md#notes-delete-has-no-confirmation`.
 | `Main` | `paddingLeft`/`Top`/`Right`/`Bottom` | `spacing/layout/page-padding-*` | Already supplied by `AppShellNav.tsx`'s `<main>` (left/top/bottom) + this page's own `pr-page-right-equal` (right) — same split every other page in this route group uses |
 | Back/Delete buttons | padding, radius, fill | `spacing/component/padding-sm`, `radius/control`, `color/surface/{secondary,highlight/red}/default` | Already `Button.tsx`'s own `variant="filled"`/`"destructive"` classes — no new binding |
 | Mobile `Content` (`3978:14850`) | `itemSpacing` | `spacing/stack/stack-md` (12px) | Not reproduced — the wrapper renders a single child (`<EditorContent>`), so a gap between siblings has no visual effect; recorded for completeness only |
-| Placeholder text (`4067:20021`/`4067:20017`) | `fills`, `fontSize`, `fontWeight`, `lineHeight`, `fontFamily` | `color/text/base/placeholder`, `font/size/base`, `font/weight/semibold`, `font/leading/6`, `font/family/sans` | `text-base font-semibold` (Tailwind's built-in pairing, `font/leading/6` = `text-base`'s default line-height) + `text-text-placeholder`; the CSS placeholder rule in `app/globals.css` reads `var(--color-text-placeholder)` directly since it's outside Tailwind's utility layer |
+| Placeholder text (`4067:20021`/`4067:20017`) | `fills`, `fontSize`, `fontWeight`, `lineHeight`, `fontFamily` | `color/text/base/placeholder`, `font/size/base`, `font/weight/semibold`, `font/leading/6`, `font/family/sans` | `text-base font-semibold` (Tailwind's built-in pairing, `font/leading/6` = `text-base`'s default line-height; the typed text is `font-medium` since #386) + `text-text-placeholder`; the CSS placeholder rule in `app/globals.css` reads `var(--color-text-placeholder)` directly since it's outside Tailwind's utility layer |
 
-The editor's real (typed) text reuses the same `text-base font-semibold`
-pairing with `text-text-primary` instead of the placeholder token — no
+The editor's real (typed) text uses `text-base font-medium` (#386; was
+`font-semibold`, headings and bold marks keep their own weights) with
+the same size with `text-text-primary` instead of the placeholder token — no
 separate Figma node draws "typed" text (the frame only ever shows the empty
 placeholder state), so this is the direct, undesigned-but-obvious
 continuation of the placeholder's own type scale, not a separate
@@ -246,7 +247,7 @@ extension was broken, missing, or mis-wired.** The actual gap: `app/
 globals.css` had exactly one rule for editor content (the `#233`
 placeholder pseudo-element) and nothing else — Tailwind's preflight resets
 every heading to `inherit` font-size and strips `ul`/`ol`'s `list-style` and
-padding, and this page's own editor root (`text-base font-semibold
+padding, and this page's own editor root (`text-base font-medium
 text-text-primary`, above) applies one flat size/weight to the whole
 document regardless of node type. A toggled `<h1>`, `<li>`, `<blockquote>`
 and `<pre>` all rendered pixel-identical to a plain `<p>` — the state was
@@ -267,7 +268,7 @@ tinted `<code>` background) — so every ruling below states the token used
 and, where none exists, why:
 
 - **`h1`/`h2`/`h3` — distinguished by size only**, not weight: the editor
-  root is already `font-semibold`, so re-bolding headings would add nothing.
+  root is a flat `font-medium`; headings carry their own bold/extrabold weight in `globals.css`.
   `h1: 1.25rem` deliberately matches `PageHeader.tsx`'s own `<h1
   className="text-xl ...">` — the one heading size already established
   elsewhere in this app. `h2`/`h3` step down (`1.125rem`/`1rem`, Tailwind's
@@ -677,14 +678,16 @@ is only a paste/copy/export format.
   fixture in `FIXTURES` (test). Superscript/subscript export as `<sup>`/`<sub>`
   (one-way: read back as plain text). Text alignment, table column widths and
   cell spans have no markdown form and are lost on export.
-- **Menu** (`NoteMarkdownMenu`): Ellipsis button left of "Verwijderen", same
+- **Menu** (`NoteMarkdownMenu`): Ellipsis button in the header, same
   panel mechanics as `TableMenu` (`usePopoverPanel`, `role="menu"`, arrows /
   Home / End, Escape and Tab close, focus returns to the trigger). Copy shows a
   3 s `role="status"` line under the header. Export filename: derived title,
   sanitised by `markdownFilename` (separators and reserved characters
   removed, no leading dots, 100 chars, `Naamloze notitie` when empty).
-- **Flagged gap**: no `Copy`/`Download` glyph in the icon registry (adding one
-  moves `icon--all-icons`), so the rows are text-only.
+- **Icons and delete (#386)**: Copy as Markdown = `Copy`, Export = `Download`
+  (registered in `Icon.tsx`). "Verwijderen" is the last row after a separator,
+  `text-priority-urgent` + `Trash`, and starts the unchanged inline
+  `DeleteConfirm` flow (the header no longer has a separate delete button).
 
 ## #335 — block drag handle and block menu (Claude-designed on request)
 

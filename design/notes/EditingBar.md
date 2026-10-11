@@ -385,7 +385,7 @@ bubble menu (#331) and slash menu (#332) the 20-button bar duplicated most of
 what is now one gesture away. Stories: `AtRest`, `WithActiveButton`,
 `OverflowOpen`, `Mobile`, `MobileInTable` (+ the two #329 menu stories).
 
-### Desktop grouping: 2 | 3 | 3 | More (nine roving stops)
+### Desktop grouping: 2 | 3 | 3 | align | image | More (#386 order, eleven roving stops)
 
 1. **Undo, redo.** History has no other surface and is shortcut-poor on touch.
 2. **Block type, list, table.** The structure group. Each is a menu or picker
@@ -396,10 +396,11 @@ what is now one gesture away. Stories: `AtRest`, `WithActiveButton`,
    duplicate the bubble menu on purpose: the bubble needs a selection, the
    bar works before typing and is the discoverable list. Link keeps opening
    the shared LinkPopover (`requestLinkPopover`).
-4. **More** (`Ellipsis`, `EditingBarOverflow`). Three separated sections:
-   *insert* (quote, code block, divider; filtered from `SLASH_ITEMS`, labels
-   from `components.slashMenu.items`), *format* (underline, strikethrough,
-   highlight, inline code, superscript, subscript) and *align* (4). Rarely used
+4. **More** (`Ellipsis`, `EditingBarOverflow`, always the last item). Two
+   separated sections: *insert* (quote, code block, divider; filtered from
+   `SLASH_ITEMS`, labels from `components.slashMenu.items`) and *format*
+   (underline, strikethrough, highlight, inline code, superscript, subscript;
+   alignment and image moved onto the bar in #386). Rarely used
    on a typical note; the format rows are also in the bubble on desktop but
    mobile has no bubble, so they must live here. Rows are `menuitemcheckbox`
    with `aria-checked` and a trailing `Check`; divider is a plain `menuitem`.
@@ -408,7 +409,7 @@ what is now one gesture away. Stories: `AtRest`, `WithActiveButton`,
 
 ### Mobile (`< md`, or `mobile` prop in stories)
 
-- Default: the same nine items; the bar scrolls horizontally if narrow.
+- Default: the same eleven items; the bar scrolls horizontally if narrow.
 - **Cursor in a table:** the bar swaps to *Back* (`ArrowLeft`) | the ten
   `TABLE_COMMANDS` (`lib/notes/table-commands.ts`, #330) as icon + text buttons
   (the icons repeat: four `Plus`, two `Minus`, so text is required). Disabled
@@ -424,7 +425,7 @@ what is now one gesture away. Stories: `AtRest`, `WithActiveButton`,
 ### Keyboard
 
 One toolbar, one tab stop. Left/Right/Home/End rove over `[data-toolbar-item]`
-**counted from the DOM**, so the nine-button bar, the table bar and the overflow
+**counted from the DOM**, so the default bar, the table bar and the overflow
 trigger all work with the same handler; the stop resets to the first item when
 the mode swaps. Overflow: Enter/Space/click or ArrowUp/Down open, focus lands on
 the first row, arrows/Home/End move, Escape/Tab/outside click close and focus
@@ -442,19 +443,36 @@ No real iOS device: the mobile layout is exercised in Chromium with the
 `check:comment-budget` and the full `pnpm test:visual` results are reported
 in the PR, not restated here.
 
-## #339 — the "Afbeelding" button
+## #339 / #386 — the "Afbeelding" button
 
-The 21st mobile element (`3978:15082`) is built as the last item of the mobile
-bar: after the "More" overflow and one more separator (`separator-4`), a
-`Button` `transparent` with `Icon/Image` and the visible label "Afbeelding"
-(`components.editingBar.imageLabel`). It opens the system file picker
-(`openImagePicker`, `lib/notes/image-upload.ts`). On desktop the bar stays at
-nine items; the same action is the "Afbeelding" row in the overflow's insert
-section (`INSERT_ITEMS` now includes the slash item `image`; the row is a plain
-`menuitem`). `BAR_COMMAND_IDS` therefore ends with `image`; the desktop render
-skips it and its separator, and the roving-tabindex ring is unaffected because
-it is built from the DOM. The node was not re-fetched from Figma in #339 (the
-`figma-console` bridge was unreachable): geometry (label, icon, position after
-the 6th separator) comes from the measurements above, the colours are the
-other `Button/Transparent` items'. Full image design record:
-`design/notes/NoteEditor.md` (#339 section).
+`Button` `transparent` with `Icon/Image` (`3978:15082` for the mobile label),
+opening the system file picker (`openImagePicker`, `lib/notes/image-upload.ts`).
+Since #386 it is always on the bar: labelled "Afbeelding"
+(`components.editingBar.imageLabel`) on mobile, icon-only with the same
+`aria-label` on desktop (keeps the desktop bar compact). It is no longer an
+overflow row (`INSERT_ITEMS` excludes `image`; the slash menu keeps its item).
+Full image design record: `design/notes/NoteEditor.md` (#339 section).
+
+## #386 — polish round (Claude-designed on request)
+
+- **Order**: undo redo | block list table | bold italic link | align | image |
+  More. `BAR_COMMAND_IDS` is that order; the reachability test also counts the
+  align menu's options. More stays last on mobile and desktop.
+- **Desktop hugs its content**: `md:mx-auto md:w-fit md:max-w-full` on the
+  toolbar root (centred in the flex-column page body). Mobile keeps the fixed
+  full-width bottom bar.
+- **Option icons**: `EditingBarMenuOption.icon` (optional). Block type:
+  `Pilcrow`, `Heading1-3`; list: `List`, `ListOrdered`, `ListTodo`; align:
+  `TextAlignStart/Center/End/Justify`. The bubble menu's "Turn into" shares
+  `BLOCK_TYPE_MENU`, so it gets them too. The new lucide icons are registered
+  in `Icon.tsx` (moves `icon--all-icons`).
+- **Align dropdown** (`ALIGN_MENU`, `EditingBarMenu` with `iconOnly`): trigger =
+  current alignment icon + `ChevronDown`, label as `sr-only` text plus
+  `aria-label` "Tekstuitlijning: <current>". Rendered through the labelled
+  Button branch (icon-only Button cannot carry a trailing icon). Same
+  keyboard contract as the other menus; one roving stop.
+- **Separators in popovers**: row and separator widths were already equal
+  (measured), but the line stopped short of the panel border, which read as
+  narrower than the rows. It now bleeds to the panel edge
+  (`-mx-component-xs`) in the overflow and in `NoteMarkdownMenu`.
+- Stories: `AlignMenuOpen` added; `OverflowOpen` targets the new last stop.

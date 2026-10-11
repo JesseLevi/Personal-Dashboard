@@ -34,7 +34,7 @@ function HandleDemo({ openMenu = false, rich = false }: { openMenu?: boolean; ri
     content: rich ? richContent : content,
     immediatelyRender: false,
     editorProps: {
-      attributes: { class: "text-base font-semibold text-text-primary focus:outline-none" },
+      attributes: { class: "text-base font-medium text-text-primary focus:outline-none" },
     },
   });
   useEffect(() => {

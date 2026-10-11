@@ -20,6 +20,7 @@ import type { IconName } from "@/components/atoms/Icon";
  */
 export interface EditingBarMenuOption {
   id: string;
+  icon?: IconName;
   label: string;
   active: boolean;
   onSelect: () => void;
@@ -27,6 +28,8 @@ export interface EditingBarMenuOption {
 
 export interface EditingBarMenuProps {
   icon: IconName;
+  /** Trigger shows only the icon and a chevron; the label stays the accessible name. */
+  iconOnly?: boolean;
   /** Visible trigger text: the current selection. */
   currentLabel: string;
   /** Accessible name of the trigger and the panel (e.g. "Block type"). */
@@ -64,6 +67,7 @@ export function measure(trigger: {
 
 export function EditingBarMenu({
   icon,
+  iconOnly,
   currentLabel,
   menuLabel,
   options,
@@ -160,7 +164,7 @@ export function EditingBarMenu({
           else if (el) setPlacement(measure(el));
         }}
       >
-        {currentLabel}
+        {iconOnly ? <span className="sr-only">{currentLabel}</span> : currentLabel}
       </Button>
       {placement &&
         createPortal(
@@ -183,6 +187,7 @@ export function EditingBarMenu({
                   aria-checked={option.active}
                   variant="transparent"
                   align="left"
+                  icon={option.icon}
                   tabIndex={-1}
                   trailingIcon={option.active ? "Check" : undefined}
                   className={option.active ? "text-text-primary" : undefined}

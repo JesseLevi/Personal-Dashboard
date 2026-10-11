@@ -23,7 +23,7 @@ function useDemoEditor(activateBold: boolean) {
     content: "<p>Voorbeeldtekst in de notitie-editor.</p>",
     immediatelyRender: false,
     editorProps: {
-      attributes: { class: "text-base font-semibold text-text-primary focus:outline-none" },
+      attributes: { class: "text-base font-medium text-text-primary focus:outline-none" },
     },
     onCreate: ({ editor }) => {
       if (activateBold) {
@@ -50,13 +50,13 @@ export const WithActiveButton = () => <EditingBarDemo activateBold />;
 // #329: menus open at first paint (a click on the trigger once mounted) so the
 // baseline shows the panel; `content` seeds the cursor block so the trigger
 // reads the current type.
-function OpenMenuDemo({ menu, content }: { menu: "blockType" | "list" | "overflow"; content: string }) {
+function OpenMenuDemo({ menu, content }: { menu: "blockType" | "list" | "align" | "overflow"; content: string }) {
   const editor = useEditor({
     extensions: [...noteExtensions, Placeholder.configure({ placeholder })],
     content,
     immediatelyRender: false,
     editorProps: {
-      attributes: { class: "text-base font-semibold text-text-primary focus:outline-none" },
+      attributes: { class: "text-base font-medium text-text-primary focus:outline-none" },
     },
     onCreate: ({ editor: created }) => {
       created.commands.focus("end");
@@ -65,7 +65,7 @@ function OpenMenuDemo({ menu, content }: { menu: "blockType" | "list" | "overflo
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!editor) return;
-    const index = { blockType: 2, list: 3, overflow: 8 }[menu];
+    const index = { blockType: 2, list: 3, align: 8, overflow: 10 }[menu];
     const timer = requestAnimationFrame(() => {
       ref.current?.querySelectorAll<HTMLButtonElement>("[data-toolbar-item]")[index]?.click();
     });
@@ -95,6 +95,11 @@ export const OverflowOpen = () => (
   <OpenMenuDemo menu="overflow" content="<p>Voorbeeldtekst in de notitie-editor.</p>" />
 );
 
+// #386: the icon-only alignment dropdown; centred text so the trigger shows a non-default icon.
+export const AlignMenuOpen = () => (
+  <OpenMenuDemo menu="align" content={'<p style="text-align: center">Voorbeeldtekst in de notitie-editor.</p>'} />
+);
+
 const TABLE_CONTENT =
   "<p>Voorbeeldtekst.</p><table><tbody><tr><th><p>Product</p></th><th><p>Prijs</p></th></tr><tr><td><p>Appel</p></td><td><p>1,20</p></td></tr></tbody></table>";
 
@@ -104,7 +109,7 @@ function MobileDemo({ content }: { content: string }) {
     content,
     immediatelyRender: false,
     editorProps: {
-      attributes: { class: "text-base font-semibold text-text-primary focus:outline-none" },
+      attributes: { class: "text-base font-medium text-text-primary focus:outline-none" },
     },
     onCreate: ({ editor: created }) => {
       created.commands.focus("end");

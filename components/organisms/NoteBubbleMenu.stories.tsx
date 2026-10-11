@@ -13,7 +13,7 @@ function BubbleDemo({ bold = false, openTurnInto = false }: { bold?: boolean; op
     content,
     immediatelyRender: false,
     editorProps: {
-      attributes: { class: "text-base font-semibold text-text-primary focus:outline-none" },
+      attributes: { class: "text-base font-medium text-text-primary focus:outline-none" },
     },
     onCreate: ({ editor: created }) => {
       created.commands.focus();

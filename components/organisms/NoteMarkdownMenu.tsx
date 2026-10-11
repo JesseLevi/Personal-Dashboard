@@ -11,8 +11,9 @@ import { usePopoverPanel } from "./usePopoverPanel";
 
 // design: Claude-designed on request (#337)
 /**
- * Note menu next to "Verwijderen": an Ellipsis button opening a portalled
- * `Dropdown` (`role="menu"`) with "Copy as Markdown" and "Export as .md".
+ * Note menu: an Ellipsis button opening a portalled `Dropdown`
+ * (`role="menu"`) with "Copy as Markdown", "Export as .md" and, after a
+ * separator, the destructive Delete row (#386).
  * Same panel mechanics as TableMenu (usePopoverPanel): arrows/Home/End move,
  * Escape/Tab close and focus returns to the trigger. Record:
  * design/notes/NoteEditor.md (#337).
@@ -20,10 +21,12 @@ import { usePopoverPanel } from "./usePopoverPanel";
 export interface NoteMarkdownMenuProps {
   onCopy: () => void;
   onExport: () => void;
+  /** Starts the note's inline delete confirmation (the caller owns the two-step flow). */
+  onDelete: () => void;
   disabled?: boolean;
 }
 
-export function NoteMarkdownMenu({ onCopy, onExport, disabled }: NoteMarkdownMenuProps) {
+export function NoteMarkdownMenu({ onCopy, onExport, onDelete, disabled }: NoteMarkdownMenuProps) {
   const t = useTranslations("components.noteMarkdownMenu");
   const panelId = useId();
   const { placement, isOpen, open, close, wrapperRef, panelRef } = usePopoverPanel((panel) => {
@@ -97,11 +100,23 @@ export function NoteMarkdownMenu({ onCopy, onExport, disabled }: NoteMarkdownMen
             )}
           >
             <Dropdown role="menu" aria-label={t("menuLabel")} className="shadow-sm">
-              <Button role="menuitem" variant="transparent" align="left" tabIndex={-1} onClick={() => run(onCopy)}>
+              <Button role="menuitem" variant="transparent" align="left" icon="Copy" tabIndex={-1} onClick={() => run(onCopy)}>
                 {t("copy")}
               </Button>
-              <Button role="menuitem" variant="transparent" align="left" tabIndex={-1} onClick={() => run(onExport)}>
+              <Button role="menuitem" variant="transparent" align="left" icon="Download" tabIndex={-1} onClick={() => run(onExport)}>
                 {t("export")}
+              </Button>
+              <div role="separator" className="-mx-component-xs h-px w-auto shrink-0 bg-stroke-lines" />
+              <Button
+                role="menuitem"
+                variant="transparent"
+                align="left"
+                icon="Trash"
+                tabIndex={-1}
+                className="text-priority-urgent"
+                onClick={() => run(onDelete)}
+              >
+                {t("delete")}
               </Button>
             </Dropdown>
           </div>,

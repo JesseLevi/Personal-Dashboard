@@ -543,7 +543,6 @@
     "noteEditor": {
       "backLabel": "Terug naar notities",
       "placeholder": "Typ '/' voor opties",
-      "deleteLabel": "Verwijderen",
       "deleteConfirmLabel": "Weet je het zeker?",
       "deleteConfirmButtonLabel": "Ja, verwijderen",
       "deletingLabel": "Verwijderen...",
@@ -570,12 +569,13 @@
       "linkLabel": "Link",
       "superscriptLabel": "Superscript",
       "subscriptLabel": "Subscript",
-      "alignLeftLabel": "Links uitlijnen",
-      "alignCenterLabel": "Centreren",
-      "alignRightLabel": "Rechts uitlijnen",
-      "alignJustifyLabel": "Uitvullen",
+      "alignLabel": "Uitlijning",
       "imageLabel": "Afbeelding",
       "options": {
+        "alignLeft": "Links uitlijnen",
+        "alignCenter": "Centreren",
+        "alignRight": "Rechts uitlijnen",
+        "alignJustify": "Uitvullen",
         "paragraph": "Tekst",
         "heading1": "Kop 1",
         "heading2": "Kop 2",
@@ -818,6 +818,7 @@
       "menuLabel": "Meer opties",
       "copy": "Kopieer als Markdown",
       "export": "Exporteer als .md",
+      "delete": "Verwijderen",
       "copied": "Gekopieerd als Markdown",
       "copyFailed": "Kopiëren is niet gelukt",
       "untitled": "Naamloze notitie"

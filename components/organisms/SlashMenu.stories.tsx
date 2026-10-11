@@ -14,7 +14,7 @@ function SlashDemo({ query }: { query: string }) {
     content: "<p></p>",
     immediatelyRender: false,
     editorProps: {
-      attributes: { class: "text-base font-semibold text-text-primary focus:outline-none" },
+      attributes: { class: "text-base font-medium text-text-primary focus:outline-none" },
     },
   });
   useEffect(() => {

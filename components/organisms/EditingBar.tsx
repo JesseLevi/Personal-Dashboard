@@ -44,11 +44,14 @@ interface EditingBarCommand {
 // has an i18n key under components.editingBar and reads/writes the document
 // through the same editor commands the markdown input rules use.
 export interface EditingBarMenuDef {
-  id: "blockType" | "list";
+  id: "blockType" | "list" | "align";
   icon: IconName;
   fallbackKey: string;
+  /** Icon-only trigger showing the current option's icon (#386). */
+  iconOnly?: boolean;
   options: {
     id: string;
+    icon: IconName;
     isActive: (editor: Editor) => boolean;
     run: (editor: Editor) => void;
   }[];
@@ -61,8 +64,8 @@ interface EditingBarPickerDef {
   picker: true;
 }
 
-// #339: the labelled "Afbeelding" button, shown on the mobile bar only (Figma
-// 3978:15082); on desktop the same slash item is a row in the overflow.
+// #339/#386: the "Afbeelding" button, always on the bar: labelled on mobile
+// (Figma 3978:15082), icon-only on desktop.
 interface EditingBarImageDef {
   id: "image";
   icon: IconName;
@@ -102,11 +105,13 @@ export const BLOCK_TYPE_MENU: EditingBarMenuDef = {
   options: [
     {
       id: "paragraph",
+      icon: "Pilcrow",
       isActive: (editor) => !editor.isActive("heading"),
       run: (editor) => editor.chain().focus().setParagraph().run(),
     },
     ...([1, 2, 3] as const).map((level) => ({
       id: `heading${level}`,
+      icon: (["Heading1", "Heading2", "Heading3"] as const)[level - 1],
       isActive: (editor: Editor) => editor.isActive("heading", { level }),
       run: (editor: Editor) => editor.chain().focus().setHeading({ level }).run(),
     })),
@@ -120,16 +125,19 @@ export const LIST_MENU: EditingBarMenuDef = {
   options: [
     {
       id: "bulletList",
+      icon: "List",
       isActive: (editor) => editor.isActive("bulletList"),
       run: (editor) => editor.chain().focus().toggleBulletList().run(),
     },
     {
       id: "orderedList",
+      icon: "ListOrdered",
       isActive: (editor) => editor.isActive("orderedList"),
       run: (editor) => editor.chain().focus().toggleOrderedList().run(),
     },
     {
       id: "taskList",
+      icon: "ListTodo",
       isActive: (editor) => editor.isActive("taskList"),
       run: (editor) => editor.chain().focus().toggleTaskList().run(),
     },
@@ -137,7 +145,7 @@ export const LIST_MENU: EditingBarMenuDef = {
 };
 
 // "More": inline formats not on the bar (the desktop bubble menu has them too,
-// but mobile has no bubble), then alignment.
+// but mobile has no bubble).
 const FORMAT_COMMANDS: EditingBarCommand[] = [
   {
     id: "underline",
@@ -177,38 +185,32 @@ const FORMAT_COMMANDS: EditingBarCommand[] = [
   },
 ];
 
-const ALIGN_COMMANDS: EditingBarCommand[] = [
-  {
-    id: "alignLeft",
-    icon: "TextAlignStart",
-    isActive: (editor) => editor.isActive({ textAlign: "left" }),
-    run: (editor) => editor.chain().focus().setTextAlign("left").run(),
-  },
-  {
-    id: "alignCenter",
-    icon: "TextAlignCenter",
-    isActive: (editor) => editor.isActive({ textAlign: "center" }),
-    run: (editor) => editor.chain().focus().setTextAlign("center").run(),
-  },
-  {
-    id: "alignRight",
-    icon: "TextAlignEnd",
-    isActive: (editor) => editor.isActive({ textAlign: "right" }),
-    run: (editor) => editor.chain().focus().setTextAlign("right").run(),
-  },
-  {
-    id: "alignJustify",
-    icon: "TextAlignJustify",
-    isActive: (editor) => editor.isActive({ textAlign: "justify" }),
-    run: (editor) => editor.chain().focus().setTextAlign("justify").run(),
-  },
-];
+// #386: its own icon-only dropdown on the bar (the trigger shows the current alignment).
+export const ALIGN_MENU: EditingBarMenuDef = {
+  id: "align",
+  icon: "TextAlignStart",
+  fallbackKey: "alignLeft",
+  iconOnly: true,
+  options: (
+    [
+      ["alignLeft", "TextAlignStart", "left"],
+      ["alignCenter", "TextAlignCenter", "center"],
+      ["alignRight", "TextAlignEnd", "right"],
+      ["alignJustify", "TextAlignJustify", "justify"],
+    ] as const
+  ).map(([id, icon, textAlign]) => ({
+    id,
+    icon,
+    isActive: (editor: Editor) => editor.isActive({ textAlign }),
+    run: (editor: Editor) => editor.chain().focus().setTextAlign(textAlign).run(),
+  })),
+};
 
 // Block inserts in "More" come from the slash menu's own list (#332), so a new
 // block type there needs no second edit here.
-const INSERT_ITEMS = SLASH_ITEMS.filter((item) => ["blockquote", "codeBlock", "divider", "image"].includes(item.id));
+const INSERT_ITEMS = SLASH_ITEMS.filter((item) => ["blockquote", "codeBlock", "divider"].includes(item.id));
 
-// 2 | 3 | 3 | More | Afbeelding (mobile only). Reasoning and the old-command map: design/notes/EditingBar.md.
+// 2 | 3 | 3 | align | image | More. Reasoning and the old-command map: design/notes/EditingBar.md.
 const GROUPS: BarCommand[][] = [
   [
     { id: "undo", icon: "Undo2", run: (editor) => editor.chain().focus().undo().run() },
@@ -236,8 +238,9 @@ const GROUPS: BarCommand[][] = [
       run: (_editor, { openLink }) => openLink(),
     },
   ],
-  [{ id: "overflow", icon: "Ellipsis", overflow: true }],
+  [ALIGN_MENU],
   [{ id: "image", icon: "Image", imageButton: true }],
+  [{ id: "overflow", icon: "Ellipsis", overflow: true }],
 ];
 
 /** Ids of the bar's own buttons and of every overflow row (reachability test). */
@@ -245,10 +248,9 @@ export const BAR_COMMAND_IDS = GROUPS.flat().map((command) => command.id);
 export const OVERFLOW_COMMAND_IDS = [
   ...INSERT_ITEMS.map((item) => item.id),
   ...FORMAT_COMMANDS.map((command) => command.id),
-  ...ALIGN_COMMANDS.map((command) => command.id),
 ];
 
-const ALL_COMMANDS = [...GROUPS.flat(), ...FORMAT_COMMANDS, ...ALIGN_COMMANDS];
+const ALL_COMMANDS = [...GROUPS.flat(), ...FORMAT_COMMANDS];
 
 // Flattened once at module scope (buttons and separators as direct siblings,
 // one shared gap) rather than a wrapper div per group.
@@ -404,36 +406,35 @@ export function EditingBar({ editor, className, mobile }: EditingBarProps) {
         id: item.id,
         icon: item.icon,
         label: tSlash(item.id),
-        active: item.id === "divider" || item.id === "image" ? undefined : Boolean(activeState?.[item.id]),
+        active: item.id === "divider" ? undefined : Boolean(activeState?.[item.id]),
         onSelect: () => item.run?.(current),
       })),
       FORMAT_COMMANDS.map(toggle),
-      ALIGN_COMMANDS.map(toggle),
     ];
   }
 
   function renderDefaultItems(current: Editor) {
     return BAR_ITEMS.map((item) => {
       if (item.type === "separator") {
-        if (!isMobile && item.key === "separator-4") return null;
         return <div key={item.key} aria-hidden="true" className="h-6 w-px shrink-0 bg-stroke-lines" />;
       }
       const { command } = item;
       const tabIndex = item.index === activeIndex ? 0 : -1;
       if (isImageButton(command)) {
-        if (!isMobile) return null;
-        return (
-          <Button
-            key={command.id}
-            variant="transparent"
-            icon={command.icon}
-            data-toolbar-item=""
-            tabIndex={tabIndex}
-            onFocus={() => setActiveIndex(item.index)}
-            onClick={() => openImagePicker(current)}
-          >
+        const imageProps = {
+          variant: "transparent",
+          icon: command.icon,
+          "data-toolbar-item": "",
+          tabIndex,
+          onFocus: () => setActiveIndex(item.index),
+          onClick: () => openImagePicker(current),
+        } as const;
+        return isMobile ? (
+          <Button key={command.id} {...imageProps}>
             {t("imageLabel")}
           </Button>
+        ) : (
+          <Button key={command.id} {...imageProps} aria-label={t("imageLabel")} />
         );
       }
       if (isOverflow(command)) {
@@ -484,11 +485,13 @@ export function EditingBar({ editor, className, mobile }: EditingBarProps) {
         return (
           <EditingBarMenu
             key={command.id}
-            icon={command.icon}
+            icon={selected?.icon ?? command.icon}
+            iconOnly={command.iconOnly}
             menuLabel={t(`${command.id}Label`)}
             currentLabel={t(`options.${hasActive && selected ? selected.id : command.fallbackKey}`)}
             options={command.options.map((option) => ({
               id: option.id,
+              icon: option.icon,
               label: t(`options.${option.id}`),
               active: option.id === activeState?.[command.id],
               onSelect: () => option.run(current),
@@ -581,7 +584,7 @@ export function EditingBar({ editor, className, mobile }: EditingBarProps) {
         // both unbound on 3978:14138/3978:14870 (paddingLeft/Right and the
         // corner radius ARE bound, see the token classes below) —
         // design/notes/EditingBar.md
-        "flex items-center gap-2 overflow-x-auto rounded-card bg-surface-highlight-white px-component-xs py-1",
+        "flex items-center gap-2 overflow-x-auto md:mx-auto md:w-fit md:max-w-full rounded-card bg-surface-highlight-white px-component-xs py-1",
         "fixed bottom-[env(safe-area-inset-bottom)] left-page-left right-page-right-equal z-10",
         "translate-y-[calc(var(--keyboard-inset,0px)*-1)] transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
         "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",

@@ -53,12 +53,12 @@ test("keyboard: Enter on a selected image focuses its alt-text field", async ({ 
   await expect(page.getByLabel("Alternatieve tekst")).toBeFocused();
 });
 
-test("mobile bar: the labelled Afbeelding button is on the bar; desktop has it in the overflow", async ({ page }) => {
+test("mobile bar: the labelled Afbeelding button is on the bar; desktop shows it icon-only (#386)", async ({ page }) => {
   await page.goto(story("editing-bar--mobile"));
   await expect(page.getByRole("toolbar", { name: "Opmaakwerkbalk" }).getByRole("button", { name: "Afbeelding" })).toBeVisible();
 
   await page.goto(story("editing-bar--at-rest"));
-  await expect(page.getByRole("button", { name: "Afbeelding" })).toHaveCount(0);
+  await expect(page.getByRole("toolbar", { name: "Opmaakwerkbalk" }).getByRole("button", { name: "Afbeelding" })).toBeVisible();
   await page.getByRole("button", { name: "Meer" }).click();
-  await expect(page.getByRole("menuitem", { name: "Afbeelding" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Afbeelding" })).toHaveCount(0);
 });

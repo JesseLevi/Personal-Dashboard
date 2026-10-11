@@ -10,7 +10,7 @@ const toolbar = (page: import("@playwright/test").Page) => page.getByRole("toolb
 test("arrow keys, Home and End rove over the bar; the overflow is part of the ring", async ({ page }) => {
   await page.goto("/?story=editing-bar--at-rest&mode=preview");
   const buttons = toolbar(page).locator("[data-toolbar-item]");
-  await expect(buttons).toHaveCount(9);
+  await expect(buttons).toHaveCount(11);
   await buttons.first().focus();
   await page.keyboard.press("End");
   await expect(page.getByRole("button", { name: "Meer" })).toBeFocused();
