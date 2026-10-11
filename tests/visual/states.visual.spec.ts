@@ -32,6 +32,7 @@ const VARIANTS = [
 const BUTTONS_PER_ROW = 3;
 
 async function openStateMatrix(page: Page) {
+  await page.clock.setFixedTime(new Date("2026-01-01T14:00:00"));
   await page.goto(`/?story=${STORY_ID}&mode=preview`);
   await page.locator("#ladle-root > div").first().waitFor({ state: "visible" });
 }

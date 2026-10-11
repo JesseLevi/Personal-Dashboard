@@ -46,6 +46,10 @@ test.describe("Ladle story visual baselines", () => {
 
   for (const storyId of storyIds) {
     test(storyId, async ({ page }) => {
+      // Fixed clock keeps rendering deterministic across runs (the old
+      // time-of-day login greeting is gone, but removing the freeze shifted
+      // editing-bar / link-popover popover baselines).
+      await page.clock.setFixedTime(new Date("2026-01-01T14:00:00"));
       await page.goto(`/?story=${storyId}&mode=preview`);
 
       // .ladle/components.tsx's Provider wraps every story in a `min-h-screen`
