@@ -3,7 +3,7 @@
 -- check-rls-coverage.sh does not see it; its isolation is asserted here.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(19);
+select plan(17);
 
 -- Signup trigger creates the profiles; names are set afterwards.
 insert into auth.users (id, email)
