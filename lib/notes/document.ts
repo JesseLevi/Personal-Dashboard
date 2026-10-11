@@ -25,6 +25,7 @@ export interface TipTapNode {
   type: string;
   content?: TipTapNode[];
   text?: string;
+  attrs?: Record<string, unknown>;
 }
 
 export interface TipTapDocument {
@@ -64,6 +65,13 @@ function flatten(node: TipTapNode): string {
   // LINE_ENDING_TYPES node's trailing newline below -- both get collapsed by
   // toPlainText's regex the same way, so it doesn't need special-casing there.
   if (node.type === "hardBreak") return "\n";
+
+  // #339: an image contributes its alt text as a line of its own, so images
+  // are searchable (and a note that opens with one gets that title).
+  if (node.type === "image") {
+    const alt = typeof node.attrs?.alt === "string" ? node.attrs.alt.replace(/\s+/g, " ").trim() : "";
+    return alt ? `${alt}\n` : "";
+  }
 
   // #330: a table row is one line, its cells separated by a tab (a cell's own
   // line breaks collapse to spaces); trailing empty cells add no tabs.

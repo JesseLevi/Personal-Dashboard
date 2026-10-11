@@ -574,6 +574,7 @@
       "alignCenterLabel": "Centreren",
       "alignRightLabel": "Rechts uitlijnen",
       "alignJustifyLabel": "Uitvullen",
+      "imageLabel": "Afbeelding",
       "options": {
         "paragraph": "Tekst",
         "heading1": "Kop 1",
@@ -600,8 +601,16 @@
         "codeBlock": "Codeblok",
         "table": "Tabel",
         "divider": "Scheidingslijn",
-        "details": "Inklapbare sectie"
+        "details": "Inklapbare sectie",
+        "image": "Afbeelding"
       }
+    },
+    "noteImage": {
+      "broken": "Afbeelding niet beschikbaar",
+      "altLabel": "Alternatieve tekst",
+      "altPlaceholder": "Beschrijf de afbeelding",
+      "deleteLabel": "Afbeelding verwijderen",
+      "uploading": "Afbeelding uploaden..."
     },
     "codeBlock": {
       "languageLabel": "Taal",

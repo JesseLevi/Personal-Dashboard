@@ -87,10 +87,8 @@ above) — one `GROUPS` config in `EditingBar.tsx` renders both.
 3. **Mobile has a 21st element the ticket never mentions**, after `Line 6`:
    `3978:15082`, a real `Button/Default` **instance** (not detached, unlike
    the other twenty), 133px wide, with a visible text label "Afbeelding" and
-   `Icon/Image`. No image-insertion TipTap extension exists in
-   `lib/notes/extensions.ts`. **Out of scope for #234** — not built, not
-   counted among the 20 rows above.
-   `docs/open-questions.md#notes-editingbar-mobile-image-button-out-of-scope`.
+   `Icon/Image`. Out of scope for #234 (no image extension then), not counted
+   among the 20 rows above. **Built in #339**: see the "#339" section below.
 
 ## Assumptions made where the ticket is silent (not flagged as ambiguous by the ticket itself)
 
@@ -443,3 +441,20 @@ No real iOS device: the mobile layout is exercised in Chromium with the
 `pnpm lint`/`typecheck`/`test`/`check:server-only`/`check:raw-spacing`/
 `check:comment-budget` and the full `pnpm test:visual` results are reported
 in the PR, not restated here.
+
+## #339 — the "Afbeelding" button
+
+The 21st mobile element (`3978:15082`) is built as the last item of the mobile
+bar: after the "More" overflow and one more separator (`separator-4`), a
+`Button` `transparent` with `Icon/Image` and the visible label "Afbeelding"
+(`components.editingBar.imageLabel`). It opens the system file picker
+(`openImagePicker`, `lib/notes/image-upload.ts`). On desktop the bar stays at
+nine items; the same action is the "Afbeelding" row in the overflow's insert
+section (`INSERT_ITEMS` now includes the slash item `image`; the row is a plain
+`menuitem`). `BAR_COMMAND_IDS` therefore ends with `image`; the desktop render
+skips it and its separator, and the roving-tabindex ring is unaffected because
+it is built from the DOM. The node was not re-fetched from Figma in #339 (the
+`figma-console` bridge was unreachable): geometry (label, icon, position after
+the 6th separator) comes from the measurements above, the colours are the
+other `Button/Transparent` items'. Full image design record:
+`design/notes/NoteEditor.md` (#339 section).

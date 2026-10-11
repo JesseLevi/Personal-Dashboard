@@ -195,18 +195,6 @@ state.
 
 Needs a real Figma frame (panel chrome, an icon set scoped to Notities, and a delete-confirmation state) before any of the three should be considered final.
 
-### notes-editingbar-mobile-image-button-out-of-scope
-
-Mobile `EditingBar` (`3978:14870`) carries a 21st element after a 6th
-separator line that desktop doesn't have: `3978:15082`, a real `Button/
-Default` **instance** (not a detached frame like the other twenty), 133px
-wide, with a visible text label "Afbeelding" and `Icon/Image`. No TipTap
-image extension is installed in `lib/notes/extensions.ts` and none was added
-for #234 — image insertion is out of scope for this ticket, per direct user
-instruction. Needs a real ticket (extension install, upload/insert flow) before
-this button is built; not counted among the 20 mapped commands in
-`design/notes/EditingBar.md`.
-
 ### notes-delete-has-no-confirmation
 
 `/notities/[noteId]`'s "Verwijderen" button (`3978:14809` desktop, `3978:14839` mobile) has no confirmation step drawn anywhere in `Pages/Notities/Breakpoints` — same absence `notes-category-panel-not-designed` already documents for the category panel. #233 reused the existing two-step confirm pattern verbatim (`RecipeDetailPage.tsx`'s own in-place button-row swap, itself the same shape `NoteCategoryPanel.tsx`/`CategoryPanel.tsx` already use): deleting a note is irreversible, and the app already has one established confirm idiom rather than inventing a second. Needs a real Figma confirmation state before this is considered final.
@@ -241,6 +229,10 @@ Code highlighting (#336) has no dedicated syntax palette. `app/globals.css` maps
 
 The block handle and menu (#335) want `GripVertical` (the drag grip), `Copy` (Duplicate) and `ArrowUp`/`ArrowDown` (Move). The `Icon` set has none, and adding glyphs changes the `icon--all-icons` baseline. The handle reuses `EllipsisVertical` (one column of dots instead of the usual two) and the menu rows are text-only except Delete (`Trash`). Register the glyphs in `components/atoms/Icon.tsx`, regenerate that baseline and switch `components/organisms/NoteBlockHandle.tsx`. -> `design/notes/NoteEditor.md` (#335 section).
 
+### notes-image-states-glyph-and-spinner
+
+The image states (#339) have two small gaps. The broken-image block wants an `ImageOff` glyph; `Icon` has only `Image`, so it reuses that (adding a glyph changes the `icon--all-icons` baseline). The upload placeholder wants a spinner; `Icon` has a `Loader` glyph but no spin treatment for it exists in the design system, so the placeholder is a pulsing `surface-secondary` block with text (static under `prefers-reduced-motion`). Needs a design call on both. -> `design/notes/NoteEditor.md` (#339 section).
+
 ---
 
 ## Resolved and removed
@@ -260,3 +252,5 @@ These were open questions that the shipped build now answers. The deviation and 
 **Notes prose (#329)** — `notes-prose-typography-not-designed` (2026-10-10, user: Claude designs it on request; H1-H3 on Tailwind's type scale, rhythm, 70ch width, task lists — `design/notes/NoteEditor.md` #329 section; the missing font tokens are the new `notes-prose-font-scale-no-tokens`).
 
 **Recipe import UI (#318, Figma section `4164:20621`)** — `import-skeleton-bars-unbound`: the skeleton bars (nodes under `4164:23681`) have no bound fill/radius/height (values equal `surface/primary/default` and 4px radius; built with those tokens, confirm in Figma). `import-link-panel-input-chevron`: the Link Input-field in `4164:23722`/`4164:23777` still draws the Dropdown variant's trailing chevron; not built. `import-description-not-stored`: ADR-0019 mentions a description field but `recipes` has no description column, so the extracted description is dropped (add a column + UI first). `import-range-and-pack-note-dropped`: the parser's `note` (range text, pack text, prep) has no column on `recipe_ingredients`, so it is only kept (in the name) for lines whose unit could not be resolved.
+
+**Notes images (#339)** — `notes-editingbar-mobile-image-button-out-of-scope` (2026-10-11: built as the last item of the mobile bar and as an overflow row on desktop; the `figma-console` bridge was unreachable, so the node was not re-fetched — `design/notes/EditingBar.md` #339 section).

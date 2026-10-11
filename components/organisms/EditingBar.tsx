@@ -7,6 +7,7 @@ import { useEditorState, type Editor } from "@tiptap/react";
 import { cn } from "@/lib/ui/cn";
 import { Button } from "@/components/atoms/Button";
 import type { IconName } from "@/components/atoms/Icon";
+import { openImagePicker } from "@/lib/notes/image-upload";
 import { requestLinkPopover } from "@/lib/notes/link-popover";
 import { SLASH_ITEMS } from "@/lib/notes/slash-items";
 import { insertTable, TABLE_COMMANDS } from "@/lib/notes/table-commands";
@@ -60,6 +61,14 @@ interface EditingBarPickerDef {
   picker: true;
 }
 
+// #339: the labelled "Afbeelding" button, shown on the mobile bar only (Figma
+// 3978:15082); on desktop the same slash item is a row in the overflow.
+interface EditingBarImageDef {
+  id: "image";
+  icon: IconName;
+  imageButton: true;
+}
+
 // #333: the "More" overflow (EditingBarOverflow).
 interface EditingBarOverflowDef {
   id: "overflow";
@@ -67,7 +76,7 @@ interface EditingBarOverflowDef {
   overflow: true;
 }
 
-type BarCommand = EditingBarCommand | EditingBarMenuDef | EditingBarPickerDef | EditingBarOverflowDef;
+type BarCommand = EditingBarCommand | EditingBarMenuDef | EditingBarPickerDef | EditingBarOverflowDef | EditingBarImageDef;
 
 function isPicker(command: BarCommand): command is EditingBarPickerDef {
   return "picker" in command;
@@ -75,6 +84,10 @@ function isPicker(command: BarCommand): command is EditingBarPickerDef {
 
 function isMenu(command: BarCommand): command is EditingBarMenuDef {
   return "options" in command;
+}
+
+function isImageButton(command: BarCommand): command is EditingBarImageDef {
+  return "imageButton" in command;
 }
 
 function isOverflow(command: BarCommand): command is EditingBarOverflowDef {
@@ -193,9 +206,9 @@ const ALIGN_COMMANDS: EditingBarCommand[] = [
 
 // Block inserts in "More" come from the slash menu's own list (#332), so a new
 // block type there needs no second edit here.
-const INSERT_ITEMS = SLASH_ITEMS.filter((item) => ["blockquote", "codeBlock", "divider"].includes(item.id));
+const INSERT_ITEMS = SLASH_ITEMS.filter((item) => ["blockquote", "codeBlock", "divider", "image"].includes(item.id));
 
-// 2 | 3 | 3 | More. Reasoning and the old-command map: design/notes/EditingBar.md.
+// 2 | 3 | 3 | More | Afbeelding (mobile only). Reasoning and the old-command map: design/notes/EditingBar.md.
 const GROUPS: BarCommand[][] = [
   [
     { id: "undo", icon: "Undo2", run: (editor) => editor.chain().focus().undo().run() },
@@ -224,6 +237,7 @@ const GROUPS: BarCommand[][] = [
     },
   ],
   [{ id: "overflow", icon: "Ellipsis", overflow: true }],
+  [{ id: "image", icon: "Image", imageButton: true }],
 ];
 
 /** Ids of the bar's own buttons and of every overflow row (reachability test). */
@@ -327,7 +341,7 @@ export function EditingBar({ editor, className, mobile }: EditingBarProps) {
       if (!current) return null;
       const state: Record<string, boolean | string> = { inTable: current.isActive("table") };
       for (const command of ALL_COMMANDS) {
-        if (isPicker(command) || isOverflow(command)) continue;
+        if (isPicker(command) || isOverflow(command) || isImageButton(command)) continue;
         if (isMenu(command)) {
           state[command.id] = command.options.find((option) => option.isActive(current))?.id ?? "";
         } else if (command.isActive) {
@@ -390,7 +404,7 @@ export function EditingBar({ editor, className, mobile }: EditingBarProps) {
         id: item.id,
         icon: item.icon,
         label: tSlash(item.id),
-        active: item.id === "divider" ? undefined : Boolean(activeState?.[item.id]),
+        active: item.id === "divider" || item.id === "image" ? undefined : Boolean(activeState?.[item.id]),
         onSelect: () => item.run?.(current),
       })),
       FORMAT_COMMANDS.map(toggle),
@@ -401,10 +415,27 @@ export function EditingBar({ editor, className, mobile }: EditingBarProps) {
   function renderDefaultItems(current: Editor) {
     return BAR_ITEMS.map((item) => {
       if (item.type === "separator") {
+        if (!isMobile && item.key === "separator-4") return null;
         return <div key={item.key} aria-hidden="true" className="h-6 w-px shrink-0 bg-stroke-lines" />;
       }
       const { command } = item;
       const tabIndex = item.index === activeIndex ? 0 : -1;
+      if (isImageButton(command)) {
+        if (!isMobile) return null;
+        return (
+          <Button
+            key={command.id}
+            variant="transparent"
+            icon={command.icon}
+            data-toolbar-item=""
+            tabIndex={tabIndex}
+            onFocus={() => setActiveIndex(item.index)}
+            onClick={() => openImagePicker(current)}
+          >
+            {t("imageLabel")}
+          </Button>
+        );
+      }
       if (isOverflow(command)) {
         return (
           <EditingBarOverflow
