@@ -1,4 +1,4 @@
-# ADR-0021: `recipe_step_ingredients` — linking steps to ingredients
+# ADR-0029: `recipe_step_ingredients` — linking steps to ingredients
 
 **Status**: Proposed (retroactive; the underlying choice was approved by the user 2026-08-01, issue #149)
 
@@ -15,7 +15,7 @@ A join table `public.recipe_step_ingredients (step_id → recipe_steps, recipe_i
 - It carries its **own `user_id`** and the four standard RLS policies: ADR-0001 has no join-table exception (same precedent as `card_labels`, `recipe_tags`). RLS test: `supabase/tests/rls-recipe_step_ingredients.sql` (ADR-0009).
 - It links to **`recipe_ingredients` rows of the same recipe**, not to `public.ingredients`: the step must show *this recipe's* quantity and unit, and a recipe line may have no library link at all (ADR-0011 §2).
 - `position` uses the repo's fractional scheme and orders the linked ingredient Tags under a step.
-- The write path is the `replace_recipe_contents` RPC (ADR-0022): the client cannot know row ids of a not-yet-saved recipe, so it sends 0-based `ingredientRefs` indexes into the ingredient array and the RPC resolves them (`design/notes/StepIngredientPanel.md`).
+- The write path is the `replace_recipe_contents` RPC (ADR-0030): the client cannot know row ids of a not-yet-saved recipe, so it sends 0-based `ingredientRefs` indexes into the ingredient array and the RPC resolves them (`design/notes/StepIngredientPanel.md`).
 
 ## Consequences
 
@@ -27,4 +27,4 @@ A join table `public.recipe_step_ingredients (step_id → recipe_steps, recipe_i
 
 ## Migration
 
-- [`supabase/migrations/20260802000001_recipe_step_ingredients.sql`](../../supabase/migrations/20260802000001_recipe_step_ingredients.sql) (#149, commit `2b71d2b`) — table, policies, grants; the same file defines the RPC of ADR-0022.
+- [`supabase/migrations/20260802000001_recipe_step_ingredients.sql`](../../supabase/migrations/20260802000001_recipe_step_ingredients.sql) (#149, commit `2b71d2b`) — table, policies, grants; the same file defines the RPC of ADR-0030.
