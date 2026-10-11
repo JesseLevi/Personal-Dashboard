@@ -175,7 +175,9 @@ function slideBlock(editor: Editor, pos: number, handle: HTMLElement, startY: nu
   function onUp() {
     const commit = active && target !== from;
     cleanup();
-    if (commit) moveBlockToIndex(editor, target, block!.from);
+    if (!commit) return;
+    moveBlockToIndex(editor, target, block!.from);
+    editor.commands.focus();
   }
   function onCancel() {
     cleanup();
