@@ -13,11 +13,11 @@ export const updateLocaleSchema = z.object({
 });
 
 // profiles.display_name is a bare `text` column with no DB constraint
-// (20260720000001_profiles.sql), so the 60-char cap is an app-level choice
+// (20260720000001_profiles.sql), so the 40-char cap is an app-level choice
 // (#398): long enough for any name, short enough for the sidebar account row.
 // Trimmed; an empty/whitespace-only string becomes null (= "no name", the
 // sidebar then shows its fallback name).
-export const DISPLAY_NAME_MAX_LENGTH = 60;
+export const DISPLAY_NAME_MAX_LENGTH = 40;
 export const updateDisplayNameSchema = z.object({
   displayName: z
     .string()

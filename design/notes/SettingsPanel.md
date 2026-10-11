@@ -154,7 +154,7 @@ Saved by the existing Opslaan button: `updateLocale` first, then
 `updateDisplayName` (skipped when the trimmed value is unchanged); the panel
 closes and the theme applies only when every write succeeded, otherwise the
 existing inline error line shows. Empty/whitespace becomes `null` (sidebar
-shows its fallback name); max 60 chars (app-level, the column has no DB
+shows its fallback name); max 40 chars (app-level, the column has no DB
 constraint). Seeded from `AppShellNav`'s `displayName`, re-synced on prop
 change like `pendingLocale`. No Ladle story / visual baseline: the panel
 imports server actions and next-themes, and no story for it exists (flagged
