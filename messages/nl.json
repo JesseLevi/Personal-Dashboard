@@ -339,6 +339,7 @@
     },
     "settingsPanel": {
       "title": "Instellingen",
+      "nameLabel": "Naam",
       "themeLabel": "Kleurenthema",
       "themeOptions": {
         "system": "Systeem",

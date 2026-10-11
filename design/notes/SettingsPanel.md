@@ -144,10 +144,26 @@ flow instead of an external event. Safe on the save path too: by the time
 the effect fires there, `pendingLocale` already equals the incoming value,
 so it's a same-value no-op, not a stomp.
 
+## Naam field — Claude-designed on request (#398)
+
+Claude-designed on request (#398), no Figma node: the user explicitly asked
+for a display-name input. One existing `InputField` (single-line text,
+`label` = Naam / Name) placed above the theme toggle, reusing the same
+atoms and semantic tokens as the Taal field; no new tokens or components.
+Saved by the existing Opslaan button: `updateLocale` first, then
+`updateDisplayName` (skipped when the trimmed value is unchanged); the panel
+closes and the theme applies only when every write succeeded, otherwise the
+existing inline error line shows. Empty/whitespace becomes `null` (sidebar
+shows its fallback name); max 60 chars (app-level, the column has no DB
+constraint). Seeded from `AppShellNav`'s `displayName`, re-synced on prop
+change like `pendingLocale`. No Ladle story / visual baseline: the panel
+imports server actions and next-themes, and no story for it exists (flagged
+in the PR, not invented).
+
 ## Not built
 
-- **No name/email/password fields** — Figma draws only Kleurenthema + Taal;
-  the ticket brief is explicit that Settings contains only what Figma draws.
+- **No email/password fields** — Figma draws only Kleurenthema + Taal (the
+  Naam field is the #398 Claude-designed exception above).
 - **No delete-account button** — see the footer table above.
 - **No avatar upload** — undesigned, out of scope (`design/notes/Sidebar.md`'s
   own #265 entry covers the read-only avatar/initials side).
