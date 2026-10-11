@@ -70,7 +70,7 @@ export function getSlashStore(editor: Editor | null): SlashStore | null {
 export const SlashCommandPluginKey = new PluginKey("slashCommand");
 
 // A code block, or inline code, is literal text: "/" there stays a "/".
-function isInsideCode($pos: ResolvedPos) {
+export function isInsideCode($pos: ResolvedPos) {
   return $pos.parent.type.spec.code === true || $pos.marks().some((mark) => mark.type.name === "code");
 }
 

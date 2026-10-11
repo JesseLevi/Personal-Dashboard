@@ -97,7 +97,7 @@ export function SlashMenuPanel({
 const EDGE = 8;
 const GAP = 4;
 
-interface Placement {
+export interface Placement {
   openUp: boolean;
   style: CSSProperties;
 }
@@ -128,7 +128,7 @@ function place(anchor: DOMRect, panel: HTMLElement | null): Placement {
   };
 }
 
-function usePlacement(getRect: () => DOMRect | null, active: boolean, dependency: unknown) {
+export function usePlacement(getRect: () => DOMRect | null, active: boolean, dependency: unknown) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [placement, setPlacement] = useState<Placement | null>(null);
   const getRectRef = useRef(getRect);
@@ -160,7 +160,7 @@ function usePlacement(getRect: () => DOMRect | null, active: boolean, dependency
   return { panelRef, placement };
 }
 
-const panelClasses = (placement: Placement | null) =>
+export const panelClasses = (placement: Placement | null) =>
   cn(
     "fixed z-20 w-max min-w-56 max-w-[calc(100vw-2rem)] max-h-[var(--menu-max)] overflow-y-auto rounded-control-outer",
     "left-[var(--menu-x)]",

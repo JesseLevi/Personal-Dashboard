@@ -338,3 +338,53 @@ export async function resolveNoteTitles(ids: string[]): Promise<Record<string, s
   }
   return Object.fromEntries(data.map((note) => [note.id, note.title]));
 }
+
+/* #341 (ADR-0023): `[[` suggestions ------------------------------------- */
+
+export interface NoteLinkTarget {
+  id: string;
+  title: string;
+  category_name: string;
+}
+
+/**
+ * Notes the `[[` menu offers as link targets: title matches (case-insensitive
+ * substring, pg_trgm-indexed), freshest first, or the most recently updated
+ * notes for an empty query. `excludeNoteId` (the note being edited) is left
+ * out; a self-link would be dropped by save_note_content anyway.
+ */
+export async function findNoteLinkTargets(
+  query: string,
+  excludeNoteId: string,
+  limit = 8,
+): Promise<NoteLinkTarget[]> {
+  const excluded = z.uuid().safeParse(excludeNoteId);
+  if (!excluded.success) return [];
+
+  const supabase = await createSupabaseServerClient();
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return [];
+
+  let request = supabase
+    .from("notes")
+    .select("id, title, note_categories(name)")
+    .eq("user_id", userId)
+    .neq("id", excluded.data);
+  const trimmed = query.trim();
+  if (trimmed) request = request.ilike("title", `%${escapeIlike(trimmed)}%`);
+
+  const { data, error } = await request
+    .order("updated_at", { ascending: false })
+    .limit(limit)
+    .overrideTypes<Array<{ id: string; title: string; note_categories: { name: string } | null }>, { merge: false }>();
+
+  if (error) {
+    console.error("[notes] findNoteLinkTargets failed:", error.code, error.message);
+    throw new Error("Failed to search link targets");
+  }
+  return data.map((note) => ({
+    id: note.id,
+    title: note.title,
+    category_name: note.note_categories?.name ?? "",
+  }));
+}

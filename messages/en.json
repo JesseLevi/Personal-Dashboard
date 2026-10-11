@@ -602,8 +602,20 @@
         "table": "Table",
         "divider": "Divider",
         "details": "Collapsible section",
-        "image": "Image"
+        "image": "Image",
+        "noteLink": "Link to note"
       }
+    },
+    "noteRef": {
+      "menuLabel": "Link to note",
+      "noResults": "No notes found",
+      "searching": "Searching...",
+      "untitled": "Untitled",
+      "deleted": "Deleted note"
+    },
+    "noteBacklinks": {
+      "title": "Linked from",
+      "untitled": "Untitled"
     },
     "noteImage": {
       "broken": "Image not available",

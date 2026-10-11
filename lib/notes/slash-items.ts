@@ -98,6 +98,17 @@ export const SLASH_ITEMS: SlashItem[] = [
     aliases: { nl: ["afbeelding", "foto", "plaatje", "beeld"], en: ["image", "picture", "photo", "upload"] },
     run: (editor) => openImagePicker(editor),
   },
+  // #341: types the "[[" trigger, which opens the note-link menu in its place.
+  {
+    id: "noteLink",
+    icon: "Link",
+    aliases: {
+      nl: ["link", "notitie", "verwijzing", "wikilink"],
+      en: ["link", "note", "reference", "backlink", "wikilink"],
+    },
+    isEnabled: (editor) => Boolean((editor.storage as unknown as Record<string, unknown>).noteLinkSuggestion),
+    run: (editor) => editor.chain().focus().insertContent("[[").run(),
+  },
 ];
 
 function normalize(value: string): string {
