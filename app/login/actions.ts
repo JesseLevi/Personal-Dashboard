@@ -8,12 +8,13 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 // #158 rewrote both actions from redirect-with-querystring to the
 // `useActionState` shape `(prevState, formData) => Promise<State>` so
 // LoginForm.tsx's two-step animation can keep its step client-side across a
-// submission instead of losing it on a full navigation. Success still
-// redirects (throws, never resolves to a State) — only the error/idle/sent
-// branches are real return values.
+// submission instead of losing it on a full navigation. Password success
+// returns `{ status: "success" }` (#413): LoginForm plays its exit animation,
+// then navigates, so the session cookie is already set when it does.
 
 export type PasswordLoginState =
   | { status: "idle" }
+  | { status: "success" }
   | { status: "error"; errorKey: "invalid-input" | "invalid-credentials" };
 
 export type MagicLinkState =
@@ -39,7 +40,7 @@ export async function signInWithPassword(
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { status: "error", errorKey: "invalid-credentials" };
 
-  redirect("/te-doen");
+  return { status: "success" };
 }
 
 // Step 3's magic-link form. Sends to the address carried over from step 1
