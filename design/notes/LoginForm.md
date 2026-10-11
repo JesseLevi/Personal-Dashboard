@@ -211,6 +211,14 @@ now also starts while typing (valid address, 250ms idle, or blur), so the name
 can appear on step 1. An invalid/empty field keeps the shown name (no flicker
 while fixing a typo). Doorgaan reuses the lookup via the same-address dedupe.
 
+## Motion: name blur and sign-in exit
+
+- **Name:** the name text blurs in (`animate-blur-in`) when it appears and out (`animate-blur-out`) when it collapses, on top of the width opening. Never on first paint (a seeded `initialGreetingName` stays static).
+- **Exit:** `signInWithPassword` returns `{ status: "success" }` instead of redirecting. The form then blurs out heading, password field, Terug/Inloggen row and magic-link form, top to bottom (`blurFadeStagger(0..3)`), waits `blurOutTotalMs(4, reduced)`, sets the `atlas:enter-from-login` mark (`lib/ui/login-enter.ts`) and calls `onNavigate("/te-doen")`. `onPrefetch` warms the route when the exit starts.
+- **Router seam:** `LoginForm` takes `onNavigate` / `onPrefetch`; `LoginFormClient.tsx` wires `router.replace` / `router.prefetch`, so Ladle needs no app router.
+- **No double submit:** Inloggen stays disabled and the password and magic-link forms are `inert` during the exit. The password field keeps its dots through the form reset via `defaultValue`.
+- Story: `ExitAfterSignIn`. Mark-and-play on the destination page: `design/notes/TeDoenBoard.md`.
+
 ## Terug/Inloggen row — the back trigger is now designed (fix round)
 
 `LogIn/Mobile/Step-03/Error` (`3991:13224`), fetched in a fix round after

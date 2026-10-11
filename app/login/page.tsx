@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
-import { LoginForm } from "./LoginForm";
+import { LoginFormClient } from "./LoginFormClient";
 import { lookupGreetingName } from "./greeting-action";
 import { sendMagicLink, signInWithPassword } from "./actions";
 
@@ -38,7 +38,7 @@ export default async function LoginPage() {
     // the Figma node binds it, not a slip — see design/notes/LoginForm.md.
     <main className="flex h-screen flex-col p-component-lg lg:flex-row lg:gap-page-stack">
       <div className="flex flex-1 flex-col items-center justify-center">
-        <LoginForm
+        <LoginFormClient
           signInWithPasswordAction={signInWithPassword}
           sendMagicLinkAction={sendMagicLink}
           lookupGreetingNameAction={lookupGreetingName}
