@@ -1,4 +1,4 @@
-# ADR-0017: `cards.size` — optional s/m/l/xl size on Kanban cards
+# ADR-0025: `cards.size` — optional s/m/l/xl size on Kanban cards
 
 **Status**: Proposed (retroactive; the underlying choice was approved by the user 2026-07-23, issue #91)
 
@@ -17,7 +17,7 @@
 - Sorting by size (`?sort=size`) and the detail-panel field read this column directly.
 - Adding a value (e.g. `xs`) requires a migration replacing the check constraint; renaming or removing one requires migrating existing rows.
 - It sits beside `priority` (`low|medium|urgent`, also a text+check; §4.2's `mid` was dropped in the same ticket) and `source`, so the table's small closed sets are modelled uniformly.
-- **Not recoverable from the repo**: why text+check was chosen over a Postgres enum. The #91 ticket body says "`size` enum" while the migration implements text+check, and no comment explains the switch. Consistency with `priority`/`source` is an observation, not a recorded reason. (The later `recipe_unit` enum, ADR-0020, went the other way, also without a written comparison.)
+- **Not recoverable from the repo**: why text+check was chosen over a Postgres enum. The #91 ticket body says "`size` enum" while the migration implements text+check, and no comment explains the switch. Consistency with `priority`/`source` is an observation, not a recorded reason. (The later `recipe_unit` enum, ADR-0028, went the other way, also without a written comparison.)
 - `Architecture.md` §4.2 is stale on this point and should be updated by the architecture layer.
 
 ## Migration

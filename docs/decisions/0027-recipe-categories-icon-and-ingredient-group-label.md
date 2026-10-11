@@ -1,4 +1,4 @@
-# ADR-0019: `recipe_categories.icon` and `recipe_ingredients.group_label`
+# ADR-0027: `recipe_categories.icon` and `recipe_ingredients.group_label`
 
 **Status**: Proposed (retroactive; the underlying choices were approved by the user 2026-07-29/30, issue #119)
 
@@ -16,7 +16,7 @@
 ## Decision
 
 1. **`recipe_categories.icon text not null`** — a member of the `IconName` union in `components/atoms/Icon.tsx`, PascalCase (e.g. `Croissant`), same convention as `board_columns.icon`. Plain text, not an enum or FK. The three default categories are seeded per user by `seed_default_recipe_categories()`, mirroring the Kanban seed trigger; `20260731212646_backfill_recipe_categories.sql` backfills accounts that predate the trigger.
-2. **`recipe_ingredients.group_label text` (nullable)** — one nullable column on the ingredient row; **no** separate `recipe_ingredient_groups` table. The ticket's reasoning: the design has no UI to *manage* groups, only to display them, so a table would model behaviour nobody can reach. Ingredients sharing a label render in one `Card`; unlabelled ones render under a default "Ingrediënten" heading (`design/notes/RecipeDetailPage.md`, reversed in #166). The replace RPC (ADR-0022) writes it from `groupLabel`.
+2. **`recipe_ingredients.group_label text` (nullable)** — one nullable column on the ingredient row; **no** separate `recipe_ingredient_groups` table. The ticket's reasoning: the design has no UI to *manage* groups, only to display them, so a table would model behaviour nobody can reach. Ingredients sharing a label render in one `Card`; unlabelled ones render under a default "Ingrediënten" heading (`design/notes/RecipeDetailPage.md`, reversed in #166). The replace RPC (ADR-0030) writes it from `groupLabel`.
 
 ## Consequences
 

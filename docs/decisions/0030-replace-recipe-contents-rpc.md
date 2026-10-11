@@ -1,4 +1,4 @@
-# ADR-0022: `replace_recipe_contents` — the first RPC and the transactional replace pattern
+# ADR-0030: `replace_recipe_contents` — the first RPC and the transactional replace pattern
 
 **Status**: Proposed (retroactive; the underlying choice was approved by the user 2026-08-01, issue #149)
 
@@ -8,7 +8,7 @@
 
 ## Context
 
-`createRecipe`/`updateRecipe` (`app/(app)/recepten/actions.ts`) wrote ingredients and steps as delete-then-insert pairs through PostgREST: sequential, non-atomic statements, an accepted and documented trade-off since #126. A failed insert after a successful delete could leave a recipe with **no** ingredients or steps, and `updateRecipe` had no compensation (`design/notes/RecipePanel.md`). #149 added a third table to that write (ADR-0021), widening the partial-failure window. The user approved introducing the repo's first Postgres function on 2026-08-01.
+`createRecipe`/`updateRecipe` (`app/(app)/recepten/actions.ts`) wrote ingredients and steps as delete-then-insert pairs through PostgREST: sequential, non-atomic statements, an accepted and documented trade-off since #126. A failed insert after a successful delete could leave a recipe with **no** ingredients or steps, and `updateRecipe` had no compensation (`design/notes/RecipePanel.md`). #149 added a third table to that write (ADR-0029), widening the partial-failure window. The user approved introducing the repo's first Postgres function on 2026-08-01.
 
 ## Decision
 
@@ -24,10 +24,10 @@
 ## Consequences
 
 - Recipe writes are atomic and cost one round trip; the "no ingredients after a failed update" risk is closed.
-- **Replace, not diff**: every save deletes and recreates all ingredient and step rows, so row ids and `created_at` do not survive an edit. Cheap at recipe size; unsuitable if anything needs stable ids (see ADR-0021).
+- **Replace, not diff**: every save deletes and recreates all ingredient and step rows, so row ids and `created_at` do not survive an edit. Cheap at recipe size; unsuitable if anything needs stable ids (see ADR-0029).
 - Recipe-write logic lives in two places, TypeScript validation and SQL, kept in sync by hand; the function signature in `lib/database.types.ts` is likewise maintained to match (ADR-0015 consequence).
 - Errors are a plain raised exception, unlike the later RPCs' custom SQLSTATEs (`MV404`, ADR-0015). Left as is.
-- Established the pattern reused by `move_card`, `move_recipe`, `move_note` and (via #286) `toggle_board_favorite` (ADR-0015, ADR-0018); `docs/guides/data-layer.md` states it as a rule.
+- Established the pattern reused by `move_card`, `move_recipe`, `move_note` and (via #286) `toggle_board_favorite` (ADR-0015, ADR-0026); `docs/guides/data-layer.md` states it as a rule.
 - Delivery to hosted follows ADR-0012.
 
 ## Migration

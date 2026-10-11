@@ -1,4 +1,4 @@
-# ADR-0020: `public.recipe_unit` — one Postgres enum for every unit column
+# ADR-0028: `public.recipe_unit` — one Postgres enum for every unit column
 
 **Status**: Proposed (retroactive; the underlying choice was approved by the user 2026-07-29, issues #119/#120/#130)
 
@@ -22,7 +22,7 @@
 - Adding a unit is cheap (`alter type ... add value`, plus `UNIT_CODES` and the nl/en labels); **removing or renaming one is expensive** once recipes, masses and shopping rows reference it. The tickets instruct starting conservatively and never deviating silently. No `alter type` has been needed so far.
 - One type across recipes, masses and the shopping list keeps merges and joins type-safe and prevents a second, drifting unit vocabulary.
 - Imports can only map to units in the enum (ADR-0013: only `eetlepel`, `theelepel`, `stuk` overlap with NEVO's `Maat`).
-- **Not recoverable**: why an enum rather than a lookup table or text+check (the pattern used for `cards.size`, ADR-0017). The tickets state only "Postgres-enum in plaats van vrije text"; the trade-off against alternatives was not written down.
+- **Not recoverable**: why an enum rather than a lookup table or text+check (the pattern used for `cards.size`, ADR-0025). The tickets state only "Postgres-enum in plaats van vrije text"; the trade-off against alternatives was not written down.
 - `Architecture.md` §4.2 (`unit text nullable`) is stale.
 
 ## Migration
