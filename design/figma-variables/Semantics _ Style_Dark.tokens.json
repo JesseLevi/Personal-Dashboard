@@ -1015,12 +1015,12 @@
         "$value": {
           "colorSpace": "srgb",
           "components": [
-            0.6509804129600525,
-            0.6274510025978088,
-            0.6078431606292725
+            0.34117648005485535,
+            0.32549020648002625,
+            0.3019607961177826
           ],
           "alpha": 1,
-          "hex": "#A6A09B"
+          "hex": "#57534D"
         },
         "$extensions": {
           "com.figma.variableId": "VariableID:3761:7849",
@@ -1028,8 +1028,8 @@
             "ALL_SCOPES"
           ],
           "com.figma.aliasData": {
-            "targetVariableId": "VariableID:e6f89e2971b9a15a141122428bcfc6dce0cd0715/-1:-1",
-            "targetVariableName": "color/stone/400",
+            "targetVariableId": "VariableID:71f91ef2652823d698b5a389fdb6d7a093202f12/-1:-1",
+            "targetVariableName": "color/stone/600",
             "targetVariableSetId": "VariableCollectionId:4a5af3f157830a1d1fa9edfba3d93197009a702b/-1:-1",
             "targetVariableSetName": "Primitives / Tailwind"
           }
