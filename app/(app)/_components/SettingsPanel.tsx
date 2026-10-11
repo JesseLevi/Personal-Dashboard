@@ -8,9 +8,11 @@ import { ButtonToggle, type ButtonToggleItem } from "@/components/molecules/Butt
 import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
 import type { IconName } from "@/components/atoms/Icon";
-import { updateLocale } from "@/lib/profile/actions";
+import { updateDisplayName, updateLocale } from "@/lib/profile/actions";
+import { DISPLAY_NAME_MAX_LENGTH } from "@/lib/profile/schemas";
 import type { Locale } from "@/lib/profile/types";
 
+// design: Claude-designed on request (#398) — the Naam field only.
 // #265 — Figma "Add recipi/Desktop" frame (misleadingly named; the actual
 // content is `4160:33196` desktop drawer / `4160:34064` mobile pull-up
 // panel, both reusing SidePanel per the ticket brief). Page-level
@@ -39,13 +41,16 @@ export interface SettingsPanelProps {
   onClose: () => void;
   /** Server-resolved current locale (`lib/profile/queries.ts#getProfileForNav`) — seeds the Taal field's initial selection. */
   currentLocale: Locale;
+  /** Server-resolved `profiles.display_name` (#398) — seeds the Naam field. */
+  currentDisplayName: string | null;
 }
 
-export function SettingsPanel({ open, onClose, currentLocale }: SettingsPanelProps) {
+export function SettingsPanel({ open, onClose, currentLocale, currentDisplayName }: SettingsPanelProps) {
   const t = useTranslations("components.settingsPanel");
   const tSidePanel = useTranslations("components.sidePanel");
   const tErrors = useTranslations("profile.errors");
   const languageFieldId = useId();
+  const nameFieldId = useId();
 
   const { theme, setTheme } = useTheme();
   const themeItems: readonly ButtonToggleItem[] = (
@@ -88,6 +93,12 @@ export function SettingsPanel({ open, onClose, currentLocale }: SettingsPanelPro
     setPendingLocale(currentLocale);
   }, [currentLocale]);
 
+  // #398: same re-sync-on-prop-change reasoning as pendingLocale above.
+  const [pendingName, setPendingName] = useState(currentDisplayName ?? "");
+  useEffect(() => {
+    setPendingName(currentDisplayName ?? "");
+  }, [currentDisplayName]);
+
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -104,6 +115,15 @@ export function SettingsPanel({ open, onClose, currentLocale }: SettingsPanelPro
       if (!result.success) {
         setError(tErrors(result.error));
         return;
+      }
+      // #398: skip the write when the name is unchanged (compared trimmed,
+      // matching the schema). Any failure keeps the panel open.
+      if (pendingName.trim() !== (currentDisplayName ?? "")) {
+        const nameResult = await updateDisplayName({ displayName: pendingName });
+        if (!nameResult.success) {
+          setError(tErrors(nameResult.error));
+          return;
+        }
       }
       setTheme(pendingTheme);
       onClose();
@@ -138,6 +158,15 @@ export function SettingsPanel({ open, onClose, currentLocale }: SettingsPanelPro
         </Button>
       }
     >
+      <InputField
+        label={t("nameLabel")}
+        id={nameFieldId}
+        type="text"
+        autoComplete="name"
+        maxLength={DISPLAY_NAME_MAX_LENGTH}
+        value={pendingName}
+        onChange={(event: ChangeEvent<HTMLInputElement>) => setPendingName(event.target.value)}
+      />
       <ButtonToggle
         key={themeReady ? "theme-ready" : "theme-loading"}
         title={t("themeLabel")}
