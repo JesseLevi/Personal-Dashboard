@@ -30,7 +30,7 @@ describe("slim EditingBar", () => {
 
   it("keeps the essentials on the bar itself", () => {
     expect(BAR_COMMAND_IDS).toEqual([
-      "undo", "redo", "blockType", "list", "table", "bold", "italic", "link", "align", "image", "overflow",
+      "blockType", "list", "table", "bold", "italic", "link", "align", "image", "undo", "redo", "overflow",
     ]);
   });
 });

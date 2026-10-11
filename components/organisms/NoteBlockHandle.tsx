@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import type { Editor } from "@tiptap/react";
@@ -17,6 +17,7 @@ import {
   duplicateBlock,
   isConvertibleBlock,
   moveBlock,
+  moveBlockToIndex,
   selectBlockStart,
   topLevelBlockAt,
 } from "@/lib/notes/block-commands";
@@ -72,6 +73,126 @@ interface Target {
   node: PMNode;
 }
 
+const DRAG_THRESHOLD = 4;
+
+/**
+ * Press-and-slide a top-level block: the handle follows the pointer on the
+ * vertical axis only, the block moves with it at reduced opacity and the
+ * blocks it passes slide aside to open its new place (the Te-Doen board's
+ * drag feel). Releasing commits one `moveBlockToIndex`; Escape cancels.
+ */
+function slideBlock(editor: Editor, pos: number, handle: HTMLElement, startY: number, onDragged: () => void) {
+  const view = editor.view;
+  const block = topLevelBlockAt(view.state.doc, pos);
+  if (!block) return;
+  const doc = view.state.doc;
+  const els: HTMLElement[] = [];
+  let at = 0;
+  for (let i = 0; i < doc.childCount; i += 1) {
+    const dom = view.nodeDOM(at);
+    if (!(dom instanceof HTMLElement)) return;
+    els.push(dom);
+    at += doc.child(i).nodeSize;
+  }
+  const from = block.index;
+  const rects = els.map((el) => el.getBoundingClientRect());
+  const size = rects[from].height;
+  const neighbour = from < els.length - 1 ? rects[from + 1].top - rects[from].bottom : from > 0 ? rects[from].top - rects[from - 1].bottom : 0;
+  const shift = size + neighbour;
+  const minDy = rects[0].top - rects[from].top;
+  const maxDy = rects[els.length - 1].bottom - rects[from].bottom;
+  let active = false;
+  let target = from;
+  let dy = 0;
+
+  function apply() {
+    els.forEach((el, i) => {
+      if (i === from) {
+        el.style.transform = `translateY(${dy}px)`;
+        return;
+      }
+      const offset = i > from && i <= target ? -shift : i < from && i >= target ? shift : 0;
+      el.style.transform = offset ? `translateY(${offset}px)` : "";
+    });
+    handle.style.transform = `translateY(${dy}px)`;
+  }
+
+  function start() {
+    active = true;
+    onDragged();
+    editor.view.dispatch(editor.state.tr.setMeta("lockDragHandle", true));
+    document.body.style.cursor = "grabbing";
+    document.body.style.userSelect = "none";
+    els.forEach((el, i) => {
+      el.style.willChange = "transform";
+      if (i === from) {
+        el.style.position = "relative";
+        el.style.zIndex = "5";
+        el.style.opacity = "0.4";
+        el.style.pointerEvents = "none";
+      } else {
+        el.style.transition = "transform var(--duration-base) var(--ease-base)";
+      }
+    });
+  }
+
+  function onMove(event: PointerEvent) {
+    const raw = event.clientY - startY;
+    if (!active) {
+      if (Math.abs(raw) < DRAG_THRESHOLD) return;
+      start();
+    }
+    dy = Math.min(Math.max(raw, minDy), maxDy);
+    const center = rects[from].top + dy + size / 2;
+    let next = 0;
+    rects.forEach((rect, i) => {
+      if (i !== from && rect.top + rect.height / 2 < center) next += 1;
+    });
+    target = next;
+    apply();
+  }
+
+  function cleanup() {
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+    window.removeEventListener("pointercancel", onCancel);
+    window.removeEventListener("keydown", onKey, true);
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    els.forEach((el) => {
+      el.style.transform = "";
+      el.style.transition = "";
+      el.style.willChange = "";
+      el.style.position = "";
+      el.style.zIndex = "";
+      el.style.opacity = "";
+      el.style.pointerEvents = "";
+    });
+    handle.style.transform = "";
+    if (active && !editor.isDestroyed) editor.view.dispatch(editor.state.tr.setMeta("lockDragHandle", false));
+  }
+
+  function onUp() {
+    const commit = active && target !== from;
+    cleanup();
+    if (commit) moveBlockToIndex(editor, target, block!.from);
+  }
+  function onCancel() {
+    cleanup();
+  }
+  function onKey(event: globalThis.KeyboardEvent) {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    cleanup();
+  }
+
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", onUp);
+  window.addEventListener("pointercancel", onCancel);
+  window.addEventListener("keydown", onKey, true);
+}
+
 export function NoteBlockHandle({ editor }: NoteBlockHandleProps) {
   const t = useTranslations("components.noteBlockMenu");
   const tItems = useTranslations("components.slashMenu.items");
@@ -81,6 +202,7 @@ export function NoteBlockHandle({ editor }: NoteBlockHandleProps) {
     () => false,
   );
   const hovered = useRef<Target | null>(null);
+  const suppressClick = useRef(false);
   const [target, setTarget] = useState<Target | null>(null);
   const [placement, setPlacement] = useState<Placement | null>(null);
   const handleRef = useRef<HTMLSpanElement>(null);
@@ -125,40 +247,39 @@ export function NoteBlockHandle({ editor }: NoteBlockHandleProps) {
     editor.view.dispatch(editor.state.tr.setMeta("lockDragHandle", isOpen));
   }, [editor, finePointer, isOpen]);
 
-  // The handle sits in the gutter, outside the text column, so a vertical drag
-  // never crosses the editor and ProseMirror would find no drop position.
-  // Re-dispatch gutter drag events onto the editor with x clamped inside the
-  // column: the drop then follows the pointer's height.
+  // The handle is a vertical slider, not a free native drag: the browser's drag
+  // image would follow the pointer anywhere. Native drag is cancelled and the
+  // block is moved with pointer events instead (see slideBlock below).
   useEffect(() => {
     if (!editor || editor.isDestroyed || !finePointer) return;
-    const view = editor.view;
-    function redirect(event: DragEvent) {
-      const source = event.target as Node | null;
-      if (!view.dragging || !event.dataTransfer || (source && view.dom.contains(source))) return;
-      const rect = view.dom.getBoundingClientRect();
-      event.preventDefault();
-      event.stopPropagation();
-      view.dom.dispatchEvent(
-        new DragEvent(event.type, {
-          bubbles: true,
-          cancelable: true,
-          clientX: Math.min(Math.max(event.clientX, rect.left + 1), rect.right - 1),
-          clientY: Math.min(Math.max(event.clientY, rect.top + 1), rect.bottom - 1),
-          dataTransfer: event.dataTransfer,
-        }),
-      );
+    function cancelNativeDrag(event: DragEvent) {
+      const handle = handleRef.current?.parentElement;
+      if (handle && event.target instanceof Node && handle.contains(event.target)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
     }
-    document.addEventListener("dragover", redirect, true);
-    document.addEventListener("drop", redirect, true);
-    return () => {
-      document.removeEventListener("dragover", redirect, true);
-      document.removeEventListener("drop", redirect, true);
-    };
+    document.addEventListener("dragstart", cancelNativeDrag, true);
+    return () => document.removeEventListener("dragstart", cancelNativeDrag, true);
   }, [editor, finePointer]);
+
+  function onHandlePointerDown(event: ReactPointerEvent<HTMLElement>) {
+    const current = hovered.current;
+    const button = (event.target as Element).closest("button");
+    if (!editor || event.button !== 0 || !button || !current) return;
+    if (isOpen) return;
+    slideBlock(editor, current.pos, button, event.clientY, () => {
+      suppressClick.current = true;
+    });
+  }
 
   if (!editor || !finePointer) return null;
 
   function openMenu() {
+    if (suppressClick.current) {
+      suppressClick.current = false;
+      return;
+    }
     const trigger = handleRef.current?.querySelector("button");
     const current = hovered.current;
     if (!trigger || !current) return;
@@ -217,7 +338,7 @@ export function NoteBlockHandle({ editor }: NoteBlockHandleProps) {
           hovered.current = node ? { node, pos } : hovered.current;
         }}
       >
-        <span ref={handleRef} className="contents">
+        <span ref={handleRef} className="contents" onPointerDown={onHandlePointerDown}>
           <Button
             variant="transparent"
             icon="EllipsisVertical"
