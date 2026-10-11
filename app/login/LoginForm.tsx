@@ -14,17 +14,21 @@ import { useTranslations } from "next-intl";
 import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
 import { magicLinkSchema } from "@/lib/auth/schemas";
-import { greetingKeyForHour, type GreetingKey } from "@/lib/auth/greeting";
+import { useTurnstile } from "./useTurnstile";
 import type { MagicLinkState, PasswordLoginState } from "./actions";
 
-// Login/Mobile+Desktop (3929:25181). StepAnimation (3934:32745): two panes
-// share one grid cell and each slides (no fade) by the Figma rail distance
-// (357px = 312px pane + 45px gap). No scroll container, so focus() can't
-// scroll it; a padded edge-fade mask (not overflow-hidden) keeps focus rings
-// whole. Record: design/notes/LoginForm.md.
+// figma: Login/Mobile+Desktop (3929:25181); StepAnimation (3934:32745);
+// heading Step-01 4221:14845 "Hey, welkom bij Atlas" / Step-02 4221:14940
+// "Hey Carlotta, welkom bij Atlas". Panes share one grid cell and slide by
+// 357px; the heading's name part opens its width in place (GreetingHeading).
+// Record: design/notes/LoginForm.md.
 
 const PANE_CLASS =
   "col-start-1 row-start-1 transition-[translate] duration-[var(--duration-base)] ease-base motion-reduce:transition-none";
+
+// Matches --duration-base (200ms) plus a frame of slack.
+const GREETING_COLLAPSE_MS = 250;
+const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 
 const IDLE_PASSWORD_STATE: PasswordLoginState = { status: "idle" };
 const IDLE_MAGIC_LINK_STATE: MagicLinkState = { status: "idle" };
@@ -38,8 +42,15 @@ export interface LoginFormProps {
     prevState: MagicLinkState,
     formData: FormData,
   ) => Promise<MagicLinkState>;
-  /** Greeting bucket computed from the request's own (server) clock; corrected to the visitor's local clock after mount — see the useEffect below. */
-  serverGreetingKey: GreetingKey;
+  /** Server action returning the first name for a valid e-mail (ADR-0031); a prop so Ladle can mock it. */
+  lookupGreetingNameAction: (input: {
+    email: string;
+    turnstileToken: string | null;
+  }) => Promise<{ name: string | null }>;
+  /** Turnstile site key, read server-side by page.tsx; absent = no widget, null token. */
+  turnstileSiteKey?: string | null;
+  /** Ladle-only: a name already shown in the heading on mount. */
+  initialGreetingName?: string;
   /**
    * Ladle-only: which StepAnimation pane is visible on mount. A real visit
    * always starts at "email" (the default); the Ladle baselines for step 3,
@@ -55,21 +66,21 @@ export interface LoginFormProps {
 export function LoginForm({
   signInWithPasswordAction,
   sendMagicLinkAction,
-  serverGreetingKey,
+  lookupGreetingNameAction,
+  turnstileSiteKey = null,
+  initialGreetingName,
   initialStep = "email",
   initialState,
 }: LoginFormProps) {
   const t = useTranslations("auth");
 
-  // Server renders with the request's own clock; this corrects to the
-  // visitor's local clock once mounted. The initial client render matches
-  // the server output exactly (same serverGreetingKey), so the correction
-  // is an ordinary post-mount state update, not a hydration diff — the
-  // element still carries suppressHydrationWarning as instructed.
-  const [greetingKey, setGreetingKey] = useState(serverGreetingKey);
-  useEffect(() => {
-    setGreetingKey(greetingKeyForHour(new Date().getHours()));
-  }, []);
+  // The text stays while the name part collapses, so it can animate out.
+  const [greetingName, setGreetingName] = useState(initialGreetingName ?? "");
+  const [greetingVisible, setGreetingVisible] = useState(Boolean(initialGreetingName));
+  const lookupSeq = useRef(0);
+  const lookedUpEmail = useRef<string | null>(null);
+  const greetingShown = useRef(Boolean(initialGreetingName));
+  const { containerRef: turnstileRef, getToken } = useTurnstile(turnstileSiteKey);
 
   const [step, setStep] = useState<"email" | "password">(initialStep);
   const [email, setEmail] = useState("");
@@ -120,6 +131,31 @@ export function LoginForm({
     setEmailError(null);
     setEmail(parsed.data.email);
     setStep("password");
+    void startGreetingLookup(parsed.data.email);
+  }
+
+  // Runs beside the step slide, never delaying it. Same e-mail as the last
+  // lookup keeps the name and skips the query; a different one collapses the
+  // old name first. Stale responses (older seq) are dropped; null/throw = plain greeting.
+  async function startGreetingLookup(address: string) {
+    if (address === lookedUpEmail.current) return;
+    lookedUpEmail.current = address;
+    const seq = ++lookupSeq.current;
+    const hadName = greetingShown.current;
+    if (hadName) {
+      greetingShown.current = false;
+      setGreetingVisible(false);
+    }
+    try {
+      const [token] = await Promise.all([getToken(), hadName ? wait(GREETING_COLLAPSE_MS) : null]);
+      const { name } = await lookupGreetingNameAction({ email: address, turnstileToken: token });
+      if (seq !== lookupSeq.current || !name) return;
+      setGreetingName(name);
+      setGreetingVisible(true);
+      greetingShown.current = true;
+    } catch {
+      // plain greeting stays
+    }
   }
 
   // Undesigned (no Figma trigger for "back to email") — Escape plus a
@@ -138,9 +174,13 @@ export function LoginForm({
 
   return (
     <div className="flex w-full flex-col items-center">
-      <h1 className="text-xl font-semibold text-text-primary" suppressHydrationWarning>
-        {t(`greeting.${greetingKey}`)}
-      </h1>
+      <GreetingHeading
+        hey={t("greeting.hey")}
+        tail={t("greeting.tail")}
+        name={greetingName}
+        visible={greetingVisible}
+      />
+      <div ref={turnstileRef} aria-hidden className="absolute size-0 overflow-hidden" />
 
       {/* 16px padding, offset by negative margin + mt (24px - 16px): room for
           focus rings inside the mask's border box, layout unchanged. */}
@@ -275,5 +315,41 @@ function ErrorLine({ id, message }: { id: string; message: string | null }) {
         </p>
       </div>
     </div>
+  );
+}
+
+// Three inline parts in a centered row: Hey | name | tail. The name part opens
+// from 0 width (grid 0fr -> 1fr), so the centered row pushes the outer parts
+// apart. The visual row is aria-hidden; the sr-only sentence is the h1's
+// accessible name. A long name truncates (min-w-0 + ellipsis) so the row never
+// exceeds its column. Record: design/notes/LoginForm.md.
+function GreetingHeading({
+  hey,
+  tail,
+  name,
+  visible,
+}: {
+  hey: string;
+  tail: string;
+  name: string;
+  visible: boolean;
+}) {
+  const shown = visible && name !== "";
+  return (
+    <h1 className="max-w-full text-xl font-semibold text-text-primary">
+      <span className="sr-only">{`${hey}${shown ? ` ${name}` : ""}${tail}`}</span>
+      <span aria-hidden className="flex max-w-full items-baseline justify-center">
+        <span className="shrink-0 whitespace-nowrap">{hey}</span>
+        <span
+          className={cn(
+            "grid min-w-0 transition-[grid-template-columns,opacity] duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+            shown ? "grid-cols-[1fr] opacity-100" : "grid-cols-[0fr] opacity-0",
+          )}
+        >
+          <span className="overflow-hidden text-ellipsis whitespace-pre">{` ${name}`}</span>
+        </span>
+        <span className="shrink-0 whitespace-nowrap">{tail}</span>
+      </span>
+    </h1>
   );
 }

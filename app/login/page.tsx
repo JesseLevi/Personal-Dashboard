@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
-import { greetingKeyForHour } from "@/lib/auth/greeting";
 import { LoginForm } from "./LoginForm";
+import { lookupGreetingName } from "./greeting-action";
 import { sendMagicLink, signInWithPassword } from "./actions";
 
 // figma: node-id=3929:25181 (Pages/Login — LogIn/Desktop 3929:25202,
@@ -19,7 +19,8 @@ export default async function LoginPage() {
   const userId = await getAuthenticatedUserId();
   if (userId) redirect("/te-doen");
 
-  const greetingKey = greetingKeyForHour(new Date().getHours());
+  // Server-side env, never NEXT_PUBLIC_ (ADR-0031).
+  const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY || null;
 
   return (
     // `lg` (1024px), not `md`: below it (including tablet-width viewports)
@@ -40,7 +41,8 @@ export default async function LoginPage() {
         <LoginForm
           signInWithPasswordAction={signInWithPassword}
           sendMagicLinkAction={sendMagicLink}
-          serverGreetingKey={greetingKey}
+          lookupGreetingNameAction={lookupGreetingName}
+          turnstileSiteKey={turnstileSiteKey}
         />
       </div>
 
