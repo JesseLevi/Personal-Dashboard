@@ -144,26 +144,28 @@ flow instead of an external event. Safe on the save path too: by the time
 the effect fires there, `pendingLocale` already equals the incoming value,
 so it's a same-value no-op, not a stomp.
 
-## Naam field — Claude-designed on request (#398)
+## Voornaam + Achternaam fields — Claude-designed on request (#398, #404)
 
-Claude-designed on request (#398), no Figma node: the user explicitly asked
-for a display-name input. One existing `InputField` (single-line text,
-`label` = Naam / Name) placed above the theme toggle, reusing the same
-atoms and semantic tokens as the Taal field; no new tokens or components.
-Saved by the existing Opslaan button: `updateLocale` first, then
-`updateDisplayName` (skipped when the trimmed value is unchanged); the panel
-closes and the theme applies only when every write succeeded, otherwise the
-existing inline error line shows. Empty/whitespace becomes `null` (sidebar
-shows its fallback name); max 40 chars (app-level, the column has no DB
-constraint). Seeded from `AppShellNav`'s `displayName`, re-synced on prop
-change like `pendingLocale`. No Ladle story / visual baseline: the panel
-imports server actions and next-themes, and no story for it exists (flagged
-in the PR, not invented).
+Claude-designed on request, no Figma node: the user asked for a name input
+(#398), then a split into first + last name (#404). Two single-line
+`InputField`s (Voornaam / Achternaam, First name / Last name) are the
+**bottom** inputs: toggle, language, Voornaam, Achternaam. Same atoms and
+semantic tokens as Taal; no new tokens or components. `display_name` holds
+the first name (sidebar shows it); `last_name` is new (nullable). Saved by
+Opslaan: `updateLocale` first, then ONE `updateName` write for both (skipped
+when both trimmed values are unchanged); the panel closes and the theme
+applies only when every write succeeded, else the inline error shows.
+Empty/whitespace becomes `null`; max 40 chars each (app-level, no DB
+constraint). Seeded from `AppShellNav`'s `displayName` / `lastName`, re-synced
+on prop change like `pendingLocale`. `lastName` comes from the separate,
+error-swallowing `getLastName` query, not `getProfileForNav`, so a hosted DB
+without the #404 migration only loses this field. No Ladle story / visual
+baseline: the panel imports server actions and next-themes (flagged in PR).
 
 ## Not built
 
 - **No email/password fields** — Figma draws only Kleurenthema + Taal (the
-  Naam field is the #398 Claude-designed exception above).
+  name fields are the #398/#404 Claude-designed exception above).
 - **No delete-account button** — see the footer table above.
 - **No avatar upload** — undesigned, out of scope (`design/notes/Sidebar.md`'s
   own #265 entry covers the read-only avatar/initials side).

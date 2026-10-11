@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
 import { ensureUserDefaults } from "@/lib/defaults/ensure";
-import { getProfileForNav } from "@/lib/profile/queries";
+import { getLastName, getProfileForNav } from "@/lib/profile/queries";
 import { AppShellNav } from "./_components/AppShellNav";
 
 // Auth guard for the whole (app) route group. #168 added middleware.ts,
@@ -28,12 +28,15 @@ export default async function AppLayout({
   // reached (ADR-0017). Steady state = one indexed count in SQL.
   await ensureUserDefaults();
 
-  const profile = await getProfileForNav();
+  // #404: separate, error-swallowing query so a not-yet-migrated last_name
+  // column cannot break the nav profile; both run in parallel.
+  const [profile, lastName] = await Promise.all([getProfileForNav(), getLastName()]);
 
   return (
     <AppShellNav
       displayName={profile.displayName}
       avatarUrl={profile.avatarUrl}
+      lastName={lastName}
       locale={profile.locale}
     >
       {children}

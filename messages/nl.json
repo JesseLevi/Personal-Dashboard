@@ -339,7 +339,6 @@
     },
     "settingsPanel": {
       "title": "Instellingen",
-      "nameLabel": "Naam",
       "themeLabel": "Kleurenthema",
       "themeOptions": {
         "system": "Systeem",
@@ -351,6 +350,8 @@
         "nl": "Nederlands",
         "en": "Engels"
       },
+      "firstNameLabel": "Voornaam",
+      "lastNameLabel": "Achternaam",
       "saveLabel": "Opslaan",
       "savingLabel": "Opslaan..."
     },

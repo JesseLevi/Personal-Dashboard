@@ -8,11 +8,12 @@ import { ButtonToggle, type ButtonToggleItem } from "@/components/molecules/Butt
 import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
 import type { IconName } from "@/components/atoms/Icon";
-import { updateDisplayName, updateLocale } from "@/lib/profile/actions";
+import { updateLocale, updateName } from "@/lib/profile/actions";
 import { DISPLAY_NAME_MAX_LENGTH } from "@/lib/profile/schemas";
 import type { Locale } from "@/lib/profile/types";
 
-// design: Claude-designed on request (#398) — the Naam field only.
+// design: Claude-designed on request (#398, #404) — the Voornaam + Achternaam
+// fields only (the two bottom inputs).
 // #265 — Figma "Add recipi/Desktop" frame (misleadingly named; the actual
 // content is `4160:33196` desktop drawer / `4160:34064` mobile pull-up
 // panel, both reusing SidePanel per the ticket brief). Page-level
@@ -41,16 +42,25 @@ export interface SettingsPanelProps {
   onClose: () => void;
   /** Server-resolved current locale (`lib/profile/queries.ts#getProfileForNav`) — seeds the Taal field's initial selection. */
   currentLocale: Locale;
-  /** Server-resolved `profiles.display_name` (#398) — seeds the Naam field. */
+  /** Server-resolved `profiles.display_name` (#398; the FIRST name since #404) — seeds the Voornaam field. */
   currentDisplayName: string | null;
+  /** Server-resolved `profiles.last_name` (#404, `getLastName`) — seeds the Achternaam field. */
+  currentLastName: string | null;
 }
 
-export function SettingsPanel({ open, onClose, currentLocale, currentDisplayName }: SettingsPanelProps) {
+export function SettingsPanel({
+  open,
+  onClose,
+  currentLocale,
+  currentDisplayName,
+  currentLastName,
+}: SettingsPanelProps) {
   const t = useTranslations("components.settingsPanel");
   const tSidePanel = useTranslations("components.sidePanel");
   const tErrors = useTranslations("profile.errors");
   const languageFieldId = useId();
-  const nameFieldId = useId();
+  const firstNameFieldId = useId();
+  const lastNameFieldId = useId();
 
   const { theme, setTheme } = useTheme();
   const themeItems: readonly ButtonToggleItem[] = (
@@ -93,11 +103,15 @@ export function SettingsPanel({ open, onClose, currentLocale, currentDisplayName
     setPendingLocale(currentLocale);
   }, [currentLocale]);
 
-  // #398: same re-sync-on-prop-change reasoning as pendingLocale above.
-  const [pendingName, setPendingName] = useState(currentDisplayName ?? "");
+  // #398/#404: same re-sync-on-prop-change reasoning as pendingLocale above.
+  const [pendingFirstName, setPendingFirstName] = useState(currentDisplayName ?? "");
   useEffect(() => {
-    setPendingName(currentDisplayName ?? "");
+    setPendingFirstName(currentDisplayName ?? "");
   }, [currentDisplayName]);
+  const [pendingLastName, setPendingLastName] = useState(currentLastName ?? "");
+  useEffect(() => {
+    setPendingLastName(currentLastName ?? "");
+  }, [currentLastName]);
 
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -116,10 +130,17 @@ export function SettingsPanel({ open, onClose, currentLocale, currentDisplayName
         setError(tErrors(result.error));
         return;
       }
-      // #398: skip the write when the name is unchanged (compared trimmed,
-      // matching the schema). Any failure keeps the panel open.
-      if (pendingName.trim() !== (currentDisplayName ?? "")) {
-        const nameResult = await updateDisplayName({ displayName: pendingName });
+      // #398/#404: one write for both names, skipped when neither changed
+      // (compared trimmed, matching the schema). Any failure keeps the panel
+      // open.
+      if (
+        pendingFirstName.trim() !== (currentDisplayName ?? "") ||
+        pendingLastName.trim() !== (currentLastName ?? "")
+      ) {
+        const nameResult = await updateName({
+          firstName: pendingFirstName,
+          lastName: pendingLastName,
+        });
         if (!nameResult.success) {
           setError(tErrors(nameResult.error));
           return;
@@ -158,15 +179,6 @@ export function SettingsPanel({ open, onClose, currentLocale, currentDisplayName
         </Button>
       }
     >
-      <InputField
-        label={t("nameLabel")}
-        id={nameFieldId}
-        type="text"
-        autoComplete="name"
-        maxLength={DISPLAY_NAME_MAX_LENGTH}
-        value={pendingName}
-        onChange={(event: ChangeEvent<HTMLInputElement>) => setPendingName(event.target.value)}
-      />
       <ButtonToggle
         key={themeReady ? "theme-ready" : "theme-loading"}
         title={t("themeLabel")}
@@ -187,6 +199,24 @@ export function SettingsPanel({ open, onClose, currentLocale, currentDisplayName
         onChange={(event: ChangeEvent<HTMLSelectElement>) =>
           setPendingLocale(event.target.value as Locale)
         }
+      />
+      <InputField
+        label={t("firstNameLabel")}
+        id={firstNameFieldId}
+        type="text"
+        autoComplete="given-name"
+        maxLength={DISPLAY_NAME_MAX_LENGTH}
+        value={pendingFirstName}
+        onChange={(event: ChangeEvent<HTMLInputElement>) => setPendingFirstName(event.target.value)}
+      />
+      <InputField
+        label={t("lastNameLabel")}
+        id={lastNameFieldId}
+        type="text"
+        autoComplete="family-name"
+        maxLength={DISPLAY_NAME_MAX_LENGTH}
+        value={pendingLastName}
+        onChange={(event: ChangeEvent<HTMLInputElement>) => setPendingLastName(event.target.value)}
       />
       {error ? (
         <p className="text-base font-semibold text-priority-urgent">{error}</p>

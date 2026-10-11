@@ -423,6 +423,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          last_name: string | null
           locale: string
           updated_at: string
         }
@@ -431,6 +432,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          last_name?: string | null
           locale?: string
           updated_at?: string
         }
@@ -439,6 +441,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          last_name?: string | null
           locale?: string
           updated_at?: string
         }

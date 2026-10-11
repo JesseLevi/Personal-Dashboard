@@ -2,7 +2,7 @@
 -- rls-<table>.sql for every new table; check-rls-coverage.sh enforces that).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(8);
+select plan(10);
 
 -- Seed two users directly in auth.users (signup trigger creates profiles).
 insert into auth.users (id, email)
@@ -43,6 +43,18 @@ select is_empty(
   $$ update public.profiles set locale = 'en'
      where id = '00000000-0000-0000-0000-00000000000b' returning id $$,
   'A cannot update B''s locale'
+);
+-- #404: profiles.last_name -- own row succeeds, other user's row is a no-op.
+select results_eq(
+  $$ update public.profiles set last_name = 'Kamps'
+     where id = '00000000-0000-0000-0000-00000000000a' returning last_name $$,
+  $$ values ('Kamps'::text) $$,
+  'A can update their own last_name'
+);
+select is_empty(
+  $$ update public.profiles set last_name = 'hacked'
+     where id = '00000000-0000-0000-0000-00000000000b' returning id $$,
+  'A cannot update B''s last_name'
 );
 select is_empty(
   $$ delete from public.profiles

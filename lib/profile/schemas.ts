@@ -18,10 +18,14 @@ export const updateLocaleSchema = z.object({
 // Trimmed; an empty/whitespace-only string becomes null (= "no name", the
 // sidebar then shows its fallback name).
 export const DISPLAY_NAME_MAX_LENGTH = 40;
-export const updateDisplayNameSchema = z.object({
-  displayName: z
-    .string()
-    .trim()
-    .max(DISPLAY_NAME_MAX_LENGTH)
-    .transform((value) => (value === "" ? null : value)),
+// #404: display_name now holds the FIRST name; last_name sits next to it and
+// follows the same rules. Both are written in one update.
+const nameField = z
+  .string()
+  .trim()
+  .max(DISPLAY_NAME_MAX_LENGTH)
+  .transform((value) => (value === "" ? null : value));
+export const updateNameSchema = z.object({
+  firstName: nameField,
+  lastName: nameField,
 });

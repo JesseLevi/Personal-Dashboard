@@ -77,3 +77,25 @@ export const getProfileForNav = cache(async (): Promise<NavProfile> => {
     : "nl";
   return { displayName: data.display_name, avatarUrl: data.avatar_url, locale };
 });
+
+/** #404: `profiles.last_name`, deliberately NOT part of `getProfileForNav`:
+ * that query also carries the locale + nav name, and hosted may not have the
+ * column yet (migration applied via deploy.yml). A missing column must only
+ * cost this field, never the nav. Returns null on any error. */
+export const getLastName = cache(async (): Promise<string | null> => {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return null;
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("last_name")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[profile] getLastName failed:", error.code, error.message);
+    return null;
+  }
+  return data?.last_name ?? null;
+});
