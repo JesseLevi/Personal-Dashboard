@@ -10,7 +10,9 @@ import { isIconName } from "@/components/atoms/Icon";
 import { isPriority } from "@/lib/boards/enums";
 import { applyCardMove, type CardMove } from "@/lib/boards/optimistic";
 import type { BoardWithColumns, CardWithLabels } from "@/lib/boards/types";
+import { blurInTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 import { useTeDoenColumnPanel } from "./TeDoenColumnPanel";
+import { clearBoardEnter, useTeDoenBoardSwitch, wantsBoardEnter } from "./TeDoenBoardSwitch";
 import { CardDetailPanel, type CardDetailPanelTarget } from "./CardDetailPanel";
 import { createCard, deleteCard, moveCard, updateCard } from "./actions";
 
@@ -38,6 +40,19 @@ export function TeDoenBoard({ board, dragDisabled }: TeDoenBoardProps) {
   const format = useFormatter();
   const router = useRouter();
   const columnPanel = useTeDoenColumnPanel();
+  const { exiting } = useTeDoenBoardSwitch();
+  const reduced = usePrefersReducedMotion();
+
+  // #413: enter fade only when this mount follows a board switch, and only
+  // until it has played (a lingering animation fill keeps a filter on the
+  // columns, which breaks drag overlays).
+  const [entering, setEntering] = useState(() => wantsBoardEnter(board.id));
+  useEffect(() => {
+    if (!entering) return;
+    clearBoardEnter();
+    const id = setTimeout(() => setEntering(false), blurInTotalMs(board.columns.length, reduced));
+    return () => clearTimeout(id);
+  }, [entering, board.columns.length, reduced]);
 
   // Local optimistic copy of `board` (#96) — same pattern @dnd-kit's own
   // docs describe one layer down (Context7 /clauderic/dnd-kit,
@@ -138,6 +153,7 @@ export function TeDoenBoard({ board, dragDisabled }: TeDoenBoardProps) {
       <BoardView
         columns={columns}
         dragDisabled={dragDisabled}
+        columnMotion={exiting ? "out" : entering ? "in" : undefined}
         onMove={handleMove}
         addLabel={t("addLabel")}
         editLabel={t("editLabel")}

@@ -4,6 +4,7 @@ import { loadTeDoenPageData } from "./board-data";
 import { TeDoenHeader } from "./TeDoenHeader";
 import { TeDoenBoard } from "./TeDoenBoard";
 import { TeDoenColumnPanelProvider } from "./TeDoenColumnPanel";
+import { TeDoenBoardSwitchProvider } from "./TeDoenBoardSwitch";
 import { createBoard, renameBoard, toggleBoardFavorite } from "./actions";
 
 // Shared Server Component body for both `/te-doen` (page.tsx, no boardId —
@@ -35,6 +36,7 @@ export async function TeDoenPageBody({ boardId, sortParam }: TeDoenPageBodyProps
 
   return (
     <TeDoenColumnPanelProvider boardId={board.id}>
+      <TeDoenBoardSwitchProvider boardId={board.id} columnCount={board.columns.length}>
       <TeDoenHeader
         boards={boards}
         board={board}
@@ -49,6 +51,7 @@ export async function TeDoenPageBody({ boardId, sortParam }: TeDoenPageBodyProps
           against what the user actually sees. See TeDoenBoard.md for the
           full reasoning #96 (drag persistence) must inherit. */}
       <TeDoenBoard board={board} dragDisabled={sort !== null} />
+      </TeDoenBoardSwitchProvider>
     </TeDoenColumnPanelProvider>
   );
 }

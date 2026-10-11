@@ -4,6 +4,8 @@ import { BoardView, type BoardColumn } from "./BoardView";
 import { CardContentTicket } from "../molecules/CardContentTicket";
 import { CardContentRecipe } from "../molecules/CardContentRecipe";
 import { Tag } from "../atoms/Tag";
+import { Button } from "../atoms/Button";
+import { blurInTotalMs, blurOutTotalMs, usePrefersReducedMotion } from "../../lib/ui/blur-fade";
 import en from "../../messages/en.json";
 
 const addLabel = en.components.cardContainer.addLabel;
@@ -191,3 +193,56 @@ export const LastColumnMuted = () => (
     )}
   />
 );
+
+// #413: board switch. Exit fade on the current board, then the other board
+// mounts with the enter fade; the motion is dropped once it has played.
+export const BoardSwitch = () => {
+  const [board, setBoard] = useState<"tickets" | "recipes">("tickets");
+  const [motion, setMotion] = useState<"in" | "out" | undefined>();
+  const reduced = usePrefersReducedMotion();
+  const next = board === "tickets" ? "recipes" : "tickets";
+
+  function switchBoard() {
+    setMotion("out");
+    setTimeout(() => {
+      setBoard(next);
+      setMotion("in");
+      setTimeout(() => setMotion(undefined), blurInTotalMs(4, reduced));
+    }, blurOutTotalMs(4, reduced));
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Button onClick={switchBoard} disabled={motion !== undefined}>
+        Switch board
+      </Button>
+      {board === "tickets" ? (
+        <BoardView
+          key="tickets"
+          columns={initialTicketColumns}
+          columnMotion={motion}
+          addLabel={addLabel}
+          editLabel={editLabel}
+          emptyLabel={emptyLabel}
+          renderItem={(item: TicketItem) => (
+            <CardContentTicket title={item.title}>
+              <Tag variant={item.tag.variant}>{item.tag.label}</Tag>
+            </CardContentTicket>
+          )}
+        />
+      ) : (
+        <BoardView
+          key="recipes"
+          columns={recipeColumns}
+          columnMotion={motion}
+          addLabel={addLabel}
+          editLabel={editLabel}
+          emptyLabel={emptyLabel}
+          renderItem={(item: RecipeItem) => (
+            <CardContentRecipe imageUrl={PLACEHOLDER_IMAGE} name={item.name} duration={item.duration} />
+          )}
+        />
+      )}
+    </div>
+  );
+};
