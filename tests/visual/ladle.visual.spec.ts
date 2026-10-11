@@ -46,9 +46,8 @@ test.describe("Ladle story visual baselines", () => {
 
   for (const storyId of storyIds) {
     test(storyId, async ({ page }) => {
-      // Fixed clock keeps rendering deterministic across runs (the old
-      // time-of-day login greeting is gone, but removing the freeze shifted
-      // editing-bar / link-popover popover baselines).
+      // Fixed clock keeps baselines stable across runs. Do not remove: doing
+      // so shifted the editing-bar / link-popover baselines (#407).
       await page.clock.setFixedTime(new Date("2026-01-01T14:00:00"));
       await page.goto(`/?story=${storyId}&mode=preview`);
 
