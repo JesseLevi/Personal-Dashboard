@@ -210,12 +210,8 @@ export const ALIGN_MENU: EditingBarMenuDef = {
 // block type there needs no second edit here.
 const INSERT_ITEMS = SLASH_ITEMS.filter((item) => ["blockquote", "codeBlock", "divider"].includes(item.id));
 
-// 2 | 3 | 3 | align | image | More. Reasoning and the old-command map: design/notes/EditingBar.md.
+// 3 | 3 | align | image | 2 | More. Reasoning and the old-command map: design/notes/EditingBar.md.
 const GROUPS: BarCommand[][] = [
-  [
-    { id: "undo", icon: "Undo2", run: (editor) => editor.chain().focus().undo().run() },
-    { id: "redo", icon: "Redo2", run: (editor) => editor.chain().focus().redo().run() },
-  ],
   [BLOCK_TYPE_MENU, LIST_MENU, { id: "table", icon: "Table", picker: true }],
   [
     {
@@ -240,6 +236,10 @@ const GROUPS: BarCommand[][] = [
   ],
   [ALIGN_MENU],
   [{ id: "image", icon: "Image", imageButton: true }],
+  [
+    { id: "undo", icon: "Undo2", run: (editor) => editor.chain().focus().undo().run() },
+    { id: "redo", icon: "Redo2", run: (editor) => editor.chain().focus().redo().run() },
+  ],
   [{ id: "overflow", icon: "Ellipsis", overflow: true }],
 ];
 

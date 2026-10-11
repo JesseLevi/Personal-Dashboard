@@ -9,6 +9,7 @@ import {
   duplicateBlock,
   isConvertibleBlock,
   moveBlock,
+  moveBlockToIndex,
   selectBlockStart,
   topLevelBlockAt,
 } from "../lib/notes/block-commands";
@@ -41,6 +42,19 @@ describe("topLevelBlockAt", () => {
     const block = topLevelBlockAt(e.state.doc, posOf(e, 1) + 4);
     expect(block?.node.type.name).toBe("bulletList");
     expect(block?.from).toBe(posOf(e, 1));
+  });
+});
+
+describe("moveBlockToIndex", () => {
+  it("moves a block to any index in one undoable step", () => {
+    const e = make("<p>one</p><h2>two</h2><p>three</p>");
+    expect(moveBlockToIndex(e, 2, 0)).toBe(true);
+    expect(texts(e)).toEqual(["two", "three", "one"]);
+    expect(moveBlockToIndex(e, 0, posOf(e, 2))).toBe(true);
+    expect(texts(e)).toEqual(["one", "two", "three"]);
+    expect(moveBlockToIndex(e, 1, posOf(e, 1))).toBe(false);
+    e.commands.undo();
+    expect(texts(e)).toEqual(["one", "two", "three"]);
   });
 });
 
