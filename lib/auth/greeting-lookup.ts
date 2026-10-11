@@ -63,9 +63,10 @@ async function lookup(input: unknown): Promise<GreetingResult> {
   if (!secret || !salt) return { name: null };
 
   const h = await headers();
+  // Vercel sets x-real-ip itself; x-forwarded-for is only a fallback.
   const ip =
-    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     h.get("x-real-ip")?.trim() ||
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     "unknown";
   const host = (h.get("x-forwarded-host") ?? h.get("host"))?.split(",")[0]?.trim() ?? null;
 
