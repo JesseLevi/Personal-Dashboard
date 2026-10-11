@@ -443,6 +443,38 @@ html {
   background-color: var(--color-stroke-secondary-active);
 }
 
+/* #341: note links (NoteLinkView.tsx). Claude-designed on request, tokens
+   only -- design/notes/NoteEditor.md (#341). A chip that reads as inline text:
+   same size and weight as its line, a filled background marks it as a link
+   (links elsewhere in a note are underlined; this one is a different thing).
+   Deleted target: muted, no pointer. */
+.tiptap .note-link {
+  border-radius: var(--radius-control-inner);
+  background-color: var(--color-surface-secondary);
+  color: var(--color-text-primary);
+  padding: 0 var(--spacing-component-xs);
+  text-decoration: none;
+  cursor: pointer;
+}
+.tiptap .note-link:hover {
+  background-color: var(--color-surface-secondary-hover);
+}
+.tiptap .note-link:active {
+  background-color: var(--color-surface-secondary-active);
+}
+.tiptap .note-link:focus-visible,
+.tiptap .note-link-selected {
+  /* spacing-flag: outline width is a structural 2px, same class of value as
+     the image ring below. design/notes/NoteEditor.md */
+  outline: 2px solid var(--color-stroke-primary-selected);
+  outline-offset: 2px;
+}
+.tiptap .note-link-deleted {
+  background-color: var(--color-surface-primary);
+  color: var(--color-text-secondary);
+  cursor: default;
+}
+
 /* #339: images (NoteImageView.tsx) and the upload placeholder
    (lib/notes/image-upload.ts). Claude-designed on request, tokens only --
    design/notes/NoteEditor.md (#339). The picture never exceeds the text

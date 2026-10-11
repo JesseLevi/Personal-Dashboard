@@ -161,7 +161,7 @@ describe("image node", () => {
 });
 
 describe("slash item", () => {
-  it("is appended to the list", () => {
-    expect(SLASH_ITEMS.at(-1)?.id).toBe("image");
+  it("is appended to the list (before the note link, #341)", () => {
+    expect(SLASH_ITEMS.at(-2)?.id).toBe("image");
   });
 });

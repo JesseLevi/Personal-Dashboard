@@ -14,7 +14,11 @@ import { LinkPopover } from "@/components/organisms/LinkPopover";
 import { NoteBubbleMenu } from "@/components/organisms/NoteBubbleMenu";
 import { NoteBlockHandle } from "@/components/organisms/NoteBlockHandle";
 import { TableMenu } from "@/components/organisms/TableMenu";
-import { noteExtensions } from "@/lib/notes/extensions";
+import { noteExtensionsWith } from "@/lib/notes/extensions";
+import { buildNoteLinkResolution } from "@/lib/notes/note-link"; // #341
+import { NoteLinkSuggestion } from "@/lib/notes/note-link-suggestion"; // #341
+import { NoteLinkMenu } from "@/components/organisms/NoteLinkMenu"; // #341
+import { NoteBacklinks, type NoteBacklink } from "@/components/organisms/NoteBacklinks"; // #341
 import { setDetailsToggleLabels } from "@/lib/notes/details-labels";
 import { countWords, readingMinutes, typographyForLocale } from "@/lib/notes/writing-comfort";
 import { SlashMenu } from "@/components/organisms/SlashMenu";
@@ -27,7 +31,7 @@ import { SLASH_ITEMS } from "@/lib/notes/slash-items";
 import type { NoteRow } from "@/lib/notes/types";
 import { NoteImageUpload } from "@/lib/notes/image-upload"; // #339
 import { downscaleImageFile } from "@/lib/images/downscale-client"; // #339
-import { deleteNote, uploadNoteImage } from "../actions";
+import { deleteNote, searchNoteLinkTargets, uploadNoteImage } from "../actions";
 import { useNoteSave } from "./useNoteSave";
 
 // #233 note-editor page body — Figma "Desktop/Notes/Edit" (3934:33463) /
@@ -42,9 +46,13 @@ import { useNoteSave } from "./useNoteSave";
 
 export interface NoteEditorProps {
   note: NoteRow;
+  /** #341: current title per linked note id; a linked id absent here is a deleted note. */
+  linkTitles: Record<string, string>;
+  /** #341: notes that link to this one ("Gelinkt vanuit"). */
+  backlinks: NoteBacklink[];
 }
 
-export function NoteEditor({ note }: NoteEditorProps) {
+export function NoteEditor({ note, linkTitles, backlinks }: NoteEditorProps) {
   const t = useTranslations("components.noteEditor");
   const tSlash = useTranslations("components.slashMenu");
   const tErrors = useTranslations("notes.errors");
@@ -65,9 +73,24 @@ export function NoteEditor({ note }: NoteEditorProps) {
   // #339: a failed or rejected image upload shows its error here; nothing is inserted.
   const [imageError, setImageError] = useState<string | null>(null);
 
+  // #341: note links show their target's current title (resolved on the server
+  // when the note opened); a click navigates client-side. Built once per mount.
+  const [extensions] = useState(() => [
+    ...noteExtensionsWith({
+      ...buildNoteLinkResolution(note.content, linkTitles),
+      navigate: (href) => router.push(href),
+    }),
+    NoteLinkSuggestion.configure({
+      search: async (query) => {
+        const result = await searchNoteLinkTargets({ noteId: note.id, query });
+        return result.success ? result.data : [];
+      },
+    }),
+  ]);
+
   const editor = useEditor({
     extensions: [
-      ...noteExtensions,
+      ...extensions,
       // Editor-only UI copy, not part of the fixed content-rendering
       // whitelist (lib/notes/extensions.ts's own header explains the split).
       Placeholder.configure({ placeholder: t("placeholder") }),
@@ -224,7 +247,13 @@ export function NoteEditor({ note }: NoteEditorProps) {
         <div className="pt-stack-md">
           <NoteWordCount words={words} minutes={readingMinutes(words)} />
         </div>
+        {backlinks.length > 0 && (
+          <div className="pt-stack-lg">
+            <NoteBacklinks backlinks={backlinks} onNavigate={(href) => router.push(href)} />
+          </div>
+        )}
         <SlashMenu editor={editor} />
+        <NoteLinkMenu editor={editor} />
         <NoteBubbleMenu editor={editor} />
         <NoteBlockHandle editor={editor} />
         <LinkPopover editor={editor} />

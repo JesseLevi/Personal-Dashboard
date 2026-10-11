@@ -602,8 +602,20 @@
         "table": "Tabel",
         "divider": "Scheidingslijn",
         "details": "Inklapbare sectie",
-        "image": "Afbeelding"
+        "image": "Afbeelding",
+        "noteLink": "Link naar notitie"
       }
+    },
+    "noteRef": {
+      "menuLabel": "Link naar notitie",
+      "noResults": "Geen notities gevonden",
+      "searching": "Zoeken...",
+      "untitled": "Zonder titel",
+      "deleted": "Verwijderde notitie"
+    },
+    "noteBacklinks": {
+      "title": "Gelinkt vanuit",
+      "untitled": "Zonder titel"
     },
     "noteImage": {
       "broken": "Afbeelding niet beschikbaar",

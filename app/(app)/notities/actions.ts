@@ -15,8 +15,10 @@ import {
   moveNoteSchema,
   renameCategorySchema,
   reorderCategorySchema,
+  searchNoteLinkTargetsSchema,
   updateNoteContentSchema,
 } from "@/lib/notes/schemas";
+import { findNoteLinkTargets, type NoteLinkTarget } from "@/lib/notes/queries";
 import type { ActionResult, NoteCategoryRow, NoteRow } from "@/lib/notes/types";
 import type { Database, Json } from "@/lib/database.types";
 
@@ -414,6 +416,24 @@ export async function deleteNote(input: unknown): Promise<ActionResult> {
 
   revalidatePath("/notities", "layout");
   return { success: true, data: undefined };
+}
+
+// #341 (ADR-0023): candidates for the editor's `[[` menu. Read-only, so no
+// revalidatePath; the browser reaches Supabase only through this action.
+export async function searchNoteLinkTargets(
+  input: unknown,
+): Promise<ActionResult<NoteLinkTarget[]>> {
+  const parsed = searchNoteLinkTargetsSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  try {
+    return { success: true, data: await findNoteLinkTargets(parsed.data.query, parsed.data.noteId) };
+  } catch {
+    return { success: false, error: "generic" };
+  }
 }
 
 // Stores one image for a note and returns the same-origin `src` for the

@@ -9,11 +9,15 @@ import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { Details, DetailsContent, DetailsSummary } from "@tiptap/extension-details";
 import Image from "@tiptap/extension-image";
 import FileHandler from "@tiptap/extension-file-handler";
+import Mention, { type MentionOptions } from "@tiptap/extension-mention";
 import { NodeSelection } from "@tiptap/pm/state";
-import { ReactNodeViewRenderer, type AnyExtension } from "@tiptap/react";
+import { ReactNodeViewRenderer, mergeAttributes, type AnyExtension } from "@tiptap/react";
 import { CodeBlockView } from "@/components/organisms/CodeBlockView";
 import { NoteImageView } from "@/components/organisms/NoteImageView";
+import { NoteLinkView } from "@/components/organisms/NoteLinkView";
 import { noteLowlight } from "./code-languages";
+import { NOTE_LINK_NODE_TYPE } from "./document";
+import { EMPTY_NOTE_LINK_RESOLUTION, type NoteLinkResolution } from "./note-link";
 import { detailsToggleLabel } from "./details-labels";
 import { LINK_PROTOCOLS, isAllowedLinkUri } from "./link-url";
 import { BlockShortcuts } from "./block-commands";
@@ -94,6 +98,64 @@ const NoteImage = Image.extend({
   },
 });
 
+// #341 (ADR-0023): `noteLink`, an inline atom built on the official Mention
+// node. Stored attrs: `noteId` (uuid; what lib/notes/document.ts's
+// extractNoteLinkIds hands to save_note_content) and `label` (the target's
+// title when inserted, the fallback text). The editor shows the target's
+// CURRENT title from `resolution` (lib/notes/note-link.ts), set per editor at
+// the call site via `noteExtensionsWith`. The `[[` trigger is NOT here: it is
+// the editor-only lib/notes/note-link-suggestion.ts, so a read-only renderer
+// carries no menu. Mention's own suggestion plugin is therefore switched off,
+// and its `:mention[...]` markdown syntax replaced by `[[label]]` on export.
+export interface NoteLinkOptions extends MentionOptions {
+  resolution: NoteLinkResolution;
+}
+
+export const NoteLink = Mention.extend<NoteLinkOptions>({
+  name: NOTE_LINK_NODE_TYPE,
+  addOptions() {
+    return { ...this.parent?.(), resolution: EMPTY_NOTE_LINK_RESOLUTION } as NoteLinkOptions;
+  },
+  addAttributes() {
+    return {
+      noteId: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-note-id"),
+      },
+      label: {
+        default: "",
+        parseHTML: (element) => element.getAttribute("data-label") ?? element.textContent ?? "",
+      },
+    };
+  },
+  parseHTML() {
+    return [{ tag: `span[data-type="${NOTE_LINK_NODE_TYPE}"]` }];
+  },
+  renderHTML({ node, HTMLAttributes }) {
+    return [
+      "span",
+      mergeAttributes(HTMLAttributes, {
+        "data-type": NOTE_LINK_NODE_TYPE,
+        "data-note-id": node.attrs.noteId,
+        "data-label": node.attrs.label,
+      }),
+      node.attrs.label ?? "",
+    ];
+  },
+  renderText({ node }) {
+    return node.attrs.label ?? "";
+  },
+  markdownTokenName: undefined,
+  markdownTokenizer: undefined,
+  parseMarkdown: undefined,
+  renderMarkdown: (node) => `[[${String(node.attrs?.label ?? "")}]]`,
+  addKeyboardShortcuts: () => ({}),
+  addProseMirrorPlugins: () => [],
+  addNodeView() {
+    return ReactNodeViewRenderer(NoteLinkView, { as: "span" });
+  },
+});
+
 export const noteExtensions: AnyExtension[] = [
   // #331: links are limited to http/https/mailto (lib/notes/link-url.ts is the
   // one validator); the link popover, not a click, opens/edits a link.
@@ -159,4 +221,11 @@ export const noteExtensions: AnyExtension[] = [
   }),
   // #335: Mod-Shift-Up/Down move the current top-level block (drag-handle alternative).
   BlockShortcuts,
+  // #341: links to other notes.
+  NoteLink,
 ];
+
+/** The whitelist with this editor's note-link resolution (current titles, deleted targets, navigation). */
+export function noteExtensionsWith(resolution: NoteLinkResolution): AnyExtension[] {
+  return noteExtensions.map((extension) => (extension === NoteLink ? NoteLink.configure({ resolution }) : extension));
+}

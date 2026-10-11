@@ -292,3 +292,28 @@ describe("images (#339)", () => {
     expect(deriveTitle(doc(image("Zomervakantie"), paragraph(text("Tekst"))))).toBe("Zomervakantie");
   });
 });
+
+describe("note links (#341)", () => {
+  const link = (label: unknown): TipTapNode => ({
+    type: "noteLink",
+    attrs: { noteId: "11111111-1111-4111-8111-111111111111", label },
+  });
+
+  it("reads a link as its label, inline with the surrounding text", () => {
+    expect(toPlainText(doc(paragraph(text("Zie "), link("Boodschappen"), text(" voor meer"))))).toBe(
+      "Zie Boodschappen voor meer",
+    );
+  });
+
+  it("adds nothing for a link without a usable label", () => {
+    expect(toPlainText(doc(paragraph(text("Zie"), link(null), link(5))))).toBe("Zie");
+  });
+
+  it("collapses whitespace in the label", () => {
+    expect(toPlainText(doc(paragraph(link("een\n  titel"))))).toBe("een titel");
+  });
+
+  it("derives the title from a leading link", () => {
+    expect(deriveTitle(doc(paragraph(link("Weekplan"), text(" ideeën"))))).toBe("Weekplan ideeën");
+  });
+});

@@ -780,3 +780,49 @@ No new component beyond the node view `components/organisms/NoteImageView.tsx`
   Not verified: a real phone's file picker and camera roll, and R2 itself (nothing
   has run against real R2, see `docs/HANDOFF.md`).
 
+## #341 — note links: `[[` menu, link chip, "Gelinkt vanuit" (Claude-designed on request)
+
+ADR-0023. All from existing components and bound semantic tokens.
+
+- **Node**: `noteLink` (`NoteLink` in `lib/notes/extensions.ts`), an inline atom on
+  the official `Mention` with attributes `noteId` (uuid) and `label` (the target's
+  title when inserted). These are exactly what `extractNoteLinkIds` hands to
+  `save_note_content` (#340; `tests/notes-note-link.test.ts` pins it). Mention's own
+  suggestion plugin and keyboard shortcut are switched off: the `[[` trigger is the
+  editor-only `NoteLinkSuggestion` (`lib/notes/note-link-suggestion.ts`, official
+  `@tiptap/suggestion`, 200 ms debounce, `allowSpaces`, query capped at 80 characters,
+  never inside code), so a read-only renderer carries no menu. Markdown export
+  writes `[[label]]`; it is one-way (import leaves the text).
+- **Resolution** (`lib/notes/note-link.ts`): `page.tsx` calls `resolveNoteTitles` for
+  the ids in the document and `getBacklinks` once; `NoteEditor` builds the
+  resolution (`noteExtensionsWith`) once per mount. A renamed target shows its new
+  title on the next open. An id the server could not resolve is **deleted**: muted
+  chip "Verwijderde notitie", a `span`, not clickable. A link inserted in the
+  session is never "deleted" and shows its stored label.
+- **Chip** (`NoteLinkView`, `.tiptap .note-link*` in `app/globals.css`): inline text
+  size and weight, `surface-secondary` fill (hover/active steps), `radius-control-inner`,
+  `component-xs` padding. It is a real `<a href="/notities/<id>">`: focusable with
+  Tab, Enter or click opens it (client-side via `router.push`; a modified click keeps
+  the browser's new-tab behaviour). Selected/focus ring is `stroke-primary-selected`
+  (flagged 2px, same as the image ring). `Tag` was not reused: it is a 40px block pill.
+- **Menu** (`NoteLinkMenu`): a labelless `Dropdown` `role="listbox"` of transparent
+  `Button` `role="option"` rows (icon `Notebook`, title, category muted), placed by
+  the slash menu's `usePlacement`/`panelClasses` (caret, visual viewport). Focus
+  stays in the editor, which carries `aria-haspopup/expanded/controls/activedescendant`.
+  Arrows move, Enter/Tab insert the link plus a space, Escape closes (the suggestion
+  plugin). While a search runs the previous rows stay and Enter waits; no rows shows
+  "Geen notities gevonden"; an empty query lists the most recently updated notes
+  (`findNoteLinkTargets`: title match, current note excluded, eight rows). Slash item
+  `noteLink` ("Link naar notitie", last in `SLASH_ITEMS`) types `[[`.
+- **Backlinks** (`NoteBacklinks`): a `section` labelled "Gelinkt vanuit" below the
+  word count, a list of links (title, category muted), hidden when empty.
+- **Server**: action `searchNoteLinkTargets` (zod-parsed, auth checked) over
+  `findNoteLinkTargets` in `lib/notes/queries.ts`; no schema change.
+- **Tests**: `tests/notes-note-link.test.ts` (attrs, HTML round-trip, resolution,
+  trigger, select, slash item, markdown), `tests/notes-document.test.ts` (label in
+  plain text and title); stories `NoteLinkMenu` (`Open`, `Filtered`, `NoResults`,
+  `Searching`), `NoteLinkView` (`Links`, `DeletedLink`), `NoteBacklinks`.
+- **Flagged**: no inline chip in Figma (`docs/open-questions.md#notes-link-chip-undesigned`).
+  Not verified: a real phone's keyboard with the menu, and a note-to-note click
+  against hosted data (nothing has run signed in).
+

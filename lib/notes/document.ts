@@ -73,6 +73,12 @@ function flatten(node: TipTapNode): string {
     return alt ? `${alt}\n` : "";
   }
 
+  // #341: a note link reads as its label (the target's title when inserted),
+  // so search and embeddings see the linked title (ADR-0023 s6).
+  if (node.type === NOTE_LINK_NODE_TYPE) {
+    return typeof node.attrs?.label === "string" ? node.attrs.label.replace(/\s+/g, " ").trim() : "";
+  }
+
   // #330: a table row is one line, its cells separated by a tab (a cell's own
   // line breaks collapse to spaces); trailing empty cells add no tabs.
   if (node.type === "tableRow") {
