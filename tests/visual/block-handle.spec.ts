@@ -80,7 +80,8 @@ test("dragging the handle reorders a block and undo restores it", async ({ page 
   const heading = (await page.locator(".tiptap > h2").boundingBox())!;
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
   await page.mouse.down();
-  await page.mouse.move(heading.x + 20, heading.y + 2, { steps: 12 });
+  // The handle slides on the Y axis only: dragging past the heading's centre swaps them.
+  await page.mouse.move(from.x + from.width / 2, heading.y + heading.height, { steps: 12 });
   await page.mouse.up();
   const after = await blockTexts(page);
   expect(after).toEqual([before[1], before[0], before[2], before[3]]);
