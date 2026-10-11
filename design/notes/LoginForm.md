@@ -79,11 +79,22 @@ the equivalent REST image-render endpoint was used for the pixel check
   (gap), confirmed identically in all three fetched instances that draw the
   full rail (`3929:25182`, `3934:32620`, `3989:13128`). Visible window is
   312px wide; the rail translates by 357px, the window never resizes.
-  Built with the rail as a `flex` row (`w-[312px]` pane + `ml-[45px]` on the
-  second pane) inside a `w-[312px] overflow-hidden` window, translated via
-  `-translate-x-[357px]` — the house convention
-  (`transition-transform duration-[var(--duration-base)] ease-base
-  motion-reduce:transition-none`, `Dropdown.tsx:160`).
+  Built (#396) as two panes stacked in one `grid` cell (`col-start-1
+  row-start-1`), each a pure slide, no fade (`transition-[translate]
+  duration-[var(--duration-base)] ease-base motion-reduce:transition-none`;
+  the inactive pane sits outside the mask box, so it is invisible). Trap: in
+  Tailwind v4 `translate-x-*` sets the `translate` property, so an arbitrary
+  transition list must name `translate`, not `transform`. Active `translate-x-0`, inactive
+  email `-translate-x-[357px]`, inactive password `translate-x-[357px]`, both
+  `pointer-events-none` + `inert`. Replaced the translated flex rail
+  inside `overflow-hidden` because (1) `focus()` on the still-offscreen
+  password input made the browser scroll the overflow-hidden window
+  (`scrollLeft`), stacking on the transform (double shift, timing-dependent)
+  — now there is no scroll container, and focus uses `preventScroll`; (2) the
+  hard window clipped focus rings and cut panes at the edge. Edge softening is
+  a horizontal `mask-image` gradient on a wrapper with 16px padding
+  (`p-component-lg`) offset by equal negative margin / reduced `mt`, so layout
+  is unchanged and rings stay whole. Container height = tallest pane.
 - **Step-01** (`3934:32746`/`3934:32624`/…): `Input-field` 312×48 (`E-mail`
   placeholder) + 16px gap + `Button/Default` 312×40 ("Doorgaan"). Both the
   leading `Icon/Calendar` on the input and the leading/trailing icon frames

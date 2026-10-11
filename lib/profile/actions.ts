@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/profile/session";
-import { updateLocaleSchema } from "@/lib/profile/schemas";
+import { updateDisplayNameSchema, updateLocaleSchema } from "@/lib/profile/schemas";
 import type { ActionResult } from "@/lib/profile/types";
 
 // Write side of #162 -- deliberately its own module with no page/component
@@ -46,6 +46,32 @@ export async function updateLocale(input: unknown): Promise<ActionResult> {
   // same "layout" type argument reasoning as every other write action in
   // this codebase that must invalidate more than its own page (e.g.
   // app/(app)/notities/actions.ts's revalidatePath("/notities", "layout")).
+  revalidatePath("/", "layout");
+
+  return { success: true, data: undefined };
+}
+
+// #398: same pattern as updateLocale. `input` must parse as
+// { displayName: string } (updateDisplayNameSchema); empty -> null.
+export async function updateDisplayName(input: unknown): Promise<ActionResult> {
+  const parsed = updateDisplayNameSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ display_name: parsed.data.displayName })
+    .eq("id", auth.userId);
+
+  if (error) {
+    console.error("[profile] updateDisplayName failed:", error.code, error.message);
+    return { success: false, error: "generic" };
+  }
+
+  // The name feeds the sidebar account row in the app layout.
   revalidatePath("/", "layout");
 
   return { success: true, data: undefined };

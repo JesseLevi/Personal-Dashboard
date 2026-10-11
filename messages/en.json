@@ -339,6 +339,7 @@
     },
     "settingsPanel": {
       "title": "Settings",
+      "nameLabel": "Name",
       "themeLabel": "Color theme",
       "themeOptions": {
         "system": "System",

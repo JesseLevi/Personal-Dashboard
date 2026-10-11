@@ -59,6 +59,20 @@ export function moveBlock(editor: Editor, direction: "up" | "down", pos?: number
   return true;
 }
 
+/** Moves the block to `toIndex` (its index in the document after the move), in one transaction. */
+export function moveBlockToIndex(editor: Editor, toIndex: number, pos?: number): boolean {
+  const { state } = editor;
+  const block = topLevelBlockAt(state.doc, resolvePos(editor, pos));
+  if (!block || toIndex === block.index || toIndex < 0 || toIndex > state.doc.childCount - 1) return false;
+  const tr = state.tr.delete(block.from, block.to);
+  let at = 0;
+  for (let i = 0; i < toIndex; i += 1) at += tr.doc.child(i).nodeSize;
+  tr.insert(at, block.node);
+  tr.setSelection(Selection.near(tr.doc.resolve(at + 1)));
+  editor.view.dispatch(tr.scrollIntoView());
+  return true;
+}
+
 /** Inserts a copy right after the block and puts the cursor in the copy. */
 export function duplicateBlock(editor: Editor, pos?: number): boolean {
   const { state } = editor;
