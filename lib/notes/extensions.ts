@@ -22,6 +22,7 @@ import { NOTE_LINK_NODE_TYPE } from "./document";
 import { EMPTY_NOTE_LINK_RESOLUTION, type NoteLinkResolution } from "./note-link";
 import { detailsToggleLabel } from "./details-labels";
 import { LINK_PROTOCOLS, isAllowedLinkUri } from "./link-url";
+import { CreationQuiet } from "./creation-quiet";
 import { BlockShortcuts } from "./block-commands";
 import { NOTE_IMAGE_MIME_TYPES, isNoteImageSrc, requestImageUpload } from "./image-upload";
 
@@ -232,6 +233,7 @@ export const noteExtensions: AnyExtension[] = [
   // on its next save (lib/notes/toc.ts). `scrollParent: undefined` switches off
   // the extension's own scroll listener -- the rail tracks the active heading
   // itself (components/organisms/NoteTableOfContents.tsx).
+  CreationQuiet,
   UniqueID.configure({ types: ["heading"] }),
   TableOfContents.configure({ anchorTypes: ["heading"], scrollParent: undefined }),
 ];

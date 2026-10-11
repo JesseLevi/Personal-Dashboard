@@ -43,7 +43,7 @@ async function load(doc: unknown = OLD_DOC): Promise<Editor> {
 describe("heading ids on an old document", () => {
   it("loads with all content intact and gives every heading an id", async () => {
     const json = (await load()).getJSON() as TipTapDocument;
-    expect(json.content.map((node) => node.type)).toEqual(["heading", "paragraph", "heading", "paragraph", "heading", "paragraph"]);
+    expect(json.content.map((node) => node.type)).toEqual(["heading", "paragraph", "heading", "paragraph", "heading"]);
     const ids = json.content.filter((n) => n.type === "heading").map((n) => n.attrs?.id);
     expect(ids.every((id) => typeof id === "string" && id.length > 0)).toBe(true);
     expect(new Set(ids).size).toBe(3);

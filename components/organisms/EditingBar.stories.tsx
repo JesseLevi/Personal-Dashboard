@@ -106,14 +106,8 @@ function MobileDemo({ content }: { content: string }) {
     editorProps: {
       attributes: { class: "text-base font-semibold text-text-primary focus:outline-none" },
     },
-    // #342: "end" is no longer inside the table: the heading-id extensions dispatch at
-    // creation, which appends the trailing paragraph. Focus the last cell explicitly.
     onCreate: ({ editor: created }) => {
-      let lastCell = 0;
-      created.state.doc.descendants((node, pos) => {
-        if (node.type.name === "tableCell") lastCell = pos + 2;
-      });
-      created.commands.focus(lastCell || "end");
+      created.commands.focus("end");
     },
   });
   return (
