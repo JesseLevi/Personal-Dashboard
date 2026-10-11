@@ -64,8 +64,8 @@ interface EditingBarPickerDef {
   picker: true;
 }
 
-// #339/#386: the "Afbeelding" button, always on the bar: labelled on mobile
-// (Figma 3978:15082), icon-only on desktop.
+// #339/#386: the "Afbeelding" button, always on the bar: labelled on desktop,
+// icon-only on mobile.
 interface EditingBarImageDef {
   id: "image";
   icon: IconName;
@@ -430,11 +430,11 @@ export function EditingBar({ editor, className, mobile }: EditingBarProps) {
           onClick: () => openImagePicker(current),
         } as const;
         return isMobile ? (
+          <Button key={command.id} {...imageProps} aria-label={t("imageLabel")} />
+        ) : (
           <Button key={command.id} {...imageProps}>
             {t("imageLabel")}
           </Button>
-        ) : (
-          <Button key={command.id} {...imageProps} aria-label={t("imageLabel")} />
         );
       }
       if (isOverflow(command)) {
