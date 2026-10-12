@@ -34,7 +34,7 @@ export function AvatarGroup({ members }: AvatarGroupProps) {
           <Avatar
             key={m.id}
             name={m.name}
-            avatarUrl={m.avatarUrl}
+            src={m.avatarUrl}
             size="sm"
             // spacing-flag: -16px overlap is an unbound Figma itemSpacing — design/notes/AvatarGroup.md
             className={i > 0 ? "-ml-4" : undefined}

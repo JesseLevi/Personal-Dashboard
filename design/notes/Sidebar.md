@@ -8,7 +8,7 @@ Figma: `Sidebar` component set · node `3674:5664` (`Collapsed=No` `3674:5665`, 
 - The only variant axis is `Collapsed` → the `collapsed` prop. All state (`collapsed`, `accountMenuOpen`) is composer-owned (`AppShellNav.tsx`).
 - Nav items come from a closed `NAV_ITEMS` list: Te doen `Columns3`, Notities `Notebook`, Recepten `FolderClosed`, Winkelmand `ShoppingBasket`, Assistent `Astroid` (#226, Kleding removed per ADR-0016).
 - The active item is `Button variant="filled"` + `aria-pressed` + `aria-current="page"` (Button's Selected state). Others are `transparent`.
-- The Account row is a plain `<button>`, not the Button atom (Figma's frame is not a Button instance). Inside: a 40×40 avatar or initials, then name + `EllipsisVertical` 16px. It opens a labelless `Dropdown` with Settings (`transparent`) and Logout (`destructive`).
+- The Account row is a plain `<button>`, not the Button atom (Figma's frame is not a Button instance). Inside: a 40×40 round `Avatar`, then name + `EllipsisVertical` 16px. It opens a labelless `Dropdown` with Settings (`transparent`) and Logout (`destructive`).
 - Labels, `navLabel`, `toggleLabel` and the menu labels are composer-supplied (`components.sidebar.*`).
 
 ## Deliberate decisions
@@ -23,7 +23,7 @@ Figma: `Sidebar` component set · node `3674:5664` (`Collapsed=No` `3674:5665`, 
 - **Outside-click closing of the account menu** lives in `AppShellNav`: one listener checks containment against both wrappers (`lib/dom/outside-pointer.ts`). One listener per wrapper closed the menu before Settings/Logout could fire (#265).
 - **Distinct menu ids** `sidebar-account-menu-desktop` and `-mobile`, because both instances can render the panel (#265).
 - **The account popover** is positioned by `usePopoverPosition` (`anchor: "left"`, `prefer: "above"`, `w-[209px]`). Its inline `style` (left/top only) is the flagged exception to the no-inline-styles rule. That hook is why the file is `"use client"`.
-- **The avatar** is the `Avatar` atom (`size="md"`); the initials fallback lives in `design/notes/Avatar.md`. The account hover fill `hover:bg-surface-secondary` is a codebase choice, not Figma-sourced (#265).
+- **The avatar** is the `Avatar` atom (`size="md"`); the avatar is a circle in both states, and the bordered letter fallback lives in `design/notes/Avatar.md` (the border is a user addition on top of Figma). The account hover fill `hover:bg-surface-secondary` is a codebase choice, not Figma-sourced (#265).
 
 ## Token gaps and flags
 - Motion: `--duration-base` 200ms / `--ease-base` are unsourced (`sidebar-motion-timing-unsourced`).

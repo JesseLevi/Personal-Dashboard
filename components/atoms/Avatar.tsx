@@ -3,18 +3,19 @@ import { cn } from "@/lib/ui/cn";
 import { cva, type VariantProps } from "class-variance-authority";
 
 /**
- * Atom/Avatar — round image with an initials fallback.
+ * Atom/Avatar — round photo, or a bordered circle with the first letter of
+ * the first name when there is no photo.
  *
  * `size` maps to the two sizes in use: `md` is the Sidebar account row
- * (40px, rounded square), `sm` is the 32px round avatar from the Figma
- * group. Always decorative (`alt=""`, fallback `aria-hidden`): the person's
- * name is rendered next to it. See design/notes/Avatar.md.
+ * (40px), `sm` is the 32px avatar from the Figma group. Always decorative
+ * (`alt=""`, fallback `aria-hidden`): the person's name is rendered next to
+ * it. See design/notes/Avatar.md.
  */
-const avatarVariants = cva("shrink-0 object-cover", {
+const avatarVariants = cva("shrink-0 rounded-full object-cover", {
   variants: {
     size: {
-      md: "size-10 rounded-control-inner",
-      sm: "size-8 rounded-full",
+      md: "size-10",
+      sm: "size-8",
     },
   },
   defaultVariants: { size: "md" },
@@ -22,26 +23,25 @@ const avatarVariants = cva("shrink-0 object-cover", {
 
 const PX = { md: 40, sm: 32 } as const;
 
-// First letter of the first two words, not Figma-sourced.
-export function initialsFor(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "";
-  return (parts[0][0] + (parts[1]?.[0] ?? "")).toUpperCase();
+// First letter of the first word, uppercase. Not Figma-sourced.
+export function initialFor(name: string): string {
+  const first = name.trim().split(/\s+/)[0] ?? "";
+  return (Array.from(first)[0] ?? "").toUpperCase();
 }
 
 export interface AvatarProps extends VariantProps<typeof avatarVariants> {
   name: string;
-  /** Public image URL; null/undefined renders the initials fallback. */
-  avatarUrl?: string | null;
+  /** Photo URL; null/undefined renders the letter fallback. */
+  src?: string | null;
   className?: string;
 }
 
-export function Avatar({ name, avatarUrl, size, className }: AvatarProps) {
+export function Avatar({ name, src, size, className }: AvatarProps) {
   const px = PX[size ?? "md"];
-  if (avatarUrl) {
+  if (src) {
     return (
       <img
-        src={avatarUrl}
+        src={src}
         alt=""
         width={px}
         height={px}
@@ -55,11 +55,11 @@ export function Avatar({ name, avatarUrl, size, className }: AvatarProps) {
       aria-hidden="true"
       className={cn(
         avatarVariants({ size }),
-        "flex items-center justify-center bg-surface-secondary-hover text-xs font-semibold text-text-secondary",
+        "flex items-center justify-center border border-stroke-primary bg-surface-secondary-hover text-xs font-semibold text-text-secondary",
         className,
       )}
     >
-      {initialsFor(name)}
+      {initialFor(name)}
     </span>
   );
 }

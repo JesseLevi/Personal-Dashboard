@@ -14,7 +14,7 @@ export const WithInitials = () => (
 
 export const WithImage = () => (
   <div className="flex items-center gap-4">
-    <Avatar name="Jesse Kamps" avatarUrl={IMAGE} size="md" />
-    <Avatar name="Jesse Kamps" avatarUrl={IMAGE} size="sm" />
+    <Avatar name="Jesse Kamps" src={IMAGE} size="md" />
+    <Avatar name="Jesse Kamps" src={IMAGE} size="sm" />
   </div>
 );

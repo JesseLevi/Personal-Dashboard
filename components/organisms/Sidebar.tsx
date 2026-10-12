@@ -182,7 +182,7 @@ export function Sidebar({
           // spacing-flag: p-0 resets native UA button padding, not Figma-sourced. design/notes/Sidebar.md.
           className="chrome-touch flex w-full items-center gap-inline-sm overflow-hidden rounded-control p-0 text-left transition-colors hover:bg-surface-secondary"
         >
-          <Avatar name={accountName} avatarUrl={accountAvatarUrl} size="md" />
+          <Avatar name={accountName} src={accountAvatarUrl} size="md" />
           {/* Figma "Name + icon" (4160:31009): hug-width, zero internal gap — design/notes/Sidebar.md. */}
           <span className="inline-flex shrink-0 items-center">
             <span className="whitespace-nowrap text-xs font-semibold text-text-primary">
