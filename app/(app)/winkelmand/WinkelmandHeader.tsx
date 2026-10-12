@@ -34,7 +34,8 @@ export interface WinkelmandHeaderProps {
   isEmpty: boolean;
   onSwitchList: (listId: string) => void;
   onAddList: () => void;
-  onEditList: () => void;
+  /** Opens the settings panel of that basket. */
+  onEditList: (listId: string) => void;
   onAddItem: () => void;
   onClearAll: () => void;
   /** Story-only: renders with the basket switcher already open. */
@@ -118,10 +119,6 @@ export function WinkelmandHeader({
     </Button>
   );
 
-  const settingsButton = (
-    <Button icon="Settings2" aria-label={t("settingsLabel")} onClick={onEditList} />
-  );
-
   return (
     <PageHeader
       title={title}
@@ -137,18 +134,34 @@ export function WinkelmandHeader({
             <div ref={listPopoverRef} className="absolute z-[999] w-[209px]" style={listPopover.style}>
               <Dropdown className="shadow-sm">
                 {lists.map((list) => (
-                  <Button
-                    key={list.id}
-                    icon={list.shared ? "Users" : "User"}
-                    variant={list.id === currentListId ? "filled" : "white"}
-                    align="left"
-                    onClick={() => {
-                      setListMenuOpen(false);
-                      if (list.id !== currentListId) onSwitchList(list.id);
-                    }}
-                  >
-                    {list.name}
-                  </Button>
+                  // The settings icon is a sibling button laid over the row's
+                  // trailing edge: buttons cannot nest.
+                  <div key={list.id} className="relative">
+                    <Button
+                      icon={list.shared ? "Users" : "User"}
+                      variant={list.id === currentListId ? "filled" : "white"}
+                      align="left"
+                      // spacing-flag: room for the 32px settings button — design/notes/WinkelmandPage.md
+                      className="w-full pr-10"
+                      onClick={() => {
+                        setListMenuOpen(false);
+                        if (list.id !== currentListId) onSwitchList(list.id);
+                      }}
+                    >
+                      {list.name}
+                    </Button>
+                    <Button
+                      icon="Settings"
+                      variant="transparent"
+                      size="compact"
+                      className="absolute right-1 top-1/2 -translate-y-1/2"
+                      aria-label={t("listSettingsLabel", { name: list.name })}
+                      onClick={() => {
+                        setListMenuOpen(false);
+                        onEditList(list.id);
+                      }}
+                    />
+                  </div>
                 ))}
                 <Button
                   variant="white"
@@ -209,7 +222,6 @@ export function WinkelmandHeader({
               )}
             </div>
           )}
-          {settingsButton}
           {clearAllButton}
         </div>
       }

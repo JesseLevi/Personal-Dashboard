@@ -228,7 +228,7 @@
       "emptyStateCta": "Ga naar recepten",
       "listSwitcherLabel": "Mand wisselen",
       "addListOptionLabel": "Toevoegen",
-      "settingsLabel": "Instellingen"
+      "listSettingsLabel": "Instellingen van {name}"
     },
     "lists": {
       "defaultName": "Mijn mand"
@@ -383,6 +383,7 @@
       "savingLabel": "Opslaan...",
       "avatar": {
         "inputLabel": "Profielfoto",
+        "remove": "Foto verwijderen",
         "placeholder": "Selecteer afbeelding"
       }
     },

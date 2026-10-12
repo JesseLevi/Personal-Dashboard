@@ -124,6 +124,9 @@ export function ShoppingListPanel({
           setError(tErrors(result.error));
           return;
         }
+        // Create stays successful even if the optional invite fails: the
+        // basket exists, so go there and let the owner retry from its settings.
+        if (canShare && member) await saveShare(result.data.id);
         onCreated(result.data);
       } else {
         const result = await onRenameList({ listId: target.list.id, name: trimmed });
@@ -196,8 +199,8 @@ export function ShoppingListPanel({
   const isMember = target.mode === "edit" && !target.list.isOwner;
   // Delete is hidden for the default basket (it cannot be deleted, ADR-0035).
   const canDelete = target.mode === "edit" && target.list.isOwner && !target.list.isDefault;
-  // Sharing needs an existing basket, so only the edit panel of an owned one.
-  const canShare = target.mode === "edit" && target.list.isOwner;
+  // Create (the new basket is the caller's own) and the edit panel of an owned basket.
+  const canShare = target.mode === "create" || target.list.isOwner;
   // A person picked in this panel is always a fresh (pending) invite; the
   // stored status only applies to the person already shared with.
   const pending = member !== null && (member.id !== share?.member.id || share.status === "pending");
@@ -310,7 +313,7 @@ export function ShoppingListPanel({
                   onTrailingIconClick: () => setMember(null),
                   trailingIconLabel: t("fields.shareClearLabel", { name: memberName }),
                 }
-              : { trailingIcon: "Pencil" as const })}
+              : { trailingIcon: "Plus" as const })}
           />
           {pending && (
             <Tag variant="highlight" className="self-start">

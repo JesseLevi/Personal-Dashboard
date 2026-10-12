@@ -9,7 +9,7 @@ import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
 import type { IconName } from "@/components/atoms/Icon";
 import { ImageUploadField } from "@/components/molecules/ImageUploadField";
-import { updateLocale, updateName, uploadAvatar } from "@/lib/profile/actions";
+import { removeAvatar, updateLocale, updateName, uploadAvatar } from "@/lib/profile/actions";
 import { DISPLAY_NAME_MAX_LENGTH } from "@/lib/profile/schemas";
 import type { Locale } from "@/lib/profile/types";
 
@@ -47,6 +47,8 @@ export interface SettingsPanelProps {
   currentDisplayName: string | null;
   /** Server-resolved `profiles.last_name` (#404, `getLastName`) — seeds the Achternaam field. */
   currentLastName: string | null;
+  /** #434: whether the user has a profile photo (seeds the filled state of the photo field). */
+  hasAvatar: boolean;
 }
 
 export function SettingsPanel({
@@ -55,6 +57,7 @@ export function SettingsPanel({
   currentLocale,
   currentDisplayName,
   currentLastName,
+  hasAvatar,
 }: SettingsPanelProps) {
   const t = useTranslations("components.settingsPanel");
   const tSidePanel = useTranslations("components.sidePanel");
@@ -133,6 +136,14 @@ export function SettingsPanel({
     });
   }
 
+  function handleAvatarClear() {
+    setAvatarError(null);
+    startAvatarTransition(async () => {
+      const result = await removeAvatar();
+      if (!result.success) setAvatarError(tErrors(result.error));
+    });
+  }
+
   function handleSave() {
     setError(null);
     startTransition(async () => {
@@ -202,7 +213,10 @@ export function SettingsPanel({
         placeholder={t("avatar.placeholder")}
         ariaLabel={t("avatar.inputLabel")}
         disabled={isAvatarPending}
+        selectedFileName={hasAvatar ? t("avatar.inputLabel") : null}
         onFileSelect={handleAvatarFile}
+        onClear={handleAvatarClear}
+        clearLabel={t("avatar.remove")}
       />
       {avatarError ? (
         <p className="text-base font-semibold text-priority-urgent">{avatarError}</p>
