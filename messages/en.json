@@ -383,10 +383,7 @@
       "savingLabel": "Saving...",
       "avatar": {
         "inputLabel": "Profile photo",
-        "choose": "Choose photo",
-        "change": "Change photo",
-        "remove": "Remove",
-        "busy": "Working..."
+        "placeholder": "Select image"
       }
     },
     "boardPanel": {
