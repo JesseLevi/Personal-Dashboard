@@ -21,7 +21,14 @@ export const LOCALES: readonly Locale[] = ["nl", "en"];
 // profile row (the on_auth_user_created trigger, 20260720000001_profiles.sql)
 // so updateLocale never hits a missing row the way a notes/recipes id lookup
 // can.
-export type ProfileErrorCode = "invalid-input" | "unauthenticated" | "generic";
+export type ProfileErrorCode =
+  | "invalid-input"
+  | "unauthenticated"
+  | "generic"
+  | "invalid-file-type"
+  | "file-too-large"
+  | "invalid-image"
+  | "upload-failed";
 
 export type ActionResult<T = undefined> =
   | { success: true; data: T }

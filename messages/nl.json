@@ -265,7 +265,11 @@
     "errors": {
       "invalid-input": "Controleer de ingevoerde gegevens.",
       "unauthenticated": "Log opnieuw in om door te gaan.",
-      "generic": "Er ging iets mis. Probeer het opnieuw."
+      "generic": "Er ging iets mis. Probeer het opnieuw.",
+      "invalid-file-type": "Kies een JPEG-, PNG-, WebP- of HEIC-foto.",
+      "file-too-large": "Deze foto is te groot (maximaal 5 MB).",
+      "invalid-image": "Deze foto kan niet worden gelezen. Probeer een andere.",
+      "upload-failed": "Uploaden is mislukt. Probeer het opnieuw."
     }
   },
   "components": {
@@ -356,7 +360,14 @@
       "firstNameLabel": "Voornaam",
       "lastNameLabel": "Achternaam",
       "saveLabel": "Opslaan",
-      "savingLabel": "Opslaan..."
+      "savingLabel": "Opslaan...",
+      "avatar": {
+        "inputLabel": "Profielfoto",
+        "choose": "Foto kiezen",
+        "change": "Foto wijzigen",
+        "remove": "Verwijderen",
+        "busy": "Bezig..."
+      }
     },
     "boardPanel": {
       "addTitle": "Bord toevoegen",

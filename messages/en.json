@@ -265,7 +265,11 @@
     "errors": {
       "invalid-input": "Check the information you entered.",
       "unauthenticated": "Sign in again to continue.",
-      "generic": "Something went wrong. Please try again."
+      "generic": "Something went wrong. Please try again.",
+      "invalid-file-type": "Choose a JPEG, PNG, WebP or HEIC photo.",
+      "file-too-large": "This photo is too large (5 MB at most).",
+      "invalid-image": "This photo can't be read. Try another one.",
+      "upload-failed": "Upload failed. Please try again."
     }
   },
   "components": {
@@ -356,7 +360,14 @@
       "firstNameLabel": "First name",
       "lastNameLabel": "Last name",
       "saveLabel": "Save",
-      "savingLabel": "Saving..."
+      "savingLabel": "Saving...",
+      "avatar": {
+        "inputLabel": "Profile photo",
+        "choose": "Choose photo",
+        "change": "Change photo",
+        "remove": "Remove",
+        "busy": "Working..."
+      }
     },
     "boardPanel": {
       "addTitle": "Add board",

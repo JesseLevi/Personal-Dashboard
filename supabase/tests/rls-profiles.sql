@@ -2,7 +2,7 @@
 -- rls-<table>.sql for every new table; check-rls-coverage.sh enforces that).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(10);
+select plan(14);
 
 -- Seed two users directly in auth.users (signup trigger creates profiles).
 insert into auth.users (id, email)
@@ -55,6 +55,29 @@ select is_empty(
   $$ update public.profiles set last_name = 'hacked'
      where id = '00000000-0000-0000-0000-00000000000b' returning id $$,
   'A cannot update B''s last_name'
+);
+-- #434: profiles.avatar_path -- own row succeeds, other user's row is a no-op;
+-- avatar_path_for hands the owner their own key and nobody else's.
+select results_eq(
+  $$ update public.profiles set avatar_path = '00000000-0000-0000-0000-00000000000a/avatar/x.webp'
+     where id = '00000000-0000-0000-0000-00000000000a' returning avatar_path $$,
+  $$ values ('00000000-0000-0000-0000-00000000000a/avatar/x.webp'::text) $$,
+  'A can update their own avatar_path'
+);
+select is_empty(
+  $$ update public.profiles set avatar_path = 'hacked'
+     where id = '00000000-0000-0000-0000-00000000000b' returning id $$,
+  'A cannot update B''s avatar_path'
+);
+select is(
+  public.avatar_path_for('00000000-0000-0000-0000-00000000000a'),
+  '00000000-0000-0000-0000-00000000000a/avatar/x.webp',
+  'avatar_path_for returns the caller''s own key'
+);
+select is(
+  public.avatar_path_for('00000000-0000-0000-0000-00000000000b'),
+  null,
+  'avatar_path_for returns null for an unrelated user'
 );
 select is_empty(
   $$ delete from public.profiles

@@ -4,7 +4,7 @@ Figma: avatar frame inside node `4231:16052` (`4231:16053`, 32×32) · Code: `co
 ## Anatomy
 - A round photo (`<img>`) when `src` is set, otherwise a letter fallback (`<span>`). `src` is a plain URL; the component knows nothing about storage.
 - Fallback: a circle with `border border-stroke-primary`, fill `bg-surface-secondary-hover`, and ONE letter (`initialFor`: first letter of the first word of the name, uppercase), `text-xs font-semibold text-text-secondary`. Exported from the atom.
-- **`avatar_url` is null for every account** until an upload flow exists, so the letter fallback is the default rendering.
+- Callers pass `/api/avatar/<id>?v=<updated_at>` as `src` (profile photo, #434), or null for the letter fallback. The photo is a 120×120 WebP, shown at 40 and 32 px.
 - One variant axis, `size`; both sizes are `rounded-full`:
 
 | `size` | Where | Box |

@@ -64,7 +64,7 @@ export interface SidebarProps {
   onItemHover?: (item: SidebarItemId) => void;
   /** #265: the signed-in user's display name (composer resolves the null-`display_name` fallback, e.g. `components.sidebar.accountFallbackName`). */
   accountName: string;
-  /** #265: public avatar URL, when set. Renders an initials fallback when null/undefined — no upload UI exists yet (out of scope), so this stays null until a future ticket adds one. */
+  /** #265: profile photo URL (`/api/avatar/<id>?v=…`, #434), when set. Renders a letter fallback when null/undefined. */
   accountAvatarSrc?: string | null;
   /** #265: whether the account dropdown (Settings/Logout) is open. Composer-owned — the row itself is stateless, same split as `onToggle`/`collapsed`. */
   accountMenuOpen: boolean;
