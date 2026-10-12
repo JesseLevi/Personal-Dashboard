@@ -12,6 +12,7 @@ import { IngredientSearchPanel } from "@/components/organisms/IngredientSearchPa
 import { ShareInviteBanner } from "@/components/organisms/ShareInviteBanner";
 import { blurInTotalMs, blurFadeStagger, blurOutTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 import { cn } from "@/lib/ui/cn";
+import { useServerRefresh } from "@/lib/ui/server-refresh";
 import { formatQuantity } from "@/lib/recipes/units";
 import { formatQuantityFraction } from "@/lib/recipes/kitchen-units";
 import {
@@ -159,6 +160,10 @@ export function WinkelmandList({ listId, lists, items, share, owner, people, inv
     if (pendingActions.current === 0) setLocalItems(items);
   }, [items]);
 
+  // #428: a basket with an accepted member (`people` is empty otherwise) is
+  // re-fetched on focus and every 15 s; a personal basket never polls.
+  useServerRefresh({ active: people.length > 0, isBusy: () => pendingActions.current > 0 });
+
   const [actionError, setActionError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortBy>("recipe");
   const [addItemPanelOpen, setAddItemPanelOpen] = useState(false);
@@ -195,6 +200,7 @@ export function WinkelmandList({ listId, lists, items, share, owner, people, inv
   function runAction(
     optimisticUpdate: (current: ShoppingListItemWithGroupInfo[]) => ShoppingListItemWithGroupInfo[],
     action: () => Promise<ActionResult>,
+    softMissing = false,
   ) {
     setActionError(null);
     const previous = localItems;
@@ -202,7 +208,11 @@ export function WinkelmandList({ listId, lists, items, share, owner, people, inv
     setLocalItems(optimisticUpdate);
     action()
       .then((result) => {
-        if (!result.success) {
+        // Someone else removed the row first: stay silent and let the refresh
+        // drop it (#428). The optimistic state is kept.
+        if (!result.success && softMissing && result.error === "not-found") {
+          router.refresh();
+        } else if (!result.success) {
           setLocalItems(previous);
           setActionError(tErrors(result.error));
         }
@@ -240,6 +250,7 @@ export function WinkelmandList({ listId, lists, items, share, owner, people, inv
     runAction(
       (current) => current.map((row) => (row.id === item.id ? { ...row, checked: nextChecked } : row)),
       () => toggleShoppingListItem({ id: item.id, checked: nextChecked }),
+      true,
     );
   }
 
@@ -247,6 +258,7 @@ export function WinkelmandList({ listId, lists, items, share, owner, people, inv
     runAction(
       (current) => current.filter((row) => row.id !== item.id),
       () => deleteShoppingListItem({ id: item.id }),
+      true,
     );
   }
 
