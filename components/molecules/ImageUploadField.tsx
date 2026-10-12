@@ -6,7 +6,7 @@
 // wraps that atom with real file-picking behaviour rather than duplicating
 // its visual shell. Full record: design/notes/ImageUploadField.md.
 import { cn } from "@/lib/ui/cn";
-import { useState, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { InputField } from "../atoms/InputField";
 
 const ACCEPTED_MIME_TYPES = "image/jpeg,image/png,image/webp";
@@ -23,6 +23,9 @@ export interface ImageUploadFieldProps {
   /** Pre-selected file's display name, e.g. when re-opening an edit form. */
   selectedFileName?: string | null;
   onFileSelect?: (file: File | null) => void;
+  /** When set, a filled field shows a trailing X (aria-label `clearLabel`) that empties it and calls this. */
+  onClear?: () => void;
+  clearLabel?: string;
   disabled?: boolean;
   className?: string;
 }
@@ -44,10 +47,20 @@ export function ImageUploadField({
   ariaLabel,
   selectedFileName = null,
   onFileSelect,
+  onClear,
+  clearLabel,
   disabled,
   className,
 }: ImageUploadFieldProps) {
   const [fileName, setFileName] = useState<string | null>(selectedFileName);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const clearable = Boolean(onClear && clearLabel && fileName);
+
+  function handleClear() {
+    if (inputRef.current) inputRef.current.value = "";
+    setFileName(null);
+    onClear?.();
+  }
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null;
@@ -63,6 +76,7 @@ export function ImageUploadField({
           descendant selector can, regardless of nesting depth. See
           design/notes/ImageUploadField.md. */}
       <input
+        ref={inputRef}
         id={id}
         type="file"
         name={name}
@@ -70,16 +84,22 @@ export function ImageUploadField({
         disabled={disabled}
         aria-label={ariaLabel}
         onChange={handleChange}
-        className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+        className={cn(
+          "absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed",
+          // Filled + clearable: the X below must be clickable, so the overlay steps aside.
+          clearable && "pointer-events-none",
+        )}
       />
       <InputField
         leadingIcon="Image"
-        trailingIcon="Plus"
+        {...(clearable
+          ? { trailingIcon: "X" as const, onTrailingIconClick: handleClear, trailingIconLabel: clearLabel! }
+          : { trailingIcon: "Plus" as const })}
         value={fileName ?? ""}
         placeholder={placeholder}
         readOnly
         tabIndex={-1}
-        aria-hidden="true"
+        aria-hidden={clearable ? undefined : "true"}
         disabled={disabled}
         boxClassName="group-hover:border-stroke-primary-hover group-active:border-stroke-primary-active group-focus-within:border-stroke-primary-selected"
       />
