@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
+import { EnterFromLoginSkeleton } from "./EnterFromLoginSkeleton";
 import { loadTeDoenColumnCounts } from "./board-data";
 import { TeDoenPageBody, type TeDoenPageBodyProps } from "./TeDoenPageBody";
 
@@ -9,7 +10,13 @@ import { TeDoenPageBody, type TeDoenPageBodyProps } from "./TeDoenPageBody";
 export async function TeDoenPageStream({ boardId, sortParam }: TeDoenPageBodyProps) {
   const counts = await loadTeDoenColumnCounts(boardId);
   return (
-    <Suspense fallback={<BoardSkeleton variant="todo" counts={counts} />}>
+    <Suspense
+      fallback={
+        <EnterFromLoginSkeleton>
+          <BoardSkeleton variant="todo" counts={counts} />
+        </EnterFromLoginSkeleton>
+      }
+    >
       <TeDoenPageBody boardId={boardId} sortParam={sortParam} />
     </Suspense>
   );

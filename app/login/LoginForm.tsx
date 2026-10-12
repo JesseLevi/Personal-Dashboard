@@ -114,15 +114,22 @@ export function LoginForm({
   const exiting = passwordState.status === "success";
   // React resets the form once the action settles; seeding defaultValue keeps the dots visible while they blur out.
   const [typedPassword, setTypedPassword] = useState("");
+  // Latest router callbacks live in a ref: the parent passes fresh inline functions on every
+  // render (the sign-in action re-renders this route too), and as effect deps they restarted
+  // the exit timer, so the navigation slipped out of step with the animation.
+  const routerRef = useRef({ onNavigate, onPrefetch });
+  useEffect(() => {
+    routerRef.current = { onNavigate, onPrefetch };
+  });
   useEffect(() => {
     if (!exiting) return;
-    onPrefetch?.(EXIT_TARGET);
+    routerRef.current.onPrefetch?.(EXIT_TARGET);
     const timer = window.setTimeout(() => {
       markEnterFromLogin();
-      onNavigate?.(EXIT_TARGET);
+      routerRef.current.onNavigate?.(EXIT_TARGET);
     }, blurOutTotalMs(EXIT_ELEMENT_COUNT, reducedMotion));
     return () => window.clearTimeout(timer);
-  }, [exiting, reducedMotion, onNavigate, onPrefetch]);
+  }, [exiting, reducedMotion]);
   const exitClass = (index: number) => (exiting ? ["animate-blur-out", blurFadeStagger(index)] : null);
 
   const emailInputId = useId();

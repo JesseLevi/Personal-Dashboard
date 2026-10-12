@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { EnterFromLoginSkeleton } from "./EnterFromLoginSkeleton";
 import { TeDoenPageStream } from "./TeDoenPageStream";
 import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 
@@ -28,7 +29,13 @@ export default async function TeDoenPage({
 }) {
   const { sort } = await searchParams;
   return (
-    <Suspense fallback={<BoardSkeleton variant="todo" />}>
+    <Suspense
+      fallback={
+        <EnterFromLoginSkeleton>
+          <BoardSkeleton variant="todo" />
+        </EnterFromLoginSkeleton>
+      }
+    >
       <TeDoenPageStream sortParam={sort} />
     </Suspense>
   );

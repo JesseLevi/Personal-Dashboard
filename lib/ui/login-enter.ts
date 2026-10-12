@@ -39,3 +39,31 @@ export function clearEnterFromLogin(store: Store | null = defaultStore()): void 
     // nothing to clear
   }
 }
+
+// The skeleton that shows while the page streams in plays the blur-in itself; the content that
+// replaces it must then appear without a second one (opacity 0 -> in would flash the board
+// away between skeleton and content). Module state, keyed by the mark so a new login resets it.
+let skeletonPlayedFor: string | null = null;
+
+function freshMark(store: Store | null, now: number): string | null {
+  if (!hasEnterFromLogin(store, now)) return null;
+  try {
+    return store?.getItem(LOGIN_ENTER_KEY) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** True for the first skeleton of an arrival from login (it plays the blur-in); false for later ones. */
+export function claimSkeletonEnter(store: Store | null = defaultStore(), now = Date.now()): boolean {
+  const mark = freshMark(store, now);
+  if (!mark || skeletonPlayedFor === mark) return false;
+  skeletonPlayedFor = mark;
+  return true;
+}
+
+/** True when a skeleton already played the blur-in for the current mark. */
+export function skeletonPlayedEnter(store: Store | null = defaultStore(), now = Date.now()): boolean {
+  const mark = freshMark(store, now);
+  return mark !== null && skeletonPlayedFor === mark;
+}
