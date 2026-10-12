@@ -44,7 +44,11 @@ function SkeletonHeader({ variant }: { variant: BoardSkeletonVariant }) {
             <Button icon="StarPlus" aria-label={t("components.pageHeader.todo.favoriteLabel")} />
           </>
         }
-        actions={<Button icon="ArrowUpDown" align="left">{t("components.pageHeader.todo.sortLabel")}</Button>}
+        actions={
+          <Button icon="ArrowUpDown" align="left" aria-label={t("components.pageHeader.todo.sortLabel")}>
+            <span className="hidden md:inline">{t("components.pageHeader.todo.sortLabel")}</span>
+          </Button>
+        }
       />
     );
   }

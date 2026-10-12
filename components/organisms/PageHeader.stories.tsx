@@ -17,7 +17,11 @@ export const TeDoen = () => (
         <Button icon="Star" aria-label={t.todo.favoriteLabel} />
       </>
     }
-    actions={<Button icon="ArrowUpDown">{t.todo.sortLabel}</Button>}
+    actions={
+      <Button icon="ArrowUpDown" aria-label={t.todo.sortLabel}>
+        <span className="hidden md:inline">{t.todo.sortLabel}</span>
+      </Button>
+    }
   />
 );
 
@@ -45,7 +49,11 @@ export const TitleChange = () => {
           <Button icon="Star" aria-label={t.todo.favoriteLabel} />
         </>
       }
-      actions={<Button icon="ArrowUpDown">{t.todo.sortLabel}</Button>}
+      actions={
+      <Button icon="ArrowUpDown" aria-label={t.todo.sortLabel}>
+        <span className="hidden md:inline">{t.todo.sortLabel}</span>
+      </Button>
+    }
     />
   );
 };
