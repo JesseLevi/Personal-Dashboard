@@ -3,6 +3,7 @@
 // figma: node-id=3674:5664
 import { cn } from "@/lib/ui/cn";
 import { useRef } from "react";
+import { Avatar } from "../atoms/Avatar";
 import { Button } from "../atoms/Button";
 import { Dropdown } from "../atoms/Dropdown";
 import { Icon, type IconName } from "../atoms/Icon";
@@ -43,14 +44,6 @@ const NAV_ITEMS: ReadonlyArray<{ id: SidebarItemId; icon: IconName }> = [
 export const SIDEBAR_EXPANDED_WIDTH = "w-[198px]";
 export const SIDEBAR_COLLAPSED_WIDTH = "w-[73px]";
 
-// First letter of the first two words — not Figma-sourced (no initials
-// treatment in the fetched node). See design/notes/Sidebar.md.
-function initialsFor(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "";
-  return (parts[0][0] + (parts[1]?.[0] ?? "")).toUpperCase();
-}
-
 export interface SidebarProps {
   /** Figma `Collapsed` variant axis (No/Yes). Defaults to expanded (`No`). */
   collapsed?: boolean;
@@ -72,7 +65,7 @@ export interface SidebarProps {
   /** #265: the signed-in user's display name (composer resolves the null-`display_name` fallback, e.g. `components.sidebar.accountFallbackName`). */
   accountName: string;
   /** #265: public avatar URL, when set. Renders an initials fallback when null/undefined — no upload UI exists yet (out of scope), so this stays null until a future ticket adds one. */
-  accountAvatarUrl?: string | null;
+  accountAvatarSrc?: string | null;
   /** #265: whether the account dropdown (Settings/Logout) is open. Composer-owned — the row itself is stateless, same split as `onToggle`/`collapsed`. */
   accountMenuOpen: boolean;
   /** #265: id pair wiring the trigger to its dropdown panel (`aria-controls` / the panel's own `id`). */
@@ -102,7 +95,7 @@ export function Sidebar({
   onNavigate,
   onItemHover,
   accountName,
-  accountAvatarUrl,
+  accountAvatarSrc,
   accountMenuOpen,
   accountMenuId,
   onAccountMenuToggle,
@@ -189,24 +182,7 @@ export function Sidebar({
           // spacing-flag: p-0 resets native UA button padding, not Figma-sourced. design/notes/Sidebar.md.
           className="chrome-touch flex w-full items-center gap-inline-sm overflow-hidden rounded-control p-0 text-left transition-colors hover:bg-surface-secondary"
         >
-          {accountAvatarUrl ? (
-            <img
-              src={accountAvatarUrl}
-              alt=""
-              width={40}
-              height={40}
-              loading="lazy"
-              className="size-10 shrink-0 rounded-control-inner object-cover"
-            />
-          ) : (
-            // Exact unbound match for surface-secondary-hover — design/notes/Sidebar.md.
-            <span
-              aria-hidden="true"
-              className="flex size-10 shrink-0 items-center justify-center rounded-control-inner bg-surface-secondary-hover text-xs font-semibold text-text-secondary"
-            >
-              {initialsFor(accountName)}
-            </span>
-          )}
+          <Avatar name={accountName} src={accountAvatarSrc} size="md" />
           {/* Figma "Name + icon" (4160:31009): hug-width, zero internal gap — design/notes/Sidebar.md. */}
           <span className="inline-flex shrink-0 items-center">
             <span className="whitespace-nowrap text-xs font-semibold text-text-primary">

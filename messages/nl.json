@@ -286,6 +286,9 @@
     "cardContentRecipe": {
       "durationMinutes": "{minutes} min"
     },
+    "avatarGroup": {
+      "and": "&"
+    },
     "sidebar": {
       "navLabel": "Hoofdnavigatie",
       "expandLabel": "Zijbalk uitklappen",

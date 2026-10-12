@@ -11,10 +11,12 @@
     "Checkbox": { "path": "components/atoms/Checkbox.tsx", "nodeId": "3727:4084" },
     "Icon/*": { "path": "components/atoms/Icon.tsx", "nodeId": "3760:6187" },
     "Dropdown": { "path": "components/atoms/Dropdown.tsx", "nodeId": "3705:4446" },
-    "Step": { "path": "components/atoms/Step.tsx", "nodeId": "3727:3208" }
+    "Step": { "path": "components/atoms/Step.tsx", "nodeId": "3727:3208" },
+    "Avatar": { "path": "components/atoms/Avatar.tsx", "nodeId": "4231:16053" }
   },
   "molecules": {
     "Button/Toggle": { "path": "components/molecules/ButtonToggle.tsx", "nodeId": "4160:33335" },
+    "AvatarGroup": { "path": "components/molecules/AvatarGroup.tsx", "nodeId": "4231:16052" },
     "Card": { "path": "components/molecules/Card.tsx", "nodeId": "3997:25430" },
     "Card-content/Recipi": { "path": "components/molecules/CardContentRecipe.tsx", "nodeId": "3628:67" },
     "Card-content/Recipi skeleton": { "path": "components/molecules/CardContentRecipeSkeleton.tsx", "nodeId": "4164:23681" },
