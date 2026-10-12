@@ -320,6 +320,7 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
         currentLocale={locale}
         currentDisplayName={displayName}
         currentLastName={lastName}
+        hasAvatar={avatarSrc !== null}
       />
     </div>
   );

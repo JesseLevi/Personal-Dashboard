@@ -383,6 +383,7 @@
       "savingLabel": "Saving...",
       "avatar": {
         "inputLabel": "Profile photo",
+        "remove": "Remove photo",
         "placeholder": "Select image"
       }
     },
