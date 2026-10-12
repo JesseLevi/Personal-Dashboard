@@ -763,6 +763,7 @@
       "backLabel": "Back to recipes",
       "addToBasketLabel": "Add to basket",
       "addedToBasketLabel": "Added",
+      "chooseBasketLabel": "Choose a basket",
       "addIngredientToBasketLabel": "Add {name} to basket",
       "editLabel": "Edit",
       "deleteLabel": "Delete",

@@ -7,6 +7,7 @@ import { AnimatedAddToBasketButton } from "./AnimatedAddToBasketButton";
 import { Button } from "../atoms/Button";
 import { Checkbox } from "../atoms/Checkbox";
 import { Tag } from "../atoms/Tag";
+import type { BasketOption } from "@/lib/shopping/baskets";
 import type { ActionResult } from "@/lib/shopping/types";
 
 /**
@@ -52,6 +53,8 @@ export type CardContentIngredientProps =
       onDelete?: undefined;
       deleteLabel?: never;
       onAddToCart?: undefined;
+      baskets?: never;
+      chooseBasketLabel?: never;
       addToCartLabel?: never;
     })
   | (CardContentIngredientBaseProps & {
@@ -59,11 +62,16 @@ export type CardContentIngredientProps =
       onDelete: () => void;
       deleteLabel: string;
       onAddToCart?: undefined;
+      baskets?: never;
+      chooseBasketLabel?: never;
       addToCartLabel?: never;
     })
   | (CardContentIngredientBaseProps & {
       swipeAction: "cart";
-      onAddToCart: () => Promise<ActionResult>;
+      onAddToCart: (listId?: string) => Promise<ActionResult>;
+      /** More than one: the cart button opens a basket popover first (#429). */
+      baskets?: BasketOption[];
+      chooseBasketLabel?: string;
       addToCartLabel: string;
       onDelete?: undefined;
       deleteLabel?: never;
@@ -87,6 +95,8 @@ export function CardContentIngredient({
   deleteLabel,
   onAddToCart,
   addToCartLabel,
+  baskets,
+  chooseBasketLabel,
   swipeAction,
   divider,
   reviewLabel,
@@ -225,6 +235,8 @@ export function CardContentIngredient({
               <AnimatedAddToBasketButton
                 aria-label={addToCartLabel}
                 onAddToBasket={onAddToCart}
+                baskets={baskets}
+                chooseBasketLabel={chooseBasketLabel}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
               />

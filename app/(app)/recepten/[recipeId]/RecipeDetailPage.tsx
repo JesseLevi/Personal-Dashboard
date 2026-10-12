@@ -12,6 +12,7 @@ import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
 import { CardContentStep } from "@/components/molecules/CardContentStep";
 import { usePopoverPosition } from "@/lib/dom/use-popover-position";
+import type { BasketOption } from "@/lib/shopping/baskets";
 import { formatQuantityFraction } from "@/lib/recipes/kitchen-units";
 import { summarizeRecipeNutrition, type RecipeIngredientNutritionInput } from "@/lib/recipes/nutrition";
 import { scaleIngredientRows } from "@/lib/recipes/scaling";
@@ -77,9 +78,11 @@ export interface RecipeDetailPageProps {
   categories: RecipeCategoryRow[];
   /** Presigned "full" hero URL minted in the page render (#391); null/absent -> placeholder. */
   thumbnailUrl?: string | null;
+  /** Baskets this user can send to (own plus accepted shared, #429). More than one: send buttons open a basket popover first. */
+  baskets?: BasketOption[];
 }
 
-export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null }: RecipeDetailPageProps) {
+export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null, baskets = [] }: RecipeDetailPageProps) {
   // #391: presigned hero; the route URL is the one-shot onError fallback.
   // See design/notes/RecipeDetailPage.md.
   const hero = useImageFallback(
@@ -157,10 +160,10 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null }: Re
   // #290: the real `ActionResult` is returned so AnimatedAddToBasketButton
   // plays "Toegevoegd" only on success; the failure display itself is
   // undesigned -- see docs/open-questions.md#winkelmand-send-no-success-feedback.
-  async function handleSendToList() {
+  async function handleSendToList(listId?: string) {
     setSendPending(true);
     try {
-      return await sendRecipeToShoppingList({ recipeId: recipe.id, targetPortions: portions });
+      return await sendRecipeToShoppingList({ listId, recipeId: recipe.id, targetPortions: portions });
     } finally {
       setSendPending(false);
     }
@@ -169,8 +172,8 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null }: Re
   // #179 part 2: the per-row swipe-to-cart action -- one ingredient instead
   // of the whole recipe, same session `portions`. Returns the real result
   // too (#290), see handleSendToList above.
-  function handleAddIngredientToCart(ingredientId: string) {
-    return addIngredientToShoppingList({ recipeId: recipe.id, ingredientId, targetPortions: portions });
+  function handleAddIngredientToCart(ingredientId: string, listId?: string) {
+    return addIngredientToShoppingList({ listId, recipeId: recipe.id, ingredientId, targetPortions: portions });
   }
 
   // #128/#160/#164/#157: one shared scaled-and-converted list feeds both the
@@ -251,6 +254,8 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null }: Re
               label={t("addToBasketLabel")}
               addedLabel={t("addedToBasketLabel")}
               onAddToBasket={handleSendToList}
+              baskets={baskets}
+              chooseBasketLabel={t("chooseBasketLabel")}
               disabled={sendPending}
             />
 
@@ -395,7 +400,9 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null }: Re
                   notCountedIds.has(ingredient.id) || ingredient.needs_review ? () => setEditOpen(true) : undefined
                 }
                 swipeAction="cart"
-                onAddToCart={() => handleAddIngredientToCart(ingredient.id)}
+                onAddToCart={(listId) => handleAddIngredientToCart(ingredient.id, listId)}
+                baskets={baskets}
+                chooseBasketLabel={t("chooseBasketLabel")}
                 addToCartLabel={t("addIngredientToBasketLabel", { name: ingredient.name })}
               />
             ))}
