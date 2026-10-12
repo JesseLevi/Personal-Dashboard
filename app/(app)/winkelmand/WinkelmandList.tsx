@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Basket } from "@lucasmarkes/hairline/react";
 import { Button } from "@/components/atoms/Button";
+import { AvatarGroup, type AvatarGroupMember } from "@/components/molecules/AvatarGroup";
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
 import { IngredientSearchPanel } from "@/components/organisms/IngredientSearchPanel";
+import { ShareInviteBanner } from "@/components/organisms/ShareInviteBanner";
 import { blurInTotalMs, blurFadeStagger, blurOutTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 import { cn } from "@/lib/ui/cn";
 import { formatQuantity } from "@/lib/recipes/units";
@@ -23,6 +25,9 @@ import {
   searchShareMembers,
   inviteShareMember,
   revokeShareMember,
+  acceptShareInvite,
+  declineShareInvite,
+  leaveSharedList,
 } from "./actions";
 import { ShoppingListPanel, type ShoppingListOption, type ShoppingListPanelTarget } from "./ShoppingListPanel";
 import { WinkelmandHeader, type SortBy } from "./WinkelmandHeader";
@@ -35,7 +40,7 @@ import { clearListEnter, markListEnter, wantsListEnter } from "./list-switch";
 import { searchIngredients, createOwnIngredient } from "@/app/(app)/recepten/actions";
 import type { IngredientRow } from "@/lib/recipes/types";
 import type { ActionResult, ShoppingListItemWithGroupInfo } from "@/lib/shopping/types";
-import type { ListShare } from "@/lib/sharing/types";
+import type { ListShare, MemberProfile } from "@/lib/sharing/types";
 
 // Client owner of row interactions (#177), same split as ReceptenBoard.tsx.
 // No moveQueue/pendingMoves *sequencing* is needed here the way
@@ -66,6 +71,17 @@ export interface WinkelmandListProps {
   items: ShoppingListItemWithGroupInfo[];
   /** The owner's current share on this basket (#426); null when not shared or not the owner. */
   share: ListShare | null;
+  /** The basket owner (profile), for a member; shown read-only in the panel (#427). */
+  owner: MemberProfile | null;
+  /** Owner first, then the accepted member; empty while the basket is not shared (#427). */
+  people: AvatarGroupMember[];
+  /** Pending invitations, one banner each (#427). */
+  invites: WinkelmandInvite[];
+}
+
+export interface WinkelmandInvite {
+  listId: string;
+  inviterName: string;
 }
 
 interface Group {
@@ -122,7 +138,7 @@ function buildGroups(
   return ordered.map((key) => byKey.get(key)!);
 }
 
-export function WinkelmandList({ listId, lists, items, share }: WinkelmandListProps) {
+export function WinkelmandList({ listId, lists, items, share, owner, people, invites }: WinkelmandListProps) {
   const router = useRouter();
   const locale = useLocale();
   // Long-form recipes.units labels are the ingredient-CARD Tag's usual
@@ -134,6 +150,7 @@ export function WinkelmandList({ listId, lists, items, share }: WinkelmandListPr
   // design/notes/WinkelmandPage.md.
   const tUnitsShort = useTranslations("recipes.unitsShort");
   const tErrors = useTranslations("shopping.errors");
+  const tSharingErrors = useTranslations("sharing.errors");
   const t = useTranslations("shopping.page");
 
   const [localItems, setLocalItems] = useState(items);
@@ -149,8 +166,12 @@ export function WinkelmandList({ listId, lists, items, share }: WinkelmandListPr
     open: false,
     target: { mode: "create" },
   });
+  // Invitations: declined ones disappear at once, an accepted one navigates away.
+  const [dismissedInvites, setDismissedInvites] = useState<string[]>([]);
+  const [respondingInvite, setRespondingInvite] = useState<string | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const currentList = lists.find((list) => list.id === listId);
-  const defaultList = lists.find((list) => list.isDefault);
+  const defaultList = lists.find((list) => list.isDefault && list.isOwner);
 
   // Basket switch: the groups blur out, then the route changes, then the new
   // basket's groups blur in (only when this mount follows a switch). Same
@@ -193,6 +214,25 @@ export function WinkelmandList({ listId, lists, items, share }: WinkelmandListPr
       .finally(() => {
         pendingActions.current -= 1;
       });
+  }
+
+  async function respondToInvite(invite: WinkelmandInvite, accept: boolean) {
+    setInviteError(null);
+    setRespondingInvite(invite.listId);
+    try {
+      const input = { resource: "shopping_list", id: invite.listId };
+      const result = await (accept ? acceptShareInvite(input) : declineShareInvite(input));
+      if (!result.success) {
+        setInviteError(tSharingErrors(result.error));
+        return;
+      }
+      if (accept) router.push(`/winkelmand/${invite.listId}`);
+      else setDismissedInvites((current) => [...current, invite.listId]);
+    } catch {
+      setInviteError(tSharingErrors("generic"));
+    } finally {
+      setRespondingInvite(null);
+    }
   }
 
   function handleToggle(item: ShoppingListItemWithGroupInfo) {
@@ -245,6 +285,7 @@ export function WinkelmandList({ listId, lists, items, share }: WinkelmandListPr
     }
   }
 
+  const visibleInvites = invites.filter((invite) => !dismissedInvites.includes(invite.listId));
   const isEmpty = localItems.length === 0;
   const groups = isEmpty ? [] : buildGroups(localItems, sortBy, locale, t("otherGroupLabel"));
   const motionCount = Math.max(groups.length, 1);
@@ -291,6 +332,21 @@ export function WinkelmandList({ listId, lists, items, share }: WinkelmandListPr
         onAddItem={() => setAddItemPanelOpen(true)}
         onClearAll={handleClearAll}
       />
+      {visibleInvites.length > 0 && (
+        <div className="flex w-full flex-col gap-stack-xl pr-page-right-equal">
+          {visibleInvites.map((invite) => (
+            <ShareInviteBanner
+              key={invite.listId}
+              inviterName={invite.inviterName}
+              pending={respondingInvite !== null}
+              onAccept={() => respondToInvite(invite, true)}
+              onDecline={() => respondToInvite(invite, false)}
+            />
+          ))}
+        </div>
+      )}
+      {inviteError && <p className="text-base font-semibold text-priority-urgent">{inviteError}</p>}
+      {people.length > 0 && <AvatarGroup members={people} />}
       {actionError && <p className="text-base font-semibold text-priority-urgent">{actionError}</p>}
       {isEmpty ? (
         // #179: the fetched empty-state nodes (4049:11175 desktop /
@@ -380,6 +436,8 @@ export function WinkelmandList({ listId, lists, items, share }: WinkelmandListPr
         onSearchMembers={searchShareMembers}
         onInviteMember={inviteShareMember}
         onRevokeShare={revokeShareMember}
+        onLeaveList={leaveSharedList}
+        owner={owner}
         share={share}
         onCreated={(list) => switchToList(list.id)}
         onRenamed={() => router.refresh()}

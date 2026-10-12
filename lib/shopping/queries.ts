@@ -149,6 +149,24 @@ export async function getShoppingLists(): Promise<ShoppingListRow[]> {
 }
 
 /**
+ * Ids of the baskets with an accepted share the caller can see: the owner's
+ * own shared baskets and the ones they are a member of (RLS only shows a
+ * user the shares they are part of). One source for every "shared" marker
+ * (#429, #427).
+ */
+export async function getAcceptedShareListIds(): Promise<Set<string>> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("shares")
+    .select("shopping_list_id")
+    .eq("status", "accepted");
+  if (error) {
+    console.error("[shopping] getAcceptedShareListIds failed:", error.code, error.message);
+  }
+  return new Set((data ?? []).flatMap((row) => (row.shopping_list_id ? [row.shopping_list_id] : [])));
+}
+
+/**
  * The baskets a recipe can be sent to (own plus accepted shared, RLS decides),
  * in `getShoppingLists` order. `shared` is true when the caller is not the
  * owner or the basket has at least one accepted share. Feeds the recipe
@@ -158,19 +176,11 @@ export async function getRecipeBaskets(): Promise<BasketOption[]> {
   const userId = await getAuthenticatedUserId();
   if (!userId) return [];
 
-  const supabase = await createSupabaseServerClient();
-  const [lists, t, sharesResult] = await Promise.all([
+  const [lists, t, acceptedShareListIds] = await Promise.all([
     getShoppingLists(),
     getTranslations("shopping.lists"),
-    supabase.from("shares").select("shopping_list_id").eq("status", "accepted"),
+    getAcceptedShareListIds(),
   ]);
-
-  if (sharesResult.error) {
-    console.error("[shopping] getRecipeBaskets shares failed:", sharesResult.error.code, sharesResult.error.message);
-  }
-  const acceptedShareListIds = new Set(
-    (sharesResult.data ?? []).flatMap((row) => (row.shopping_list_id ? [row.shopping_list_id] : [])),
-  );
 
   return toBasketOptions({ lists, acceptedShareListIds, userId, defaultName: t("defaultName") });
 }

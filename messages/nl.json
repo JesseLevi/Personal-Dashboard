@@ -242,6 +242,11 @@
       "already-shared": "Je deelt dit al met deze persoon.",
       "rate-limited": "Je hebt te vaak gezocht. Probeer het over een paar minuten opnieuw.",
       "generic": "Er ging iets mis. Probeer het opnieuw."
+    },
+    "invite": {
+      "message": "{name} wil mand delen",
+      "acceptLabel": "Accepteren",
+      "declineLabel": "Afwijzen"
     }
   },
   "boards": {
@@ -897,7 +902,12 @@
       "deleteConfirmButtonLabel": "Ja, verwijderen",
       "deletingLabel": "Verwijderen...",
       "cancelLabel": "Annuleren",
-      "sharePendingTag": "Delen wordt actief na toestemming"
+      "sharePendingTag": "Delen wordt actief na toestemming",
+      "ownerLabel": "Eigenaar",
+      "leaveLabel": "Verlaat mand",
+      "leaveConfirmLabel": "Weet je het zeker? Je ziet deze mand en de items erin niet meer, tenzij je opnieuw wordt uitgenodigd.",
+      "leaveConfirmButtonLabel": "Ja, verlaten",
+      "leavingLabel": "Verlaten..."
     }
   }
 }

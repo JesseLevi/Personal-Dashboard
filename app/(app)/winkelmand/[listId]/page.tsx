@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
-import { getShoppingListItems, getShoppingLists } from "@/lib/shopping/queries";
+import { getAcceptedShareListIds, getShoppingListItems, getShoppingLists } from "@/lib/shopping/queries";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
-import { getShoppingListShare } from "@/lib/sharing/queries";
+import { getShoppingListPeople, getShoppingListShare } from "@/lib/sharing/queries";
+import { pendingInvites } from "@/lib/sharing/actions";
+import { memberFullName, toAvatarGroupMembers } from "@/lib/sharing/member";
 import { WinkelmandList, type WinkelmandListOption } from "../WinkelmandList";
 
 // #177: Winkelmand page UI, on top of #175/#176's schema + data layer. Same
@@ -38,17 +40,45 @@ export default async function WinkelmandListPage({
 
   // Only the owner sees and edits the share (#426); RLS also hides it from members.
   const userId = await getAuthenticatedUserId();
-  const isOwnerOfCurrent = lists.some((row) => row.id === listId && row.user_id === userId);
-  const [items, share] = await Promise.all([
+  const current = lists.find((row) => row.id === listId);
+  const isOwnerOfCurrent = current?.user_id === userId;
+  const [items, share, sharedListIds, invitesResult] = await Promise.all([
     getShoppingListItems(listId),
     isOwnerOfCurrent ? getShoppingListShare(listId) : Promise.resolve(null),
+    getAcceptedShareListIds(),
+    pendingInvites(),
   ]);
   const options: WinkelmandListOption[] = lists.map((row) => ({
     id: row.id,
     name: row.name ?? t("shopping.lists.defaultName"),
     isDefault: row.is_default,
     isOwner: row.user_id === userId,
+    shared: row.user_id !== userId || sharedListIds.has(row.id),
   }));
 
-  return <WinkelmandList key={listId} listId={listId} lists={options} items={items} share={share} />;
+  // #427: the owner first, then the member; empty until someone accepted.
+  const { owner, people } = await getShoppingListPeople({
+    ownerId: current?.user_id ?? "",
+    isOwner: isOwnerOfCurrent,
+    share,
+    accepted: sharedListIds.has(listId),
+  });
+  const unnamed = t("components.memberSearchPanel.unnamedLabel");
+  const invites = (invitesResult.success ? invitesResult.data : []).map((invite) => ({
+    listId: invite.resourceId,
+    inviterName: memberFullName(invite.inviter, unnamed),
+  }));
+
+  return (
+    <WinkelmandList
+      key={listId}
+      listId={listId}
+      lists={options}
+      items={items}
+      share={share}
+      owner={owner}
+      people={toAvatarGroupMembers(people, unnamed)}
+      invites={invites}
+    />
+  );
 }

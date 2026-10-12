@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { memberAvatarSrc, memberFullName } from "@/lib/sharing/member";
+import { memberAvatarSrc, memberFullName, toAvatarGroupMembers } from "@/lib/sharing/member";
 
 describe("memberAvatarSrc", () => {
   it("returns null without a photo", () => {
@@ -25,5 +25,16 @@ describe("memberFullName", () => {
 
   it("falls back when there is no name", () => {
     expect(memberFullName({ displayName: null, lastName: null }, "Naamloos")).toBe("Naamloos");
+  });
+});
+
+describe("toAvatarGroupMembers", () => {
+  it("keeps the given order, uses full names and sets src only with a photo", () => {
+    const owner = { id: "o", displayName: "Jesse", lastName: "Kamps", hasAvatar: true, updatedAt: "v1" };
+    const lid = { id: "m", displayName: "Youri", lastName: null, hasAvatar: false, updatedAt: "v2" };
+    expect(toAvatarGroupMembers([owner, lid], "?")).toEqual([
+      { id: "o", name: "Jesse Kamps", src: "/api/avatar/o?v=v1" },
+      { id: "m", name: "Youri", src: null },
+    ]);
   });
 });

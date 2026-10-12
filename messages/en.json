@@ -242,6 +242,11 @@
       "already-shared": "You already share this with this person.",
       "rate-limited": "You searched too often. Try again in a few minutes.",
       "generic": "Something went wrong. Try again."
+    },
+    "invite": {
+      "message": "{name} wants to share a basket",
+      "acceptLabel": "Accept",
+      "declineLabel": "Decline"
     }
   },
   "boards": {
@@ -897,7 +902,12 @@
       "deleteConfirmButtonLabel": "Yes, delete",
       "deletingLabel": "Deleting...",
       "cancelLabel": "Cancel",
-      "sharePendingTag": "Sharing starts after they agree"
+      "sharePendingTag": "Sharing starts after they agree",
+      "ownerLabel": "Owner",
+      "leaveLabel": "Leave basket",
+      "leaveConfirmLabel": "Are you sure? You will no longer see this basket or its items unless you are invited again.",
+      "leaveConfirmButtonLabel": "Yes, leave",
+      "leavingLabel": "Leaving..."
     }
   }
 }

@@ -1,7 +1,7 @@
 // figma: node-id=4231:16736
 import { ShoppingListPanel, type ShoppingListOption } from "./ShoppingListPanel";
 import type { ActionResult, ShoppingListRow } from "@/lib/shopping/types";
-import type { ActionResult as SharingActionResult, ListShare, MemberSearchResult } from "@/lib/sharing/types";
+import type { ActionResult as SharingActionResult, ListShare, MemberProfile, MemberSearchResult } from "@/lib/sharing/types";
 
 // Dev-only mock actions, same approach as BoardPanel.stories.tsx: the panel
 // takes its actions as props and never imports the "use server" module.
@@ -27,9 +27,9 @@ async function mockShareAction(input: unknown): Promise<SharingActionResult> {
   return { success: true, data: undefined };
 }
 
-const sampleList: ShoppingListOption = { id: "list-2", name: "Gedeelde mand", isDefault: false, isOwner: true };
-const defaultList: ShoppingListOption = { id: "list-1", name: "Mijn mand", isDefault: true, isOwner: true };
-const memberList: ShoppingListOption = { ...sampleList, isOwner: false };
+const sampleList: ShoppingListOption = { id: "list-2", name: "Gedeelde mand", isDefault: false, isOwner: true, shared: false };
+const defaultList: ShoppingListOption = { id: "list-1", name: "Mijn mand", isDefault: true, isOwner: true, shared: false };
+const memberList: ShoppingListOption = { ...sampleList, isOwner: false, shared: true };
 
 const member = {
   id: "member-1",
@@ -46,9 +46,11 @@ const acceptedShare: ListShare = { member, status: "accepted" };
 const Harness = ({
   target,
   share = null,
+  owner = null,
 }: {
   target: Parameters<typeof ShoppingListPanel>[0]["target"];
   share?: ListShare | null;
+  owner?: MemberProfile | null;
 }) => (
   <div className="min-h-screen">
     <ShoppingListPanel
@@ -61,6 +63,8 @@ const Harness = ({
       onSearchMembers={mockSearchMembers}
       onInviteMember={mockShareAction}
       onRevokeShare={mockShareAction}
+      onLeaveList={mockShareAction}
+      owner={owner}
       share={share}
       onCreated={() => {}}
       onRenamed={() => {}}
@@ -89,5 +93,7 @@ export const EditListSharedAccepted = () => (
   <Harness target={{ mode: "edit", list: sampleList }} share={acceptedShare} />
 );
 
-// A member (not the owner) of the basket gets no sharing field at all.
-export const EditListAsMember = () => <Harness target={{ mode: "edit", list: memberList }} />;
+// A member (not the owner): name and owner read-only, no sharing field, "Verlaat mand" instead of delete.
+export const EditListAsMember = () => (
+  <Harness target={{ mode: "edit", list: memberList }} owner={{ ...member, displayName: "Youri", lastName: "Tukker", id: "owner-1" }} />
+);
