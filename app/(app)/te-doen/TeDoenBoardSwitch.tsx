@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { armTitleMorph } from "@/lib/ui/title-morph";
 import { blurOutTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 
 // Board switch = exit fade, then navigation, then enter fade on the
@@ -70,6 +71,7 @@ export function TeDoenBoardSwitchProvider({
       setExitingFor(boardId);
       timer.current = setTimeout(() => {
         timer.current = null;
+        armTitleMorph();
         pendingEnter = { boardId: targetBoardId, at: Date.now() };
         router.push(href);
       }, blurOutTotalMs(columnCount, reduced));
