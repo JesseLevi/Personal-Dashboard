@@ -17,13 +17,17 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
   - design notes condensed to contracts;
   - `phase-log.md` replaced by `docs/operations.md`.
 
-## Next: Phase 7, Agenda (#33)
+## Next: Delen, fase 1, Winkelmand (epic #420, ADR-0035)
+
+Figma `4233:17988`. Order: #422 `shopping_lists` → #423 `shares` + role functions + member RPCs → #424 basket switcher/panel (parallel #425 `Avatar`/`AvatarGroup`) → #426 invite (owner) → #427 accept/decline + member view → #428 refresh shared basket → #429 recipe → basket popover. Each migration needs the user's go before hosted.
+
+## After that: Phase 7, Agenda (#33)
 
 1. **ADR: runtime for scheduled work.** Calendar sync is the first feature that needs it (`Architecture.md` §6, open decision 1).
    - Weigh a lazy "sync when stale" on Agenda load via `after()` (ADR-0017/0019 style, no infrastructure) against Vercel Cron and Supabase Cron.
    - Cost and the Vercel plan's cron limits decide it.
 2. **Split #33 into tickets**, in this order:
-   - (a) schema + RLS: `calendar_events`, `calendar_accounts`, with a sharing-ready owning container (ADR-0001);
+   - (a) schema + RLS: `calendar_events`, `calendar_accounts`, with an owning container shareable per ADR-0035;
    - (b) manual events and an Agenda page with day/week/month views on Schedule-X, Claude-designed (ADR-0034), plus a nav entry. The Sidebar has no Agenda item yet;
    - (c) a deadline overlay from `cards.due_at`;
    - (d) ICS import via `safe-fetch`, with the secret URL stored in Vault;

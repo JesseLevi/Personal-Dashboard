@@ -50,9 +50,10 @@ worker/               job-consumer skeleton (unused until a scheduled-work mecha
 ### 4.1 Conventions
 
 - snake_case, plural tables, `uuid` primary keys, `created_at`/`updated_at` (trigger-maintained).
-- **Every `public` table** has `user_id uuid not null references auth.users on delete cascade`, RLS with the four standard policies, explicit grants, and a pgTAP test in `supabase/tests` (ADR-0001/0009). `pnpm check:rls-coverage` fails on any gap.
+- **Every `public` table** has `user_id uuid not null references auth.users on delete cascade`, RLS with the four standard policies, explicit grants, and a pgTAP test in `supabase/tests` (ADR-0009/0035). `user_id` is the owner, not the only reader. `pnpm check:rls-coverage` fails on any gap.
 - **`reference` schema**: shared, non-user data with no `user_id`. Select for everyone. Writes only through migrations, except admin-written `eigen` rows and shared aliases (ADR-0011/0020).
-- **`private` schema**: not exposed by PostgREST; written only by definer functions (ADR-0031).
+- **`private` schema**: not exposed by PostgREST; written only by definer functions (ADR-0031). Also holds the sharing role functions (ADR-0035).
+- **Sharing** (ADR-0035): a container (now `shopping_lists`) is shared through `shares` (one nullable FK per shareable type, `pending|accepted`, role `editor`). Rows inside a container carry the owner's `user_id`; their policies call `private.<type>_role(id)`. Other members' names come only from `member_profiles()` / `search_members()`.
 - **Small closed sets** are text with a check constraint (`priority`, `size`, `source`). Units are the shared enum `public.recipe_unit` (ADR-0028).
 - **Ordering** uses fractional `position` (numeric midpoint), mirrored in TypeScript and SQL (ADR-0015).
 - **Multi-statement writes** are `security invoker` RPCs with `search_path = ''`, an explicit ownership guard, and execute granted only to `authenticated`: `replace_recipe_contents`, `move_card`, `move_recipe`, `move_note`, `toggle_board_favorite`, `save_note_content` (ADR-0015/0030).
@@ -68,7 +69,8 @@ worker/               job-consumer skeleton (unused until a scheduled-work mecha
 | Recepten | `recipe_categories` (`icon`), `recipes` (`thumbnail_path`, `source_url`, `import_status`, `import_error`), `recipe_ingredients` (`ingredient_id`, `unit`, `group_label`, `needs_review`), `recipe_steps`, `recipe_step_ingredients`, `tags`, `recipe_tags` |
 | Ingredient library | `ingredients` (user layer, nullable `reference_id`), `ingredient_unit_masses` (user overrides), `ingredient_aliases` (user) |
 | Reference | `reference.ingredients` (NEVO + `eigen`, nutrients per 100 g, bilingual names/categories), `reference.ingredient_unit_masses` (NEVO portions, USDA), `reference.ingredient_aliases` (admin) |
-| Winkelmand | `shopping_list_items` (`ingredient_id`, `unit`, `checked`, `recipe_id` provenance) |
+| Winkelmand | `shopping_lists` (container, one `is_default` per user), `shopping_list_items` (`list_id`, `unit`, `checked`, `recipe_id` provenance) |
+| Sharing | `shares` (ADR-0035) |
 | Notities | `note_categories`, `notes` (`content` TipTap JSON, derived `title` + `content_text`), `note_links` (derived on save) |
 
 Planned for Phase 7: `calendar_events` and `calendar_accounts` (§7).
@@ -86,7 +88,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 
 ## 5. Security model
 
-- **Isolation**: RLS on every user table, tested in CI (ADR-0009). Access decisions live in policies, not in app code, so a future sharing model is a policy change (ADR-0001).
+- **Isolation**: RLS on every user table, tested in CI (ADR-0009). Access decisions live in policies, not in app code; sharing extends them through role functions, never app-side checks (ADR-0035). A share is active only after the member accepts.
 - **Boundaries** (ADR-0033):
   - no `NEXT_PUBLIC_` Supabase variables;
   - `service_role` only in server-only modules, never in a request on a user's behalf;
@@ -131,7 +133,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 - **Schema** (ADR-0005/0008):
   - `calendar_events`: title, `starts_at`/`ends_at` as `timestamptz`, `all_day` flag, location, description, `source` `manual|sync`, nullable `calendar_account_id` + `external_id`, unique per account.
   - `calendar_accounts`: provider `ics|caldav|google`, display name, `vault_secret_id`, `sync_state`, `last_synced_at`.
-  - Keep a clear owning container, so a shared calendar can come later (ADR-0001).
+  - Keep a clear owning container, so a shared calendar can come later (ADR-0035).
 - **Sync**:
   - read-only import, providers in order `ics` → `caldav` (`tsdav`) → `google` (OAuth refresh token);
   - credentials, including secret ICS URLs, in Vault (ADR-0002);
@@ -160,7 +162,8 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 | --- | --- |
 | 0 Foundation, 1 Account, 2 Design system | ✅ (SMTP for magic links on hosted is open, #10) |
 | 3 Te doen, 4 Recepten (incl. import, nutrition), 5 Winkelmand, 6 Notities | ✅ in production use |
-| 7 Agenda | 🔜 next (#33) |
+| Delen, fase 1: Winkelmand (#420) | 🔜 now (ADR-0035) |
+| 7 Agenda | 🔜 after #420 (#33) |
 | 8 AI pipeline: embeddings and semantic search | backlog (#31) |
 | 9 Assistent: agent signals | backlog (#32) |
-| Later | sharing between members, weekmenu, mail integration (`Vision.md`) |
+| Later | sharing boards and recipes (ADR-0035), weekmenu, mail integration (`Vision.md`) |

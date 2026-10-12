@@ -9,7 +9,7 @@ Atlas brengt de persoonlijke informatie van het dagelijks leven samen op één p
 
 Het doel is een rustiger hoofd, geen productiviteitssysteem om het systeem.
 
-**Voor wie**: een kleine kring van vrienden en familie. Ieder heeft een eigen account met eigen data. **Delen is een vaste richting**: gedeelde borden, receptenverzamelingen en boodschappenlijsten, en één recept delen met een ander lid. Dat komt via een eigen ADR zodra het gebouwd wordt (zie ADR-0001). Tot die tijd blijft elke nieuwe module zo opgezet dat delen later een beleidswijziging is, geen herbouw.
+**Voor wie**: een kleine kring van vrienden en familie. Ieder heeft een eigen account met eigen data. **Delen is een vaste richting**: gedeelde borden, receptenverzamelingen en boodschappenlijsten, en één recept delen met een ander lid. Het deelmodel ligt vast in ADR-0035: je deelt een container (een mand, later een bord of verzameling) met een ander lid, en delen wordt pas actief na diens toestemming. Elke nieuwe module houdt een duidelijke container, zodat delen later alleen een uitbreiding is.
 
 ## 2. Fundamenten (vast)
 
@@ -49,7 +49,7 @@ Een rijke editor met slash-menu, tabellen, taken, code, afbeeldingen en inklapba
 *Buiten scope*: prijzen, supermarkt-API's.
 
 ### Winkelmand ✅
-Een lopende boodschappenlijst, handmatig of vanuit recepten gevuld, gegroepeerd en af te vinken.
+Lopende boodschappenlijsten in één of meer manden, handmatig of vanuit recepten gevuld (je kiest de mand), gegroepeerd en af te vinken. Een mand deel je met een ander lid 🔜 (#420).
 *Buiten scope*: prijsvergelijking, voorraadbeheer.
 
 ### Agenda 🔜
@@ -60,7 +60,7 @@ Eigen afspraken in dag-, week- en maandweergave, met deadlines uit Te doen erin.
 Het AI-gedeelte. Signalen uit je eigen data (vastgelopen taken, terugkerende thema's) worden kort en in gewone taal gemeld. Later komt daar een gesprek bij over je eigen informatie, gebaseerd op semantisch zoeken over notities en recepten. De agent heeft geen tools en geen schrijfrechten buiten zijn eigen meldingen.
 
 ### Later 💭
-- **Delen** tussen leden (zie §1).
+- **Delen** van borden, receptenverzamelingen en losse recepten, op hetzelfde model als de mand (ADR-0035).
 - **Weekmenu**: recepten plannen in de agenda en de winkelmand automatisch vullen. Het duidelijkste voorbeeld van "kleine beslissingen verminderen".
 - **Mail-integratie**: actiepunten en uitnodigingen uit mail naar Te doen en Agenda. Het `source`-veld op kaarten en afspraken is er al voor (ADR-0005).
 
