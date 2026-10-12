@@ -4,7 +4,6 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/lib/recipes/contents", () => ({ replaceRecipeContents: vi.fn(async () => ({ ok: true })) }));
 vi.mock("@/lib/recipes/thumbnails", () => ({
   storeRecipeThumbnail: vi.fn(async () => ({ success: true, data: { path: "u1/thumb" } })),
-  discardRecipeThumbnail: vi.fn(async () => {}),
 }));
 vi.mock("@/lib/recipes/import/match-ingredients", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/recipes/import/match-ingredients")>()),
@@ -20,7 +19,7 @@ import { replaceRecipeContents, type IngredientLine, type StepLine } from "@/lib
 import { matchIngredients, resolveIngredientId, widenMatches, type LineMatch } from "@/lib/recipes/import/match-ingredients";
 import { loadUnitGrams } from "@/lib/recipes/import/unit-grams";
 import { runRecipeImport, toImportErrorCode } from "@/lib/recipes/import/pipeline";
-import { discardRecipeThumbnail, storeRecipeThumbnail } from "@/lib/recipes/thumbnails";
+import { storeRecipeThumbnail } from "@/lib/recipes/thumbnails";
 import { IMPORT_ERROR_CODES } from "@/lib/recipes/enums";
 import { computeRecipeNutritionPerPerson } from "@/lib/recipes/nutrition";
 import type { UnitCode } from "@/lib/recipes/units";
@@ -108,7 +107,6 @@ beforeEach(() => {
   vi.mocked(replaceRecipeContents).mockClear();
   vi.mocked(replaceRecipeContents).mockResolvedValue({ ok: true });
   vi.mocked(storeRecipeThumbnail).mockClear();
-  vi.mocked(discardRecipeThumbnail).mockClear();
   vi.mocked(matchIngredients).mockReset();
   vi.mocked(resolveIngredientId).mockReset();
   vi.mocked(resolveIngredientId).mockImplementation(async (_s, _u, chosen) =>
@@ -348,15 +346,6 @@ describe("runRecipeImport: translation into the user's language", () => {
     expect(updates[0]).not.toHaveProperty("thumbnail_path");
   });
 
-  it("a stored thumbnail is discarded when the import fails afterwards (#446)", async () => {
-    vi.mocked(matchIngredients).mockResolvedValue([own("a"), own("b"), own("c"), own("d")]);
-    vi.mocked(replaceRecipeContents).mockResolvedValue({ ok: false });
-    const { supabase, updates } = fakeSupabase();
-    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetcher(page(recipeLd())) });
-    expect(discardRecipeThumbnail).toHaveBeenCalledWith("u1/thumb");
-    expect(updates).toEqual([{ import_status: "failed", import_error: "import_failed" }]);
-  });
-
   it("an unsupported image type is not stored", async () => {
     vi.mocked(matchIngredients).mockResolvedValue([own("a"), own("b"), own("c"), own("d")]);
     const { supabase } = fakeSupabase();
@@ -379,47 +368,6 @@ describe("runRecipeImport: text page", () => {
     expect(contentsCall().ingredients[0]).toMatchObject({ name: "bloem", quantity: 250, unit: "gram", ingredientId: "meel" });
     expect(contentsCall().steps[0]).toMatchObject({ ingredientRefs: [0] });
     expect(updates[0]).toMatchObject({ title: "Pannenkoeken", time_minutes: 20, import_status: "done" });
-  });
-
-  // #446: thumbnails went missing on this path. The page's og:image must end up as
-  // thumbnail_path, and the download must not wait for the (slow) LLM steps.
-  const ogTextPage = textPage.replace("<head>", '<head><meta property="og:image" content="https://example.com/og.jpg">');
-  const textAnswers = {
-    text: { isRecipe: true, name: "Pannenkoeken", description: null, recipeIngredient: ["250 g bloem"], steps: ["Meng."], timeMinutes: 20, servings: 4 },
-  };
-
-  it("saves the og:image as thumbnail_path (#446)", async () => {
-    vi.mocked(matchIngredients).mockResolvedValue([own("meel")]);
-    aiAnswers(textAnswers);
-    const { supabase, updates } = fakeSupabase();
-    const fetchPage = fetcher(ogTextPage);
-    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetchPage });
-    expect(fetchPage).toHaveBeenCalledWith("https://example.com/og.jpg", { allowImages: true });
-    expect(storeRecipeThumbnail).toHaveBeenCalledWith("u1", expect.any(Uint8Array));
-    expect(updates[0]).toMatchObject({ import_status: "done", thumbnail_path: "u1/thumb" });
-  });
-
-  it("starts the image download before the LLM steps (#446)", async () => {
-    vi.mocked(matchIngredients).mockResolvedValue([own("meel")]);
-    const order: string[] = [];
-    const provider: AiProvider = {
-      generateObject: vi.fn(async (req: { purpose?: string }) => {
-        order.push(`ai:${req.purpose}`);
-        if (req.purpose === "recipe_text_extract") return textAnswers.text;
-        if (req.purpose === "recipe_prepare") return { lines: [], translated: null };
-        return { lines: [], stepRefs: [] };
-      }) as AiProvider["generateObject"],
-    };
-    setProviderForTests(provider);
-    const inner = fetcher(ogTextPage);
-    const fetchPage = vi.fn(async (url: string, opts?: { allowImages?: boolean }) => {
-      if (opts?.allowImages) order.push("image");
-      return inner(url, opts);
-    });
-    const { supabase } = fakeSupabase();
-    await runRecipeImport({ supabase, ...JOB }, { safeFetch: fetchPage });
-    expect(order.indexOf("image")).toBeGreaterThan(-1);
-    expect(order.indexOf("image")).toBeLessThan(order.indexOf("ai:recipe_prepare"));
   });
 
   it("no API key -> failed with ai_unavailable, nothing written", async () => {

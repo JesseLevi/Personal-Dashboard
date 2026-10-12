@@ -26,7 +26,7 @@ import { loadUnitGrams, type UnitGramsLookup } from "@/lib/recipes/import/unit-g
 import { hostOf } from "@/lib/recipes/import/url";
 import type { UnitCode } from "@/lib/recipes/units";
 import type { Locale } from "@/lib/profile/types";
-import { discardRecipeThumbnail, storeRecipeThumbnail } from "@/lib/recipes/thumbnails";
+import { storeRecipeThumbnail } from "@/lib/recipes/thumbnails";
 import { MAX_THUMBNAIL_BYTES, isAllowedThumbnailMimeType } from "@/lib/recipes/thumbnail-validation";
 
 // The recipe import pipeline (#318, ADR-0019 §2): a plain module with no
@@ -39,8 +39,7 @@ import { MAX_THUMBNAIL_BYTES, isAllowedThumbnailMimeType } from "@/lib/recipes/t
 //   parse lines -> matchIngredients -> prepareRecipe (search terms,
 //   translation) -> widenMatches -> linkIngredients (choice, grams, step
 //   refs) -> resolve ingredient ids -> weight per unit for counts ->
-//   replace_recipe_contents (the manual write path) -> done. The thumbnail
-//   download runs alongside all of that (#446), not after it.
+//   replace_recipe_contents (the manual write path) -> thumbnail -> done.
 //
 // Everything that can fail runs before the first write; a typed error ends in
 // `import_status='failed'` + `import_error=<code>` in ONE update (the
@@ -151,30 +150,10 @@ async function saveUnitWeights(
 }
 
 async function run(job: ImportJob, deps: PipelineDeps): Promise<void> {
-  const { url } = job;
+  const { supabase, userId, recipeId, url, locale } = job;
   const fetchPage = deps.safeFetch ?? safeFetch;
 
   const recipe = await loadRecipe(url, fetchPage);
-  // Started right away and awaited last (#446): the LLM steps below can eat
-  // most of the function's time budget, and a thumbnail fetched after them was
-  // silently cut off. fetchThumbnailPath never rejects.
-  const thumbnail = recipe.image ? fetchThumbnailPath(job, recipe.image, fetchPage) : Promise.resolve(null);
-  try {
-    await importContents(job, recipe, thumbnail);
-  } catch (error) {
-    // The recipe ends up failed: do not leave the downloaded image orphaned in R2.
-    const stored = await thumbnail;
-    if (stored) await discardRecipeThumbnail(stored);
-    throw error;
-  }
-}
-
-async function importContents(
-  job: ImportJob,
-  recipe: ExtractedRecipe,
-  thumbnail: Promise<string | null>,
-): Promise<void> {
-  const { supabase, userId, recipeId, url, locale } = job;
   const entries = parseLines(recipe.recipeIngredient);
 
   const firstPass = await matchIngredients(
@@ -249,7 +228,7 @@ async function importContents(
   if (!contents.ok) throw new Error("Failed to save the imported recipe contents");
   await saveUnitWeights(supabase, userId, unitWeights);
 
-  const thumbnailPath = await thumbnail;
+  const thumbnailPath = recipe.image ? await fetchThumbnailPath(job, recipe.image, fetchPage) : null;
 
   const { error } = await supabase
     .from("recipes")

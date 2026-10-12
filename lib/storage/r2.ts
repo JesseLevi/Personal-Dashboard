@@ -6,6 +6,8 @@ import type { R2Config } from "./env";
 import { PRESIGN_EXPIRES_SECONDS, floorToHour, type ObjectStore } from "./types";
 
 const DELETE_BATCH = 1000;
+const MAX_RETRIES = 3;
+const RETRY_BACKOFF_MS = 100;
 
 const xmlEscape = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -27,8 +29,23 @@ export function createR2Store(config: R2Config): ObjectStore {
   const base = `https://${config.accountId}.r2.cloudflarestorage.com/${config.bucket}`;
   const objectUrl = (key: string) => `${base}/${key.split("/").map(encodeURIComponent).join("/")}`;
 
+  // Sign, then call the global fetch with a URL string and the original body. client.fetch
+  // would hand Next's patched fetch a Request, which it rebuilds with a stream body: no
+  // Content-Length reaches R2, which answers 411 (#446).
   async function call(url: string, init: RequestInit, okStatuses: number[] = []) {
-    const res = await client.fetch(url, init);
+    const signed = await client.sign(url, init);
+    let res: Response;
+    for (let attempt = 0; ; attempt++) {
+      res = await fetch(url, {
+        method: init.method,
+        headers: signed.headers,
+        body: init.body,
+        cache: "no-store",
+      });
+      const retryable = res.status >= 500 || res.status === 429;
+      if (!retryable || attempt >= MAX_RETRIES) break;
+      await new Promise((r) => setTimeout(r, RETRY_BACKOFF_MS * 2 ** attempt));
+    }
     if (!res.ok && !okStatuses.includes(res.status)) {
       throw new Error(`R2 request failed: ${init.method ?? "GET"} ${res.status}`);
     }
