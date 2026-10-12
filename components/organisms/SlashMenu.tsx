@@ -59,7 +59,9 @@ export function SlashMenuPanel({
     listRef.current
       ?.querySelector<HTMLElement>("[aria-selected=true]")
       ?.scrollIntoView({ block: "nearest" });
-  }, [selectedIndex, rows]);
+    // Keyed on the selection only: `rows` is a new array every render, and
+    // re-running on it yanked a touch-scrolled list back to the active item (#448).
+  }, [selectedIndex]);
 
   return (
     <Dropdown role="listbox" aria-label={label} className="shadow-sm">
@@ -128,6 +130,12 @@ function place(anchor: DOMRect, panel: HTMLElement | null): Placement {
   };
 }
 
+function sameStyle(a: CSSProperties, b: CSSProperties) {
+  const x = a as Record<string, unknown>;
+  const y = b as Record<string, unknown>;
+  return ["--menu-x", "--menu-y", "--menu-max"].every((key) => x[key] === y[key]);
+}
+
 export function usePlacement(getRect: () => DOMRect | null, active: boolean, dependency: unknown) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [placement, setPlacement] = useState<Placement | null>(null);
@@ -141,19 +149,29 @@ export function usePlacement(getRect: () => DOMRect | null, active: boolean, dep
     }
     function update() {
       const rect = getRectRef.current();
-      if (rect) setPlacement(place(rect, panelRef.current));
+      if (!rect) return;
+      const next = place(rect, panelRef.current);
+      // Same geometry: keep the old object so no re-render happens (#448).
+      setPlacement((prev) =>
+        prev && prev.openUp === next.openUp && sameStyle(prev.style, next.style) ? prev : next,
+      );
+    }
+    // The panel's own scroll (touch) must not re-place it (#448).
+    function onScroll(event: Event) {
+      if (event.target instanceof Node && panelRef.current?.contains(event.target)) return;
+      update();
     }
     update();
     const viewport = window.visualViewport;
     viewport?.addEventListener("resize", update);
     viewport?.addEventListener("scroll", update);
     window.addEventListener("resize", update);
-    window.addEventListener("scroll", update, true);
+    window.addEventListener("scroll", onScroll, true);
     return () => {
       viewport?.removeEventListener("resize", update);
       viewport?.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
-      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("scroll", onScroll, true);
     };
   }, [active, dependency]);
 

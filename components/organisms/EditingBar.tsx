@@ -282,21 +282,33 @@ function useKeyboardInset() {
   useEffect(() => {
     const viewport = window.visualViewport;
     if (!viewport) return;
-    function update() {
+    let frame = 0;
+    function compute() {
+      frame = 0;
       const vv = window.visualViewport;
       if (!vv) return;
-      setInset(Math.max(0, window.innerHeight - (vv.height + vv.offsetTop)));
+      const raw = Math.round(window.innerHeight - (vv.height + vv.offsetTop));
+      // #448: a collapsing browser toolbar shifts this by tens of px while
+      // scrolling; only a real keyboard (taller than that) lifts the bar.
+      setInset(raw > KEYBOARD_MIN_INSET ? raw : 0);
     }
-    update();
+    // One read per frame: scroll fires faster than the screen paints.
+    function update() {
+      if (!frame) frame = requestAnimationFrame(compute);
+    }
+    compute();
     viewport.addEventListener("resize", update);
     viewport.addEventListener("scroll", update);
     return () => {
+      if (frame) cancelAnimationFrame(frame);
       viewport.removeEventListener("resize", update);
       viewport.removeEventListener("scroll", update);
     };
   }, []);
   return inset;
 }
+
+const KEYBOARD_MIN_INSET = 120;
 
 // Below the `md` breakpoint (48rem), where the bar is the fixed bottom bar.
 const DESKTOP_QUERY = "(min-width: 48rem)";
@@ -587,7 +599,7 @@ export function EditingBar({ editor, className, mobile }: EditingBarProps) {
         // design/notes/EditingBar.md
         "flex items-center gap-2 overflow-x-auto md:mx-auto md:w-fit md:max-w-full rounded-card bg-surface-highlight-white px-component-xs py-1",
         "fixed bottom-[env(safe-area-inset-bottom)] left-page-left right-page-right-equal z-10",
-        "translate-y-[calc(var(--keyboard-inset,0px)*-1)] transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+        "translate-y-[calc(var(--keyboard-inset,0px)*-1)]",
         "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         "md:static md:inset-auto md:translate-y-0",
         className,

@@ -35,13 +35,18 @@ export function usePopoverPanel(onOpen: (panel: HTMLDivElement) => void) {
       if (panelRef.current?.contains(target) || wrapperRef.current?.contains(target)) return;
       close();
     }
+    // The panel's own scroll (touch) must not dismiss it (#448).
+    function onScroll(event: Event) {
+      if (event.target instanceof Node && panelRef.current?.contains(event.target)) return;
+      close();
+    }
     window.addEventListener("pointerdown", onPointerDown);
     window.addEventListener("resize", close);
-    window.addEventListener("scroll", close, true);
+    window.addEventListener("scroll", onScroll, true);
     return () => {
       window.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("resize", close);
-      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("scroll", onScroll, true);
     };
   }, [isOpen]);
 
