@@ -35,3 +35,10 @@ export type PendingInvite = {
   inviter: MemberProfile;
   invitedAt: string;
 };
+
+// The one share a basket owner has on a container (v1: one member per basket,
+// ADR-0035 point 11). `status` is the invitee's side: pending until accepted.
+export type ListShare = {
+  member: MemberProfile;
+  status: "pending" | "accepted";
+};

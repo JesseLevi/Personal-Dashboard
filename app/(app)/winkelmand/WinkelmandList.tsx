@@ -20,6 +20,9 @@ import {
   createShoppingList,
   renameShoppingList,
   deleteShoppingList,
+  searchShareMembers,
+  inviteShareMember,
+  revokeShareMember,
 } from "./actions";
 import { ShoppingListPanel, type ShoppingListOption, type ShoppingListPanelTarget } from "./ShoppingListPanel";
 import { WinkelmandHeader, type SortBy } from "./WinkelmandHeader";
@@ -32,6 +35,7 @@ import { clearListEnter, markListEnter, wantsListEnter } from "./list-switch";
 import { searchIngredients, createOwnIngredient } from "@/app/(app)/recepten/actions";
 import type { IngredientRow } from "@/lib/recipes/types";
 import type { ActionResult, ShoppingListItemWithGroupInfo } from "@/lib/shopping/types";
+import type { ListShare } from "@/lib/sharing/types";
 
 // Client owner of row interactions (#177), same split as ReceptenBoard.tsx.
 // No moveQueue/pendingMoves *sequencing* is needed here the way
@@ -60,6 +64,8 @@ export interface WinkelmandListProps {
   /** Every basket of the user, default first; `name` is already the display name. */
   lists: WinkelmandListOption[];
   items: ShoppingListItemWithGroupInfo[];
+  /** The owner's current share on this basket (#426); null when not shared or not the owner. */
+  share: ListShare | null;
 }
 
 interface Group {
@@ -116,7 +122,7 @@ function buildGroups(
   return ordered.map((key) => byKey.get(key)!);
 }
 
-export function WinkelmandList({ listId, lists, items }: WinkelmandListProps) {
+export function WinkelmandList({ listId, lists, items, share }: WinkelmandListProps) {
   const router = useRouter();
   const locale = useLocale();
   // Long-form recipes.units labels are the ingredient-CARD Tag's usual
@@ -371,6 +377,10 @@ export function WinkelmandList({ listId, lists, items }: WinkelmandListProps) {
         onCreateList={createShoppingList}
         onRenameList={renameShoppingList}
         onDeleteList={deleteShoppingList}
+        onSearchMembers={searchShareMembers}
+        onInviteMember={inviteShareMember}
+        onRevokeShare={revokeShareMember}
+        share={share}
         onCreated={(list) => switchToList(list.id)}
         onRenamed={() => router.refresh()}
         // The deleted basket was this page: go to the default one (the action

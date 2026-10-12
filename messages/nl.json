@@ -234,6 +234,16 @@
       "defaultName": "Mijn mand"
     }
   },
+  "sharing": {
+    "errors": {
+      "invalid-input": "Controleer de ingevoerde gegevens.",
+      "unauthenticated": "Log opnieuw in om door te gaan.",
+      "not-found": "Dit onderdeel bestaat niet (meer) of is niet van jou.",
+      "already-shared": "Je deelt dit al met deze persoon.",
+      "rate-limited": "Je hebt te vaak gezocht. Probeer het over een paar minuten opnieuw.",
+      "generic": "Er ging iets mis. Probeer het opnieuw."
+    }
+  },
   "boards": {
     "errors": {
       "invalid-input": "Controleer de ingevoerde gegevens.",
@@ -848,11 +858,25 @@
       "words": "{count, plural, one {# woord} other {# woorden}}",
       "readingTime": "{count, plural, =0 {0 min lezen} other {# min lezen}}"
     },
+    "memberSearchPanel": {
+      "title": "Persoon kiezen",
+      "searchLabel": "Zoek een persoon",
+      "searchPlaceholder": "Naam",
+      "searchPromptLabel": "Typ minstens twee letters van een naam, of het volledige e-mailadres.",
+      "searchingLabel": "Zoeken...",
+      "noResultsLabel": "Niemand gevonden voor \"{query}\".",
+      "unnamedLabel": "Naamloos",
+      "cancelLabel": "Annuleren",
+      "addLabel": "Voeg toe"
+    },
     "shoppingListPanel": {
       "addTitle": "Mand toevoegen",
       "editTitle": "Mand bewerken",
       "fields": {
-        "nameLabel": "Naam"
+        "nameLabel": "Naam",
+        "shareLabel": "Delen met persoon",
+        "sharePlaceholder": "Kies",
+        "shareClearLabel": "Stop met delen met {name}"
       },
       "saveLabel": "Opslaan",
       "savingLabel": "Opslaan...",
@@ -860,7 +884,8 @@
       "deleteConfirmLabel": "Weet je het zeker? De mand en alle items erin worden verwijderd.",
       "deleteConfirmButtonLabel": "Ja, verwijderen",
       "deletingLabel": "Verwijderen...",
-      "cancelLabel": "Annuleren"
+      "cancelLabel": "Annuleren",
+      "sharePendingTag": "Delen wordt actief na toestemming"
     }
   }
 }
