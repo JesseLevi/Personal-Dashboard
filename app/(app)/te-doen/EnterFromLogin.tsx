@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { blurFadeStagger, blurInTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
-import { clearEnterFromLogin, hasEnterFromLogin } from "@/lib/ui/login-enter";
+import { clearEnterFromLogin, hasEnterFromLogin, skeletonPlayedEnter } from "@/lib/ui/login-enter";
 import { cn } from "@/lib/ui/cn";
 
 // Blur-in for one page region, only right after a login. Record: design/notes/TeDoenBoard.md.
@@ -13,7 +13,10 @@ export function EnterFromLogin({ index, children }: { index: number; children: R
   // Layout effects run before the first paint, so a marked arrival never shows the
   // region un-hidden; the first render matches the server HTML (no hydration mismatch).
   useLayoutEffect(() => {
-    if (hasEnterFromLogin()) setEntering(true);
+    if (!hasEnterFromLogin()) return;
+    // A skeleton already played the blur-in: the content replaces it in place, no second one.
+    if (skeletonPlayedEnter()) window.setTimeout(clearEnterFromLogin, 0);
+    else setEntering(true);
   }, []);
 
   // The class goes away afterwards: its fill keeps `filter`, a containing block for fixed panels.

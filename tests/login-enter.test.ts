@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   LOGIN_ENTER_KEY,
   LOGIN_ENTER_TTL_MS,
+  claimSkeletonEnter,
   clearEnterFromLogin,
   hasEnterFromLogin,
   markEnterFromLogin,
+  skeletonPlayedEnter,
 } from "@/lib/ui/login-enter";
 
 function memoryStore() {
@@ -43,5 +45,20 @@ describe("login-enter handshake", () => {
     expect(hasEnterFromLogin(throwing)).toBe(false);
     expect(() => clearEnterFromLogin(throwing)).not.toThrow();
     expect(hasEnterFromLogin(null)).toBe(false);
+  });
+});
+
+describe("skeleton handoff", () => {
+  it("lets only the first skeleton per mark play, and tells the content", () => {
+    const store = memoryStore();
+    expect(claimSkeletonEnter(store, 10)).toBe(false);
+    markEnterFromLogin(store, 100);
+    expect(skeletonPlayedEnter(store, 200)).toBe(false);
+    expect(claimSkeletonEnter(store, 200)).toBe(true);
+    expect(claimSkeletonEnter(store, 210)).toBe(false);
+    expect(skeletonPlayedEnter(store, 220)).toBe(true);
+    markEnterFromLogin(store, 5000);
+    expect(skeletonPlayedEnter(store, 5100)).toBe(false);
+    expect(claimSkeletonEnter(store, 5100)).toBe(true);
   });
 });
