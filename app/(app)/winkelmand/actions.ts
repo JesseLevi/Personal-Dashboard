@@ -6,10 +6,12 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/recipes/session";
 import { nextPosition } from "@/lib/boards/positioning";
 import { getRecipeWithIngredientsAndSteps } from "@/lib/recipes/queries";
+import { getDefaultShoppingListId } from "@/lib/shopping/lists";
 import { buildShoppingListLines, mergeSingleIngredientLine } from "@/lib/shopping/send-to-list";
 import {
   addIngredientToShoppingListSchema,
   addShoppingListItemSchema,
+  clearShoppingListSchema,
   deleteShoppingListItemSchema,
   sendRecipeToShoppingListSchema,
   toggleShoppingListItemSchema,
@@ -25,10 +27,9 @@ import type { Database } from "@/lib/database.types";
 //      real network endpoint regardless of how it's invoked from the client
 //      bundle -- see app/(app)/recepten/actions.ts's searchIngredients
 //      comment for the same reasoning);
-//   2. resolves the signed-in user and filters every query on that id
-//      explicitly, on top of RLS -- ownership is enforced by the
-//      shopping_list_items_*_own policies
-//      (20260808000001_shopping_list_items.sql, #175), never service_role;
+//   2. works per basket (`listId`, default: the user's default basket,
+//      ADR-0035) and lets RLS decide access -- no user_id filter on items,
+//      never service_role;
 //   3. returns a typed ActionResult instead of throwing.
 // revalidatePath("/winkelmand") runs on every successful write.
 
@@ -44,17 +45,26 @@ function logDbError(action: string, error: { code: string; message: string }) {
   console.error(`[shopping] ${action} failed:`, error.code, error.message);
 }
 
-// Position of the last row (by `position`) owned by `userId` -- the same
-// "append at the end" building block as lib/recipes/'s
-// lastCategoryPosition/lastRecipePosition (app/(app)/recepten/actions.ts).
-async function lastShoppingListItemPosition(
+// Resolves the basket an action works on: the caller's `listId`, or the
+// signed-in user's default basket. RLS decides whether the list is usable.
+async function resolveListId(
   supabase: Client,
   userId: string,
+  listId: string | undefined,
+): Promise<string | null> {
+  return listId ?? (await getDefaultShoppingListId(supabase, userId));
+}
+
+// Position of the last row (by `position`) in a basket -- the same "append at
+// the end" building block as lib/recipes/'s lastCategoryPosition.
+async function lastShoppingListItemPosition(
+  supabase: Client,
+  listId: string,
 ): Promise<number | null> {
   const { data } = await supabase
     .from("shopping_list_items")
     .select("position")
-    .eq("user_id", userId)
+    .eq("list_id", listId)
     .order("position", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -77,13 +87,18 @@ export async function addShoppingListItem(
   const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
-  const last = await lastShoppingListItemPosition(supabase, auth.userId);
+  const listId = await resolveListId(supabase, auth.userId, parsed.data.listId);
+  if (!listId) return { success: false, error: "not-found" };
+
+  const last = await lastShoppingListItemPosition(supabase, listId);
   const position = nextPosition(last, null);
 
   const { data, error } = await supabase
     .from("shopping_list_items")
     .insert({
+      // A trigger sets user_id to the basket owner; the column is required.
       user_id: auth.userId,
+      list_id: listId,
       name: parsed.data.name,
       quantity: parsed.data.quantity,
       unit: parsed.data.unit,
@@ -114,7 +129,6 @@ export async function toggleShoppingListItem(input: unknown): Promise<ActionResu
     .from("shopping_list_items")
     .update({ checked: parsed.data.checked })
     .eq("id", parsed.data.id)
-    .eq("user_id", auth.userId)
     .select("id")
     .maybeSingle();
 
@@ -140,7 +154,6 @@ export async function deleteShoppingListItem(input: unknown): Promise<ActionResu
     .from("shopping_list_items")
     .delete()
     .eq("id", parsed.data.id)
-    .eq("user_id", auth.userId)
     .select("id")
     .maybeSingle();
 
@@ -155,19 +168,22 @@ export async function deleteShoppingListItem(input: unknown): Promise<ActionResu
 }
 
 /**
- * The header's "Alles verwijderen" -- deletes every shopping_list_items row
- * the signed-in user owns. No input to validate. An already-empty list is
- * not an error: the delete simply matches zero rows.
+ * The header's "Alles verwijderen" -- deletes every item of one basket
+ * (default: the user's default basket). An already-empty list is not an
+ * error: the delete simply matches zero rows.
  */
-export async function clearShoppingList(): Promise<ActionResult> {
+export async function clearShoppingList(input?: unknown): Promise<ActionResult> {
+  const parsed = clearShoppingListSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
   const supabase = await createSupabaseServerClient();
   const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
 
-  const { error } = await supabase
-    .from("shopping_list_items")
-    .delete()
-    .eq("user_id", auth.userId);
+  const listId = await resolveListId(supabase, auth.userId, parsed.data.listId);
+  if (!listId) return { success: false, error: "not-found" };
+
+  const { error } = await supabase.from("shopping_list_items").delete().eq("list_id", listId);
 
   if (error) {
     logDbError("clearShoppingList", error);
@@ -213,12 +229,16 @@ export async function sendRecipeToShoppingList(input: unknown): Promise<ActionRe
   const lines = buildShoppingListLines(recipe.ingredients, recipe.servings, parsed.data.targetPortions);
   if (lines.length === 0) return { success: true, data: undefined };
 
-  let last = await lastShoppingListItemPosition(supabase, auth.userId);
+  const listId = await resolveListId(supabase, auth.userId, parsed.data.listId);
+  if (!listId) return { success: false, error: "not-found" };
+
+  let last = await lastShoppingListItemPosition(supabase, listId);
   const rows = lines.map((line) => {
     const position = nextPosition(last, null);
     last = position;
     return {
       user_id: auth.userId,
+      list_id: listId,
       name: line.name,
       quantity: line.quantity,
       unit: line.unit,
@@ -266,10 +286,13 @@ export async function addIngredientToShoppingList(input: unknown): Promise<Actio
   const ingredient = recipe.ingredients.find((row) => row.id === parsed.data.ingredientId);
   if (!ingredient) return { success: false, error: "not-found" };
 
+  const listId = await resolveListId(supabase, auth.userId, parsed.data.listId);
+  if (!listId) return { success: false, error: "not-found" };
+
   const { data: existingRows, error: existingError } = await supabase
     .from("shopping_list_items")
     .select("id, name, quantity, unit")
-    .eq("user_id", auth.userId);
+    .eq("list_id", listId);
   if (existingError) {
     logDbError("addIngredientToShoppingList", existingError);
     return { success: false, error: "generic" };
@@ -286,16 +309,16 @@ export async function addIngredientToShoppingList(input: unknown): Promise<Actio
     const { error } = await supabase
       .from("shopping_list_items")
       .update({ quantity: merge.quantity })
-      .eq("id", merge.id)
-      .eq("user_id", auth.userId);
+      .eq("id", merge.id);
     if (error) {
       logDbError("addIngredientToShoppingList", error);
       return { success: false, error: "generic" };
     }
   } else {
-    const last = await lastShoppingListItemPosition(supabase, auth.userId);
+    const last = await lastShoppingListItemPosition(supabase, listId);
     const { error } = await supabase.from("shopping_list_items").insert({
       user_id: auth.userId,
+      list_id: listId,
       name: merge.line.name,
       quantity: merge.line.quantity,
       unit: merge.line.unit,
