@@ -1,9 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/organisms/PageHeader";
 import { loadTeDoenPageData } from "./board-data";
+import { EnterFromLogin } from "./EnterFromLogin";
 import { TeDoenHeader } from "./TeDoenHeader";
 import { TeDoenBoard } from "./TeDoenBoard";
 import { TeDoenColumnPanelProvider } from "./TeDoenColumnPanel";
+import { TeDoenBoardSwitchProvider } from "./TeDoenBoardSwitch";
 import { createBoard, renameBoard, toggleBoardFavorite } from "./actions";
 
 // Shared Server Component body for both `/te-doen` (page.tsx, no boardId —
@@ -35,20 +37,26 @@ export async function TeDoenPageBody({ boardId, sortParam }: TeDoenPageBodyProps
 
   return (
     <TeDoenColumnPanelProvider boardId={board.id}>
-      <TeDoenHeader
-        boards={boards}
-        board={board}
-        sort={sort}
-        onCreateBoard={createBoard}
-        onRenameBoard={renameBoard}
-        onToggleFavorite={toggleBoardFavorite}
-      />
-      {/* Sorting is a view-only choice (lib/boards/sort.ts) — when active the
-          on-screen order no longer matches `position`, so dragging is
-          disabled rather than letting a drop write a misleading position
-          against what the user actually sees. See TeDoenBoard.md for the
-          full reasoning #96 (drag persistence) must inherit. */}
-      <TeDoenBoard board={board} dragDisabled={sort !== null} />
+      <TeDoenBoardSwitchProvider boardId={board.id} columnCount={board.columns.length}>
+        <EnterFromLogin index={0}>
+          <TeDoenHeader
+            boards={boards}
+            board={board}
+            sort={sort}
+            onCreateBoard={createBoard}
+            onRenameBoard={renameBoard}
+            onToggleFavorite={toggleBoardFavorite}
+          />
+        </EnterFromLogin>
+        {/* Sorting is a view-only choice (lib/boards/sort.ts) — when active the
+            on-screen order no longer matches `position`, so dragging is
+            disabled rather than letting a drop write a misleading position
+            against what the user actually sees. See TeDoenBoard.md for the
+            full reasoning #96 (drag persistence) must inherit. */}
+        <EnterFromLogin index={1}>
+          <TeDoenBoard board={board} dragDisabled={sort !== null} />
+        </EnterFromLogin>
+      </TeDoenBoardSwitchProvider>
     </TeDoenColumnPanelProvider>
   );
 }

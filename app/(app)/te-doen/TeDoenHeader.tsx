@@ -12,6 +12,7 @@ import { SORT_OPTIONS, type SortOption } from "@/lib/boards/sort";
 import type { ActionResult, BoardRow, BoardWithColumns } from "@/lib/boards/types";
 import { BoardPanel, type BoardPanelTarget } from "./BoardPanel";
 import { useTeDoenColumnPanel } from "./TeDoenColumnPanel";
+import { useTeDoenBoardSwitch } from "./TeDoenBoardSwitch";
 
 // Per-option icon, matching the fetched sort-dropdown node (3877:7682) and
 // SORT_OPTIONS' own order (lib/boards/sort.ts): Aanmaakdatum/Prioriteit/
@@ -71,6 +72,7 @@ export function TeDoenHeader({
   const tSort = useTranslations("components.pageHeader.todo.sortOptions");
   const router = useRouter();
   const columnPanel = useTeDoenColumnPanel();
+  const boardSwitch = useTeDoenBoardSwitch();
   const [isFavoritePending, startFavoriteTransition] = useTransition();
 
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
@@ -103,7 +105,8 @@ export function TeDoenHeader({
   // never client state — both navigations below preserve the current sort so
   // switching boards doesn't silently drop the user's chosen view.
   function goToBoard(id: string) {
-    router.push(sort ? `/te-doen/${id}?sort=${sort}` : `/te-doen/${id}`);
+    if (id === board.id) return;
+    boardSwitch.switchTo(id, sort ? `/te-doen/${id}?sort=${sort}` : `/te-doen/${id}`);
   }
 
   function goWithSort(nextSort: SortOption) {

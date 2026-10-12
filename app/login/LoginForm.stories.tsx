@@ -123,3 +123,20 @@ export const MagicLinkSent = () => (
     initialState={{ magicLink: { status: "sent" } }}
   />
 );
+
+// Exit after sign-in: submit any password. The heading, field, buttons and link blur
+// out top to bottom; onNavigate logs instead of leaving. Reload the story to replay.
+export const ExitAfterSignIn = () => (
+  <LoginForm
+    signInWithPasswordAction={async () => {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      return { status: "success" };
+    }}
+    sendMagicLinkAction={mockSendMagicLink}
+    lookupGreetingNameAction={mockLookupGreetingName("Carlotta")}
+    initialStep="password"
+    initialGreetingName="Carlotta"
+    onNavigate={(href) => console.log("navigate", href)}
+    onPrefetch={(href) => console.log("prefetch", href)}
+  />
+);

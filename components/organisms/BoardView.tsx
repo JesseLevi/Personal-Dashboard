@@ -14,6 +14,7 @@ import { CardContainer } from "./CardContainer";
 import { Card } from "../molecules/Card";
 import { Button } from "../atoms/Button";
 import type { IconName } from "../atoms/Icon";
+import { blurFadeStagger } from "@/lib/ui/blur-fade";
 
 /**
  * Organism/BoardView — generic Kanban board: `Carousel` of `CardContainer`
@@ -58,6 +59,8 @@ export interface BoardViewProps<TItem extends { id: string }> {
   isItemMuted?: (item: TItem, columnId: string) => boolean;
   /** #95: disables both dragging and dropping everywhere (still renders the same DOM/DragDropProvider — only `useSortable`/`useDroppable`'s own `disabled` flips). Set by a caller whose current view is sorted rather than manual/position order, where a drop's resulting index would be meaningless against the stored `position`. See design/notes/TeDoenBoard.md for the full reasoning. */
   dragDisabled?: boolean;
+  /** Staggered blur fade on the columns, left to right. Unset it once played: a lingering fill keeps a filter on the columns. */
+  columnMotion?: "in" | "out";
   className?: string;
 }
 
@@ -167,7 +170,9 @@ function BoardColumnView<TItem extends { id: string }>({
   onEditColumn,
   onItemClick,
   isItemMuted,
+  className,
 }: {
+  className?: string;
   column: BoardColumn<TItem>;
   renderAddMenu?: (columnId: string) => ReactNode;
   items: TItem[];
@@ -192,6 +197,7 @@ function BoardColumnView<TItem extends { id: string }>({
 
   return (
     <CardContainer
+      className={className}
       name={column.name}
       count={String(items.length)}
       icon={column.icon}
@@ -253,6 +259,7 @@ export function BoardView<TItem extends { id: string }>({
   onEditColumn,
   onItemClick,
   isItemMuted,
+  columnMotion,
   className,
 }: BoardViewProps<TItem>) {
   const [itemsByColumn, setItemsByColumn] = useState(() =>
@@ -305,9 +312,14 @@ export function BoardView<TItem extends { id: string }>({
       }}
     >
       <Carousel columnWidthClassName={BOARD_COLUMN_WIDTH} className={className}>
-        {columns.map((column) => (
+        {columns.map((column, index) => (
           <BoardColumnView
             key={column.id}
+            className={
+              columnMotion
+                ? cn(blurFadeStagger(index), columnMotion === "in" ? "animate-blur-in" : "animate-blur-out")
+                : undefined
+            }
             column={column}
             items={itemsByColumn[column.id] ?? []}
             renderItem={renderItem}

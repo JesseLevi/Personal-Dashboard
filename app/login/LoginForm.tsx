@@ -16,6 +16,8 @@ import { useTranslations } from "next-intl";
 import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
 import { GREETING_LOOKUP_DEBOUNCE_MS, parseGreetingAddress } from "@/lib/auth/greeting-address";
+import { blurFadeStagger, blurOutTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
+import { markEnterFromLogin } from "@/lib/ui/login-enter";
 import { useTurnstile } from "./useTurnstile";
 import type { MagicLinkState, PasswordLoginState } from "./actions";
 
@@ -30,6 +32,9 @@ const PANE_CLASS =
 
 // Matches --duration-base (200ms) plus a frame of slack.
 const GREETING_COLLAPSE_MS = 250;
+const EXIT_TARGET = "/te-doen";
+// Heading, password field, button row, magic-link form: the top-to-bottom exit order.
+const EXIT_ELEMENT_COUNT = 4;
 const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 
 const IDLE_PASSWORD_STATE: PasswordLoginState = { status: "idle" };
@@ -61,6 +66,10 @@ export interface LoginFormProps {
    * are how the four Figma frames become story-able.
    */
   initialStep?: "email" | "password";
+  /** Leaves the page after the exit animation; LoginFormClient passes `router.replace`. */
+  onNavigate?: (href: string) => void;
+  /** Warms the target route while the exit plays; LoginFormClient passes `router.prefetch`. */
+  onPrefetch?: (href: string) => void;
   /** Ladle-only: seeds the two forms' `useActionState` results — see `initialStep`. */
   initialState?: { password?: PasswordLoginState; magicLink?: MagicLinkState };
 }
@@ -73,8 +82,11 @@ export function LoginForm({
   initialGreetingName,
   initialStep = "email",
   initialState,
+  onNavigate,
+  onPrefetch,
 }: LoginFormProps) {
   const t = useTranslations("auth");
+  const reducedMotion = usePrefersReducedMotion();
 
   // The text stays while the name part collapses, so it can animate out.
   const [greetingName, setGreetingName] = useState(initialGreetingName ?? "");
@@ -97,6 +109,21 @@ export function LoginForm({
     sendMagicLinkAction,
     initialState?.magicLink ?? IDLE_MAGIC_LINK_STATE,
   );
+
+  // Exit: the session cookie is already set when the action returns success.
+  const exiting = passwordState.status === "success";
+  // React resets the form once the action settles; seeding defaultValue keeps the dots visible while they blur out.
+  const [typedPassword, setTypedPassword] = useState("");
+  useEffect(() => {
+    if (!exiting) return;
+    onPrefetch?.(EXIT_TARGET);
+    const timer = window.setTimeout(() => {
+      markEnterFromLogin();
+      onNavigate?.(EXIT_TARGET);
+    }, blurOutTotalMs(EXIT_ELEMENT_COUNT, reducedMotion));
+    return () => window.clearTimeout(timer);
+  }, [exiting, reducedMotion, onNavigate, onPrefetch]);
+  const exitClass = (index: number) => (exiting ? ["animate-blur-out", blurFadeStagger(index)] : null);
 
   const emailInputId = useId();
   const passwordInputId = useId();
@@ -212,6 +239,7 @@ export function LoginForm({
         }
         name={greetingName}
         visible={greetingVisible}
+        className={cn(exitClass(0))}
       />
       <div ref={turnstileRef} aria-hidden className="absolute size-0 overflow-hidden" />
 
@@ -254,14 +282,17 @@ export function LoginForm({
             inert={step !== "password"}
             onKeyDown={handlePasswordPaneKeyDown}
           >
-            <form action={passwordFormAction}>
+            <form action={passwordFormAction} inert={exiting}>
               <input type="hidden" name="email" value={email} />
               <InputField
+                className={cn(exitClass(1))}
                 id={passwordInputId}
                 name="password"
                 type="password"
                 placeholder={t("passwordPlaceholder")}
                 autoComplete="current-password"
+                defaultValue={exiting ? typedPassword : undefined}
+                onChange={(event) => setTypedPassword(event.target.value)}
                 required
                 aria-invalid={passwordState.status === "error" ? true : undefined}
                 aria-describedby={passwordState.status === "error" ? passwordErrorId : undefined}
@@ -281,7 +312,7 @@ export function LoginForm({
                   Figma) — coincides with both inline-sm and component-sm,
                   exactly the ambiguity this ticket forbids guessing through —
                   design/notes/LoginForm.md#219. */}
-              <div className="mt-4 flex gap-2">
+              <div className={cn("mt-4 flex gap-2", exitClass(2))}>
                 <Button
                   type="button"
                   variant="outline"
@@ -291,13 +322,13 @@ export function LoginForm({
                 >
                   {t("back")}
                 </Button>
-                <Button type="submit" disabled={passwordPending} className="flex-1">
+                <Button type="submit" disabled={passwordPending || exiting} className="flex-1">
                   {t("signIn")}
                 </Button>
               </div>
             </form>
 
-            <form action={magicLinkFormAction} className="mt-4">
+            <form action={magicLinkFormAction} className={cn("mt-4", exitClass(3))} inert={exiting}>
               <input type="hidden" name="email" value={email} />
               <Button
                 type="submit"
@@ -364,16 +395,25 @@ function GreetingHeading({
   srText,
   name,
   visible,
+  className,
 }: {
   hey: string;
   tail: string;
   srText: string;
   name: string;
   visible: boolean;
+  className?: string;
 }) {
   const shown = visible && name !== "";
+  // Blur the name in or out only on a change, never on first paint.
+  const [wasShown, setWasShown] = useState(shown);
+  const [nameMotion, setNameMotion] = useState<"in" | "out" | null>(null);
+  if (shown !== wasShown) {
+    setWasShown(shown);
+    setNameMotion(shown ? "in" : "out");
+  }
   return (
-    <h1 className="max-w-full text-xl font-semibold text-text-primary">
+    <h1 className={cn("max-w-full text-xl font-semibold text-text-primary", className)}>
       <span className="sr-only">{srText}</span>
       <span aria-hidden className="flex max-w-full items-baseline justify-center">
         <span className="shrink-0 whitespace-nowrap">{hey}</span>
@@ -383,7 +423,15 @@ function GreetingHeading({
             shown ? "grid-cols-[1fr] opacity-100" : "grid-cols-[0fr] opacity-0",
           )}
         >
-          <span className="overflow-hidden text-ellipsis whitespace-pre">{` ${name}`}</span>
+          <span
+            className={cn(
+              "overflow-hidden text-ellipsis whitespace-pre",
+              nameMotion === "in" && "animate-blur-in",
+              nameMotion === "out" && "animate-blur-out",
+            )}
+          >
+            {` ${name}`}
+          </span>
         </span>
         <span className="shrink-0 whitespace-nowrap">{tail}</span>
       </span>

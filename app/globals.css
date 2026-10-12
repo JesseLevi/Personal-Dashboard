@@ -21,6 +21,73 @@
   }
 }
 
+/* Blur fade (lib/ui/blur-fade.ts, design/notes/BlurFade.md). Duration,
+   easing and stagger are local picks (no motion spec in Figma, no token
+   namespace for them); keep BLUR_FADE in blur-fade.ts in step. */
+:root {
+  --blur-fade-in-duration: 420ms;
+  --blur-fade-out-duration: 280ms;
+  --blur-fade-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --blur-fade-step: 50ms;
+  --blur-fade-max-delay: 400ms;
+  --blur-fade-blur: 8px;
+  --blur-fade-reduced-duration: 120ms;
+}
+@keyframes blur-fade-in {
+  from {
+    opacity: 0;
+    filter: blur(var(--blur-fade-blur));
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+}
+@keyframes blur-fade-out {
+  from {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    filter: blur(var(--blur-fade-blur));
+    transform: scale(0.98);
+  }
+}
+@keyframes blur-fade-in-reduced {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes blur-fade-out-reduced {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@utility animate-blur-in {
+  animation: blur-fade-in var(--blur-fade-in-duration) var(--blur-fade-ease)
+    min(calc(var(--fade-index, 0) * var(--blur-fade-step)), var(--blur-fade-max-delay)) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: blur-fade-in-reduced var(--blur-fade-reduced-duration) linear 0s both;
+  }
+}
+@utility animate-blur-out {
+  animation: blur-fade-out var(--blur-fade-out-duration) var(--blur-fade-ease)
+    min(calc(var(--fade-index, 0) * var(--blur-fade-step)), var(--blur-fade-max-delay)) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: blur-fade-out-reduced var(--blur-fade-reduced-duration) linear 0s both;
+  }
+}
+
 /* #115 (components/organisms/BoardView.tsx SortableCard): iOS Safari's
    native long-press callout/text-selection has no Tailwind utility
    (`-webkit-touch-callout` isn't part of the utility set) and would
