@@ -18,7 +18,7 @@ Figma: `4231:16052` in `Winkelmand/09` (`4231:15885`) · Code: `components/molec
 
 ## Token gaps and flags
 - Figma overlaps by 16 px (unbound negative `itemSpacing`, no variable). Code uses 8 px because the letter fallback would otherwise be covered by the next circle; `-ml-2` carries a `spacing-flag`.
-- Figma's avatar fill (`#D6D3D1`) and the placeholder photo are unbound canvas content. In code, `avatar_url` is null everywhere, so the letter fallback renders (see `design/notes/Avatar.md`).
+- Figma's avatar fill (`#D6D3D1`) and the placeholder photo are unbound canvas content. In code the photo is `/api/avatar/<id>?v=…` when the member has one, else the letter fallback (see `design/notes/Avatar.md`).
 
 ## Gotchas
 - Names are split on whitespace; a name with a particle ("Anne de Vries") shows as "Anne".

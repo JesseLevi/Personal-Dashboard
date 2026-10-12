@@ -4,7 +4,7 @@
 -- asserted here, like rls-login-greeting.sql does for ADR-0031.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(39);
+select plan(42);
 
 insert into auth.users (id, email, deleted_at, banned_until)
 values ('00000000-0000-0000-0000-423000006001', 'anna@test.local', null, null),
@@ -17,9 +17,10 @@ values ('00000000-0000-0000-0000-423000006001', 'anna@test.local', null, null),
        ('00000000-0000-0000-0000-423000006008', 'iris@test.local', null, null);
 update public.profiles set display_name = 'Anna', last_name = 'Jansen'
   where id = '00000000-0000-0000-0000-423000006001';
-update public.profiles set display_name = 'Bob', last_name = 'Bakker', avatar_url = 'x'
+update public.profiles set display_name = 'Bob', last_name = 'Bakker', avatar_path = '00000000-0000-0000-0000-423000006002/avatar/b.webp'
   where id = '00000000-0000-0000-0000-423000006002';
-update public.profiles set display_name = 'Carla', last_name = 'Bakker'
+update public.profiles set display_name = 'Carla', last_name = 'Bakker',
+  avatar_path = '00000000-0000-0000-0000-423000006003/avatar/c.webp'
   where id = '00000000-0000-0000-0000-423000006003';
 update public.profiles set display_name = 'Dirk', last_name = 'Bakker'
   where id = '00000000-0000-0000-0000-423000006004';
@@ -107,6 +108,21 @@ select is(
   (select has_avatar from public.member_profiles(array['00000000-0000-0000-0000-423000006002']::uuid[])),
   true,
   'has_avatar is derived without exposing the path'
+);
+select ok(
+  has_function_privilege('authenticated', 'public.avatar_path_for(uuid)', 'EXECUTE')
+  and not has_function_privilege('anon', 'public.avatar_path_for(uuid)', 'EXECUTE'),
+  'only authenticated can execute avatar_path_for'
+);
+select is(
+  public.avatar_path_for('00000000-0000-0000-0000-423000006002'),
+  '00000000-0000-0000-0000-423000006002/avatar/b.webp',
+  'avatar_path_for returns the key of a member the caller shares with (pending counts)'
+);
+select is(
+  public.avatar_path_for('00000000-0000-0000-0000-423000006003'),
+  null,
+  'avatar_path_for returns null for an unrelated user with a photo'
 );
 select is(
   (select last_name from public.member_profiles(array['00000000-0000-0000-0000-423000006002']::uuid[])),

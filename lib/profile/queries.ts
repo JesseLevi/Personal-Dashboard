@@ -41,8 +41,8 @@ export const getUserLocale = cache(async (): Promise<Locale> => {
   return (LOCALES as readonly string[]).includes(locale) ? (locale as Locale) : "nl";
 });
 
-/** #265: the three columns the app shell needs for the Sidebar account row
- * + SettingsPanel — one query instead of three, since all three columns
+/** #265: the two columns the app shell needs for the Sidebar account row
+ * + SettingsPanel — one query instead of two, since both columns
  * live on the same `profiles` row anyway. Argument-free + `cache()`'d, same
  * shape as `getUserLocale` above: `AppLayout` (Server Component) already
  * guards on `getAuthenticatedUserId()` before rendering `AppShellNav`, but
@@ -50,19 +50,18 @@ export const getUserLocale = cache(async (): Promise<Locale> => {
  * call from anywhere, not just that one guarded call site. */
 export interface NavProfile {
   displayName: string | null;
-  avatarUrl: string | null;
   locale: Locale;
 }
 
 export const getProfileForNav = cache(async (): Promise<NavProfile> => {
-  const fallback: NavProfile = { displayName: null, avatarUrl: null, locale: "nl" };
+  const fallback: NavProfile = { displayName: null, locale: "nl" };
   const userId = await getAuthenticatedUserId();
   if (!userId) return fallback;
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("profiles")
-    .select("display_name, avatar_url, locale")
+    .select("display_name, locale")
     .eq("id", userId)
     .maybeSingle();
 
@@ -75,7 +74,7 @@ export const getProfileForNav = cache(async (): Promise<NavProfile> => {
   const locale = (LOCALES as readonly string[]).includes(data.locale)
     ? (data.locale as Locale)
     : "nl";
-  return { displayName: data.display_name, avatarUrl: data.avatar_url, locale };
+  return { displayName: data.display_name, locale };
 });
 
 /** #404: `profiles.last_name`, deliberately NOT part of `getProfileForNav`:
@@ -98,4 +97,27 @@ export const getLastName = cache(async (): Promise<string | null> => {
     return null;
   }
   return data?.last_name ?? null;
+});
+
+/** #434: same-origin avatar URL for the signed-in user, `?v=<updated_at>` busts
+ * the immutable cache on replace. Separate from `getProfileForNav` like
+ * `getLastName`: a hosted DB without the avatar_path migration only loses the
+ * photo, never the nav. Null when there is no photo or on any error. */
+export const getAvatarSrc = cache(async (): Promise<string | null> => {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return null;
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("avatar_path, updated_at")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[profile] getAvatarSrc failed:", error.code, error.message);
+    return null;
+  }
+  if (!data?.avatar_path) return null;
+  return `/api/avatar/${userId}?v=${encodeURIComponent(data.updated_at)}`;
 });
