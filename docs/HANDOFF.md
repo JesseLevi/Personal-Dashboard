@@ -19,7 +19,7 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
 
 ## Next: Delen, fase 1, Winkelmand (epic #420, ADR-0035)
 
-Figma `4233:17988`. Order: #422 `shopping_lists` → #423 `shares` + role functions + member RPCs → #424 basket switcher/panel (parallel #425 `Avatar`/`AvatarGroup`) → #426 invite (owner) → #427 accept/decline + member view → #428 refresh shared basket → #429 recipe → basket popover. Each migration needs the user's go before hosted.
+Figma `4233:17988`. Order: #422 `shopping_lists` → #423 `shares` + role functions + member RPCs → #424 basket switcher/panel (parallel #425 `Avatar`/`AvatarGroup`, then #434 profile photo) → #426 invite (owner) → #427 accept/decline + member view → #428 refresh shared basket → #429 recipe → basket popover. Each migration needs the user's go before hosted.
 
 ## After that: Phase 7, Agenda (#33)
 

@@ -36,7 +36,8 @@ Alternatives weighed:
    - **Write limits on `shares`**: only the owner inserts, always as `pending`/`editor`. A member may only flip its own row to `accepted`, enforced by `grant update (status, responded_at)` plus the policy.
 5. **Consent**: a share is active only after the member accepts. The invitee sees who invited them and the container's name through `pending_share_invites()`, not through the container's policies.
 6. **Other people's profiles** are readable only through definer RPCs that return name and avatar. The `profiles` policies are never widened.
-   - `member_profiles(ids)` returns only users the caller shares something with, in either direction and any status.
+   - `member_profiles(ids)` returns only users the caller shares something with, in either direction and any status. That relation is one definer check, `private.shares_with(other)`.
+   - **Profile photos** are stored once, as a 120×120 WebP in R2 (`profiles.avatar_path`, ADR-0024). They are served by `/api/avatar/[userId]` only to the user themselves or to someone `shares_with` them. Without a photo the UI shows a bordered circle with the first letter of the first name.
    - `search_members(q)` finds **all members by first or last name**. It requires 2 to 64 characters, returns at most 8 results, leaves out the caller and deleted or banned users, and returns the e-mail address only when `q` is exactly that address.
    - The search is rate-limited in a `private` table, using ADR-0031's pattern: 30 per user and 500 globally per 15 minutes.
    - **Accepted trade-off**: any member can look up the names of other members. Atlas is a closed circle without self-signup.
