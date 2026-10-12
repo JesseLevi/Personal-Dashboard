@@ -36,8 +36,8 @@ function SkeletonHeader({ variant }: { variant: BoardSkeletonVariant }) {
     // The board name is data, so only its (hidden) line height is kept.
     return (
       <PageHeader
-        className="[&_h1]:invisible"
         title={t("common.loading")}
+        titlePending
         titleAdornments={
           <>
             <Button icon="ChevronDown" aria-label={t("components.pageHeader.todo.boardSwitcherLabel")} />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import { createTokenSource, type TokenSource } from "./turnstile-token-source";
 
 // Invisible Cloudflare Turnstile for the login greeting lookup (ADR-0031).
 // Site key arrives as a prop from page.tsx (server-read env); with no key the
@@ -59,24 +60,20 @@ function loadTurnstile(): Promise<TurnstileApi | null> {
   return scriptPromise;
 }
 
-/** Returns a ref for the hidden container and `getToken()` (fresh single-use token, or null). */
+/**
+ * Returns a ref for the hidden container, `warm()` (start a challenge early) and
+ * `getToken()` (a fresh single-use token from the pre-fetched pool, or null).
+ */
 export function useTurnstile(siteKey: string | null | undefined) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const apiRef = useRef<TurnstileApi | null>(null);
   const readyRef = useRef<Promise<boolean> | null>(null);
-  const pendingRef = useRef<((token: string | null) => void) | null>(null);
-  const callIdRef = useRef(0);
+  const sourceRef = useRef<TokenSource | null>(null);
   const aliveRef = useRef(false);
 
-  const settle = useCallback((token: string | null) => {
-    const resolve = pendingRef.current;
-    pendingRef.current = null;
-    resolve?.(token);
-  }, []);
-
   // Loads the script and renders the widget once; a failed attempt clears the
-  // cached promise so the next getToken() tries again.
+  // cached promise so the next challenge tries again.
   const ensureReady = useCallback((): Promise<boolean> | null => {
     if (!siteKey) return null;
     if (readyRef.current) return readyRef.current;
@@ -92,57 +89,56 @@ export function useTurnstile(siteKey: string | null | undefined) {
         sitekey: siteKey,
         action: "login_greeting",
         execution: "execute",
-        callback: (token) => settle(token),
-        "error-callback": () => settle(null),
-        "expired-callback": () => settle(null),
-        "timeout-callback": () => settle(null),
+        callback: (token) => sourceRef.current?.onToken(token),
+        "error-callback": () => sourceRef.current?.onError(),
+        "expired-callback": () => sourceRef.current?.onExpired(),
+        "timeout-callback": () => sourceRef.current?.onError(),
       });
       return true;
     });
     readyRef.current = attempt;
     return attempt;
-  }, [siteKey, settle]);
+  }, [siteKey]);
 
   useEffect(() => {
     if (!siteKey) return;
     aliveRef.current = true;
+    const source = createTokenSource(
+      {
+        start: () => {
+          const ready = ensureReady();
+          if (!ready) return source.onError();
+          void ready.then((ok) => {
+            const api = apiRef.current;
+            const widgetId = widgetIdRef.current;
+            if (!ok || !api || !widgetId) return source.onError();
+            api.execute(widgetId);
+          }, () => source.onError());
+        },
+        reset: () => {
+          if (apiRef.current && widgetIdRef.current) apiRef.current.reset(widgetIdRef.current);
+        },
+      },
+      TOKEN_TIMEOUT_MS,
+    );
+    sourceRef.current = source;
     void ensureReady();
     return () => {
       aliveRef.current = false;
-      settle(null);
+      source.dispose();
+      sourceRef.current = null;
       if (apiRef.current && widgetIdRef.current) apiRef.current.remove(widgetIdRef.current);
       widgetIdRef.current = null;
       apiRef.current = null;
       readyRef.current = null;
     };
-  }, [siteKey, ensureReady, settle]);
+  }, [siteKey, ensureReady]);
 
-  const getToken = useCallback(async (): Promise<string | null> => {
-    const ready = ensureReady();
-    if (!ready) return null;
-    const callId = ++callIdRef.current;
-    try {
-      if (!(await ready)) return null;
-      const api = apiRef.current;
-      const widgetId = widgetIdRef.current;
-      if (!api || !widgetId || callId !== callIdRef.current) return null;
-      settle(null);
-      const token = await new Promise<string | null>((resolve) => {
-        const timer = window.setTimeout(() => settle(null), TOKEN_TIMEOUT_MS);
-        pendingRef.current = (value) => {
-          window.clearTimeout(timer);
-          resolve(value);
-        };
-        api.execute(widgetId);
-      });
-      // Only reset if no newer lookup has started meanwhile; resetting would
-      // cancel its challenge.
-      if (callId === callIdRef.current) api.reset(widgetId);
-      return token;
-    } catch {
-      return null;
-    }
-  }, [ensureReady, settle]);
+  const warm = useCallback(() => sourceRef.current?.warm(), []);
+  const getToken = useCallback(
+    (): Promise<string | null> => sourceRef.current?.take() ?? Promise.resolve(null),
+    [],
+  );
 
-  return { containerRef, getToken };
+  return { containerRef, getToken, warm };
 }

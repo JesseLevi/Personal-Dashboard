@@ -2,7 +2,7 @@
 Figma: "Header" frame (plain `FRAME`, not a Component/ComponentSet; duplicated per page design) · node `3878:7959` (Te-Doen desktop, the only one exercising both slots); Recepten `3672:1580`, Te-Doen mobile `3680:1438` · Code: `components/organisms/PageHeader.tsx`
 
 ## Anatomy
-`<header>`: row, `justify-between`, `items-center`, right padding `pr-page-right-equal`. Left block (`flex items-center gap-inline-lg`) holds the `<h1>` (`text-xl font-semibold text-text-primary`) plus `titleAdornments`; `actions` sits at the far right. Te-Doen fills adornments with icon-only chevron-down (board switcher) and star (favourite) Buttons and actions with a sort Button; Recepten fills only actions with a Plus "Categorie" Button.
+`<header>`: row, `justify-between`, `items-center`, right padding `pr-page-right-equal`. Left block (`flex items-center gap-inline-lg`) holds the `<h1>` (`text-xl font-semibold text-text-primary`, rendered by the client piece `PageHeaderTitle.tsx`) plus `titleAdornments`; `actions` sits at the far right. Te-Doen fills adornments with icon-only chevron-down (board switcher) and star (favourite) Buttons and actions with a sort Button; Recepten fills only actions with a Plus "Categorie" Button.
 
 ## Deliberate decisions
 - Built as slots (`titleAdornments`, `actions`), not a fixed button set, because the two pages fill the header with different controls. This generalisation is this codebase's call, not read off one Figma node (#88).
@@ -13,6 +13,14 @@ Figma: "Header" frame (plain `FRAME`, not a Component/ComponentSet; duplicated p
 - `top-[env(safe-area-inset-top)]`, not `top-0` and not a padding idiom: with the iOS PWA `black-translucent` status bar, a stuck header would sit under the clock. `top` only applies once the header is stuck, while padding (as `Sidebar`/`SidePanel` use, since those are permanently at the edge) would add a gap on every unscrolled load. No `max()` needed; `env()` resolves to 0 without an inset. Unverified on real hardware. Audit of all top-of-shell elements: `design/notes/AppShell.md` (#172).
 - `chrome-touch` class: header chrome is not reading content, so on coarse pointers it gets no text selection or callout (see `app/globals.css`) (#172).
 - Radius/spacing tokens: `gap-inline-lg` read via `boundVariables` on `3878:7959` ("Onderwerp" child `itemSpacing` = `spacing/inline/gap-lg`). Right padding uses the page-padding token `pr-page-right-equal` (16 mobile / 128 desktop) per the ticket's page-padding rule (#205).
+
+## Title motion
+- `PageHeaderTitle` morphs the title whenever `title` changes on a mounted header (rename) and when a header mounts right after a board switch. The old name (absolute, `animate-blur-out`) and the new name (`animate-blur-in`) overlap while the h1's width goes from the old to the new text width, so the adornments glide. The width is measured (`getBoundingClientRect`), not `interpolate-size`, so Safari and iOS work. The value reaches the h1 as the `--title-w` custom property set via ref and read by `w-[var(--title-w)]`; the property and the width classes are removed when the transition ends, so the h1 returns to its natural width. Duration and easing are the `--blur-fade-in-duration` / `--blur-fade-ease` variables.
+- First paint, reloads and static titles (Recepten) never animate: a first render with nothing armed has no "previous" title.
+- Reduced motion: no width change, no outgoing text; the new name fades in (120ms).
+- The header remounts on a board switch (the route's Suspense fallback is the skeleton), so React state cannot carry the old name. `TeDoenBoardSwitchProvider` calls `armTitleMorph()` (`lib/ui/title-morph.ts`, module scope, 8s cap) just before `router.push`; the skeleton header (`titlePending`) keeps showing that name; the real header then animates from it. Only a board switch arms it, so sidebar navigation between pages never morphs.
+- Long names: unchanged; the title still has no truncation of its own. During a morph the text is `whitespace-nowrap` inside an `overflow-hidden` h1.
+- Story: `page-header--title-change` (the chevron toggles the name).
 
 ## Token gaps and flags
 - The root frame's own `itemSpacing` and `paddingRight` (128px) are unbound in the node; the page-padding tokens supersede them (#205).
