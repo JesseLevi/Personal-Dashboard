@@ -32,7 +32,14 @@ import {
 } from "./actions";
 import { ShoppingListPanel, type ShoppingListOption, type ShoppingListPanelTarget } from "./ShoppingListPanel";
 import { WinkelmandHeader, type SortBy } from "./WinkelmandHeader";
-import { clearListEnter, markListEnter, wantsListEnter } from "./list-switch";
+import {
+  clearListEnter,
+  clearListSettings,
+  markListEnter,
+  markListSettings,
+  wantsListEnter,
+  wantsListSettings,
+} from "./list-switch";
 // #222 pt.4: reuses RecipePanel.tsx's own ingredient search/create actions
 // rather than duplicating them -- same cross-route-group import direction
 // RecipeDetailPage.tsx already uses for winkelmand/actions.ts (imports go
@@ -309,6 +316,15 @@ export function WinkelmandList({ listId, lists, items, share, owner, people, inv
     return () => clearTimeout(id);
   }, [entering, motionCount, reduced]);
 
+  useEffect(() => {
+    if (!wantsListSettings(listId)) return;
+    clearListSettings();
+    const list = lists.find((candidate) => candidate.id === listId);
+    if (list) setListPanel({ open: true, target: { mode: "edit", list } });
+    // Mount only: the flag is set by the switch that created this page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function switchToList(targetListId: string) {
     if (targetListId === listId || switchTimer.current) return;
     const href = `/winkelmand/${targetListId}`;
@@ -319,6 +335,17 @@ export function WinkelmandList({ listId, lists, items, share, owner, people, inv
       markListEnter(targetListId);
       router.push(href);
     }, blurOutTotalMs(motionCount, reduced));
+  }
+
+  // The panel's share/owner data belongs to this page's basket, so another
+  // basket's settings open after switching to it.
+  function editList(targetListId: string) {
+    if (targetListId !== listId) {
+      markListSettings(targetListId);
+      switchToList(targetListId);
+      return;
+    }
+    if (currentList) setListPanel({ open: true, target: { mode: "edit", list: currentList } });
   }
 
   function groupMotion(index: number) {
@@ -338,9 +365,7 @@ export function WinkelmandList({ listId, lists, items, share, owner, people, inv
         isEmpty={isEmpty}
         onSwitchList={switchToList}
         onAddList={() => setListPanel({ open: true, target: { mode: "create" } })}
-        onEditList={() =>
-          currentList && setListPanel({ open: true, target: { mode: "edit", list: currentList } })
-        }
+        onEditList={editList}
         onAddItem={() => setAddItemPanelOpen(true)}
         onClearAll={handleClearAll}
       />

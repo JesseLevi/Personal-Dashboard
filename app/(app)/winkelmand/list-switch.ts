@@ -24,3 +24,24 @@ export function wantsListEnter(listId: string): boolean {
 export function clearListEnter() {
   pendingEnter = null;
 }
+
+// Same lifetime rules for "open this basket's settings on arrival" (the
+// settings icon of a basket other than the current one in the switcher).
+let pendingSettings: { listId: string; at: number } | null = null;
+
+export function markListSettings(listId: string) {
+  pendingSettings = { listId, at: Date.now() };
+}
+
+/** Pure read (safe twice under strict mode); `clearListSettings` consumes it. */
+export function wantsListSettings(listId: string): boolean {
+  return (
+    pendingSettings !== null &&
+    pendingSettings.listId === listId &&
+    Date.now() - pendingSettings.at < ENTER_FLAG_MAX_AGE_MS
+  );
+}
+
+export function clearListSettings() {
+  pendingSettings = null;
+}
