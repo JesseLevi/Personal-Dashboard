@@ -32,10 +32,10 @@ const Header = ({ open = false, ownerLists = lists, compact = false }: { open?: 
   </div>
 );
 
-// Closed: title, chevron, and "+ Item", Sorteer, Instellingen, Leeg mand.
+// Closed: title, chevron, and "+ Item", Sorteer, Leeg mand.
 export const Default = () => <Header />;
 
-// Switcher open: one option per basket (`User` icon), the current one filled, plus "Toevoegen".
+// Switcher open: one option per basket (`User` icon, trailing `Settings` button), the current one filled, plus "Toevoegen".
 export const SwitcherOpen = () => <Header open />;
 
 // A basket someone else owns: the member sees it with `Users` in the switcher.

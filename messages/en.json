@@ -228,7 +228,7 @@
       "emptyStateCta": "Go to recipes",
       "listSwitcherLabel": "Switch basket",
       "addListOptionLabel": "Add",
-      "settingsLabel": "Settings"
+      "listSettingsLabel": "Settings of {name}"
     },
     "lists": {
       "defaultName": "My basket"
