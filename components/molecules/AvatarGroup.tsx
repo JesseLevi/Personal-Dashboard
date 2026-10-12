@@ -11,7 +11,7 @@ import { Avatar } from "../atoms/Avatar";
 export interface AvatarGroupMember {
   id: string;
   name: string;
-  avatarUrl?: string | null;
+  src?: string | null;
 }
 
 export interface AvatarGroupProps {
@@ -29,17 +29,20 @@ export function AvatarGroup({ members }: AvatarGroupProps) {
 
   return (
     <div className="inline-flex items-center gap-inline-sm">
-      <div className="flex" aria-hidden="true">
-        {members.map((m, i) => (
-          <Avatar
-            key={m.id}
-            name={m.name}
-            src={m.avatarUrl}
-            size="sm"
-            // spacing-flag: -16px overlap is an unbound Figma itemSpacing — design/notes/AvatarGroup.md
-            className={i > 0 ? "-ml-4" : undefined}
-          />
-        ))}
+      <div className="isolate flex flex-row-reverse" aria-hidden="true">
+        {members
+          .map((m, i) => [m, i] as const)
+          .reverse()
+          .map(([m, i]) => (
+            <Avatar
+              key={m.id}
+              name={m.name}
+              src={m.src}
+              size="sm"
+              // spacing-flag: overlap is 8px, not Figma's unbound 16px itemSpacing — design/notes/AvatarGroup.md
+              className={i > 0 ? "-ml-2" : undefined}
+            />
+          ))}
       </div>
       <span className="whitespace-nowrap text-base font-semibold text-text-primary">
         {label}

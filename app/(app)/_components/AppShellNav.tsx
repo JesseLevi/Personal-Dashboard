@@ -229,7 +229,7 @@ export function AppShellNav({ children, displayName, lastName, avatarUrl, locale
           onNavigate={handleNavigate}
           onItemHover={handleItemHover}
           accountName={accountName}
-          accountAvatarUrl={avatarUrl}
+          accountAvatarSrc={avatarUrl}
           accountMenuOpen={accountMenuOpen}
           accountMenuId={desktopAccountMenuId}
           onAccountMenuToggle={() => setAccountMenuOpen((open) => !open)}
@@ -275,7 +275,7 @@ export function AppShellNav({ children, displayName, lastName, avatarUrl, locale
           onNavigate={handleNavigate}
           onItemHover={handleItemHover}
           accountName={accountName}
-          accountAvatarUrl={avatarUrl}
+          accountAvatarSrc={avatarUrl}
           accountMenuOpen={accountMenuOpen}
           accountMenuId={mobileAccountMenuId}
           onAccountMenuToggle={() => setAccountMenuOpen((open) => !open)}

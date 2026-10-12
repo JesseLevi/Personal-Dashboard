@@ -65,7 +65,7 @@ export interface SidebarProps {
   /** #265: the signed-in user's display name (composer resolves the null-`display_name` fallback, e.g. `components.sidebar.accountFallbackName`). */
   accountName: string;
   /** #265: public avatar URL, when set. Renders an initials fallback when null/undefined — no upload UI exists yet (out of scope), so this stays null until a future ticket adds one. */
-  accountAvatarUrl?: string | null;
+  accountAvatarSrc?: string | null;
   /** #265: whether the account dropdown (Settings/Logout) is open. Composer-owned — the row itself is stateless, same split as `onToggle`/`collapsed`. */
   accountMenuOpen: boolean;
   /** #265: id pair wiring the trigger to its dropdown panel (`aria-controls` / the panel's own `id`). */
@@ -95,7 +95,7 @@ export function Sidebar({
   onNavigate,
   onItemHover,
   accountName,
-  accountAvatarUrl,
+  accountAvatarSrc,
   accountMenuOpen,
   accountMenuId,
   onAccountMenuToggle,
@@ -182,7 +182,7 @@ export function Sidebar({
           // spacing-flag: p-0 resets native UA button padding, not Figma-sourced. design/notes/Sidebar.md.
           className="chrome-touch flex w-full items-center gap-inline-sm overflow-hidden rounded-control p-0 text-left transition-colors hover:bg-surface-secondary"
         >
-          <Avatar name={accountName} src={accountAvatarUrl} size="md" />
+          <Avatar name={accountName} src={accountAvatarSrc} size="md" />
           {/* Figma "Name + icon" (4160:31009): hug-width, zero internal gap — design/notes/Sidebar.md. */}
           <span className="inline-flex shrink-0 items-center">
             <span className="whitespace-nowrap text-xs font-semibold text-text-primary">
