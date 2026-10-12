@@ -93,6 +93,20 @@ export async function deleteRecipeThumbnail(stem: string): Promise<void> {
 }
 
 /**
+ * Removes both variants of a stem the importer stored but never attached to a
+ * recipe (the import failed afterwards). No session needed, it runs in
+ * `after()`. Best-effort, never throws.
+ */
+export async function discardRecipeThumbnail(stem: string): Promise<void> {
+  const keys = [thumbnailVariantPath(stem, "card"), thumbnailVariantPath(stem, "full")];
+  try {
+    await getObjectStore().delete(keys);
+  } catch (error) {
+    console.error("[recipes] discardRecipeThumbnail failed:", error instanceof Error ? error.message : error);
+  }
+}
+
+/**
  * Presigned GET URL for one variant of `stem`, for a server render that already
  * loaded the owning row for `userId` (ADR-0024 §5 amendment). Null, never a
  * throw, when the stem is not the user's or R2 is not configured.
