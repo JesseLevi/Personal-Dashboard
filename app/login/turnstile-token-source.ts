@@ -87,6 +87,8 @@ export function createTokenSource(driver: TokenDriver, waitMs: number): TokenSou
     },
     onExpired() {
       cached = null;
+      // The widget still holds the expired token; a later start must begin clean.
+      if (!disposed && !running) driver.reset();
     },
     dispose() {
       disposed = true;

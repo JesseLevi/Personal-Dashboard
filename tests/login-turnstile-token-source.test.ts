@@ -64,6 +64,7 @@ describe("createTokenSource", () => {
     source.warm();
     source.onToken("t1");
     source.onExpired();
+    expect(driver.reset).toHaveBeenCalledTimes(1);
     const pending = source.take();
     expect(driver.start).toHaveBeenCalledTimes(2);
     source.onToken("t2");
