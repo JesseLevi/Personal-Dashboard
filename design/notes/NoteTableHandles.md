@@ -4,7 +4,7 @@ Claude-designed on request (#387), no Figma step · Code: `components/organisms/
 ## Anatomy
 Row and column reordering for notes tables. Built from existing components and semantic tokens (`bg-surface-highlight-white`, `border-stroke-lines`, `rounded-control-inner`, drop line `stroke-secondary-active`). Table menu background and design: `design/notes/NoteEditor.md` (#330).
 
-- Desktop fine pointer only. Only the grips of the hovered cell's row and column show, not all at once (one document `pointermove` listener; the last hovered cell stays while the pointer is over a grip or a dragged grip).
+- Fine pointer: only the grips of the hovered cell's row and column show, not all at once (one document `pointermove` listener; the last hovered cell stays while the pointer is over a grip or a dragged grip).
 - Row grips (`GripVertical`) straddle the table's left edge, column grips (`GripHorizontal`) the top edge. The header row has no grip. Hidden for a single row/column and for tables with merged cells. Columns scrolled out of a wide table's wrapper get no grip.
 - Four move commands (`moveRowUp/Down`, `moveColumnLeft/Right`, icons `Arrow*`) are in `TABLE_COMMANDS`, so they appear in `TableMenu` and the mobile table-actions bar without more wiring.
 
@@ -24,3 +24,4 @@ Row and column reordering for notes tables. Built from existing components and s
 - Keyboard and touch: no grip focus and no keyboard drag; use the move commands (Alt+F10 table menu, mobile bar). Grips carry `aria-label`s (`components.noteTable.rowHandleLabel`, `columnHandleLabel`). No click-to-select-row on a grip.
 - Merged-cell tables cannot be reordered (library limit).
 - Stories `HandlesVisible` and `FirstBlockUnderBar` simulate hover with a `pointermove`. Tests: `tests/notes-table-reorder.test.ts`.
+- Touch (primary pointer not fine, #449): no hover, so the grips follow the editor selection (`selectedCell`, synced on every transaction): they show for the row and column of the cell holding the caret or cell selection and stay while the selection stays in the table. The grip's hit area grows to 46px under `(pointer: coarse)` via an `::after` (`rowHitClass`/`columnHitClass`); the visible grip stays small. Root cause was the `finePointer` gate that rendered nothing on touch.

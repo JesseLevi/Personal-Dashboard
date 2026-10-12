@@ -5,6 +5,7 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import type { Editor } from "@tiptap/react";
+import type { ResolvedPos } from "@tiptap/pm/model";
 import { cn } from "@/lib/ui/cn";
 import { Icon } from "@/components/atoms/Icon";
 import { canMoveColumn, canMoveRow, moveTableLine, type MoveKind, type TableInfo } from "@/lib/notes/table-commands";
@@ -12,8 +13,9 @@ import { canMoveColumn, canMoveRow, moveTableLine, type MoveKind, type TableInfo
 // design: Claude-designed on request (#387)
 /**
  * Grip handles for reordering table rows (left edge) and columns (top edge),
- * shown for the hovered cell's row and column while a fine pointer is over a table. A grip is dragged with the
- * pointer; the drop is one `moveTableLine` call. Keyboard and touch use the
+ * shown for the hovered cell's row and column (fine pointer) or for the cell the
+ * selection sits in (touch, #449). A grip is dragged with the
+ * pointer; the drop is one `moveTableLine` call. Keyboard use the
  * move commands in TABLE_COMMANDS. Geometry is measured at runtime and handed
  * to Tailwind as CSS custom properties. Record: design/notes/NoteTableHandles.md.
  */
@@ -90,12 +92,35 @@ function indexAt(spans: { start: number; end: number }[], point: number) {
   return point < spans[0].start ? 0 : spans.length - 1;
 }
 
+// Cell the editor selection sits in (touch has no hover): the head's enclosing
+// cell, or the head cell of a cell selection.
+function selectedCell(editor: Editor): HTMLTableCellElement | null {
+  const { selection } = editor.state;
+  const head = "$headCell" in selection ? (selection.$headCell as ResolvedPos) : selection.$head;
+  for (let depth = head.depth; depth > 0; depth--) {
+    const role = head.node(depth).type.spec.tableRole;
+    if (role === "cell" || role === "header_cell") {
+      const dom = editor.view.nodeDOM(head.before(depth));
+      return dom instanceof HTMLTableCellElement ? dom : null;
+    }
+  }
+  const after = head.nodeAfter;
+  if (after && (after.type.spec.tableRole === "cell" || after.type.spec.tableRole === "header_cell")) {
+    const dom = editor.view.nodeDOM(head.pos);
+    return dom instanceof HTMLTableCellElement ? dom : null;
+  }
+  return null;
+}
+
 function css(vars: Record<string, string>) {
   return vars as CSSProperties;
 }
 
 const gripClass =
-  "chrome-touch pointer-events-auto fixed flex touch-none cursor-grab items-center justify-center rounded-control-inner border border-stroke-lines bg-surface-highlight-white text-text-secondary shadow-sm hover:bg-surface-highlight-white-selected active:cursor-grabbing active:bg-surface-highlight-white-hover";
+  "chrome-touch pointer-events-auto fixed flex touch-none cursor-grab items-center justify-center rounded-control-inner border border-stroke-lines bg-surface-highlight-white text-text-secondary shadow-sm hover:bg-surface-highlight-white-selected active:cursor-grabbing active:bg-surface-highlight-white-hover after:absolute after:content-['']";
+// Touch: the visible grip stays small, the hit area grows to 44px.
+const rowHitClass = "[@media(pointer:coarse)]:after:-inset-x-4 [@media(pointer:coarse)]:after:-inset-y-3";
+const columnHitClass = "[@media(pointer:coarse)]:after:-inset-x-3 [@media(pointer:coarse)]:after:-inset-y-4";
 
 export function NoteTableHandles({ editor }: NoteTableHandlesProps) {
   const t = useTranslations("components.noteTable");
@@ -126,10 +151,10 @@ export function NoteTableHandles({ editor }: NoteTableHandlesProps) {
   }, []);
 
   useEffect(() => {
-    if (!editor || !finePointer) return;
+    if (!editor) return;
     const dom = editor.view.dom;
     function onPointerMove(event: PointerEvent) {
-      if (dragRef.current || !editor?.isEditable) return;
+      if (!finePointer || dragRef.current || !editor?.isEditable) return;
       const element = event.target instanceof Element ? event.target : null;
       if (element?.closest("[data-table-handle]")) return;
       const table = element?.closest("table") ?? null;
@@ -147,7 +172,26 @@ export function NoteTableHandles({ editor }: NoteTableHandlesProps) {
       hoverRef.current = { row, col: cell.cellIndex };
       setHover(hoverRef.current);
     }
+    // Touch: no hover, so the selection decides which cell's grips show.
+    function syncSelection() {
+      if (finePointer || dragRef.current || !editor) return false;
+      const cell = editor.isEditable ? selectedCell(editor) : null;
+      const table = cell?.closest("table") ?? null;
+      const row = cell?.parentElement instanceof HTMLTableRowElement ? cell.parentElement.rowIndex : -1;
+      if (!cell || !table || row < 0 || !dom.contains(table)) {
+        if (layoutRef.current) show(null);
+        return true;
+      }
+      show(measureTable(table));
+      const prev = hoverRef.current;
+      if (prev?.row !== row || prev.col !== cell.cellIndex) {
+        hoverRef.current = { row, col: cell.cellIndex };
+        setHover(hoverRef.current);
+      }
+      return true;
+    }
     function remeasure() {
+      if (syncSelection()) return;
       const current = layoutRef.current;
       if (!current) return;
       show(current.table.isConnected ? measureTable(current.table) : null);
@@ -156,6 +200,7 @@ export function NoteTableHandles({ editor }: NoteTableHandlesProps) {
     window.addEventListener("scroll", remeasure, true);
     window.addEventListener("resize", remeasure);
     editor.on("transaction", remeasure);
+    remeasure();
     return () => {
       document.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("scroll", remeasure, true);
@@ -173,7 +218,7 @@ export function NoteTableHandles({ editor }: NoteTableHandlesProps) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [drag, setDragState]);
 
-  if (!editor || !finePointer || !layout) return null;
+  if (!editor || !layout) return null;
 
   function targetAt(event: ReactPointerEvent, current: Layout, kind: MoveKind, from: number) {
     const spans =
@@ -254,6 +299,7 @@ export function NoteTableHandles({ editor }: NoteTableHandlesProps) {
               style={css({ "--grip-x": `${layout.left}px`, "--grip-y": `${(row.top + row.bottom) / 2}px` })}
               className={cn(
                 gripClass,
+                rowHitClass,
                 "left-[var(--grip-x)] top-[var(--grip-y)] h-6 w-4 -translate-x-1/2 -translate-y-1/2",
                 drag?.kind === "row" && drag.from === index && "bg-surface-highlight-white-active",
               )}
@@ -279,6 +325,7 @@ export function NoteTableHandles({ editor }: NoteTableHandlesProps) {
               style={css({ "--grip-x": `${center}px`, "--grip-y": `${layout.top}px` })}
               className={cn(
                 gripClass,
+                columnHitClass,
                 "left-[var(--grip-x)] top-[var(--grip-y)] h-4 w-6 -translate-x-1/2 -translate-y-1/2",
                 drag?.kind === "column" && drag.from === index && "bg-surface-highlight-white-active",
               )}
