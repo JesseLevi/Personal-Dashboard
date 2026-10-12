@@ -3,18 +3,27 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { PageHeader } from "@/components/organisms/PageHeader";
 import { Basket } from "@lucasmarkes/hairline/react";
 import { Button } from "@/components/atoms/Button";
-import { Dropdown } from "@/components/atoms/Dropdown";
-import type { IconName } from "@/components/atoms/Icon";
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
 import { IngredientSearchPanel } from "@/components/organisms/IngredientSearchPanel";
-import { usePopoverPosition } from "@/lib/dom/use-popover-position";
+import { blurInTotalMs, blurFadeStagger, blurOutTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
+import { cn } from "@/lib/ui/cn";
 import { formatQuantity } from "@/lib/recipes/units";
 import { formatQuantityFraction } from "@/lib/recipes/kitchen-units";
-import { toggleShoppingListItem, deleteShoppingListItem, clearShoppingList, addShoppingListItem } from "./actions";
+import {
+  toggleShoppingListItem,
+  deleteShoppingListItem,
+  clearShoppingList,
+  addShoppingListItem,
+  createShoppingList,
+  renameShoppingList,
+  deleteShoppingList,
+} from "./actions";
+import { ShoppingListPanel, type ShoppingListOption, type ShoppingListPanelTarget } from "./ShoppingListPanel";
+import { WinkelmandHeader, type SortBy } from "./WinkelmandHeader";
+import { clearListEnter, markListEnter, wantsListEnter } from "./list-switch";
 // #222 pt.4: reuses RecipePanel.tsx's own ingredient search/create actions
 // rather than duplicating them -- same cross-route-group import direction
 // RecipeDetailPage.tsx already uses for winkelmand/actions.ts (imports go
@@ -39,18 +48,19 @@ import type { ActionResult, ShoppingListItemWithGroupInfo } from "@/lib/shopping
 // from app/(app)/te-doen/TeDoenHeader.tsx's own sort menu, per the fetched
 // node's annotation). Full grouping/ordering reasoning:
 // design/notes/WinkelmandPage.md.
-export interface WinkelmandListProps {
-  items: ShoppingListItemWithGroupInfo[];
-  /** Page title (`nav.shopping`). */
-  title: string;
-}
+//
+// #424: one instance per basket (`key={listId}` on the page), so sort, pending
+// actions and the switch motion reset by themselves on a basket change. Every
+// action below passes `listId`.
+export type WinkelmandListOption = ShoppingListOption;
 
-type SortBy = "recipe" | "foodGroup";
-const SORT_OPTIONS: SortBy[] = ["recipe", "foodGroup"];
-const SORT_ICONS: Record<SortBy, IconName> = {
-  recipe: "FolderClosed",
-  foodGroup: "Broccoli",
-};
+export interface WinkelmandListProps {
+  /** The basket this page shows (`/winkelmand/[listId]`). */
+  listId: string;
+  /** Every basket of the user, default first; `name` is already the display name. */
+  lists: WinkelmandListOption[];
+  items: ShoppingListItemWithGroupInfo[];
+}
 
 interface Group {
   key: string;
@@ -106,26 +116,7 @@ function buildGroups(
   return ordered.map((key) => byKey.get(key)!);
 }
 
-// Same click-outside-closes shape as TeDoenHeader.tsx's own
-// useCloseOnOutsidePointerDown (#95) -- reimplemented here rather than
-// imported, matching that file's own precedent of a small, page-local copy
-// over a shared module for a single-caller interaction.
-function useCloseOnOutsidePointerDown(
-  ref: React.RefObject<HTMLElement | null>,
-  active: boolean,
-  onClose: () => void,
-) {
-  useEffect(() => {
-    if (!active) return;
-    function handlePointerDown(event: PointerEvent) {
-      if (ref.current && !ref.current.contains(event.target as Node)) onClose();
-    }
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [active, ref, onClose]);
-}
-
-export function WinkelmandList({ items, title }: WinkelmandListProps) {
+export function WinkelmandList({ listId, lists, items }: WinkelmandListProps) {
   const router = useRouter();
   const locale = useLocale();
   // Long-form recipes.units labels are the ingredient-CARD Tag's usual
@@ -138,7 +129,6 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
   const tUnitsShort = useTranslations("recipes.unitsShort");
   const tErrors = useTranslations("shopping.errors");
   const t = useTranslations("shopping.page");
-  const tSort = useTranslations("shopping.page.sortOptions");
 
   const [localItems, setLocalItems] = useState(items);
   const pendingActions = useRef(0);
@@ -148,23 +138,25 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
 
   const [actionError, setActionError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortBy>("recipe");
-  const [sortMenuOpen, setSortMenuOpen] = useState(false);
-  const sortMenuRef = useRef<HTMLDivElement>(null);
-  const sortPopoverRef = useRef<HTMLDivElement>(null);
-  useCloseOnOutsidePointerDown(sortMenuRef, sortMenuOpen, () => setSortMenuOpen(false));
   const [addItemPanelOpen, setAddItemPanelOpen] = useState(false);
-
-  // #182's left-anchor-to-the-trigger decision stands (user call, see
-  // docs/open-questions.md#winkelmand-mobile-sort-dropdown-anchor-undesigned)
-  // — now clamp-protected instead of measurement-dependent, which is what
-  // broke when #222 shortened the trailing button's label and moved this
-  // trigger right (docs/incidents.md, 2026-08-18). Desktop's right anchor
-  // stays pixel-verified against Figma. design/notes/WinkelmandPage.md#182.
-  const sortPopover = usePopoverPosition(sortMenuRef, sortPopoverRef, {
-    open: sortMenuOpen,
-    anchor: { base: "left", md: "right" },
-    prefer: "below",
+  const [listPanel, setListPanel] = useState<{ open: boolean; target: ShoppingListPanelTarget }>({
+    open: false,
+    target: { mode: "create" },
   });
+  const currentList = lists.find((list) => list.id === listId);
+  const defaultList = lists.find((list) => list.isDefault);
+
+  // Basket switch: the groups blur out, then the route changes, then the new
+  // basket's groups blur in (only when this mount follows a switch). Same
+  // pattern as te-doen/TeDoenBoardSwitch.tsx; the enter class is dropped
+  // after it has played, since its fill would keep a `filter` on the cards.
+  const reduced = usePrefersReducedMotion();
+  const [exiting, setExiting] = useState(false);
+  const switchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [entering, setEntering] = useState(() => wantsListEnter(listId));
+  useEffect(() => () => {
+    if (switchTimer.current) clearTimeout(switchTimer.current);
+  }, []);
 
   function quantityLabel(item: ShoppingListItemWithGroupInfo): string | undefined {
     if (item.quantity === null) return undefined;
@@ -216,7 +208,7 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
     // No confirmation step -- Figma draws none for this button, unlike the
     // recipe-detail delete's two-step confirm. See
     // docs/open-questions.md#winkelmand-clear-all-no-confirmation.
-    runAction(() => [], () => clearShoppingList());
+    runAction(() => [], () => clearShoppingList({ listId }));
   }
 
   // #222 pt.4: sequential, awaited (not Promise.all) -- addShoppingListItem
@@ -236,7 +228,7 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
     setActionError(null);
     try {
       for (const name of [...ingredients.map((ingredient) => ingredient.name), ...plainNames]) {
-        const result = await addShoppingListItem({ name });
+        const result = await addShoppingListItem({ name, listId });
         if (!result.success) {
           setActionError(tErrors(result.error));
           return;
@@ -249,106 +241,49 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
 
   const isEmpty = localItems.length === 0;
   const groups = isEmpty ? [] : buildGroups(localItems, sortBy, locale, t("otherGroupLabel"));
+  const motionCount = Math.max(groups.length, 1);
 
-  // Shared by both PageHeader states below. Empty state also carries the
-  // Add button by user instruction (deviates from Figma): design/notes/WinkelmandPage.md.
-  const clearAllButton = (
-    <Button variant="destructive" icon="Trash" onClick={handleClearAll}>
-      <span className="md:hidden">{t("clearAllLabelShort")}</span>
-      <span className="hidden md:inline">{t("clearAllLabel")}</span>
-    </Button>
-  );
+  useEffect(() => {
+    if (!entering) return;
+    clearListEnter();
+    const id = setTimeout(() => setEntering(false), blurInTotalMs(motionCount, reduced));
+    return () => clearTimeout(id);
+  }, [entering, motionCount, reduced]);
 
-  // #222 pt.4: icon-only on mobile, "Item" from md up -- span-hide + permanent
-  // aria-label (same pattern as Sort). Opens the existing IngredientSearchPanel.
-  const addItemButton = (
-    <Button icon="Plus" aria-label={t("addItemLabel")} onClick={() => setAddItemPanelOpen(true)}>
-      <span className="hidden md:inline">{t("addItemLabel")}</span>
-    </Button>
-  );
+  function switchToList(targetListId: string) {
+    if (targetListId === listId || switchTimer.current) return;
+    const href = `/winkelmand/${targetListId}`;
+    router.prefetch(href);
+    setExiting(true);
+    switchTimer.current = setTimeout(() => {
+      switchTimer.current = null;
+      markListEnter(targetListId);
+      router.push(href);
+    }, blurOutTotalMs(motionCount, reduced));
+  }
+
+  function groupMotion(index: number) {
+    if (exiting) return cn("animate-blur-out", blurFadeStagger(index));
+    if (entering) return cn("animate-blur-in", blurFadeStagger(index));
+    return undefined;
+  }
 
   return (
     <>
-      <PageHeader
-        title={title}
-        // Add + Clear in the empty state (Sort hidden), Add + Sort + Clear
-        // otherwise; empty-state Add is not in Figma, see
-        // design/notes/WinkelmandPage.md.
-        actions={
-          isEmpty ? (
-            <div className="flex items-center gap-inline-sm md:gap-inline-xl">
-              {addItemButton}
-              {clearAllButton}
-            </div>
-          ) : (
-            // #182: a single flex wrapper mirroring Figma's own "Knoppen"
-            // frame (row, gap 8px mobile / 20px desktop) -- every button
-            // must be ONE child of PageHeader's actions slot, not siblings
-            // (a Fragment's children render as flat siblings of <header>,
-            // which is itself `justify-between` -- see
-            // design/notes/WinkelmandPage.md#182).
-            // #182: the Sort wrapper is the positioning context at every
-            // breakpoint -- no relative/static flip. Only the panel's
-            // horizontal anchor switches per breakpoint: left-anchored to
-            // the Sort button below md, right-anchored to it from md up.
-            // Desktop's right anchor is pixel-verified against the fetched
-            // node: the Dropdown's own `absoluteBoundingBox` right edge
-            // (x=10620) exactly matches the Sort button's right edge, not
-            // the group's. Figma draws no open-dropdown mobile frame at all
-            // (Mobile/Sort, 4052:13689, has no Dropdown child) -- undesigned,
-            // so the mobile anchor is this ticket's own call: left-anchor to
-            // the button that opened it, rather than the far side of the
-            // whole group, per user decision. Geometry re-verified in a real
-            // browser at 320/375/390/430px, see design/notes/WinkelmandPage.md#182.
-            <div className="flex items-center gap-inline-sm md:gap-inline-xl">
-              {addItemButton}
-              <div ref={sortMenuRef} className="relative">
-                <Button
-                  icon="ArrowUpDown"
-                  align="left"
-                  // #182: icon-only on mobile (fetched Mobile nodes draw
-                  // "With text: false") -- text hidden via `hidden md:inline`
-                  // rather than swapping `children`, so the accessible name
-                  // stays on aria-label at both breakpoints instead of
-                  // depending on which text node happens to be visible.
-                  aria-label={t("sortLabel")}
-                  aria-expanded={sortMenuOpen}
-                  onClick={() => setSortMenuOpen((open) => !open)}
-                >
-                  <span className="hidden md:inline">{t("sortLabel")}</span>
-                </Button>
-                {sortMenuOpen && (
-                  // Left-aligned under the Sort button (mobile) / right-
-                  // aligned under it (desktop), z-999, closes on outside
-                  // click -- the fetched panel's own annotation ("See
-                  // #DropdownActive ... z-index: 999. Click outside to
-                  // disappear") points at the exact same mechanism
-                  // TeDoenHeader.tsx's sort menu already implements.
-                  <div ref={sortPopoverRef} className="absolute z-[999] w-[209px]" style={sortPopover.style}>
-                    <Dropdown className="shadow-sm">
-                      {SORT_OPTIONS.map((option) => (
-                        <Button
-                          key={option}
-                          icon={SORT_ICONS[option]}
-                          variant={option === sortBy ? "filled" : "white"}
-                          align="left"
-                          aria-pressed={option === sortBy}
-                          onClick={() => {
-                            setSortMenuOpen(false);
-                            setSortBy(option);
-                          }}
-                        >
-                          {tSort(option)}
-                        </Button>
-                      ))}
-                    </Dropdown>
-                  </div>
-                )}
-              </div>
-              {clearAllButton}
-            </div>
-          )
+      <WinkelmandHeader
+        title={currentList?.name ?? ""}
+        lists={lists}
+        currentListId={listId}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        isEmpty={isEmpty}
+        onSwitchList={switchToList}
+        onAddList={() => setListPanel({ open: true, target: { mode: "create" } })}
+        onEditList={() =>
+          currentList && setListPanel({ open: true, target: { mode: "edit", list: currentList } })
         }
+        onAddItem={() => setAddItemPanelOpen(true)}
+        onClearAll={handleClearAll}
       />
       {actionError && <p className="text-base font-semibold text-priority-urgent">{actionError}</p>}
       {isEmpty ? (
@@ -359,7 +294,7 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
         // is full-width on mobile (Figma's Button carries its own
         // `alignSelf: stretch`) and hugs, centred, on desktop (no such
         // override there) -- `w-full md:w-fit` reproduces that split.
-        <div className="pr-page-right-equal">
+        <div className={cn("pr-page-right-equal", groupMotion(0))}>
           <Card>
             {/* #222 pt.5: re-measured "Stap + Card" (4049:11174 mobile,
                 4050:11597 desktop) via the bridge -- the Card's own p-
@@ -396,8 +331,9 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
         // page-stack and stack-xl, exactly the ambiguity this ticket
         // forbids guessing through — design/notes/WinkelmandPage.md#219.
         <div className="flex w-full flex-col gap-6 pr-page-right-equal">
-          {groups.map((group) => (
-            <Card key={group.key} title={group.label}>
+          {groups.map((group, groupIndex) => (
+            <div key={group.key} className={groupMotion(groupIndex)}>
+            <Card title={group.label}>
               {group.items.map((item, index) => (
                 <CardContentIngredient
                   key={item.id}
@@ -412,6 +348,7 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
                 />
               ))}
             </Card>
+            </div>
           ))}
         </div>
       )}
@@ -426,6 +363,19 @@ export function WinkelmandList({ items, title }: WinkelmandListProps) {
         onSearch={searchIngredients}
         onCreateOwnIngredient={createOwnIngredient}
         onSave={handleAddIngredients}
+      />
+      <ShoppingListPanel
+        open={listPanel.open}
+        onClose={() => setListPanel((current) => ({ ...current, open: false }))}
+        target={listPanel.target}
+        onCreateList={createShoppingList}
+        onRenameList={renameShoppingList}
+        onDeleteList={deleteShoppingList}
+        onCreated={(list) => switchToList(list.id)}
+        onRenamed={() => router.refresh()}
+        // The deleted basket was this page: go to the default one (the action
+        // does not revalidate, see deleteShoppingList).
+        onDeleted={() => router.replace(defaultList ? `/winkelmand/${defaultList.id}` : "/winkelmand")}
       />
     </>
   );

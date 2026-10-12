@@ -1,26 +1,13 @@
-import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
-import { getShoppingListItems } from "@/lib/shopping/queries";
-import { WinkelmandList } from "./WinkelmandList";
+import { notFound, redirect } from "next/navigation";
+import { getShoppingLists } from "@/lib/shopping/queries";
 
-// #177: Winkelmand page UI, on top of #175/#176's schema + data layer. Same
-// Server/Client split as app/(app)/recepten/page.tsx -> ReceptenBoard.tsx:
-// this stays a thin Server Component that only fetches serialisable
-// ShoppingListItemRow[] (getShoppingListItems() already returns [] signed-
-// out, same convention as getRecipeCategoriesWithRecipes) and translated
-// strings, and hands them to WinkelmandList.tsx ("use client"), which owns
-// row interactions. See design/notes/WinkelmandPage.md.
-//
-// #223 follow-up: links this route's own Web App Manifest, same mechanism
-// as app/(app)/te-doen/page.tsx — see that file's comment and
-// design/notes/AppShell.md.
-export const metadata: Metadata = {
-  manifest: "/winkelmand/manifest.webmanifest",
-};
-
+// ADR-0035 §10: every basket has its own route, `/winkelmand/[listId]`. The
+// bare route sends the user to their default basket, the way `/te-doen`
+// falls back to the favourite board. The manifest metadata lives on
+// [listId]/page.tsx, the page that actually renders.
 export default async function WinkelmandPage() {
-  const t = await getTranslations();
-  const items = await getShoppingListItems();
-
-  return <WinkelmandList items={items} title={t("nav.shopping")} />;
+  const lists = await getShoppingLists();
+  const defaultList = lists.find((list) => list.is_default) ?? lists[0];
+  if (!defaultList) notFound();
+  redirect(`/winkelmand/${defaultList.id}`);
 }

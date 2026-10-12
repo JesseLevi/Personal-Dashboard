@@ -20,6 +20,8 @@ on:
       # App-level panels with their own stories (CardDetailPanel, BoardPanel) (#191)
       - 'app/**/*.stories.tsx'
       - 'app/(app)/te-doen/*Panel.tsx'
+      - 'app/(app)/winkelmand/*Panel.tsx'
+      - 'app/(app)/winkelmand/WinkelmandHeader.tsx'
       - '.ladle/**'
       - 'tests/visual/**'
       - 'app/theme.css'

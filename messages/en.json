@@ -216,7 +216,6 @@
     },
     "page": {
       "clearAllLabel": "Empty basket",
-      "clearAllLabelShort": "Empty",
       "deleteItemLabel": "Delete {name}",
       "sortLabel": "Sort",
       "addItemLabel": "Item",
@@ -226,7 +225,13 @@
       },
       "otherGroupLabel": "Other",
       "emptyStateTitle": "Shopping basket is empty",
-      "emptyStateCta": "Go to recipes"
+      "emptyStateCta": "Go to recipes",
+      "listSwitcherLabel": "Switch basket",
+      "addListOptionLabel": "Add",
+      "settingsLabel": "Settings"
+    },
+    "lists": {
+      "defaultName": "My basket"
     }
   },
   "boards": {
@@ -839,6 +844,20 @@
     "noteWordCount": {
       "words": "{count, plural, one {# word} other {# words}}",
       "readingTime": "{count, plural, =0 {0 min read} other {# min read}}"
+    },
+    "shoppingListPanel": {
+      "addTitle": "Add basket",
+      "editTitle": "Edit basket",
+      "fields": {
+        "nameLabel": "Name"
+      },
+      "saveLabel": "Save",
+      "savingLabel": "Saving...",
+      "deleteLabel": "Delete basket",
+      "deleteConfirmLabel": "Are you sure? The basket and all its items will be deleted.",
+      "deleteConfirmButtonLabel": "Yes, delete",
+      "deletingLabel": "Deleting...",
+      "cancelLabel": "Cancel"
     }
   }
 }
