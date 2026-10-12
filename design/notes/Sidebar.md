@@ -23,12 +23,11 @@ Figma: `Sidebar` component set · node `3674:5664` (`Collapsed=No` `3674:5665`, 
 - **Outside-click closing of the account menu** lives in `AppShellNav`: one listener checks containment against both wrappers (`lib/dom/outside-pointer.ts`). One listener per wrapper closed the menu before Settings/Logout could fire (#265).
 - **Distinct menu ids** `sidebar-account-menu-desktop` and `-mobile`, because both instances can render the panel (#265).
 - **The account popover** is positioned by `usePopoverPosition` (`anchor: "left"`, `prefer: "above"`, `w-[209px]`). Its inline `style` (left/top only) is the flagged exception to the no-inline-styles rule. That hook is why the file is `"use client"`.
-- **The initials fallback** (`initialsFor`: first letters of the first two words) and the account hover fill `hover:bg-surface-secondary` are codebase choices, not Figma-sourced (#265).
+- **The avatar** is the `Avatar` atom (`size="md"`); the initials fallback lives in `design/notes/Avatar.md`. The account hover fill `hover:bg-surface-secondary` is a codebase choice, not Figma-sourced (#265).
 
 ## Token gaps and flags
 - Motion: `--duration-base` 200ms / `--ease-base` are unsourced (`sidebar-motion-timing-unsourced`).
 - Safe-area `pt-/pb-[max(1rem,env(safe-area-inset-*))]` stay raw on top of `p-component-lg` (#113, unverified on a notched device).
-- The initials background is an unbound Figma fill `#D6D3D1`, an exact match for `surface-secondary-hover`.
 - `p-0` on the account button resets native padding (spacing-flag).
 - The scrim uses the `overlay` token (stone-950 in both themes). `text-primary` inverted in dark mode (#222).
 
