@@ -12,11 +12,14 @@ import {
   addIngredientToShoppingListSchema,
   addShoppingListItemSchema,
   clearShoppingListSchema,
+  createShoppingListSchema,
   deleteShoppingListItemSchema,
+  deleteShoppingListSchema,
+  renameShoppingListSchema,
   sendRecipeToShoppingListSchema,
   toggleShoppingListItemSchema,
 } from "@/lib/shopping/schemas";
-import type { ActionResult, ShoppingListItemRow } from "@/lib/shopping/types";
+import type { ActionResult, ShoppingListItemRow, ShoppingListRow } from "@/lib/shopping/types";
 import type { Database } from "@/lib/database.types";
 
 // Write side of #176 -- Winkelmand item CRUD, called from the Winkelmand UI
@@ -31,7 +34,8 @@ import type { Database } from "@/lib/database.types";
 //      ADR-0035) and lets RLS decide access -- no user_id filter on items,
 //      never service_role;
 //   3. returns a typed ActionResult instead of throwing.
-// revalidatePath("/winkelmand") runs on every successful write.
+// revalidatePath("/winkelmand", "layout") runs on every successful write: the
+// "layout" argument is what also matches the dynamic /winkelmand/[listId] child.
 
 type Client = SupabaseClient<Database>;
 
@@ -113,7 +117,7 @@ export async function addShoppingListItem(
     return { success: false, error: "generic" };
   }
 
-  revalidatePath("/winkelmand");
+  revalidatePath("/winkelmand", "layout");
   return { success: true, data };
 }
 
@@ -138,7 +142,7 @@ export async function toggleShoppingListItem(input: unknown): Promise<ActionResu
   }
   if (!data) return { success: false, error: "not-found" };
 
-  revalidatePath("/winkelmand");
+  revalidatePath("/winkelmand", "layout");
   return { success: true, data: undefined };
 }
 
@@ -163,7 +167,7 @@ export async function deleteShoppingListItem(input: unknown): Promise<ActionResu
   }
   if (!data) return { success: false, error: "not-found" };
 
-  revalidatePath("/winkelmand");
+  revalidatePath("/winkelmand", "layout");
   return { success: true, data: undefined };
 }
 
@@ -190,7 +194,7 @@ export async function clearShoppingList(input?: unknown): Promise<ActionResult> 
     return { success: false, error: "generic" };
   }
 
-  revalidatePath("/winkelmand");
+  revalidatePath("/winkelmand", "layout");
   return { success: true, data: undefined };
 }
 
@@ -255,7 +259,7 @@ export async function sendRecipeToShoppingList(input: unknown): Promise<ActionRe
     return { success: false, error: "generic" };
   }
 
-  revalidatePath("/winkelmand");
+  revalidatePath("/winkelmand", "layout");
   revalidatePath(`/recepten/${recipe.id}`);
   return { success: true, data: undefined };
 }
@@ -333,6 +337,104 @@ export async function addIngredientToShoppingList(input: unknown): Promise<Actio
     }
   }
 
-  revalidatePath("/winkelmand");
+  revalidatePath("/winkelmand", "layout");
+  return { success: true, data: undefined };
+}
+
+/**
+ * Creates a non-default basket at the end of the signed-in user's baskets.
+ * The default basket is seeded elsewhere (ADR-0017); RLS only lets a client
+ * insert `is_default = false` rows owned by itself.
+ */
+export async function createShoppingList(input: unknown): Promise<ActionResult<ShoppingListRow>> {
+  const parsed = createShoppingListSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const supabase = await createSupabaseServerClient();
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  const { data: last } = await supabase
+    .from("shopping_lists")
+    .select("position")
+    .eq("user_id", auth.userId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data, error } = await supabase
+    .from("shopping_lists")
+    .insert({
+      user_id: auth.userId,
+      name: parsed.data.name,
+      position: nextPosition(last?.position ?? null, null),
+    })
+    .select()
+    .single();
+
+  if (error || !data) {
+    if (error) logDbError("createShoppingList", error);
+    return { success: false, error: "generic" };
+  }
+
+  revalidatePath("/winkelmand", "layout");
+  return { success: true, data };
+}
+
+/** Renames a basket. RLS decides access; clients may only update `name`/`position`. */
+export async function renameShoppingList(input: unknown): Promise<ActionResult> {
+  const parsed = renameShoppingListSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("shopping_lists")
+    .update({ name: parsed.data.name })
+    .eq("id", parsed.data.listId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    logDbError("renameShoppingList", error);
+    return { success: false, error: "generic" };
+  }
+  if (!data) return { success: false, error: "not-found" };
+
+  revalidatePath("/winkelmand", "layout");
+  return { success: true, data: undefined };
+}
+
+/**
+ * Deletes a basket and (by cascade) its items. The default basket is
+ * protected by the delete policy, so it matches zero rows and reports
+ * `not-found`.
+ */
+export async function deleteShoppingList(input: unknown): Promise<ActionResult> {
+  const parsed = deleteShoppingListSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("shopping_lists")
+    .delete()
+    .eq("id", parsed.data.listId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    logDbError("deleteShoppingList", error);
+    return { success: false, error: "generic" };
+  }
+  if (!data) return { success: false, error: "not-found" };
+
+  // No revalidatePath here, on purpose: the page being viewed is the deleted
+  // basket, and re-rendering it would flash a 404 before the caller's own
+  // navigation to the default basket lands (which renders fresh).
   return { success: true, data: undefined };
 }

@@ -3,6 +3,9 @@ import {
   addIngredientToShoppingListSchema,
   addShoppingListItemSchema,
   clearShoppingListSchema,
+  createShoppingListSchema,
+  deleteShoppingListSchema,
+  renameShoppingListSchema,
   deleteShoppingListItemSchema,
   toggleShoppingListItemSchema,
 } from "../lib/shopping/schemas";
@@ -178,5 +181,27 @@ describe("addIngredientToShoppingListSchema", () => {
       addIngredientToShoppingListSchema.safeParse({ recipeId: uuid, ingredientId: uuid2 })
         .success,
     ).toBe(false);
+  });
+});
+
+describe("basket schemas (#424)", () => {
+  it("createShoppingListSchema trims the name and rejects empty or too long", () => {
+    expect(createShoppingListSchema.parse({ name: "  Feestje  " })).toEqual({ name: "Feestje" });
+    expect(createShoppingListSchema.safeParse({ name: "   " }).success).toBe(false);
+    expect(createShoppingListSchema.safeParse({ name: "a".repeat(201) }).success).toBe(false);
+    expect(createShoppingListSchema.safeParse({}).success).toBe(false);
+  });
+
+  it("renameShoppingListSchema needs a uuid listId and a valid name", () => {
+    expect(renameShoppingListSchema.safeParse({ listId: uuid, name: "Week" }).success).toBe(true);
+    expect(renameShoppingListSchema.safeParse({ listId: "nope", name: "Week" }).success).toBe(false);
+    expect(renameShoppingListSchema.safeParse({ listId: uuid, name: " " }).success).toBe(false);
+    expect(renameShoppingListSchema.safeParse({ name: "Week" }).success).toBe(false);
+  });
+
+  it("deleteShoppingListSchema needs a uuid listId", () => {
+    expect(deleteShoppingListSchema.safeParse({ listId: uuid }).success).toBe(true);
+    expect(deleteShoppingListSchema.safeParse({ listId: "nope" }).success).toBe(false);
+    expect(deleteShoppingListSchema.safeParse({}).success).toBe(false);
   });
 });

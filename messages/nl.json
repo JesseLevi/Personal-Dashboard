@@ -216,7 +216,6 @@
     },
     "page": {
       "clearAllLabel": "Leeg mand",
-      "clearAllLabelShort": "Leeg",
       "deleteItemLabel": "Verwijder {name}",
       "sortLabel": "Sorteer",
       "addItemLabel": "Item",
@@ -226,7 +225,13 @@
       },
       "otherGroupLabel": "Overig",
       "emptyStateTitle": "Winkelmand is leeg",
-      "emptyStateCta": "Ga naar recepten"
+      "emptyStateCta": "Ga naar recepten",
+      "listSwitcherLabel": "Mand wisselen",
+      "addListOptionLabel": "Toevoegen",
+      "settingsLabel": "Instellingen"
+    },
+    "lists": {
+      "defaultName": "Mijn mand"
     }
   },
   "boards": {
@@ -842,6 +847,20 @@
     "noteWordCount": {
       "words": "{count, plural, one {# woord} other {# woorden}}",
       "readingTime": "{count, plural, =0 {0 min lezen} other {# min lezen}}"
+    },
+    "shoppingListPanel": {
+      "addTitle": "Mand toevoegen",
+      "editTitle": "Mand bewerken",
+      "fields": {
+        "nameLabel": "Naam"
+      },
+      "saveLabel": "Opslaan",
+      "savingLabel": "Opslaan...",
+      "deleteLabel": "Verwijder mand",
+      "deleteConfirmLabel": "Weet je het zeker? De mand en alle items erin worden verwijderd.",
+      "deleteConfirmButtonLabel": "Ja, verwijderen",
+      "deletingLabel": "Verwijderen...",
+      "cancelLabel": "Annuleren"
     }
   }
 }

@@ -2,7 +2,7 @@ import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import { getDefaultShoppingListId } from "@/lib/shopping/lists";
-import type { ShoppingListItemWithGroupInfo } from "@/lib/shopping/types";
+import type { ShoppingListItemWithGroupInfo, ShoppingListRow } from "@/lib/shopping/types";
 
 // Read side of #176 (mirrors lib/recipes/queries.ts's
 // getRecipeCategoriesWithRecipes). Server-only, via the anon-key server
@@ -120,4 +120,28 @@ export async function getShoppingListItems(
       categoryEn: category?.categoryEn ?? null,
     };
   });
+}
+
+/**
+ * Every basket the signed-in user can see (RLS decides), default first, then
+ * by `position`. Empty when signed out or not seeded yet. Feeds the
+ * Winkelmand switcher and `/winkelmand`'s redirect to the default basket.
+ */
+export async function getShoppingLists(): Promise<ShoppingListRow[]> {
+  const supabase = await createSupabaseServerClient();
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return [];
+
+  const { data, error } = await supabase
+    .from("shopping_lists")
+    .select("*")
+    .order("is_default", { ascending: false })
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("[shopping] getShoppingLists failed:", error.code, error.message);
+    return [];
+  }
+  return data;
 }

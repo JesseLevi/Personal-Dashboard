@@ -69,3 +69,12 @@ export const addIngredientToShoppingListSchema = z.object({
 });
 
 export const clearShoppingListSchema = z.object({ listId }).default({});
+
+// #424: basket (container) management. `name` is the trimmed 1..200 string
+// every other schema here uses; ownership and the "default basket cannot be
+// deleted" rule are decided by RLS (ADR-0035), not by these shapes.
+export const createShoppingListSchema = z.object({ name });
+
+export const renameShoppingListSchema = z.object({ listId: z.uuid(), name });
+
+export const deleteShoppingListSchema = z.object({ listId: z.uuid() });

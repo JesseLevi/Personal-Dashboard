@@ -4,6 +4,8 @@ import type { Database } from "@/lib/database.types";
 // contract for app/(app)/winkelmand/actions.ts -- same split as
 // lib/recipes/types.ts (#122), scoped down for #176.
 
+export type ShoppingListRow = Database["public"]["Tables"]["shopping_lists"]["Row"];
+
 export type ShoppingListItemRow = Database["public"]["Tables"]["shopping_list_items"]["Row"];
 
 // #179: the Winkelmand page's own read shape -- the base row plus the two
