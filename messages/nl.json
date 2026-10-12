@@ -383,10 +383,7 @@
       "savingLabel": "Opslaan...",
       "avatar": {
         "inputLabel": "Profielfoto",
-        "choose": "Foto kiezen",
-        "change": "Foto wijzigen",
-        "remove": "Verwijderen",
-        "busy": "Bezig..."
+        "placeholder": "Selecteer afbeelding"
       }
     },
     "boardPanel": {

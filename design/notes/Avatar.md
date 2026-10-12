@@ -2,10 +2,10 @@
 Figma: avatar frame inside node `4231:16052` (`4231:16053`, 32×32) · Code: `components/atoms/Avatar.tsx`
 
 ## Anatomy
-- A round photo (`<img>`) when `src` is set, otherwise a letter fallback (`<span>`). `src` is a plain URL; the component knows nothing about storage.
-- Fallback: a circle with `border border-stroke-primary`, fill `bg-surface-secondary-hover`, and ONE letter (`initialFor`: first letter of the first word of the name, uppercase), `text-xs font-semibold text-text-secondary`. Exported from the atom.
+- A photo (`<img>`) when `src` is set, otherwise a letter fallback (`<span>`). `src` is a plain URL; the component knows nothing about storage.
+- Fallback: a tile with `border border-stroke-primary`, fill `bg-surface-secondary-hover`, and ONE letter (`initialFor`: first letter of the first word of the name, uppercase), `text-xs font-semibold text-text-secondary`. Exported from the atom.
 - Callers pass `/api/avatar/<id>?v=<updated_at>` as `src` (profile photo, #434), or null for the letter fallback. The photo is a 120×120 WebP, shown at 40 and 32 px.
-- One variant axis, `size`; both sizes are `rounded-full`:
+- One variant axis, `size`; `md` is a rounded square (`rounded-control-inner`, as in the original Sidebar), `sm` is round (`rounded-full`):
 
 | `size` | Where | Box |
 |---|---|---|
@@ -14,7 +14,7 @@ Figma: avatar frame inside node `4231:16052` (`4231:16053`, 32×32) · Code: `co
 
 ## Deliberate decisions
 - **The border is a user addition on top of Figma**, which shows only photos. It also separates overlapping circles in `AvatarGroup` (the fill is opaque).
-- **Round everywhere**, photo and fallback, both sizes.
+- **Shape follows size**: `md` square, `sm` round; photo and fallback share it.
 - **Always decorative**, the Sidebar contract: image `alt=""`, fallback `aria-hidden`. The person's name is always rendered next to the avatar, so it is the accessible name.
 - Image has `loading="lazy"` and explicit `width`/`height` matching the size.
 - New component by exception (ADR-0034): no existing component renders a person.

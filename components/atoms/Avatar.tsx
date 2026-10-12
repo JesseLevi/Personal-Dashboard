@@ -3,19 +3,19 @@ import { cn } from "@/lib/ui/cn";
 import { cva, type VariantProps } from "class-variance-authority";
 
 /**
- * Atom/Avatar — round photo, or a bordered circle with the first letter of
+ * Atom/Avatar — photo, or a bordered tile with the first letter of
  * the first name when there is no photo.
  *
- * `size` maps to the two sizes in use: `md` is the Sidebar account row
- * (40px), `sm` is the 32px avatar from the Figma group. Always decorative
+ * `size` maps to the two sizes in use: `md` is the square Sidebar account
+ * row (40px), `sm` is the round 32px avatar from the Figma group. Always decorative
  * (`alt=""`, fallback `aria-hidden`): the person's name is rendered next to
  * it. See design/notes/Avatar.md.
  */
-const avatarVariants = cva("shrink-0 rounded-full object-cover", {
+const avatarVariants = cva("shrink-0 object-cover", {
   variants: {
     size: {
-      md: "size-10",
-      sm: "size-8",
+      md: "size-10 rounded-control-inner",
+      sm: "size-8 rounded-full",
     },
   },
   defaultVariants: { size: "md" },

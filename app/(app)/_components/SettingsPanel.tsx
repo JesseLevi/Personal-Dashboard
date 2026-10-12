@@ -8,8 +8,8 @@ import { ButtonToggle, type ButtonToggleItem } from "@/components/molecules/Butt
 import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
 import type { IconName } from "@/components/atoms/Icon";
-import { removeAvatar, updateLocale, updateName, uploadAvatar } from "@/lib/profile/actions";
-import { SettingsAvatarField } from "./SettingsAvatarField";
+import { ImageUploadField } from "@/components/molecules/ImageUploadField";
+import { updateLocale, updateName, uploadAvatar } from "@/lib/profile/actions";
 import { DISPLAY_NAME_MAX_LENGTH } from "@/lib/profile/schemas";
 import type { Locale } from "@/lib/profile/types";
 
@@ -47,10 +47,6 @@ export interface SettingsPanelProps {
   currentDisplayName: string | null;
   /** Server-resolved `profiles.last_name` (#404, `getLastName`) — seeds the Achternaam field. */
   currentLastName: string | null;
-  /** #434: same-origin avatar URL (`getAvatarSrc`), null without a photo. */
-  currentAvatarSrc: string | null;
-  /** #434: name for the avatar's letter fallback (same as the Sidebar row). */
-  avatarName: string;
 }
 
 export function SettingsPanel({
@@ -59,8 +55,6 @@ export function SettingsPanel({
   currentLocale,
   currentDisplayName,
   currentLastName,
-  currentAvatarSrc,
-  avatarName,
 }: SettingsPanelProps) {
   const t = useTranslations("components.settingsPanel");
   const tSidePanel = useTranslations("components.sidePanel");
@@ -128,20 +122,13 @@ export function SettingsPanel({
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [isAvatarPending, startAvatarTransition] = useTransition();
 
-  function handleAvatarFile(file: File) {
+  function handleAvatarFile(file: File | null) {
     setAvatarError(null);
+    if (!file) return;
     startAvatarTransition(async () => {
       const formData = new FormData();
       formData.set("file", file);
       const result = await uploadAvatar(formData);
-      if (!result.success) setAvatarError(tErrors(result.error));
-    });
-  }
-
-  function handleAvatarRemove() {
-    setAvatarError(null);
-    startAvatarTransition(async () => {
-      const result = await removeAvatar();
       if (!result.success) setAvatarError(tErrors(result.error));
     });
   }
@@ -209,14 +196,17 @@ export function SettingsPanel({
         </Button>
       }
     >
-      <SettingsAvatarField
-        name={avatarName}
-        src={currentAvatarSrc}
-        pending={isAvatarPending}
-        error={avatarError}
-        onSelectFile={handleAvatarFile}
-        onRemove={handleAvatarRemove}
+      <ImageUploadField
+        id="settings-avatar"
+        name="avatar"
+        placeholder={t("avatar.placeholder")}
+        ariaLabel={t("avatar.inputLabel")}
+        disabled={isAvatarPending}
+        onFileSelect={handleAvatarFile}
       />
+      {avatarError ? (
+        <p className="text-base font-semibold text-priority-urgent">{avatarError}</p>
+      ) : null}
       <ButtonToggle
         key={themeReady ? "theme-ready" : "theme-loading"}
         title={t("themeLabel")}
