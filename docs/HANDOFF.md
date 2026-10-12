@@ -19,11 +19,8 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
 
 ## Delen, fase 1 (epic #420, ADR-0035): built, not live
 
-All tickets (#421–#429, #434) are merged on `main`; the user reviews and closes them. Before a `main` build with this code is promoted:
-1. Apply on hosted, in order, each with the user's explicit go (ADR-0032). All three are additive:
-   - `20261012000001_shopping_lists.sql` (#422);
-   - `20261012000002_shares.sql` (#423);
-   - `20261012000003_profile_avatar_path.sql` (#434).
+All tickets (#421–#429, #434) are merged on `main`; the user reviews and closes them. Their three migrations (`20261012000001`–`…0003`) are applied on hosted (2026-10-12, `deploy.yml` migrate run 38285635989). Before a `main` build with this code is promoted:
+1. Production keeps working meanwhile: the migrations are additive.
 2. Test end to end with two accounts (steps in PRs #440, #441, #442): invite, accept, both see items, tick-off visible within ~15 s, leave, revoke, delete. Also create/rename/delete a basket and the recipe → basket popover.
 
 Follow-ups:
