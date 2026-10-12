@@ -3,7 +3,7 @@
 -- the marker table, plus the lazy-seed behaviour and function privileges.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(20);
+select plan(21);
 
 -- Triggers seed + mark all users on insert (new-account path).
 insert into auth.users (id, email)
@@ -14,8 +14,8 @@ values ('00000000-0000-0000-0000-3000000000aa', 'a@test.local'),
 select is(
   (select count(*)::int from public.user_seeds
    where user_id = '00000000-0000-0000-0000-3000000000aa'),
-  3,
-  'the signup triggers mark all three seeds for a new user'
+  4,
+  'the signup triggers mark all four seeds for a new user'
 );
 select is(
   (select count(*)::int from public.boards
@@ -34,6 +34,8 @@ delete from public.recipe_categories
   where user_id in ('00000000-0000-0000-0000-3000000000aa', '00000000-0000-0000-0000-3000000000ac');
 delete from public.note_categories
   where user_id in ('00000000-0000-0000-0000-3000000000aa', '00000000-0000-0000-0000-3000000000ac');
+delete from public.shopping_lists
+  where user_id in ('00000000-0000-0000-0000-3000000000aa', '00000000-0000-0000-0000-3000000000ac');
 insert into public.recipe_categories (user_id, name, icon, position)
   values ('00000000-0000-0000-0000-3000000000ac', 'Mijn eigen', 'Croissant', 1000);
 
@@ -49,15 +51,16 @@ select is((select count(*)::int from public.boards), 1, 'A got exactly one board
 select is((select count(*)::int from public.board_columns), 4, 'A got the four default columns');
 select is((select count(*)::int from public.recipe_categories), 3, 'A got three recipe categories');
 select is((select count(*)::int from public.note_categories), 3, 'A got three note categories');
-select is((select count(*)::int from public.user_seeds), 3, 'A has three markers');
+select is((select count(*)::int from public.shopping_lists), 1, 'A got a default shopping list');
+select is((select count(*)::int from public.user_seeds), 4, 'A has four markers');
 
 -- Second call adds nothing.
 select lives_ok($$ select public.ensure_user_defaults() $$, 'second call succeeds');
 select is(
   ((select count(*) from public.boards) + (select count(*) from public.board_columns)
    + (select count(*) from public.recipe_categories) + (select count(*) from public.note_categories)
-   + (select count(*) from public.user_seeds))::int,
-  1 + 4 + 3 + 3 + 3,
+   + (select count(*) from public.shopping_lists) + (select count(*) from public.user_seeds))::int,
+  1 + 4 + 3 + 3 + 1 + 4,
   'a repeated call adds no rows (no duplicates)'
 );
 

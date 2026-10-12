@@ -723,6 +723,7 @@ export type Database = {
           checked: boolean
           created_at: string
           id: string
+          list_id: string
           name: string
           position: number
           quantity: number | null
@@ -737,6 +738,7 @@ export type Database = {
           checked?: boolean
           created_at?: string
           id?: string
+          list_id: string
           name: string
           position: number
           quantity?: number | null
@@ -751,6 +753,7 @@ export type Database = {
           checked?: boolean
           created_at?: string
           id?: string
+          list_id?: string
           name?: string
           position?: number
           quantity?: number | null
@@ -763,6 +766,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "shopping_list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "shopping_list_items_recipe_id_fkey"
             columns: ["recipe_id"]
             isOneToOne: false
@@ -770,6 +780,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shopping_lists: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string | null
+          position: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string | null
+          position?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string | null
+          position?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       tags: {
         Row: {
@@ -879,6 +919,10 @@ export type Database = {
         Returns: undefined
       }
       seed_recipe_categories_for: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
+      seed_shopping_lists_for: {
         Args: { p_user_id: string }
         Returns: undefined
       }

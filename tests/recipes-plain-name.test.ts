@@ -14,7 +14,10 @@ vi.mock("@/lib/supabase/server", () => ({
       for (const op of ["select", "eq", "order", "limit", "insert", "maybeSingle", "single"]) {
         chain[op] = () => {
           touched.push({ table, op });
-          if (op === "maybeSingle") return Promise.resolve({ data: null, error: null });
+          if (op === "maybeSingle") {
+            const data = table === "shopping_lists" ? { id: "list-1" } : null;
+            return Promise.resolve({ data, error: null });
+          }
           if (op === "single") return Promise.resolve({ data: { id: "row-1", name: "Kokosmelk" }, error: null });
           return chain;
         };
