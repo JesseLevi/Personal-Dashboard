@@ -192,10 +192,12 @@ export function TeDoenHeader({
             <Button
               icon="ArrowUpDown"
               align="left"
+              aria-label={t("sortLabel")}
               aria-expanded={sortMenuOpen}
               onClick={() => setSortMenuOpen((open) => !open)}
             >
-              {t("sortLabel")}
+              {/* #447: icon-only below md; permanent aria-label (same span-hide pattern as WinkelmandHeader). */}
+              <span className="hidden md:inline">{t("sortLabel")}</span>
             </Button>
             {sortMenuOpen && (
               // Right-aligned to the Sort button — matches the fetched
@@ -225,8 +227,8 @@ export function TeDoenHeader({
               </div>
             )}
           </div>
-          <Button icon="Plus" onClick={columnPanel.openCreate}>
-            {t("addCategoryLabel")}
+          <Button icon="Plus" aria-label={t("addCategoryLabel")} onClick={columnPanel.openCreate}>
+            <span className="hidden md:inline">{t("addCategoryLabel")}</span>
           </Button>
           </div>
         }
