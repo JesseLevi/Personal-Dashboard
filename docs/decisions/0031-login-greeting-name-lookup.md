@@ -48,6 +48,7 @@ The user chose (c): Atlas is a small app for friends and family, and the feature
    - The login flow itself (password, magic link) is unchanged and still never reveals existence.
 6. **No new user-facing strings carry the name.** It is rendered as text (React escapes it).
 7. **Lookup while typing (#416).** The lookup also fires on a valid address after a 250 ms typing pause or on blur, so probing no longer needs a click on Doorgaan; the limits are unchanged.
+8. **Token pre-fetch.** The client runs the invisible Turnstile challenge on the first focus or keystroke in the e-mail field and keeps one single-use token ready, starting the next right after one is used, so the challenge no longer sits between the typing pause and the request. Every request still carries a fresh token that the server verifies, and the 500 ms floor and all limits are unchanged.
 
 ## Consequences
 

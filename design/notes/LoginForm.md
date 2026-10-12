@@ -182,20 +182,33 @@ before (Inter 20 semibold), so the h1 classes are unchanged.
   `, welkom bij Atlas`. The name part is an inline grid going
   `grid-cols-[0fr]` -> `[1fr]` plus opacity 0 -> 1 (child `overflow-hidden
   whitespace-pre`, like `ErrorLine`); the centered row pushes the outer parts
-  apart. `transition-[grid-template-columns,opacity]`. Trap: Tailwind v4
+  apart. The name opens from its own centre: the clipped box is a
+  `flex justify-center` whose text is `shrink-0`, so it overflows equally on
+  both sides. `transition-[grid-template-columns,opacity]`. Trap: Tailwind v4
   translate utilities set `translate`, not `transform`, so any arbitrary
   transition list must name `translate` (and `grid-template-columns`) explicitly.
 - **Accessibility:** visual row is `aria-hidden`; an `sr-only` span carries
   the full sentence, so the h1 name is exactly "Hey, welkom bij Atlas" or
   "Hey Carlotta, welkom bij Atlas" (the collapsed name never leaks).
-- **Long names:** the name part is `min-w-0` with `text-ellipsis`, so the
-  row shrinks the name instead of overflowing. The row is capped by its column
+- **Long names:** at rest the name text is `min-w-0 overflow-hidden text-ellipsis`, so the
+  row shrinks the name instead of overflowing. While the name opens or closes
+  (`settled` false, about 300ms) it is `shrink-0` and clipped from the centre
+  instead: centre-clipping and an ellipsis cannot both apply to one box, so a name
+  longer than the column shows its middle until it settles, then switches to the
+  ellipsis form. The row is capped by its column
   (370px at 402px wide), not 312px, because the real sentence is ~300px.
   Cosmetic: a truncated name shows "..." followed by a space before the comma.
 - **Lookup flow:** on a valid Doorgaan the lookup starts beside the step slide
   (never delays it): Turnstile token (`useTurnstile.ts`, invisible widget,
-  `action: login_greeting`, `execution: execute`, ~5s timeout, reset after each
-  token) then `lookupGreetingName`. Same e-mail after Terug keeps the name, no
+  `action: login_greeting`, `execution: execute`) then `lookupGreetingName`. The
+  token is off the critical path: the first focus or keystroke in the e-mail field
+  calls `warm()`, which runs one challenge and caches the token in a one-slot pool
+  (`turnstile-token-source.ts`). `getToken()` takes it (never handed out twice),
+  resets the widget and immediately starts the next challenge, so a corrected
+  address is fast too. The widget's expired-callback drops a cached token; a newer
+  `getToken()` supersedes an older waiting one; a cold call waits at most ~5s for
+  a token, then null. The 250ms debounce (ADR-0031) and the server's 500ms floor
+  are unchanged. Same e-mail after Terug keeps the name, no
   re-query; a different one collapses the old name first, then looks up. Stale
   responses are dropped; null or a throw keeps the plain greeting, no error UI.
   No site key = no script, null token.
