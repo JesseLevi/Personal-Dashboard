@@ -211,7 +211,7 @@ select is_empty(
 -- ============================================================================
 set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-423000006006", "role": "authenticated"}';
 select lives_ok(
-  $$ select count(*) from generate_series(1, 30) g, lateral public.search_members('bakker') $$,
+  $$ select count(*) from generate_series(1, 30) g, lateral public.search_members(case when g > 0 then 'bakker' end) $$,
   'thirty searches within the window run'
 );
 select throws_ok(
