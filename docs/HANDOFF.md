@@ -2,7 +2,7 @@
 
 State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace stale bullets; never append history. Ticket status lives on the board, rules in `CLAUDE.md` and the guides, and the system in `Architecture.md`.
 
-## State (2026-10-11)
+## State (2026-10-12)
 
 - Atlas is in production use by real accounts. Phases 0–6 are done: account, Te doen, Recepten (incl. URL import and nutrition), Winkelmand, Notities (full editor round, images, note links).
 - Open PR **#411** (#407, login greeting, ADR-0031). Before it works on production it needs:
@@ -17,11 +17,21 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
   - design notes condensed to contracts;
   - `phase-log.md` replaced by `docs/operations.md`.
 
-## Next: Delen, fase 1, Winkelmand (epic #420, ADR-0035)
+## Delen, fase 1 (epic #420, ADR-0035): built, not live
 
-Figma `4233:17988`. Order: #422 `shopping_lists` → #423 `shares` + role functions + member RPCs → #424 basket switcher/panel (parallel #425 `Avatar`/`AvatarGroup`, then #434 profile photo) → #426 invite (owner) → #427 accept/decline + member view → #428 refresh shared basket → #429 recipe → basket popover. Each migration needs the user's go before hosted.
+All tickets (#421–#429, #434) are merged on `main`; the user reviews and closes them. Before a `main` build with this code is promoted:
+1. Apply on hosted, in order, each with the user's explicit go (ADR-0032). All three are additive:
+   - `20261012000001_shopping_lists.sql` (#422);
+   - `20261012000002_shares.sql` (#423);
+   - `20261012000003_profile_avatar_path.sql` (#434).
+2. Test end to end with two accounts (steps in PRs #440, #441, #442): invite, accept, both see items, tick-off visible within ~15 s, leave, revoke, delete. Also create/rename/delete a basket and the recipe → basket popover.
 
-## After that: Phase 7, Agenda (#33)
+Follow-ups:
+- A later migration drops `profiles.avatar_url` once #434's code is live (destructive: the user runs it).
+- Open product question: a member sees the owner's unnamed default basket as "Mijn mand", next to their own.
+- HEIC upload fails cleanly when `sharp` lacks a HEVC decoder.
+
+## Next: Phase 7, Agenda (#33)
 
 1. **ADR: runtime for scheduled work.** Calendar sync is the first feature that needs it (`Architecture.md` §6, open decision 1).
    - Weigh a lazy "sync when stale" on Agenda load via `after()` (ADR-0017/0019 style, no infrastructure) against Vercel Cron and Supabase Cron.
