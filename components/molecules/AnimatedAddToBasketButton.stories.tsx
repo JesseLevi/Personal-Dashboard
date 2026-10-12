@@ -72,3 +72,52 @@ export const AddFails = () => (
     onAddToBasket={fails}
   />
 );
+
+// #429: more than one basket -> the click opens a basket popover first. Not
+// designed in Figma: existing Dropdown + Buttons, icons User / Users.
+const twoBaskets = [
+  { id: "own", name: nl.shopping.lists.defaultName, shared: false },
+  { id: "samen", name: "Gezin", shared: true },
+];
+const threeBaskets = [...twoBaskets, { id: "sam", name: "Feestje van Sam", shared: true }];
+
+// Room below the trigger so the portalled popover is captured by the screenshot.
+const popoverFrame = "flex min-h-72 items-start justify-end";
+
+export const BasketPopoverTwo = () => (
+  <div className={popoverFrame}>
+    <AnimatedAddToBasketButton
+      label={nl.components.recipeDetailPage.addToBasketLabel}
+      addedLabel={nl.components.recipeDetailPage.addedToBasketLabel}
+      chooseBasketLabel={nl.components.recipeDetailPage.chooseBasketLabel}
+      baskets={twoBaskets}
+      defaultChoosing
+      onAddToBasket={succeeds}
+    />
+  </div>
+);
+
+export const BasketPopoverThree = () => (
+  <div className={popoverFrame}>
+    <AnimatedAddToBasketButton
+      label={nl.components.recipeDetailPage.addToBasketLabel}
+      addedLabel={nl.components.recipeDetailPage.addedToBasketLabel}
+      chooseBasketLabel={nl.components.recipeDetailPage.chooseBasketLabel}
+      baskets={threeBaskets}
+      defaultChoosing
+      onAddToBasket={succeeds}
+    />
+  </div>
+);
+
+export const BasketPopoverIconOnly = () => (
+  <div className={popoverFrame}>
+    <AnimatedAddToBasketButton
+      aria-label={nl.components.cardContentIngredient.addToCartLabel}
+      chooseBasketLabel={nl.components.recipeDetailPage.chooseBasketLabel}
+      baskets={threeBaskets}
+      defaultChoosing
+      onAddToBasket={succeeds}
+    />
+  </div>
+);

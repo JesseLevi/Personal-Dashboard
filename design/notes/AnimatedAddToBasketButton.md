@@ -12,13 +12,14 @@ Composes `Button` (stays a presentational Server Component) with its own click a
 - Press-scale uses `transition-all!` (important modifier, as `ButtonToggle.tsx` does) because `Button`'s base `transition-colors` and a second `transition-*` utility both set the non-additive `transition-property`, and the winner would depend on Tailwind's emission order. Paired with `motion-reduce:transition-none!` and `motion-reduce:active:scale-100` (#179).
 - The "Added" state lasts 2s (`REVERT_MS`), then reverts. Not from Figma (the annotation gives the transition, not its lifetime); a code-side pick. One `setTimeout`, cleared and re-armed on every click and cleared on unmount (#179).
 - The animation plays only on a successful result. `onAddToBasket` returns `Promise<ActionResult>`; `lib/ui/add-to-basket.ts#playsAddedFace` awaits it and the Added face plays only on `success: true`. A failure leaves the button at rest, with no error UI because none is designed. While pending the button stays on its rest face (no spinner), so a success has one server round-trip of delay before the slide. Clicks while a call is in flight are ignored via a ref guard so a double-click cannot insert twice. The decision lives in a pure helper because the repo has no DOM test stack (`tests/add-to-basket.test.ts`) (#290).
+- Basket popover (#429, not in Figma): `baskets` with more than one entry turns the click into a toggle for a labelless `Dropdown` of white `Button`s, one per basket, icon `Users` when shared, else `User`. The animation runs only after a choice and the send, with the id passed as `onAddToBasket(listId)`. Zero or one basket: unchanged, `onAddToBasket()` without argument. The popover is portalled to `body` with `usePopoverPosition` `strategy: "fixed"`, because the icon-only button sits in `CardContentIngredient`'s `overflow-hidden` swipe row. A pointer down outside trigger and popover closes it (as Sorteer). Choosing hands focus back to the trigger so the swipe row stays open. `defaultChoosing` is story-only.
 
 ## Token gaps and flags
 - `Face` `gap-inline-sm`: read via `boundVariables` on `4051:12960` (`spacing/inline/gap-sm`), matching `Button`'s own "Leading + Text" binding. A few sibling frames in the animation set show no binding, an artifact of per-frame duplication, not a real divergence (#205).
 
 ## Gotchas
 - Icon-only mode's `aria-label` stays constant across the animation; a screen-reader user gets no "item added" announcement. An `aria-live` region would be the real fix, not built.
-- Ladle stories (`Labelled`, `IconOnly`, `NlCatalog`, `Disabled`, `AddSucceeds`, `AddFails`) render the resting frame only; the live transition and the failure path are not captured by the static visual baseline.
+- Ladle stories (`Labelled`, `IconOnly`, `NlCatalog`, `Disabled`, `AddSucceeds`, `AddFails`) render the resting frame only; `BasketPopoverTwo`, `BasketPopoverThree` and `BasketPopoverIconOnly` capture the open popover; the live transition and the failure path are not captured by the static visual baseline.
 
 ## Open
 - `docs/open-questions.md#winkelmand-send-no-success-feedback`

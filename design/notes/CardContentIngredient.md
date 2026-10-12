@@ -23,6 +23,7 @@ Row: name (`text-base font-semibold text-text-primary`), optional neutral `Tag` 
 - Tag does not wrap under a long name: the Tag has `shrink-0` and the name `<p>` has `min-w-0`, so the name wraps instead. Fixed here, not in `Atom/Tag`, because other Tag consumers stack the Tag below the text and never share a horizontal flex row. Story `LongNameWrap`. (#222)
 - Longhand padding (`pl-`, `pr-`, `py-`), never `px-*`: the shorthand emits `padding-inline`, a different declaration from `padding-right`, so the open state's `pr-component-lg` override could lose on utility emission order.
 - Delete/Trash footprint archaeology: `design/notes/Button.md` (#75). The Checkbox and Button atoms carry `shrink-0` themselves (#80), so no protection is needed here.
+- `baskets` / `chooseBasketLabel` pass through to the cart button: with more than one basket it opens a basket popover first (`AnimatedAddToBasketButton.md`, #429). `onAddToCart` then receives the chosen `listId`.
 
 ## Token gaps and flags
 - Tokens measured via `boundVariables` across every state: row gap 20px -> `gap-inline-xl` (`spacing/inline/gap-xl`); padding 12px -> `*-component-md` (`spacing/component/padding-md`); swiped-open right padding 16px -> `pr-component-lg` (Active binds `padding-lg` on `paddingRight` only); radius 24px -> `rounded-container` (`radius/container`, byte-identical to the old `rounded-3xl`). The static Default sample has no radius; the code applies `rounded-container` to every branch regardless. (#205)

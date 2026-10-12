@@ -5,6 +5,7 @@ import {
 } from "@/lib/recipes/queries";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import { presignRecipeThumbnails } from "@/lib/recipes/thumbnails";
+import { getRecipeBaskets } from "@/lib/shopping/queries";
 import { RecipeDetailPage } from "./RecipeDetailPage";
 
 // #127: recipe detail route — Figma "Recept/Mobile" (3778:5427) / "Recept/
@@ -25,9 +26,10 @@ export default async function RecipeDetailRoute({
   params: Promise<{ recipeId: string }>;
 }) {
   const { recipeId } = await params;
-  const [recipe, categories] = await Promise.all([
+  const [recipe, categories, baskets] = await Promise.all([
     getRecipeWithIngredientsAndSteps(recipeId),
     getRecipeCategoriesWithRecipes(),
+    getRecipeBaskets(),
   ]);
 
   if (!recipe) notFound();
@@ -43,6 +45,7 @@ export default async function RecipeDetailRoute({
       recipe={recipe}
       categories={categories}
       thumbnailUrl={thumbnails[recipe.id] ?? null}
+      baskets={baskets}
     />
   );
 }
