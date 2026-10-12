@@ -26,7 +26,7 @@ CI enforces much of this (`pnpm check:*`); the rest is on you.
   - The browser talks only to Atlas, and RLS decides access (ADR-0033).
   - `service_role` never runs on a user's request path.
   - A new table ships with `user_id`, RLS, grants and a pgTAP test in the same PR.
-  - Keep access logic in policies, so sharing between members can come later as a policy change (ADR-0001).
+  - Keep access logic in policies; sharing extends them through role functions, never app-side checks (ADR-0035).
 - **Hosted is production, and every hosted write needs the user's explicit go, per action.** That covers migrations, `deploy.yml`, dashboard settings and role grants. Committing a migration does not apply it (ADR-0032).
 - **UI** (ADR-0034):
   - Design it in code from existing components and semantic tokens.

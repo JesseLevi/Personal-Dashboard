@@ -1,6 +1,6 @@
 # ADR-0001: user_id-only data ownership (no household scoping yet)
 
-**Status**: Accepted (user decision, 2026-07-20). Still in force. **Direction (2026-10-11, #412):** Atlas is for friends and family, and sharing is a stated future need: shared boards, recipe collections and shopping lists, and sharing a single recipe with another member. A sharing-model ADR will supersede this one when that work starts. Until then, see "Staying sharing-ready" below.
+**Status**: Superseded by ADR-0035 (2026-10-12, #421). `user_id` as owner and the "staying sharing-ready" rules below live on in ADR-0035.
 
 ## Context
 
