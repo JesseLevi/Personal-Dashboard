@@ -19,3 +19,15 @@ export function memberFullName(
     .join(" ");
   return full === "" ? fallback : full;
 }
+
+/** AvatarGroup input in the given order (callers put the owner first); `src` only when there is a photo. */
+export function toAvatarGroupMembers(
+  people: ReadonlyArray<MemberProfile>,
+  fallbackName: string,
+): { id: string; name: string; src: string | null }[] {
+  return people.map((person) => ({
+    id: person.id,
+    name: memberFullName(person, fallbackName),
+    src: memberAvatarSrc(person),
+  }));
+}

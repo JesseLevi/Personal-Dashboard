@@ -35,6 +35,7 @@
     "BoardView": { "path": "components/organisms/BoardView.tsx", "nodeId": "3680:1442" },
     "IngredientSearchPanel": { "path": "components/organisms/IngredientSearchPanel.tsx", "nodeId": "3957:10337" },
     "MemberSearchPanel": { "path": "components/organisms/MemberSearchPanel.tsx", "nodeId": "4231:16811" },
+    "ShareInviteBanner": { "path": "components/organisms/ShareInviteBanner.tsx", "nodeId": "4233:17679" },
     "StepIngredientPanel": { "path": "components/organisms/StepIngredientPanel.tsx", "nodeId": "3749:3241" },
     "EditingBar": { "path": "components/organisms/EditingBar.tsx", "nodeId": "3978:14138" }
   },

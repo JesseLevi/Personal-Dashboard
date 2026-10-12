@@ -20,7 +20,7 @@ import {
   toggleShoppingListItemSchema,
 } from "@/lib/shopping/schemas";
 import type { ActionResult, ShoppingListItemRow, ShoppingListRow } from "@/lib/shopping/types";
-import { inviteMember, revokeShare, searchMembers } from "@/lib/sharing/actions";
+import { acceptShare, declineShare, inviteMember, leaveShare, revokeShare, searchMembers } from "@/lib/sharing/actions";
 import type { Database } from "@/lib/database.types";
 
 // Write side of #176 -- Winkelmand item CRUD, called from the Winkelmand UI
@@ -456,4 +456,25 @@ export async function inviteShareMember(input: unknown) {
 
 export async function revokeShareMember(input: unknown) {
   return revokeShare(input);
+}
+
+// #427: the invitee side. Accept and decline revalidate (the baskets, the
+// pending invites and the items all change); leaving does not, like
+// deleteShoppingList: the page being viewed is the one that disappears, so the
+// caller navigates away first.
+
+export async function acceptShareInvite(input: unknown) {
+  const result = await acceptShare(input);
+  if (result.success) revalidatePath("/winkelmand", "layout");
+  return result;
+}
+
+export async function declineShareInvite(input: unknown) {
+  const result = await declineShare(input);
+  if (result.success) revalidatePath("/winkelmand", "layout");
+  return result;
+}
+
+export async function leaveSharedList(input: unknown) {
+  return leaveShare(input);
 }

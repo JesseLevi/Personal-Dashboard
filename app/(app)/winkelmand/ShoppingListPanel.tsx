@@ -33,6 +33,8 @@ export interface ShoppingListOption {
   isDefault: boolean;
   /** Only the owner can share (and unshare) a basket; members never see the field. */
   isOwner: boolean;
+  /** At least one accepted share, or the caller is not the owner (shows `Users` in the switcher). */
+  shared: boolean;
 }
 
 export type ShoppingListPanelTarget =
@@ -50,12 +52,16 @@ export interface ShoppingListPanelProps {
   onSearchMembers: (input: unknown) => Promise<SharingActionResult<MemberSearchResult[]>>;
   onInviteMember: (input: unknown) => Promise<SharingActionResult>;
   onRevokeShare: (input: unknown) => Promise<SharingActionResult>;
+  /** A member leaves the basket (`leaveShare`). */
+  onLeaveList: (input: unknown) => Promise<SharingActionResult>;
+  /** The basket owner, shown read-only to a member. */
+  owner?: MemberProfile | null;
   /** The owner's current share on the basket being edited (v1: one member). Null/omitted = not shared. */
   share?: ListShare | null;
   /** Fired after a successful create with the new basket (the caller navigates to it). */
   onCreated: (list: ShoppingListRow) => void;
   onRenamed: () => void;
-  /** Fired after a successful delete (the caller navigates to the default basket). */
+  /** Fired after a successful delete or leave (the caller navigates to the default basket). */
   onDeleted: () => void;
 }
 
@@ -69,6 +75,8 @@ export function ShoppingListPanel({
   onSearchMembers,
   onInviteMember,
   onRevokeShare,
+  onLeaveList,
+  owner = null,
   share = null,
   onCreated,
   onRenamed,
@@ -169,8 +177,25 @@ export function ShoppingListPanel({
     });
   }
 
+  function handleLeave() {
+    if (!list) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await onLeaveList({ resource: "shopping_list", id: list.id });
+      if (!result.success) {
+        setError(tSharingErrors(result.error));
+        cancelDelete();
+        return;
+      }
+      onDeleted();
+      onClose();
+    });
+  }
+
+  // A member manages nothing: name read-only, "Verlaat mand" instead of delete.
+  const isMember = target.mode === "edit" && !target.list.isOwner;
   // Delete is hidden for the default basket (it cannot be deleted, ADR-0035).
-  const canDelete = target.mode === "edit" && !target.list.isDefault;
+  const canDelete = target.mode === "edit" && target.list.isOwner && !target.list.isDefault;
   // Sharing needs an existing basket, so only the edit panel of an owned one.
   const canShare = target.mode === "edit" && target.list.isOwner;
   // A person picked in this panel is always a fresh (pending) invite; the
@@ -178,8 +203,26 @@ export function ShoppingListPanel({
   const pending = member !== null && (member.id !== share?.member.id || share.status === "pending");
   const memberName = member ? memberFullName(member, tMember("unnamedLabel")) : "";
 
-  const footer =
-    canDelete && deleteConfirming ? (
+  const footer = isMember ? (
+    deleteConfirming ? (
+      <DeleteConfirm
+        layout="stacked"
+        isPending={isPending}
+        onCancel={cancelDelete}
+        onConfirm={handleLeave}
+        labels={{
+          prompt: t("leaveConfirmLabel"),
+          cancel: t("cancelLabel"),
+          confirm: t("leaveConfirmButtonLabel"),
+          deleting: t("leavingLabel"),
+        }}
+      />
+    ) : (
+      <Button variant="destructive" icon="LogOut" className="w-full" onClick={() => askDelete()} disabled={isPending}>
+        {t("leaveLabel")}
+      </Button>
+    )
+  ) : canDelete && deleteConfirming ? (
       <DeleteConfirm
         layout="stacked"
         isPending={isPending}
@@ -231,8 +274,18 @@ export function ShoppingListPanel({
         id="shopping-list-panel-name"
         value={name}
         onChange={(event) => setName(event.target.value)}
+        readOnly={isMember}
         required
       />
+      {isMember && (
+        <InputField
+          label={t("ownerLabel")}
+          id="shopping-list-panel-owner"
+          readOnly
+          leadingIcon="User"
+          value={owner ? memberFullName(owner, tMember("unnamedLabel")) : ""}
+        />
+      )}
       {canShare && (
         <>
           {/* Read-only field that opens the member search; the trailing X

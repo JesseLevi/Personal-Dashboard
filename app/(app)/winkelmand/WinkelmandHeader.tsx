@@ -139,8 +139,7 @@ export function WinkelmandHeader({
                 {lists.map((list) => (
                   <Button
                     key={list.id}
-                    // Personal baskets only until the sharing ticket adds the `Users` icon.
-                    icon="User"
+                    icon={list.shared ? "Users" : "User"}
                     variant={list.id === currentListId ? "filled" : "white"}
                     align="left"
                     onClick={() => {
