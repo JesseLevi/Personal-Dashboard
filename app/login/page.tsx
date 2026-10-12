@@ -1,5 +1,7 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Image from "next/image";
+import { shouldRedirectAuthenticated } from "@/lib/auth/login-redirect";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
 import { LoginFormClient } from "./LoginFormClient";
 import { lookupGreetingName } from "./greeting-action";
@@ -17,7 +19,10 @@ export default async function LoginPage() {
   // #168: cache()'d helper instead of a direct supabase.auth.getUser() call
   // — see lib/boards/session.ts.
   const userId = await getAuthenticatedUserId();
-  if (userId) redirect("/te-doen");
+  // A login action re-renders this route with the fresh session; LoginForm must stay
+  // mounted to play its exit animation and navigate itself (lib/auth/login-redirect.ts).
+  const isServerAction = (await headers()).has("next-action");
+  if (shouldRedirectAuthenticated({ userId, isServerAction })) redirect("/te-doen");
 
   // Server-side env, never NEXT_PUBLIC_ (ADR-0031).
   const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY || null;
