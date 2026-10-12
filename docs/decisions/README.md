@@ -23,7 +23,8 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 
 | ADR | Decides | Status |
 | --- | --- | --- |
-| [0001](0001-user-scoped-data-ownership.md) | `user_id` ownership + RLS on every table; sharing is a future ADR, stay sharing-ready | Accepted |
+| [0035](0035-sharing-model.md) | Sharing per container via one `shares` table; access in policies through `private.<type>_role()`; member search by name | Accepted |
+| [0001](0001-user-scoped-data-ownership.md) | `user_id` ownership + RLS on every table | Superseded by 0035 |
 | [0002](0002-secrets-in-vault-server-only-access.md) | Per-user credentials in Vault, decrypted server-side only | Accepted |
 | [0005](0005-source-field-now.md) | `source` column on `cards` and `calendar_events` | Accepted |
 | [0015](0015-move-rpcs-atomic-drag-persistence.md) | Multi-statement writes as `security invoker` RPCs with an ownership guard | Accepted |
