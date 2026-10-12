@@ -95,7 +95,7 @@ export function LoginForm({
   const lookedUpEmail = useRef<string | null>(null);
   const greetingShown = useRef(Boolean(initialGreetingName));
   const debounceTimer = useRef<number | null>(null);
-  const { containerRef: turnstileRef, getToken } = useTurnstile(turnstileSiteKey);
+  const { containerRef: turnstileRef, getToken, warm: warmTurnstile } = useTurnstile(turnstileSiteKey);
 
   const [step, setStep] = useState<"email" | "password">(initialStep);
   const [email, setEmail] = useState("");
@@ -176,6 +176,7 @@ export function LoginForm({
   // typo is corrected. Autofill fires onChange too. Dedupe lives in startGreetingLookup.
   function handleEmailChange(event: ChangeEvent<HTMLInputElement>) {
     clearDebounce();
+    warmTurnstile();
     const address = parseGreetingAddress(event.target.value);
     if (address === null) return;
     debounceTimer.current = window.setTimeout(() => {
@@ -189,7 +190,8 @@ export function LoginForm({
     if (address !== null) void startGreetingLookup(address);
   }
 
-  // Runs beside the step slide, never delaying it. Same e-mail as the last
+  // The Turnstile token is pre-fetched on focus or the first keystroke (useTurnstile),
+  // so getToken() below normally resolves at once. Runs beside the step slide, never delaying it. Same e-mail as the last
   // lookup keeps the name and skips the query; a different one collapses the
   // old name first. Stale responses (older seq) are dropped; null/throw = plain greeting.
   async function startGreetingLookup(address: string) {
@@ -260,6 +262,7 @@ export function LoginForm({
                 type="email"
                 placeholder={t("emailPlaceholder")}
                 autoComplete="email"
+                onFocus={warmTurnstile}
                 onChange={handleEmailChange}
                 onBlur={handleEmailBlur}
                 aria-invalid={emailError ? true : undefined}
@@ -385,8 +388,8 @@ function ErrorLine({ id, message }: { id: string; message: string | null }) {
 }
 
 // Three inline parts in a centered row: Hey | name | tail. The name part opens
-// from 0 width (grid 0fr -> 1fr), so the centered row pushes the outer parts
-// apart. The visual row is aria-hidden; the sr-only sentence is the h1's
+// from 0 width (grid 0fr -> 1fr) and reveals from its own centre, so the
+// centered row pushes the outer parts apart. The visual row is aria-hidden; the sr-only sentence is the h1's
 // accessible name. A long name truncates (min-w-0 + ellipsis) so the row never
 // exceeds its column. Record: design/notes/LoginForm.md.
 function GreetingHeading({
@@ -408,10 +411,18 @@ function GreetingHeading({
   // Blur the name in or out only on a change, never on first paint.
   const [wasShown, setWasShown] = useState(shown);
   const [nameMotion, setNameMotion] = useState<"in" | "out" | null>(null);
+  // While the name opens or closes it is clipped from its centre; at rest it truncates with an ellipsis.
+  const [settled, setSettled] = useState(true);
   if (shown !== wasShown) {
     setWasShown(shown);
     setNameMotion(shown ? "in" : "out");
+    setSettled(false);
   }
+  useEffect(() => {
+    if (settled) return;
+    const id = window.setTimeout(() => setSettled(true), GREETING_COLLAPSE_MS + 50);
+    return () => window.clearTimeout(id);
+  }, [settled, shown]);
   return (
     <h1 className={cn("max-w-full text-xl font-semibold text-text-primary", className)}>
       <span className="sr-only">{srText}</span>
@@ -425,12 +436,12 @@ function GreetingHeading({
         >
           <span
             className={cn(
-              "overflow-hidden text-ellipsis whitespace-pre",
+              "flex min-w-0 justify-center overflow-hidden whitespace-pre",
               nameMotion === "in" && "animate-blur-in",
               nameMotion === "out" && "animate-blur-out",
             )}
           >
-            {` ${name}`}
+            <span className={cn(settled ? "min-w-0 overflow-hidden text-ellipsis" : "shrink-0")}>{` ${name}`}</span>
           </span>
         </span>
         <span className="shrink-0 whitespace-nowrap">{tail}</span>
