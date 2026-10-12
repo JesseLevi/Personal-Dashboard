@@ -1,6 +1,7 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
+import { getDefaultShoppingListId } from "@/lib/shopping/lists";
 import type { ShoppingListItemWithGroupInfo } from "@/lib/shopping/types";
 
 // Read side of #176 (mirrors lib/recipes/queries.ts's
@@ -70,28 +71,30 @@ function distinctNonNull(values: (string | null | undefined)[]): string[] {
 }
 
 /**
- * Every shopping_list_items row belonging to the signed-in user, ordered by
- * `position`, plus the source recipe's title and the linked
- * reference.ingredients row's bilingual food-group name -- two extra
- * batched queries total (see `titlesByRecipeId`/
- * `categoriesByReferenceIngredientId` above), never one per row or group.
- * Feeds `WinkelmandList.tsx`'s (#179) Recept/Voedingsgroep grouping. Empty
- * array if signed out, same "no session, nothing to return" convention as
- * lib/recipes/queries.ts.
+ * Every item of one basket (`listId`, default: the signed-in user's default
+ * basket), ordered by `position` then `created_at`, plus the source recipe's
+ * title and the linked reference.ingredients row's bilingual food-group name
+ * -- two extra batched queries total, never one per row or group. RLS decides
+ * whether the list is readable. Feeds `WinkelmandList.tsx`'s (#179)
+ * Recept/Voedingsgroep grouping. Empty array if signed out or the default
+ * basket does not exist yet.
  */
-export async function getShoppingListItems(): Promise<ShoppingListItemWithGroupInfo[]> {
+export async function getShoppingListItems(
+  listId?: string,
+): Promise<ShoppingListItemWithGroupInfo[]> {
   const supabase = await createSupabaseServerClient();
   const userId = await getAuthenticatedUserId();
   if (!userId) return [];
 
+  const resolvedListId = listId ?? (await getDefaultShoppingListId(supabase, userId));
+  if (!resolvedListId) return [];
+
   const { data, error } = await supabase
     .from("shopping_list_items")
     .select("*")
-    // Explicit ownership filter alongside RLS -- see the module comment on
-    // lib/recipes/queries.ts's own getRecipeCategoriesWithRecipes for why
-    // this isn't redundant with RLS.
-    .eq("user_id", userId)
-    .order("position", { ascending: true });
+    .eq("list_id", resolvedListId)
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true });
 
   if (error) {
     console.error("[shopping] getShoppingListItems failed:", error.code, error.message);

@@ -7,6 +7,10 @@ import { isUnitCode } from "@/lib/recipes/units";
 
 const name = z.string().trim().min(1).max(200);
 
+// Optional everywhere: omitted means the user's default basket. Access to an
+// explicit list is decided by RLS (ADR-0035), not by this schema.
+const listId = z.uuid().optional();
+
 // shopping_list_items.unit is nullable public.recipe_unit (#175, reused
 // from #130) -- validated through isUnitCode's canonical UNIT_CODES list
 // (#120), never a fresh, hand-copied literal list. Nullable because a
@@ -28,6 +32,7 @@ const quantity = z.number().positive().nullable();
 const section = z.string().trim().min(1).max(100).nullable();
 
 export const addShoppingListItemSchema = z.object({
+  listId,
   name,
   quantity: quantity.optional().default(null),
   unit: unit.optional().default(null),
@@ -48,6 +53,7 @@ export const deleteShoppingListItemSchema = z.object({
 // (`z.int().positive()`, lib/recipes/schemas.ts) -- the same "portion count"
 // concept, just supplied by the caller at send time instead of stored.
 export const sendRecipeToShoppingListSchema = z.object({
+  listId,
   recipeId: z.uuid(),
   targetPortions: z.int().positive(),
 });
@@ -56,7 +62,10 @@ export const sendRecipeToShoppingListSchema = z.object({
 // sendRecipeToShoppingListSchema plus which of the recipe's own
 // recipe_ingredients rows to send (a real FK to that table, not free text).
 export const addIngredientToShoppingListSchema = z.object({
+  listId,
   recipeId: z.uuid(),
   ingredientId: z.uuid(),
   targetPortions: z.int().positive(),
 });
+
+export const clearShoppingListSchema = z.object({ listId }).default({});

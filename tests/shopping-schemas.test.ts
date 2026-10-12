@@ -2,12 +2,27 @@ import { describe, expect, it } from "vitest";
 import {
   addIngredientToShoppingListSchema,
   addShoppingListItemSchema,
+  clearShoppingListSchema,
   deleteShoppingListItemSchema,
   toggleShoppingListItemSchema,
 } from "../lib/shopping/schemas";
 import { UNIT_CODES } from "../lib/recipes/units";
 
 const uuid = "123e4567-e89b-12d3-a456-426614174000";
+
+describe("listId (#422)", () => {
+  it("is optional and must be a uuid when given", () => {
+    expect(addShoppingListItemSchema.safeParse({ name: "Melk" }).success).toBe(true);
+    expect(addShoppingListItemSchema.safeParse({ name: "Melk", listId: uuid }).success).toBe(true);
+    expect(addShoppingListItemSchema.safeParse({ name: "Melk", listId: "nope" }).success).toBe(false);
+  });
+
+  it("clearShoppingListSchema accepts no input and rejects a bad listId", () => {
+    expect(clearShoppingListSchema.safeParse(undefined).success).toBe(true);
+    expect(clearShoppingListSchema.safeParse({ listId: uuid }).success).toBe(true);
+    expect(clearShoppingListSchema.safeParse({ listId: "nope" }).success).toBe(false);
+  });
+});
 
 describe("addShoppingListItemSchema", () => {
   it("accepts the minimal shape (name only)", () => {
