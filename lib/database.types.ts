@@ -718,6 +718,47 @@ export type Database = {
           },
         ]
       }
+      shares: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+          responded_at: string | null
+          role: string
+          shopping_list_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+          responded_at?: string | null
+          role?: string
+          shopping_list_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+          responded_at?: string | null
+          role?: string
+          shopping_list_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shares_shopping_list_id_fkey"
+            columns: ["shopping_list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shopping_list_items: {
         Row: {
           checked: boolean
@@ -878,6 +919,16 @@ export type Database = {
           source: string
         }[]
       }
+      member_profiles: {
+        Args: { p_ids: string[] }
+        Returns: {
+          display_name: string
+          has_avatar: boolean
+          id: string
+          last_name: string
+          updated_at: string
+        }[]
+      }
       move_card: {
         Args: { p_card_id: string; p_column_id: string; p_target_index: number }
         Returns: number
@@ -898,6 +949,21 @@ export type Database = {
         }
         Returns: number
       }
+      pending_share_invites: {
+        Args: never
+        Returns: {
+          invited_at: string
+          inviter_display_name: string
+          inviter_has_avatar: boolean
+          inviter_id: string
+          inviter_last_name: string
+          inviter_updated_at: string
+          resource_id: string
+          resource_name: string
+          resource_type: string
+          share_id: string
+        }[]
+      }
       replace_recipe_contents: {
         Args: { p_ingredients: Json; p_recipe_id: string; p_steps: Json }
         Returns: undefined
@@ -911,6 +977,17 @@ export type Database = {
           p_title: string
         }
         Returns: undefined
+      }
+      search_members: {
+        Args: { p_query: string }
+        Returns: {
+          display_name: string
+          email: string
+          has_avatar: boolean
+          id: string
+          last_name: string
+          updated_at: string
+        }[]
       }
       seed_board_for: { Args: { p_user_id: string }; Returns: undefined }
       seed_keys: { Args: never; Returns: string[] }

@@ -59,8 +59,8 @@ select ok(
 );
 select ok(
   not has_schema_privilege('anon', 'private', 'USAGE')
-  and not has_schema_privilege('authenticated', 'private', 'USAGE'),
-  'anon and authenticated have no usage on schema private'
+  and has_schema_privilege('authenticated', 'private', 'USAGE'),
+  'anon has no usage on schema private; authenticated has it for the policy functions (#423)'
 );
 
 set local role anon;
