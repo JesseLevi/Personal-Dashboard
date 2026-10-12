@@ -3,8 +3,8 @@ import { WinkelmandHeader } from "./WinkelmandHeader";
 import type { ShoppingListOption } from "./ShoppingListPanel";
 
 const lists: ShoppingListOption[] = [
-  { id: "list-1", name: "Mijn mand", isDefault: true },
-  { id: "list-2", name: "Gedeelde mand", isDefault: false },
+  { id: "list-1", name: "Mijn mand", isDefault: true, isOwner: true },
+  { id: "list-2", name: "Gedeelde mand", isDefault: false, isOwner: true },
 ];
 
 const noop = () => {};

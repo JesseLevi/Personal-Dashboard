@@ -20,6 +20,7 @@ import {
   toggleShoppingListItemSchema,
 } from "@/lib/shopping/schemas";
 import type { ActionResult, ShoppingListItemRow, ShoppingListRow } from "@/lib/shopping/types";
+import { inviteMember, revokeShare, searchMembers } from "@/lib/sharing/actions";
 import type { Database } from "@/lib/database.types";
 
 // Write side of #176 -- Winkelmand item CRUD, called from the Winkelmand UI
@@ -437,4 +438,22 @@ export async function deleteShoppingList(input: unknown): Promise<ActionResult> 
   // basket, and re-rendering it would flash a 404 before the caller's own
   // navigation to the default basket lands (which renders fresh).
   return { success: true, data: undefined };
+}
+
+// #426: thin wrappers so the (client) basket panel can reach the sharing
+// operations in lib/sharing/actions.ts, which is a plain server-only module
+// and not itself a Server Action endpoint. They validate and authorise there
+// (zod + the anon-key client, RLS decides); nothing is added here. No
+// revalidatePath: the panel's caller refreshes the route after saving.
+
+export async function searchShareMembers(input: unknown) {
+  return searchMembers(input);
+}
+
+export async function inviteShareMember(input: unknown) {
+  return inviteMember(input);
+}
+
+export async function revokeShareMember(input: unknown) {
+  return revokeShare(input);
 }

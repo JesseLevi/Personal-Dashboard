@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { z } from "zod";
 import { getShoppingListItems, getShoppingLists } from "@/lib/shopping/queries";
+import { getAuthenticatedUserId } from "@/lib/recipes/session";
+import { getShoppingListShare } from "@/lib/sharing/queries";
 import { WinkelmandList, type WinkelmandListOption } from "../WinkelmandList";
 
 // #177: Winkelmand page UI, on top of #175/#176's schema + data layer. Same
@@ -34,12 +36,19 @@ export default async function WinkelmandListPage({
   const lists = await getShoppingLists();
   if (!lists.some((row) => row.id === listId)) notFound();
 
-  const items = await getShoppingListItems(listId);
+  // Only the owner sees and edits the share (#426); RLS also hides it from members.
+  const userId = await getAuthenticatedUserId();
+  const isOwnerOfCurrent = lists.some((row) => row.id === listId && row.user_id === userId);
+  const [items, share] = await Promise.all([
+    getShoppingListItems(listId),
+    isOwnerOfCurrent ? getShoppingListShare(listId) : Promise.resolve(null),
+  ]);
   const options: WinkelmandListOption[] = lists.map((row) => ({
     id: row.id,
     name: row.name ?? t("shopping.lists.defaultName"),
     isDefault: row.is_default,
+    isOwner: row.user_id === userId,
   }));
 
-  return <WinkelmandList key={listId} listId={listId} lists={options} items={items} />;
+  return <WinkelmandList key={listId} listId={listId} lists={options} items={items} share={share} />;
 }
