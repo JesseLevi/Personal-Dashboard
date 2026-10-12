@@ -1,6 +1,7 @@
 // figma: node-id=3878:7959
 import { cn } from "@/lib/ui/cn";
 import type { ReactNode } from "react";
+import { PageHeaderTitle } from "./PageHeaderTitle";
 
 /**
  * Organism/PageHeader — the "Header" frame shared by every (app) page design
@@ -14,6 +15,8 @@ import type { ReactNode } from "react";
  */
 export interface PageHeaderProps {
   title: string;
+  /** Skeleton only: the title is a placeholder; keep showing the outgoing name of a board switch. */
+  titlePending?: boolean;
   /** Rendered next to the title (Te-Doen's board-switcher + favourite buttons). */
   titleAdornments?: ReactNode;
   /** Rendered at the far right (Te-Doen's sort button, Recepten's category button). */
@@ -21,7 +24,7 @@ export interface PageHeaderProps {
   className?: string;
 }
 
-export function PageHeader({ title, titleAdornments, actions, className }: PageHeaderProps) {
+export function PageHeader({ title, titlePending, titleAdornments, actions, className }: PageHeaderProps) {
   return (
     <header
       className={cn(
@@ -32,7 +35,7 @@ export function PageHeader({ title, titleAdornments, actions, className }: PageH
       )}
     >
       <div className="flex items-center gap-inline-lg">
-        <h1 className="text-xl font-semibold text-text-primary">{title}</h1>
+        <PageHeaderTitle title={title} pending={titlePending} />
         {titleAdornments}
       </div>
       {actions}

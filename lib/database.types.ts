@@ -419,6 +419,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_path: string | null
           avatar_url: string | null
           created_at: string
           display_name: string | null
@@ -428,6 +429,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_path?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
@@ -437,6 +439,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_path?: string | null
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
@@ -903,6 +906,7 @@ export type Database = {
         Args: { p_key: string; p_user_id: string }
         Returns: boolean
       }
+      avatar_path_for: { Args: { p_user_id: string }; Returns: string }
       ensure_user_defaults: { Args: never; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
       login_greeting_name: {

@@ -12,11 +12,18 @@ export type RedirectToStoredObjectOptions = {
   userId: string | null;
   /** Runs on the RLS-bound client; returns the key from the owning row, or null (-> 404). */
   ownerCheck: (userId: string) => Promise<string | null>;
+  /**
+   * Whose namespace the key must live in. Defaults to `userId`; set when the
+   * viewer may read another user's object (a shared member's avatar) and
+   * `ownerCheck` has already proven access.
+   */
+  keyOwnerId?: string;
 };
 
 export async function redirectToStoredObject({
   userId,
   ownerCheck,
+  keyOwnerId,
 }: RedirectToStoredObjectOptions): Promise<NextResponse> {
   if (!userId) return new NextResponse(null, { status: 401 });
 
@@ -27,7 +34,7 @@ export async function redirectToStoredObject({
     console.error("[storage] ownerCheck failed:", error instanceof Error ? error.message : error);
     return new NextResponse(null, { status: 404 });
   }
-  if (!key || !keyBelongsTo(userId, key)) return new NextResponse(null, { status: 404 });
+  if (!key || !keyBelongsTo(keyOwnerId ?? userId, key)) return new NextResponse(null, { status: 404 });
 
   const url = await getObjectStore().presignGet(key);
   return new NextResponse(null, {

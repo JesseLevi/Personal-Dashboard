@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/profile/session";
 import { updateNameSchema, updateLocaleSchema } from "@/lib/profile/schemas";
+import { clearAvatar, storeAvatar } from "@/lib/profile/avatar";
 import type { ActionResult } from "@/lib/profile/types";
 
 // Write side of #162 -- deliberately its own module with no page/component
@@ -77,4 +78,19 @@ export async function updateName(input: unknown): Promise<ActionResult> {
   revalidatePath("/", "layout");
 
   return { success: true, data: undefined };
+}
+
+// #434: profile photo. `formData` carries the picked image under "file"; the
+// server re-encodes it (the browser never talks to R2). The layout
+// revalidation refreshes the Sidebar avatar.
+export async function uploadAvatar(formData: FormData): Promise<ActionResult> {
+  const result = await storeAvatar(formData.get("file"));
+  if (result.success) revalidatePath("/", "layout");
+  return result;
+}
+
+export async function removeAvatar(): Promise<ActionResult> {
+  const result = await clearAvatar();
+  if (result.success) revalidatePath("/", "layout");
+  return result;
 }
