@@ -249,7 +249,7 @@ begin
 
   return query
   select p.id, p.display_name, p.last_name, p.avatar_url is not null, p.updated_at,
-         case when u.email = v_lower then u.email end
+         case when u.email = v_lower then u.email::text end
   from public.profiles p
   join auth.users u on u.id = p.id
   where p.id <> v_uid
