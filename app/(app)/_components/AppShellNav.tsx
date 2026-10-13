@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/atoms/Button";
 import { signOut } from "@/app/login/actions";
 import { isOutsideAllContainers } from "@/lib/dom/outside-pointer";
-import { blurInTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
+import { blurInTotalMs, blurOutTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 import { hasEnterFromLogin } from "@/lib/ui/login-enter";
 import type { Locale } from "@/lib/profile/types";
 import { SettingsPanel } from "./SettingsPanel";
@@ -59,6 +59,46 @@ function useChromeEnterFromLogin(): boolean {
     return () => window.clearTimeout(id);
   }, [entering, reduced]);
   return entering;
+}
+
+// Switching section (Te doen -> Recepten, ...) plays the board/basket switch motion on the whole
+// page: the current page blurs out, then the next one blurs in. Back/forward only get the blur-in;
+// a switch within a section (another board, basket or recipe) has its own motion or none.
+function usePageTransition(pathname: string, navigate: (href: string) => void) {
+  const reduced = usePrefersReducedMotion();
+  const section = activeItemForPath(pathname);
+  const [motion, setMotion] = useState<"in" | "out" | undefined>(undefined);
+  const shownSection = useRef(section);
+  const exitTimer = useRef<number | undefined>(undefined);
+
+  // Before paint, so the new page never shows un-hidden for a frame. Right after a login the
+  // page regions play their own blur-in (lib/ui/login-enter.ts), so the shell adds none.
+  useLayoutEffect(() => {
+    if (shownSection.current === section) return;
+    shownSection.current = section;
+    setMotion(hasEnterFromLogin() ? undefined : "in");
+  }, [section]);
+
+  // Dropped afterwards: the animation's fill keeps `filter`, a containing block for fixed children.
+  useEffect(() => {
+    if (motion !== "in") return;
+    const id = window.setTimeout(() => setMotion(undefined), blurInTotalMs(1, reduced) + 50);
+    return () => window.clearTimeout(id);
+  }, [motion, reduced]);
+
+  useEffect(() => () => window.clearTimeout(exitTimer.current), []);
+
+  function go(href: string) {
+    window.clearTimeout(exitTimer.current);
+    if (activeItemForPath(href) === section) {
+      navigate(href);
+      return;
+    }
+    setMotion("out");
+    exitTimer.current = window.setTimeout(() => navigate(href), blurOutTotalMs(1, reduced));
+  }
+
+  return { motion, go };
 }
 
 function getFocusable(root: HTMLElement | null): HTMLElement[] {
@@ -122,6 +162,7 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
   const router = useRouter();
   const t = useTranslations("components.sidebar");
   const chromeEntering = useChromeEnterFromLogin();
+  const page = usePageTransition(pathname, (href) => router.push(href));
 
   const labels: Record<SidebarItemId, string> = {
     todo: t("items.todo"),
@@ -143,7 +184,7 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
     const href = ROUTES[item];
     if (!href) return;
     setMobileOpen(false);
-    router.push(href);
+    page.go(href);
   }
 
   // #170: warms the Next.js router cache for a route before the click that
@@ -332,7 +373,16 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
           onClick={() => setMobileOpen(true)}
           className={cn("md:hidden", chromeEntering && "animate-blur-in")}
         />
-        {children}
+        {/* Same flex column as `main`, so the pages lay out as before; it carries the page transition. */}
+        <div
+          className={cn(
+            "flex min-w-0 flex-1 flex-col gap-page-stack",
+            page.motion === "in" && "animate-blur-in",
+            page.motion === "out" && "animate-blur-out",
+          )}
+        >
+          {children}
+        </div>
       </main>
 
       <SettingsPanel
