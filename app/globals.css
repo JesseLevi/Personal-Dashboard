@@ -74,6 +74,8 @@
   }
 }
 @utility animate-blur-in {
+  /* Own GPU layer: without it iOS Safari repaints the blur on the CPU every frame (stutters). */
+  will-change: opacity, filter, transform;
   animation: blur-fade-in var(--blur-fade-in-duration) var(--blur-fade-ease)
     min(calc(var(--fade-index, 0) * var(--blur-fade-step)), var(--blur-fade-max-delay)) both;
   @media (prefers-reduced-motion: reduce) {
@@ -81,6 +83,7 @@
   }
 }
 @utility animate-blur-out {
+  will-change: opacity, filter, transform;
   animation: blur-fade-out var(--blur-fade-out-duration) var(--blur-fade-ease)
     min(calc(var(--fade-index, 0) * var(--blur-fade-step)), var(--blur-fade-max-delay)) both;
   @media (prefers-reduced-motion: reduce) {
