@@ -2,6 +2,7 @@
 
 // design: Claude-designed on request (#466), design/notes/Toast.md.
 import { useEffect, useState } from "react";
+import { Dropdown } from "@/components/atoms/Dropdown";
 import { cn } from "@/lib/ui/cn";
 
 const TRANSITION_MS = 300;
@@ -51,16 +52,23 @@ export function Toast({ message, onDismiss, durationMs = 3000 }: ToastProps) {
   return (
     <div className="pointer-events-none fixed inset-x-0 top-0 z-[1000] flex justify-center px-component-sm pt-[calc(env(safe-area-inset-top)+0.75rem)]">
       {text !== null && (
-        <p
-          role="status"
-          aria-live="polite"
+        <div
           className={cn(
-            "rounded-control-outer border border-stroke-primary bg-surface-highlight-white px-component-sm py-component-xs text-base font-semibold text-text-primary shadow-sm transition duration-300 ease-out motion-reduce:transition-opacity",
+            "w-fit max-w-full transition duration-300 ease-out motion-reduce:transition-opacity",
             visible ? "translate-y-0 opacity-100" : "-translate-y-[200%] opacity-0 motion-reduce:translate-y-0",
           )}
         >
-          {text}
-        </p>
+          <Dropdown className="shadow-sm">
+            {/* Looks like a `Button variant="white"` row but is inert text. */}
+            <p
+              role="status"
+              aria-live="polite"
+              className="flex h-10 items-center rounded-control px-component-sm text-base font-semibold text-text-secondary"
+            >
+              {text}
+            </p>
+          </Dropdown>
+        </div>
       )}
     </div>
   );
