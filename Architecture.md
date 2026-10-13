@@ -96,7 +96,8 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - one server-only module per external seam;
   - `check:server-only` enforces these.
 - **Auth**:
-  - Supabase Auth with password or magic link; self-signup disabled.
+  - Supabase Auth with password or a 6-digit e-mail code (plus fallback link); self-signup disabled (ADR-0038).
+  - Mail goes out through Resend SMTP; the template is `supabase/templates/magic_link.html`, hosted config is set by `pnpm auth:email`.
   - `middleware.ts` only refreshes tokens; the redirect lives in `app/(app)/layout.tsx`.
   - `getClaims()` verifies locally, so a revoked session lasts until token expiry (#168).
   - Admins: `app_metadata.role = 'admin'` (ADR-0020).
@@ -163,7 +164,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 
 | Phase | Status |
 | --- | --- |
-| 0 Foundation, 1 Account, 2 Design system | ✅ (SMTP for magic links on hosted is open, #10) |
+| 0 Foundation, 1 Account, 2 Design system | ✅ (Resend hookup on hosted is open, #10) |
 | 3 Te doen, 4 Recepten (incl. import, nutrition), 5 Winkelmand, 6 Notities | ✅ in production use |
 | Delen, fase 1: Winkelmand (#420) | 🔜 now (ADR-0035) |
 | 7 Agenda, incl. meal and card planning | 🔜 after #420 (#33, ADR-0037) |

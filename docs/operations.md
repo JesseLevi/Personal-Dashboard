@@ -25,10 +25,22 @@ Hosted settings that code review cannot see. Every change here is a hosted write
   - Check with `scripts/check-reference-exposed.sh`.
 - **Auth**:
   - self-signup disabled;
-  - magic link needs SMTP, which is not configured yet (#10: Resend free tier);
+  - login by e-mail code needs Resend SMTP (ADR-0038, steps: "Resend / auth e-mail" below);
   - admins have `app_metadata.role = 'admin'` (ADR-0020). The first grant was made 2026-10-10.
 - **Migrations**: before debugging a data-shaped bug, check `supabase_migrations.schema_migrations`. A migration applied outside `db push` needs its ledger version corrected to the filename (ADR-0032).
 - **Backups**: Supabase Cloud's own backups, plan-dependent.
+
+## Resend / auth e-mail (ADR-0038, #10, #493)
+
+Login by 6-digit e-mail code. The only manual part is connecting Resend; hosted writes need the user's go (ADR-0032).
+
+1. Create a Resend account (free tier) and add your domain. Add the DNS records Resend shows (SPF, DKIM) and wait for "Verified".
+2. Create an API key (sending access). It is the SMTP password.
+3. Put in `.env`: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `RESEND_API_KEY`, `AUTH_EMAIL_FROM` (an address on the verified domain), `AUTH_EMAIL_SENDER_NAME`.
+4. `pnpm auth:email` is a dry run: it prints a masked diff against hosted. Then `pnpm auth:email --apply` writes SMTP, the template, a 10 minute / 6 digit OTP and the e-mail rate limit.
+   - Using Resend's Supabase integration for SMTP instead: `pnpm auth:email --templates-only --apply` (needs only the two Supabase vars).
+5. In Supabase, Authentication, URL Configuration: Site URL is the production URL and it is in the redirect allow-list (the fallback link is `{{ .SiteURL }}/auth/confirm`).
+6. Test end to end: request a code on the production login, check the mail (code, link, NL then EN), log in with the code, then with the link.
 
 ## GitHub
 
