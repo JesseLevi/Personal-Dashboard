@@ -73,6 +73,8 @@ export interface LoginFormProps {
   onPrefetch?: (href: string) => void;
   /** Fires once when the exit starts, so the page's visual blurs out with it (LoginExit.tsx). */
   onExitStart?: () => void;
+  /** Fires once the exit has played, a frame before `onNavigate`, so the page can drop the login UI (LoginExit.tsx). */
+  onExitEnd?: () => void;
   /** Ladle-only: seeds the two forms' `useActionState` results — see `initialStep`. */
   initialState?: { password?: PasswordLoginState; magicLink?: MagicLinkState };
 }
@@ -88,6 +90,7 @@ export function LoginForm({
   onNavigate,
   onPrefetch,
   onExitStart,
+  onExitEnd,
 }: LoginFormProps) {
   const t = useTranslations("auth");
   const reducedMotion = usePrefersReducedMotion();
@@ -121,9 +124,9 @@ export function LoginForm({
   // Latest router callbacks live in a ref: the parent passes fresh inline functions on every
   // render (the sign-in action re-renders this route too), and as effect deps they restarted
   // the exit timer, so the navigation slipped out of step with the animation.
-  const routerRef = useRef({ onNavigate, onPrefetch, onExitStart });
+  const routerRef = useRef({ onNavigate, onPrefetch, onExitStart, onExitEnd });
   useEffect(() => {
-    routerRef.current = { onNavigate, onPrefetch, onExitStart };
+    routerRef.current = { onNavigate, onPrefetch, onExitStart, onExitEnd };
   });
   useEffect(() => {
     if (!exiting) return;
@@ -132,11 +135,22 @@ export function LoginForm({
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     routerRef.current.onExitStart?.();
     routerRef.current.onPrefetch?.(EXIT_TARGET);
+    // Drop the login UI first and navigate only after a frame has painted without it, so no
+    // faded login layer can reappear over the entering page (iOS Safari did).
+    let frame = 0;
     const timer = window.setTimeout(() => {
-      markEnterFromLogin();
-      routerRef.current.onNavigate?.(EXIT_TARGET);
+      routerRef.current.onExitEnd?.();
+      frame = window.requestAnimationFrame(() => {
+        frame = window.requestAnimationFrame(() => {
+          markEnterFromLogin();
+          routerRef.current.onNavigate?.(EXIT_TARGET);
+        });
+      });
     }, blurOutTotalMs(EXIT_ELEMENT_COUNT, reducedMotion));
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      window.cancelAnimationFrame(frame);
+    };
   }, [exiting, reducedMotion]);
   const exitClass = (index: number) => (exiting ? ["animate-blur-out", blurFadeStagger(index)] : null);
 

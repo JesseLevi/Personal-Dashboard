@@ -42,48 +42,46 @@ export default async function LoginPage() {
     // not assumed — see design/notes/LoginForm.md).
     // `lg:gap-page-stack` is a stack-family token on a row axis: that is how
     // the Figma node binds it, not a slip — see design/notes/LoginForm.md.
-    <main className="flex h-screen flex-col p-component-lg lg:flex-row lg:gap-page-stack">
-      <LoginExitProvider>
-        <div className="flex flex-1 flex-col items-center justify-center">
-          <LoginFormClient
-            signInWithPasswordAction={signInWithPassword}
-            sendMagicLinkAction={sendMagicLink}
-            lookupGreetingNameAction={lookupGreetingName}
-            turnstileSiteKey={turnstileSiteKey}
-          />
-        </div>
+    <LoginExitProvider className="flex h-screen flex-col p-component-lg lg:flex-row lg:gap-page-stack">
+      <div className="flex flex-1 flex-col items-center justify-center">
+        <LoginFormClient
+          signInWithPasswordAction={signInWithPassword}
+          sendMagicLinkAction={sendMagicLink}
+          lookupGreetingNameAction={lookupGreetingName}
+          turnstileSiteKey={turnstileSiteKey}
+        />
+      </div>
 
-        {/* Flat image-fill in Figma (both breakpoints) — exported once and
-            committed as a static asset rather than re-fetched at build time
-            (Figma URLs expire). Decorative: aria-hidden + empty alt.
-            Width-driven (`w-full`) stacked under the login block on mobile;
-            height-driven (`h-full`, `w-auto`) beside it on desktop, so it
-            always fills the available square exactly instead of following
-            whatever width `flex-1` happens to leave it — see
-            design/notes/LoginForm.md for the bug this replaced. Blurs out
-            last in LoginForm's exit (LoginExit.tsx, stagger index 4). */}
-        <LoginVisual
-          index={4}
-          className="relative aspect-square w-full shrink-0 overflow-hidden rounded-container bg-surface-secondary lg:h-full lg:w-auto"
-        >
-          <Image
-            src="/login/login-visual-mobile.png"
-            alt=""
-            aria-hidden="true"
-            fill
-            sizes="(min-width: 1024px) 0px, 100vw"
-            className="object-cover lg:hidden"
-          />
-          <Image
-            src="/login/login-visual-desktop.png"
-            alt=""
-            aria-hidden="true"
-            fill
-            sizes="(min-width: 1024px) 100vh, 0px"
-            className="hidden object-cover lg:block"
-          />
-        </LoginVisual>
-      </LoginExitProvider>
-    </main>
+      {/* Flat image-fill in Figma (both breakpoints) — exported once and
+          committed as a static asset rather than re-fetched at build time
+          (Figma URLs expire). Decorative: aria-hidden + empty alt.
+          Width-driven (`w-full`) stacked under the login block on mobile;
+          height-driven (`h-full`, `w-auto`) beside it on desktop, so it
+          always fills the available square exactly instead of following
+          whatever width `flex-1` happens to leave it — see
+          design/notes/LoginForm.md for the bug this replaced. Blurs out
+          last in LoginForm's exit (LoginExit.tsx, stagger index 4). */}
+      <LoginVisual
+        index={4}
+        className="relative aspect-square w-full shrink-0 overflow-hidden rounded-container bg-surface-secondary lg:h-full lg:w-auto"
+      >
+        <Image
+          src="/login/login-visual-mobile.png"
+          alt=""
+          aria-hidden="true"
+          fill
+          sizes="(min-width: 1024px) 0px, 100vw"
+          className="object-cover lg:hidden"
+        />
+        <Image
+          src="/login/login-visual-desktop.png"
+          alt=""
+          aria-hidden="true"
+          fill
+          sizes="(min-width: 1024px) 100vh, 0px"
+          className="hidden object-cover lg:block"
+        />
+      </LoginVisual>
+    </LoginExitProvider>
   );
 }
