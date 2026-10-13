@@ -20,6 +20,7 @@ import {
   deleteRecipeSchema,
   moveRecipeSchema,
   searchIngredientsSchema,
+  shareRecipeSchema,
   updateCategorySchema,
   updateRecipeSchema,
 } from "@/lib/recipes/schemas";
@@ -31,6 +32,7 @@ import type {
   RecipeRow,
 } from "@/lib/recipes/types";
 import type { Database } from "@/lib/database.types";
+import { inviteMember, searchMembers } from "@/lib/sharing/actions";
 
 // Write side of #122 — category/recipe CRUD, called from the Recepten UI
 // (later tickets). Every action follows lib/boards/'s
@@ -543,4 +545,19 @@ export async function uploadRecipeThumbnail(
   const file = formData.get("thumbnail");
   if (!(file instanceof File)) return { success: false, error: "invalid-input" };
   return uploadRecipeThumbnailToStorage(file);
+}
+
+// ADR-0036: thin wrappers so the (client) recipe page can reach lib/sharing
+// (a plain server-only module, not a Server Action endpoint). Access is
+// decided there and by RLS: only the recipe's owner can insert the offer.
+// No revalidatePath: sharing changes nothing the owner's pages render.
+
+export async function searchRecipeShareMembers(input: unknown) {
+  return searchMembers(input);
+}
+
+export async function shareRecipe(input: unknown) {
+  const parsed = shareRecipeSchema.safeParse(input);
+  if (!parsed.success) return { success: false as const, error: "invalid-input" as const };
+  return inviteMember({ resource: "recipe", id: parsed.data.recipeId, memberId: parsed.data.memberId });
 }

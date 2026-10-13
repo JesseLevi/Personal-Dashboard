@@ -7,6 +7,7 @@ import { SidePanel } from "./SidePanel";
 import { InputField } from "../atoms/InputField";
 import { Avatar } from "../atoms/Avatar";
 import { Button } from "../atoms/Button";
+import type { IconName } from "../atoms/Icon";
 import { Card } from "../molecules/Card";
 import { memberAvatarSrc, memberFullName } from "@/lib/sharing/member";
 import type { ActionResult, MemberSearchResult } from "@/lib/sharing/types";
@@ -15,7 +16,8 @@ import type { ActionResult, MemberSearchResult } from "@/lib/sharing/types";
  * Organism/MemberSearchPanel — Figma "Winkelmand/04..06" level-2 panel
  * (4231:16811 empty, 4231:17096 result, 4233:17340 selected). Pick one
  * person by name (or full e-mail address, which the RPC then also returns).
- * Knows nothing about baskets: the caller decides what "Voeg toe" means.
+ * Knows nothing about baskets or recipes: the caller decides what the
+ * confirm button ("Voeg toe" by default) means.
  * `SidePanel level={2}` supplies the chrome. Never imports "use server"
  * code (`onSearch` is a prop), so it stays Ladle-testable.
  * See design/notes/MemberSearchPanel.md.
@@ -30,12 +32,16 @@ export interface MemberSearchPanelProps {
   onClose: () => void;
   /** Takes `{ query }` (trimmed, 2 to 64 characters) and returns the matching members. Pass a stable reference: it is a dependency of the debounce effect. */
   onSearch: (input: unknown) => Promise<ActionResult<MemberSearchResult[]>>;
-  /** Fired once on "Voeg toe" with the picked person, before `onClose`. Never fired on cancel. */
+  /** Fired once on the confirm button with the picked person, before `onClose`. Never fired on cancel. */
   onSelect: (member: MemberSearchResult) => void;
   /** The person already chosen by the caller: shown as selected as soon as they appear in the results. */
   selectedId?: string | null;
   /** Pre-fills the search field on open (a caller reopening with a query in hand; also makes the Ladle baselines deterministic). */
   initialQuery?: string;
+  /** Confirm button text. Defaults to "Voeg toe". */
+  confirmLabel?: string;
+  /** Confirm button icon. Defaults to `Plus`. */
+  confirmIcon?: IconName;
 }
 
 export function MemberSearchPanel({
@@ -45,6 +51,8 @@ export function MemberSearchPanel({
   onSelect,
   selectedId = null,
   initialQuery,
+  confirmLabel,
+  confirmIcon = "Plus",
 }: MemberSearchPanelProps) {
   const t = useTranslations("components.memberSearchPanel");
   const tSidePanel = useTranslations("components.sidePanel");
@@ -135,12 +143,12 @@ export function MemberSearchPanel({
           </Button>
           <Button
             variant="filled"
-            icon="Plus"
+            icon={confirmIcon}
             className="grow basis-0"
             onClick={handleAdd}
             disabled={!pickedResult}
           >
-            {t("addLabel")}
+            {confirmLabel ?? t("addLabel")}
           </Button>
         </div>
       }

@@ -153,6 +153,12 @@ export const deleteRecipeSchema = z.object({
   recipeId: z.uuid(),
 });
 
+// ADR-0036: offering a recipe to one person.
+export const shareRecipeSchema = z.object({
+  recipeId: z.uuid(),
+  memberId: z.uuid(),
+});
+
 // #155 drag & drop -- same "index, not a raw position" shape and the same
 // reason for it as lib/boards/schemas.ts's moveCardSchema (a client can
 // influence where a recipe lands but never inject an arbitrary position

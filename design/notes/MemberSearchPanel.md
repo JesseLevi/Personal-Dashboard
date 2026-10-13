@@ -5,10 +5,10 @@ Figma: `Winkelmand/04` empty `4231:16811`, `05` result `4231:17096`, `06` select
 `SidePanel level={2}` supplies the chrome. Children: `InputField` (placeholder "Naam", trailing `Search`, no visible label), then one `Card` (Title=No) per result. Each Card holds a full-width `<button aria-pressed>`: `Avatar` (md), name (`text-base font-semibold`), and the e-mail (`text-sm`, secondary) only when the RPC returned it. Footer: filled `Button` "Annuleren" (`ArrowLeft`) and "Voeg toe" (`Plus`), equal width.
 
 ## Contract
-- Generic: no basket knowledge. Props: `open`, `onClose`, `onSearch`, `onSelect`, `selectedId`, optional `initialQuery`.
+- Generic: no basket or recipe knowledge. Props: `open`, `onClose`, `onSearch`, `onSelect`, `selectedId`, optional `initialQuery`, `confirmLabel` (default "Voeg toe") and `confirmIcon` (default `Plus`). The recipe page passes "Delen" / `Check`.
 - `onSearch(input: unknown) => Promise<ActionResult<MemberSearchResult[]>>` is called with `{ query }`. The panel never imports `"use server"` code; pass a stable reference (it is a dependency of the debounce effect).
-- `onSelect(member)` fires once on "Voeg toe", then the panel closes. Never fired on cancel/close.
-- `selectedId` is the person the caller already chose. They show as selected once they appear in a result set. "Voeg toe" is disabled until someone is selected.
+- `onSelect(member)` fires once on the confirm button, then the panel closes. Never fired on cancel/close.
+- `selectedId` is the person the caller already chose. They show as selected once they appear in a result set. The confirm button is disabled until someone is selected.
 - Everything (query, results, pick) resets on close.
 
 ## Deliberate decisions
@@ -25,4 +25,4 @@ Figma: `Winkelmand/04` empty `4231:16811`, `05` result `4231:17096`, `06` select
 - No raw spacing. Result row `gap-inline-lg` (as `CardContentRecipe`), text column `gap-stack-sm`, list `gap-stack-md`, footer `gap-inline-sm`.
 
 ## Gotchas
-- Stories: `Empty`, `Results`, `Selected`, `NoResults`, `RateLimited`, with mock actions; no result has `hasAvatar`, so the baselines need no avatar route.
+- Stories: `Empty`, `Results`, `Selected`, `NoResults`, `RateLimited`, `ShareRecipe` (confirm "Delen" / `Check`), with mock actions; no result has `hasAvatar`, so the baselines need no avatar route.
