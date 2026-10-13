@@ -42,7 +42,10 @@ export function RecipeDetailSkeleton() {
         <div className="flex w-full items-center justify-between gap-4">
           <Button icon="ArrowLeft" aria-label={t("backLabel")} />
           <div className="flex items-center justify-end gap-inline-xl">
-            <Button icon="ShoppingBasket">{t("addToBasketLabel")}</Button>
+            <Button icon="ShoppingBasket">
+              <span className="md:hidden">{t("addToBasketShortLabel")}</span>
+              <span className="hidden md:inline">{t("addToBasketLabel")}</span>
+            </Button>
             <div className="hidden items-center gap-inline-xl md:flex">
               <Button variant="filled" icon="Pencil">
                 {t("editLabel")}
