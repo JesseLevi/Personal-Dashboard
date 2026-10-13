@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { cn } from "@/lib/ui/cn";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -13,6 +13,8 @@ import {
 import { Button } from "@/components/atoms/Button";
 import { signOut } from "@/app/login/actions";
 import { isOutsideAllContainers } from "@/lib/dom/outside-pointer";
+import { blurInTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
+import { hasEnterFromLogin } from "@/lib/ui/login-enter";
 import type { Locale } from "@/lib/profile/types";
 import { SettingsPanel } from "./SettingsPanel";
 
@@ -40,6 +42,24 @@ function activeItemForPath(pathname: string): SidebarItemId | undefined {
 // design/notes/Sidebar.md for the full call.
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+// The chrome (desktop rail, mobile drawer button) blurs in with the page right after a login,
+// instead of standing there before the login form has finished fading. Reads the mark without
+// claiming or clearing it: the page regions own that (lib/ui/login-enter.ts).
+function useChromeEnterFromLogin(): boolean {
+  const reduced = usePrefersReducedMotion();
+  const [entering, setEntering] = useState(false);
+  useLayoutEffect(() => {
+    if (hasEnterFromLogin()) setEntering(true);
+  }, []);
+  // Dropped afterwards: the animation's fill keeps `filter`, a containing block for fixed children.
+  useEffect(() => {
+    if (!entering) return;
+    const id = window.setTimeout(() => setEntering(false), blurInTotalMs(1, reduced) + 50);
+    return () => window.clearTimeout(id);
+  }, [entering, reduced]);
+  return entering;
+}
 
 function getFocusable(root: HTMLElement | null): HTMLElement[] {
   if (!root) return [];
@@ -101,6 +121,7 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations("components.sidebar");
+  const chromeEntering = useChromeEnterFromLogin();
 
   const labels: Record<SidebarItemId, string> = {
     todo: t("items.todo"),
@@ -217,7 +238,7 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
       />
       <div
         ref={desktopWrapperRef}
-        className="hidden md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex"
+        className={cn("hidden md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex", chromeEntering && "animate-blur-in")}
       >
         <Sidebar
           collapsed={collapsed}
@@ -309,7 +330,7 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
           icon="PanelLeftOpen"
           aria-label={t("expandLabel")}
           onClick={() => setMobileOpen(true)}
-          className="md:hidden"
+          className={cn("md:hidden", chromeEntering && "animate-blur-in")}
         />
         {children}
       </main>
