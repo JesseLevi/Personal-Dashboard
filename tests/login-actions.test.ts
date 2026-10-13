@@ -7,6 +7,7 @@ const { signInWithPasswordMock, redirectMock } = vi.hoisted(() => ({
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: async () => ({ auth: { signInWithPassword: signInWithPasswordMock } }),
 }));
+vi.mock("server-only", () => ({}));
 vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 vi.mock("next/headers", () => ({ headers: async () => ({ get: () => null }) }));
 

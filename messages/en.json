@@ -23,16 +23,32 @@
     "passwordPlaceholder": "Password",
     "continue": "Continue",
     "signIn": "Sign in",
-    "sendMagicLink": "Send me a sign-in link",
-    "magicLinkSent": "Sign-in link sent",
+    "sendLoginCode": "Email me a login code",
     "back": "Back",
     "errors": {
       "invalid-input": "Enter a valid email address and password.",
       "invalid-email-format": "Enter a valid email address.",
       "invalid-credentials": "Email address or password is incorrect.",
-      "magic-link-failed": "The magic link could not be sent. Please try again later.",
+      "send-failed": "The code could not be sent. Please try again later.",
+      "rate-limited": "You have tried too many times. Wait a moment and try again.",
       "magic-link-invalid": "This sign-in link is invalid or expired. Request a new one.",
       "generic": "Something went wrong. Please try again."
+    },
+    "code": {
+      "title": "Enter your code",
+      "description": "We sent a 6-digit code to {email}.",
+      "codeLabel": "6-digit login code",
+      "submit": "Sign in",
+      "resend": "Send code again",
+      "resendIn": "Send code again ({seconds} s)",
+      "resent": "We sent you a new code.",
+      "otherEmail": "Use another email address",
+      "errors": {
+        "invalid-input": "Enter the 6 digits from your email.",
+        "invalid-code": "This code is incorrect or has expired.",
+        "rate-limited": "You have tried too many times. Wait a moment and try again.",
+        "send-failed": "The code could not be sent. Please try again later."
+      }
     }
   },
   "recipes": {

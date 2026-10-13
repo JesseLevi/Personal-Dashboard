@@ -10,3 +10,8 @@ export const passwordLoginSchema = z.object({
 export const magicLinkSchema = z.object({
   email: z.email(),
 });
+
+// Six digits, nothing else: the same shape input-otp enforces in the browser.
+export const loginCodeSchema = z.object({
+  code: z.string().regex(/^\d{6}$/),
+});

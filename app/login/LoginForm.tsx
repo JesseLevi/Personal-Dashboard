@@ -19,7 +19,7 @@ import { GREETING_LOOKUP_DEBOUNCE_MS, parseGreetingAddress } from "@/lib/auth/gr
 import { blurFadeStagger, blurOutTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 import { markEnterFromLogin } from "@/lib/ui/login-enter";
 import { useTurnstile } from "./useTurnstile";
-import type { MagicLinkState, PasswordLoginState } from "./actions";
+import type { LoginCodeSendState, PasswordLoginState } from "./actions";
 
 // figma: Login/Mobile+Desktop (3929:25181); StepAnimation (3934:32745);
 // heading Step-01 4221:14845 "Hey, welkom bij Atlas" / Step-02 4221:14940
@@ -32,24 +32,27 @@ const PANE_CLASS =
 
 // Matches --duration-base (200ms) plus a frame of slack.
 const GREETING_COLLAPSE_MS = 250;
-const EXIT_TARGET = "/te-doen";
-// Heading, password field, button row, magic-link form, then the page's visual (LoginVisual,
-// told via `onExitStart`): the top-to-bottom exit order.
+const SIGNED_IN_TARGET = "/te-doen";
+const CODE_TARGET = "/login/code";
+// Heading, password field, button row, login-code form, then the page's visual (LoginVisual,
+// told via `onExitStart`): the top-to-bottom exit order. Going to the code page keeps the
+// visual (shared layout), so it exits four elements.
 const EXIT_ELEMENT_COUNT = 5;
+const CODE_EXIT_ELEMENT_COUNT = 4;
 const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 
 const IDLE_PASSWORD_STATE: PasswordLoginState = { status: "idle" };
-const IDLE_MAGIC_LINK_STATE: MagicLinkState = { status: "idle" };
+const IDLE_LOGIN_CODE_STATE: LoginCodeSendState = { status: "idle" };
 
 export interface LoginFormProps {
   signInWithPasswordAction: (
     prevState: PasswordLoginState,
     formData: FormData,
   ) => Promise<PasswordLoginState>;
-  sendMagicLinkAction: (
-    prevState: MagicLinkState,
+  sendLoginCodeAction: (
+    prevState: LoginCodeSendState,
     formData: FormData,
-  ) => Promise<MagicLinkState>;
+  ) => Promise<LoginCodeSendState>;
   /** Server action returning the first name for a valid e-mail (ADR-0031); a prop so Ladle can mock it. */
   lookupGreetingNameAction: (input: {
     email: string;
@@ -61,8 +64,8 @@ export interface LoginFormProps {
   initialGreetingName?: string;
   /**
    * Ladle-only: which StepAnimation pane is visible on mount. A real visit
-   * always starts at "email" (the default); the Ladle baselines for step 3,
-   * the error state and the magic-link-sent state need step 3 reachable
+   * always starts at "email" (the default); the Ladle baselines for step 3
+   * and the error state need step 3 reachable
    * without driving a real submission — this prop plus `initialState` below
    * are how the four Figma frames become story-able.
    */
@@ -74,12 +77,12 @@ export interface LoginFormProps {
   /** Fires once when the exit starts, so the page's visual blurs out with it (LoginExit.tsx). */
   onExitStart?: () => void;
   /** Ladle-only: seeds the two forms' `useActionState` results — see `initialStep`. */
-  initialState?: { password?: PasswordLoginState; magicLink?: MagicLinkState };
+  initialState?: { password?: PasswordLoginState; loginCode?: LoginCodeSendState };
 }
 
 export function LoginForm({
   signInWithPasswordAction,
-  sendMagicLinkAction,
+  sendLoginCodeAction,
   lookupGreetingNameAction,
   turnstileSiteKey = null,
   initialGreetingName,
@@ -109,13 +112,16 @@ export function LoginForm({
     signInWithPasswordAction,
     initialState?.password ?? IDLE_PASSWORD_STATE,
   );
-  const [magicLinkState, magicLinkFormAction, magicLinkPending] = useActionState(
-    sendMagicLinkAction,
-    initialState?.magicLink ?? IDLE_MAGIC_LINK_STATE,
+  const [loginCodeState, loginCodeFormAction, loginCodePending] = useActionState(
+    sendLoginCodeAction,
+    initialState?.loginCode ?? IDLE_LOGIN_CODE_STATE,
   );
 
-  // Exit: the session cookie is already set when the action returns success.
-  const exiting = passwordState.status === "success";
+  // Exit: the session cookie is already set when the action returns success; a sent code
+  // leaves for /login/code, where its address cookie is already set.
+  const exitTarget =
+    passwordState.status === "success" ? SIGNED_IN_TARGET : loginCodeState.status === "sent" ? CODE_TARGET : null;
+  const exiting = exitTarget !== null;
   // React resets the form once the action settles; seeding defaultValue keeps the dots visible while they blur out.
   const [typedPassword, setTypedPassword] = useState("");
   // Latest router callbacks live in a ref: the parent passes fresh inline functions on every
@@ -126,25 +132,26 @@ export function LoginForm({
     routerRef.current = { onNavigate, onPrefetch, onExitStart };
   });
   useEffect(() => {
-    if (!exiting) return;
+    if (exitTarget === null) return;
+    const toCode = exitTarget === CODE_TARGET;
     // Close the mobile keyboard now, while the form fades out; closing it on unmount resized
     // the viewport under the entering page.
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-    routerRef.current.onExitStart?.();
-    routerRef.current.onPrefetch?.(EXIT_TARGET);
+    if (!toCode) routerRef.current.onExitStart?.();
+    routerRef.current.onPrefetch?.(exitTarget);
     const timer = window.setTimeout(() => {
-      markEnterFromLogin();
-      routerRef.current.onNavigate?.(EXIT_TARGET);
-    }, blurOutTotalMs(EXIT_ELEMENT_COUNT, reducedMotion));
+      if (!toCode) markEnterFromLogin();
+      routerRef.current.onNavigate?.(exitTarget);
+    }, blurOutTotalMs(toCode ? CODE_EXIT_ELEMENT_COUNT : EXIT_ELEMENT_COUNT, reducedMotion));
     return () => window.clearTimeout(timer);
-  }, [exiting, reducedMotion]);
+  }, [exitTarget, reducedMotion]);
   const exitClass = (index: number) => (exiting ? ["animate-blur-out", blurFadeStagger(index)] : null);
 
   const emailInputId = useId();
   const passwordInputId = useId();
   const emailErrorId = useId();
   const passwordErrorId = useId();
-  const magicLinkErrorId = useId();
+  const loginCodeErrorId = useId();
 
   // Focuses the pane that just became active, in either direction — skips
   // the very first render so step 1 isn't auto-focused on a plain page
@@ -346,21 +353,21 @@ export function LoginForm({
               </div>
             </form>
 
-            <form action={magicLinkFormAction} className={cn("mt-4", exitClass(3))} inert={exiting}>
+            <form action={loginCodeFormAction} className={cn("mt-4", exitClass(3))} inert={exiting}>
               <input type="hidden" name="email" value={email} />
               <Button
                 type="submit"
                 variant="outline"
-                icon={magicLinkState.status === "sent" ? "Check" : "Scroll"}
-                disabled={magicLinkPending || magicLinkState.status === "sent"}
+                icon="Scroll"
+                disabled={loginCodePending || exiting}
                 className="w-full"
               >
-                {magicLinkState.status === "sent" ? t("magicLinkSent") : t("sendMagicLink")}
+                {t("sendLoginCode")}
               </Button>
               <ErrorLine
-                id={magicLinkErrorId}
+                id={loginCodeErrorId}
                 message={
-                  magicLinkState.status === "error" ? t(`errors.${magicLinkState.errorKey}`) : null
+                  loginCodeState.status === "error" ? t(`errors.${loginCodeState.errorKey}`) : null
                 }
               />
             </form>

@@ -2,12 +2,12 @@
 // 3933:32343 (Step-03), 3985:10266 (Error), 3989:13128 (InloglinkSend),
 // 3991:13224 (Step-03/Error) — see design/notes/LoginForm.md.
 import { LoginForm } from "./LoginForm";
-import type { MagicLinkState, PasswordLoginState } from "./actions";
+import type { LoginCodeSendState, PasswordLoginState } from "./actions";
 
 // Dev-only mock actions — LoginForm never imports the real "use server"
 // module itself (same precedent as CategoryPanel.stories.tsx): the composer
 // (app/login/page.tsx) passes the real actions as props so these stand in
-// for signInWithPassword/sendMagicLink without needing Supabase/Next's
+// for signInWithPassword/sendLoginCode without needing Supabase/Next's
 // request context. Never resolve for real — `initialStep`/`initialState`
 // put each story straight into the state it needs to show.
 async function mockSignInWithPassword(
@@ -17,11 +17,11 @@ async function mockSignInWithPassword(
   console.log("signInWithPassword", prevState, Object.fromEntries(formData));
   return { status: "idle" };
 }
-async function mockSendMagicLink(
-  prevState: MagicLinkState,
+async function mockSendLoginCode(
+  prevState: LoginCodeSendState,
   formData: FormData,
-): Promise<MagicLinkState> {
-  console.log("sendMagicLink", prevState, Object.fromEntries(formData));
+): Promise<LoginCodeSendState> {
+  console.log("sendLoginCode", prevState, Object.fromEntries(formData));
   return { status: "idle" };
 }
 
@@ -37,7 +37,7 @@ const mockLookupGreetingName = (name: string | null, ms = 0) =>
 export const Step1Email = () => (
   <LoginForm
     signInWithPasswordAction={mockSignInWithPassword}
-    sendMagicLinkAction={mockSendMagicLink}
+    sendLoginCodeAction={mockSendLoginCode}
     lookupGreetingNameAction={mockLookupGreetingName(null)}
   />
 );
@@ -47,7 +47,7 @@ export const Step1Email = () => (
 export const Step2GreetingName = () => (
   <LoginForm
     signInWithPasswordAction={mockSignInWithPassword}
-    sendMagicLinkAction={mockSendMagicLink}
+    sendLoginCodeAction={mockSendLoginCode}
     lookupGreetingNameAction={mockLookupGreetingName("Carlotta")}
     initialStep="password"
     initialGreetingName="Carlotta"
@@ -58,7 +58,7 @@ export const Step2GreetingName = () => (
 export const GreetingNameArrivesLate = () => (
   <LoginForm
     signInWithPasswordAction={mockSignInWithPassword}
-    sendMagicLinkAction={mockSendMagicLink}
+    sendLoginCodeAction={mockSendLoginCode}
     lookupGreetingNameAction={mockLookupGreetingName("Carlotta", 600)}
   />
 );
@@ -69,7 +69,7 @@ const spyLookup = mockLookupGreetingName("Carlotta", 600);
 export const GreetingWhileTyping = () => (
   <LoginForm
     signInWithPasswordAction={mockSignInWithPassword}
-    sendMagicLinkAction={mockSendMagicLink}
+    sendLoginCodeAction={mockSendLoginCode}
     lookupGreetingNameAction={async (input) => {
       const w = window as unknown as { __greetingLookups?: string[] };
       (w.__greetingLookups ??= []).push(input.email);
@@ -82,7 +82,7 @@ export const GreetingWhileTyping = () => (
 export const GreetingLongName = () => (
   <LoginForm
     signInWithPasswordAction={mockSignInWithPassword}
-    sendMagicLinkAction={mockSendMagicLink}
+    sendLoginCodeAction={mockSendLoginCode}
     lookupGreetingNameAction={mockLookupGreetingName("Maximiliaan-Alexandrina")}
     initialStep="password"
     initialGreetingName="Maximiliaan-Alexandrina"
@@ -93,7 +93,7 @@ export const GreetingLongName = () => (
 export const Step3Password = () => (
   <LoginForm
     signInWithPasswordAction={mockSignInWithPassword}
-    sendMagicLinkAction={mockSendMagicLink}
+    sendLoginCodeAction={mockSendLoginCode}
     lookupGreetingNameAction={mockLookupGreetingName(null)}
     initialStep="password"
   />
@@ -105,22 +105,37 @@ export const Step3Password = () => (
 export const Step3Error = () => (
   <LoginForm
     signInWithPasswordAction={mockSignInWithPassword}
-    sendMagicLinkAction={mockSendMagicLink}
+    sendLoginCodeAction={mockSendLoginCode}
     lookupGreetingNameAction={mockLookupGreetingName(null)}
     initialStep="password"
     initialState={{ password: { status: "error", errorKey: "invalid-credentials" } }}
   />
 );
 
-// LogIn/Mobile/InloglinkSend (3989:13128) — magic-link button after a
-// successful send: "Inlog link verstuurd" + Icon/Check, disabled.
-export const MagicLinkSent = () => (
+// Step 3 after a failed send (rate limit): the error line under the login-code button.
+export const LoginCodeRateLimited = () => (
   <LoginForm
     signInWithPasswordAction={mockSignInWithPassword}
-    sendMagicLinkAction={mockSendMagicLink}
+    sendLoginCodeAction={mockSendLoginCode}
     lookupGreetingNameAction={mockLookupGreetingName(null)}
     initialStep="password"
-    initialState={{ magicLink: { status: "sent" } }}
+    initialState={{ loginCode: { status: "error", errorKey: "rate-limited" } }}
+  />
+);
+
+// Exit towards /login/code after a successful send: the form blurs out, the visual stays.
+export const ExitAfterCodeSent = () => (
+  <LoginForm
+    signInWithPasswordAction={mockSignInWithPassword}
+    sendLoginCodeAction={async () => {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      return { status: "sent" };
+    }}
+    lookupGreetingNameAction={mockLookupGreetingName("Carlotta")}
+    initialStep="password"
+    initialGreetingName="Carlotta"
+    onNavigate={(href) => console.log("navigate", href)}
+    onPrefetch={(href) => console.log("prefetch", href)}
   />
 );
 
@@ -132,7 +147,7 @@ export const ExitAfterSignIn = () => (
       await new Promise((resolve) => setTimeout(resolve, 300));
       return { status: "success" };
     }}
-    sendMagicLinkAction={mockSendMagicLink}
+    sendLoginCodeAction={mockSendLoginCode}
     lookupGreetingNameAction={mockLookupGreetingName("Carlotta")}
     initialStep="password"
     initialGreetingName="Carlotta"

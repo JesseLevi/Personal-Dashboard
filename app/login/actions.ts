@@ -2,7 +2,8 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { magicLinkSchema, passwordLoginSchema } from "@/lib/auth/schemas";
+import { loginCodeSchema, magicLinkSchema, passwordLoginSchema } from "@/lib/auth/schemas";
+import { clearLoginEmail, getLoginEmail, setLoginEmail } from "@/lib/auth/login-email-cookie";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // #158 rewrote both actions from redirect-with-querystring to the
@@ -17,10 +18,15 @@ export type PasswordLoginState =
   | { status: "success" }
   | { status: "error"; errorKey: "invalid-input" | "invalid-credentials" };
 
-export type MagicLinkState =
+export type LoginCodeSendState =
   | { status: "idle" }
-  | { status: "error"; errorKey: "invalid-input" | "magic-link-failed" }
+  | { status: "error"; errorKey: "invalid-input" | "rate-limited" | "send-failed" }
   | { status: "sent" };
+
+export type VerifyLoginCodeState =
+  | { status: "idle" }
+  | { status: "error"; errorKey: "invalid-input" | "invalid-code" | "rate-limited" }
+  | { status: "success" };
 
 // Step 3's password form. Unknown email and wrong password deliberately
 // collapse into the same "invalid-credentials" error (#158) — a distinct
@@ -43,27 +49,85 @@ export async function signInWithPassword(
   return { status: "success" };
 }
 
-// Step 3's magic-link form. Sends to the address carried over from step 1
-// (hidden field, LoginForm.tsx) — never redirects on success, since the
-// button itself becomes the confirmation ("Inlog link verstuurd", #158).
-export async function sendMagicLink(
-  _prevState: MagicLinkState,
+// Step 3's login-code form. Sends to the address carried over from step 1
+// (hidden field, LoginForm.tsx), remembers it in the httpOnly cookie that
+// /login/code reads, and answers "sent" so LoginForm can play its exit and
+// navigate there (#492).
+export async function sendLoginCode(
+  _prevState: LoginCodeSendState,
   formData: FormData,
-): Promise<MagicLinkState> {
+): Promise<LoginCodeSendState> {
   const parsed = magicLinkSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) return { status: "error", errorKey: "invalid-input" };
+  return deliverLoginCode(parsed.data.email);
+}
 
+// Same as sendLoginCode, but for an address already in the cookie and without
+// leaving /login/code.
+export async function resendLoginCode(): Promise<LoginCodeSendState> {
+  const email = await getLoginEmail();
+  if (!email) return { status: "error", errorKey: "invalid-input" };
+  return deliverLoginCode(email);
+}
+
+async function deliverLoginCode(email: string): Promise<LoginCodeSendState> {
   const supabase = await createSupabaseServerClient();
   const origin = (await headers()).get("origin");
   const { error } = await supabase.auth.signInWithOtp({
-    email: parsed.data.email,
-    // shouldCreateUser defaults to true — without this flag a magic-link
-    // request self-provisions an account, and there is no self-signup flow.
+    email,
+    // shouldCreateUser defaults to true — without this flag a code request
+    // self-provisions an account, and there is no self-signup flow.
+    // emailRedirectTo: the mail also carries a link that lands on /auth/confirm.
     options: { emailRedirectTo: `${origin}/auth/confirm`, shouldCreateUser: false },
   });
-  if (error) return { status: "error", errorKey: "magic-link-failed" };
+  if (error && isRateLimited(error)) return { status: "error", errorKey: "rate-limited" };
+  // Anti-enumeration (ADR-0031): with shouldCreateUser=false GoTrue refuses an
+  // address that has no account. Answering anything but "sent" would turn this
+  // screen into an oracle for which addresses exist, so that case looks sent,
+  // and the code page then simply never accepts a code.
+  if (error && !isUnknownUser(error)) return { status: "error", errorKey: "send-failed" };
 
+  await setLoginEmail(email);
   return { status: "sent" };
+}
+
+// Reads the address from the cookie, never from the form, so a code can only
+// be redeemed for the address it was requested for.
+export async function verifyLoginCode(
+  _prevState: VerifyLoginCodeState,
+  formData: FormData,
+): Promise<VerifyLoginCodeState> {
+  const parsed = loginCodeSchema.safeParse({ code: formData.get("code") });
+  if (!parsed.success) return { status: "error", errorKey: "invalid-input" };
+  const email = await getLoginEmail();
+  if (!email) return { status: "error", errorKey: "invalid-code" };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.verifyOtp({ email, token: parsed.data.code, type: "email" });
+  if (error) {
+    return { status: "error", errorKey: isRateLimited(error) ? "rate-limited" : "invalid-code" };
+  }
+
+  await clearLoginEmail();
+  return { status: "success" };
+}
+
+// "Ander e-mailadres" on /login/code.
+export async function changeLoginEmail() {
+  await clearLoginEmail();
+  redirect("/login");
+}
+
+function isRateLimited(error: { status?: number; code?: string }) {
+  return (
+    error.status === 429 ||
+    error.code === "over_email_send_rate_limit" ||
+    error.code === "over_request_rate_limit"
+  );
+}
+
+function isUnknownUser(error: { code?: string }) {
+  return error.code === "otp_disabled" || error.code === "user_not_found";
 }
 
 // No UI calls this since #158 removed the placeholder homepage's sign-out
