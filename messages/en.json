@@ -795,6 +795,7 @@
     "recipeDetailPage": {
       "backLabel": "Back to recipes",
       "addToBasketLabel": "Add to basket",
+      "addToBasketShortLabel": "Add",
       "addedToBasketLabel": "Added",
       "chooseBasketLabel": "Choose a basket",
       "addIngredientToBasketLabel": "Add {name} to basket",

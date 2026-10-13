@@ -274,6 +274,7 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null, bask
                 and design/notes/AnimatedAddToBasketButton.md. */}
             <AnimatedAddToBasketButton
               label={t("addToBasketLabel")}
+              shortLabel={t("addToBasketShortLabel")}
               addedLabel={t("addedToBasketLabel")}
               onAddToBasket={handleSendToList}
               baskets={baskets}

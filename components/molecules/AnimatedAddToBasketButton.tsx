@@ -27,7 +27,17 @@ import type { ActionResult } from "@/lib/shopping/types";
  */
 const REVERT_MS = 2000;
 
-function Face({ icon, label, hidden }: { icon: IconName; label?: string; hidden: boolean }) {
+function Face({
+  icon,
+  label,
+  shortLabel,
+  hidden,
+}: {
+  icon: IconName;
+  label?: string;
+  shortLabel?: string;
+  hidden: boolean;
+}) {
   return (
     <span
       aria-hidden={hidden || undefined}
@@ -43,7 +53,15 @@ function Face({ icon, label, hidden }: { icon: IconName; label?: string; hidden:
       )}
     >
       <Icon name={icon} />
-      {label && <span>{label}</span>}
+      {label &&
+        (shortLabel ? (
+          <>
+            <span className="md:hidden">{shortLabel}</span>
+            <span className="hidden md:inline">{label}</span>
+          </>
+        ) : (
+          <span>{label}</span>
+        ))}
     </span>
   );
 }
@@ -65,11 +83,14 @@ type AnimatedAddToBasketButtonBaseProps = Omit<
 export type AnimatedAddToBasketButtonProps =
   | (AnimatedAddToBasketButtonBaseProps & {
       label: string;
+      /** Shown instead of `label` below `md`. */
+      shortLabel?: string;
       addedLabel: string;
       "aria-label"?: never;
     })
   | (AnimatedAddToBasketButtonBaseProps & {
       label?: never;
+      shortLabel?: never;
       addedLabel?: never;
       "aria-label": string;
     });
@@ -80,6 +101,7 @@ export function AnimatedAddToBasketButton({
   chooseBasketLabel,
   defaultChoosing = false,
   label,
+  shortLabel,
   addedLabel,
   className,
   ...rest
@@ -165,7 +187,7 @@ export function AnimatedAddToBasketButton({
       {...rest}
     >
       <span className="relative inline-grid h-6 overflow-hidden">
-        <Face icon="ShoppingBasket" label={label} hidden={added} />
+        <Face icon="ShoppingBasket" label={label} shortLabel={shortLabel} hidden={added} />
         <Face icon="Check" label={addedLabel} hidden={!added} />
       </span>
     </Button>

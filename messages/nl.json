@@ -795,6 +795,7 @@
     "recipeDetailPage": {
       "backLabel": "Terug naar recepten",
       "addToBasketLabel": "Voeg toe aan mand",
+      "addToBasketShortLabel": "Voeg toe",
       "addedToBasketLabel": "Toegevoegd",
       "chooseBasketLabel": "Kies een mand",
       "addIngredientToBasketLabel": "Voeg {name} toe aan mand",
