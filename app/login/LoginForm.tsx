@@ -33,8 +33,8 @@ const PANE_CLASS =
 // Matches --duration-base (200ms) plus a frame of slack.
 const GREETING_COLLAPSE_MS = 250;
 const EXIT_TARGET = "/te-doen";
-// Heading, password field, button row, magic-link form, then the page's visual (page.tsx
-// fades it via `data-exiting`): the top-to-bottom exit order.
+// Heading, password field, button row, magic-link form, then the page's visual (LoginVisual,
+// told via `onExitStart`): the top-to-bottom exit order.
 const EXIT_ELEMENT_COUNT = 5;
 const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 
@@ -71,6 +71,8 @@ export interface LoginFormProps {
   onNavigate?: (href: string) => void;
   /** Warms the target route while the exit plays; LoginFormClient passes `router.prefetch`. */
   onPrefetch?: (href: string) => void;
+  /** Fires once when the exit starts, so the page's visual blurs out with it (LoginExit.tsx). */
+  onExitStart?: () => void;
   /** Ladle-only: seeds the two forms' `useActionState` results — see `initialStep`. */
   initialState?: { password?: PasswordLoginState; magicLink?: MagicLinkState };
 }
@@ -85,6 +87,7 @@ export function LoginForm({
   initialState,
   onNavigate,
   onPrefetch,
+  onExitStart,
 }: LoginFormProps) {
   const t = useTranslations("auth");
   const reducedMotion = usePrefersReducedMotion();
@@ -118,15 +121,16 @@ export function LoginForm({
   // Latest router callbacks live in a ref: the parent passes fresh inline functions on every
   // render (the sign-in action re-renders this route too), and as effect deps they restarted
   // the exit timer, so the navigation slipped out of step with the animation.
-  const routerRef = useRef({ onNavigate, onPrefetch });
+  const routerRef = useRef({ onNavigate, onPrefetch, onExitStart });
   useEffect(() => {
-    routerRef.current = { onNavigate, onPrefetch };
+    routerRef.current = { onNavigate, onPrefetch, onExitStart };
   });
   useEffect(() => {
     if (!exiting) return;
     // Close the mobile keyboard now, while the form fades out; closing it on unmount resized
     // the viewport under the entering page.
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    routerRef.current.onExitStart?.();
     routerRef.current.onPrefetch?.(EXIT_TARGET);
     const timer = window.setTimeout(() => {
       markEnterFromLogin();
@@ -241,7 +245,7 @@ export function LoginForm({
   }
 
   return (
-    <div className="flex w-full flex-col items-center" data-exiting={exiting || undefined}>
+    <div className="flex w-full flex-col items-center">
       <GreetingHeading
         hey={t("greeting.hey")}
         tail={t("greeting.tail")}

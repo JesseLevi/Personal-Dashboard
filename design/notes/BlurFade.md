@@ -13,6 +13,7 @@ Not a component: two Tailwind utilities plus a helper module, for a staggered "b
 - `BLUR_FADE` in `blur-fade.ts` mirrors the CSS values; change both together.
 - `prefers-reduced-motion: reduce`: no blur, scale, rise or stagger; a 120ms opacity fade.
 - Exit uses the same ease-out as enter: it starts fast, so it reads as quick.
+- Both utilities set `will-change: opacity, filter, transform`, so the element gets its own GPU layer for the run; without it iOS Safari repaints the blur on the CPU each frame and stutters where Chrome stays smooth.
 
 ## Token gaps and flags
 - Unbound, local custom properties in `:root` of `app/globals.css`: `--blur-fade-in-duration` (420ms), `--blur-fade-out-duration` (280ms), `--blur-fade-ease`, `--blur-fade-step` (50ms), `--blur-fade-max-delay` (400ms), `--blur-fade-blur` (8px), `--blur-fade-reduced-duration` (120ms). `--duration-base` (200ms) is too short for the blur to read.
