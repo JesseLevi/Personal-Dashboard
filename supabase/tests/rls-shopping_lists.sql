@@ -3,7 +3,7 @@
 -- keeps old inserts (no list_id) working, and the list_id backfill result.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(21);
+select plan(22);
 
 -- The signup trigger seeds one default list per user.
 insert into auth.users (id, email)
@@ -84,9 +84,12 @@ select is_empty(
   'the default list cannot be deleted'
 );
 
--- Own non-default list: create, rename, delete.
-insert into public.shopping_lists (user_id, name, position)
-values ('00000000-0000-0000-0000-4000000000aa', 'Feestje', 2000);
+-- Own non-default list: create (with returning, as the app does), rename, delete.
+select lives_ok(
+  $$ insert into public.shopping_lists (user_id, name, position)
+     values ('00000000-0000-0000-0000-4000000000aa', 'Feestje', 2000) returning id $$,
+  'A can create a non-default list and read it back'
+);
 select lives_ok(
   $$ update public.shopping_lists set name = 'Verjaardag' where name = 'Feestje' $$,
   'A can rename their own non-default list'
