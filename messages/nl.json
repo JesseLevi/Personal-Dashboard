@@ -251,6 +251,11 @@
       "message": "{name} wil mand delen",
       "acceptLabel": "Accepteren",
       "declineLabel": "Afwijzen"
+    },
+    "recipeOffer": {
+      "sharedBy": "Gedeeld door {name}",
+      "acceptLabel": "Accepteren",
+      "declineLabel": "Afwijzen"
     }
   },
   "boards": {

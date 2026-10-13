@@ -19,6 +19,7 @@ Not a new Figma leaf: `Carousel` (row) > `CardContainer` (column, `emptyState` f
 - `isItemMuted(item, columnId)`: the card wrapper gets `opacity-30 line-through`, evaluated against the column the item currently sits in (live, also mid-drag). `isDragging`'s `opacity-40` comes later in `cn()` and wins. Used for `/te-doen`'s last column; story `LastColumnMuted`.
 - `columnMotion` (`"in" | "out"`) puts `animate-blur-in/out` plus `blurFadeStagger(columnIndex)` on each `CardContainer`, never on `Carousel` or the drag provider. The caller must unset it once the animation has played, because the `both` fill keeps a filter on the columns. Story `BoardSwitch`.
 - `renderAddMenu(columnId)` is forwarded to `CardContainer.addMenu`. (#318)
+- `renderColumnTop(columnId)` puts non-draggable content above a column's items, outside the sortable list and the droppable wrapper, and not counted in the header count. In an empty column it sits above the empty-state button. Used by `/recepten` for offered recipes (`SharedRecipeOffer`). (#467)
 
 ## Token gaps and flags
 - Sortable-cards wrapper `gap-stack-sm`, standing in for `CardContainer`'s Content-slot gap (`spacing/stack/stack-sm`); not independently measured. (#205)

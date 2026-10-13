@@ -55,6 +55,8 @@ export interface BoardViewProps<TItem extends { id: string }> {
   /** #318: a popover (e.g. the recipe "Via link / Handmatig" menu) rendered inside that column's Plus-button wrapper. */
   renderAddMenu?: (columnId: string) => ReactNode;
   onEditColumn?: (columnId: string) => void;
+  /** Non-draggable content above a column's items (e.g. an offered recipe, #467). Not an item: it is never sorted, counted or a drop target. */
+  renderColumnTop?: (columnId: string) => ReactNode;
   /** Muted (30% opacity + line-through) card, decided per item against the column it currently sits in (live, so also mid-drag). See design/notes/BoardView.md. */
   isItemMuted?: (item: TItem, columnId: string) => boolean;
   /** #95: disables both dragging and dropping everywhere (still renders the same DOM/DragDropProvider — only `useSortable`/`useDroppable`'s own `disabled` flips). Set by a caller whose current view is sorted rather than manual/position order, where a drop's resulting index would be meaningless against the stored `position`. See design/notes/TeDoenBoard.md for the full reasoning. */
@@ -167,6 +169,7 @@ function BoardColumnView<TItem extends { id: string }>({
   dragDisabled,
   onAddItem,
   renderAddMenu,
+  renderColumnTop,
   onEditColumn,
   onItemClick,
   isItemMuted,
@@ -175,6 +178,7 @@ function BoardColumnView<TItem extends { id: string }>({
   className?: string;
   column: BoardColumn<TItem>;
   renderAddMenu?: (columnId: string) => ReactNode;
+  renderColumnTop?: (columnId: string) => ReactNode;
   items: TItem[];
   renderItem: (item: TItem) => ReactNode;
   addLabel: string;
@@ -194,6 +198,14 @@ function BoardColumnView<TItem extends { id: string }>({
   });
   const isEmpty = items.length === 0;
   const handleAdd = onAddItem ? () => onAddItem(column.id) : undefined;
+  const top = renderColumnTop?.(column.id);
+  const emptyButton = (
+    <div ref={dropRef} className="flex w-full flex-1 items-center justify-center">
+      <Button variant="white" icon="Plus" onClick={handleAdd}>
+        {emptyLabel}
+      </Button>
+    </div>
+  );
 
   return (
     <CardContainer
@@ -212,15 +224,19 @@ function BoardColumnView<TItem extends { id: string }>({
           // just the button's own footprint — a bigger droppable hit-region
           // than the visible control, matching the ticket's Jira/Trello
           // callout, with no visual change (still centered by CardContainer's
-          // own `items-center`).
-          <div ref={dropRef} className="flex w-full flex-1 items-center justify-center">
-            <Button variant="white" icon="Plus" onClick={handleAdd}>
-              {emptyLabel}
-            </Button>
-          </div>
+          // own `items-center`). With a top slot the button sits below it.
+          top ? (
+            <div className="flex w-full flex-1 flex-col gap-stack-sm">
+              {top}
+              {emptyButton}
+            </div>
+          ) : (
+            emptyButton
+          )
         ) : undefined
       }
     >
+      {!isEmpty && top}
       {!isEmpty && (
         // Owns its own `gap-2` — CardContainer's Content slot only spaces
         // *this* wrapper from siblings (there are none), not the cards
@@ -256,6 +272,7 @@ export function BoardView<TItem extends { id: string }>({
   dragDisabled,
   onAddItem,
   renderAddMenu,
+  renderColumnTop,
   onEditColumn,
   onItemClick,
   isItemMuted,
@@ -329,6 +346,7 @@ export function BoardView<TItem extends { id: string }>({
             dragDisabled={dragDisabled}
             onAddItem={onAddItem}
             renderAddMenu={renderAddMenu}
+            renderColumnTop={renderColumnTop}
             onEditColumn={onEditColumn}
             onItemClick={onItemClick}
             isItemMuted={isItemMuted}

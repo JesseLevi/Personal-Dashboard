@@ -32,7 +32,8 @@ import type {
   RecipeRow,
 } from "@/lib/recipes/types";
 import type { Database } from "@/lib/database.types";
-import { inviteMember, searchMembers } from "@/lib/sharing/actions";
+import { declineShare, inviteMember, searchMembers } from "@/lib/sharing/actions";
+import { acceptRecipeShare } from "@/lib/sharing/recipes";
 
 // Write side of #122 — category/recipe CRUD, called from the Recepten UI
 // (later tickets). Every action follows lib/boards/'s
@@ -560,4 +561,23 @@ export async function shareRecipe(input: unknown) {
   const parsed = shareRecipeSchema.safeParse(input);
   if (!parsed.success) return { success: false as const, error: "invalid-input" as const };
   return inviteMember({ resource: "recipe", id: parsed.data.recipeId, memberId: parsed.data.memberId });
+}
+
+// ============================================================================
+// #467: answering an offered recipe (ADR-0036)
+// ============================================================================
+
+/** Accepts an offered recipe: lib/sharing copies it into the caller's first category. */
+export async function acceptRecipeOffer(input: unknown) {
+  const result = await acceptRecipeShare(input);
+  if (result.success) revalidatePath("/recepten");
+  return result;
+}
+
+/** Declines an offered recipe: the pending share row is deleted. */
+export async function declineRecipeOffer(input: unknown) {
+  const recipeId = typeof input === "object" && input !== null && "recipeId" in input ? input.recipeId : undefined;
+  const result = await declineShare({ resource: "recipe", id: recipeId });
+  if (result.success) revalidatePath("/recepten");
+  return result;
 }

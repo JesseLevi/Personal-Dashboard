@@ -3,6 +3,7 @@ import { useState } from "react";
 import { BoardView, type BoardColumn } from "./BoardView";
 import { CardContentTicket } from "../molecules/CardContentTicket";
 import { CardContentRecipe } from "../molecules/CardContentRecipe";
+import { SharedRecipeOffer } from "./SharedRecipeOffer";
 import { Tag } from "../atoms/Tag";
 import { Button } from "../atoms/Button";
 import { blurInTotalMs, blurOutTotalMs, usePrefersReducedMotion } from "../../lib/ui/blur-fade";
@@ -167,6 +168,31 @@ export const RecipeGeneric = () => (
         name={item.name}
         duration={item.duration}
       />
+    )}
+  />
+);
+
+// #467: non-draggable content above a column's cards, also above an empty column's add button.
+export const ColumnTop = () => (
+  <BoardView
+    columns={recipeColumns}
+    addLabel={addLabel}
+    editLabel={editLabel}
+    emptyLabel={emptyLabel}
+    renderColumnTop={(columnId) =>
+      columnId === recipeColumns[0].id || columnId === recipeColumns[recipeColumns.length - 1].id ? (
+        <SharedRecipeOffer
+          name="Amandel Pasta"
+          imageUrl={PLACEHOLDER_IMAGE}
+          duration="20 min"
+          inviterName="Youri"
+          onAccept={() => {}}
+          onDecline={() => {}}
+        />
+      ) : null
+    }
+    renderItem={(item: RecipeItem) => (
+      <CardContentRecipe imageUrl={PLACEHOLDER_IMAGE} name={item.name} duration={item.duration} />
     )}
   />
 );
