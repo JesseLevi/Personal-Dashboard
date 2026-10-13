@@ -12,7 +12,7 @@ import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
 import { CardContentStep } from "@/components/molecules/CardContentStep";
 import { MemberSearchPanel } from "@/components/organisms/MemberSearchPanel";
-import { memberFullName } from "@/lib/sharing/member";
+import { Toast } from "@/components/organisms/Toast";
 import type { MemberSearchResult } from "@/lib/sharing/types";
 import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import type { BasketOption } from "@/lib/shopping/baskets";
@@ -152,7 +152,7 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null, bask
   });
 
   // ADR-0036: offers a copy of this recipe to the picked person. Failures
-  // and the confirmation both render as a text line under the header.
+  // render as a text line under the header; the confirmation is a Toast.
   async function handleShare(member: MemberSearchResult) {
     setShareError(null);
     setShareNotice(null);
@@ -161,7 +161,7 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null, bask
       setShareError(tSharingErrors(result.error));
       return;
     }
-    setShareNotice(t("sharedWithLabel", { name: memberFullName(member, t("sharedUnnamedLabel")) }));
+    setShareNotice(t("sharedWithLabel", { name: member.displayName?.trim() || t("sharedUnnamedLabel") }));
   }
 
   function handleDelete() {
@@ -284,13 +284,15 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null, bask
             <Button
               variant="filled"
               icon="Share"
+              aria-label={t("shareLabel")}
               onClick={() => {
                 setShareError(null);
                 setShareNotice(null);
                 setShareOpen(true);
               }}
             >
-              {t("shareLabel")}
+              {/* #466: icon-only below md; permanent aria-label (same span-hide pattern as TeDoenHeader). */}
+              <span className="hidden md:inline">{t("shareLabel")}</span>
             </Button>
 
             {/* Ellipsis overflow at every breakpoint (Bewerken, Verwijderen) —
@@ -341,9 +343,7 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null, bask
       {shareError && (
         <p role="alert" className="text-base font-semibold text-priority-urgent">{shareError}</p>
       )}
-      {shareNotice && (
-        <p role="status" className="text-base font-semibold text-text-secondary">{shareNotice}</p>
-      )}
+      <Toast message={shareNotice} onDismiss={() => setShareNotice(null)} />
 
       {/* #153: real thumbnail, 2:1 at every breakpoint (user-ordered
           override of the fetched node's own ~2:1-but-not-exact geometry —
