@@ -33,8 +33,9 @@ const PANE_CLASS =
 // Matches --duration-base (200ms) plus a frame of slack.
 const GREETING_COLLAPSE_MS = 250;
 const EXIT_TARGET = "/te-doen";
-// Heading, password field, button row, magic-link form: the top-to-bottom exit order.
-const EXIT_ELEMENT_COUNT = 4;
+// Heading, password field, button row, magic-link form, then the page's visual (page.tsx
+// fades it via `data-exiting`): the top-to-bottom exit order.
+const EXIT_ELEMENT_COUNT = 5;
 const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
 
 const IDLE_PASSWORD_STATE: PasswordLoginState = { status: "idle" };
@@ -123,6 +124,9 @@ export function LoginForm({
   });
   useEffect(() => {
     if (!exiting) return;
+    // Close the mobile keyboard now, while the form fades out; closing it on unmount resized
+    // the viewport under the entering page.
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     routerRef.current.onPrefetch?.(EXIT_TARGET);
     const timer = window.setTimeout(() => {
       markEnterFromLogin();
@@ -237,7 +241,7 @@ export function LoginForm({
   }
 
   return (
-    <div className="flex w-full flex-col items-center">
+    <div className="flex w-full flex-col items-center" data-exiting={exiting || undefined}>
       <GreetingHeading
         hey={t("greeting.hey")}
         tail={t("greeting.tail")}
