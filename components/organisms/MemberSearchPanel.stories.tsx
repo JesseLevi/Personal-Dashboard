@@ -57,3 +57,8 @@ export const Selected = () => <Harness initialQuery="jes" selectedId="member-2" 
 export const NoResults = () => <Harness initialQuery="zzz" onSearch={mockSearchEmpty} />;
 
 export const RateLimited = () => <Harness initialQuery="jes" onSearch={mockSearchRateLimited} />;
+
+// Recipe sharing (ADR-0036): the confirm button reads "Delen" with a check.
+export const ShareRecipe = () => (
+  <Harness initialQuery="jes" selectedId="member-2" confirmLabel="Delen" confirmIcon="Check" />
+);

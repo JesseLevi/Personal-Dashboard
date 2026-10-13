@@ -11,6 +11,9 @@ import { AnimatedAddToBasketButton } from "@/components/molecules/AnimatedAddToB
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
 import { CardContentStep } from "@/components/molecules/CardContentStep";
+import { MemberSearchPanel } from "@/components/organisms/MemberSearchPanel";
+import { memberFullName } from "@/lib/sharing/member";
+import type { MemberSearchResult } from "@/lib/sharing/types";
 import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import type { BasketOption } from "@/lib/shopping/baskets";
 import { formatQuantityFraction } from "@/lib/recipes/kitchen-units";
@@ -32,6 +35,8 @@ import {
   createRecipe,
   deleteRecipe,
   searchIngredients,
+  searchRecipeShareMembers,
+  shareRecipe,
   updateRecipe,
   uploadRecipeThumbnail,
 } from "../actions";
@@ -99,6 +104,7 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null, bask
   // design/notes/RecipeDetailPage.md.
   const tUnitsShort = useTranslations("recipes.unitsShort");
   const tErrors = useTranslations("recipes.errors");
+  const tSharingErrors = useTranslations("sharing.errors");
   const router = useRouter();
 
   // Local, display-only, session-only state -- never written back to
@@ -111,6 +117,9 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null, bask
   const [panelOpen, setPanelOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [overflowOpen, setOverflowOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [shareNotice, setShareNotice] = useState<string | null>(null);
   const { confirming: deleteConfirming, ask: askDelete, cancel: cancelDelete } = useDeleteConfirm();
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -121,7 +130,7 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null, bask
   const [sendPending, setSendPending] = useState(false);
 
   // Same click-outside-closes convention as TeDoenHeader.tsx's board-
-  // switcher/sort dropdowns — reused for the mobile Ellipsis overflow menu.
+  // switcher/sort dropdowns — reused for the Ellipsis overflow menu.
   const overflowRef = useRef<HTMLDivElement>(null);
   const overflowPopoverRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -141,6 +150,19 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null, bask
     anchor: "right",
     prefer: "below",
   });
+
+  // ADR-0036: offers a copy of this recipe to the picked person. Failures
+  // and the confirmation both render as a text line under the header.
+  async function handleShare(member: MemberSearchResult) {
+    setShareError(null);
+    setShareNotice(null);
+    const result = await shareRecipe({ recipeId: recipe.id, memberId: member.id });
+    if (!result.success) {
+      setShareError(tSharingErrors(result.error));
+      return;
+    }
+    setShareNotice(t("sharedWithLabel", { name: memberFullName(member, t("sharedUnnamedLabel")) }));
+  }
 
   function handleDelete() {
     setDeleteError(null);
@@ -259,19 +281,22 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null, bask
               disabled={sendPending}
             />
 
-            <div className="hidden items-center gap-inline-xl md:flex">
-              <Button variant="filled" icon="Pencil" onClick={() => setEditOpen(true)}>
-                {t("editLabel")}
-              </Button>
-              <Button variant="destructive" icon="Trash" onClick={() => askDelete()}>
-                {t("deleteLabel")}
-              </Button>
-            </div>
+            <Button
+              variant="filled"
+              icon="Share"
+              onClick={() => {
+                setShareError(null);
+                setShareNotice(null);
+                setShareOpen(true);
+              }}
+            >
+              {t("shareLabel")}
+            </Button>
 
-            {/* Mobile Ellipsis overflow — undesigned node, built from Button +
-                Dropdown exactly like TeDoenHeader.tsx's own menus. See
-                design/notes/RecipeDetailPage.md. */}
-            <div ref={overflowRef} className="relative md:hidden">
+            {/* Ellipsis overflow at every breakpoint (Bewerken, Verwijderen) —
+                undesigned node, built from Button + Dropdown exactly like
+                TeDoenHeader.tsx's own menus. See design/notes/RecipeDetailPage.md. */}
+            <div ref={overflowRef} className="relative">
               <Button
                 icon="Ellipsis"
                 aria-label={t("overflowMenuLabel")}
@@ -312,6 +337,12 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null, bask
       </div>
       {deleteError && (
         <p className="text-base font-semibold text-priority-urgent">{deleteError}</p>
+      )}
+      {shareError && (
+        <p role="alert" className="text-base font-semibold text-priority-urgent">{shareError}</p>
+      )}
+      {shareNotice && (
+        <p role="status" className="text-base font-semibold text-text-secondary">{shareNotice}</p>
       )}
 
       {/* #153: real thumbnail, 2:1 at every breakpoint (user-ordered
@@ -474,6 +505,15 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null, bask
           setPortions(nextPortions);
           setUnitSystem(nextUnitSystem);
         }}
+      />
+
+      <MemberSearchPanel
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        onSearch={searchRecipeShareMembers}
+        onSelect={handleShare}
+        confirmLabel={t("shareLabel")}
+        confirmIcon="Check"
       />
     </div>
   );
