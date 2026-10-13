@@ -227,9 +227,9 @@ while fixing a typo). Doorgaan reuses the lookup via the same-address dedupe.
 ## Motion: name blur and sign-in exit
 
 - **Name:** the name text blurs in (`animate-blur-in`) when it appears and out (`animate-blur-out`) when it collapses, on top of the width opening. Never on first paint (a seeded `initialGreetingName` stays static).
-- **Exit:** `signInWithPassword` returns `{ status: "success" }` instead of redirecting. The form then blurs the active element (closes the mobile keyboard during the exit, not under the entering page) and blurs out heading, password field, Terug/Inloggen row, magic-link form and the page's visual, top to bottom (`blurFadeStagger(0..4)`; the visual is `LoginVisual`, told through `onExitStart` and the `LoginExitProvider` context in `LoginExit.tsx`; a CSS `:has()` hook did not fire reliably in iOS Safari), waits `blurOutTotalMs(5, reduced)`, sets the `atlas:enter-from-login` mark (`lib/ui/login-enter.ts`) and calls `onNavigate("/te-doen")`. `onPrefetch` warms the route when the exit starts.
+- **Exit:** `signInWithPassword` returns `{ status: "success" }` instead of redirecting. The form then blurs the active element (closes the mobile keyboard during the exit, not under the entering page) and blurs out heading, password field, Terug/Inloggen row, login-code form and the page's visual, top to bottom (`blurFadeStagger(0..4)`; the visual is `LoginVisual`, told through `onExitStart` and the `LoginExitProvider` context in `LoginExit.tsx`; a CSS `:has()` hook did not fire reliably in iOS Safari), waits `blurOutTotalMs(5, reduced)`, sets the `atlas:enter-from-login` mark (`lib/ui/login-enter.ts`) and calls `onNavigate("/te-doen")`. `onPrefetch` warms the route when the exit starts.
 - **Router seam:** `LoginForm` takes `onNavigate` / `onPrefetch`; `LoginFormClient.tsx` wires `router.replace` / `router.prefetch`, so Ladle needs no app router.
-- **No double submit:** Inloggen stays disabled and the password and magic-link forms are `inert` during the exit. The password field keeps its dots through the form reset via `defaultValue`.
+- **No double submit:** Inloggen stays disabled and the password and login-code forms are `inert` during the exit. The password field keeps its dots through the form reset via `defaultValue`.
 - Story: `ExitAfterSignIn`. Mark-and-play on the destination page: `design/notes/TeDoenBoard.md`.
 
 ## Terug/Inloggen row — the back trigger is now designed (fix round)
@@ -419,3 +419,12 @@ header comment already names for its 153/151px hug-artefact width call):
 coincides with both `spacing/inline/gap-sm` and `spacing/component/
 padding-sm`; with no binding to disambiguate, stays raw rather than
 guessed.
+
+## Login by e-mail code (#492, Claude-designed, no Figma)
+
+- **Step 3 button:** "Stuur mij een inlogcode" replaces the magic-link button. `sendLoginCode` sets the httpOnly `atlas_login_email` cookie (`lib/auth/login-email-cookie.ts`) and returns `sent`; the form then blurs out its four elements (the visual stays) and `router.replace("/login/code")`.
+- **Shared frame:** `app/login/layout.tsx` owns `<main>` and `LoginVisual`, so the image does not reload between `/login` and `/login/code`.
+- **Code page:** `app/login/code/page.tsx` redirects to `/login` without the cookie. `LoginCodeForm` stacks heading, masked address, `OtpInput` (design/notes/OtpInput.md), Inloggen, "Code opnieuw sturen" (outline, disabled for 60 s, countdown in the label) and "Ander e-mailadres" (transparent, clears the cookie). Same 312 px column and blur-in/-out stagger as the login form.
+- **Submit:** `onComplete` calls `requestSubmit()`; the Inloggen button is the fallback and stays disabled until six digits. A wrong code empties the field and refocuses it; typing retires the message.
+- **Messages:** one collapsing line under the field (`role="alert"` for errors, `role="status"` for "nieuwe code gestuurd"). Resend uses this inline line instead of a toast: the page has no Toast host.
+- **Unknown account:** `sendLoginCode` answers `sent` when Supabase refuses an unknown address, so the screen is no enumeration oracle (ADR-0031); such a code simply never verifies.
