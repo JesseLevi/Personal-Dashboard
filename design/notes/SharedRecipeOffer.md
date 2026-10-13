@@ -19,7 +19,7 @@ One visual unit: a wrapper `flex w-full flex-col rounded-card bg-priority-medium
 - No category yet (empty board): `page.tsx` passes no offers, because `accept_recipe_share` needs a first category and would fail.
 
 ## Token gaps and flags
-- Dark mode: `priority-medium-bg` follows the dark token set, like the `Tag`.
+- Dark mode: `priority-medium-bg` keeps its light value in dark mode (as the `Tag` does), so the block stays light blue around a dark card. Accepted.
 
 ## Gotchas
 - Stories: `Default`, `Pending`, `NoThumbnail`.
