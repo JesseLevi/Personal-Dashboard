@@ -207,20 +207,6 @@ export function SettingsPanel({
         </Button>
       }
     >
-      <ImageUploadField
-        id="settings-avatar"
-        name="avatar"
-        placeholder={t("avatar.placeholder")}
-        ariaLabel={t("avatar.inputLabel")}
-        disabled={isAvatarPending}
-        selectedFileName={hasAvatar ? t("avatar.inputLabel") : null}
-        onFileSelect={handleAvatarFile}
-        onClear={handleAvatarClear}
-        clearLabel={t("avatar.remove")}
-      />
-      {avatarError ? (
-        <p className="text-base font-semibold text-priority-urgent">{avatarError}</p>
-      ) : null}
       <ButtonToggle
         key={themeReady ? "theme-ready" : "theme-loading"}
         title={t("themeLabel")}
@@ -242,6 +228,21 @@ export function SettingsPanel({
           setPendingLocale(event.target.value as Locale)
         }
       />
+      <ImageUploadField
+        id="settings-avatar"
+        name="avatar"
+        placeholder={t("avatar.placeholder")}
+        ariaLabel={t("avatar.inputLabel")}
+        label={t("avatar.inputLabel")}
+        disabled={isAvatarPending}
+        selectedFileName={hasAvatar ? t("avatar.inputLabel") : null}
+        onFileSelect={handleAvatarFile}
+        onClear={handleAvatarClear}
+        clearLabel={t("avatar.remove")}
+      />
+      {avatarError ? (
+        <p className="text-base font-semibold text-priority-urgent">{avatarError}</p>
+      ) : null}
       <InputField
         label={t("firstNameLabel")}
         id={firstNameFieldId}
