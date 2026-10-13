@@ -28,6 +28,14 @@ Follow-ups:
 - Open product question: a member sees the owner's unnamed default basket as "Mijn mand", next to their own.
 - HEIC upload fails cleanly when `sharp` lacks a HEVC decoder.
 
+## Recept delen als kopie (epic #464, ADR-0036): built, not live
+
+#465–#467 are merged on `main`. The user reviews and closes them. Migration `20261013000002_recipe_shares.sql` is **not applied on hosted**: it needs the user's go for a `deploy.yml` migrate run. Before promoting a `main` build with this code:
+1. Apply that migration. Without it, `/recepten` loses its offers (the RPC fails and is logged) and "Delen" returns an error.
+2. Test with two accounts: share, the offer shows at the top of the first column, accept creates a copy with its photo, and decline removes it.
+
+Open: the recipe header wraps to two rows at ~400 px (three buttons). Making them icon-only on mobile needs a design decision.
+
 ## Next: Phase 7, Agenda (#33)
 
 1. **ADR: runtime for scheduled work.** Calendar sync is the first feature that needs it (`Architecture.md` §6, open decision 1).
