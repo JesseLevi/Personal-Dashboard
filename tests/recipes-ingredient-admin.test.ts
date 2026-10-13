@@ -20,6 +20,7 @@ import {
   createEigenIngredientSchema,
   createAliasSchema,
 } from "@/lib/recipes/ingredient-admin-schemas";
+import { distinctCategories } from "@/lib/recipes/ingredient-admin";
 
 const ID = "11111111-1111-4111-8111-111111111111";
 const OTHER = "22222222-2222-4222-8222-222222222222";
@@ -197,5 +198,23 @@ describe("schemas", () => {
   });
   it("requires a uuid target", () => {
     expect(createAliasSchema.safeParse({ name: "a", ingredientId: "x" }).success).toBe(false);
+  });
+});
+
+describe("distinctCategories", () => {
+  it("keeps one entry per Dutch name, fills a missing English name, skips empty and sorts", () => {
+    expect(
+      distinctCategories([
+        { category_nl: "Groenten", category_en: null },
+        { category_nl: "Brood", category_en: "Bread" },
+        { category_nl: "Groenten", category_en: "Vegetables" },
+        { category_nl: " ", category_en: "Nothing" },
+        { category_nl: null, category_en: "Orphan" },
+        { category_nl: "Brood", category_en: "Bread, other" },
+      ]),
+    ).toEqual([
+      { nl: "Brood", en: "Bread" },
+      { nl: "Groenten", en: "Vegetables" },
+    ]);
   });
 });

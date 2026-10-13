@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { getIngredientAdminData, getPendingIngredientGroups } from "@/lib/recipes/ingredient-admin";
+import { getIngredientAdminData, getIngredientCategories, getPendingIngredientGroups } from "@/lib/recipes/ingredient-admin";
 import { isAdmin } from "@/lib/recipes/session";
 import { searchIngredients } from "../actions";
 import {
@@ -20,13 +20,18 @@ import { IngredientAdmin } from "./IngredientAdmin";
 export default async function IngredientAdminPage() {
   if (!(await isAdmin())) notFound();
   const t = await getTranslations("recipes.ingredientAdmin");
-  const [{ aliases, eigen }, pending] = await Promise.all([getIngredientAdminData(), getPendingIngredientGroups()]);
+  const [{ aliases, eigen }, pending, categories] = await Promise.all([
+    getIngredientAdminData(),
+    getPendingIngredientGroups(),
+    getIngredientCategories(),
+  ]);
   return (
     <IngredientAdmin
       title={t("title")}
       aliases={aliases}
       eigen={eigen}
       pending={pending}
+      categories={categories}
       onSearch={searchIngredients}
       onCreateAlias={createAlias}
       onUpdateAlias={updateAlias}

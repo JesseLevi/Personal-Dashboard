@@ -172,3 +172,55 @@ export async function getPendingIngredientGroups(): Promise<PendingGroup[]> {
   const supabase = await createSupabaseServerClient();
   return groupPendingLines(await fetchOwnPendingLines(supabase, userId));
 }
+
+// ---------------------------------------------------------------------------
+// Categories for the own-ingredient picker: every distinct NL/EN pair already
+// in reference.ingredients (NEVO food groups plus categories added by an admin).
+// ---------------------------------------------------------------------------
+
+export interface IngredientCategory {
+  nl: string;
+  en: string | null;
+}
+
+const CATEGORY_PAGE_SIZE = 1000;
+const CATEGORY_MAX_ROWS = 20000;
+
+/** One entry per Dutch name; the first non-empty English name wins. Sorted by Dutch name. */
+export function distinctCategories(
+  rows: { category_nl: string | null; category_en: string | null }[],
+): IngredientCategory[] {
+  const byNl = new Map<string, string | null>();
+  for (const row of rows) {
+    const nl = row.category_nl?.trim();
+    if (!nl) continue;
+    const en = row.category_en?.trim() || null;
+    if (!byNl.has(nl) || (byNl.get(nl) === null && en)) byNl.set(nl, en);
+  }
+  return [...byNl.entries()]
+    .map(([nl, en]) => ({ nl, en }))
+    .sort((a, b) => a.nl.localeCompare(b.nl, "nl"));
+}
+
+export async function getIngredientCategories(): Promise<IngredientCategory[]> {
+  if (!(await isAdmin())) return [];
+  const supabase = await createSupabaseServerClient();
+  const rows: { category_nl: string | null; category_en: string | null }[] = [];
+  // PostgREST caps a response at 1000 rows; NEVO alone has ~2300.
+  for (let from = 0; from < CATEGORY_MAX_ROWS; from += CATEGORY_PAGE_SIZE) {
+    const { data, error } = await supabase
+      .schema("reference")
+      .from("ingredients")
+      .select("category_nl, category_en")
+      .not("category_nl", "is", null)
+      .order("id", { ascending: true })
+      .range(from, from + CATEGORY_PAGE_SIZE - 1);
+    if (error) {
+      console.error("[recipes] getIngredientCategories failed:", error.code, error.message);
+      throw new Error("Failed to load ingredient categories");
+    }
+    rows.push(...data);
+    if (data.length < CATEGORY_PAGE_SIZE) break;
+  }
+  return distinctCategories(rows);
+}

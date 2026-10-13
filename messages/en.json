@@ -161,8 +161,8 @@
         "editTitle": "Edit own ingredient",
         "nameNlLabel": "Name (Dutch)",
         "nameEnLabel": "Name (English)",
-        "categoryNlLabel": "Category (Dutch)",
-        "categoryEnLabel": "Category (English)",
+        "categoryNlLabel": "Name (Dutch)",
+        "categoryEnLabel": "Name (English)",
         "nutrientsLabel": "Nutrition per 100 g",
         "nutrientsHint": "Leave a field empty when the value is unknown. Empty never counts as 0.",
         "kcalLabel": "Energy (kcal)",
@@ -182,7 +182,11 @@
         "cancelLabel": "Cancel",
         "saveLabel": "Save",
         "savingLabel": "Saving…",
-        "namesHeading": "Names"
+        "namesHeading": "Names",
+        "categoryLabel": "Category",
+        "categoryNone": "No category",
+        "categoryNew": "New category…",
+        "categoryNewHint": "Give the category a Dutch and an English name so the shopping basket can group in both languages."
       },
       "countOf": "{shown} of {total}",
       "pending": {

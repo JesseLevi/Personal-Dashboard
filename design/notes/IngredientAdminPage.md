@@ -2,14 +2,13 @@
 Claude-designed on request (#325, redesigned #350, pending tab #326); no Figma node, ADR-0020 §2, §4, §6 is the spec · Code: `app/(app)/recepten/ingredienten/` (`page.tsx`, `IngredientAdmin.tsx`, `AliasPanel.tsx`, `OwnIngredientPanel.tsx`, `PendingPanel.tsx`, `PanelSection.tsx`, `actions.ts`, stories); data in `lib/recipes/ingredient-admin.ts`, validation in `lib/recipes/ingredient-admin-schemas.ts`
 
 ## Anatomy
-Admin-only route; non-admins get a 404 (route not discoverable; RLS is the real write boundary). Existing pieces only, no new tokens. Mirrors Winkelmand's rhythm: one `surface-primary` plane, content in `pr-page-right-equal`, no boxed list.
-- `PageHeader` with at most one filled "add" button that follows the active section; hidden on the pending tab (rows are the action).
-- `ButtonToggle` with three sections: Koppelingen (aliases), Eigen ingrediënten (own), Nog te koppelen (pending, icon `List`). `InputField` search below it; switching section clears the query.
+Admin-only route; non-admins get a 404 (route not discoverable; RLS is the real write boundary). Existing pieces only, no new tokens. Mirrors Winkelmand's rhythm: one `surface-primary` plane, no boxed list. Content is a `max-w-3xl` column centred (`mx-auto`) inside `pr-page-right-equal`; the `PageHeader` carries only the title.
+- `ButtonToggle` with three sections: Koppelingen (aliases), Eigen ingrediënten (own), Nog te koppelen (pending, icon `List`). Below it one row: `InputField` search (`flex-1`) plus the "add" button that follows the active section, so the row stays within the toggle's width. The button is labelled from `md:`, icon-only (with `aria-label`) below it; hidden on the pending tab (rows are the action). Switching section clears the query.
 - One muted `text-base text-text-secondary` count line above the list ("12 koppelingen", "2 van 12" while searching).
 - Plain rows via a local `ListRow` button (`rounded-control`, `px/py-component-md`, `hover:bg-surface-secondary`, `active:bg-surface-secondary-hover`, as the Sidebar rows): semibold truncating primary line, muted truncating secondary line, `stroke-lines` divider as a sibling between rows (like `CardContentIngredient`). No `Card`, no chevron.
 - The "Eigen" mark (ADR-0013, `eigen` rows always labelled) is small muted text, not a `Tag`, shown on every row of the Eigen section too.
 - Empty / no-results: one centred muted line (`py-stack-xxl`), no button. No own `loading.tsx`; `recepten/loading.tsx` covers it.
-- Panels stay in `SidePanel`. `PanelSection.tsx` holds the visible `PanelTitle` (`text-xl font-semibold`, `aria-hidden`; `SidePanel`'s sr-only h2 names the dialog) and `PanelSection` (semibold heading, optional muted hint). Own panel: Namen, Voeding per 100 g (2-col grid), Gewicht per eenheid. Alias panel: Naam in recept, Gekoppeld ingrediënt.
+- Panels stay in `SidePanel`. `PanelSection.tsx` holds the visible `PanelTitle` (`text-xl font-semibold`, `aria-hidden`; `SidePanel`'s sr-only h2 names the dialog) and `PanelSection` (semibold heading, optional muted hint). Own panel: Namen, Categorie, Voeding per 100 g (2-col grid), Gewicht per eenheid. Alias panel: Naam in recept, Gekoppeld ingrediënt.
 - Footer: filled "Opslaan" grows; edit mode adds destructive "Verwijderen" to its left via `DeleteConfirm`.
 - Pending row: primary = most common spelling, secondary = "N regels in je recepten"; tap opens `PendingPanel` (target search, optional "Gewicht per eenheid", one filled "Koppelen" button).
 
@@ -22,6 +21,8 @@ Admin-only route; non-admins get a 404 (route not discoverable; RLS is the real 
 - The alias key is shown as "Opgeslagen als: ..." (live `normalizeIngredientName`); the edit form starts from the stored key. (#325)
 - Nutrient fields are text inputs with `inputMode="decimal"`; empty means `null`, never `0`. Weight per unit offers only non-mass units. `source_version` of an `eigen` row is the ISO date of its last edit. (#325)
 - Pending data: the admin's own `recipe_ingredients` (`needs_review` or no `ingredient_id`), read with the user's RLS client plus an explicit `user_id` filter, grouped by `normalizeIngredientName` (singularises: "tomaten" groups as "tomaat"). No SQL, no migration, no cross-user data. Lines deliberately kept as plain names (ADR-0020 §5, `ingredient_id = null`) also appear until linked. (#326)
+
+- Categorie is a select over every distinct `category_nl` in `reference.ingredients` (NEVO food groups plus admin-added ones; label in the UI locale), plus "Geen categorie" and "Nieuwe categorie…". Picking one writes its NL/EN pair; "Nieuwe categorie…" reveals a required NL and an optional EN name field. A stored category not in the list opens as "Nieuwe categorie…" with its values. Loaded in pages of 1000 (PostgREST row cap) by `getIngredientCategories`.
 
 ## Gotchas
 - Only RLS-bound clients; every action also checks `isAdmin()` and returns `forbidden` otherwise. `duplicate` is the unique-key clash on `alias_normalized`.

@@ -3,7 +3,7 @@ import { IngredientAdmin } from "./IngredientAdmin";
 import { AliasPanel } from "./AliasPanel";
 import { OwnIngredientPanel } from "./OwnIngredientPanel";
 import { PendingPanel } from "./PendingPanel";
-import type { AdminAlias, AdminEigenIngredient, PendingGroup } from "@/lib/recipes/ingredient-admin";
+import type { AdminAlias, AdminEigenIngredient, IngredientCategory, PendingGroup } from "@/lib/recipes/ingredient-admin";
 import type { ActionResult, IngredientSearchResult, ReferenceIngredientRow } from "@/lib/recipes/types";
 
 // Dev-only mock actions: the page components never import the real "use server" module.
@@ -77,7 +77,14 @@ const pending: PendingGroup[] = [
   { key: "gochujang", name: "Gochujang", count: 1 },
 ];
 
+const categories: IngredientCategory[] = [
+  { nl: "Groenten", en: "Vegetables" },
+  { nl: "Kruiden en specerijen", en: "Herbs and spices" },
+  { nl: "Smeersels", en: "Spreads" },
+];
+
 const handlers = {
+  categories,
   onSearch: mockSearch,
   onCreateAlias: ok,
   onUpdateAlias: ok,
@@ -141,13 +148,13 @@ export const AliasPanelEdit = () => (
 
 export const OwnIngredientPanelEdit = () => (
   <div className="min-h-screen bg-surface-primary">
-    <OwnIngredientPanel open onClose={() => {}} target={{ mode: "edit", ingredient: eigen[0] }} onCreate={ok} onUpdate={ok} onDelete={ok} />
+    <OwnIngredientPanel open onClose={() => {}} target={{ mode: "edit", ingredient: eigen[0] }} categories={categories} onCreate={ok} onUpdate={ok} onDelete={ok} />
   </div>
 );
 
 export const OwnIngredientPanelCreate = () => (
   <div className="min-h-screen bg-surface-primary">
-    <OwnIngredientPanel open onClose={() => {}} target={{ mode: "create" }} onCreate={ok} onUpdate={ok} onDelete={ok} />
+    <OwnIngredientPanel open onClose={() => {}} target={{ mode: "create" }} categories={categories} onCreate={ok} onUpdate={ok} onDelete={ok} />
   </div>
 );
 

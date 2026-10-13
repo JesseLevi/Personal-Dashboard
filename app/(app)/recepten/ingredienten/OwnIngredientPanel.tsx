@@ -2,14 +2,14 @@
 
 // design: Claude-designed on request (#325, #350), design/notes/IngredientAdminPage.md.
 import { useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { SidePanel } from "@/components/organisms/SidePanel";
 import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
 import { PanelSection, PanelTitle } from "./PanelSection";
 import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import { UNITS } from "@/lib/recipes/units";
-import type { AdminEigenIngredient } from "@/lib/recipes/ingredient-admin";
+import type { AdminEigenIngredient, IngredientCategory } from "@/lib/recipes/ingredient-admin";
 import type { ActionResult } from "@/lib/recipes/types";
 
 export type OwnIngredientPanelTarget =
@@ -20,6 +20,8 @@ export interface OwnIngredientPanelProps {
   open: boolean;
   onClose: () => void;
   target: OwnIngredientPanelTarget;
+  /** Existing categories (NL/EN pairs); picking one sets both languages. */
+  categories: IngredientCategory[];
   onCreate: (input: unknown) => Promise<ActionResult<unknown>>;
   onUpdate: (input: unknown) => Promise<ActionResult>;
   onDelete: (input: unknown) => Promise<ActionResult>;
@@ -30,11 +32,18 @@ export interface OwnIngredientPanelProps {
 const WEIGHABLE_UNITS = UNITS.filter((unit) => unit.magnitude !== "mass").map((unit) => unit.code);
 
 const text = (value: string | null | undefined) => value ?? "";
+// Select values besides a category's Dutch name.
+const NO_CATEGORY = "";
+const NEW_CATEGORY = "__new__";
+
 const num = (value: number | null | undefined) => (value === null || value === undefined ? "" : String(value));
 
 interface FormState {
   nameNl: string;
   nameEn: string;
+  /** NO_CATEGORY, NEW_CATEGORY or an existing category's Dutch name. */
+  category: string;
+  /** Only used for NEW_CATEGORY. */
   categoryNl: string;
   categoryEn: string;
   kcal: string;
@@ -46,10 +55,13 @@ interface FormState {
   grams: string;
 }
 
-function formFor(ingredient: AdminEigenIngredient | null): FormState {
+function formFor(ingredient: AdminEigenIngredient | null, categories: IngredientCategory[]): FormState {
+  const current = ingredient?.categoryNl ?? ingredient?.categoryEn ?? null;
+  const known = categories.some((category) => category.nl === ingredient?.categoryNl);
   return {
     nameNl: text(ingredient?.nameNl),
     nameEn: text(ingredient?.nameEn),
+    category: current === null ? NO_CATEGORY : known ? ingredient!.categoryNl! : NEW_CATEGORY,
     categoryNl: text(ingredient?.categoryNl),
     categoryEn: text(ingredient?.categoryEn),
     kcal: num(ingredient?.kcal),
@@ -66,6 +78,7 @@ export function OwnIngredientPanel({
   open,
   onClose,
   target,
+  categories,
   onCreate,
   onUpdate,
   onDelete,
@@ -75,9 +88,10 @@ export function OwnIngredientPanel({
   const tUnits = useTranslations("recipes.units");
   const tSidePanel = useTranslations("components.sidePanel");
   const tErrors = useTranslations("recipes.errors");
+  const locale = useLocale();
 
   const ingredient = target.mode === "edit" ? target.ingredient : null;
-  const [form, setForm] = useState<FormState>(() => formFor(ingredient));
+  const [form, setForm] = useState<FormState>(() => formFor(ingredient, categories));
   const { confirming, ask, cancel } = useDeleteConfirm();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -91,7 +105,7 @@ export function OwnIngredientPanel({
     setPrevOpen(open);
     setPrevTargetKey(targetKey);
     if (shouldReset) {
-      setForm(formFor(ingredient));
+      setForm(formFor(ingredient, categories));
       cancel();
       setError(null);
     }
@@ -100,12 +114,17 @@ export function OwnIngredientPanel({
   const set = (field: keyof FormState) => (event: { target: { value: string } }) =>
     setForm((current) => ({ ...current, [field]: event.target.value }));
 
+  function categoryPayload() {
+    if (form.category === NEW_CATEGORY) return { categoryNl: form.categoryNl, categoryEn: form.categoryEn };
+    const picked = categories.find((category) => category.nl === form.category);
+    return { categoryNl: picked?.nl ?? null, categoryEn: picked?.en ?? null };
+  }
+
   function payload() {
     return {
       nameNl: form.nameNl,
       nameEn: form.nameEn,
-      categoryNl: form.categoryNl,
-      categoryEn: form.categoryEn,
+      ...categoryPayload(),
       kcal: form.kcal,
       protein: form.protein,
       carbs: form.carbs,
@@ -146,7 +165,22 @@ export function OwnIngredientPanel({
   }
 
   const hasUnit = form.unit !== "";
-  const canSave = !isPending && form.nameNl.trim() !== "" && (!hasUnit || form.grams.trim() !== "");
+  const isNewCategory = form.category === NEW_CATEGORY;
+  const canSave =
+    !isPending &&
+    form.nameNl.trim() !== "" &&
+    (!isNewCategory || form.categoryNl.trim() !== "") &&
+    (!hasUnit || form.grams.trim() !== "");
+
+  const categoryLabel = (category: IngredientCategory) =>
+    locale === "en" && category.en ? category.en : category.nl;
+  const categoryOptions = [
+    { value: NO_CATEGORY, label: t("categoryNone") },
+    ...categories
+      .map((category) => ({ value: category.nl, label: categoryLabel(category) }))
+      .sort((a, b) => a.label.localeCompare(b.label, locale)),
+    { value: NEW_CATEGORY, label: t("categoryNew") },
+  ];
 
   const footer =
     ingredient && confirming ? (
@@ -188,8 +222,23 @@ export function OwnIngredientPanel({
       <PanelSection heading={t("namesHeading")}>
         <InputField label={t("nameNlLabel")} id="own-name-nl" value={form.nameNl} onChange={set("nameNl")} required />
         <InputField label={t("nameEnLabel")} id="own-name-en" value={form.nameEn} onChange={set("nameEn")} />
-        <InputField label={t("categoryNlLabel")} id="own-category-nl" value={form.categoryNl} onChange={set("categoryNl")} />
-        <InputField label={t("categoryEnLabel")} id="own-category-en" value={form.categoryEn} onChange={set("categoryEn")} />
+      </PanelSection>
+
+      <PanelSection heading={t("categoryLabel")} hint={isNewCategory ? t("categoryNewHint") : undefined}>
+        <InputField
+          aria-label={t("categoryLabel")}
+          id="own-category"
+          trailingIcon="ChevronDown"
+          value={form.category}
+          onChange={set("category")}
+          options={categoryOptions}
+        />
+        {isNewCategory && (
+          <>
+            <InputField label={t("categoryNlLabel")} id="own-category-nl" value={form.categoryNl} onChange={set("categoryNl")} required />
+            <InputField label={t("categoryEnLabel")} id="own-category-en" value={form.categoryEn} onChange={set("categoryEn")} />
+          </>
+        )}
       </PanelSection>
 
       <PanelSection heading={t("nutrientsLabel")} hint={t("nutrientsHint")}>

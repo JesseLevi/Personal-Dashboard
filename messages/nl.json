@@ -161,8 +161,8 @@
         "editTitle": "Eigen ingrediënt bewerken",
         "nameNlLabel": "Naam (Nederlands)",
         "nameEnLabel": "Naam (Engels)",
-        "categoryNlLabel": "Categorie (Nederlands)",
-        "categoryEnLabel": "Categorie (Engels)",
+        "categoryNlLabel": "Naam (Nederlands)",
+        "categoryEnLabel": "Naam (Engels)",
         "nutrientsLabel": "Voeding per 100 g",
         "nutrientsHint": "Laat een veld leeg als de waarde onbekend is. Leeg telt nooit als 0.",
         "kcalLabel": "Energie (kcal)",
@@ -182,7 +182,11 @@
         "cancelLabel": "Annuleren",
         "saveLabel": "Opslaan",
         "savingLabel": "Opslaan…",
-        "namesHeading": "Namen"
+        "namesHeading": "Namen",
+        "categoryLabel": "Categorie",
+        "categoryNone": "Geen categorie",
+        "categoryNew": "Nieuwe categorie…",
+        "categoryNewHint": "Geef de categorie een Nederlandse en Engelse naam, zodat de winkelmand in beide talen kan groeperen."
       },
       "countOf": "{shown} van {total}",
       "pending": {
