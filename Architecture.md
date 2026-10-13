@@ -42,7 +42,7 @@ worker/               job-consumer skeleton (unused until a scheduled-work mecha
 - **Components**: built with CVA. Variant axes are props; Hover/Active/Focus are CSS states, never props. Composition mirrors the design hierarchy: atoms ← molecules ← organisms ← `app/`. Icons go only through the `Icon` atom (lucide).
 - **Design source** (ADR-0034): Claude designs UI in code from existing components and tokens. A Figma design the user names is implemented exactly.
 - **Every component** gets a Ladle story, a visual baseline and a `design/notes/<Component>.md` contract.
-- **Libraries**: dnd-kit (drag and drop), TipTap 3 with official MIT extensions only (ADR-0021), Floating UI (menus), next-intl (i18n), Schedule-X for the Agenda (ADR-0008).
+- **Libraries**: dnd-kit (drag and drop), TipTap 3 with official MIT extensions only (ADR-0021), Floating UI (menus), next-intl (i18n), FullCalendar standard/MIT for the Agenda (ADR-0037).
 - **PWA**: per-section web manifests, so Te doen, Recepten, Winkelmand and Notities can each be a home-screen icon.
 
 ## 4. Data model
@@ -74,7 +74,7 @@ worker/               job-consumer skeleton (unused until a scheduled-work mecha
 | Sharing | `shares` (ADR-0035) |
 | Notities | `note_categories`, `notes` (`content` TipTap JSON, derived `title` + `content_text`), `note_links` (derived on save) |
 
-Planned for Phase 7: `calendar_events` and `calendar_accounts` (§7).
+Planned for Phase 7: `calendars`, `calendar_accounts`, `calendar_events`, `calendar_event_links`, `meal_plans`, `cards.planned_for` (§7).
 
 ### 4.3 Search
 
@@ -129,20 +129,22 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   2. the hosted multilingual embedding model and its dimension;
   3. the privacy stance on sending notes to a provider (ADR-0018 requires it to be explicit).
 
-## 7. Agenda (Phase 7, planned)
+## 7. Agenda (Phase 7, planned, ADR-0037)
 
-- **Schema** (ADR-0005/0008):
-  - `calendar_events`: title, `starts_at`/`ends_at` as `timestamptz`, `all_day` flag, location, description, `source` `manual|sync`, nullable `calendar_account_id` + `external_id`, unique per account.
-  - `calendar_accounts`: provider `ics|caldav|google`, display name, `vault_secret_id`, `sync_state`, `last_synced_at`.
-  - Keep a clear owning container, so a shared calendar can come later (ADR-0035).
+- **One timeline, nothing copied**: manual events (editable), synced events (source fields read-only, never written back), `meal_plans`, `cards.planned_for` and the `cards.due_at` overlay, unioned by one `security invoker` function.
+- **Schema**:
+  - `calendars`: the container (ADR-0035); a default per user (ADR-0017); an imported feed is its own calendar.
+  - `calendar_accounts`: provider, credentials in Vault (ADR-0002), `sync_state`, `last_synced_at`.
+  - `calendar_events`: `calendar_id`, `starts_at`/`ends_at`, `all_day`, `source` `manual|sync`, `external_id` unique per account, `missing_since`.
+  - `meal_plans`: `calendar_id`, `recipe_id`, `servings`, `slot` (breakfast/lunch/dinner/snack), and either `planned_on` or `calendar_event_id`; "naar mand" sets `shopping_list_items.meal_plan_id`.
+  - `calendar_event_links`: an event plus exactly one card, recipe or note, cascading on both sides.
 - **Sync**:
-  - read-only import, providers in order `ics` → `caldav` (`tsdav`) → `google` (OAuth refresh token);
-  - credentials, including secret ICS URLs, in Vault (ADR-0002);
-  - fetches through `safe-fetch`;
-  - recurring events expanded into instances within −30 d / +400 d;
-  - synced rows are read-only in the UI.
-- **Deadlines** from `cards.due_at` overlay at query time; they are never copied.
-- **UI**: Schedule-X themed with semantic tokens, Claude-designed (ADR-0034).
+  - providers `ics` → `caldav` (`tsdav`) → Graph/Google only on need; Outlook is ICS or Graph, never CalDAV;
+  - fetches through `safe-fetch`; recurring instances expanded within −30 d / +400 d, `external_id` = UID + instance start;
+  - upsert, never delete-and-insert; a failed or empty fetch, or a drop over half, deletes nothing;
+  - an event is deleted after two consecutive successful syncs miss it; its links and attached meal plans go with it, basket items stay and the user gets a notice;
+  - write only on a changed content hash; past events are kept as history.
+- **UI**: FullCalendar standard (MIT) packages, themed with semantic tokens, Claude-designed (ADR-0034); `ical.js` parses feeds.
 - **Sync trigger** depends on open decision 1 in §6.
 
 ## 8. Testing and CI gates
@@ -164,8 +166,8 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 | 0 Foundation, 1 Account, 2 Design system | ✅ (SMTP for magic links on hosted is open, #10) |
 | 3 Te doen, 4 Recepten (incl. import, nutrition), 5 Winkelmand, 6 Notities | ✅ in production use |
 | Delen, fase 1: Winkelmand (#420) | 🔜 now (ADR-0035) |
-| 7 Agenda | 🔜 after #420 (#33) |
+| 7 Agenda, incl. meal and card planning | 🔜 after #420 (#33, ADR-0037) |
 | 8 AI pipeline: embeddings and semantic search | backlog (#31) |
 | 9 Assistent: agent signals | backlog (#32) |
 | Delen, fase 2: Recept als kopie (#464) | backend gebouwd (ADR-0036), UI volgt |
-| Later | sharing boards (ADR-0035), live recipe sharing, weekmenu, mail integration (`Vision.md`) |
+| Later | sharing boards (ADR-0035), live recipe sharing, mail integration (`Vision.md`) |

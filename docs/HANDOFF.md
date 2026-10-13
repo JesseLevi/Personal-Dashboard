@@ -36,15 +36,10 @@ Open: the recipe header wraps to two rows at ~400 px (three buttons). Making the
 
 ## Next: Phase 7, Agenda (#33)
 
-1. **ADR: runtime for scheduled work.** Calendar sync is the first feature that needs it (`Architecture.md` §6, open decision 1).
+1. **ADR-0038: runtime for scheduled work (#482).** Calendar sync is the first feature that needs it (`Architecture.md` §6, open decision 1).
    - Weigh a lazy "sync when stale" on Agenda load via `after()` (ADR-0017/0019 style, no infrastructure) against Vercel Cron and Supabase Cron.
    - Cost and the Vercel plan's cron limits decide it.
-2. **Split #33 into tickets**, in this order:
-   - (a) schema + RLS: `calendar_events`, `calendar_accounts`, with an owning container shareable per ADR-0035;
-   - (b) manual events and an Agenda page with day/week/month views on Schedule-X, Claude-designed (ADR-0034), plus a nav entry. The Sidebar has no Agenda item yet;
-   - (c) a deadline overlay from `cards.due_at`;
-   - (d) ICS import via `safe-fetch`, with the secret URL stored in Vault;
-   - (e) CalDAV, then (f) Google.
+2. **#33 is the epic** (ADR-0037, Agenda as planner; supersedes ADR-0008), split into #481–#491 on the board. Ready: #481 (this ADR's PR), #482 (runtime ADR, blocks ICS #490), #483 (schema), #485 (`AgendaCalendar` in Atlas style, parallel). The rest follows the epic's order.
 3. Phases 8 and 9 (#31, #32) stay in the backlog. Their bodies follow ADR-0018 (hosted models, no worker host). Each needs its own ADR first: the embedding model and the privacy of notes.
 
 ## Small open items

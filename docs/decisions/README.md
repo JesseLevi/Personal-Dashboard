@@ -67,5 +67,6 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 
 | ADR | Decides | Status |
 | --- | --- | --- |
-| [0008](0008-calendar-sync-and-ui-library.md) | Read-only sync (ics → caldav → google), Schedule-X, SSRF guard | Accepted |
+| [0037](0037-agenda-as-planner.md) | Agenda = one timeline over events, meal plans and planned cards; `calendars` container; links on any event; safe sync deletion; ics → caldav → Graph/Google; FullCalendar (MIT) + `ical.js` | Accepted |
+| [0008](0008-calendar-sync-and-ui-library.md) | Read-only sync, Schedule-X, SSRF guard | Superseded by 0037 |
 | [0006](0006-embedding-pipeline.md) | Jobs + embeddings + `search_semantic` shape; model and host reopened by 0018 | Accepted, amended by 0018 |
