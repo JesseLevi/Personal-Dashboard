@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // Resource types that can be shared (ADR-0035). A new type adds an entry
 // here and a column in SHARE_COLUMN (lib/sharing/actions.ts).
-export const resourceTypeSchema = z.enum(["shopping_list"]);
+export const resourceTypeSchema = z.enum(["shopping_list", "recipe"]);
 export type ResourceType = z.infer<typeof resourceTypeSchema>;
 
 export const resourceRefSchema = z.object({
@@ -13,6 +13,8 @@ export type ResourceRef = z.infer<typeof resourceRefSchema>;
 
 export const inviteMemberSchema = resourceRefSchema.extend({ memberId: z.uuid() });
 export const revokeShareSchema = resourceRefSchema.extend({ memberId: z.uuid() });
+
+export const acceptRecipeShareSchema = z.object({ shareId: z.uuid() });
 
 // Same bounds as public.search_members (2 to 64 characters after trimming).
 export const searchMembersSchema = z.object({

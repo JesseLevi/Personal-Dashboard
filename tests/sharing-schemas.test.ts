@@ -14,7 +14,8 @@ const OTHER = "00000000-0000-4000-8000-000000000002";
 describe("sharing schemas", () => {
   it("accepts only known resource types", () => {
     expect(resourceTypeSchema.safeParse("shopping_list").success).toBe(true);
-    expect(resourceTypeSchema.safeParse("recipe").success).toBe(false);
+    expect(resourceTypeSchema.safeParse("recipe").success).toBe(true);
+    expect(resourceTypeSchema.safeParse("board").success).toBe(false);
   });
 
   it("requires a resource type and a uuid", () => {

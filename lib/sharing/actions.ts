@@ -1,5 +1,6 @@
 import "server-only";
 import type { z } from "zod";
+import type { TablesInsert } from "@/lib/database.types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/recipes/session";
 import {
@@ -24,18 +25,21 @@ import type {
 // this uses service_role. A zero-row result (filtered by RLS, or the row is
 // not in the expected state) reports "not-found".
 
-const SHARE_COLUMN = { shopping_list: "shopping_list_id" } as const satisfies Record<
+const SHARE_COLUMN = {
+  shopping_list: "shopping_list_id",
+  recipe: "recipe_id",
+} as const satisfies Record<
   ResourceType,
   string
 >;
 
 type Client = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
-function logDbError(action: string, error: { code?: string; message: string }) {
+export function logDbError(action: string, error: { code?: string; message: string }) {
   console.error(`[sharing] ${action} failed:`, error.code, error.message);
 }
 
-function toErrorCode(error: { code?: string; message: string }): SharingErrorCode {
+export function toErrorCode(error: { code?: string; message: string }): SharingErrorCode {
   if (error.code === "23505") return "already-shared";
   if (error.code === "42501") return "not-found";
   if (error.message === "rate_limited") return "rate-limited";
@@ -58,11 +62,9 @@ async function withUser<S extends z.ZodType, T>(
 
 export async function inviteMember(input: unknown): Promise<ActionResult> {
   return withUser(inviteMemberSchema, input, async ({ supabase, userId, data }) => {
-    const { error } = await supabase.from("shares").insert({
-      user_id: userId,
-      member_id: data.memberId,
-      [SHARE_COLUMN[data.resource]]: data.id,
-    });
+    const row: TablesInsert<"shares"> = { user_id: userId, member_id: data.memberId };
+    row[SHARE_COLUMN[data.resource]] = data.id;
+    const { error } = await supabase.from("shares").insert(row);
     if (error) {
       logDbError("inviteMember", error);
       return { success: false, error: toErrorCode(error) };
@@ -73,6 +75,8 @@ export async function inviteMember(input: unknown): Promise<ActionResult> {
 
 export async function acceptShare(input: unknown): Promise<ActionResult> {
   return withUser(resourceRefSchema, input, async ({ supabase, userId, data }) => {
+    // A recipe offer is never accepted in place: acceptRecipeShare copies it (ADR-0036).
+    if (data.resource === "recipe") return { success: false, error: "invalid-input" };
     const { data: rows, error } = await supabase
       .from("shares")
       .update({ status: "accepted", responded_at: new Date().toISOString() })

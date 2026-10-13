@@ -36,6 +36,18 @@ export type PendingInvite = {
   invitedAt: string;
 };
 
+// A recipe offered to the caller (ADR-0036). `thumbnailUrl` is presigned on
+// the server; the stored path never reaches the browser.
+export type PendingRecipeShare = {
+  shareId: string;
+  recipeId: string;
+  title: string;
+  timeMinutes: number | null;
+  thumbnailUrl: string | null;
+  inviterFirstName: string | null;
+  invitedAt: string;
+};
+
 // The one share a basket owner has on a container (v1: one member per basket,
 // ADR-0035 point 11). `status` is the invitee's side: pending until accepted.
 export type ListShare = {
