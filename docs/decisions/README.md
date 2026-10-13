@@ -11,6 +11,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | [0018](0018-shelve-self-hosting-and-local-inference.md) | Vercel + Supabase Cloud is the target; hosted AI behind `lib/ai/` with cost guardrails; no always-on worker | Accepted |
 | [0032](0032-deploy-and-release.md) | Builds on `main` only, manual promotion, migration routes, CI scope | Accepted |
 | [0033](0033-server-only-data-access.md) | Browser talks only to Atlas; all data through server code | Accepted |
+| [0038](0038-login-by-email-code.md) | Login by 6-digit e-mail code plus fallback link; Resend SMTP; hosted config scripted | Accepted |
 | [0007](0007-i18n-next-intl.md) | next-intl, NL default, EN in the same PR | Accepted |
 | [0009](0009-rls-testing-and-migration-discipline.md) | Migrations only; RLS test per table; CI coverage gate | Accepted (storage part amended by 0024) |
 | [0034](0034-ui-design-source.md) | Claude designs UI in code by default; a named Figma design is binding | Accepted |

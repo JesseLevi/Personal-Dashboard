@@ -16,6 +16,7 @@
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "worker": "tsx worker/index.ts",
+    "auth:email": "tsx --env-file-if-exists=.env scripts/configure-auth-email.ts",
     "db:reset": "supabase db reset",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --local --schema public,reference > lib/database.types.ts",
