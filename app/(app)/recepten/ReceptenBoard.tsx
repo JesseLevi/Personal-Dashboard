@@ -9,6 +9,7 @@ import { BoardView, type BoardColumn } from "@/components/organisms/BoardView";
 import { CardContentRecipe } from "@/components/molecules/CardContentRecipe";
 import { CardContentRecipeSkeleton } from "@/components/molecules/CardContentRecipeSkeleton";
 import { CardContentRecipeFailed } from "@/components/molecules/CardContentRecipeFailed";
+import { SharedRecipeOffer } from "@/components/organisms/SharedRecipeOffer";
 import { isIconName } from "@/components/atoms/Icon";
 import { isImportErrorCode } from "@/lib/recipes/enums";
 import { hasImportingRecipe } from "@/lib/recipes/import/polling";
@@ -16,6 +17,7 @@ import { hostOf } from "@/lib/recipes/import/url";
 import { recipeThumbnailRouteUrl } from "@/lib/recipes/thumbnail-url";
 import { applyItemMove, type CardMove } from "@/lib/boards/optimistic";
 import type { CategoryWithRecipes, RecipeRow } from "@/lib/recipes/types";
+import type { PendingRecipeShare } from "@/lib/sharing/types";
 import { CategoryPanel, type CategoryPanelTarget } from "@/app/(app)/_components/CategoryPanel";
 import { CATEGORY_ICONS } from "./category-icons";
 import { RecipePanel, type RecipePanelTarget } from "./RecipePanel";
@@ -34,6 +36,8 @@ import {
   searchIngredients,
   createOwnIngredient,
   uploadRecipeThumbnail,
+  acceptRecipeOffer,
+  declineRecipeOffer,
 } from "./actions";
 
 // Client wrapper around BoardView (#124) — `renderItem` is a function prop
@@ -65,6 +69,8 @@ export interface ReceptenBoardProps {
   ingredientsLabel?: string;
   /** Presigned card-thumbnail URLs by recipe id, minted in the page render (#391). */
   thumbnailUrls?: Record<string, string>;
+  /** Recipes offered by others (#467), shown above the first category's cards. */
+  offers?: PendingRecipeShare[];
 }
 
 // `recipe_categories.icon` is free-text at the schema layer (deviation (a),
@@ -83,12 +89,15 @@ export function ReceptenBoard({
   addCategoryLabel,
   ingredientsLabel,
   thumbnailUrls = {},
+  offers = [],
 }: ReceptenBoardProps) {
   const t = useTranslations("components.cardContainer");
   const tRecipe = useTranslations("components.cardContentRecipe");
   const tErrors = useTranslations("recipes.errors");
   const tImportErrors = useTranslations("recipes.import.errors");
   const tImport = useTranslations("components.recipeImport");
+  const tOfferErrors = useTranslations("sharing.errors");
+  const tUnnamed = useTranslations("components.memberSearchPanel");
   const router = useRouter();
 
   // Local optimistic copy of `categories` (#155) — same "render from local
@@ -204,6 +213,44 @@ export function ReceptenBoard({
     }
   }
 
+  // #467: accept copies the recipe to the top of the first column, decline just
+  // removes the offer; both end in a refresh. One request at a time.
+  const [respondingOffer, setRespondingOffer] = useState<string | null>(null);
+  const [offerError, setOfferError] = useState<string | null>(null);
+  async function respondToOffer(offer: PendingRecipeShare, accept: boolean) {
+    setOfferError(null);
+    setRespondingOffer(offer.shareId);
+    try {
+      const result = await (accept
+        ? acceptRecipeOffer({ shareId: offer.shareId })
+        : declineRecipeOffer({ recipeId: offer.recipeId }));
+      if (!result.success) setOfferError(tOfferErrors(result.error));
+      router.refresh();
+    } catch {
+      setOfferError(tOfferErrors("generic"));
+    } finally {
+      setRespondingOffer(null);
+    }
+  }
+
+  function renderOffers(columnId: string) {
+    if (offers.length === 0 || columnId !== localCategories[0]?.id) return null;
+    return offers.map((offer) => (
+      <SharedRecipeOffer
+        key={offer.shareId}
+        name={offer.title}
+        imageUrl={offer.thumbnailUrl ?? undefined}
+        duration={
+          offer.timeMinutes != null ? tRecipe("durationMinutes", { minutes: offer.timeMinutes }) : undefined
+        }
+        inviterName={offer.inviterFirstName ?? tUnnamed("unnamedLabel")}
+        pending={respondingOffer !== null}
+        onAccept={() => void respondToOffer(offer, true)}
+        onDecline={() => void respondToOffer(offer, false)}
+      />
+    ));
+  }
+
   function renderRecipeCard(recipe: RecipeRow) {
     if (recipe.import_status === "importing") {
       return <CardContentRecipeSkeleton label={tImport("skeleton.loadingLabel")} />;
@@ -279,6 +326,7 @@ export function ReceptenBoard({
           convention as TeDoenBoard.tsx (`recipes.errors.*`, no toast
           component exists in this design system yet). */}
       {moveError && <p className="text-base font-semibold text-priority-urgent">{moveError}</p>}
+      {offerError && <p className="text-base font-semibold text-priority-urgent">{offerError}</p>}
       <BoardView
         columns={columns}
         onMove={handleMove}
@@ -309,6 +357,7 @@ export function ReceptenBoard({
           />
         )}
         renderItem={renderRecipeCard}
+        renderColumnTop={renderOffers}
       />
       <LinkImportPanel
         open={linkPanel.open}

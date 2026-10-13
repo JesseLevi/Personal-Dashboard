@@ -251,6 +251,11 @@
       "message": "{name} wants to share a basket",
       "acceptLabel": "Accept",
       "declineLabel": "Decline"
+    },
+    "recipeOffer": {
+      "sharedBy": "Shared by {name}",
+      "acceptLabel": "Accept",
+      "declineLabel": "Decline"
     }
   },
   "boards": {

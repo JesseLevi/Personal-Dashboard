@@ -6,6 +6,7 @@ import { getAuthenticatedUserId, isAdmin } from "@/lib/recipes/session";
 import { sweepStuckImports } from "@/lib/recipes/import/sweep";
 import { presignRecipeThumbnails } from "@/lib/recipes/thumbnails";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { pendingRecipeShares } from "@/lib/sharing/recipes";
 import { ReceptenBoard } from "./ReceptenBoard";
 import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
 
@@ -35,7 +36,11 @@ async function ReceptenPageContent() {
   // before the board reads them, so they show as a failed card, not a skeleton.
   const userId = await getAuthenticatedUserId();
   if (userId) await sweepStuckImports(await createSupabaseServerClient(), userId);
-  const [categories, admin] = await Promise.all([getRecipeCategoriesWithRecipes(), isAdmin()]);
+  const [categories, admin, offers] = await Promise.all([
+    getRecipeCategoriesWithRecipes(),
+    isAdmin(),
+    pendingRecipeShares(),
+  ]);
 
   const thumbnailUrls = await presignRecipeThumbnails(
     userId,
@@ -47,6 +52,8 @@ async function ReceptenPageContent() {
     <ReceptenBoard
       categories={categories}
       thumbnailUrls={thumbnailUrls}
+      // #467: an accepted copy lands in the first category, so no category means no offer.
+      offers={categories.length > 0 ? offers : []}
       title={t("nav.recipes")}
       addCategoryLabel={t("components.pageHeader.recipes.addCategoryLabel")}
       ingredientsLabel={admin ? t("components.pageHeader.recipes.ingredientsLabel") : undefined}

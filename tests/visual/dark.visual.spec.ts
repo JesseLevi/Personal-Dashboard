@@ -33,6 +33,7 @@ const DARK_STORIES = [
   "card--all-content-types",
   "card--with-settings",
   "card-container--default",
+  "shared-recipe-offer--default",
   "card-content-ingredient--all-variants",
   "checkbox--states",
   "dropdown--closed",
