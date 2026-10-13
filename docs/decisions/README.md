@@ -24,6 +24,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | ADR | Decides | Status |
 | --- | --- | --- |
 | [0035](0035-sharing-model.md) | Sharing per container via one `shares` table; access in policies through `private.<type>_role()`; member search by name | Accepted |
+| [0036](0036-recipe-share-sends-a-copy.md) | Sharing a recipe sends a copy: offer in `shares`, two definer RPCs, accept copies into the recipient's data | Accepted |
 | [0001](0001-user-scoped-data-ownership.md) | `user_id` ownership + RLS on every table | Superseded by 0035 |
 | [0002](0002-secrets-in-vault-server-only-access.md) | Per-user credentials in Vault, decrypted server-side only | Accepted |
 | [0005](0005-source-field-now.md) | `source` column on `cards` and `calendar_events` | Accepted |

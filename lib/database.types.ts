@@ -726,6 +726,7 @@ export type Database = {
           created_at: string
           id: string
           member_id: string
+          recipe_id: string | null
           responded_at: string | null
           role: string
           shopping_list_id: string | null
@@ -736,6 +737,7 @@ export type Database = {
           created_at?: string
           id?: string
           member_id: string
+          recipe_id?: string | null
           responded_at?: string | null
           role?: string
           shopping_list_id?: string | null
@@ -746,6 +748,7 @@ export type Database = {
           created_at?: string
           id?: string
           member_id?: string
+          recipe_id?: string | null
           responded_at?: string | null
           role?: string
           shopping_list_id?: string | null
@@ -753,6 +756,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "shares_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "shares_shopping_list_id_fkey"
             columns: ["shopping_list_id"]
@@ -902,6 +912,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_recipe_share: {
+        Args: { p_share_id: string }
+        Returns: {
+          recipe_id: string
+          source_thumbnail_path: string
+        }[]
+      }
       apply_seed: {
         Args: { p_key: string; p_user_id: string }
         Returns: boolean
@@ -952,6 +969,19 @@ export type Database = {
           p_target_index: number
         }
         Returns: number
+      }
+      pending_recipe_shares: {
+        Args: never
+        Returns: {
+          invited_at: string
+          inviter_display_name: string
+          inviter_id: string
+          recipe_id: string
+          share_id: string
+          thumbnail_path: string
+          time_minutes: number
+          title: string
+        }[]
       }
       pending_share_invites: {
         Args: never

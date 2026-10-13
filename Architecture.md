@@ -54,6 +54,7 @@ worker/               job-consumer skeleton (unused until a scheduled-work mecha
 - **`reference` schema**: shared, non-user data with no `user_id`. Select for everyone. Writes only through migrations, except admin-written `eigen` rows and shared aliases (ADR-0011/0020).
 - **`private` schema**: not exposed by PostgREST; written only by definer functions (ADR-0031). Also holds the sharing role functions (ADR-0035).
 - **Sharing** (ADR-0035): a container (now `shopping_lists`) is shared through `shares` (one nullable FK per shareable type, `pending|accepted`, role `editor`). Rows inside a container carry the owner's `user_id`; their policies call `private.<type>_role(id)`. Other members' names come only from `member_profiles()` / `search_members()`.
+- **Recipe share = copy** (ADR-0036): a recipe offer is a pending `shares` row (`recipe_id`, never `accepted`). The invitee reads it only through `pending_recipe_shares()`; `accept_recipe_share()` (definer) copies the recipe into their own first category, then `lib/sharing/recipes.ts` copies the thumbnail in R2. Afterwards the two recipes are unrelated.
 - **Small closed sets** are text with a check constraint (`priority`, `size`, `source`). Units are the shared enum `public.recipe_unit` (ADR-0028).
 - **Ordering** uses fractional `position` (numeric midpoint), mirrored in TypeScript and SQL (ADR-0015).
 - **Multi-statement writes** are `security invoker` RPCs with `search_path = ''`, an explicit ownership guard, and execute granted only to `authenticated`: `replace_recipe_contents`, `move_card`, `move_recipe`, `move_note`, `toggle_board_favorite`, `save_note_content` (ADR-0015/0030).
@@ -166,4 +167,5 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 | 7 Agenda | 🔜 after #420 (#33) |
 | 8 AI pipeline: embeddings and semantic search | backlog (#31) |
 | 9 Assistent: agent signals | backlog (#32) |
-| Later | sharing boards and recipes (ADR-0035), weekmenu, mail integration (`Vision.md`) |
+| Delen, fase 2: Recept als kopie (#464) | backend gebouwd (ADR-0036), UI volgt |
+| Later | sharing boards (ADR-0035), live recipe sharing, weekmenu, mail integration (`Vision.md`) |
