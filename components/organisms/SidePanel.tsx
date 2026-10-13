@@ -230,7 +230,7 @@ export function SidePanel({
         inert={!open}
         onKeyDown={handleKeyDown}
         className={cn(
-          "fixed flex flex-col overflow-hidden bg-surface-primary transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+          "fixed flex flex-col overflow-hidden bg-surface-primary transition-[transform,visibility] transition-discrete duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
           level === 2 ? "z-[70]" : "z-50",
           // Corner radii are 16/12, not a uniform value on either shape —
           // Figma reports "16px 12px 0px 0px" (mobile) / "16px 0px 0px 12px"
@@ -250,8 +250,8 @@ export function SidePanel({
           // click target inside the h-14 handle strip below.
           "md:inset-x-auto md:inset-y-0 md:right-0 md:h-full md:max-h-none md:w-[400px] md:rounded-tr-none md:rounded-bl-control-outer md:pt-[env(safe-area-inset-top)]",
           open
-            ? "translate-x-0 translate-y-0"
-            : "translate-y-full md:translate-x-full md:translate-y-0",
+            ? "visible translate-x-0 translate-y-0"
+            : "invisible translate-y-full md:translate-x-full md:translate-y-0",
           className,
         )}
       >
