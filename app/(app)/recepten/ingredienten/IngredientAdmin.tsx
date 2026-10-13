@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/organisms/PageHeader";
 import { Button } from "@/components/atoms/Button";
 import { InputField } from "@/components/atoms/InputField";
 import { ButtonToggle } from "@/components/molecules/ButtonToggle";
-import type { AdminAlias, AdminEigenIngredient, PendingGroup } from "@/lib/recipes/ingredient-admin";
+import type { AdminAlias, AdminEigenIngredient, IngredientCategory, PendingGroup } from "@/lib/recipes/ingredient-admin";
 import type { ActionResult, IngredientSearchResult } from "@/lib/recipes/types";
 import { AliasPanel, type AliasPanelTarget } from "./AliasPanel";
 import { PendingPanel } from "./PendingPanel";
@@ -35,6 +35,7 @@ export interface IngredientAdminProps {
   aliases: AdminAlias[];
   eigen: AdminEigenIngredient[];
   pending: PendingGroup[];
+  categories: IngredientCategory[];
   onSearch: (input: unknown) => Promise<IngredientSearchResult[]>;
   onCreateAlias: (input: unknown) => Promise<ActionResult<unknown>>;
   onUpdateAlias: (input: unknown) => Promise<ActionResult>;
@@ -83,6 +84,7 @@ export function IngredientAdmin({
   aliases,
   eigen,
   pending,
+  categories,
   onSearch,
   onCreateAlias,
   onUpdateAlias,
@@ -132,27 +134,17 @@ export function IngredientAdmin({
   const shownCount = isAliases ? shownAliases.length : isPending ? shownPending.length : shownEigen.length;
   const totalCount = isAliases ? aliases.length : isPending ? pending.length : eigen.length;
   const section = isAliases ? "aliases" : isPending ? "pending" : "own";
+  const addLabel = isAliases ? t("aliases.addLabel") : t("own.addLabel");
+  const openCreate = () =>
+    isAliases
+      ? setAliasPanel({ open: true, target: { mode: "create" } })
+      : setOwnPanel({ open: true, target: { mode: "create" } });
 
   return (
     <>
-      <PageHeader
-        title={title}
-        actions={
-          isPending ? undefined : (
-          <Button
-            icon="Plus"
-            onClick={() =>
-              isAliases
-                ? setAliasPanel({ open: true, target: { mode: "create" } })
-                : setOwnPanel({ open: true, target: { mode: "create" } })
-            }
-          >
-            {isAliases ? t("aliases.addLabel") : t("own.addLabel")}
-          </Button>
-          )
-        }
-      />
-      <div className="flex w-full flex-col gap-stack-xl pr-page-right-equal pt-stack-md md:max-w-3xl">
+      <PageHeader title={title} />
+      <div className="w-full pr-page-right-equal pt-stack-md">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-stack-xl">
         <ButtonToggle
           aria-label={t("tabsLabel")}
           className="w-full"
@@ -167,14 +159,26 @@ export function IngredientAdmin({
             { value: "pending", icon: "List", label: isDesktop ? t("tabs.pending") : t("tabs.pendingShort") },
           ]}
         />
-        <InputField
-          id="ingredient-admin-search"
-          aria-label={t(`${section}.searchPlaceholder`)}
-          placeholder={t(`${section}.searchPlaceholder`)}
-          trailingIcon="Search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
+        <div className="flex w-full items-center gap-inline-sm">
+          <InputField
+            id="ingredient-admin-search"
+            className="min-w-0 flex-1"
+            aria-label={t(`${section}.searchPlaceholder`)}
+            placeholder={t(`${section}.searchPlaceholder`)}
+            trailingIcon="Search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+          {/* Icon-only below md so the search keeps room for its placeholder at 375 px. */}
+          {!isPending &&
+            (isDesktop ? (
+              <Button icon="Plus" className="shrink-0" onClick={openCreate}>
+                {addLabel}
+              </Button>
+            ) : (
+              <Button icon="Plus" className="shrink-0" aria-label={addLabel} onClick={openCreate} />
+            ))}
+        </div>
 
         {shownCount === 0 ? (
           <p className="py-stack-xxl text-center text-base text-text-secondary">
@@ -236,6 +240,7 @@ export function IngredientAdmin({
           </div>
         )}
       </div>
+      </div>
 
       <AliasPanel
         open={aliasPanel.open}
@@ -257,6 +262,7 @@ export function IngredientAdmin({
         open={ownPanel.open}
         onClose={() => setOwnPanel((current) => ({ ...current, open: false }))}
         target={ownPanel.target}
+        categories={categories}
         onCreate={onCreateEigen}
         onUpdate={onUpdateEigen}
         onDelete={onDeleteEigen}
