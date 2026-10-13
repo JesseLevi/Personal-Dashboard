@@ -2,9 +2,9 @@
 Figma: none (Claude-designed, ADR-0034; visual reference was a card list with a tinted container and a coloured strip) · Code: `components/organisms/SharedRecipeOffer.tsx` (+ `.stories.tsx`)
 
 ## Anatomy
-A tinted container (`rounded-card border border-priority-medium bg-surface-highlight-blue p-component-sm`) holding two rows, `gap-stack-sm`:
-- The normal recipe `Card` > `CardContentRecipe` (thumbnail, title, duration). Not clickable, no link to the source recipe.
-- A strip: `sharing.recipeOffer.sharedBy` ("Gedeeld door {name}", `text-base font-semibold text-text-highlight-blue`) left, then `ml-auto`, two icon-only compact `white` `Button`s: `Check` (aria `acceptLabel`) and `X` (aria `declineLabel`).
+One visual unit: a wrapper `flex w-full flex-col rounded-card bg-priority-medium-bg` (the blue `Tag` "medium" background; no border, no padding, no gap) holding two rows:
+- The normal recipe `Card` > `CardContentRecipe`, flush against the wrapper's top and sides (both use `rounded-card`, so the corners line up) (thumbnail, title, duration). Not clickable, no link to the source recipe.
+- A thin strip (`px-component-md py-component-sm`): `sharing.recipeOffer.sharedBy` ("Gedeeld door {name}", `text-base font-semibold text-priority-medium`) left, then `ml-auto`, two icon-only compact `white` `Button`s: `Check` (aria `acceptLabel`) and `X` (aria `declineLabel`).
 
 ## Contract
 - Generic and server-free. Props: `name`, `imageUrl?`, `duration?` (already formatted), `inviterName` (first name; the caller resolves the "unnamed" fallback), `onAccept`, `onDecline`, `pending?` (disables both buttons while a request runs).
@@ -13,14 +13,13 @@ A tinted container (`rounded-card border border-priority-medium bg-surface-highl
 
 ## Deliberate decisions
 - New organism by exception (ADR-0034): it composes existing parts but carries the sharing copy and the tinted wrapper, and is reused per offer.
-- The blue family comes from existing tokens: `bg-surface-highlight-blue` (blue-50), `text-text-highlight-blue` (blue-400) and the border `border-priority-medium` (the same blue-400, the Tag "medium" colour). No new token. If a dedicated `stroke-highlight-blue` is ever wanted, that is a token request.
+- The blue comes from the same tokens as the blue `Tag` (`bg-priority-medium-bg`, `text-priority-medium`). No new token, no border.
 - The buttons are `white` so they stand out on the tint; `compact` (32 px) keeps the strip low.
 - Not draggable: it lives outside the sortable list (`BoardView.renderColumnTop`).
 - No category yet (empty board): `page.tsx` passes no offers, because `accept_recipe_share` needs a first category and would fail.
 
 ## Token gaps and flags
-- No blue stroke token; `border-priority-medium` stands in (see above).
-- Dark mode: `surface-highlight-blue` keeps its light value (the dark token set has no blue override), so the container stays light blue around a dark card. Accepted, same as the other highlight surfaces.
+- Dark mode: `priority-medium-bg` keeps its light value in dark mode (as the `Tag` does), so the block stays light blue around a dark card. Accepted.
 
 ## Gotchas
 - Stories: `Default`, `Pending`, `NoThumbnail`.

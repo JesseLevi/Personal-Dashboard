@@ -6,7 +6,7 @@ import { CardContentRecipe } from "@/components/molecules/CardContentRecipe";
 
 /**
  * Organism/SharedRecipeOffer — a recipe offered by someone else (ADR-0036): the
- * normal recipe `Card` inside a blue tinted container, with a strip below
+ * normal recipe `Card` flush at the top of a tag-blue block (the `Tag` "medium" tokens), with a thin strip below
  * ("Gedeeld door {name}", accept and decline). Knows nothing about server
  * actions; the caller does the accepting and declining.
  * See design/notes/SharedRecipeOffer.md.
@@ -35,12 +35,12 @@ export function SharedRecipeOffer({
 }: SharedRecipeOfferProps) {
   const t = useTranslations("sharing.recipeOffer");
   return (
-    <div className="flex w-full flex-col gap-stack-sm rounded-card border border-priority-medium bg-surface-highlight-blue p-component-sm">
+    <div className="flex w-full flex-col rounded-card bg-priority-medium-bg">
       <Card>
         <CardContentRecipe name={name} imageUrl={imageUrl} duration={duration} />
       </Card>
-      <div className="flex items-center gap-inline-sm px-component-xs">
-        <p className="text-base font-semibold text-text-highlight-blue">{t("sharedBy", { name: inviterName })}</p>
+      <div className="flex items-center gap-inline-sm px-component-md py-component-sm">
+        <p className="text-base font-semibold text-priority-medium">{t("sharedBy", { name: inviterName })}</p>
         <div className="ml-auto flex items-center gap-inline-sm">
           <Button variant="white" size="compact" icon="Check" aria-label={t("acceptLabel")} onClick={onAccept} disabled={pending} />
           <Button variant="white" size="compact" icon="X" aria-label={t("declineLabel")} onClick={onDecline} disabled={pending} />
