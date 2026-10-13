@@ -20,6 +20,8 @@ export interface ImageUploadFieldProps {
   placeholder: string;
   /** Accessible name for the file input (no visible label is rendered -- see design/notes/ImageUploadField.md). */
   ariaLabel: string;
+  /** Optional visible title above the field (same style as `InputField`'s label); the file input's `id` is its `htmlFor`. */
+  label?: string;
   /** Pre-selected file's display name, e.g. when re-opening an edit form. */
   selectedFileName?: string | null;
   onFileSelect?: (file: File | null) => void;
@@ -45,6 +47,7 @@ export function ImageUploadField({
   name,
   placeholder,
   ariaLabel,
+  label,
   selectedFileName = null,
   onFileSelect,
   onClear,
@@ -69,40 +72,47 @@ export function ImageUploadField({
   }
 
   return (
-    <div className={cn("group relative", className)}>
-      {/* `group` on this wrapper (not `peer` on the input): InputField's
-          bordered box is a grandchild of this div, not a sibling of the file
-          input, so `peer-*`'s sibling combinator can't reach it -- `group-*`'s
-          descendant selector can, regardless of nesting depth. See
-          design/notes/ImageUploadField.md. */}
-      <input
-        ref={inputRef}
-        id={id}
-        type="file"
-        name={name}
-        accept={ACCEPTED_MIME_TYPES}
-        disabled={disabled}
-        aria-label={ariaLabel}
-        onChange={handleChange}
-        className={cn(
-          "absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed",
-          // Filled + clearable: the X below must be clickable, so the overlay steps aside.
-          clearable && "pointer-events-none",
-        )}
-      />
-      <InputField
-        leadingIcon="Image"
-        {...(clearable
-          ? { trailingIcon: "X" as const, onTrailingIconClick: handleClear, trailingIconLabel: clearLabel! }
-          : { trailingIcon: "Plus" as const })}
-        value={fileName ?? ""}
-        placeholder={placeholder}
-        readOnly
-        tabIndex={-1}
-        aria-hidden={clearable ? undefined : "true"}
-        disabled={disabled}
-        boxClassName="group-hover:border-stroke-primary-hover group-active:border-stroke-primary-active group-focus-within:border-stroke-primary-selected"
-      />
+    <div className={cn("flex w-full flex-col gap-stack-sm", className)}>
+      {label ? (
+        <label htmlFor={id} className="text-base font-semibold text-text-secondary">
+          {label}
+        </label>
+      ) : null}
+      <div className="group relative">
+        {/* `group` on this wrapper (not `peer` on the input): InputField's
+            bordered box is a grandchild of this div, not a sibling of the file
+            input, so `peer-*`'s sibling combinator can't reach it -- `group-*`'s
+            descendant selector can, regardless of nesting depth. See
+            design/notes/ImageUploadField.md. */}
+        <input
+          ref={inputRef}
+          id={id}
+          type="file"
+          name={name}
+          accept={ACCEPTED_MIME_TYPES}
+          disabled={disabled}
+          aria-label={ariaLabel}
+          onChange={handleChange}
+          className={cn(
+            "absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed",
+            // Filled + clearable: the X below must be clickable, so the overlay steps aside.
+            clearable && "pointer-events-none",
+          )}
+        />
+        <InputField
+          leadingIcon="Image"
+          {...(clearable
+            ? { trailingIcon: "X" as const, onTrailingIconClick: handleClear, trailingIconLabel: clearLabel! }
+            : { trailingIcon: "Plus" as const })}
+          value={fileName ?? ""}
+          placeholder={placeholder}
+          readOnly
+          tabIndex={-1}
+          aria-hidden={clearable ? undefined : "true"}
+          disabled={disabled}
+          boxClassName="group-hover:border-stroke-primary-hover group-active:border-stroke-primary-active group-focus-within:border-stroke-primary-selected"
+        />
+      </div>
     </div>
   );
 }

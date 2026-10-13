@@ -6,7 +6,7 @@ Page-level composition, not a leaf component, so not in `design/figma-map.json` 
 - `ButtonToggle` "Kleurenthema": three segments, Systeem (`SunMoon`) / Licht (`Sun`) / Donker (`Moon`), wired to `next-themes` `setTheme`. `app/layout.tsx`'s `ThemeProvider` (#206) is untouched.
 - `InputField` "Taal": composed, not extended. `options`, `leadingIcon` (flag `NL`/`UK`, swapped per selection; the file has no US flag) and `trailingIcon="ChevronDown"` cover it with zero `InputField` changes. Figma's `State: Selected` is a captured-mid-interaction sample, not a request to force a focused look.
 - `InputField` Voornaam, then Achternaam (Claude-designed, #398, #404): same atoms and semantic tokens, no new tokens. `display_name` holds the first name (the sidebar shows it); `last_name` is nullable. Max `DISPLAY_NAME_MAX_LENGTH` (40) each, app-level only. `autoComplete` given-name / family-name.
-- `ImageUploadField` first (#434): the same "Selecteer afbeelding" input field as the recipe flow, no preview and no remove button. The Sidebar shows the result. Accepts jpeg/png/webp.
+- `ImageUploadField` (#434), now between Taal and Voornaam with a visible "Profielfoto" title like the other inputs: the same "Selecteer afbeelding" input field as the recipe flow, no preview and no remove button. The Sidebar shows the result. Accepts jpeg/png/webp.
 - Inline error `<p>` (`text-priority-urgent`) from `profile.errors.*`.
 - Footer: one full-width filled `Save` Button, label switches to `savingLabel` while pending.
 
