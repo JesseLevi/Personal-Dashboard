@@ -14,8 +14,8 @@ update public.profiles set display_name = 'Olga' where id = '00000000-0000-0000-
 update public.profiles set display_name = 'Mo' where id = '00000000-0000-0000-0000-465000000002';
 update public.profiles set display_name = 'Sam' where id = '00000000-0000-0000-0000-465000000003';
 
-insert into reference.ingredients (id, name_nl, source, source_version)
-values ('00000000-0000-0000-0000-465000000d01', 'Bloem', 'test', '1');
+insert into reference.ingredients (id, name_nl, source, source_version, nutrient_basis)
+values ('00000000-0000-0000-0000-465000000d01', 'Bloem', 'test', '1', 'per_100g');
 
 -- O: a reference-backed row, a self-added row M also has (other casing), and a
 -- self-added row M lacks. M: the matching reference row and self-added row.
