@@ -27,12 +27,16 @@ export interface AgendaEventItem extends AgendaItemBase {
   missingSince: string | null;
 }
 
-/** `meal_plans`. `title` is the recipe title. */
+/** `meal_plans`, always an all-day item on its date. `title` is the recipe title. */
 export interface AgendaMealItem extends AgendaItemBase {
   kind: "meal";
   slot: MealSlot;
   servings: number;
   thumbnailPath: string | null;
+  /** Attached to an event instead of a day: takes the event's date. */
+  attached: boolean;
+  /** Order within a day and moment (`meal_plans.position`). */
+  position: number;
 }
 
 /** `cards.planned_for`. `title` is the card title. */

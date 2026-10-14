@@ -231,6 +231,19 @@ export async function sendRecipeToShoppingList(input: unknown): Promise<ActionRe
   const recipe = await getRecipeWithIngredientsAndSteps(parsed.data.recipeId);
   if (!recipe) return { success: false, error: "not-found" };
 
+  // The Agenda's "Naar mand" passes the meal plan the lines come from. Only a
+  // plan of this recipe that RLS lets the caller read may be referenced.
+  const mealPlanId = parsed.data.mealPlanId ?? null;
+  if (mealPlanId) {
+    const { data: meal } = await supabase
+      .from("meal_plans")
+      .select("id")
+      .eq("id", mealPlanId)
+      .eq("recipe_id", recipe.id)
+      .maybeSingle();
+    if (!meal) return { success: false, error: "not-found" };
+  }
+
   const lines = buildShoppingListLines(recipe.ingredients, recipe.servings, parsed.data.targetPortions);
   if (lines.length === 0) return { success: true, data: undefined };
 
@@ -249,6 +262,7 @@ export async function sendRecipeToShoppingList(input: unknown): Promise<ActionRe
       unit: line.unit,
       section: null,
       recipe_id: recipe.id,
+      meal_plan_id: mealPlanId,
       reference_ingredient_id: line.referenceIngredientId ?? null,
       position,
     };

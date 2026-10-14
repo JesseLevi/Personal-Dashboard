@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import { Dropdown } from "@/components/atoms/Dropdown";
@@ -13,6 +13,7 @@ import { CardContentIngredient } from "@/components/molecules/CardContentIngredi
 import { CardContentStep } from "@/components/molecules/CardContentStep";
 import { EventLinkLine } from "@/components/molecules/EventLinkLine";
 import type { AgendaEventRef } from "@/lib/agenda/links";
+import { PlanChoices } from "@/components/molecules/PlanChoices";
 import { MemberSearchPanel } from "@/components/organisms/MemberSearchPanel";
 import { Toast } from "@/components/organisms/Toast";
 import type { MemberSearchResult } from "@/lib/sharing/types";
@@ -45,6 +46,8 @@ import {
 import { confirmIngredientMatch } from "../import-actions";
 import { SourceLink } from "./SourceLink";
 import { addIngredientToShoppingList, sendRecipeToShoppingList } from "../../winkelmand/actions";
+import { createMealPlan } from "../../agenda/meal-actions";
+import { todayInAgendaZone } from "@/lib/agenda/time";
 
 // #127/#160 recipe detail route body — V2 Figma "Recept/Mobile" (3997:14737)
 // / "Recept/Desktop" (3997:15171), NutritionalData row 3997:15948/3997:15543,
@@ -127,6 +130,11 @@ export function RecipeDetailPage({
   const [panelOpen, setPanelOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [overflowOpen, setOverflowOpen] = useState(false);
+  // "plan": the overflow menu shows the Plannen choices (day and moment) instead of its actions.
+  const [overflowView, setOverflowView] = useState<"menu" | "plan">("menu");
+  const [planNotice, setPlanNotice] = useState<string | null>(null);
+  const tPlan = useTranslations("agenda.plan");
+  const format = useFormatter();
   const [shareOpen, setShareOpen] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
   const [shareNotice, setShareNotice] = useState<string | null>(null);
@@ -148,6 +156,7 @@ export function RecipeDetailPage({
     function handlePointerDown(event: PointerEvent) {
       if (overflowRef.current && !overflowRef.current.contains(event.target as Node)) {
         setOverflowOpen(false);
+        setOverflowView("menu");
       }
     }
     document.addEventListener("pointerdown", handlePointerDown);
@@ -314,11 +323,52 @@ export function RecipeDetailPage({
                 icon="Ellipsis"
                 aria-label={t("overflowMenuLabel")}
                 aria-expanded={overflowOpen}
-                onClick={() => setOverflowOpen((open) => !open)}
+                onClick={() => {
+                  setOverflowOpen((open) => !open);
+                  setOverflowView("menu");
+                }}
               />
-              {overflowOpen && (
+              {overflowOpen && overflowView === "plan" && (
+                <div ref={overflowPopoverRef} className="absolute z-[999] w-64" style={overflowPopover.style}>
+                  <Dropdown className="shadow-sm">
+                    <PlanChoices
+                      today={todayInAgendaZone()}
+                      header={
+                        <Button variant="white" align="left" icon="ArrowLeft" onClick={() => setOverflowView("menu")}>
+                          {t("planLabel")}
+                        </Button>
+                      }
+                      onPlan={(plannedOn, slot) => createMealPlan({ recipeId: recipe.id, plannedOn, slot })}
+                      onPlanned={(plannedOn, slot) => {
+                        setOverflowOpen(false);
+                        setOverflowView("menu");
+                        setPlanNotice(
+                          tPlan("plannedNotice", {
+                            slot: tPlan(`slots.${slot}`),
+                            date: format.dateTime(new Date(`${plannedOn}T00:00:00Z`), {
+                              weekday: "long",
+                              day: "numeric",
+                              month: "short",
+                              timeZone: "UTC",
+                            }),
+                          }),
+                        );
+                      }}
+                    />
+                  </Dropdown>
+                </div>
+              )}
+              {overflowOpen && overflowView === "menu" && (
                 <div ref={overflowPopoverRef} className="absolute z-[999] w-[209px]" style={overflowPopover.style}>
                   <Dropdown className="shadow-sm">
+                    <Button
+                      variant="white"
+                      align="left"
+                      icon="Calendar"
+                      onClick={() => setOverflowView("plan")}
+                    >
+                      {t("planLabel")}
+                    </Button>
                     <Button
                       variant="white"
                       align="left"
@@ -355,6 +405,7 @@ export function RecipeDetailPage({
         <p role="alert" className="text-base font-semibold text-priority-urgent">{shareError}</p>
       )}
       <Toast message={shareNotice} onDismiss={() => setShareNotice(null)} />
+      <Toast message={planNotice} onDismiss={() => setPlanNotice(null)} />
 
       {/* #153: real thumbnail, 2:1 at every breakpoint (user-ordered
           override of the fetched node's own ~2:1-but-not-exact geometry —

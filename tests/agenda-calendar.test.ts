@@ -7,7 +7,7 @@ const base = { id: "i1", title: "T", start: "2026-01-01T09:00:00", end: "2026-01
 
 const manual: AgendaItem = { ...base, kind: "event", source: "manual", calendarId: "c", missingSince: null };
 const synced: AgendaItem = { ...manual, source: "sync" };
-const meal: AgendaItem = { ...base, kind: "meal", slot: "dinner", servings: 4, thumbnailPath: null };
+const meal: AgendaItem = { ...base, kind: "meal", slot: "dinner", servings: 4, thumbnailPath: null, attached: false, position: 1000 };
 const card: AgendaItem = { ...base, kind: "planned_card", board: "B", column: "C" };
 const deadline: AgendaItem = { ...base, kind: "deadline", allDay: true, start: "2026-01-01", end: null };
 

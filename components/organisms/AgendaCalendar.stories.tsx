@@ -37,16 +37,20 @@ const imported = (id: string, title: string, start: string, end: string): Agenda
   end,
 });
 
-const meal = (id: string, title: string, slot: "breakfast" | "lunch" | "dinner" | "snack", start: string, end: string): AgendaItem => ({
+// A meal is an all-day item on its date; only the date of `start` counts.
+const meal = (id: string, title: string, slot: "breakfast" | "lunch" | "dinner" | "snack", start: string, position = 1000): AgendaItem => ({
   ...base,
   kind: "meal",
   slot,
   servings: 4,
   thumbnailPath: null,
+  attached: false,
+  position,
   id,
   title,
-  start,
-  end,
+  start: start.slice(0, 10),
+  end: null,
+  allDay: true,
 });
 
 const plannedCard = (id: string, title: string, start: string, end: string): AgendaItem => ({
@@ -81,9 +85,11 @@ const allKinds: AgendaItem[] = [
     source: "sync",
     missingSince: "2025-12-28T00:00:00",
   } as AgendaItem,
-  meal("m1", "Lasagne met spinazie", "dinner", "2026-01-01T18:00:00", "2026-01-01T19:00:00"),
-  meal("m2", "Havermout met appel", "breakfast", "2025-12-31T08:00:00", "2025-12-31T08:45:00"),
-  meal("m3", "Tosti", "lunch", "2026-01-02T12:00:00", "2026-01-02T12:45:00"),
+  meal("m1", "Lasagne met spinazie", "dinner", "2026-01-01"),
+  meal("m2", "Havermout met appel", "breakfast", "2025-12-31"),
+  meal("m3", "Tosti", "lunch", "2026-01-02"),
+  meal("m4", "Soep van de dag", "lunch", "2026-01-02", 2000),
+  meal("m5", "Appeltaart", "snack", "2026-01-02"),
   plannedCard("c1", "Vloer dweilen", "2026-01-03T10:00:00", "2026-01-03T11:00:00"),
   plannedCard("c2", "Belastingaangifte controleren", "2025-12-30T14:00:00", "2025-12-30T15:30:00"),
   deadline("d1", "Belastingaangifte", "2026-01-01"),
@@ -95,7 +101,7 @@ const overlapping: AgendaItem[] = [
   own("o1", "Stand-up", "2026-01-01T09:00:00", "2026-01-01T09:30:00"),
   own("o2", "Workshop", "2026-01-01T09:00:00", "2026-01-01T11:30:00"),
   imported("o3", "Klantgesprek", "2026-01-01T10:00:00", "2026-01-01T12:00:00"),
-  meal("o4", "Pasta pesto", "lunch", "2026-01-01T12:00:00", "2026-01-01T13:00:00"),
+  meal("o4", "Pasta pesto", "lunch", "2026-01-01"),
   plannedCard("o5", "Fiets repareren", "2026-01-01T12:30:00", "2026-01-01T14:00:00"),
 ];
 
@@ -188,7 +194,7 @@ export const ExternalDrag = () => {
           view="week"
           date={DATE}
           onExternalDrop={(drop) => {
-            setLog(`${drop.payload.type}:${drop.payload.id} @ ${drop.start} allDay=${drop.allDay}`);
+            setLog(`${drop.payload.type}:${drop.payload.id} @ ${drop.start} allDay=${drop.allDay}${drop.eventId ? ` event=${drop.eventId}` : ""}`);
             setItems((current) => [
               ...current,
               {

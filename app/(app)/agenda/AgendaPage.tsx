@@ -9,12 +9,19 @@ import {
   effectiveAgendaView,
   useIsNarrow,
   type AgendaChange,
+  type AgendaExternalDrop,
 } from "@/components/organisms/AgendaCalendar";
 import type { SyncNoticeView } from "@/lib/agenda/calendars";
+import { PlanDrawer } from "@/components/organisms/PlanDrawer";
+import { Toast } from "@/components/organisms/Toast";
+import { weekRange } from "@/lib/agenda/meals";
+import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import { addDays, loadWindow, spanToUtc, stepDate, visibleRange } from "@/lib/agenda/time";
-import type { AgendaItem } from "@/lib/agenda/types";
+import type { AgendaItem, AgendaMealItem, MealSlot } from "@/lib/agenda/types";
 import { persistAgendaView, type AgendaView } from "@/lib/agenda/view";
+import type { BasketOption } from "@/lib/shopping/baskets";
+import type { ActionResult } from "@/lib/shopping/types";
 import type { AgendaSpan } from "@/lib/ui/agenda-calendar";
 import { createEvent, deleteEvent, getAgendaEvent, loadAgendaRange, moveEvent, updateEvent } from "./actions";
 import { AgendaBody } from "./AgendaBody";
@@ -24,6 +31,9 @@ import { getAgendaEventLinks, linkToEvent, searchAgendaLinkTargets, unlinkFromEv
 import { AgendaHeader, toToggleView, type AgendaToggleView } from "./AgendaHeader";
 import { AgendaSyncNotices } from "./AgendaSyncNotices";
 import { addIcsCalendar, listCalendarAccounts, removeCalendarAccount, resolveSyncNotice } from "./calendars-actions";
+import { AgendaMealPanel } from "./AgendaMealPanel";
+import { createMealPlan, deleteMealPlan, getMealPlan, sendMealToBasket, sendWeekToBasket, updateMealPlan } from "./meal-actions";
+import { PlanRecipeList } from "./PlanRecipeList";
 
 export interface AgendaPageProps {
   initialView: AgendaView;
@@ -33,6 +43,11 @@ export interface AgendaPageProps {
   initialItems: AgendaItem[];
   /** Open basket notices after a sync deleted an event with a meal. */
   initialNotices: SyncNoticeView[];
+  /** Recipes the plan drawer offers. */
+  recipes: PlanRecipe[];
+  recipeCategories: { id: string; name: string }[];
+  /** Baskets "Naar mand" can target. */
+  baskets: BasketOption[];
 }
 
 const utc = (date: string) => new Date(`${date}T00:00:00Z`);
@@ -42,8 +57,23 @@ function wallClock(value: string, allDay: boolean): string {
   return allDay ? value.slice(0, 10) : value.slice(0, 19);
 }
 
-export function AgendaPage({ initialView, today, initialItems, initialNotices }: AgendaPageProps) {
+// The panel shows the latest copy of its meal, so a reload after a save updates it in place.
+function liveMeal(items: AgendaItem[], fallback: AgendaMealItem): AgendaMealItem {
+  const found = items.find((item) => item.id === fallback.id);
+  return found?.kind === "meal" ? found : fallback;
+}
+
+export function AgendaPage({
+  initialView,
+  today,
+  initialItems,
+  initialNotices,
+  recipes,
+  recipeCategories,
+  baskets,
+}: AgendaPageProps) {
   const tErrors = useTranslations("agenda.errors");
+  const tPlan = useTranslations("agenda.plan");
   const format = useFormatter();
   const router = useRouter();
   const narrow = useIsNarrow();
@@ -58,6 +88,8 @@ export function AgendaPage({ initialView, today, initialItems, initialNotices }:
     target: { mode: "create", span: { start: `${today}T09:00:00`, end: null, allDay: false } },
   });
   const [calendarsOpen, setCalendarsOpen] = useState(false);
+  const [mealPanel, setMealPanel] = useState<{ open: boolean; item: AgendaMealItem | null }>({ open: false, item: null });
+  const [notice, setNotice] = useState<string | null>(null);
   const latestRequest = useRef(0);
 
   const effectiveView = effectiveAgendaView(view, narrow);
@@ -106,13 +138,76 @@ export function AgendaPage({ initialView, today, initialItems, initialNotices }:
         router.push(`/te-doen?card=${item.id}`);
         break;
       case "meal":
+        setMealPanel({ open: true, item });
         break;
     }
+  }
+
+  // A meal moves to a day, whatever slot it was dropped on; it stays an all-day item.
+  function handleMealMove(item: AgendaMealItem, change: AgendaChange, revert: () => void) {
+    const plannedOn = change.start.slice(0, 10);
+    const previous = items;
+    setItems((current) =>
+      current.map((candidate) =>
+        candidate.id === item.id ? { ...candidate, start: plannedOn, end: null, allDay: true } : candidate,
+      ),
+    );
+    void updateMealPlan({ id: item.id, plannedOn }).then((result) => {
+      if (result.success) {
+        setError(null);
+        void loadAround(date);
+        return;
+      }
+      revert();
+      setItems(previous);
+      setError(tErrors(result.error));
+    });
+  }
+
+  async function planRecipe(recipeId: string, target: { plannedOn: string; slot?: MealSlot } | { calendarEventId: string }) {
+    const result = await createMealPlan({ recipeId, ...target });
+    if (result.success) {
+      setError(null);
+      void loadAround(date);
+    } else {
+      setError(tErrors(result.error));
+    }
+    return result;
+  }
+
+  function handleExternalDrop(drop: AgendaExternalDrop) {
+    if (drop.payload.type !== "recipe") return;
+    void planRecipe(
+      drop.payload.id,
+      drop.eventId ? { calendarEventId: drop.eventId } : { plannedOn: drop.start.slice(0, 10) },
+    );
+  }
+
+  function announcePlanned(plannedOn: string, slot: MealSlot) {
+    setNotice(
+      tPlan("plannedNotice", {
+        slot: tPlan(`slots.${slot}`),
+        date: format.dateTime(utc(plannedOn), { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" }),
+      }),
+    );
+  }
+
+  // Sends the unsent meals of the visible week; the button shows success only when this resolves with it.
+  async function handleWeekToBasket(listId?: string): Promise<ActionResult> {
+    setError(null);
+    const result = await sendWeekToBasket({ ...weekRange(date), listId });
+    if (result.success) return { success: true, data: undefined };
+    setError(tErrors(result.error));
+    return { success: false, error: "generic" };
   }
 
   // Drag and resize save at once; the calendar has already moved the block, so a refusal reverts it.
   function handleChange(change: AgendaChange, revert: () => void) {
     const { item } = change;
+    if (item.kind === "meal") {
+      handleMealMove(item, change, revert);
+      return;
+    }
     if (item.kind !== "event" || item.source !== "manual") {
       revert();
       return;
@@ -162,10 +257,26 @@ export function AgendaPage({ initialView, today, initialItems, initialNotices }:
         onNext={() => goTo(stepDate(effectiveView, date, 1))}
         onToday={() => goTo(today)}
         onOpenCalendars={() => setCalendarsOpen(true)}
+        weekToBasket={{ onSend: handleWeekToBasket, baskets }}
       />
       <AgendaSyncNotices initialNotices={initialNotices} onResolve={resolveSyncNotice} />
       {error && <p className="pr-page-right-equal text-base font-semibold text-priority-urgent">{error}</p>}
-      <AgendaBody>
+      <AgendaBody
+        drawer={
+          <PlanDrawer
+            className="h-full"
+            recipes={
+              <PlanRecipeList
+                recipes={recipes}
+                categories={recipeCategories}
+                today={today}
+                onPlan={(recipeId, plannedOn, slot) => planRecipe(recipeId, { plannedOn, slot })}
+                onPlanned={announcePlanned}
+              />
+            }
+          />
+        }
+      >
         <AgendaCalendar
           items={items}
           view={view}
@@ -174,8 +285,24 @@ export function AgendaPage({ initialView, today, initialItems, initialNotices }:
           onItemClick={handleItemClick}
           onItemMove={handleChange}
           onItemResize={handleChange}
+          onExternalDrop={handleExternalDrop}
         />
       </AgendaBody>
+      <Toast message={notice} onDismiss={() => setNotice(null)} />
+      {mealPanel.item && (
+        <AgendaMealPanel
+          open={mealPanel.open}
+          onClose={() => setMealPanel((current) => ({ ...current, open: false }))}
+          item={liveMeal(items, mealPanel.item)}
+          baskets={baskets}
+          onLoadMeal={getMealPlan}
+          onUpdateMeal={updateMealPlan}
+          onDeleteMeal={deleteMealPlan}
+          onSendMeal={sendMealToBasket}
+          onOpenRecipe={(recipeId) => router.push(`/recepten/${recipeId}`)}
+          onMutated={() => void loadAround(date)}
+        />
+      )}
       <AgendaEventPanel
         open={panel.open}
         onClose={() => setPanel((current) => ({ ...current, open: false }))}

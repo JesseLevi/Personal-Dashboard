@@ -54,6 +54,19 @@ export const NoPhotoOrDuration = () => (
   </Card>
 );
 
+// Claude-designed (#487): the compact row of the Agenda's plan drawer.
+export const Compact = () => (
+  <div className="w-72">
+    <CardContentRecipe compact name="Lasagne met spinazie" duration="60 min" />
+  </div>
+);
+
+export const CompactNoPhotoLongName = () => (
+  <div className="w-72">
+    <CardContentRecipe compact name="Gestoofde kip met olijven, citroen en geroosterde venkel" />
+  </div>
+);
+
 type PlaygroundProps = {
   name: string;
   duration: string;

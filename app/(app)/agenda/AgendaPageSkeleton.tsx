@@ -20,8 +20,11 @@ export function AgendaPageSkeleton({ view = DEFAULT_AGENDA_VIEW }: { view?: Agen
         onPrevious={noop}
         onNext={noop}
         onToday={noop}
+        weekToBasket={{ onSend: async () => ({ success: false, error: "generic" }), baskets: [] }}
       />
-      <AgendaBody>
+      <AgendaBody
+        drawer={<div aria-hidden="true" className="h-full rounded-card border border-stroke-primary bg-surface-highlight-white" />}
+      >
         <AgendaCalendarSkeleton />
       </AgendaBody>
     </>

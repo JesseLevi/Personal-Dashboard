@@ -398,7 +398,11 @@
           "month": "Month",
           "list": "List"
         },
-        "calendarsLabel": "Manage calendars"
+        "calendarsLabel": "Manage calendars",
+        "weekToBasketLabel": "Week to basket",
+        "weekToBasketShortLabel": "Week",
+        "weekToBasketAddedLabel": "Added",
+        "chooseBasketLabel": "Choose a basket"
       }
     },
     "sidePanel": {
@@ -863,7 +867,8 @@
       "needsReviewLabel": "check",
       "notCountedLabel": "not counted",
       "nutritionCoverage": "Based on {counted} of {total} ingredients",
-      "sourceLabel": "Source:"
+      "sourceLabel": "Source:",
+      "planLabel": "Plan"
     },
     "pasAanPanel": {
       "title": "Adjust",
@@ -1088,6 +1093,62 @@
         "no_secret": "The link could not be read.",
         "apply_failed": "The events could not be saved."
       }
+    },
+    "planDrawer": {
+      "label": "Plan",
+      "tabsLabel": "What to plan",
+      "tabs": {
+        "recipes": "Recipes",
+        "cards": "Cards"
+      },
+      "cardsEmpty": "Cards you can plan will appear here.",
+      "searchLabel": "Search recipes",
+      "searchPlaceholder": "Search recipes",
+      "searchClearLabel": "Clear search",
+      "categoryLabel": "Category",
+      "allCategories": "All categories",
+      "noRecipes": "No recipes found.",
+      "dragHint": "Drag a recipe onto a day, or onto an event, in the agenda.",
+      "planRecipeLabel": "Plan {name}",
+      "planMenuLabel": "Choose a day"
+    },
+    "planChoices": {
+      "momentLabel": "Moment",
+      "slots": {
+        "breakfast": "Breakfast",
+        "lunch": "Lunch",
+        "dinner": "Dinner",
+        "snack": "Snack"
+      },
+      "todayLabel": "Today",
+      "tomorrowLabel": "Tomorrow",
+      "otherDateLabel": "Other date",
+      "planLabel": "Plan"
+    },
+    "mealPanel": {
+      "title": "Meal",
+      "recipeLabel": "Recipe",
+      "slotLabel": "Moment",
+      "slots": {
+        "breakfast": "Breakfast",
+        "lunch": "Lunch",
+        "dinner": "Dinner",
+        "snack": "Snack"
+      },
+      "servingsLabel": "Servings",
+      "dateLabel": "Date",
+      "attachedNotice": "This meal belongs to an event and follows its date.",
+      "toBasketLabel": "To basket",
+      "addedToBasketLabel": "Added",
+      "chooseBasketLabel": "Choose a basket",
+      "sentNotice": "Ingredients of this meal are already in a basket.",
+      "saveLabel": "Save",
+      "savingLabel": "Saving...",
+      "deleteLabel": "Delete",
+      "deleteConfirmLabel": "Are you sure?",
+      "deleteConfirmButtonLabel": "Yes, delete",
+      "deletingLabel": "Deleting...",
+      "cancelLabel": "Cancel"
     }
   },
   "agenda": {
@@ -1098,13 +1159,23 @@
       "read-only": "This event is read-only and can't be changed.",
       "generic": "Something went wrong. Please try again.",
       "already-linked": "This is already linked to this event.",
-      "forbidden": "You can't link this to this event."
+      "forbidden": "You can't link this to this event.",
+      "nothing-to-send": "There are no meals in this week without ingredients in a basket."
     },
     "notices": {
       "message": "“{title}” disappeared from your calendar. These groceries were in your basket for that meal: {items}.",
       "more": "and {count} more",
       "removeLabel": "Remove",
       "keepLabel": "Keep"
+    },
+    "plan": {
+      "plannedNotice": "Planned for {slot} on {date}",
+      "slots": {
+        "breakfast": "breakfast",
+        "lunch": "lunch",
+        "dinner": "dinner",
+        "snack": "a snack"
+      }
     }
   }
 }

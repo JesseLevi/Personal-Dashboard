@@ -26,6 +26,8 @@ export interface CardContentRecipeProps {
   name: string;
   /** Figma TEXT "20 min" — already-formatted duration, caller-supplied content (not formatted/localized here). Optional: `recipes.time_minutes` is nullable, so the row is omitted rather than showing invented text (#124, design/notes/CardContentRecipe.md). */
   duration?: string;
+  /** Claude-designed (#487): a 48px thumbnail and tighter text for lists beside the Agenda. Default is Figma's 96px card. */
+  compact?: boolean;
   className?: string;
 }
 
@@ -35,27 +37,29 @@ export function CardContentRecipe({
   imageAlt,
   name,
   duration,
+  compact = false,
   className,
 }: CardContentRecipeProps) {
   const image = useImageFallback(imageUrl ?? "", imageFallbackUrl);
+  const thumbnail = compact ? "h-12 w-12" : "h-24 w-24";
   return (
-    <div className={cn("flex w-full gap-inline-lg", className)}>
+    <div className={cn("flex w-full", compact ? "gap-inline-md" : "gap-inline-lg", className)}>
       {imageUrl ? (
         <img
           src={image.src}
           onError={image.onError}
           alt={imageAlt ?? ""}
-          width={96}
-          height={96}
+          width={compact ? 48 : 96}
+          height={compact ? 48 : 96}
           loading="lazy"
           decoding="async"
-          className="h-24 w-24 shrink-0 rounded-card-inner object-cover"
+          className={cn("shrink-0 rounded-card-inner object-cover", thumbnail)}
         />
       ) : (
-        <div aria-hidden="true" className="h-24 w-24 shrink-0 rounded-card-inner bg-surface-primary" />
+        <div aria-hidden="true" className={cn("shrink-0 rounded-card-inner bg-surface-primary", thumbnail)} />
       )}
-      <div className="flex flex-1 flex-col justify-center gap-stack-sm">
-        <p className="w-full text-base font-semibold text-text-primary">{name}</p>
+      <div className={cn("flex min-w-0 flex-1 flex-col justify-center", compact ? "gap-stack-xs" : "gap-stack-sm")}>
+        <p className={cn("w-full font-semibold text-text-primary", compact ? "truncate text-sm" : "text-base")}>{name}</p>
         {duration && (
           // spacing-flag: `gap-2` stays raw (#205): "Time"'s itemSpacing (8px) has no
           // bound variable in the fetched node. See design/notes/CardContentRecipe.md.

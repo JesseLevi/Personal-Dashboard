@@ -120,19 +120,16 @@ describe("meals", () => {
       slot: "dinner",
       servings: 4,
       thumbnailPath: "a/b.webp",
+      attached: false,
     });
   });
 
-  it("takes its time from the attached event", () => {
+  it("takes the date of the attached event, not its time", () => {
     const item = mapAgendaRow(
-      meal({ starts_at: "2026-10-14T16:00:00Z", ends_at: "2026-10-14T18:00:00Z" }),
+      meal({ starts_at: "2026-10-14T22:30:00Z", ends_at: "2026-10-14T23:30:00Z" }),
       AMS,
     );
-    expect(item).toMatchObject({
-      allDay: false,
-      start: "2026-10-14T18:00:00",
-      end: "2026-10-14T20:00:00",
-    });
+    expect(item).toMatchObject({ allDay: true, start: "2026-10-15", end: null, attached: true });
   });
 
   it("takes the date of an attached all-day event", () => {
@@ -140,7 +137,7 @@ describe("meals", () => {
       meal({ all_day: true, starts_at: "2026-10-14T00:00:00Z", ends_at: "2026-10-15T00:00:00Z" }),
       AMS,
     );
-    expect(item).toMatchObject({ allDay: true, start: "2026-10-14", end: "2026-10-15" });
+    expect(item).toMatchObject({ allDay: true, start: "2026-10-14", end: null, attached: true });
   });
 });
 

@@ -12,7 +12,13 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AgendaItem } from "@/lib/agenda/types";
 import type { AgendaView } from "@/lib/agenda/view";
-import { normalizeSpan, toEventInputs, type AgendaSpan } from "@/lib/ui/agenda-calendar";
+import {
+  compareEventOrder,
+  normalizeSpan,
+  toEventInputs,
+  type AgendaSpan,
+  type EventOrderSubject,
+} from "@/lib/ui/agenda-calendar";
 import { cn } from "@/lib/ui/cn";
 import { AgendaItemContent, type AgendaItemLabels } from "./AgendaCalendarItem";
 import { buildAgendaCalendarOptions } from "./AgendaCalendarTheme";
@@ -28,6 +34,20 @@ export interface AgendaExternalDrop {
   payload: AgendaDragPayload;
   start: string;
   allDay: boolean;
+  /** Set when the drop landed on an event (`calendar_events.id`), not on an empty slot. */
+  eventId?: string;
+}
+
+const EVENT_ID_ATTRIBUTE = "data-agenda-event-id";
+
+// A drop is reported per date; the event under the pointer is found in the DOM.
+function eventIdAtPoint(event: Event): string | undefined {
+  const pointer = "changedTouches" in event ? (event as TouchEvent).changedTouches[0] : (event as MouseEvent);
+  if (!pointer) return undefined;
+  const hit = document
+    .elementsFromPoint(pointer.clientX, pointer.clientY)
+    .find((el) => el.hasAttribute(EVENT_ID_ATTRIBUTE));
+  return hit?.getAttribute(EVENT_ID_ATTRIBUTE) ?? undefined;
 }
 
 export interface AgendaCalendarProps {
@@ -168,6 +188,12 @@ export function AgendaCalendar({
     eventOverlap: true,
     slotEventOverlap: false,
     events,
+    eventOrder: (a: unknown, b: unknown) => compareEventOrder(a as EventOrderSubject, b as EventOrderSubject),
+    eventDidMount: (info) => {
+      // Drag mirrors of external items carry no agenda item.
+      const item = itemOf(info.event) as AgendaItem | undefined;
+      if (item?.kind === "event") info.el.setAttribute(EVENT_ID_ATTRIBUTE, item.id);
+    },
     editable: true,
     selectable: true,
     selectMirror: true,
@@ -198,7 +224,10 @@ export function AgendaCalendar({
     eventResize: handleResize,
     drop: (info) => {
       const payload = getAgendaDragPayload(info.draggedEl);
-      if (payload) onExternalDrop?.({ payload, start: info.dateStr, allDay: info.allDay });
+      if (payload) {
+        const eventId = eventIdAtPoint(info.jsEvent);
+        onExternalDrop?.({ payload, start: info.dateStr, allDay: info.allDay, ...(eventId ? { eventId } : {}) });
+      }
     },
   };
 
