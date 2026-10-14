@@ -115,11 +115,13 @@ export function AgendaCalendarsPanel({
     if (account.status === "ok" && account.lastSyncedAt) {
       return t("status.ok", { time: format.relativeTime(new Date(account.lastSyncedAt)) });
     }
-    if (account.status === "failed") {
-      const key = account.errorCode && t.has(`syncErrors.${account.errorCode}`) ? account.errorCode : "fetch_failed";
-      return t("status.failed", { reason: t(`syncErrors.${key}`) });
-    }
-    return t("status.never");
+    return account.status === "failed" ? t("status.failed") : t("status.never");
+  }
+
+  function failureReason(account: CalendarAccountView): string | null {
+    if (account.status !== "failed") return null;
+    const key = account.errorCode && t.has(`syncErrors.${account.errorCode}`) ? account.errorCode : "fetch_failed";
+    return t(`syncErrors.${key}`);
   }
 
   const canAdd = !isPending && name.trim() !== "" && url.trim() !== "";
@@ -174,6 +176,9 @@ export function AgendaCalendarsPanel({
                 ask();
               }}
             />
+            {failureReason(account) && (
+              <p className="w-full text-base text-text-secondary">{failureReason(account)}</p>
+            )}
           </CardContentTicket>
         </Card>
       ))}

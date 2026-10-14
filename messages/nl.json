@@ -1054,10 +1054,10 @@
       "status": {
         "never": "Nog niet gesynchroniseerd",
         "ok": "Bijgewerkt {time}",
-        "failed": "Mislukt: {reason}"
+        "failed": "Mislukt"
       },
       "deleteLabel": "{name} verwijderen",
-      "deleteConfirmLabel": "'{name}' en de geïmporteerde afspraken verwijderen? De agenda zelf blijft staan.",
+      "deleteConfirmLabel": "“{name}” en de geïmporteerde afspraken verwijderen? De agenda zelf blijft staan.",
       "deleteConfirmButtonLabel": "Ja, verwijderen",
       "deletingLabel": "Verwijderen...",
       "cancelLabel": "Annuleren",
@@ -1073,20 +1073,20 @@
         "generic": "Er ging iets mis. Probeer het opnieuw."
       },
       "syncErrors": {
-        "fetch_invalid_url": "de link is ongeldig",
-        "fetch_blocked_address": "de link verwijst naar een adres dat niet is toegestaan",
-        "fetch_too_large": "het bestand is te groot",
-        "fetch_timeout": "de agenda reageerde niet op tijd",
-        "fetch_bad_content_type": "de link geeft geen agenda terug",
-        "fetch_too_many_redirects": "te veel doorverwijzingen",
-        "fetch_http_error": "de agenda gaf een foutmelding",
-        "fetch_failed": "de agenda kon niet worden opgehaald",
-        "unparsable": "het bestand is geen leesbare agenda",
-        "too_large": "de agenda heeft te veel afspraken",
-        "empty": "de agenda bevatte geen afspraken, dus er is niets verwijderd",
-        "drop": "er verdween meer dan de helft van de afspraken, dus er is niets verwijderd",
-        "no_secret": "de link kon niet worden gelezen",
-        "apply_failed": "de afspraken konden niet worden opgeslagen"
+        "fetch_invalid_url": "De link is ongeldig.",
+        "fetch_blocked_address": "De link verwijst naar een adres dat niet is toegestaan.",
+        "fetch_too_large": "Het bestand is te groot.",
+        "fetch_timeout": "De agenda reageerde niet op tijd.",
+        "fetch_bad_content_type": "De link geeft geen agenda terug.",
+        "fetch_too_many_redirects": "Te veel doorverwijzingen.",
+        "fetch_http_error": "De agenda gaf een foutmelding.",
+        "fetch_failed": "De agenda kon niet worden opgehaald.",
+        "unparsable": "Het bestand is geen leesbare agenda.",
+        "too_large": "De agenda heeft te veel afspraken.",
+        "empty": "De agenda bevatte geen afspraken, dus er is niets verwijderd.",
+        "drop": "Er verdween meer dan de helft van de afspraken, dus er is niets verwijderd.",
+        "no_secret": "De link kon niet worden gelezen.",
+        "apply_failed": "De afspraken konden niet worden opgeslagen."
       }
     }
   },
@@ -1101,7 +1101,7 @@
       "forbidden": "Je kunt dit niet aan deze afspraak koppelen."
     },
     "notices": {
-      "message": "'{title}' is uit je agenda verdwenen. Deze boodschappen stonden voor die maaltijd in je mand: {items}.",
+      "message": "“{title}” is uit je agenda verdwenen. Deze boodschappen stonden voor die maaltijd in je mand: {items}.",
       "more": "en {count} andere",
       "removeLabel": "Weghalen",
       "keepLabel": "Laten staan"

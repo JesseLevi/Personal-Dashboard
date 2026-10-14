@@ -1054,10 +1054,10 @@
       "status": {
         "never": "Not synced yet",
         "ok": "Updated {time}",
-        "failed": "Failed: {reason}"
+        "failed": "Failed"
       },
       "deleteLabel": "Delete {name}",
-      "deleteConfirmLabel": "Delete '{name}' and its imported events? The calendar itself stays where it is.",
+      "deleteConfirmLabel": "Delete “{name}” and its imported events? The calendar itself stays where it is.",
       "deleteConfirmButtonLabel": "Yes, delete",
       "deletingLabel": "Deleting...",
       "cancelLabel": "Cancel",
@@ -1073,20 +1073,20 @@
         "generic": "Something went wrong. Please try again."
       },
       "syncErrors": {
-        "fetch_invalid_url": "the link is not valid",
-        "fetch_blocked_address": "the link points to an address that is not allowed",
-        "fetch_too_large": "the file is too large",
-        "fetch_timeout": "the calendar did not respond in time",
-        "fetch_bad_content_type": "the link does not return a calendar",
-        "fetch_too_many_redirects": "too many redirects",
-        "fetch_http_error": "the calendar returned an error",
-        "fetch_failed": "the calendar could not be fetched",
-        "unparsable": "the file is not a readable calendar",
-        "too_large": "the calendar has too many events",
-        "empty": "the calendar had no events, so nothing was deleted",
-        "drop": "more than half of the events disappeared, so nothing was deleted",
-        "no_secret": "the link could not be read",
-        "apply_failed": "the events could not be saved"
+        "fetch_invalid_url": "The link is not valid.",
+        "fetch_blocked_address": "The link points to an address that is not allowed.",
+        "fetch_too_large": "The file is too large.",
+        "fetch_timeout": "The calendar did not respond in time.",
+        "fetch_bad_content_type": "The link does not return a calendar.",
+        "fetch_too_many_redirects": "Too many redirects.",
+        "fetch_http_error": "The calendar returned an error.",
+        "fetch_failed": "The calendar could not be fetched.",
+        "unparsable": "The file is not a readable calendar.",
+        "too_large": "The calendar has too many events.",
+        "empty": "The calendar had no events, so nothing was deleted.",
+        "drop": "More than half of the events disappeared, so nothing was deleted.",
+        "no_secret": "The link could not be read.",
+        "apply_failed": "The events could not be saved."
       }
     }
   },
@@ -1101,7 +1101,7 @@
       "forbidden": "You can't link this to this event."
     },
     "notices": {
-      "message": "'{title}' disappeared from your calendar. These groceries were in your basket for that meal: {items}.",
+      "message": "“{title}” disappeared from your calendar. These groceries were in your basket for that meal: {items}.",
       "more": "and {count} more",
       "removeLabel": "Remove",
       "keepLabel": "Keep"
