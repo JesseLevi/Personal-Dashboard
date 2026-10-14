@@ -61,5 +61,5 @@
 - Phase 7 grows with meal planning and card planning. In return, the Agenda connects Recepten, Winkelmand and Te doen instead of being a standalone view.
 - The query behind the timeline unions five sources. It should be one `security invoker` function, so RLS applies to every branch.
 - A wrongly detected deletion costs at most one sync interval of delay, and never a silent loss of plans.
-- The runtime for scheduled sync is still open (`Architecture.md` §6, open decision 1). Because of the two-miss rule, deletions land after two sync intervals.
+- The sync runtime is ADR-0039 (lazy on Agenda load plus a daily cron). Because of the two-miss rule, deletions land after two sync intervals.
 - The notice store for point 6 is decided in its ticket: owner-only RLS, holding the event title and the affected item ids.
