@@ -16,6 +16,7 @@ async function mockLoad(input: unknown): Promise<AgendaActionResult<AgendaEventD
       description: "Halfjaarlijkse controle. Pasje meenemen.",
       source: id === "sync-1" ? "sync" : "manual",
       calendarId: "cal-1",
+      calendarName: id === "sync-1" ? "Outlook" : null,
     },
   };
 }

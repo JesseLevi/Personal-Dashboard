@@ -1,17 +1,20 @@
 // design: Claude-designed (#486)
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { Checkbox } from "@/components/atoms/Checkbox";
 import { InputField } from "@/components/atoms/InputField";
 import { SidePanel } from "@/components/organisms/SidePanel";
 import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
-import type { AgendaActionResult } from "@/lib/agenda/schemas";
+import type { AgendaLink, AgendaLinkCandidate } from "@/lib/agenda/links";
+import type { AgendaActionResult, AgendaErrorCode } from "@/lib/agenda/schemas";
 import { addDays, spanToUtc } from "@/lib/agenda/time";
 import type { AgendaEventDetail, AgendaEventItem } from "@/lib/agenda/types";
 import type { AgendaSpan } from "@/lib/ui/agenda-calendar";
+import { AgendaEventLinks } from "./AgendaEventLinks";
+import { AgendaLinkSearchPanel, linkKey } from "./AgendaLinkSearchPanel";
 
 export type AgendaPanelTarget =
   | { mode: "create"; span: AgendaSpan }
@@ -25,8 +28,15 @@ export interface AgendaEventPanelProps {
   onCreateEvent: (input: unknown) => Promise<AgendaActionResult<{ id: string }>>;
   onUpdateEvent: (input: unknown) => Promise<AgendaActionResult>;
   onDeleteEvent: (input: unknown) => Promise<AgendaActionResult>;
-  /** After a successful create, update or delete, before `onClose`. */
+  /** After a successful create, update or delete, before `onClose`; also after a link change, with the panel left open. */
   onMutated?: () => void;
+  /** The "Gekoppeld" section shows for a saved event when the link actions are given. */
+  onLoadLinks?: (input: unknown) => Promise<AgendaActionResult<AgendaLink[]>>;
+  onSearchLinks?: (input: unknown) => Promise<AgendaActionResult<AgendaLinkCandidate[]>>;
+  onLink?: (input: unknown) => Promise<AgendaActionResult<{ id: string }>>;
+  onUnlink?: (input: unknown) => Promise<AgendaActionResult>;
+  /** Client-side navigation for a link in "Gekoppeld". */
+  onNavigate?: (href: string) => void;
 }
 
 interface FormValues {
@@ -81,6 +91,11 @@ export function AgendaEventPanel({
   onUpdateEvent,
   onDeleteEvent,
   onMutated,
+  onLoadLinks,
+  onSearchLinks,
+  onLink,
+  onUnlink,
+  onNavigate,
 }: AgendaEventPanelProps) {
   const t = useTranslations("components.agendaPanel");
   const tSidePanel = useTranslations("components.sidePanel");
@@ -88,6 +103,10 @@ export function AgendaEventPanel({
 
   const [values, setValues] = useState(() => initialValues(target));
   const [detailLoaded, setDetailLoaded] = useState(target.mode === "create");
+  const [calendarName, setCalendarName] = useState<string | null>(null);
+  const [links, setLinks] = useState<AgendaLink[] | null>(null);
+  const [linksFailure, setLinksFailure] = useState<AgendaErrorCode | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { confirming, ask, cancel } = useDeleteConfirm();
@@ -109,11 +128,16 @@ export function AgendaEventPanel({
     if (shouldReset) {
       setValues(initialValues(target));
       setDetailLoaded(target.mode === "create");
+      setCalendarName(null);
+      setLinks(null);
+      setLinksFailure(null);
+      setSearchOpen(false);
       setError(null);
       cancel();
     }
   }
 
+  const eventId = target.mode === "edit" ? target.item.id : null;
   const editId = open && target.mode === "edit" ? target.item.id : null;
   useEffect(() => {
     if (!editId) return;
@@ -126,6 +150,7 @@ export function AgendaEventPanel({
           location: result.data.location ?? "",
           description: result.data.description ?? "",
         }));
+        setCalendarName(result.data.calendarName);
         setDetailLoaded(true);
       } else {
         setError(tErrors(result.error));
@@ -135,6 +160,41 @@ export function AgendaEventPanel({
       cancelled = true;
     };
   }, [editId, onLoadEvent, tErrors]);
+
+  const loadLinks = useCallback(async () => {
+    if (!editId || !onLoadLinks) return;
+    const result = await onLoadLinks({ eventId: editId });
+    if (result.success) setLinks(result.data);
+    else setLinksFailure(result.error);
+  }, [editId, onLoadLinks]);
+
+  useEffect(() => {
+    void loadLinks();
+  }, [loadLinks]);
+
+  function handleUnlink(link: AgendaLink) {
+    if (!onUnlink) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await onUnlink({ linkId: link.id });
+      if (!result.success) {
+        setError(tErrors(result.error));
+        return;
+      }
+      setLinks((current) => current?.filter((candidate) => candidate.id !== link.id) ?? null);
+      onMutated?.();
+    });
+  }
+
+  // Resolves with the action result so the search panel can show a refusal and stay open.
+  async function handleLink(candidate: AgendaLinkCandidate) {
+    const result = await onLink!({ eventId, kind: candidate.kind, targetId: candidate.id });
+    if (result.success) {
+      await loadLinks();
+      onMutated?.();
+    }
+    return result;
+  }
 
   function update(patch: Partial<FormValues>) {
     setValues((current) => ({ ...current, ...patch }));
@@ -214,80 +274,110 @@ export function AgendaEventPanel({
 
   const inputType = values.allDay ? "date" : "datetime-local";
 
+  const shownError = error ?? (linksFailure ? tErrors(linksFailure) : null);
+  const linkedKeys = new Set((links ?? []).map((link) => linkKey(link.kind, link.targetId)));
+
   return (
-    <SidePanel
-      open={open}
-      onClose={onClose}
-      title={readOnly ? t("viewTitle") : item ? t("editTitle") : t("addTitle")}
-      closeLabel={tSidePanel("closeLabel")}
-      footer={footer}
-    >
-      {readOnly && <p className="text-base text-text-secondary">{t("readOnlyNotice")}</p>}
-      <InputField
-        label={t("fields.titleLabel")}
-        id="agenda-event-title"
-        value={values.title}
-        onChange={(event) => update({ title: event.target.value })}
-        disabled={readOnly}
-        required
-      />
-      <div className="flex items-center gap-inline-sm">
-        <Checkbox
-          id="agenda-event-all-day"
-          checked={values.allDay}
-          aria-labelledby="agenda-event-all-day-label"
+    <>
+      <SidePanel
+        open={open}
+        onClose={onClose}
+        title={readOnly ? t("viewTitle") : item ? t("editTitle") : t("addTitle")}
+        closeLabel={tSidePanel("closeLabel")}
+        footer={footer}
+      >
+        {readOnly && (
+          <div className="flex flex-col gap-stack-sm">
+            <p className="text-base font-semibold text-text-primary">
+              {calendarName ? t("importedFrom", { name: calendarName }) : t("importedFromFallback")}
+            </p>
+            <p className="text-base text-text-secondary">{t("readOnlyNotice")}</p>
+          </div>
+        )}
+        <InputField
+          label={t("fields.titleLabel")}
+          id="agenda-event-title"
+          value={values.title}
+          onChange={(event) => update({ title: event.target.value })}
           disabled={readOnly}
-          onClick={() => setValues(toggleAllDay)}
+          required
         />
-        <span id="agenda-event-all-day-label" className="text-base font-semibold text-text-primary">
-          {t("fields.allDayLabel")}
-        </span>
-      </div>
-      <InputField
-        key={`start-${inputType}`}
-        label={values.allDay ? t("fields.startDateLabel") : t("fields.startLabel")}
-        id="agenda-event-start"
-        type={inputType}
-        leadingIcon="Calendar"
-        value={values.start}
-        onChange={(event) => update({ start: event.target.value })}
-        disabled={readOnly}
-      />
-      <InputField
-        key={`end-${inputType}`}
-        label={values.allDay ? t("fields.endDateLabel") : t("fields.endLabel")}
-        id="agenda-event-end"
-        type={inputType}
-        leadingIcon="Calendar"
-        value={values.end}
-        onChange={(event) => update({ end: event.target.value })}
-        disabled={readOnly}
-      />
-      <InputField
-        label={t("fields.locationLabel")}
-        id="agenda-event-location"
-        value={values.location}
-        onChange={(event) => update({ location: event.target.value })}
-        disabled={readOnly || !detailLoaded}
-      />
-      <InputField
-        label={t("fields.descriptionLabel")}
-        id="agenda-event-description"
-        multiline
-        value={values.description}
-        onChange={(event) => update({ description: event.target.value })}
-        placeholder={detailLoaded ? undefined : t("loadingLabel")}
-        disabled={readOnly || !detailLoaded}
-      />
-      <InputField
-        label={t("fields.calendarLabel")}
-        id="agenda-event-calendar"
-        leadingIcon="Calendar"
-        value={t("defaultCalendarName")}
-        readOnly
-        disabled
-      />
-      {error && <p className="text-base font-semibold text-priority-urgent">{error}</p>}
-    </SidePanel>
+        <div className="flex items-center gap-inline-sm">
+          <Checkbox
+            id="agenda-event-all-day"
+            checked={values.allDay}
+            aria-labelledby="agenda-event-all-day-label"
+            disabled={readOnly}
+            onClick={() => setValues(toggleAllDay)}
+          />
+          <span id="agenda-event-all-day-label" className="text-base font-semibold text-text-primary">
+            {t("fields.allDayLabel")}
+          </span>
+        </div>
+        <InputField
+          key={`start-${inputType}`}
+          label={values.allDay ? t("fields.startDateLabel") : t("fields.startLabel")}
+          id="agenda-event-start"
+          type={inputType}
+          leadingIcon="Calendar"
+          value={values.start}
+          onChange={(event) => update({ start: event.target.value })}
+          disabled={readOnly}
+        />
+        <InputField
+          key={`end-${inputType}`}
+          label={values.allDay ? t("fields.endDateLabel") : t("fields.endLabel")}
+          id="agenda-event-end"
+          type={inputType}
+          leadingIcon="Calendar"
+          value={values.end}
+          onChange={(event) => update({ end: event.target.value })}
+          disabled={readOnly}
+        />
+        <InputField
+          label={t("fields.locationLabel")}
+          id="agenda-event-location"
+          value={values.location}
+          onChange={(event) => update({ location: event.target.value })}
+          disabled={readOnly || !detailLoaded}
+        />
+        <InputField
+          label={t("fields.descriptionLabel")}
+          id="agenda-event-description"
+          multiline
+          value={values.description}
+          onChange={(event) => update({ description: event.target.value })}
+          placeholder={detailLoaded ? undefined : t("loadingLabel")}
+          disabled={readOnly || !detailLoaded}
+        />
+        <InputField
+          label={t("fields.calendarLabel")}
+          id="agenda-event-calendar"
+          leadingIcon="Calendar"
+          value={t("defaultCalendarName")}
+          readOnly
+          disabled
+        />
+        {eventId && onLoadLinks && (
+          <AgendaEventLinks
+            links={links}
+            onLink={() => setSearchOpen(true)}
+            onUnlink={handleUnlink}
+            onNavigate={onNavigate}
+            disabled={isPending}
+          />
+        )}
+        {shownError && <p className="text-base font-semibold text-priority-urgent">{shownError}</p>}
+      </SidePanel>
+      {eventId && onSearchLinks && onLink && (
+        <AgendaLinkSearchPanel
+          open={open && searchOpen}
+          onClose={() => setSearchOpen(false)}
+          onSearch={onSearchLinks}
+          onSelect={handleLink}
+          linkedKeys={linkedKeys}
+        />
+      )}
+    </>
   );
 }

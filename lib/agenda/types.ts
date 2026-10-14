@@ -63,4 +63,6 @@ export interface AgendaEventDetail {
   description: string | null;
   source: "manual" | "sync";
   calendarId: string;
+  /** Name of the calendar the event is in (the source of an imported event). */
+  calendarName: string | null;
 }

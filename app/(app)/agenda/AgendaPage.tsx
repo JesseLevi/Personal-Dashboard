@@ -18,6 +18,7 @@ import type { AgendaSpan } from "@/lib/ui/agenda-calendar";
 import { createEvent, deleteEvent, getAgendaEvent, loadAgendaRange, moveEvent, updateEvent } from "./actions";
 import { AgendaBody } from "./AgendaBody";
 import { AgendaEventPanel, type AgendaPanelTarget } from "./AgendaEventPanel";
+import { getAgendaEventLinks, linkToEvent, searchAgendaLinkTargets, unlinkFromEvent } from "./link-actions";
 import { AgendaHeader, toToggleView, type AgendaToggleView } from "./AgendaHeader";
 
 export interface AgendaPageProps {
@@ -175,6 +176,11 @@ export function AgendaPage({ initialView, today, initialItems }: AgendaPageProps
         onUpdateEvent={updateEvent}
         onDeleteEvent={deleteEvent}
         onMutated={() => void loadAround(date)}
+        onLoadLinks={getAgendaEventLinks}
+        onSearchLinks={searchAgendaLinkTargets}
+        onLink={linkToEvent}
+        onUnlink={unlinkFromEvent}
+        onNavigate={router.push}
       />
     </>
   );
