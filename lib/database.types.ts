@@ -1214,6 +1214,7 @@ export type Database = {
           board_name: string
           calendar_id: string
           column_name: string
+          ends_at: string
           id: string
           kind: string
           link_count: number
@@ -1223,7 +1224,6 @@ export type Database = {
           slot: string
           source: string
           starts_at: string
-          ends_at: string
           thumbnail_path: string
           title: string
         }[]
