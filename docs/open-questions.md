@@ -150,6 +150,12 @@ Image states (#339): the broken-image block reuses `Image` (no `ImageOff` glyph)
 
 TOC rail (#342) is Claude-designed on request. Untokenised: rail width (`w-44`), sticky offset (`top-stack-xl` reused), the `xl` hide breakpoint; no mobile menu. Claude may adjust when touched. -> `design/notes/NoteEditor.md` (#342).
 
+## Agenda
+
+### calendar-sync-drop-override
+
+**Product call.** An imported feed that loses more than half of the events in its window, or comes back empty, counts as a failed sync and deletes nothing (ADR-0037 §5). If the loss is real (a series removed, a calendar emptied on purpose), the account stays "failed" until the feed grows back or the user removes and re-adds it. Options: a "Toch bijwerken" button per failed account, or accept it. -> `design/notes/AgendaCalendarsPanel.md`.
+
 ---
 
 ## Resolved
