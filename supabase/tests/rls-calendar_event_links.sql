@@ -29,13 +29,13 @@ values ('00000000-0000-0000-0000-483000000321', '00000000-0000-0000-0000-4830000
        ('00000000-0000-0000-0000-483000000322', '00000000-0000-0000-0000-483000000302',
         (select id from public.board_columns where user_id = '00000000-0000-0000-0000-483000000302' limit 1),
         'B kaart', 1000);
-insert into public.recipes (id, user_id, category_id, title)
+insert into public.recipes (id, user_id, category_id, title, position)
 values ('00000000-0000-0000-0000-483000000331', '00000000-0000-0000-0000-483000000301',
         (select id from public.recipe_categories where user_id = '00000000-0000-0000-0000-483000000301' limit 1),
-        'A recept'),
+        'A recept', 1000),
        ('00000000-0000-0000-0000-483000000332', '00000000-0000-0000-0000-483000000302',
         (select id from public.recipe_categories where user_id = '00000000-0000-0000-0000-483000000302' limit 1),
-        'B recept');
+        'B recept', 1000);
 insert into public.notes (id, user_id, category_id, title, position)
 values ('00000000-0000-0000-0000-483000000341', '00000000-0000-0000-0000-483000000301',
         (select id from public.note_categories where user_id = '00000000-0000-0000-0000-483000000301' limit 1),

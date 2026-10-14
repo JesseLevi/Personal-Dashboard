@@ -13,16 +13,16 @@ select set_config('test.a_cal', (select id::text from public.calendars
 select set_config('test.b_cal', (select id::text from public.calendars
   where user_id = '00000000-0000-0000-0000-483000000202' and is_default), true);
 
-insert into public.recipes (id, user_id, category_id, title)
+insert into public.recipes (id, user_id, category_id, title, position)
 values ('00000000-0000-0000-0000-483000000211', '00000000-0000-0000-0000-483000000201',
         (select id from public.recipe_categories where user_id = '00000000-0000-0000-0000-483000000201' limit 1),
-        'A pasta'),
+        'A pasta', 1000),
        ('00000000-0000-0000-0000-483000000212', '00000000-0000-0000-0000-483000000201',
         (select id from public.recipe_categories where user_id = '00000000-0000-0000-0000-483000000201' limit 1),
-        'A soep'),
+        'A soep', 1000),
        ('00000000-0000-0000-0000-483000000213', '00000000-0000-0000-0000-483000000202',
         (select id from public.recipe_categories where user_id = '00000000-0000-0000-0000-483000000202' limit 1),
-        'B curry');
+        'B curry', 1000);
 
 insert into public.calendars (id, user_id, name)
 values ('00000000-0000-0000-0000-483000000221', '00000000-0000-0000-0000-483000000201', 'Tweede');

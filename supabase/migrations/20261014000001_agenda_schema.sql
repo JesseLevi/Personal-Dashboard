@@ -107,9 +107,14 @@ grant execute on function private.calendar_role(uuid) to authenticated;
 
 alter table public.calendars enable row level security;
 
+-- user_id is checked directly as well: calendar_role() is STABLE and cannot see
+-- a row inserted by the statement that is still reading it back (RETURNING).
 create policy calendars_select_member on public.calendars
   for select to authenticated
-  using (private.calendar_role(id) in ('owner', 'editor'));
+  using (
+    user_id = (select auth.uid())
+    or private.calendar_role(id) in ('owner', 'editor')
+  );
 -- A client can only create non-default calendars, and only against an account
 -- of their own; defaults come from the security definer seed.
 create policy calendars_insert_own on public.calendars
