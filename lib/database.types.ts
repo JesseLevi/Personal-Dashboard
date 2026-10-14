@@ -1207,6 +1207,27 @@ export type Database = {
           source_thumbnail_path: string
         }[]
       }
+      agenda_items: {
+        Args: { p_from: string; p_time_zone?: string; p_to: string }
+        Returns: {
+          all_day: boolean
+          board_name: string
+          calendar_id: string
+          column_name: string
+          id: string
+          kind: string
+          link_count: number
+          missing_since: string
+          planned_on: string
+          servings: number
+          slot: string
+          source: string
+          starts_at: string
+          ends_at: string
+          thumbnail_path: string
+          title: string
+        }[]
+      }
       apply_seed: {
         Args: { p_key: string; p_user_id: string }
         Returns: boolean
