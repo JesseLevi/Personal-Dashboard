@@ -32,6 +32,24 @@ const dueAt = z
     return parsed;
   })
   .nullable();
+// cards.planned_for is a calendar date, not an instant. A non-null value is
+// `YYYY-MM-DD` (the Agenda's drag and drop) or the panel's dd-mm-yyyy text,
+// the same input as the deadline; both end as `YYYY-MM-DD`. Impossible days
+// such as 2026-02-31 are rejected. `null` clears it.
+const plannedFor = z
+  .string()
+  .transform((value, ctx) => {
+    const text = value.trim();
+    const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+    const parsed = iso ? new Date(`${text}T00:00:00Z`).toISOString() : parseDueAtText(text);
+    const day = parsed?.slice(0, 10);
+    if (!day || (iso && day !== text)) {
+      ctx.addIssue({ code: "custom", message: "Invalid planned date" });
+      return z.NEVER;
+    }
+    return day;
+  })
+  .nullable();
 // board_columns.icon: free-text column, validated against the IconName union
 // at render time (components/atoms/Icon.tsx) — the data layer only rejects
 // empty input, matching the CLAUDE.md line for this column.
@@ -75,6 +93,7 @@ export const createCardSchema = z.object({
   priority: priority.optional(),
   size: size.optional(),
   dueAt: dueAt.optional(),
+  plannedFor: plannedFor.optional(),
 });
 
 export const updateCardSchema = z.object({
@@ -84,6 +103,14 @@ export const updateCardSchema = z.object({
   priority: priority.optional(),
   size: size.optional(),
   dueAt: dueAt.optional(),
+  plannedFor: plannedFor.optional(),
+});
+
+// Plans a card on a day (or clears the day with `null`). `plannedFor` is
+// required, so a missing field is not mistaken for "clear".
+export const planCardSchema = z.object({
+  cardId: z.uuid(),
+  plannedFor,
 });
 
 export const deleteCardSchema = z.object({
