@@ -42,6 +42,7 @@ const sampleCard: CardWithLabels = {
   priority: "medium",
   size: "m",
   due_at: "2026-08-01T00:00:00.000Z",
+  planned_for: null,
   position: 1000,
   source: "manual",
   created_at: "2026-07-01T00:00:00.000Z",
