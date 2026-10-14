@@ -4,5 +4,6 @@
   "github": {
     "autoAlias": false
   },
-  "ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]"
+  "ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]",
+  "crons": [{ "path": "/api/cron/calendar-sync", "schedule": "0 4 * * *" }]
 }

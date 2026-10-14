@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # ADR-0002/0003 guards, run in CI:
-# 1. service_role usage may only exist in worker/ and scripts/ (never app/, components/, lib/ except lib/database.types.ts).
+# 1. service_role usage may only exist in worker/ and scripts/ (never app/, components/, lib/ except lib/database.types.ts
+#    and lib/supabase/service.ts, which only app/api/cron/ may import: ADR-0039 §4).
 # 2. No NEXT_PUBLIC_ Supabase config — the browser never talks to Supabase.
 # 3. No dangerouslySetInnerHTML on user/model content paths (§7).
 # 4. No raw hex colors in components — tokens only (CLAUDE.md/ADR-0010).
@@ -11,8 +12,13 @@ set -euo pipefail
 cd "${1:-.}"
 fail=0
 
-if grep -rn "SERVICE_ROLE" app/ components/ lib/ 2>/dev/null | grep -v "lib/database.types.ts"; then
-  echo "FAIL: service_role referenced outside worker/scripts (ADR-0002)." >&2; fail=1
+if grep -rn "SERVICE_ROLE" app/ components/ lib/ 2>/dev/null | grep -v "lib/database.types.ts" | grep -v "^lib/supabase/service.ts:"; then
+  echo "FAIL: service_role referenced outside worker/scripts and lib/supabase/service.ts (ADR-0002, ADR-0039)." >&2; fail=1
+fi
+
+# ADR-0039 §4: the service client is for the cron route only, never a user path.
+if grep -rln "supabase/service" app/ components/ lib/ 2>/dev/null | grep -v "^app/api/cron/" | grep -v "^lib/supabase/service.ts$"; then
+  echo "FAIL: lib/supabase/service is imported outside app/api/cron (ADR-0039 §4)." >&2; fail=1
 fi
 
 if grep -rn "NEXT_PUBLIC_SUPABASE" . --include="*.ts" --include="*.tsx" --include="*.env*" --exclude-dir=node_modules 2>/dev/null; then

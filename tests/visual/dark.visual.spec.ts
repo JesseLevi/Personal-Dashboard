@@ -27,6 +27,9 @@ import { loadStoryIds } from "./story-ids";
 const stylePath = path.join(__dirname, "screenshot-override.css");
 
 const DARK_STORIES = [
+  "agenda-calendars-panel--with-calendars",
+  "agenda-calendars-panel--delete-confirm",
+  "agenda-sync-notices--default",
   "agenda-event-panel--create-event",
   "agenda-event-panel--edit-event",
   "agenda-header--desktop",

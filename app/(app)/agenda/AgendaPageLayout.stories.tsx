@@ -38,7 +38,7 @@ const Surface = ({ children }: { children: React.ReactNode }) => (
 
 const Page = ({ view, title }: { view: AgendaView; title: string }) => (
   <Surface>
-    <AgendaHeader title={title} view={view === "threeDay" ? "week" : view} onViewChange={noop} onPrevious={noop} onNext={noop} onToday={noop} />
+    <AgendaHeader title={title} view={view === "threeDay" ? "week" : view} onViewChange={noop} onPrevious={noop} onNext={noop} onToday={noop} onOpenCalendars={noop} />
     <AgendaBody>
       <AgendaCalendar items={items} view={view} date={DATE} />
     </AgendaBody>

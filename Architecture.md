@@ -146,7 +146,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - an event is deleted after two consecutive successful syncs miss it; its links and attached meal plans go with it, basket items stay and the user gets a notice;
   - write only on a changed content hash; past events are kept as history.
 - **UI**: FullCalendar standard (MIT) packages, themed with semantic tokens, Claude-designed (ADR-0034); `ical.js` parses feeds.
-- **Sync trigger** (ADR-0039): opening the Agenda syncs the user's accounts older than an hour in `after()`; a daily cron syncs every account older than 20 hours. One `security definer` function applies a parsed feed per account (upsert, hash, two-miss deletion, basket notice), under an advisory lock.
+- **Sync trigger** (ADR-0039): opening the Agenda syncs the user's accounts older than an hour in `after()`; a daily cron syncs every account older than 20 hours. `apply_calendar_sync` (`security definer`, advisory lock) applies a parsed feed per account: upsert, hash, two-miss deletion, and a `calendar_sync_notices` row (item ids kept, as `meal_plan_id` is nulled). The URL sits in Vault; `lib/agenda/sync.ts` and `app/api/cron/` call it.
 
 ## 8. Testing and CI gates
 

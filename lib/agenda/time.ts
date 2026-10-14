@@ -11,7 +11,7 @@ export const AGENDA_TIME_ZONE = "Europe/Amsterdam";
 const DAY_MS = 86_400_000;
 const LOCAL = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?/;
 
-function zoneOffsetMs(utcMs: number, timeZone: string): number {
+export function zoneOffsetMs(utcMs: number, timeZone: string): number {
   const fmt = new Intl.DateTimeFormat("en-US", {
     timeZone,
     year: "numeric",

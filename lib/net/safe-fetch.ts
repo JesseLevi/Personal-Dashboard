@@ -11,7 +11,8 @@ import { request } from "node:https";
 // resolve/connect gap for DNS rebinding. Max 3 redirects, followed manually,
 // each hop re-validated. Body capped at 3 MB, 10 s for the whole operation.
 // Only text/html, application/xhtml+xml, application/ld+json (+ image/* with
-// `allowImages`) are returned. Returns { url (final), status, contentType
+// `allowImages`) are returned; `contentTypes` replaces that list (an entry
+// ending in "/" is a prefix, and `accept` sets the Accept header). Returns { url (final), status, contentType
 // (mime, lowercase, no params), body (Buffer) }.
 //
 // SafeFetchError.code: invalid_url (bad URL, scheme, credentials, port, or DNS
@@ -60,6 +61,10 @@ export type TransportResponse = {
 
 export type SafeFetchOptions = {
   allowImages?: boolean;
+  /** Replaces the default allowed content types. */
+  contentTypes?: string[];
+  /** Accept header to send with `contentTypes`. */
+  accept?: string;
   timeoutMs?: number;
   maxBytes?: number;
   resolve?: (hostname: string) => Promise<ResolvedAddress[]>;
@@ -238,7 +243,7 @@ export async function safeFetch(
   const transport = opts.transport ?? defaultTransport;
   const maxBytes = opts.maxBytes ?? MAX_BYTES;
   const timeoutMs = opts.timeoutMs ?? TIMEOUT_MS;
-  const allowed = opts.allowImages ? [...TEXT_TYPES, "image/"] : TEXT_TYPES;
+  const allowed = opts.contentTypes ?? (opts.allowImages ? [...TEXT_TYPES, "image/"] : TEXT_TYPES);
 
   const controller = new AbortController();
   let timedOut = false;
@@ -263,9 +268,11 @@ export async function safeFetch(
         address,
         headers: {
           "User-Agent": USER_AGENT,
-          Accept: opts.allowImages
-            ? "text/html,application/xhtml+xml,application/ld+json,image/*;q=0.8"
-            : "text/html,application/xhtml+xml,application/ld+json",
+          Accept:
+            opts.accept ??
+            (opts.allowImages
+              ? "text/html,application/xhtml+xml,application/ld+json,image/*;q=0.8"
+              : "text/html,application/xhtml+xml,application/ld+json"),
           "Accept-Encoding": "identity",
         },
         signal: controller.signal,

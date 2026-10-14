@@ -247,6 +247,41 @@ export type Database = {
           },
         ]
       }
+      calendar_sync_notices: {
+        Row: {
+          calendar_account_id: string
+          created_at: string
+          event_title: string
+          id: string
+          item_ids: string[]
+          user_id: string
+        }
+        Insert: {
+          calendar_account_id: string
+          created_at?: string
+          event_title: string
+          id?: string
+          item_ids: string[]
+          user_id: string
+        }
+        Update: {
+          calendar_account_id?: string
+          created_at?: string
+          event_title?: string
+          id?: string
+          item_ids?: string[]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_sync_notices_calendar_account_id_fkey"
+            columns: ["calendar_account_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendars: {
         Row: {
           calendar_account_id: string | null
@@ -1228,12 +1263,30 @@ export type Database = {
           title: string
         }[]
       }
+      apply_calendar_sync: {
+        Args: {
+          p_account_id: string
+          p_events: Json
+          p_failure?: string
+          p_window_from: string
+          p_window_to: string
+        }
+        Returns: Json
+      }
       apply_seed: {
         Args: { p_key: string; p_user_id: string }
         Returns: boolean
       }
       avatar_path_for: { Args: { p_user_id: string }; Returns: string }
+      create_ics_calendar: {
+        Args: { p_name: string; p_url: string }
+        Returns: string
+      }
       ensure_user_defaults: { Args: never; Returns: undefined }
+      get_calendar_account_secret: {
+        Args: { p_account_id: string }
+        Returns: string
+      }
       is_admin: { Args: never; Returns: boolean }
       login_greeting_name: {
         Args: { p_client_key: string; p_email: string }

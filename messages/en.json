@@ -397,7 +397,8 @@
           "week": "Week",
           "month": "Month",
           "list": "List"
-        }
+        },
+        "calendarsLabel": "Manage calendars"
       }
     },
     "sidePanel": {
@@ -1032,6 +1033,61 @@
     "eventLinkLine": {
       "label": "In agenda:",
       "more": "+{count} more"
+    },
+    "agendaCalendarsPanel": {
+      "title": "Calendars",
+      "listHeading": "Linked calendars",
+      "emptyLabel": "You have not linked a calendar yet.",
+      "addHeading": "Add an ICS link",
+      "nameLabel": "Name",
+      "urlLabel": "ICS link",
+      "addLabel": "Add",
+      "addingLabel": "Checking...",
+      "loadingLabel": "Loading...",
+      "privacyNotice": "Anyone with this link can read your calendar. Atlas stores the link encrypted and never shows it again.",
+      "help": {
+        "heading": "Where do I find the link?",
+        "outlook": "Outlook: Settings, Calendar, Shared calendars. Publish your calendar and copy the ICS link.",
+        "google": "Google Calendar: Settings, pick the calendar, Integrate calendar. Copy the secret address in iCal format.",
+        "icloud": "iCloud: share the calendar in Calendar on your iPhone or Mac, turn on Public Calendar and copy the link."
+      },
+      "status": {
+        "never": "Not synced yet",
+        "ok": "Updated {time}",
+        "failed": "Failed"
+      },
+      "deleteLabel": "Delete {name}",
+      "deleteConfirmLabel": "Delete “{name}” and its imported events? The calendar itself stays where it is.",
+      "deleteConfirmButtonLabel": "Yes, delete",
+      "deletingLabel": "Deleting...",
+      "cancelLabel": "Cancel",
+      "errors": {
+        "invalid-input": "Enter a name and an https link.",
+        "unauthenticated": "Sign in again to continue.",
+        "not-found": "This calendar no longer exists.",
+        "invalid-url": "This link cannot be used. Use an https link to a public address.",
+        "fetch-failed": "The calendar could not be fetched. Check the link and try again.",
+        "unreadable": "This link does not return a readable calendar.",
+        "empty": "This calendar has no events. Check that you have the right link.",
+        "limit": "You can link at most 10 calendars.",
+        "generic": "Something went wrong. Please try again."
+      },
+      "syncErrors": {
+        "fetch_invalid_url": "The link is not valid.",
+        "fetch_blocked_address": "The link points to an address that is not allowed.",
+        "fetch_too_large": "The file is too large.",
+        "fetch_timeout": "The calendar did not respond in time.",
+        "fetch_bad_content_type": "The link does not return a calendar.",
+        "fetch_too_many_redirects": "Too many redirects.",
+        "fetch_http_error": "The calendar returned an error.",
+        "fetch_failed": "The calendar could not be fetched.",
+        "unparsable": "The file is not a readable calendar.",
+        "too_large": "The calendar has too many events.",
+        "empty": "The calendar had no events, so nothing was deleted.",
+        "drop": "More than half of the events disappeared, so nothing was deleted.",
+        "no_secret": "The link could not be read.",
+        "apply_failed": "The events could not be saved."
+      }
     }
   },
   "agenda": {
@@ -1043,6 +1099,12 @@
       "generic": "Something went wrong. Please try again.",
       "already-linked": "This is already linked to this event.",
       "forbidden": "You can't link this to this event."
+    },
+    "notices": {
+      "message": "“{title}” disappeared from your calendar. These groceries were in your basket for that meal: {items}.",
+      "more": "and {count} more",
+      "removeLabel": "Remove",
+      "keepLabel": "Keep"
     }
   }
 }

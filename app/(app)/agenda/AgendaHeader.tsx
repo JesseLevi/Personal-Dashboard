@@ -30,9 +30,11 @@ export interface AgendaHeaderProps {
   onPrevious: () => void;
   onNext: () => void;
   onToday: () => void;
+  /** Opens the calendars panel; the settings button is hidden without it. */
+  onOpenCalendars?: () => void;
 }
 
-export function AgendaHeader({ title, view, onViewChange, onPrevious, onNext, onToday }: AgendaHeaderProps) {
+export function AgendaHeader({ title, view, onViewChange, onPrevious, onNext, onToday, onOpenCalendars }: AgendaHeaderProps) {
   const t = useTranslations("components.pageHeader.agenda");
   const items = VIEW_ITEMS.map((item) => ({ ...item, label: t(`views.${item.value}`) }));
 
@@ -46,6 +48,7 @@ export function AgendaHeader({ title, view, onViewChange, onPrevious, onNext, on
             <Button onClick={onToday}>{t("todayLabel")}</Button>
             <Button icon="ArrowLeft" aria-label={t("previousLabel")} onClick={onPrevious} />
             <Button icon="ArrowRight" aria-label={t("nextLabel")} onClick={onNext} />
+            {onOpenCalendars && <Button icon="Settings" aria-label={t("calendarsLabel")} onClick={onOpenCalendars} />}
           </div>
           <ButtonToggle
             aria-label={t("viewLabel")}
