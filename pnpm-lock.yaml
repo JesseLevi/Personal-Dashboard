@@ -23,6 +23,9 @@ importers:
       '@dnd-kit/react':
         specifier: ^0.5.0
         version: 0.5.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@fullcalendar/react':
+        specifier: ^7.1.2
+        version: 7.1.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(temporal-polyfill@1.0.5)
       '@lucasmarkes/hairline':
         specifier: ^0.5.0
         version: 0.5.0(react@19.2.7)
@@ -152,6 +155,9 @@ importers:
       tailwind-merge:
         specifier: ^3.7.0
         version: 3.7.0
+      temporal-polyfill:
+        specifier: ^1.0.5
+        version: 1.0.5
       zod:
         specifier: ^4.0.0
         version: 4.4.3
@@ -776,6 +782,24 @@ packages:
 
   '@formatjs/intl-localematcher@0.8.13':
     resolution: {integrity: sha512-kHEAFOkeJSPNi7c5PaKaRjxcBrJwzzt81ifUu+8uve1EDW/VJl83KsxmqgqNZLzcFEhSliZGvx3+pk/RH0IOmg==}
+
+  '@full-ui/headless-calendar@7.1.2':
+    resolution: {integrity: sha512-/0bOzBoPBZTfP/7dJJpvIHzVQiyXpwcFVIvmhuXdqTv2hPz9OpYMjAJHR9lEQQnHEAAarKwy2CvTx340dGPvew==}
+    peerDependencies:
+      temporal-polyfill: ^1.0.1
+
+  '@fullcalendar/core@7.1.2':
+    resolution: {integrity: sha512-mTvn5HytJUNl1HRXW5hBpHL0lA4sKRbBrkouIE+Sl2hBKorMaWDhshFVxwcBwCBCjO9gk1m7nTfmOzKLSJv9dw==}
+    peerDependencies:
+      '@full-ui/headless-calendar': 7.1.2
+      temporal-polyfill: ^1.0.1
+
+  '@fullcalendar/react@7.1.2':
+    resolution: {integrity: sha512-ewHqp8yzr6wqXyYSc567/lr/CNhwi8dmpww9ZfWax0r2js2fG5lgFV4JtJFFt6U9dWqgyrvoZXiM6wxU4YZ+jA==}
+    peerDependencies:
+      react: ^17 || ^18 || ^19
+      react-dom: ^17 || ^18 || ^19
+      temporal-polyfill: ^1.0.1
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -4667,6 +4691,15 @@ packages:
     resolution: {integrity: sha512-uxc/zpqFg6x7C8vOE7lh6Lbda8eEL9zmVm/PLeTPBRhh1xCgdWaQ+J1CUieGpIfm2HdtsUpRv+HshiasBMcc6A==}
     engines: {node: '>=6'}
 
+  temporal-polyfill@1.0.5:
+    resolution: {integrity: sha512-+H/mmY74i6wXCMcjIhGuSnODcyZnc4eois2myhOyX0UqRAKNXQY5m9iB1en5jQ/n4SXtjLXo1ElBI5bmn8tZwQ==}
+
+  temporal-spec@1.0.1:
+    resolution: {integrity: sha512-wxVoanmDeavXie1vu2JaQ3WIc3JZnWAOYFBsJyATaVsXsycKYUflGsyBmrRSnoCpZJpwPyr38VpgSUlQ8CbFxg==}
+
+  temporal-utils@1.0.3:
+    resolution: {integrity: sha512-9jbTSX3HvkOWvDpNpFzwX/d1mkCrgQgwLmVTOEiuocZGKHsrQJtttGZFmybJ2zYP5zCSZuU5ZyeS8+eOEPABiQ==}
+
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
 
@@ -5571,6 +5604,23 @@ snapshots:
   '@formatjs/intl-localematcher@0.8.13':
     dependencies:
       '@formatjs/fast-memoize': 3.1.7
+
+  '@full-ui/headless-calendar@7.1.2(temporal-polyfill@1.0.5)':
+    dependencies:
+      temporal-polyfill: 1.0.5
+
+  '@fullcalendar/core@7.1.2(@full-ui/headless-calendar@7.1.2(temporal-polyfill@1.0.5))(temporal-polyfill@1.0.5)':
+    dependencies:
+      '@full-ui/headless-calendar': 7.1.2(temporal-polyfill@1.0.5)
+      temporal-polyfill: 1.0.5
+
+  '@fullcalendar/react@7.1.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(temporal-polyfill@1.0.5)':
+    dependencies:
+      '@full-ui/headless-calendar': 7.1.2(temporal-polyfill@1.0.5)
+      '@fullcalendar/core': 7.1.2(@full-ui/headless-calendar@7.1.2(temporal-polyfill@1.0.5))(temporal-polyfill@1.0.5)
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
+      temporal-polyfill: 1.0.5
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -9979,6 +10029,15 @@ snapshots:
   tailwindcss@4.3.3: {}
 
   tapable@2.3.3: {}
+
+  temporal-polyfill@1.0.5:
+    dependencies:
+      temporal-spec: 1.0.1
+      temporal-utils: 1.0.3
+
+  temporal-spec@1.0.1: {}
+
+  temporal-utils@1.0.3: {}
 
   tinybench@2.9.0: {}
 
