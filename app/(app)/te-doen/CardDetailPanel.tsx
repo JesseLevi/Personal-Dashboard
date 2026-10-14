@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { SidePanel } from "@/components/organisms/SidePanel";
 import { InputField } from "@/components/atoms/InputField";
@@ -9,6 +9,9 @@ import { Tag } from "@/components/atoms/Tag";
 import { Button } from "@/components/atoms/Button";
 import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import type { IconName } from "@/components/atoms/Icon";
+import { EventLinkLine } from "@/components/molecules/EventLinkLine";
+import type { AgendaEventRef } from "@/lib/agenda/links";
+import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import { PRIORITIES, SIZES, isPriority, isSize, type Size } from "@/lib/boards/enums";
 import type { ActionResult, CardRow, CardWithLabels } from "@/lib/boards/types";
 
@@ -46,6 +49,8 @@ export interface CardDetailPanelProps {
   onDeleteCard: (input: unknown) => Promise<ActionResult>;
   /** Fired after a successful create/update/move/delete, before `onClose` — TeDoenBoard.tsx wires this to `router.refresh()` (see its own file for why). Never fired on a plain close/cancel. */
   onMutated?: () => void;
+  /** Loads the events linked to the card for the "In agenda" line, called with `{ kind: "card", targetId }`. Omit to hide the line. */
+  onLoadAgendaEvents?: (input: unknown) => Promise<AgendaActionResult<AgendaEventRef[]>>;
 }
 
 // moveCard clamps any out-of-range targetIndex down to "after the last
@@ -63,6 +68,7 @@ export function CardDetailPanel({
   onMoveCard,
   onDeleteCard,
   onMutated,
+  onLoadAgendaEvents,
 }: CardDetailPanelProps) {
   const t = useTranslations("components.cardDetailPanel");
   const tSidePanel = useTranslations("components.sidePanel");
@@ -151,6 +157,20 @@ export function CardDetailPanel({
       setError(null);
     }
   }
+
+  // Keyed by card so a previous card's events never show under the next one.
+  const [agendaEvents, setAgendaEvents] = useState<{ cardId: string; events: AgendaEventRef[] } | null>(null);
+  const openCardId = open && card ? card.id : null;
+  useEffect(() => {
+    if (!openCardId || !onLoadAgendaEvents) return;
+    let cancelled = false;
+    void onLoadAgendaEvents({ kind: "card", targetId: openCardId }).then((result) => {
+      if (!cancelled) setAgendaEvents({ cardId: openCardId, events: result.success ? result.data : [] });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [openCardId, onLoadAgendaEvents]);
 
   function buildFieldPayload() {
     const trimmedDescription = description.trim();
@@ -378,6 +398,7 @@ export function CardDetailPanel({
         value={dueAtText}
         onChange={(event) => setDueAtText(event.target.value)}
       />
+      {card && agendaEvents?.cardId === card.id && <EventLinkLine events={agendaEvents.events} />}
       {error && <p className="text-base font-semibold text-priority-urgent">{error}</p>}
     </SidePanel>
   );

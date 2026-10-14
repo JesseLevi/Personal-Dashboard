@@ -3,7 +3,14 @@ import { z } from "zod";
 // Input of the Agenda server actions. Instants are UTC ISO strings: the page
 // converts the calendar's wall-clock times first (lib/agenda/time.ts).
 
-export type AgendaErrorCode = "invalid-input" | "unauthenticated" | "not-found" | "read-only" | "generic";
+export type AgendaErrorCode =
+  | "invalid-input"
+  | "unauthenticated"
+  | "not-found"
+  | "read-only"
+  | "already-linked"
+  | "forbidden"
+  | "generic";
 
 export type AgendaActionResult<T = undefined> =
   | { success: true; data: T }

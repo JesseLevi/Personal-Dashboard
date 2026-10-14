@@ -996,7 +996,42 @@
       "deleteConfirmLabel": "Are you sure?",
       "deleteConfirmButtonLabel": "Yes, delete",
       "deletingLabel": "Deleting...",
-      "cancelLabel": "Cancel"
+      "cancelLabel": "Cancel",
+      "importedFrom": "From {name}",
+      "importedFromFallback": "From another calendar"
+    },
+    "agendaEventLinks": {
+      "title": "Linked",
+      "linkLabel": "Link",
+      "emptyLabel": "Nothing linked yet.",
+      "loadingLabel": "Loading...",
+      "unlinkLabel": "Unlink {title}",
+      "untitled": "Untitled",
+      "kinds": {
+        "recipe": "Recipe",
+        "card": "Card",
+        "note": "Note"
+      }
+    },
+    "agendaLinkSearchPanel": {
+      "title": "Link",
+      "searchLabel": "Search a recipe, card or note",
+      "searchPlaceholder": "Title",
+      "searchPromptLabel": "Type at least two letters of a title.",
+      "searchingLabel": "Searching...",
+      "noResultsLabel": "Nothing found for \"{query}\".",
+      "linkedLabel": "Already linked",
+      "cancelLabel": "Back",
+      "untitled": "Untitled",
+      "groups": {
+        "recipe": "Recipes",
+        "card": "Cards",
+        "note": "Notes"
+      }
+    },
+    "eventLinkLine": {
+      "label": "In agenda:",
+      "more": "+{count} more"
     }
   },
   "agenda": {
@@ -1005,7 +1040,9 @@
       "unauthenticated": "Sign in again to continue.",
       "not-found": "This event no longer exists or isn't yours.",
       "read-only": "This event is read-only and can't be changed.",
-      "generic": "Something went wrong. Please try again."
+      "generic": "Something went wrong. Please try again.",
+      "already-linked": "This is already linked to this event.",
+      "forbidden": "You can't link this to this event."
     }
   }
 }

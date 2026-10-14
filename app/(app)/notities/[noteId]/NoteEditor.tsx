@@ -19,6 +19,8 @@ import { noteExtensionsWith } from "@/lib/notes/extensions";
 import { buildNoteLinkResolution } from "@/lib/notes/note-link"; // #341
 import { NoteLinkSuggestion } from "@/lib/notes/note-link-suggestion"; // #341
 import { NoteLinkMenu } from "@/components/organisms/NoteLinkMenu"; // #341
+import { EventLinkLine } from "@/components/molecules/EventLinkLine";
+import type { AgendaEventRef } from "@/lib/agenda/links";
 import { NoteBacklinks, type NoteBacklink } from "@/components/organisms/NoteBacklinks"; // #341
 import { NoteTableOfContents } from "@/components/organisms/NoteTableOfContents"; // #342
 import { useNoteToc } from "@/lib/notes/use-note-toc"; // #342
@@ -54,9 +56,11 @@ export interface NoteEditorProps {
   linkTitles: Record<string, string>;
   /** #341: notes that link to this one ("Gelinkt vanuit"). */
   backlinks: NoteBacklink[];
+  /** Events this note is linked to (ADR-0037 s4), upcoming first. */
+  agendaEvents?: AgendaEventRef[];
 }
 
-export function NoteEditor({ note, linkTitles, backlinks }: NoteEditorProps) {
+export function NoteEditor({ note, linkTitles, backlinks, agendaEvents = [] }: NoteEditorProps) {
   const t = useTranslations("components.noteEditor");
   const tSlash = useTranslations("components.slashMenu");
   const tErrors = useTranslations("notes.errors");
@@ -278,6 +282,11 @@ export function NoteEditor({ note, linkTitles, backlinks }: NoteEditorProps) {
         {backlinks.length > 0 && (
           <div className="pt-stack-lg">
             <NoteBacklinks backlinks={backlinks} onNavigate={(href) => router.push(href)} />
+          </div>
+        )}
+        {agendaEvents.length > 0 && (
+          <div className="pt-stack-lg">
+            <EventLinkLine events={agendaEvents} />
           </div>
         )}
         <SlashMenu editor={editor} />

@@ -996,7 +996,42 @@
       "deleteConfirmLabel": "Weet je het zeker?",
       "deleteConfirmButtonLabel": "Ja, verwijderen",
       "deletingLabel": "Verwijderen...",
-      "cancelLabel": "Annuleren"
+      "cancelLabel": "Annuleren",
+      "importedFrom": "Uit {name}",
+      "importedFromFallback": "Uit een andere agenda"
+    },
+    "agendaEventLinks": {
+      "title": "Gekoppeld",
+      "linkLabel": "Koppelen",
+      "emptyLabel": "Nog niets gekoppeld.",
+      "loadingLabel": "Laden...",
+      "unlinkLabel": "Ontkoppel {title}",
+      "untitled": "Zonder titel",
+      "kinds": {
+        "recipe": "Recept",
+        "card": "Kaart",
+        "note": "Notitie"
+      }
+    },
+    "agendaLinkSearchPanel": {
+      "title": "Koppelen",
+      "searchLabel": "Zoek een recept, kaart of notitie",
+      "searchPlaceholder": "Titel",
+      "searchPromptLabel": "Typ minstens twee letters van een titel.",
+      "searchingLabel": "Zoeken...",
+      "noResultsLabel": "Niets gevonden voor \"{query}\".",
+      "linkedLabel": "Al gekoppeld",
+      "cancelLabel": "Terug",
+      "untitled": "Zonder titel",
+      "groups": {
+        "recipe": "Recepten",
+        "card": "Kaarten",
+        "note": "Notities"
+      }
+    },
+    "eventLinkLine": {
+      "label": "In agenda:",
+      "more": "+{count} meer"
     }
   },
   "agenda": {
@@ -1005,7 +1040,9 @@
       "unauthenticated": "Log opnieuw in om door te gaan.",
       "not-found": "Deze afspraak bestaat niet (meer) of is niet van jou.",
       "read-only": "Deze afspraak is alleen-lezen en kan niet worden gewijzigd.",
-      "generic": "Er ging iets mis. Probeer het opnieuw."
+      "generic": "Er ging iets mis. Probeer het opnieuw.",
+      "already-linked": "Dit is al aan deze afspraak gekoppeld.",
+      "forbidden": "Je kunt dit niet aan deze afspraak koppelen."
     }
   }
 }

@@ -60,7 +60,7 @@ export async function getAgendaEvent(input: unknown): Promise<AgendaActionResult
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("calendar_events")
-    .select("id, title, location, description, source, calendar_id")
+    .select("id, title, location, description, source, calendar_id, calendar:calendars(name)")
     .eq("id", parsed.data.id)
     .maybeSingle();
   if (error) return failure("getAgendaEvent", error);
@@ -74,6 +74,7 @@ export async function getAgendaEvent(input: unknown): Promise<AgendaActionResult
       description: data.description,
       source: data.source === "sync" ? "sync" : "manual",
       calendarId: data.calendar_id,
+      calendarName: data.calendar?.name ?? null,
     },
   };
 }

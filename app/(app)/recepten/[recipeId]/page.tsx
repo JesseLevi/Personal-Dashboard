@@ -5,6 +5,7 @@ import {
 } from "@/lib/recipes/queries";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import { presignRecipeThumbnails } from "@/lib/recipes/thumbnails";
+import { getEventRefsOrEmpty } from "@/lib/agenda/link-queries";
 import { getRecipeBaskets } from "@/lib/shopping/queries";
 import { RecipeDetailPage } from "./RecipeDetailPage";
 
@@ -26,10 +27,11 @@ export default async function RecipeDetailRoute({
   params: Promise<{ recipeId: string }>;
 }) {
   const { recipeId } = await params;
-  const [recipe, categories, baskets] = await Promise.all([
+  const [recipe, categories, baskets, agendaEvents] = await Promise.all([
     getRecipeWithIngredientsAndSteps(recipeId),
     getRecipeCategoriesWithRecipes(),
     getRecipeBaskets(),
+    getEventRefsOrEmpty("recipe", recipeId),
   ]);
 
   if (!recipe) notFound();
@@ -46,6 +48,7 @@ export default async function RecipeDetailRoute({
       categories={categories}
       thumbnailUrl={thumbnails[recipe.id] ?? null}
       baskets={baskets}
+      agendaEvents={agendaEvents}
     />
   );
 }

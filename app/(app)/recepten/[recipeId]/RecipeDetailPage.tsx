@@ -11,6 +11,8 @@ import { AnimatedAddToBasketButton } from "@/components/molecules/AnimatedAddToB
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
 import { CardContentStep } from "@/components/molecules/CardContentStep";
+import { EventLinkLine } from "@/components/molecules/EventLinkLine";
+import type { AgendaEventRef } from "@/lib/agenda/links";
 import { MemberSearchPanel } from "@/components/organisms/MemberSearchPanel";
 import { Toast } from "@/components/organisms/Toast";
 import type { MemberSearchResult } from "@/lib/sharing/types";
@@ -85,9 +87,17 @@ export interface RecipeDetailPageProps {
   thumbnailUrl?: string | null;
   /** Baskets this user can send to (own plus accepted shared, #429). More than one: send buttons open a basket popover first. */
   baskets?: BasketOption[];
+  /** Events this recipe is linked to (ADR-0037 s4), upcoming first. */
+  agendaEvents?: AgendaEventRef[];
 }
 
-export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null, baskets = [] }: RecipeDetailPageProps) {
+export function RecipeDetailPage({
+  recipe,
+  categories,
+  thumbnailUrl = null,
+  baskets = [],
+  agendaEvents = [],
+}: RecipeDetailPageProps) {
   // #391: presigned hero; the route URL is the one-shot onError fallback.
   // See design/notes/RecipeDetailPage.md.
   const hero = useImageFallback(
@@ -391,6 +401,7 @@ export function RecipeDetailPage({ recipe, categories, thumbnailUrl = null, bask
           </p>
         )}
         <SourceLink url={recipe.source_url} label={t("sourceLabel")} />
+        <EventLinkLine events={agendaEvents} className="justify-center" />
       </div>
 
       {/* spacing-flag: Figma's "Main" frame keeps ingredient-group Cards as flat vertical siblings (page-stack=24, node 3997:14738/3997:15173) — only one ingredient-group Card exists in the fetched design, so no bound relationship covers this wrapper's md:flex-row (row-axis) gap — design/notes/RecipeDetailPage.md */}
