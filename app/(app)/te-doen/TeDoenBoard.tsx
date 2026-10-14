@@ -14,6 +14,7 @@ import { blurInTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 import { useTeDoenColumnPanel } from "./TeDoenColumnPanel";
 import { clearBoardEnter, useTeDoenBoardSwitch, wantsBoardEnter } from "./TeDoenBoardSwitch";
 import { CardDetailPanel, type CardDetailPanelTarget } from "./CardDetailPanel";
+import { getAgendaEventRefs } from "../agenda/link-actions";
 import { createCard, deleteCard, moveCard, updateCard } from "./actions";
 
 // Client wrapper around BoardView (#93) — also owns the card-detail
@@ -205,6 +206,7 @@ export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProp
         onMoveCard={moveCard}
         onDeleteCard={deleteCard}
         onMutated={() => router.refresh()}
+        onLoadAgendaEvents={getAgendaEventRefs}
       />
     </>
   );

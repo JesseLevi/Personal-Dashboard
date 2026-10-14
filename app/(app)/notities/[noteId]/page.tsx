@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getBacklinks, getNote, resolveNoteTitles } from "@/lib/notes/queries";
+import { getEventRefsOrEmpty } from "@/lib/agenda/link-queries";
 import { extractNoteLinkIds } from "@/lib/notes/document";
 import { NoteEditor } from "./NoteEditor";
 
@@ -30,10 +31,11 @@ export default async function NoteEditorRoute({
   // future in-editor link straight from one note to another must fully
   // remount rather than reuse TipTap/local state from the previous note.
   // #341: current titles of the linked notes (a missing one is a deleted target) and "Gelinkt vanuit".
-  const [linkTitles, backlinks] = await Promise.all([
+  const [linkTitles, backlinks, agendaEvents] = await Promise.all([
     resolveNoteTitles(extractNoteLinkIds(note.content)),
     getBacklinks(note.id),
+    getEventRefsOrEmpty("note", note.id),
   ]);
 
-  return <NoteEditor key={note.id} note={note} linkTitles={linkTitles} backlinks={backlinks} />;
+  return <NoteEditor key={note.id} note={note} linkTitles={linkTitles} backlinks={backlinks} agendaEvents={agendaEvents} />;
 }

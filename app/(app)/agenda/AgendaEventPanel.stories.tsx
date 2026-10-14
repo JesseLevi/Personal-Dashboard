@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import type { AgendaLink, AgendaLinkCandidate } from "@/lib/agenda/links";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { AgendaEventDetail, AgendaEventItem } from "@/lib/agenda/types";
 import nl from "@/messages/nl.json";
@@ -27,6 +28,15 @@ async function mockMutate(): Promise<AgendaActionResult> {
   return { success: true, data: undefined };
 }
 
+const links: AgendaLink[] = [
+  { id: "l1", kind: "recipe", targetId: "r1", title: "Pompoensoep met gember" },
+  { id: "l2", kind: "card", targetId: "c1", title: "Cadeau kopen voor opa" },
+  { id: "l3", kind: "note", targetId: "n1", title: "Vragen voor de tandarts" },
+];
+const mockLoadLinks = async (): Promise<AgendaActionResult<AgendaLink[]>> => ({ success: true, data: links });
+const mockLoadNoLinks = async (): Promise<AgendaActionResult<AgendaLink[]>> => ({ success: true, data: [] });
+const mockSearchLinks = async (): Promise<AgendaActionResult<AgendaLinkCandidate[]>> => ({ success: true, data: [] });
+
 const event: AgendaEventItem = {
   kind: "event",
   source: "manual",
@@ -51,6 +61,10 @@ const panelProps = {
   onCreateEvent: mockCreate,
   onUpdateEvent: mockMutate,
   onDeleteEvent: mockMutate,
+  onLoadLinks: mockLoadLinks,
+  onSearchLinks: mockSearchLinks,
+  onLink: mockCreate,
+  onUnlink: mockMutate,
 };
 
 // The panel is `position: fixed`; the min-h wrapper gives the screenshot root a height (SidePanel.stories.tsx).
@@ -72,6 +86,12 @@ export const CreateAllDay = () => (
 export const EditEvent = () => (
   <div className="min-h-screen">
     <AgendaEventPanel {...panelProps} target={{ mode: "edit", item: event }} />
+  </div>
+);
+
+export const EditEventNoLinks = () => (
+  <div className="min-h-screen">
+    <AgendaEventPanel {...panelProps} onLoadLinks={mockLoadNoLinks} target={{ mode: "edit", item: event }} />
   </div>
 );
 

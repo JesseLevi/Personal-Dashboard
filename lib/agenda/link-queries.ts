@@ -57,6 +57,20 @@ export async function getEventRefsForTarget(kind: AgendaLinkKind, targetId: stri
   return sortEventRefs(refs, new Date());
 }
 
+/**
+ * `getEventRefsForTarget` for a server page that must render without it: a
+ * failure (for example agenda tables not migrated yet) yields no line, not an error page.
+ */
+export async function getEventRefsOrEmpty(kind: AgendaLinkKind, targetId: string): Promise<AgendaEventRef[]> {
+  try {
+    return await getEventRefsForTarget(kind, targetId);
+  } catch (error) {
+    // A cookies read inside a static render signals "make this dynamic"; never swallow it.
+    if (error instanceof Error && "digest" in error && error.digest === "DYNAMIC_SERVER_USAGE") throw error;
+    return [];
+  }
+}
+
 /** Recipes, cards and notes whose title contains the query, a few of each. Empty if signed out. */
 export async function searchLinkTargets(query: string): Promise<AgendaLinkCandidate[]> {
   const userId = await getAuthenticatedUserId();

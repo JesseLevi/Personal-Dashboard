@@ -30,6 +30,8 @@ const DARK_STORIES = [
   "agenda-event-panel--create-event",
   "agenda-event-panel--edit-event",
   "agenda-header--desktop",
+  "agenda-link-search-panel--results",
+  "event-link-line--several",
   "agenda-page-layout--week",
   "agenda-page-layout--month",
   "agenda-page-layout--loading",
