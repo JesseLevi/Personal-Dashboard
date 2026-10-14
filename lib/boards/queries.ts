@@ -144,3 +144,30 @@ export async function getBoardColumnCardCounts(boardId: string): Promise<number[
   }
   return embeddedCounts(data, "cards");
 }
+
+/** The board a card lives on, or null if the id is invalid, the card is not the caller's, or the caller is signed out. */
+export async function getBoardIdForCard(cardId: string): Promise<string | null> {
+  const parsedId = z.uuid().safeParse(cardId);
+  if (!parsedId.success) return null;
+
+  const supabase = await createSupabaseServerClient();
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return null;
+
+  const { data: card, error: cardError } = await supabase
+    .from("cards")
+    .select("column_id")
+    .eq("id", parsedId.data)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (cardError || !card) return null;
+
+  const { data: column, error: columnError } = await supabase
+    .from("board_columns")
+    .select("board_id")
+    .eq("id", card.column_id)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (columnError || !column) return null;
+  return column.board_id;
+}

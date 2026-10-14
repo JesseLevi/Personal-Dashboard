@@ -15,13 +15,13 @@ export default async function TeDoenBoardPage({
   searchParams,
 }: {
   params: Promise<{ boardId: string }>;
-  searchParams: Promise<{ sort?: string }>;
+  searchParams: Promise<{ sort?: string; card?: string }>;
 }) {
   const { boardId } = await params;
-  const { sort } = await searchParams;
+  const { sort, card } = await searchParams;
   return (
     <Suspense fallback={<BoardSkeleton variant="todo" />}>
-      <TeDoenPageStream boardId={boardId} sortParam={sort} />
+      <TeDoenPageStream boardId={boardId} sortParam={sort} cardParam={card} />
     </Suspense>
   );
 }

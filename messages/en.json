@@ -10,7 +10,8 @@
   "nav": {
     "notes": "Notes",
     "recipes": "Recipes",
-    "shopping": "Basket"
+    "shopping": "Basket",
+    "agenda": "Agenda"
   },
   "auth": {
     "greeting": {
@@ -348,7 +349,8 @@
         "recipes": "Recipes",
         "shopping": "Basket",
         "clothes": "Clothes",
-        "assistant": "Assistant"
+        "assistant": "Assistant",
+        "agenda": "Agenda"
       },
       "accountFallbackName": "Account",
       "settingsLabel": "Settings",
@@ -384,6 +386,18 @@
         },
         "searchPlaceholder": "Search",
         "searchClearLabel": "Clear search"
+      },
+      "agenda": {
+        "todayLabel": "Today",
+        "previousLabel": "Previous",
+        "nextLabel": "Next",
+        "viewLabel": "View",
+        "views": {
+          "day": "Day",
+          "week": "Week",
+          "month": "Month",
+          "list": "List"
+        }
       }
     },
     "sidePanel": {
@@ -957,6 +971,41 @@
       "servings": "{count, plural, one {# serving} other {# servings}}",
       "missingFromSource": "Removed at source",
       "links": "{count, plural, one {# link} other {# links}}"
+    },
+    "agendaPanel": {
+      "addTitle": "Add event",
+      "editTitle": "Edit event",
+      "viewTitle": "Imported event",
+      "fields": {
+        "titleLabel": "Title",
+        "allDayLabel": "All day",
+        "startLabel": "Start",
+        "endLabel": "End",
+        "startDateLabel": "First day",
+        "endDateLabel": "Last day",
+        "locationLabel": "Location",
+        "descriptionLabel": "Description",
+        "calendarLabel": "Calendar"
+      },
+      "defaultCalendarName": "Calendar",
+      "readOnlyNotice": "This event comes from another calendar and can only be changed there.",
+      "loadingLabel": "Loading...",
+      "saveLabel": "Save",
+      "savingLabel": "Saving...",
+      "deleteLabel": "Delete",
+      "deleteConfirmLabel": "Are you sure?",
+      "deleteConfirmButtonLabel": "Yes, delete",
+      "deletingLabel": "Deleting...",
+      "cancelLabel": "Cancel"
+    }
+  },
+  "agenda": {
+    "errors": {
+      "invalid-input": "Check the information you entered.",
+      "unauthenticated": "Sign in again to continue.",
+      "not-found": "This event no longer exists or isn't yours.",
+      "read-only": "This event is read-only and can't be changed.",
+      "generic": "Something went wrong. Please try again."
     }
   }
 }

@@ -10,7 +10,8 @@
   "nav": {
     "notes": "Notities",
     "recipes": "Recepten",
-    "shopping": "Winkelmand"
+    "shopping": "Winkelmand",
+    "agenda": "Agenda"
   },
   "auth": {
     "greeting": {
@@ -348,7 +349,8 @@
         "recipes": "Recepten",
         "shopping": "Winkelmand",
         "clothes": "Kleren",
-        "assistant": "Assistent"
+        "assistant": "Assistent",
+        "agenda": "Agenda"
       },
       "accountFallbackName": "Account",
       "settingsLabel": "Instellingen",
@@ -384,6 +386,18 @@
         },
         "searchPlaceholder": "Zoeken",
         "searchClearLabel": "Zoekopdracht wissen"
+      },
+      "agenda": {
+        "todayLabel": "Vandaag",
+        "previousLabel": "Vorige",
+        "nextLabel": "Volgende",
+        "viewLabel": "Weergave",
+        "views": {
+          "day": "Dag",
+          "week": "Week",
+          "month": "Maand",
+          "list": "Lijst"
+        }
       }
     },
     "sidePanel": {
@@ -957,6 +971,41 @@
       "servings": "{count, plural, one {# portie} other {# porties}}",
       "missingFromSource": "Verwijderd bij bron",
       "links": "{count, plural, one {# koppeling} other {# koppelingen}}"
+    },
+    "agendaPanel": {
+      "addTitle": "Afspraak toevoegen",
+      "editTitle": "Afspraak bewerken",
+      "viewTitle": "Geïmporteerde afspraak",
+      "fields": {
+        "titleLabel": "Titel",
+        "allDayLabel": "Hele dag",
+        "startLabel": "Begin",
+        "endLabel": "Einde",
+        "startDateLabel": "Eerste dag",
+        "endDateLabel": "Laatste dag",
+        "locationLabel": "Locatie",
+        "descriptionLabel": "Omschrijving",
+        "calendarLabel": "Agenda"
+      },
+      "defaultCalendarName": "Agenda",
+      "readOnlyNotice": "Deze afspraak komt uit een andere agenda en kan alleen daar worden gewijzigd.",
+      "loadingLabel": "Laden...",
+      "saveLabel": "Opslaan",
+      "savingLabel": "Opslaan...",
+      "deleteLabel": "Verwijderen",
+      "deleteConfirmLabel": "Weet je het zeker?",
+      "deleteConfirmButtonLabel": "Ja, verwijderen",
+      "deletingLabel": "Verwijderen...",
+      "cancelLabel": "Annuleren"
+    }
+  },
+  "agenda": {
+    "errors": {
+      "invalid-input": "Controleer de ingevoerde gegevens.",
+      "unauthenticated": "Log opnieuw in om door te gaan.",
+      "not-found": "Deze afspraak bestaat niet (meer) of is niet van jou.",
+      "read-only": "Deze afspraak is alleen-lezen en kan niet worden gewijzigd.",
+      "generic": "Er ging iets mis. Probeer het opnieuw."
     }
   }
 }

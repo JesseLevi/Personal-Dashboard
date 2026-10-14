@@ -32,6 +32,8 @@ type ButtonToggleBaseProps = {
   /** Initially-selected segment's `value`. Required: the fetched node never shows an unselected track. */
   defaultValue: string;
   onValueChange?: (value: string) => void;
+  /** Below `md` only the icons show; the label stays as the accessible name. */
+  iconOnlyBelowMd?: boolean;
   className?: string;
 };
 
@@ -49,6 +51,7 @@ export function ButtonToggle({
   items,
   defaultValue,
   onValueChange,
+  iconOnlyBelowMd,
   title,
   className,
   "aria-label": ariaLabel,
@@ -181,7 +184,7 @@ export function ButtonToggle({
             onKeyDown={(event) => handleKeyDown(event, index)}
             className="relative grow basis-0 hover:bg-transparent! active:bg-transparent!"
           >
-            {item.label}
+            {iconOnlyBelowMd ? <span className="max-md:sr-only">{item.label}</span> : item.label}
           </Button>
         ))}
       </div>
