@@ -18,9 +18,11 @@ import { createBoard, renameBoard, toggleBoardFavorite } from "./actions";
 export interface TeDoenPageBodyProps {
   boardId?: string;
   sortParam?: string;
+  /** `?card=<id>`: open that card's detail panel on load. */
+  cardParam?: string;
 }
 
-export async function TeDoenPageBody({ boardId, sortParam }: TeDoenPageBodyProps) {
+export async function TeDoenPageBody({ boardId, sortParam, cardParam }: TeDoenPageBodyProps) {
   const t = await getTranslations("components.pageHeader.todo");
   const { boards, board, sort } = await loadTeDoenPageData(boardId, sortParam);
 
@@ -54,7 +56,7 @@ export async function TeDoenPageBody({ boardId, sortParam }: TeDoenPageBodyProps
             against what the user actually sees. See TeDoenBoard.md for the
             full reasoning #96 (drag persistence) must inherit. */}
         <EnterFromLogin index={1}>
-          <TeDoenBoard board={board} dragDisabled={sort !== null} />
+          <TeDoenBoard board={board} dragDisabled={sort !== null} openCardId={cardParam} />
         </EnterFromLogin>
       </TeDoenBoardSwitchProvider>
     </TeDoenColumnPanelProvider>

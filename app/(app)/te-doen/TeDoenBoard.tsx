@@ -31,9 +31,11 @@ export interface TeDoenBoardProps {
   board: BoardWithColumns;
   /** #95: true whenever a non-manual sort (`?sort=`) is active — see design/notes/TeDoenBoard.md for why dragging is disabled rather than persisting a move against a view the stored `position` no longer matches. */
   dragDisabled?: boolean;
+  /** Card to open on load (`?card=`), from a link such as the Agenda's deadlines. */
+  openCardId?: string;
 }
 
-export function TeDoenBoard({ board, dragDisabled }: TeDoenBoardProps) {
+export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProps) {
   const t = useTranslations("components.cardContainer");
   const tPriority = useTranslations("boards.priority");
   const tErrors = useTranslations("boards.errors");
@@ -136,10 +138,19 @@ export function TeDoenBoard({ board, dragDisabled }: TeDoenBoardProps) {
   // fresh open (Plus, empty-column button, or a card click) always sets
   // both together. Default target picks the board's first column so the
   // panel never renders with an empty Status field before any real open.
-  const [panel, setPanel] = useState<{ open: boolean; target: CardDetailPanelTarget }>({
-    open: false,
-    target: { mode: "create", columnId: panelColumns[0]?.id ?? "" },
+  const [panel, setPanel] = useState<{ open: boolean; target: CardDetailPanelTarget }>(() => {
+    const linked = openCardId
+      ? board.columns.flatMap((column) => column.cards).find((card) => card.id === openCardId)
+      : undefined;
+    if (linked) return { open: true, target: { mode: "edit", card: linked } };
+    return { open: false, target: { mode: "create", columnId: panelColumns[0]?.id ?? "" } };
   });
+
+  // Closing a panel opened from a link also drops `?card=`, so a reload does not reopen it.
+  function closePanel() {
+    setPanel((current) => ({ ...current, open: false }));
+    if (openCardId) window.history.replaceState(null, "", `/te-doen/${board.id}`);
+  }
 
   return (
     <>
@@ -186,7 +197,7 @@ export function TeDoenBoard({ board, dragDisabled }: TeDoenBoardProps) {
       />
       <CardDetailPanel
         open={panel.open}
-        onClose={() => setPanel((current) => ({ ...current, open: false }))}
+        onClose={closePanel}
         columns={panelColumns}
         target={panel.target}
         onCreateCard={createCard}

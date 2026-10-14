@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { getBoardIdForCard } from "@/lib/boards/queries";
 import { EnterFromLoginSkeleton } from "./EnterFromLoginSkeleton";
 import { TeDoenPageStream } from "./TeDoenPageStream";
 import { BoardSkeleton } from "../_components/skeletons/BoardSkeleton";
@@ -25,9 +27,14 @@ export const metadata: Metadata = {
 export default async function TeDoenPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string }>;
+  searchParams: Promise<{ sort?: string; card?: string }>;
 }) {
-  const { sort } = await searchParams;
+  const { sort, card } = await searchParams;
+  // A link to one card (the Agenda's deadlines and planned cards): open it on its own board.
+  if (card) {
+    const boardId = await getBoardIdForCard(card);
+    if (boardId) redirect(`/te-doen/${boardId}?card=${card}`);
+  }
   return (
     <Suspense
       fallback={

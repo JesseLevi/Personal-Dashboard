@@ -23,6 +23,7 @@ import { SettingsPanel } from "./SettingsPanel";
 // no-op rather than a link to a 404.
 const ROUTES: Partial<Record<SidebarItemId, string>> = {
   todo: "/te-doen",
+  agenda: "/agenda",
   notes: "/notities",
   recipes: "/recepten",
   shopping: "/winkelmand",
@@ -166,6 +167,7 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
 
   const labels: Record<SidebarItemId, string> = {
     todo: t("items.todo"),
+    agenda: t("items.agenda"),
     notes: t("items.notes"),
     recipes: t("items.recipes"),
     shopping: t("items.shopping"),

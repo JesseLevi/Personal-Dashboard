@@ -54,3 +54,13 @@ export type AgendaItem =
   | AgendaDeadlineItem;
 
 export type AgendaItemKind = AgendaItem["kind"];
+
+/** The editable fields of one event that the timeline does not carry. */
+export interface AgendaEventDetail {
+  id: string;
+  title: string;
+  location: string | null;
+  description: string | null;
+  source: "manual" | "sync";
+  calendarId: string;
+}

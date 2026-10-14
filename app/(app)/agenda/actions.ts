@@ -10,9 +10,10 @@ import {
   rangeSchema,
   updateEventSchema,
   type AgendaActionResult,
+  type AgendaErrorCode,
 } from "@/lib/agenda/schemas";
 import { AGENDA_TIME_ZONE, wallClockToUtc } from "@/lib/agenda/time";
-import type { AgendaItem } from "@/lib/agenda/types";
+import type { AgendaEventDetail, AgendaItem } from "@/lib/agenda/types";
 import type { Database } from "@/lib/database.types";
 
 // Agenda reads and writes for the signed-in user. Access is decided by RLS
@@ -21,15 +22,6 @@ import type { Database } from "@/lib/database.types";
 // Atlas does not. Errors carry a code only, never a database message.
 
 type EventUpdate = Database["public"]["Tables"]["calendar_events"]["Update"];
-
-export interface AgendaEventDetail {
-  id: string;
-  title: string;
-  location: string | null;
-  description: string | null;
-  source: "manual" | "sync";
-  calendarId: string;
-}
 
 function logDbError(action: string, error: { code: string; message: string }) {
   console.error(`[agenda] ${action} failed:`, error.code, error.message);
@@ -89,7 +81,12 @@ export async function getAgendaEvent(input: unknown): Promise<AgendaActionResult
 type Supabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 /** The calendar a new event goes into: the given one, else the default. It must be a manual calendar. */
-async function resolveManualCalendar(supabase: Supabase, calendarId: string | undefined) {
+type Failure = { success: false; error: AgendaErrorCode };
+
+async function resolveManualCalendar(
+  supabase: Supabase,
+  calendarId: string | undefined,
+): Promise<{ calendarId: string } | { error: Failure }> {
   const query = supabase.from("calendars").select("id, kind");
   const { data, error } = await (calendarId ? query.eq("id", calendarId) : query.eq("is_default", true)).maybeSingle();
   if (error) return { error: failure("resolveCalendar", error) };
@@ -99,7 +96,7 @@ async function resolveManualCalendar(supabase: Supabase, calendarId: string | un
 }
 
 /** Loads an event and refuses a synced one before anything is written. */
-async function requireManualEvent(supabase: Supabase, id: string) {
+async function requireManualEvent(supabase: Supabase, id: string): Promise<Failure | null> {
   const { data, error } = await supabase.from("calendar_events").select("id, source").eq("id", id).maybeSingle();
   if (error) return failure("requireManualEvent", error);
   if (!data) return { success: false, error: "not-found" } as const;

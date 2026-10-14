@@ -25,6 +25,7 @@ import { usePopoverPosition } from "../../lib/dom/use-popover-position";
  */
 export type SidebarItemId =
   | "todo"
+  | "agenda"
   | "notes"
   | "recipes"
   | "shopping"
@@ -32,6 +33,7 @@ export type SidebarItemId =
 
 const NAV_ITEMS: ReadonlyArray<{ id: SidebarItemId; icon: IconName }> = [
   { id: "todo", icon: "Columns3" },
+  { id: "agenda", icon: "Calendar" },
   { id: "notes", icon: "Notebook" },
   { id: "recipes", icon: "FolderClosed" },
   { id: "shopping", icon: "ShoppingBasket" },
