@@ -80,48 +80,6 @@ export type Database = {
         }
         Relationships: []
       }
-      card_labels: {
-        Row: {
-          card_id: string
-          created_at: string
-          id: string
-          label_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          card_id: string
-          created_at?: string
-          id?: string
-          label_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          card_id?: string
-          created_at?: string
-          id?: string
-          label_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "card_labels_card_id_fkey"
-            columns: ["card_id"]
-            isOneToOne: false
-            referencedRelation: "cards"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "card_labels_label_id_fkey"
-            columns: ["label_id"]
-            isOneToOne: false
-            referencedRelation: "labels"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       calendar_accounts: {
         Row: {
           created_at: string
@@ -329,6 +287,48 @@ export type Database = {
             columns: ["calendar_account_id"]
             isOneToOne: false
             referencedRelation: "calendar_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      card_labels: {
+        Row: {
+          card_id: string
+          created_at: string
+          id: string
+          label_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          id?: string
+          label_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          id?: string
+          label_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_labels_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "card_labels_label_id_fkey"
+            columns: ["label_id"]
+            isOneToOne: false
+            referencedRelation: "labels"
             referencedColumns: ["id"]
           },
         ]
