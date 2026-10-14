@@ -90,3 +90,6 @@ export function normalizeSpan(span: AgendaSpan): AgendaSpan {
   const day = (s: string) => s.slice(0, 10);
   return { allDay: true, start: day(span.start), end: span.end ? day(span.end) : null };
 }
+
+/** Marks the plan drawer: an item dragged from the grid and dropped on it is taken off the calendar. */
+export const AGENDA_TRAY_ATTRIBUTE = "data-agenda-tray";

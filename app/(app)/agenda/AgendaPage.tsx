@@ -15,14 +15,16 @@ import type { SyncNoticeView } from "@/lib/agenda/calendars";
 import { PlanDrawer } from "@/components/organisms/PlanDrawer";
 import { Toast } from "@/components/organisms/Toast";
 import { weekRange } from "@/lib/agenda/meals";
+import { toAgendaResult, withPlannedFor, type PlanCardGroup } from "@/lib/agenda/plan-cards";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import { addDays, loadWindow, spanToUtc, stepDate, visibleRange } from "@/lib/agenda/time";
-import type { AgendaItem, AgendaMealItem, MealSlot } from "@/lib/agenda/types";
+import type { AgendaItem, AgendaMealItem, AgendaPlannedCardItem, MealSlot } from "@/lib/agenda/types";
 import { persistAgendaView, type AgendaView } from "@/lib/agenda/view";
 import type { BasketOption } from "@/lib/shopping/baskets";
 import type { ActionResult } from "@/lib/shopping/types";
 import type { AgendaSpan } from "@/lib/ui/agenda-calendar";
+import { planCard } from "../te-doen/actions";
 import { createEvent, deleteEvent, getAgendaEvent, loadAgendaRange, moveEvent, updateEvent } from "./actions";
 import { AgendaBody } from "./AgendaBody";
 import { AgendaCalendarsPanel } from "./AgendaCalendarsPanel";
@@ -33,6 +35,7 @@ import { AgendaSyncNotices } from "./AgendaSyncNotices";
 import { addIcsCalendar, listCalendarAccounts, removeCalendarAccount, resolveSyncNotice } from "./calendars-actions";
 import { AgendaMealPanel } from "./AgendaMealPanel";
 import { createMealPlan, deleteMealPlan, getMealPlan, sendMealToBasket, sendWeekToBasket, updateMealPlan } from "./meal-actions";
+import { PlanCardList } from "./PlanCardList";
 import { PlanRecipeList } from "./PlanRecipeList";
 
 export interface AgendaPageProps {
@@ -46,6 +49,8 @@ export interface AgendaPageProps {
   /** Recipes the plan drawer offers. */
   recipes: PlanRecipe[];
   recipeCategories: { id: string; name: string }[];
+  /** Open cards the plan drawer offers, per board. */
+  cardGroups: PlanCardGroup[];
   /** Baskets "Naar mand" can target. */
   baskets: BasketOption[];
 }
@@ -70,6 +75,7 @@ export function AgendaPage({
   initialNotices,
   recipes,
   recipeCategories,
+  cardGroups,
   baskets,
 }: AgendaPageProps) {
   const tErrors = useTranslations("agenda.errors");
@@ -89,6 +95,7 @@ export function AgendaPage({
   });
   const [calendarsOpen, setCalendarsOpen] = useState(false);
   const [mealPanel, setMealPanel] = useState<{ open: boolean; item: AgendaMealItem | null }>({ open: false, item: null });
+  const [groups, setGroups] = useState(cardGroups);
   const [notice, setNotice] = useState<string | null>(null);
   const latestRequest = useRef(0);
 
@@ -175,7 +182,69 @@ export function AgendaPage({
     return result;
   }
 
+  // Saves the day of a card (or clears it with null) and keeps the drawer and the grid in step.
+  async function savePlannedFor(cardId: string, plannedFor: string | null) {
+    const result = toAgendaResult(await planCard({ cardId, plannedFor }));
+    if (result.success) {
+      setError(null);
+      setGroups((current) => withPlannedFor(current, cardId, plannedFor));
+      void loadAround(date);
+    }
+    return result;
+  }
+
+  function announceCardPlanned(title: string, plannedOn: string) {
+    setNotice(tPlan("cardPlannedNotice", { title, date: dayLabel(plannedOn) }));
+  }
+
+  function handleCardDrop(cardId: string, title: string, plannedOn: string) {
+    void savePlannedFor(cardId, plannedOn).then((result) => {
+      if (result.success) announceCardPlanned(title, plannedOn);
+      else setError(tErrors(result.error));
+    });
+  }
+
+  // A planned card moves to a day, whatever slot it was dropped on; it stays an all-day item.
+  function handleCardMove(item: AgendaPlannedCardItem, change: AgendaChange, revert: () => void) {
+    const plannedFor = change.start.slice(0, 10);
+    if (plannedFor === item.start.slice(0, 10)) {
+      revert();
+      return;
+    }
+    const previous = items;
+    setItems((current) =>
+      current.map((candidate) =>
+        candidate.id === item.id ? { ...candidate, start: plannedFor, end: null, allDay: true } : candidate,
+      ),
+    );
+    void savePlannedFor(item.id, plannedFor).then((result) => {
+      if (result.success) return;
+      revert();
+      setItems(previous);
+      setError(tErrors(result.error));
+    });
+  }
+
+  // Dropping a planned card on the drawer takes it off the agenda: its day is cleared.
+  function handleItemDropOut(item: AgendaItem) {
+    if (item.kind !== "planned_card") return;
+    const previous = items;
+    setItems((current) => current.filter((candidate) => candidate.id !== item.id));
+    void savePlannedFor(item.id, null).then((result) => {
+      if (result.success) {
+        setNotice(tPlan("cardClearedNotice", { title: item.title }));
+        return;
+      }
+      setItems(previous);
+      setError(tErrors(result.error));
+    });
+  }
+
   function handleExternalDrop(drop: AgendaExternalDrop) {
+    if (drop.payload.type === "card") {
+      handleCardDrop(drop.payload.id, drop.payload.title, drop.start.slice(0, 10));
+      return;
+    }
     if (drop.payload.type !== "recipe") return;
     void planRecipe(
       drop.payload.id,
@@ -183,13 +252,12 @@ export function AgendaPage({
     );
   }
 
+  function dayLabel(plannedOn: string) {
+    return format.dateTime(utc(plannedOn), { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" });
+  }
+
   function announcePlanned(plannedOn: string, slot: MealSlot) {
-    setNotice(
-      tPlan("plannedNotice", {
-        slot: tPlan(`slots.${slot}`),
-        date: format.dateTime(utc(plannedOn), { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" }),
-      }),
-    );
+    setNotice(tPlan("plannedNotice", { slot: tPlan(`slots.${slot}`), date: dayLabel(plannedOn) }));
   }
 
   // Sends the unsent meals of the visible week; the button shows success only when this resolves with it.
@@ -206,6 +274,10 @@ export function AgendaPage({
     const { item } = change;
     if (item.kind === "meal") {
       handleMealMove(item, change, revert);
+      return;
+    }
+    if (item.kind === "planned_card") {
+      handleCardMove(item, change, revert);
       return;
     }
     if (item.kind !== "event" || item.source !== "manual") {
@@ -274,6 +346,14 @@ export function AgendaPage({
                 onPlanned={announcePlanned}
               />
             }
+            cards={
+              <PlanCardList
+                groups={groups}
+                today={today}
+                onPlan={(cardId, plannedOn) => savePlannedFor(cardId, plannedOn)}
+                onPlanned={announceCardPlanned}
+              />
+            }
           />
         }
       >
@@ -286,6 +366,7 @@ export function AgendaPage({
           onItemMove={handleChange}
           onItemResize={handleChange}
           onExternalDrop={handleExternalDrop}
+          onItemDropOut={handleItemDropOut}
         />
       </AgendaBody>
       <Toast message={notice} onDismiss={() => setNotice(null)} />

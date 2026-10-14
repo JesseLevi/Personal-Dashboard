@@ -281,6 +281,7 @@
       "unauthenticated": "Log opnieuw in om door te gaan.",
       "not-found": "Dit onderdeel bestaat niet (meer) of is niet van jou.",
       "column-mismatch": "Deze kolom hoort niet bij dit bord.",
+      "read-only": "Je mag deze kaart niet wijzigen.",
       "generic": "Er ging iets mis. Probeer het opnieuw."
     },
     "priority": {
@@ -331,7 +332,8 @@
     "cardContainer": {
       "addLabel": "Toevoegen",
       "editLabel": "Bewerken",
-      "addItemLabel": "Voeg item toe"
+      "addItemLabel": "Voeg item toe",
+      "plannedCaption": "Gepland op"
     },
     "cardContentRecipe": {
       "durationMinutes": "{minutes} min"
@@ -451,7 +453,9 @@
         "sizeLabel": "Grootte",
         "sizePlaceholder": "Geen grootte",
         "dateLabel": "Datum",
-        "datePlaceholder": "Voeg datum toe"
+        "datePlaceholder": "Voeg datum toe",
+        "plannedLabel": "Gepland op",
+        "plannedPlaceholder": "Voeg dag toe"
       },
       "saveLabel": "Opslaan",
       "savingLabel": "Opslaan...",
@@ -1101,7 +1105,13 @@
         "recipes": "Recepten",
         "cards": "Kaarten"
       },
-      "cardsEmpty": "Kaarten die je kunt plannen komen hier.",
+      "cardsEmpty": "Je hebt geen open kaarten om te plannen.",
+      "cardsSearchLabel": "Kaarten zoeken",
+      "cardsSearchPlaceholder": "Kaarten zoeken",
+      "cardsDragHint": "Sleep een kaart naar een dag in de agenda. Een gepland item terugslepen naar hier haalt de dag weer weg.",
+      "noCards": "Geen kaarten gevonden.",
+      "planCardLabel": "{name} plannen",
+      "cardPlannedOn": "{column} · gepland op {date}",
       "searchLabel": "Recepten zoeken",
       "searchPlaceholder": "Recepten zoeken",
       "searchClearLabel": "Zoekopdracht wissen",
@@ -1156,7 +1166,7 @@
       "invalid-input": "Controleer de ingevoerde gegevens.",
       "unauthenticated": "Log opnieuw in om door te gaan.",
       "not-found": "Deze afspraak bestaat niet (meer) of is niet van jou.",
-      "read-only": "Deze afspraak is alleen-lezen en kan niet worden gewijzigd.",
+      "read-only": "Dit item is alleen-lezen en kan niet worden gewijzigd.",
       "generic": "Er ging iets mis. Probeer het opnieuw.",
       "already-linked": "Dit is al aan deze afspraak gekoppeld.",
       "forbidden": "Je kunt dit niet aan deze afspraak koppelen.",
@@ -1170,6 +1180,8 @@
     },
     "plan": {
       "plannedNotice": "Gepland als {slot} op {date}",
+      "cardPlannedNotice": "{title} gepland op {date}",
+      "cardClearedNotice": "{title} staat niet meer in de agenda",
       "slots": {
         "breakfast": "ontbijt",
         "lunch": "lunch",

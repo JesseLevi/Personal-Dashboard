@@ -99,7 +99,7 @@ function PlanRecipeRow({
 }
 
 // Portalled out of the scrolling tray; a press outside trigger and popover closes it.
-function PopoverBody({
+export function PopoverBody({
   popoverRef,
   wrapperRef,
   style,

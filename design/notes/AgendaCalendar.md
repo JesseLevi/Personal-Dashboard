@@ -4,7 +4,7 @@ Claude-designed (#485), ADR-0037 §8, no Figma node · Code: `components/organis
 ## Anatomy
 FullCalendar 7 (`@fullcalendar/react`, subpath plugins `daygrid`, `timegrid`, `list`, `interaction`; peer `temporal-polyfill`) with no theme plugin and no toolbar. Every look comes from class-name settings built in `buildAgendaCalendarOptions()`; the page (#486) owns navigation with `PageHeader` + `ButtonToggle`.
 
-Props: `items: AgendaItem[]`, `view` (`day|threeDay|week|month|list`), `date` (`YYYY-MM-DD`), callbacks `onSelectSlot`, `onItemClick`, `onItemMove(change, revert)`, `onItemResize(change, revert)`, `onExternalDrop`. The parent gives the root a height (`h-full`); the grid scrolls inside it.
+Props: `items: AgendaItem[]`, `view` (`day|threeDay|week|month|list`), `date` (`YYYY-MM-DD`), callbacks `onSelectSlot`, `onItemClick`, `onItemMove(change, revert)`, `onItemResize(change, revert)`, `onExternalDrop`, `onItemDropOut(item)` (an item dragged from the grid and released over an element carrying `AGENDA_TRAY_ATTRIBUTE`, found with `elementsFromPoint` in `eventDragStop`; FullCalendar fires no `eventDrop` then). The parent gives the root a height (`h-full`); the grid scrolls inside it.
 
 Controlled: `items` map to FullCalendar events (`toEventInput`, the item rides in `extendedProps.item`). After a drag or resize FullCalendar has already moved the event, so the parent either updates `items` or calls `revert`. Spans are ISO strings: timed with the browser's offset, all-day as `YYYY-MM-DD` with an exclusive end.
 

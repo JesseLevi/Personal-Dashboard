@@ -166,3 +166,19 @@ export const Interactive = () => {
     </div>
   );
 };
+
+// Edit mode with a planned day next to the deadline (cards.planned_for).
+export const EditItemPlanned = () => (
+  <div className="min-h-screen">
+    <CardDetailPanel
+      open
+      onClose={() => {}}
+      columns={columns}
+      target={{ mode: "edit", card: { ...sampleCard, planned_for: "2026-10-17" } }}
+      onCreateCard={mockCreateCard}
+      onUpdateCard={mockUpdateCard}
+      onMoveCard={mockMoveCard}
+      onDeleteCard={mockDeleteCard}
+    />
+  </div>
+);

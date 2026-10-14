@@ -12,6 +12,7 @@ Page-level composition of `SidePanel` + `InputField` / `Dropdown` / `Tag` / `But
 | Prioriteit | `Dropdown` of `Tag`s |
 | Grootte | `Dropdown` of neutral `Tag`s |
 | Datum | `InputField leadingIcon="Calendar" trailingIcon="Pencil"`, plain text |
+| Gepland op | Same `InputField` as Datum (`cards.planned_for`), directly under it; no Figma node |
 
 ## Deliberate decisions
 - Mutations (`onCreateCard` / `onUpdateCard` / `onMoveCard` / `onDeleteCard`) and `onMutated` are props. Only `TeDoenBoard.tsx` imports the `"use server"` actions and `useRouter()` (`onMutated={() => router.refresh()}`); this file imports neither `next/navigation` nor the actions module. A direct `useRouter()` threw "expected app router to be mounted" under Ladle's plain Vite runtime, and this is what lets the stories mock every action. (#94)
@@ -24,6 +25,8 @@ Page-level composition of `SidePanel` + `InputField` / `Dropdown` / `Tag` / `But
 - Two-step delete: "Verwijderen" swaps the same SidePanel footer to a confirm state (full-width prompt line, then Annuleren + destructive Ja/verwijderen); no `window.confirm`, no dialog. Uses the shared `DeleteConfirm layout="stacked"` + `useDeleteConfirm`. User decision 2026-07-24; no Figma node models it.
 - Reset during render, never remount. A `targetKey` (`edit-${id}` / `create-${columnId}`) is compared against `prevTargetKey` / `prevOpen` held in state, and fields, `deleteConfirming` and `error` are reset synchronously when `open && (!prevOpen || targetKey changed)`. Rejected: a JSX `key` on the panel. Remounting `SidePanel` created a fresh dialog node already in the open position (no closed frame to transition from, so no animation on every never-before-mounted target), while a non-varying key leaked the previous draft when "create" was opened twice in the same column. Rejected: a `useEffect` reset, which paints one stale frame first. Keying on `open` would have made the animation bug worse. (#103, #105)
 - Footer: normal state is a `flex gap-inline-sm` row whose buttons carry `grow basis-0` (never `flex-1`, see `SidePanel.md`); `BoardPanel` follows the same convention. (#103)
+
+- **Gepland op** (#488) is the day the user intends to do the card (`cards.planned_for`, a date), distinct from the deadline `due_at` (a moment). It has the deadline's input style and text format (dd-mm-yyyy), is sent as `plannedFor` (empty text is `null`, which clears it) and shows in the Agenda as a planned item. It is displayed in UTC because a date has no zone. Invalid text is refused by `plannedFor` in `lib/boards/schemas.ts`.
 
 ## Token gaps and flags
 - Footer row `gap-2` -> `gap-inline-sm`: the "Bottom" node (`3779:4858` mobile / `3779:4950` desktop) is HORIZONTAL with `itemSpacing` 8 bound to `spacing/inline/gap-sm`, identical on both breakpoints. (#219)
