@@ -398,7 +398,11 @@
           "month": "Maand",
           "list": "Lijst"
         },
-        "calendarsLabel": "Agenda's beheren"
+        "calendarsLabel": "Agenda's beheren",
+        "weekToBasketLabel": "Week naar mand",
+        "weekToBasketShortLabel": "Week",
+        "weekToBasketAddedLabel": "Toegevoegd",
+        "chooseBasketLabel": "Kies een mand"
       }
     },
     "sidePanel": {
@@ -863,7 +867,8 @@
       "needsReviewLabel": "controleren",
       "notCountedLabel": "niet meegeteld",
       "nutritionCoverage": "Op basis van {counted} van {total} ingrediënten",
-      "sourceLabel": "Bron:"
+      "sourceLabel": "Bron:",
+      "planLabel": "Plannen"
     },
     "pasAanPanel": {
       "title": "Pas aan",
@@ -1088,6 +1093,62 @@
         "no_secret": "De link kon niet worden gelezen.",
         "apply_failed": "De afspraken konden niet worden opgeslagen."
       }
+    },
+    "planDrawer": {
+      "label": "Plannen",
+      "tabsLabel": "Wat wil je plannen",
+      "tabs": {
+        "recipes": "Recepten",
+        "cards": "Kaarten"
+      },
+      "cardsEmpty": "Kaarten die je kunt plannen komen hier.",
+      "searchLabel": "Recepten zoeken",
+      "searchPlaceholder": "Recepten zoeken",
+      "searchClearLabel": "Zoekopdracht wissen",
+      "categoryLabel": "Categorie",
+      "allCategories": "Alle categorieën",
+      "noRecipes": "Geen recepten gevonden.",
+      "dragHint": "Sleep een recept naar een dag of een afspraak in de agenda.",
+      "planRecipeLabel": "{name} plannen",
+      "planMenuLabel": "Kies een dag"
+    },
+    "planChoices": {
+      "momentLabel": "Moment",
+      "slots": {
+        "breakfast": "Ontbijt",
+        "lunch": "Lunch",
+        "dinner": "Diner",
+        "snack": "Snack"
+      },
+      "todayLabel": "Vandaag",
+      "tomorrowLabel": "Morgen",
+      "otherDateLabel": "Andere datum",
+      "planLabel": "Plannen"
+    },
+    "mealPanel": {
+      "title": "Maaltijd",
+      "recipeLabel": "Recept",
+      "slotLabel": "Moment",
+      "slots": {
+        "breakfast": "Ontbijt",
+        "lunch": "Lunch",
+        "dinner": "Diner",
+        "snack": "Snack"
+      },
+      "servingsLabel": "Porties",
+      "dateLabel": "Datum",
+      "attachedNotice": "Deze maaltijd hoort bij een afspraak en volgt de datum ervan.",
+      "toBasketLabel": "Naar mand",
+      "addedToBasketLabel": "Toegevoegd",
+      "chooseBasketLabel": "Kies een mand",
+      "sentNotice": "De ingrediënten van deze maaltijd staan al in een mand.",
+      "saveLabel": "Opslaan",
+      "savingLabel": "Opslaan...",
+      "deleteLabel": "Verwijderen",
+      "deleteConfirmLabel": "Weet je het zeker?",
+      "deleteConfirmButtonLabel": "Ja, verwijderen",
+      "deletingLabel": "Verwijderen...",
+      "cancelLabel": "Annuleren"
     }
   },
   "agenda": {
@@ -1098,13 +1159,23 @@
       "read-only": "Deze afspraak is alleen-lezen en kan niet worden gewijzigd.",
       "generic": "Er ging iets mis. Probeer het opnieuw.",
       "already-linked": "Dit is al aan deze afspraak gekoppeld.",
-      "forbidden": "Je kunt dit niet aan deze afspraak koppelen."
+      "forbidden": "Je kunt dit niet aan deze afspraak koppelen.",
+      "nothing-to-send": "Er zijn deze week geen maaltijden zonder ingrediënten in een mand."
     },
     "notices": {
       "message": "“{title}” is uit je agenda verdwenen. Deze boodschappen stonden voor die maaltijd in je mand: {items}.",
       "more": "en {count} andere",
       "removeLabel": "Weghalen",
       "keepLabel": "Laten staan"
+    },
+    "plan": {
+      "plannedNotice": "Gepland als {slot} op {date}",
+      "slots": {
+        "breakfast": "ontbijt",
+        "lunch": "lunch",
+        "dinner": "diner",
+        "snack": "snack"
+      }
     }
   }
 }
