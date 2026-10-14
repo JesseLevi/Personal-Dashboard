@@ -257,6 +257,25 @@ describe("safeFetch", () => {
     ).resolves.toBeTruthy();
   });
 
+  it("contentTypes replaces the allowed list and accept sets the header", async () => {
+    let accept: string | undefined;
+    const ics = async (req: TransportRequest) => {
+      accept = req.headers.Accept;
+      return res(200, { "content-type": "text/calendar; charset=utf-8" }, [Buffer.from("x")]);
+    };
+    const out = await safeFetch("https://example.com/", {
+      resolve: resolvePublic,
+      contentTypes: ["text/calendar"],
+      accept: "text/calendar",
+      transport: ics,
+    });
+    expect(out.contentType).toBe("text/calendar");
+    expect(accept).toBe("text/calendar");
+    expect(
+      await code(safeFetch("https://example.com/", { resolve: resolvePublic, transport: ics })),
+    ).toBe("bad_content_type");
+  });
+
   it("maps non-2xx to http_error with status", async () => {
     const err = await safeFetch("https://example.com/", {
       resolve: resolvePublic,
