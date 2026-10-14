@@ -14,6 +14,7 @@ function makeCard(id: string, columnId: string, position: number): CardWithLabel
     priority: "medium",
     size: null,
     due_at: null,
+    planned_for: null,
     position,
     source: "manual",
     created_at: "2026-01-01T00:00:00.000Z",

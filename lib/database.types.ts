@@ -80,6 +80,217 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_accounts: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          last_synced_at: string | null
+          provider: string
+          sync_state: Json
+          updated_at: string
+          user_id: string
+          vault_secret_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id?: string
+          last_synced_at?: string | null
+          provider: string
+          sync_state?: Json
+          updated_at?: string
+          user_id: string
+          vault_secret_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          last_synced_at?: string | null
+          provider?: string
+          sync_state?: Json
+          updated_at?: string
+          user_id?: string
+          vault_secret_id?: string | null
+        }
+        Relationships: []
+      }
+      calendar_event_links: {
+        Row: {
+          calendar_event_id: string
+          card_id: string | null
+          created_at: string
+          id: string
+          note_id: string | null
+          recipe_id: string | null
+          user_id: string
+        }
+        Insert: {
+          calendar_event_id: string
+          card_id?: string | null
+          created_at?: string
+          id?: string
+          note_id?: string | null
+          recipe_id?: string | null
+          user_id: string
+        }
+        Update: {
+          calendar_event_id?: string
+          card_id?: string | null
+          created_at?: string
+          id?: string
+          note_id?: string | null
+          recipe_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_event_links_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_links_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_links_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_links_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_events: {
+        Row: {
+          all_day: boolean
+          calendar_account_id: string | null
+          calendar_id: string
+          content_hash: string | null
+          created_at: string
+          description: string | null
+          ends_at: string
+          external_id: string | null
+          id: string
+          location: string | null
+          missing_since: string | null
+          source: string
+          starts_at: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          all_day?: boolean
+          calendar_account_id?: string | null
+          calendar_id: string
+          content_hash?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at: string
+          external_id?: string | null
+          id?: string
+          location?: string | null
+          missing_since?: string | null
+          source?: string
+          starts_at: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          all_day?: boolean
+          calendar_account_id?: string | null
+          calendar_id?: string
+          content_hash?: string | null
+          created_at?: string
+          description?: string | null
+          ends_at?: string
+          external_id?: string | null
+          id?: string
+          location?: string | null
+          missing_since?: string | null
+          source?: string
+          starts_at?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_calendar_account_id_fkey"
+            columns: ["calendar_account_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_calendar_id_fkey"
+            columns: ["calendar_id"]
+            isOneToOne: false
+            referencedRelation: "calendars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendars: {
+        Row: {
+          calendar_account_id: string | null
+          created_at: string
+          id: string
+          is_default: boolean
+          kind: string
+          name: string | null
+          position: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calendar_account_id?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          kind?: string
+          name?: string | null
+          position?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calendar_account_id?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          kind?: string
+          name?: string | null
+          position?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendars_calendar_account_id_fkey"
+            columns: ["calendar_account_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       card_labels: {
         Row: {
           card_id: string
@@ -129,6 +340,7 @@ export type Database = {
           description: string | null
           due_at: string | null
           id: string
+          planned_for: string | null
           position: number
           priority: string
           size: string | null
@@ -143,6 +355,7 @@ export type Database = {
           description?: string | null
           due_at?: string | null
           id?: string
+          planned_for?: string | null
           position: number
           priority?: string
           size?: string | null
@@ -157,6 +370,7 @@ export type Database = {
           description?: string | null
           due_at?: string | null
           id?: string
+          planned_for?: string | null
           position?: number
           priority?: string
           size?: string | null
@@ -306,6 +520,70 @@ export type Database = {
             columns: ["board_id"]
             isOneToOne: false
             referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meal_plans: {
+        Row: {
+          calendar_event_id: string | null
+          calendar_id: string
+          created_at: string
+          id: string
+          planned_on: string | null
+          position: number
+          recipe_id: string
+          servings: number
+          slot: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calendar_event_id?: string | null
+          calendar_id: string
+          created_at?: string
+          id?: string
+          planned_on?: string | null
+          position?: number
+          recipe_id: string
+          servings: number
+          slot: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calendar_event_id?: string | null
+          calendar_id?: string
+          created_at?: string
+          id?: string
+          planned_on?: string | null
+          position?: number
+          recipe_id?: string
+          servings?: number
+          slot?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plans_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_plans_calendar_id_fkey"
+            columns: ["calendar_id"]
+            isOneToOne: false
+            referencedRelation: "calendars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_plans_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
             referencedColumns: ["id"]
           },
         ]
@@ -778,6 +1056,7 @@ export type Database = {
           created_at: string
           id: string
           list_id: string
+          meal_plan_id: string | null
           name: string
           position: number
           quantity: number | null
@@ -793,6 +1072,7 @@ export type Database = {
           created_at?: string
           id?: string
           list_id: string
+          meal_plan_id?: string | null
           name: string
           position: number
           quantity?: number | null
@@ -808,6 +1088,7 @@ export type Database = {
           created_at?: string
           id?: string
           list_id?: string
+          meal_plan_id?: string | null
           name?: string
           position?: number
           quantity?: number | null
@@ -824,6 +1105,13 @@ export type Database = {
             columns: ["list_id"]
             isOneToOne: false
             referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_list_items_meal_plan_id_fkey"
+            columns: ["meal_plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
             referencedColumns: ["id"]
           },
           {
@@ -1024,6 +1312,7 @@ export type Database = {
         }[]
       }
       seed_board_for: { Args: { p_user_id: string }; Returns: undefined }
+      seed_calendars_for: { Args: { p_user_id: string }; Returns: undefined }
       seed_keys: { Args: never; Returns: string[] }
       seed_note_categories_for: {
         Args: { p_user_id: string }

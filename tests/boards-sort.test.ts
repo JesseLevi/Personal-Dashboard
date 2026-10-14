@@ -13,6 +13,7 @@ function card(overrides: Partial<CardWithLabels>): CardWithLabels {
     priority: "medium",
     size: null,
     due_at: null,
+    planned_for: null,
     position: 1000,
     source: "manual",
     created_at: "2026-01-01T00:00:00.000Z",
