@@ -11,13 +11,14 @@ import timeGridPlugin from "@fullcalendar/react/timegrid";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AgendaItem } from "@/lib/agenda/types";
+import type { AgendaView } from "@/lib/agenda/view";
 import { normalizeSpan, toEventInputs, type AgendaSpan } from "@/lib/ui/agenda-calendar";
 import { cn } from "@/lib/ui/cn";
 import { AgendaItemContent, type AgendaItemLabels } from "./AgendaCalendarItem";
 import { buildAgendaCalendarOptions } from "./AgendaCalendarTheme";
 import { AGENDA_LONG_PRESS_MS, getAgendaDragPayload, type AgendaDragPayload } from "./useAgendaDraggable";
 
-export type AgendaView = "day" | "threeDay" | "week" | "month" | "list";
+export type { AgendaView };
 
 export interface AgendaChange extends AgendaSpan {
   item: AgendaItem;
