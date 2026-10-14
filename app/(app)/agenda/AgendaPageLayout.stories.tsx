@@ -1,0 +1,55 @@
+import { AgendaCalendar } from "@/components/organisms/AgendaCalendar";
+import type { AgendaItem } from "@/lib/agenda/types";
+import type { AgendaView } from "@/lib/agenda/view";
+import { AgendaBody } from "./AgendaBody";
+import { AgendaHeader } from "./AgendaHeader";
+import { AgendaPageSkeleton } from "./AgendaPageSkeleton";
+
+// The page as composed in AgendaPage.tsx, without data fetching or actions.
+// The visual suite freezes the clock on Thursday 2026-01-01.
+const DATE = "2026-01-01";
+const noop = () => {};
+
+const base = { linkCount: 0, end: null, allDay: false } as const;
+const event = (id: string, title: string, start: string, end: string, source: "manual" | "sync" = "manual"): AgendaItem => ({
+  ...base,
+  kind: "event",
+  source,
+  calendarId: "cal-1",
+  missingSince: null,
+  id,
+  title,
+  start,
+  end,
+});
+
+const items: AgendaItem[] = [
+  event("e1", "Tandarts", "2025-12-30T09:00:00", "2025-12-30T10:00:00"),
+  event("e2", "Verjaardag Eric", "2026-01-01T19:00:00", "2026-01-01T21:30:00"),
+  event("s1", "Teamoverleg", "2025-12-31T10:00:00", "2025-12-31T11:30:00", "sync"),
+  { ...base, kind: "meal", slot: "dinner", servings: 4, thumbnailPath: null, id: "m1", title: "Lasagne met spinazie", start: "2026-01-01T18:00:00", end: "2026-01-01T19:00:00" },
+  { ...base, kind: "deadline", id: "d1", title: "Belastingaangifte", start: "2026-01-01", end: null, allDay: true },
+];
+
+// The real page sits on `surface-primary`, not the story canvas.
+const Surface = ({ children }: { children: React.ReactNode }) => (
+  <div className="-m-8 flex flex-col gap-page-stack bg-surface-primary p-8">{children}</div>
+);
+
+const Page = ({ view, title }: { view: AgendaView; title: string }) => (
+  <Surface>
+    <AgendaHeader title={title} view={view === "threeDay" ? "week" : view} onViewChange={noop} onPrevious={noop} onNext={noop} onToday={noop} />
+    <AgendaBody>
+      <AgendaCalendar items={items} view={view} date={DATE} />
+    </AgendaBody>
+  </Surface>
+);
+
+export const Week = () => <Page view="week" title="29 dec – 4 jan" />;
+export const Month = () => <Page view="month" title="januari 2026" />;
+export const List = () => <Page view="list" title="29 dec – 4 jan" />;
+export const Loading = () => (
+  <Surface>
+    <AgendaPageSkeleton />
+  </Surface>
+);

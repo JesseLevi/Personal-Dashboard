@@ -51,6 +51,7 @@ export function AgendaHeader({ title, view, onViewChange, onPrevious, onNext, on
             aria-label={t("viewLabel")}
             items={items}
             defaultValue={view}
+            iconOnlyBelowMd
             onValueChange={(value) => onViewChange(value as AgendaToggleView)}
             className="max-md:basis-full max-md:order-last md:w-96"
           />

@@ -11,7 +11,7 @@ import { usePopoverPosition } from "../../lib/dom/use-popover-position";
 
 /**
  * Organism/Sidebar — Figma component set "Sidebar" (node-id 3674:5664).
- * Variant axis: `Collapsed` (No/Yes) -> `collapsed` prop. Five modules ->
+ * Variant axis: `Collapsed` (No/Yes) -> `collapsed` prop. Six modules ->
  * fixed `NAV_ITEMS` list. Active item -> Button's `Style=Filled,
  * State=Selected`. `bg-surface-primary` is Figma's fill; nav-item Buttons
  * render one element across both states (`overflow-hidden` clips the
