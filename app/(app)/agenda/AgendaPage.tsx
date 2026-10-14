@@ -10,6 +10,7 @@ import {
   useIsNarrow,
   type AgendaChange,
 } from "@/components/organisms/AgendaCalendar";
+import type { SyncNoticeView } from "@/lib/agenda/calendars";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import { addDays, loadWindow, spanToUtc, stepDate, visibleRange } from "@/lib/agenda/time";
 import type { AgendaItem } from "@/lib/agenda/types";
@@ -17,9 +18,12 @@ import { persistAgendaView, type AgendaView } from "@/lib/agenda/view";
 import type { AgendaSpan } from "@/lib/ui/agenda-calendar";
 import { createEvent, deleteEvent, getAgendaEvent, loadAgendaRange, moveEvent, updateEvent } from "./actions";
 import { AgendaBody } from "./AgendaBody";
+import { AgendaCalendarsPanel } from "./AgendaCalendarsPanel";
 import { AgendaEventPanel, type AgendaPanelTarget } from "./AgendaEventPanel";
 import { getAgendaEventLinks, linkToEvent, searchAgendaLinkTargets, unlinkFromEvent } from "./link-actions";
 import { AgendaHeader, toToggleView, type AgendaToggleView } from "./AgendaHeader";
+import { AgendaSyncNotices } from "./AgendaSyncNotices";
+import { addIcsCalendar, listCalendarAccounts, removeCalendarAccount, resolveSyncNotice } from "./calendars-actions";
 
 export interface AgendaPageProps {
   initialView: AgendaView;
@@ -27,6 +31,8 @@ export interface AgendaPageProps {
   today: string;
   /** The items of `loadWindow(today)`. */
   initialItems: AgendaItem[];
+  /** Open basket notices after a sync deleted an event with a meal. */
+  initialNotices: SyncNoticeView[];
 }
 
 const utc = (date: string) => new Date(`${date}T00:00:00Z`);
@@ -36,7 +42,7 @@ function wallClock(value: string, allDay: boolean): string {
   return allDay ? value.slice(0, 10) : value.slice(0, 19);
 }
 
-export function AgendaPage({ initialView, today, initialItems }: AgendaPageProps) {
+export function AgendaPage({ initialView, today, initialItems, initialNotices }: AgendaPageProps) {
   const tErrors = useTranslations("agenda.errors");
   const format = useFormatter();
   const router = useRouter();
@@ -51,6 +57,7 @@ export function AgendaPage({ initialView, today, initialItems }: AgendaPageProps
     open: false,
     target: { mode: "create", span: { start: `${today}T09:00:00`, end: null, allDay: false } },
   });
+  const [calendarsOpen, setCalendarsOpen] = useState(false);
   const latestRequest = useRef(0);
 
   const effectiveView = effectiveAgendaView(view, narrow);
@@ -154,7 +161,9 @@ export function AgendaPage({ initialView, today, initialItems }: AgendaPageProps
         onPrevious={() => goTo(stepDate(effectiveView, date, -1))}
         onNext={() => goTo(stepDate(effectiveView, date, 1))}
         onToday={() => goTo(today)}
+        onOpenCalendars={() => setCalendarsOpen(true)}
       />
+      <AgendaSyncNotices initialNotices={initialNotices} onResolve={resolveSyncNotice} />
       {error && <p className="pr-page-right-equal text-base font-semibold text-priority-urgent">{error}</p>}
       <AgendaBody>
         <AgendaCalendar
@@ -181,6 +190,14 @@ export function AgendaPage({ initialView, today, initialItems }: AgendaPageProps
         onLink={linkToEvent}
         onUnlink={unlinkFromEvent}
         onNavigate={router.push}
+      />
+      <AgendaCalendarsPanel
+        open={calendarsOpen}
+        onClose={() => setCalendarsOpen(false)}
+        onList={listCalendarAccounts}
+        onAdd={addIcsCalendar}
+        onRemove={removeCalendarAccount}
+        onMutated={() => void loadAround(date)}
       />
     </>
   );

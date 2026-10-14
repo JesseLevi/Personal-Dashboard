@@ -397,7 +397,8 @@
           "week": "Week",
           "month": "Maand",
           "list": "Lijst"
-        }
+        },
+        "calendarsLabel": "Agenda's beheren"
       }
     },
     "sidePanel": {
@@ -1032,6 +1033,61 @@
     "eventLinkLine": {
       "label": "In agenda:",
       "more": "+{count} meer"
+    },
+    "agendaCalendarsPanel": {
+      "title": "Agenda's",
+      "listHeading": "Gekoppelde agenda's",
+      "emptyLabel": "Je hebt nog geen agenda gekoppeld.",
+      "addHeading": "ICS-link toevoegen",
+      "nameLabel": "Naam",
+      "urlLabel": "ICS-link",
+      "addLabel": "Toevoegen",
+      "addingLabel": "Controleren...",
+      "loadingLabel": "Laden...",
+      "privacyNotice": "Iedereen met deze link kan je agenda lezen. Atlas bewaart de link versleuteld en laat hem nooit meer zien.",
+      "help": {
+        "heading": "Waar vind ik de link?",
+        "outlook": "Outlook: Instellingen, Agenda, Gedeelde agenda's. Publiceer je agenda en kopieer de ICS-link.",
+        "google": "Google Agenda: Instellingen, kies de agenda, Agenda integreren. Kopieer het geheime adres in iCal-indeling.",
+        "icloud": "iCloud: deel de agenda in Agenda op je iPhone of Mac, zet Openbare agenda aan en kopieer de link."
+      },
+      "status": {
+        "never": "Nog niet gesynchroniseerd",
+        "ok": "Bijgewerkt {time}",
+        "failed": "Mislukt: {reason}"
+      },
+      "deleteLabel": "{name} verwijderen",
+      "deleteConfirmLabel": "'{name}' en de geïmporteerde afspraken verwijderen? De agenda zelf blijft staan.",
+      "deleteConfirmButtonLabel": "Ja, verwijderen",
+      "deletingLabel": "Verwijderen...",
+      "cancelLabel": "Annuleren",
+      "errors": {
+        "invalid-input": "Vul een naam en een https-link in.",
+        "unauthenticated": "Log opnieuw in om door te gaan.",
+        "not-found": "Deze agenda bestaat niet (meer).",
+        "invalid-url": "Deze link is niet bruikbaar. Gebruik een https-link naar een openbaar adres.",
+        "fetch-failed": "De agenda kon niet worden opgehaald. Controleer de link en probeer het opnieuw.",
+        "unreadable": "Deze link geeft geen leesbare agenda terug.",
+        "empty": "Deze agenda bevat geen afspraken. Controleer of je de juiste link hebt.",
+        "limit": "Je kunt maximaal 10 agenda's koppelen.",
+        "generic": "Er ging iets mis. Probeer het opnieuw."
+      },
+      "syncErrors": {
+        "fetch_invalid_url": "de link is ongeldig",
+        "fetch_blocked_address": "de link verwijst naar een adres dat niet is toegestaan",
+        "fetch_too_large": "het bestand is te groot",
+        "fetch_timeout": "de agenda reageerde niet op tijd",
+        "fetch_bad_content_type": "de link geeft geen agenda terug",
+        "fetch_too_many_redirects": "te veel doorverwijzingen",
+        "fetch_http_error": "de agenda gaf een foutmelding",
+        "fetch_failed": "de agenda kon niet worden opgehaald",
+        "unparsable": "het bestand is geen leesbare agenda",
+        "too_large": "de agenda heeft te veel afspraken",
+        "empty": "de agenda bevatte geen afspraken, dus er is niets verwijderd",
+        "drop": "er verdween meer dan de helft van de afspraken, dus er is niets verwijderd",
+        "no_secret": "de link kon niet worden gelezen",
+        "apply_failed": "de afspraken konden niet worden opgeslagen"
+      }
     }
   },
   "agenda": {
@@ -1043,6 +1099,12 @@
       "generic": "Er ging iets mis. Probeer het opnieuw.",
       "already-linked": "Dit is al aan deze afspraak gekoppeld.",
       "forbidden": "Je kunt dit niet aan deze afspraak koppelen."
+    },
+    "notices": {
+      "message": "'{title}' is uit je agenda verdwenen. Deze boodschappen stonden voor die maaltijd in je mand: {items}.",
+      "more": "en {count} andere",
+      "removeLabel": "Weghalen",
+      "keepLabel": "Laten staan"
     }
   }
 }
