@@ -36,10 +36,9 @@ Open: the recipe header wraps to two rows at ~400 px (three buttons). Making the
 
 ## Next: Phase 7, Agenda (#33)
 
-1. **In review, merge in this order**: PR #497 (#483 schema, migration `20261014000001`), then #499 (#484 `agenda_items`, migration `…0002`, stacked on #497; retarget to `main` after #497 merges), and #498 (#485 `AgendaCalendar`) independently. Both migrations go to hosted only with the user's go.
-   - #498 awaits the user's verdict on its screenshots: pastel items in dark mode (no dark `surface-highlight-*`/`text-highlight-*` tokens, ~3:1 contrast) and truncated titles in the 3-day mobile view.
-2. **ADR-0039 (#482)** is written on PR `docs/482-adr-0039-sync-runtime`: lazy sync on Agenda load plus one daily Vercel Cron (Hobby). #490 builds it; it needs `CRON_SECRET` in Vercel.
-3. **Then #486** (Agenda page). Its issue starts with a "Herzien" section holding the contracts from #483–#485. #487–#489 follow; #490 waits for #482.
+1. **On `main`, not on hosted**: ADR-0039 (#482, lazy sync plus one daily Vercel Cron on Hobby), the schema (#483, migration `20261014000001`), `agenda_items` + `lib/agenda` (#484, `…0002`) and `AgendaCalendar` (#485). Both migrations go to hosted only with the user's go, before #486 can be tested there.
+2. **Next: #486** (Agenda page). Its issue starts with a "Herzien" section holding the contracts from #483–#485. Then #487–#489; #490 (ICS, builds ADR-0039, needs `CRON_SECRET` in Vercel) after #486.
+3. **Design pass later, by the user's choice**: the system comes first. Open: pastel items in dark mode (no dark `surface-highlight-*`/`text-highlight-*` tokens, ~3:1 contrast) and truncated titles in the 3-day mobile view.
 4. Phases 8 and 9 (#31, #32) stay in the backlog. Their bodies follow ADR-0018 (hosted models, no worker host). Each needs its own ADR first: the embedding model and the privacy of notes.
 
 ## Small open items
