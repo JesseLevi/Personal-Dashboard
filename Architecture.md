@@ -125,10 +125,10 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - SQL detectors produce candidate signals;
   - one LLM call phrases each signal into `agent_signals`;
   - the agent has no tools and no writes beyond its own rows, and its output is plain text.
+- **Scheduled work** (ADR-0039, Vercel Hobby): a lazy "sync when stale" in `after()` where a user is present, plus one daily Vercel Cron route behind `CRON_SECRET` as a backstop. The cron route is not a user request, so it may use `service_role`. Anything more frequent needs a new ADR.
 - **Open decisions** (each needs an ADR before its phase starts):
-  1. the runtime for scheduled and longer work (candidates: Vercel Cron → route handler, Supabase Cron + Edge Functions, or a lazy "sync when stale" on page load in the ADR-0017 style);
-  2. the hosted multilingual embedding model and its dimension;
-  3. the privacy stance on sending notes to a provider (ADR-0018 requires it to be explicit).
+  1. the hosted multilingual embedding model and its dimension;
+  2. the privacy stance on sending notes to a provider (ADR-0018 requires it to be explicit).
 
 ## 7. Agenda (Phase 7, planned, ADR-0037)
 
@@ -146,7 +146,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - an event is deleted after two consecutive successful syncs miss it; its links and attached meal plans go with it, basket items stay and the user gets a notice;
   - write only on a changed content hash; past events are kept as history.
 - **UI**: FullCalendar standard (MIT) packages, themed with semantic tokens, Claude-designed (ADR-0034); `ical.js` parses feeds.
-- **Sync trigger** depends on open decision 1 in §6.
+- **Sync trigger** (ADR-0039): opening the Agenda syncs the user's accounts older than an hour in `after()`; a daily cron syncs every account older than 20 hours. One `security definer` function applies a parsed feed per account (upsert, hash, two-miss deletion, basket notice), under an advisory lock.
 
 ## 8. Testing and CI gates
 

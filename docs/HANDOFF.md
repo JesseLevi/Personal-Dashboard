@@ -36,16 +36,15 @@ Open: the recipe header wraps to two rows at ~400 px (three buttons). Making the
 
 ## Next: Phase 7, Agenda (#33)
 
-1. **ADR-0038: runtime for scheduled work (#482).** Calendar sync is the first feature that needs it (`Architecture.md` §6, open decision 1).
-   - Weigh a lazy "sync when stale" on Agenda load via `after()` (ADR-0017/0019 style, no infrastructure) against Vercel Cron and Supabase Cron.
-   - Cost and the Vercel plan's cron limits decide it.
-2. **#33 is the epic** (ADR-0037, Agenda as planner; supersedes ADR-0008), split into #481–#491 on the board. Ready: #481 (this ADR's PR), #482 (runtime ADR, blocks ICS #490), #483 (schema), #485 (`AgendaCalendar` in Atlas style, parallel). The rest follows the epic's order.
-3. Phases 8 and 9 (#31, #32) stay in the backlog. Their bodies follow ADR-0018 (hosted models, no worker host). Each needs its own ADR first: the embedding model and the privacy of notes.
+1. **In review, merge in this order**: PR #497 (#483 schema, migration `20261014000001`), then #499 (#484 `agenda_items`, migration `…0002`, stacked on #497; retarget to `main` after #497 merges), and #498 (#485 `AgendaCalendar`) independently. Both migrations go to hosted only with the user's go.
+   - #498 awaits the user's verdict on its screenshots: pastel items in dark mode (no dark `surface-highlight-*`/`text-highlight-*` tokens, ~3:1 contrast) and truncated titles in the 3-day mobile view.
+2. **ADR-0039 (#482)** is written on PR `docs/482-adr-0039-sync-runtime`: lazy sync on Agenda load plus one daily Vercel Cron (Hobby). #490 builds it; it needs `CRON_SECRET` in Vercel.
+3. **Then #486** (Agenda page). Its issue starts with a "Herzien" section holding the contracts from #483–#485. #487–#489 follow; #490 waits for #482.
+4. Phases 8 and 9 (#31, #32) stay in the backlog. Their bodies follow ADR-0018 (hosted models, no worker host). Each needs its own ADR first: the embedding model and the privacy of notes.
 
 ## Small open items
 
 - `lib/defaults/ensure.ts`: the regenerated types now contain `ensure_user_defaults`, so the typed cast can go.
-- #10: connect Resend (account, domain, API key), then `pnpm auth:email` dry run and `--apply` (`docs/operations.md`, ADR-0038).
 - Check on hosted that migrations `20261011000001` (drop thumbnail bucket, #384) and `20261011000002` (`last_name`, #404) are applied. A dispatch needs the user's go.
 - Confirm `ANTHROPIC_API_KEY` and the Console spend cap are set in production. Recipe import runs degraded without them.
 - `components/molecules/CardContentIngredient.stories.tsx` has a stale comment about the removed Active pill. `next.config.ts` points to a lucide fix in `design/notes/Icon.md` that the note never had.
