@@ -156,6 +156,14 @@ TOC rail (#342) is Claude-designed on request. Untokenised: rail width (`w-44`),
 
 **Product call.** An imported feed that loses more than half of the events in its window, or comes back empty, counts as a failed sync and deletes nothing (ADR-0037 §5). If the loss is real (a series removed, a calendar emptied on purpose), the account stays "failed" until the feed grows back or the user removes and re-adds it. Options: a "Toch bijwerken" button per failed account, or accept it. -> `design/notes/AgendaCalendarsPanel.md`.
 
+### agenda-week-basket-merged-line-attribution
+
+**Product call.** "Week naar mand" sums the same ingredient and unit across meals into one basket line, but `shopping_list_items.meal_plan_id` holds one id, so a merged line records only the first contributing meal. A meal whose ingredients were all merged into earlier lines has no basket item and a second "Week naar mand" would send it again; the ADR-0037 §6 notice on deleting an event also misses its share of a merged line. Fix needs a migration (a `meal_plan_ids uuid[]` column or a join table), so it waits for a decision. -> `design/notes/AgendaPage.md`.
+
+### agenda-meal-position-not-in-timeline
+
+`agenda_items()` returns no `meal_plans.position`, so `getAgendaItems` reads it in a second query for the meals in range. Adding the column to the function (a new migration, `create or replace`) would drop that query. -> `design/notes/AgendaPage.md`.
+
 ---
 
 ## Resolved

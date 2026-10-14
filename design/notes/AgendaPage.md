@@ -1,30 +1,36 @@
 # AgendaPage
-Claude-designed (#486), ADR-0037, no Figma node · Code: `app/(app)/agenda/` — `page.tsx` (Server: view cookie, today, first window), `AgendaPage.tsx` (client state), `AgendaHeader.tsx`, `AgendaBody.tsx`, `AgendaEventPanel.tsx`, `AgendaPageSkeleton.tsx`, `loading.tsx`, `actions.ts`, `manifest.webmanifest/route.ts` · Pure helpers: `lib/agenda/time.ts`, `view.ts`, `schemas.ts`
+Claude-designed (#486, #487), ADR-0037, no Figma node · Code: `app/(app)/agenda/` — `page.tsx` (Server: view cookie, today, first window, recipes, baskets), `AgendaPage.tsx` (client state), `AgendaHeader.tsx`, `AgendaBody.tsx`, `AgendaEventPanel.tsx`, `AgendaMealPanel.tsx`, `PlanRecipeList.tsx`, `AgendaPageSkeleton.tsx`, `loading.tsx`, `actions.ts` (events), `meal-actions.ts` (meal plans), `manifest.webmanifest/route.ts` · Pure helpers: `lib/agenda/time.ts`, `view.ts`, `schemas.ts`, `meals.ts`, `plan-recipes.ts`
 
-No new component: the page composes `PageHeader`, `ButtonToggle`, `AgendaCalendar`, `SidePanel`, `InputField`, `Checkbox`, `Button`, `DeleteConfirm`. `AgendaHeader`, `AgendaBody` and `AgendaEventPanel` are page-level composition like `TeDoenHeader` and `CardDetailPanel`.
+New components: `PlanDrawer` and `PlanChoices` (own notes). The rest is page composition: `PageHeader`, `ButtonToggle`, `AgendaCalendar`, `SidePanel`, `InputField`, `Checkbox`, `Button`, `DeleteConfirm`, `PortionStepper`, `AnimatedAddToBasketButton`, `Toast`.
 
 ## Anatomy
-- Header: `PageHeader` with the period as title (`13–19 okt`, `oktober 2026`, `wo 1 jan`), then Vandaag + previous/next (`ArrowLeft`/`ArrowRight`) + the `Settings` button that opens the calendars panel (`AgendaCalendarsPanel.md`) and a `ButtonToggle` for Dag/Week/Maand/Lijst (`Calendar`, `Columns3`, `Table`, `List`). The title block, the buttons and the toggle are three flex items (`contents` wrapper). From `md` they share one row (buttons and toggle right, toggle `w-96`). Below `md` the header wraps: row 1 title and buttons, row 2 the toggle with icons only (`ButtonToggle iconOnlyBelowMd`).
-- Body: `AgendaBody` gives the calendar a definite height (`100dvh` minus the chrome, at least 28rem) and `pr-page-right-equal`; the grid scrolls inside.
-- Panel: one persistent `SidePanel`. Create (tap or drag an empty slot) and edit share it; an imported event opens it read-only (disabled fields, no footer, "Uit <agendanaam>" above them). A saved event, imported or own, also shows "Gekoppeld" with its recipes, cards and notes (design/notes/AgendaEventLinks.md). Fields: title, all day, start/end (`datetime-local`, or `date` when all day, last day inclusive), location, description, calendar (the default calendar, disabled while it is the only one). Delete is the two-step `DeleteConfirm`.
+- Header: `PageHeader` with the period as title, then "Week naar mand" (`AnimatedAddToBasketButton`, "Week" below `md`), Vandaag, previous/next, the `Settings` button that opens the calendars panel (`AgendaCalendarsPanel.md`) and a `ButtonToggle` for Dag/Week/Maand/Lijst. The title block, the buttons and the toggle are three flex items (`contents` wrapper). From `md` they share one row (toggle `w-96`); below `md` the header wraps and the toggle gets its own row with icons only.
+- Body: `AgendaBody` gives the calendar a definite height (`100dvh` minus the chrome, at least 28rem) and `pr-page-right-equal`; the grid scrolls inside. The `PlanDrawer` sits beside it from `md`, under it below.
+- Event panel: one persistent `SidePanel` for create (tap or drag an empty slot) and edit; an imported event opens it read-only (disabled fields, no footer, "Uit <agendanaam>" above them). A saved event, imported or own, also shows "Gekoppeld" with its recipes, cards and notes (`AgendaEventLinks.md`). Delete is the two-step `DeleteConfirm`.
+- Meal panel (`AgendaMealPanel`, `SidePanel`): recipe (a `Button` that opens the recipe page), moment (select), servings (`PortionStepper`), date (disabled while the meal is attached to an event), "Naar mand" (`AnimatedAddToBasketButton` with the #429 basket popover), Verwijderen (`DeleteConfirm`) and Opslaan. "Naar mand" saves pending edits first so the basket gets the servings on screen.
 - Above the calendar: basket notices after a sync deleted an event with a meal (`AgendaSyncNotices`). `page.tsx` also starts the lazy sync in `after()`.
-- Clicks: own event opens the panel; deadline and planned card open the card in Te doen (`/te-doen?card=<id>`, which redirects to the card's board and opens its panel); a meal does nothing yet.
+- Clicks: own event opens the event panel; meal opens the meal panel; deadline and planned card open the card in Te doen (`/te-doen?card=<id>`).
 
 ## Deliberate decisions
-- **Time zone**: one fixed zone, `Europe/Amsterdam` (`AGENDA_TIME_ZONE`), until Atlas stores one per user. The calendar runs in the browser zone and shows the wall-clock strings it is given; its callbacks add the browser's offset. `spanToUtc` drops that offset and reads the wall clock in the Agenda zone, so a browser elsewhere still sees what was typed. The now line and "today" in the grid follow the browser zone.
-- **View per device**: a cookie (`agenda-view`), written by the toggle and read by the Server page, so the first paint already has the right view. `threeDay` is never stored: `week` becomes it below `md`.
-- **Data**: the server renders the month of today plus a week each side (`loadWindow`); that covers every view. Navigating inside it costs nothing; leaving it calls `loadAgendaRange` and keeps the old items on screen until the new ones arrive (last request wins). After a save or delete the window reloads.
-- **Drag and resize save at once**: items update optimistically, `moveEvent` runs, a refusal calls the calendar's `revert` and restores the items. Only manual events move; meals and planned cards revert (not built yet).
-- **Own events only in a manual calendar, synced ones read-only**: the database allows a manual event in an imported calendar and deleting a synced event, so `actions.ts` checks both (`read-only`) on top of RLS, and maps the trigger's `42501` to the same code. Errors are codes, never database text; messages under `agenda.errors.*`.
+- **Time zone**: one fixed zone, `Europe/Amsterdam` (`AGENDA_TIME_ZONE`), until Atlas stores one per user. The calendar runs in the browser zone and shows wall-clock strings; `spanToUtc` reads them in the Agenda zone. The now line and "today" in the grid follow the browser zone.
+- **View per device**: cookie `agenda-view`, so the first paint has the right view. `threeDay` is never stored.
+- **Data**: the server renders the month of today plus a week each side (`loadWindow`); leaving it calls `loadAgendaRange` and keeps the old items until the new ones arrive. After a save, delete or plan the window reloads.
+- **Drag and resize save at once**: items update optimistically; a refusal calls `revert` and restores the items. Planned cards still revert (#488).
+- **Meals are day items**: always all-day, on their date, grouped per moment (breakfast, lunch, dinner, snack) and ordered by `position` in the all-day zone (`compareEventOrder`), never a block on the hour grid. A meal attached to an event takes that event's date, not its time.
+- **Planning**: dropping a recipe on a day makes a meal plan (`planned_on`, moment `dinner`, the recipe's servings, last in its group). Dropping it on an event (found by `data-agenda-event-id` under the pointer) attaches it (`calendar_event_id`), so it follows the event. Dragging a meal to another day sets `planned_on` and detaches it. The plan buttons (drawer row, recipe page `...` menu) do the same with a chosen day and moment.
+- **Week naar mand**: the visible week (Monday to Monday, from the shown date, also in month view); meals without a basket item (`shopping_list_items.meal_plan_id`) are scaled to their own servings and the same ingredient and unit are summed. A merged line carries the first contributing meal's id (see `docs/open-questions.md#agenda-week-basket-merged-line-attribution`). Nothing to send is an error message (`nothing-to-send`), and the button shows success only after a successful result.
+- **Own events only in a manual calendar, synced ones read-only**: `actions.ts` checks both (`read-only`) on top of RLS and maps `42501` to the same code. Errors are codes, never database text (`agenda.errors.*`).
 - All-day events are stored as UTC midnights with an exclusive end; the panel shows the last day inclusive.
+- `position` is not in the timeline function, so `getAgendaItems` reads it for the meals in one extra query.
 
 ## Token gaps and flags
-- `h-[calc(100dvh-…)]` and `min-h-[28rem]` in `AgendaBody` are layout sizes, not scale values (no spacing-flag needed: the gate covers only radius, gap and padding).
-- No token for a disabled field: read-only inputs look like editable ones; the notice above them says why.
-- `Button` toggle icons are borrowed from the closed icon set (no day/week glyphs): `Calendar`, `Columns3`, `Table`, `List`.
+- `h-[calc(100dvh-…)]`, `min-h-[28rem]`, `md:w-80` and `h-[32rem]` in `AgendaBody` are layout sizes, not scale values.
+- No token for a disabled field: read-only inputs look editable; a notice says why.
+- Icons borrowed from the closed set: view toggle `Calendar`, `Columns3`, `Table`, `List`; the recipe link uses `CookingPot`.
 
 ## Gotchas
-- `PageHeaderTitle` morphs the title whenever it changes, so every previous/next press plays the title morph.
-- The mobile header and bottom-sheet shapes follow the viewport, not the container: Ladle stories only baseline the desktop shape. Check mobile in a narrow window.
-- `page.tsx` cannot be tried against hosted until the agenda migrations are applied there (`agenda_items` does not exist yet).
-- `getAgendaEvent` is a separate read because `agenda_items` carries no location or description.
+- `PageHeaderTitle` morphs the title on every previous/next press.
+- The mobile header and bottom-sheet shapes follow the viewport, not the container: Ladle stories only baseline the desktop shape. The "Week" button below `md` is as wide as its "Toegevoegd" face (the grid sizes to the wider face).
+- `page.tsx` cannot be tried against hosted until the agenda migrations are applied there.
+- `getAgendaEvent` and `getMealPlan` are separate reads because `agenda_items` carries no location, description or recipe id.
+- A meal whose ingredients were all merged into earlier meals' lines has no basket item of its own, so a second "Week naar mand" would send it again.
