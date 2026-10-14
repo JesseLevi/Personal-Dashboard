@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
 import { mapAgendaRows } from "@/lib/agenda/map";
+import { groupOpenCards, type PlanBoardInput, type PlanCardGroup } from "@/lib/agenda/plan-cards";
 import type { AgendaItem } from "@/lib/agenda/types";
 
 // There is no stored user time zone yet, so the caller passes an IANA name
@@ -63,4 +64,26 @@ async function withMealPositions(supabase: Supabase, items: AgendaItem[]): Promi
   }
   const positions = new Map(data.map((row) => [row.id, row.position]));
   return items.map((item) => (item.kind === "meal" ? { ...item, position: positions.get(item.id) ?? item.position } : item));
+}
+
+/**
+ * The open cards of every board the signed-in user can see, per board, for the
+ * plan drawer. RLS decides which boards and cards these are (ADR-0033, ADR-0035).
+ * Empty array if signed out.
+ */
+export async function getPlannableCards(): Promise<PlanCardGroup[]> {
+  const supabase = await createSupabaseServerClient();
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return [];
+
+  const { data, error } = await supabase
+    .from("boards")
+    .select("id, name, is_favorite, position, board_columns ( name, position, cards ( id, title, planned_for, position ) )")
+    .overrideTypes<PlanBoardInput[], { merge: false }>();
+
+  if (error) {
+    console.error("[agenda] getPlannableCards failed:", error.code, error.message);
+    throw new Error("Failed to load cards");
+  }
+  return groupOpenCards(data);
 }

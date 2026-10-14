@@ -29,3 +29,12 @@ export const WithBackRow = () => (
     </Dropdown>
   </div>
 );
+
+// Cards have no moment: the select is hidden.
+export const WithoutMoment = () => (
+  <div className="w-64">
+    <Dropdown className="shadow-sm">
+      <PlanChoices today="2026-01-01" showSlot={false} onPlan={plan} onPlanned={() => {}} />
+    </Dropdown>
+  </div>
+);

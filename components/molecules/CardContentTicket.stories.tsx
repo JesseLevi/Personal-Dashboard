@@ -48,3 +48,22 @@ export const WithDueDate = () => (
     </CardContentTicket>
   </div>
 );
+
+// A planned day (cards.planned_for) shows compact after the deadline; it is not a deadline.
+export const WithPlannedDay = () => (
+  <div className="w-80">
+    <CardContentTicket title="Offertes opvragen voor het reinigen van de dakgoot" plannedLabel="za" plannedCaption="Gepland op">
+      <Tag variant="low">Laag</Tag>
+      <Tag variant="neutral">S</Tag>
+      <Tag variant="neutral">01-04-2026</Tag>
+    </CardContentTicket>
+  </div>
+);
+
+export const WithPlannedDate = () => (
+  <div className="w-80">
+    <CardContentTicket title="HBO Wachtwoord updaten" plannedLabel="3 nov" plannedCaption="Gepland op">
+      <Tag variant="medium">Medium</Tag>
+    </CardContentTicket>
+  </div>
+);

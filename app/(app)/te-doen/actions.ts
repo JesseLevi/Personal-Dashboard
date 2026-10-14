@@ -14,6 +14,7 @@ import {
   deleteCardSchema,
   deleteColumnSchema,
   moveCardSchema,
+  planCardSchema,
   renameBoardSchema,
   renameColumnSchema,
   updateCardSchema,
@@ -344,6 +345,7 @@ export async function createCard(input: unknown): Promise<ActionResult<CardRow>>
       priority: parsed.data.priority,
       size: parsed.data.size ?? null,
       due_at: parsed.data.dueAt ?? null,
+      planned_for: parsed.data.plannedFor ?? null,
       position,
     })
     .select()
@@ -373,6 +375,7 @@ export async function updateCard(input: unknown): Promise<ActionResult> {
   if (fields.priority !== undefined) update.priority = fields.priority;
   if (fields.size !== undefined) update.size = fields.size;
   if (fields.dueAt !== undefined) update.due_at = fields.dueAt;
+  if (fields.plannedFor !== undefined) update.planned_for = fields.plannedFor;
 
   if (Object.keys(update).length === 0) {
     return { success: false, error: "invalid-input" };
@@ -393,6 +396,37 @@ export async function updateCard(input: unknown): Promise<ActionResult> {
   if (error) {
     logDbError("updateCard", error);
     return { success: false, error: "generic" };
+  }
+  if (!data) return { success: false, error: "not-found" };
+
+  revalidatePath("/te-doen", "layout");
+  return { success: true, data: undefined };
+}
+
+// Plans a card on a day, or clears the day with `null` (ADR-0037 §1). Access is
+// decided by the cards policies alone (ADR-0033, ADR-0035): there is no
+// user_id filter here, so a card on a board shared with the caller works the
+// day sharing extends those policies. A card RLS hides, or a write it refuses
+// by returning no row, is `not-found`; a refused write that raises 42501 is
+// `read-only`. The board shows the day on its ticket, hence the revalidation.
+export async function planCard(input: unknown): Promise<ActionResult> {
+  const parsed = planCardSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const supabase = await createSupabaseServerClient();
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  const { data, error } = await supabase
+    .from("cards")
+    .update({ planned_for: parsed.data.plannedFor })
+    .eq("id", parsed.data.cardId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    logDbError("planCard", error);
+    return { success: false, error: error.code === "42501" ? "read-only" : "generic" };
   }
   if (!data) return { success: false, error: "not-found" };
 

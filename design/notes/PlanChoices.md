@@ -7,7 +7,7 @@ No existing component offers "pick a day and a moment". It is the body of a menu
 ## Anatomy
 Renders a fragment meant for a labelless `Dropdown` (`shadow-sm`, `w-64`): optional `header` row (the recipe page passes a back `Button`), a "Moment" select `InputField` (default Diner), white `Button` rows for today, tomorrow and the three days after (`planDays`), then an "Andere datum" `InputField type="date"` (min today) with a filled "Plannen" `Button`, and an error line.
 
-Props: `today` (`YYYY-MM-DD`, Agenda zone), `onPlan(plannedOn, slot) => Promise<AgendaActionResult>`, `onPlanned(plannedOn, slot)`, `header?`. A day row plans immediately with the chosen moment; the other date waits for "Plannen".
+Props: `today` (`YYYY-MM-DD`, Agenda zone), `onPlan(plannedOn, slot) => Promise<AgendaActionResult>`, `onPlanned(plannedOn, slot)`, `header?`, `showSlot?` (default true; the card list turns it off, because a card has no moment, and ignores the `slot` argument). A day row plans immediately with the chosen moment; the other date waits for "Plannen".
 
 ## Deliberate decisions
 - Success is reported only after `onPlan` resolves with `success: true`; a failure shows its code's message (`agenda.errors.*`) in the menu and the menu stays open. The caller shows the confirmation (a `Toast`: "Gepland als diner op donderdag 15 jan").

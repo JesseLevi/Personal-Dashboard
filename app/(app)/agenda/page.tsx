@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { after } from "next/server";
 import { Suspense } from "react";
 import { getSyncNotices } from "@/lib/agenda/notices";
-import { getAgendaItems } from "@/lib/agenda/queries";
+import { getAgendaItems, getPlannableCards } from "@/lib/agenda/queries";
 import { syncStaleAccounts } from "@/lib/agenda/sync";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import { AGENDA_TIME_ZONE, loadWindow, todayInAgendaZone, wallClockToUtc } from "@/lib/agenda/time";
@@ -29,7 +29,7 @@ async function AgendaPageBody() {
   const supabase = await createSupabaseServerClient();
   // ADR-0039: stale feeds sync after the response, with the user's own client; the page shows what is stored.
   after(() => syncStaleAccounts(supabase).catch(() => console.error("[agenda] lazy sync failed")));
-  const [items, notices, categories, baskets, userId] = await Promise.all([
+  const [items, notices, categories, baskets, userId, cardGroups] = await Promise.all([
     getAgendaItems({
       from: wallClockToUtc(`${window.from}T00:00:00`),
       to: wallClockToUtc(`${window.to}T00:00:00`),
@@ -39,6 +39,7 @@ async function AgendaPageBody() {
     getRecipeCategoriesWithRecipes(),
     getRecipeBaskets(),
     getAuthenticatedUserId(),
+    getPlannableCards(),
   ]);
 
   // Imports still running or failed cannot be planned.
@@ -62,6 +63,7 @@ async function AgendaPageBody() {
       initialNotices={notices}
       recipes={recipes}
       recipeCategories={categories.map(({ id, name }) => ({ id, name }))}
+      cardGroups={cardGroups}
       baskets={baskets}
     />
   );

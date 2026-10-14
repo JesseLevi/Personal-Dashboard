@@ -18,13 +18,15 @@ export interface PlanChoicesProps {
   onPlanned: (plannedOn: string, slot: MealSlot) => void;
   /** Rendered as the first row, e.g. a back button when this replaces another menu. */
   header?: ReactNode;
+  /** Show the moment select. Off for things without a moment, such as cards; `onPlan` then gets the default moment. */
+  showSlot?: boolean;
 }
 
 /**
  * The rows of a "Plannen" menu: moment, today, tomorrow, the days after, and any other date.
  * Meant to sit inside a labelless `Dropdown` popover. Contract: design/notes/PlanChoices.md.
  */
-export function PlanChoices({ today, onPlan, onPlanned, header }: PlanChoicesProps) {
+export function PlanChoices({ today, onPlan, onPlanned, header, showSlot = true }: PlanChoicesProps) {
   const t = useTranslations("components.planChoices");
   const tErrors = useTranslations("agenda.errors");
   const format = useFormatter();
@@ -53,14 +55,16 @@ export function PlanChoices({ today, onPlan, onPlanned, header }: PlanChoicesPro
   return (
     <>
       {header}
-      <InputField
-        id="plan-choices-slot"
-        label={t("momentLabel")}
-        options={slotOptions}
-        trailingIcon="ChevronDown"
-        value={slot}
-        onChange={(event) => setSlot(event.target.value as MealSlot)}
-      />
+      {showSlot && (
+        <InputField
+          id="plan-choices-slot"
+          label={t("momentLabel")}
+          options={slotOptions}
+          trailingIcon="ChevronDown"
+          value={slot}
+          onChange={(event) => setSlot(event.target.value as MealSlot)}
+        />
+      )}
       {planDays(today).map((date, index) => (
         <Button key={date} variant="white" align="left" icon="Calendar" disabled={pending} onClick={() => void plan(date)}>
           {dayLabel(date, index)}

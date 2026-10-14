@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AgendaItem } from "@/lib/agenda/types";
 import type { AgendaView } from "@/lib/agenda/view";
 import {
+  AGENDA_TRAY_ATTRIBUTE,
   compareEventOrder,
   normalizeSpan,
   toEventInputs,
@@ -41,13 +42,18 @@ export interface AgendaExternalDrop {
 const EVENT_ID_ATTRIBUTE = "data-agenda-event-id";
 
 // A drop is reported per date; the event under the pointer is found in the DOM.
-function eventIdAtPoint(event: Event): string | undefined {
+function elementsAtPoint(event: Event): Element[] {
   const pointer = "changedTouches" in event ? (event as TouchEvent).changedTouches[0] : (event as MouseEvent);
-  if (!pointer) return undefined;
-  const hit = document
-    .elementsFromPoint(pointer.clientX, pointer.clientY)
-    .find((el) => el.hasAttribute(EVENT_ID_ATTRIBUTE));
+  return pointer ? document.elementsFromPoint(pointer.clientX, pointer.clientY) : [];
+}
+
+function eventIdAtPoint(event: Event): string | undefined {
+  const hit = elementsAtPoint(event).find((el) => el.hasAttribute(EVENT_ID_ATTRIBUTE));
   return hit?.getAttribute(EVENT_ID_ATTRIBUTE) ?? undefined;
+}
+
+function isOverTray(event: Event): boolean {
+  return elementsAtPoint(event).some((el) => el.hasAttribute(AGENDA_TRAY_ATTRIBUTE));
 }
 
 export interface AgendaCalendarProps {
@@ -61,6 +67,8 @@ export interface AgendaCalendarProps {
   onItemMove?: (change: AgendaChange, revert: () => void) => void;
   onItemResize?: (change: AgendaChange, revert: () => void) => void;
   onExternalDrop?: (drop: AgendaExternalDrop) => void;
+  /** An item from the grid was dropped on the plan drawer (an element with `AGENDA_TRAY_ATTRIBUTE`). */
+  onItemDropOut?: (item: AgendaItem) => void;
   className?: string;
 }
 
@@ -110,6 +118,7 @@ export function AgendaCalendar({
   onItemMove,
   onItemResize,
   onExternalDrop,
+  onItemDropOut,
   className,
 }: AgendaCalendarProps) {
   const t = useTranslations("components.agendaCalendar");
@@ -220,6 +229,10 @@ export function AgendaCalendar({
     },
     select: (info) => onSelectSlot?.(normalizeSpan({ start: info.startStr, end: info.endStr, allDay: info.allDay })),
     eventClick: (info) => onItemClick?.(itemOf(info.event), info.el),
+    eventDragStop: (info) => {
+      const item = itemOf(info.event) as AgendaItem | undefined;
+      if (item && isOverTray(info.jsEvent)) onItemDropOut?.(item);
+    },
     eventDrop: handleMove,
     eventResize: handleResize,
     drop: (info) => {

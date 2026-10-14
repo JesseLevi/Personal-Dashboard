@@ -8,6 +8,8 @@ import { CardContentTicket } from "@/components/molecules/CardContentTicket";
 import { Tag } from "@/components/atoms/Tag";
 import { isIconName } from "@/components/atoms/Icon";
 import { isPriority } from "@/lib/boards/enums";
+import { plannedLabelStyle } from "@/lib/agenda/plan-cards";
+import { todayInAgendaZone } from "@/lib/agenda/time";
 import { applyCardMove, type CardMove } from "@/lib/boards/optimistic";
 import type { BoardWithColumns, CardWithLabels } from "@/lib/boards/types";
 import { blurInTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
@@ -123,6 +125,15 @@ export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProp
       });
   }
 
+  // Within the coming week the weekday ("za"), later the day and month.
+  const today = todayInAgendaZone();
+  function plannedLabel(plannedFor: string) {
+    const day = new Date(`${plannedFor}T00:00:00Z`);
+    return plannedLabelStyle(plannedFor, today) === "weekday"
+      ? format.dateTime(day, { weekday: "short", timeZone: "UTC" })
+      : format.dateTime(day, { day: "numeric", month: "short", timeZone: "UTC" });
+  }
+
   const columns: BoardColumn<CardWithLabels>[] = localBoard.columns.map((column) => ({
     id: column.id,
     name: column.name,
@@ -180,7 +191,11 @@ export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProp
         renderItem={(card) => {
           const priority = isPriority(card.priority) ? card.priority : "medium";
           return (
-            <CardContentTicket title={card.title}>
+            <CardContentTicket
+              title={card.title}
+              plannedLabel={card.planned_for ? plannedLabel(card.planned_for) : undefined}
+              plannedCaption={t("plannedCaption")}
+            >
               <Tag variant={priority}>{tPriority(priority)}</Tag>
               {card.size && <Tag variant="neutral">{card.size.toUpperCase()}</Tag>}
               {card.due_at && (

@@ -3,6 +3,7 @@
 // design: Claude-designed (#487)
 import { useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
+import { AGENDA_TRAY_ATTRIBUTE } from "@/lib/ui/agenda-calendar";
 import { cn } from "@/lib/ui/cn";
 import { ButtonToggle } from "../molecules/ButtonToggle";
 
@@ -29,6 +30,7 @@ export function PlanDrawer({ recipes, cards, defaultTab = "recipes", className }
   return (
     <section
       aria-label={t("label")}
+      {...{ [AGENDA_TRAY_ATTRIBUTE]: "" }}
       className={cn(
         "flex min-h-0 flex-col gap-stack-md rounded-card border border-stroke-primary bg-surface-highlight-white p-component-sm",
         className,

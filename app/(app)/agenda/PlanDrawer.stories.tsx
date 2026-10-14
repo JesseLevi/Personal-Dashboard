@@ -2,6 +2,8 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { PlanDrawer } from "@/components/organisms/PlanDrawer";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import nl from "@/messages/nl.json";
+import type { PlanCardGroup } from "@/lib/agenda/plan-cards";
+import { PlanCardList } from "./PlanCardList";
 import { PlanRecipeList } from "./PlanRecipeList";
 
 const recipe = (id: string, title: string, categoryId: string, timeMinutes: number | null): PlanRecipe => ({
@@ -36,6 +38,30 @@ const List = () => (
   <PlanRecipeList recipes={recipes} categories={categories} today="2026-01-01" onPlan={noPlan} onPlanned={() => {}} />
 );
 
+const cardGroups: PlanCardGroup[] = [
+  {
+    boardId: "b1",
+    boardName: "Thuis",
+    cards: [
+      { id: "c1", title: "Tuinmeubels schoonmaken", columnName: "Bezig", plannedFor: "2026-01-03" },
+      { id: "c2", title: "Garage opruimen", columnName: "Ideeën", plannedFor: null },
+      { id: "c3", title: "Rookmelders vervangen", columnName: "Klaar", plannedFor: null },
+    ],
+  },
+  {
+    boardId: "b2",
+    boardName: "Werk",
+    cards: [
+      { id: "c4", title: "Kwartaalrapport afmaken", columnName: "Bezig", plannedFor: null },
+      { id: "c5", title: "Offertes opvragen voor het reinigen van de dakgoot", columnName: "Ideeën", plannedFor: null },
+    ],
+  },
+];
+
+const Cards = ({ groups = cardGroups }: { groups?: PlanCardGroup[] }) => (
+  <PlanCardList groups={groups} today="2026-01-01" onPlan={noPlan} onPlanned={() => {}} />
+);
+
 // Same footprint as the page's drawer column.
 const Column = ({ children }: { children: ReactNode }) => <div className="h-[40rem] w-80">{children}</div>;
 
@@ -47,7 +73,13 @@ export const Recipes = () => (
 
 export const CardsTabEmpty = () => (
   <Column>
-    <PlanDrawer className="h-full" recipes={<List />} defaultTab="cards" />
+    <PlanDrawer className="h-full" recipes={<List />} cards={<Cards groups={[]} />} defaultTab="cards" />
+  </Column>
+);
+
+export const CardsTab = () => (
+  <Column>
+    <PlanDrawer className="h-full" recipes={<List />} cards={<Cards />} defaultTab="cards" />
   </Column>
 );
 
@@ -71,6 +103,21 @@ export const PlanMenuOpen = () => {
   return (
     <div ref={ref} className="h-[40rem] w-80">
       <PlanDrawer className="h-full" recipes={<List />} />
+    </div>
+  );
+};
+
+const planCardLabel = nl.components.planDrawer.planCardLabel.replace("{name}", "Tuinmeubels schoonmaken");
+
+// Clicks the first card's plan button once on mount: day choices without a moment.
+export const CardsPlanMenuOpen = () => {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.querySelector<HTMLButtonElement>(`button[aria-label="${planCardLabel}"]`)?.click();
+  }, []);
+  return (
+    <div ref={ref} className="h-[40rem] w-80">
+      <PlanDrawer className="h-full" recipes={<List />} cards={<Cards />} defaultTab="cards" />
     </div>
   );
 };

@@ -281,6 +281,7 @@
       "unauthenticated": "Sign in again to continue.",
       "not-found": "This item no longer exists or isn't yours.",
       "column-mismatch": "This column doesn't belong to this board.",
+      "read-only": "You can't change this card.",
       "generic": "Something went wrong. Please try again."
     },
     "priority": {
@@ -331,7 +332,8 @@
     "cardContainer": {
       "addLabel": "Add",
       "editLabel": "Edit",
-      "addItemLabel": "Add item"
+      "addItemLabel": "Add item",
+      "plannedCaption": "Planned for"
     },
     "cardContentRecipe": {
       "durationMinutes": "{minutes} min"
@@ -451,7 +453,9 @@
         "sizeLabel": "Size",
         "sizePlaceholder": "No size",
         "dateLabel": "Date",
-        "datePlaceholder": "Add date"
+        "datePlaceholder": "Add date",
+        "plannedLabel": "Planned for",
+        "plannedPlaceholder": "Add day"
       },
       "saveLabel": "Save",
       "savingLabel": "Saving...",
@@ -1101,7 +1105,13 @@
         "recipes": "Recipes",
         "cards": "Cards"
       },
-      "cardsEmpty": "Cards you can plan will appear here.",
+      "cardsEmpty": "You have no open cards to plan.",
+      "cardsSearchLabel": "Search cards",
+      "cardsSearchPlaceholder": "Search cards",
+      "cardsDragHint": "Drag a card to a day in the agenda. Dragging a planned item back here clears its day.",
+      "noCards": "No cards found.",
+      "planCardLabel": "Plan {name}",
+      "cardPlannedOn": "{column} · planned for {date}",
       "searchLabel": "Search recipes",
       "searchPlaceholder": "Search recipes",
       "searchClearLabel": "Clear search",
@@ -1156,7 +1166,7 @@
       "invalid-input": "Check the information you entered.",
       "unauthenticated": "Sign in again to continue.",
       "not-found": "This event no longer exists or isn't yours.",
-      "read-only": "This event is read-only and can't be changed.",
+      "read-only": "This item is read-only and can't be changed.",
       "generic": "Something went wrong. Please try again.",
       "already-linked": "This is already linked to this event.",
       "forbidden": "You can't link this to this event.",
@@ -1170,6 +1180,8 @@
     },
     "plan": {
       "plannedNotice": "Planned for {slot} on {date}",
+      "cardPlannedNotice": "{title} planned for {date}",
+      "cardClearedNotice": "{title} is no longer on the agenda",
       "slots": {
         "breakfast": "breakfast",
         "lunch": "lunch",

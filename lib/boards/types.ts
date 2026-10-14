@@ -22,6 +22,7 @@ export type BoardsErrorCode =
   | "unauthenticated"
   | "not-found"
   | "column-mismatch"
+  | "read-only"
   | "generic";
 
 export type ActionResult<T = undefined> =

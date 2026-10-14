@@ -80,7 +80,7 @@ export async function getBoardWithColumns(
         id, user_id, board_id, name, icon, position, created_at, updated_at,
         cards (
           id, user_id, column_id, title, description, priority, size,
-          due_at, position, source, created_at, updated_at,
+          due_at, planned_for, position, source, created_at, updated_at,
           card_labels ( label:labels ( id, user_id, board_id, name, created_at, updated_at ) )
         )
       )

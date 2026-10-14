@@ -96,6 +96,17 @@ export function CardDetailPanel({
         })
       : "",
   );
+  // planned_for is a plain date: shown in UTC so the stored day never shifts with the browser zone.
+  const plannedText = (value: string | null | undefined) =>
+    value
+      ? format.dateTime(new Date(`${value}T00:00:00Z`), {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          timeZone: "UTC",
+        })
+      : "";
+  const [plannedForText, setPlannedForText] = useState(() => plannedText(card?.planned_for));
   const { confirming: deleteConfirming, ask: askDelete, cancel: cancelDelete } = useDeleteConfirm();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -153,6 +164,7 @@ export function CardDetailPanel({
             })
           : "",
       );
+      setPlannedForText(plannedText(card?.planned_for));
       cancelDelete();
       setError(null);
     }
@@ -175,12 +187,14 @@ export function CardDetailPanel({
   function buildFieldPayload() {
     const trimmedDescription = description.trim();
     const trimmedDueAt = dueAtText.trim();
+    const trimmedPlannedFor = plannedForText.trim();
     return {
       title: title.trim(),
       description: trimmedDescription === "" ? null : trimmedDescription,
       priority,
       size,
       dueAt: trimmedDueAt === "" ? null : trimmedDueAt,
+      plannedFor: trimmedPlannedFor === "" ? null : trimmedPlannedFor,
     };
   }
 
@@ -397,6 +411,15 @@ export function CardDetailPanel({
         placeholder={t("fields.datePlaceholder")}
         value={dueAtText}
         onChange={(event) => setDueAtText(event.target.value)}
+      />
+      <InputField
+        label={t("fields.plannedLabel")}
+        id="card-detail-planned-for"
+        leadingIcon="Calendar"
+        trailingIcon="Pencil"
+        placeholder={t("fields.plannedPlaceholder")}
+        value={plannedForText}
+        onChange={(event) => setPlannedForText(event.target.value)}
       />
       {card && agendaEvents?.cardId === card.id && <EventLinkLine events={agendaEvents.events} />}
       {error && <p className="text-base font-semibold text-priority-urgent">{error}</p>}
