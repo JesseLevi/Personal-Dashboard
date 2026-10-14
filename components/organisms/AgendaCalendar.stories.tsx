@@ -194,7 +194,7 @@ export const ExternalDrag = () => {
           view="week"
           date={DATE}
           onExternalDrop={(drop) => {
-            setLog(`${drop.payload.type}:${drop.payload.id} @ ${drop.start} allDay=${drop.allDay}`);
+            setLog(`${drop.payload.type}:${drop.payload.id} @ ${drop.start} allDay=${drop.allDay}${drop.eventId ? ` event=${drop.eventId}` : ""}`);
             setItems((current) => [
               ...current,
               {

@@ -190,8 +190,9 @@ export function AgendaCalendar({
     events,
     eventOrder: (a: unknown, b: unknown) => compareEventOrder(a as EventOrderSubject, b as EventOrderSubject),
     eventDidMount: (info) => {
-      const item = itemOf(info.event);
-      if (item.kind === "event") info.el.setAttribute(EVENT_ID_ATTRIBUTE, item.id);
+      // Drag mirrors of external items carry no agenda item.
+      const item = itemOf(info.event) as AgendaItem | undefined;
+      if (item?.kind === "event") info.el.setAttribute(EVENT_ID_ATTRIBUTE, item.id);
     },
     editable: true,
     selectable: true,

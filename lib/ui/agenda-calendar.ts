@@ -42,30 +42,36 @@ export function toEventInput(item: AgendaItem): AgendaEventInput {
   };
 }
 
-/** The slice of FullCalendar's event the ordering reads. */
+/**
+ * What FullCalendar hands the `eventOrder` function: a flat object of the
+ * event's extended props (so `item`) plus `start` and `duration` in
+ * milliseconds and `allDay` as 0 or 1.
+ */
 export interface EventOrderSubject {
-  allDay: boolean;
-  startStr: string;
-  title: string;
-  extendedProps: Record<string, unknown>;
+  allDay: number | boolean;
+  start: number;
+  duration: number;
+  title?: string;
+  item?: unknown;
 }
 
 const ALL_DAY_KIND_ORDER: Record<AgendaItem["kind"], number> = { deadline: 0, planned_card: 1, event: 2, meal: 3 };
 
 /**
  * Order inside one day: all-day items first (deadlines, planned cards, events,
- * then meals by moment and position), timed items by start.
+ * then meals by moment and position), then by start, longest first, and title.
  */
 export function compareEventOrder(a: EventOrderSubject, b: EventOrderSubject): number {
-  if (a.allDay !== b.allDay) return a.allDay ? -1 : 1;
-  const itemA = a.extendedProps.item as AgendaItem | undefined;
-  const itemB = b.extendedProps.item as AgendaItem | undefined;
-  if (a.allDay && itemA && itemB) {
+  const allDay = Boolean(a.allDay);
+  if (allDay !== Boolean(b.allDay)) return allDay ? -1 : 1;
+  const itemA = a.item as AgendaItem | undefined;
+  const itemB = b.item as AgendaItem | undefined;
+  if (allDay && itemA && itemB) {
     const byKind = ALL_DAY_KIND_ORDER[itemA.kind] - ALL_DAY_KIND_ORDER[itemB.kind];
     if (byKind !== 0) return byKind;
     if (itemA.kind === "meal" && itemB.kind === "meal") return compareMeals(itemA, itemB);
   }
-  return a.startStr.localeCompare(b.startStr) || a.title.localeCompare(b.title);
+  return a.start - b.start || b.duration - a.duration || (a.title ?? "").localeCompare(b.title ?? "");
 }
 
 export function toEventInputs(items: AgendaItem[]): AgendaEventInput[] {

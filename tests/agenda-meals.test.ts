@@ -186,19 +186,26 @@ describe("filterPlanRecipes", () => {
 });
 
 describe("compareEventOrder", () => {
-  const subject = (over: Partial<EventOrderSubject> & { item?: unknown }): EventOrderSubject => ({
-    allDay: true,
-    startStr: "2026-10-14",
+  const subject = (over: Partial<EventOrderSubject>): EventOrderSubject => ({
+    allDay: 1,
+    start: Date.UTC(2026, 9, 14),
+    duration: 0,
     title: "T",
-    extendedProps: { item: over.item },
     ...over,
   });
   const meal = (slot: string, position: number, title = "T") =>
     subject({ title, item: { kind: "meal", slot, position, title } });
 
   it("puts all-day items before timed ones", () => {
-    const timed = subject({ allDay: false, startStr: "2026-10-14T09:00:00", item: { kind: "event" } });
+    const timed = subject({ allDay: 0, start: Date.UTC(2026, 9, 14, 9), item: { kind: "event" } });
     expect(compareEventOrder(meal("dinner", 1000), timed)).toBeLessThan(0);
+  });
+
+  it("orders timed items by start, then longest first", () => {
+    const early = subject({ allDay: 0, start: 1, duration: 10, title: "early" });
+    const late = subject({ allDay: 0, start: 2, duration: 99, title: "late" });
+    const longEarly = subject({ allDay: 0, start: 1, duration: 50, title: "long" });
+    expect([late, early, longEarly].sort(compareEventOrder).map((s) => s.title)).toEqual(["long", "early", "late"]);
   });
 
   it("groups meals per moment, then by position, after events", () => {
