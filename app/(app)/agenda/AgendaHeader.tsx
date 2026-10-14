@@ -3,9 +3,12 @@
 
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
+import { AnimatedAddToBasketButton } from "@/components/molecules/AnimatedAddToBasketButton";
 import { ButtonToggle, type ButtonToggleItem } from "@/components/molecules/ButtonToggle";
 import { PageHeader } from "@/components/organisms/PageHeader";
 import type { AgendaView } from "@/lib/agenda/view";
+import type { BasketOption } from "@/lib/shopping/baskets";
+import type { ActionResult } from "@/lib/shopping/types";
 
 // The toggle offers four choices; `threeDay` is only what `week` becomes on a phone.
 export type AgendaToggleView = Exclude<AgendaView, "threeDay">;
@@ -32,9 +35,23 @@ export interface AgendaHeaderProps {
   onToday: () => void;
   /** Opens the calendars panel; the settings button is hidden without it. */
   onOpenCalendars?: () => void;
+  /** "Week naar mand": sends the visible week's unsent meals. Omitted: no button. */
+  weekToBasket?: {
+    onSend: (listId?: string) => Promise<ActionResult>;
+    baskets: BasketOption[];
+  };
 }
 
-export function AgendaHeader({ title, view, onViewChange, onPrevious, onNext, onToday, onOpenCalendars }: AgendaHeaderProps) {
+export function AgendaHeader({
+  title,
+  view,
+  onViewChange,
+  onPrevious,
+  onNext,
+  onToday,
+  onOpenCalendars,
+  weekToBasket,
+}: AgendaHeaderProps) {
   const t = useTranslations("components.pageHeader.agenda");
   const items = VIEW_ITEMS.map((item) => ({ ...item, label: t(`views.${item.value}`) }));
 
@@ -45,6 +62,16 @@ export function AgendaHeader({ title, view, onViewChange, onPrevious, onNext, on
       actions={
         <div className="contents">
           <div className="flex items-center gap-inline-sm ml-auto md:mr-inline-xl">
+            {weekToBasket && (
+              <AnimatedAddToBasketButton
+                label={t("weekToBasketLabel")}
+                shortLabel={t("weekToBasketShortLabel")}
+                addedLabel={t("weekToBasketAddedLabel")}
+                onAddToBasket={weekToBasket.onSend}
+                baskets={weekToBasket.baskets}
+                chooseBasketLabel={t("chooseBasketLabel")}
+              />
+            )}
             <Button onClick={onToday}>{t("todayLabel")}</Button>
             <Button icon="ArrowLeft" aria-label={t("previousLabel")} onClick={onPrevious} />
             <Button icon="ArrowRight" aria-label={t("nextLabel")} onClick={onNext} />
