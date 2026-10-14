@@ -56,6 +56,8 @@ export const sendRecipeToShoppingListSchema = z.object({
   listId,
   recipeId: z.uuid(),
   targetPortions: z.int().positive(),
+  /** The Agenda meal plan the lines come from (`shopping_list_items.meal_plan_id`). */
+  mealPlanId: z.uuid().optional(),
 });
 
 // #179 part 2: the swipe-to-cart single-ingredient add -- same shape as

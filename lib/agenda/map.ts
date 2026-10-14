@@ -80,6 +80,16 @@ function allDaySpan(startsAt: string, endsAt: string | null) {
   return { start, end: end !== null && end > start ? end : null };
 }
 
+/** The `meal_plans.position` default; the query layer replaces it with the stored value. */
+export const DEFAULT_MEAL_POSITION = 1000;
+
+/** A meal is a day-level item: all-day on its date, or on the date of the event it is attached to. */
+function mealDay(row: AgendaRow, timeZone: string) {
+  if (row.planned_on) return { start: row.planned_on, end: null, allDay: true };
+  const startsAt = requireValue(row.starts_at, "starts_at");
+  return { start: localDate(startsAt, row.all_day ? "UTC" : timeZone), end: null, allDay: true };
+}
+
 export function mapAgendaRow(row: AgendaRow, timeZone: string): AgendaItem {
   const base = { id: row.id, title: row.title, linkCount: row.link_count };
 
@@ -108,11 +118,13 @@ export function mapAgendaRow(row: AgendaRow, timeZone: string): AgendaItem {
     case "meal":
       return {
         ...base,
-        ...timeOf(),
+        ...mealDay(row, timeZone),
         kind: "meal",
         slot: requireValue(row.slot, "slot"),
         servings: requireValue(row.servings, "servings"),
         thumbnailPath: row.thumbnail_path,
+        attached: row.planned_on === null,
+        position: DEFAULT_MEAL_POSITION,
       };
     case "planned_card":
       return {

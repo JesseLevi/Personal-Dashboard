@@ -10,6 +10,7 @@ export type AgendaErrorCode =
   | "read-only"
   | "already-linked"
   | "forbidden"
+  | "nothing-to-send"
   | "generic";
 
 export type AgendaActionResult<T = undefined> =
@@ -50,6 +51,36 @@ export const updateEventSchema = eventFieldsSchema.extend({ id: z.uuid() }).refi
 export const moveEventSchema = span.extend({ id: z.uuid() }).refine(spanIsValid);
 
 export const eventIdSchema = z.object({ id: z.uuid() });
+
+const mealSlot = z.enum(["breakfast", "lunch", "dinner", "snack"]);
+
+// A meal plan sits on a day or on an event, never both (the table's check constraint).
+export const createMealSchema = z
+  .object({
+    recipeId: z.uuid(),
+    plannedOn: date.optional(),
+    calendarEventId: z.uuid().optional(),
+    slot: mealSlot.default("dinner"),
+    servings: z.int().positive().max(999).optional(),
+  })
+  .refine((v) => (v.plannedOn === undefined) !== (v.calendarEventId === undefined));
+
+export const updateMealSchema = z
+  .object({
+    id: z.uuid(),
+    slot: mealSlot.optional(),
+    servings: z.int().positive().max(999).optional(),
+    plannedOn: date.optional(),
+  })
+  .refine((v) => v.slot !== undefined || v.servings !== undefined || v.plannedOn !== undefined);
+
+export const mealIdSchema = z.object({ id: z.uuid() });
+
+export const sendMealSchema = z.object({ id: z.uuid(), listId: z.uuid().optional() });
+
+export const sendWeekSchema = z
+  .object({ from: date, to: date, listId: z.uuid().optional() })
+  .refine((v) => v.from < v.to);
 
 export const rangeSchema = z
   .object({ from: date, to: date })

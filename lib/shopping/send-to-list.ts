@@ -121,6 +121,34 @@ export function buildShoppingListLines<T extends SendToListIngredient>(
   return order.map((key) => byKey.get(key)!);
 }
 
+/** A line to merge, tagged with where it came from (e.g. a meal plan id). */
+export interface TaggedShoppingListLine<Tag> extends ShoppingListLine {
+  tag: Tag;
+}
+
+/**
+ * Merges already-scaled lines from several sources (the meals of a week) by
+ * the same name-and-unit rule as `buildShoppingListLines`. A merged line keeps
+ * the tag of its first-seen contributor. Order-preserving.
+ */
+export function mergeShoppingListLines<Tag>(
+  lines: readonly TaggedShoppingListLine<Tag>[],
+): TaggedShoppingListLine<Tag>[] {
+  const order: string[] = [];
+  const byKey = new Map<string, TaggedShoppingListLine<Tag>>();
+  for (const line of lines) {
+    const key = mergeKey(line.name, line.unit);
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, { ...line });
+      order.push(key);
+      continue;
+    }
+    existing.quantity = mergeQuantities(existing.quantity, line.quantity);
+  }
+  return order.map((key) => byKey.get(key)!);
+}
+
 /**
  * #179 part 2: the swipe-to-cart single-ingredient add (app/(app)/winkelmand/
  * actions.ts's `addIngredientToShoppingList`). Scales one recipe ingredient

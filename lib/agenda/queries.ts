@@ -47,5 +47,20 @@ export async function getAgendaItems(input: {
     console.error("[agenda] getAgendaItems failed:", error.code, error.message);
     throw new Error("Failed to load agenda");
   }
-  return mapAgendaRows(data, timeZone);
+  return withMealPositions(supabase, mapAgendaRows(data, timeZone));
+}
+
+type Supabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
+// The timeline function carries no `position`, so meals get it in one extra read.
+async function withMealPositions(supabase: Supabase, items: AgendaItem[]): Promise<AgendaItem[]> {
+  const ids = items.filter((item) => item.kind === "meal").map((item) => item.id);
+  if (ids.length === 0) return items;
+  const { data, error } = await supabase.from("meal_plans").select("id, position").in("id", ids);
+  if (error) {
+    console.error("[agenda] meal positions failed:", error.code, error.message);
+    return items;
+  }
+  const positions = new Map(data.map((row) => [row.id, row.position]));
+  return items.map((item) => (item.kind === "meal" ? { ...item, position: positions.get(item.id) ?? item.position } : item));
 }
