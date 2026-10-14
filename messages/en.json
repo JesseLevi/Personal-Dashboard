@@ -935,6 +935,28 @@
       "leaveConfirmLabel": "Are you sure? You will no longer see this basket or its items unless you are invited again.",
       "leaveConfirmButtonLabel": "Yes, leave",
       "leavingLabel": "Leaving..."
+    },
+    "agendaCalendar": {
+      "label": "Agenda",
+      "allDay": "All day",
+      "moreLink": "+{count} more",
+      "noItems": "Nothing planned",
+      "slots": {
+        "breakfast": "Breakfast",
+        "lunch": "Lunch",
+        "dinner": "Dinner",
+        "snack": "Snack"
+      },
+      "kinds": {
+        "event": "Event",
+        "sync": "Imported event",
+        "meal": "Meal",
+        "planned_card": "Planned card",
+        "deadline": "Deadline"
+      },
+      "servings": "{count, plural, one {# serving} other {# servings}}",
+      "missingFromSource": "Removed at source",
+      "links": "{count, plural, one {# link} other {# links}}"
     }
   }
 }
