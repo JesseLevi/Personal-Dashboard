@@ -473,10 +473,8 @@ export function RecipePanel({
             id="recipe-panel-category"
             defaultOpen={false}
           >
-            {/* Same trigger pattern as CardDetailPanel.tsx's Status Dropdown
-                (a filled Button doubling as the disclosure trigger, #100) —
-                least-inventive reuse for "select an entity with an icon". */}
-            <Button variant="filled" icon={categoryIconOrFallback(selectedCategory.icon)} align="left">
+            {/* Presentational pill: Dropdown's own button is the trigger. */}
+            <Button presentational variant="filled" icon={categoryIconOrFallback(selectedCategory.icon)} align="left">
               {selectedCategory.name}
             </Button>
             {otherCategories.map((category) => (

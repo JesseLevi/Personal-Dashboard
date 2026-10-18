@@ -44,12 +44,6 @@ No loading frame for the note editor; `NoteEditorSkeleton` renders only the iner
 
 `semantic.duration.base` (200ms) and `semantic.easing.base` are this codebase's own defaults (frame `3859:6647` has no timing). Needs ratification; `Dropdown` grid-rows and `ButtonToggle` track still hardcode `duration-200 ease-out`.
 
-### dropdown-row-not-fully-clickable
-
-**Product call.** #108 asked for the whole Status/Prioriteit/Grootte row to open; only the pill is a target (chevron decorative, as in Figma). A clickable row means nested buttons or a `role="button"` wrapper (ARIA anti-patterns). Decide: accept pill-only, or make `Dropdown` own the one button.
-
-## Recepten
-
 ### step-rows-no-delete-reorder
 
 **Product call.** Ingredient rows have a delete (#166); steps have no delete or reorder (`3717:2844`, `4025:10628`), so a step cannot be removed once added. Decide: add controls (Claude designs) or steps are immutable.
@@ -169,3 +163,4 @@ TOC rail (#342) is Claude-designed on request. Untokenised: rail width (`w-44`),
 - `notes-link-chip-undesigned`, `notes-editingbar-mobile-image-button-out-of-scope`
 - `winkelmand-clear-all-no-confirmation`
 - `notes-delete-has-no-confirmation`
+- `dropdown-row-not-fully-clickable`
