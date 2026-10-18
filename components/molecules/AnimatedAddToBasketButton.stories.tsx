@@ -1,4 +1,5 @@
 // figma: node-id=4051:12960
+import { Button } from "../atoms/Button";
 import { AnimatedAddToBasketButton } from "./AnimatedAddToBasketButton";
 import type { ActionResult } from "@/lib/shopping/types";
 import en from "../../messages/en.json";
@@ -119,5 +120,28 @@ export const BasketPopoverIconOnly = () => (
       defaultChoosing
       onAddToBasket={succeeds}
     />
+  </div>
+);
+
+// The recipe header row: short label below `md`, icon only at 400px and
+// narrower so the row stays on one line down to 320px (viewport media
+// queries, so the static baseline shows the wide frame; the narrow frames
+// are checked in the browser).
+export const RecipeHeader = () => (
+  <div className="flex w-full items-center justify-between gap-4">
+    <Button icon="ArrowLeft" aria-label={en.components.recipeDetailPage.backLabel} />
+    <div className="flex flex-wrap items-center justify-end gap-4">
+      <AnimatedAddToBasketButton
+        label={nl.components.recipeDetailPage.addToBasketLabel}
+        shortLabel={nl.components.recipeDetailPage.addToBasketShortLabel}
+        iconOnlyBelow400
+        addedLabel={nl.components.recipeDetailPage.addedToBasketLabel}
+        onAddToBasket={succeeds}
+      />
+      <Button variant="filled" icon="Share" aria-label={en.components.recipeDetailPage.shareLabel}>
+        <span className="hidden md:inline">{en.components.recipeDetailPage.shareLabel}</span>
+      </Button>
+      <Button icon="Ellipsis" aria-label={en.components.recipeDetailPage.overflowMenuLabel} />
+    </div>
   </div>
 );

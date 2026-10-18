@@ -27,22 +27,35 @@ import type { ActionResult } from "@/lib/shopping/types";
  */
 const REVERT_MS = 2000;
 
+// Literal class strings so Tailwind can see them.
+const BREAKPOINT_CLASSES = {
+  md: { short: "md:hidden", long: "hidden md:inline", hug: "max-md:absolute max-md:top-0 max-md:left-0" },
+  lg: { short: "lg:hidden", long: "hidden lg:inline", hug: "max-lg:absolute max-lg:top-0 max-lg:left-0" },
+} as const;
+
 function Face({
   icon,
   label,
   shortLabel,
+  shortBelow,
+  hug,
+  hideLabel,
   hidden,
 }: {
   icon: IconName;
   label?: string;
   shortLabel?: string;
+  shortBelow: "md" | "lg";
+  hug: boolean;
+  hideLabel: boolean;
   hidden: boolean;
 }) {
+  const classes = BREAKPOINT_CLASSES[shortBelow];
   return (
     <span
       aria-hidden={hidden || undefined}
       className={cn(
-        "col-start-1 row-start-1 flex items-center gap-inline-sm transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+        "col-start-1 row-start-1 flex items-center gap-inline-sm whitespace-nowrap transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
         icon === "Check"
           ? hidden
             ? "translate-y-full"
@@ -50,18 +63,23 @@ function Face({
           : hidden
             ? "-translate-y-full"
             : "translate-y-0",
+        // With a short label, the hidden face leaves the flow below the breakpoint so the button hugs the visible face.
+        hug && hidden && classes.hug,
       )}
     >
       <Icon name={icon} />
-      {label &&
-        (shortLabel ? (
-          <>
-            <span className="md:hidden">{shortLabel}</span>
-            <span className="hidden md:inline">{label}</span>
-          </>
-        ) : (
-          <span>{label}</span>
-        ))}
+      {label && (
+        <span className={cn("contents", hideLabel && "max-[400px]:hidden")}>
+          {shortLabel ? (
+            <>
+              <span className={classes.short}>{shortLabel}</span>
+              <span className={classes.long}>{label}</span>
+            </>
+          ) : (
+            <span>{label}</span>
+          )}
+        </span>
+      )}
     </span>
   );
 }
@@ -83,14 +101,20 @@ type AnimatedAddToBasketButtonBaseProps = Omit<
 export type AnimatedAddToBasketButtonProps =
   | (AnimatedAddToBasketButtonBaseProps & {
       label: string;
-      /** Shown instead of `label` below `md`. */
+      /** Shown instead of `label` below `shortLabelBelow`; the button then hugs the visible face there. */
       shortLabel?: string;
+      /** Breakpoint under which `shortLabel` shows. Default `md`. */
+      shortLabelBelow?: "md" | "lg";
+      /** At 400px and narrower only the icon shows; the button's accessible name becomes the current face's text (`label`, or `addedLabel` once added). */
+      iconOnlyBelow400?: boolean;
       addedLabel: string;
       "aria-label"?: never;
     })
   | (AnimatedAddToBasketButtonBaseProps & {
       label?: never;
       shortLabel?: never;
+      shortLabelBelow?: never;
+      iconOnlyBelow400?: never;
       addedLabel?: never;
       "aria-label": string;
     });
@@ -102,6 +126,8 @@ export function AnimatedAddToBasketButton({
   defaultChoosing = false,
   label,
   shortLabel,
+  shortLabelBelow = "md",
+  iconOnlyBelow400 = false,
   addedLabel,
   className,
   ...rest
@@ -172,6 +198,7 @@ export function AnimatedAddToBasketButton({
     <Button
       variant="filled"
       aria-expanded={choosing ? open : undefined}
+      aria-label={iconOnlyBelow400 ? (added ? addedLabel : label) : undefined}
       onClick={handleClick}
       className={cn(
         // `!`: Button's own base class already sets `transition-colors` --
@@ -187,8 +214,8 @@ export function AnimatedAddToBasketButton({
       {...rest}
     >
       <span className="relative inline-grid h-6 overflow-hidden">
-        <Face icon="ShoppingBasket" label={label} shortLabel={shortLabel} hidden={added} />
-        <Face icon="Check" label={addedLabel} hidden={!added} />
+        <Face icon="ShoppingBasket" label={label} shortLabel={shortLabel} shortBelow={shortLabelBelow} hug={!!shortLabel} hideLabel={iconOnlyBelow400} hidden={added} />
+        <Face icon="Check" label={addedLabel} shortBelow={shortLabelBelow} hug={!!shortLabel} hideLabel={iconOnlyBelow400} hidden={!added} />
       </span>
     </Button>
   );
