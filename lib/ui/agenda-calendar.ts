@@ -93,3 +93,30 @@ export function normalizeSpan(span: AgendaSpan): AgendaSpan {
 
 /** Marks the plan drawer: an item dragged from the grid and dropped on it is taken off the calendar. */
 export const AGENDA_TRAY_ATTRIBUTE = "data-agenda-tray";
+
+/** The time grid is one lane of `AGENDA_SLOTS_PER_DAY` slots per day (no min/max time). */
+export const AGENDA_SLOT_MINUTES = 30;
+export const AGENDA_SLOTS_PER_DAY = (24 * 60) / AGENDA_SLOT_MINUTES;
+
+export interface Box {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+}
+
+/** The slot of a day lane under a pointer: full lane width, one slot high. Clamped to the lane. */
+export function slotBox(lane: Box, pointerY: number, slots: number = AGENDA_SLOTS_PER_DAY): Box {
+  const height = lane.height / slots;
+  const index = Math.min(slots - 1, Math.max(0, Math.floor((pointerY - lane.top) / height)));
+  return { top: lane.top + index * height, left: lane.left, width: lane.width, height };
+}
+
+/** The part of `box` inside `clip`, or null when they do not overlap. */
+export function clipBox(box: Box, clip: Box): Box | null {
+  const top = Math.max(box.top, clip.top);
+  const left = Math.max(box.left, clip.left);
+  const bottom = Math.min(box.top + box.height, clip.top + clip.height);
+  const right = Math.min(box.left + box.width, clip.left + clip.width);
+  return bottom > top && right > left ? { top, left, width: right - left, height: bottom - top } : null;
+}
