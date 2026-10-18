@@ -66,3 +66,18 @@ export function buildContentsPayload(ingredients: IngredientRowState[], steps: S
       })),
   };
 }
+
+/**
+ * New list with the row at `index` moved one place (`-1` up, `1` down). The
+ * panel's array order IS the saved order: `replace_recipe_contents` numbers
+ * `recipe_steps.position` from the array index on every save, so no position
+ * math lives client-side. Out-of-range moves return the list unchanged.
+ */
+export function moveRow<T>(rows: readonly T[], index: number, delta: -1 | 1): T[] {
+  const target = index + delta;
+  if (index < 0 || index >= rows.length || target < 0 || target >= rows.length) return [...rows];
+  const next = [...rows];
+  const [moved] = next.splice(index, 1);
+  next.splice(target, 0, moved!);
+  return next;
+}

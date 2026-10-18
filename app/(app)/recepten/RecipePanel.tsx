@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { SidePanel } from "@/components/organisms/SidePanel";
 import { IngredientSearchPanel } from "@/components/organisms/IngredientSearchPanel";
@@ -16,6 +16,7 @@ import { UNIT_CODES, formatQuantity, magnitudeOf, type UnitCode } from "@/lib/re
 import {
   buildContentsPayload,
   keepsNeedsReview,
+  moveRow,
   type IngredientRowState,
   type StepRowState,
 } from "@/lib/recipes/panel-payload";
@@ -282,6 +283,32 @@ export function RecipePanel({
   function handleAddStepRow() {
     setSteps((current) => [...current, emptyStepRow()]);
   }
+
+  // Steps: delete and move up/down (ingredient-row delete pattern, #166). Saved
+  // order is the array order: replace_recipe_contents renumbers positions from
+  // the index on every save, so nothing else has to change.
+  function handleRemoveStepRow(localId: string) {
+    setSteps((current) => current.filter((row) => row.localId !== localId));
+  }
+
+  // A moved row's DOM node is reinserted, which drops focus in some browsers;
+  // restore it on the same direction button (or the other one at the ends).
+  const stepFocus = useRef<{ localId: string; direction: "up" | "down" } | null>(null);
+  function handleMoveStepRow(localId: string, direction: "up" | "down") {
+    stepFocus.current = { localId, direction };
+    setSteps((current) =>
+      moveRow(current, current.findIndex((row) => row.localId === localId), direction === "up" ? -1 : 1),
+    );
+  }
+  useEffect(() => {
+    const target = stepFocus.current;
+    if (!target) return;
+    stepFocus.current = null;
+    const byDirection = (direction: "up" | "down") =>
+      document.getElementById(`recipe-panel-step-${target.localId}-${direction}`) as HTMLButtonElement | null;
+    const preferred = byDirection(target.direction);
+    (preferred && !preferred.disabled ? preferred : byDirection(target.direction === "up" ? "down" : "up"))?.focus();
+  }, [steps]);
 
   const searchRow = ingredients.find((row) => row.localId === ingredientSearch.rowLocalId) ?? null;
   const activeStepIngredientRow =
@@ -562,40 +589,75 @@ export function RecipePanel({
             spacing/stack/stack-lg), this value would be a guess-from-number,
             not a measurement — design/notes/RecipePanel.md#219. */}
         <div className="flex w-full flex-col items-stretch gap-4">
-          {steps.map((row) => (
-            <InputField
-              key={row.localId}
-              id={`recipe-panel-step-${row.localId}`}
-              label={t("fields.stepLabel", { number: steps.indexOf(row) + 1 })}
-              multiline
-              placeholder={t("fields.stepPlaceholder")}
-              value={row.instruction}
-              onChange={(event) =>
-                setSteps((current) =>
-                  current.map((step) =>
-                    step.localId === row.localId
-                      ? { ...step, instruction: event.target.value }
-                      : step,
-                  ),
-                )
-              }
-              button={
-                // Opens StepIngredientPanel (#149, Figma 3749:3091/3749:3241)
-                // for this step — no longer `disabled`, the panel is built.
-                // Label grows a "(count)" suffix once a selection exists,
-                // this codebase's own judgement call (no Figma count badge
-                // exists on this pill) — see design/notes/RecipePanel.md.
+          {steps.map((row, index) => (
+            <div key={row.localId} className="flex w-full items-start gap-inline-sm">
+              <div className="min-w-0 flex-1">
+                <InputField
+                  id={`recipe-panel-step-${row.localId}`}
+                  label={t("fields.stepLabel", { number: index + 1 })}
+                  multiline
+                  placeholder={t("fields.stepPlaceholder")}
+                  value={row.instruction}
+                  onChange={(event) =>
+                    setSteps((current) =>
+                      current.map((step) =>
+                        step.localId === row.localId
+                          ? { ...step, instruction: event.target.value }
+                          : step,
+                      ),
+                    )
+                  }
+                  button={
+                    // Opens StepIngredientPanel (#149, Figma 3749:3091/3749:3241)
+                    // for this step — no longer `disabled`, the panel is built.
+                    // Label grows a "(count)" suffix once a selection exists,
+                    // this codebase's own judgement call (no Figma count badge
+                    // exists on this pill) — see design/notes/RecipePanel.md.
+                    <Button
+                      variant="filled"
+                      icon="Plus"
+                      onClick={() => setStepIngredientPanel({ open: true, stepLocalId: row.localId })}
+                    >
+                      {row.ingredientLocalIds.length > 0
+                        ? t("stepIngredientPillLabelWithCount", { count: row.ingredientLocalIds.length })
+                        : t("stepIngredientPillLabel")}
+                    </Button>
+                  }
+                />
+              </div>
+              {/* Controls column: the spacer consumes the label block the
+                  InputField draws above its box, so the buttons sit beside the
+                  box (same trick as RecipeIngredientRow's delete). */}
+              <div className="flex shrink-0 flex-col gap-stack-sm self-stretch">
+                <span aria-hidden="true" className="invisible text-base font-semibold">
+                  &nbsp;
+                </span>
                 <Button
-                  variant="filled"
-                  icon="Plus"
-                  onClick={() => setStepIngredientPanel({ open: true, stepLocalId: row.localId })}
-                >
-                  {row.ingredientLocalIds.length > 0
-                    ? t("stepIngredientPillLabelWithCount", { count: row.ingredientLocalIds.length })
-                    : t("stepIngredientPillLabel")}
-                </Button>
-              }
-            />
+                  id={`recipe-panel-step-${row.localId}-up`}
+                  icon="ArrowUp"
+                  aria-label={t("fields.moveStepUpLabel", { number: index + 1 })}
+                  className="disabled:opacity-40"
+                  onClick={() => handleMoveStepRow(row.localId, "up")}
+                  disabled={index === 0}
+                />
+                <Button
+                  id={`recipe-panel-step-${row.localId}-down`}
+                  icon="ArrowDown"
+                  aria-label={t("fields.moveStepDownLabel", { number: index + 1 })}
+                  className="disabled:opacity-40"
+                  onClick={() => handleMoveStepRow(row.localId, "down")}
+                  disabled={index === steps.length - 1}
+                />
+                <Button
+                  variant="destructive"
+                  icon="Trash"
+                  aria-label={t("fields.removeStepLabel", { number: index + 1 })}
+                  className="disabled:opacity-40"
+                  onClick={() => handleRemoveStepRow(row.localId)}
+                  disabled={steps.length <= 1}
+                />
+              </div>
+            </div>
           ))}
         </div>
         <Button variant="filled" icon="Plus" onClick={handleAddStepRow}>

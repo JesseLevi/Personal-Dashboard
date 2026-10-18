@@ -810,6 +810,9 @@
         "removeIngredientLabel": "Remove ingredient",
         "stepLabel": "Step {number}",
         "stepPlaceholder": "Type an instruction here...",
+        "removeStepLabel": "Remove step {number}",
+        "moveStepUpLabel": "Move step {number} up",
+        "moveStepDownLabel": "Move step {number} down",
         "needsReviewLabel": "check"
       },
       "addRowLabel": "Add",

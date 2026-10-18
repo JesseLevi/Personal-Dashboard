@@ -44,10 +44,6 @@ No loading frame for the note editor; `NoteEditorSkeleton` renders only the iner
 
 `semantic.duration.base` (200ms) and `semantic.easing.base` are this codebase's own defaults (frame `3859:6647` has no timing). Needs ratification; `Dropdown` grid-rows and `ButtonToggle` track still hardcode `duration-200 ease-out`.
 
-### step-rows-no-delete-reorder
-
-**Product call.** Ingredient rows have a delete (#166); steps have no delete or reorder (`3717:2844`, `4025:10628`), so a step cannot be removed once added. Decide: add controls (Claude designs) or steps are immutable.
-
 ### recipe-image-field-personen-label
 
 The image-upload field's Title reads "Personen" in both frames (`3968:11192` / `3953:9875`), a copy-paste artifact. `ImageUploadField` renders no visible label. Claude may add a label ("Afbeelding" / "Foto") when touched.
@@ -164,3 +160,4 @@ TOC rail (#342) is Claude-designed on request. Untokenised: rail width (`w-44`),
 - `winkelmand-clear-all-no-confirmation`
 - `notes-delete-has-no-confirmation`
 - `dropdown-row-not-fully-clickable`
+- `step-rows-no-delete-reorder`
