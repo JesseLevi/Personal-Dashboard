@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { itemKey } from "@/components/organisms/AgendaCalendarTheme";
 import type { AgendaItem } from "@/lib/agenda/types";
-import { itemEditability, normalizeSpan, toEventInput } from "@/lib/ui/agenda-calendar";
+import { clipBox, itemEditability, normalizeSpan, slotBox, slotForSingleSnap, toEventInput } from "@/lib/ui/agenda-calendar";
 
 const base = { id: "i1", title: "T", start: "2026-01-01T09:00:00", end: "2026-01-01T10:00:00", allDay: false, linkCount: 0 };
 
@@ -66,5 +66,42 @@ describe("itemKey", () => {
     expect(itemKey(meal)).toBe("meal");
     expect(itemKey(card)).toBe("planned_card");
     expect(itemKey(deadline)).toBe("deadline");
+  });
+});
+
+describe("slotForSingleSnap", () => {
+  const at = (h: number, m: number) => new Date(2026, 0, 1, h, m).toISOString();
+  const span = (start: string, end: string) => ({ start, end, allDay: false });
+
+  it("widens a one-snap click to the whole slot, floored", () => {
+    const r = slotForSingleSnap(span(at(8, 15), at(8, 30)), 15, 30);
+    expect(r?.start.getHours()).toBe(8);
+    expect(r?.start.getMinutes()).toBe(0);
+    expect(r && r.end.getTime() - r.start.getTime()).toBe(30 * 60_000);
+  });
+
+  it("leaves drags and all-day spans alone", () => {
+    expect(slotForSingleSnap(span(at(8, 15), at(8, 45)), 15, 30)).toBeNull();
+    expect(slotForSingleSnap({ start: "2026-01-01", end: "2026-01-02", allDay: true }, 15, 30)).toBeNull();
+  });
+});
+
+describe("slotBox and clipBox", () => {
+  const lane = { top: 100, left: 10, width: 150, height: 1200 };
+
+  it("snaps the pointer to its 30-minute slot at full lane width", () => {
+    expect(slotBox(lane, 100)).toEqual({ top: 100, left: 10, width: 150, height: 25 });
+    expect(slotBox(lane, 100 + 25 * 20 + 24)).toEqual({ top: 600, left: 10, width: 150, height: 25 });
+  });
+
+  it("clamps to the first and last slot", () => {
+    expect(slotBox(lane, 0).top).toBe(100);
+    expect(slotBox(lane, 5000).top).toBe(100 + 47 * 25);
+  });
+
+  it("clips a box to the visible area", () => {
+    const clip = { top: 100, left: 0, width: 50, height: 500 };
+    expect(clipBox({ top: 90, left: 0, width: 50, height: 25 }, clip)).toEqual({ top: 100, left: 0, width: 50, height: 15 });
+    expect(clipBox({ top: 0, left: 0, width: 50, height: 25 }, clip)).toBeNull();
   });
 });

@@ -62,8 +62,10 @@ function eventSurface(info: EventDisplayInfo): string {
   );
 }
 
-const todayCell = (isToday: boolean, isOther?: boolean) =>
-  cn(isToday && "bg-surface-primary", isOther && "text-text-secondary");
+// A tint, not an opaque fill: the slot lines underneath the day lanes stay visible in light and dark.
+const TODAY_TINT = "bg-surface-secondary/40";
+
+const todayCell = (isToday: boolean, isOther?: boolean) => cn(isToday && TODAY_TINT, isOther && "text-text-secondary");
 
 const isSingleDay = (viewType: string) => viewType === "timeGridDay";
 
@@ -86,7 +88,7 @@ export function buildAgendaCalendarOptions(): CalendarOptions {
         "border",
         LINE,
         info.inPopover && "border-x-0 border-t-0 px-component-sm py-component-xs",
-        info.isToday && !info.inPopover && !isSingleDay(info.view.type) && "bg-surface-primary",
+        info.isToday && !info.inPopover && !isSingleDay(info.view.type) && TODAY_TINT,
       ),
     dayHeaderInnerClass: "flex items-center gap-inline-xs px-component-xs py-component-sm text-sm font-semibold text-text-secondary",
     dayHeaderRowClass: cn("border", LINE),
@@ -102,7 +104,7 @@ export function buildAgendaCalendarOptions(): CalendarOptions {
         info.isToday ? "bg-surface-secondary text-text-primary" : "text-text-secondary",
         info.isOther && "opacity-50",
       ),
-    dayLaneClass: (info) => cn("border", LINE, info.isToday && !isSingleDay(info.view.type) && "bg-surface-primary"),
+    dayLaneClass: (info) => cn("border", LINE, info.isToday && !isSingleDay(info.view.type) && TODAY_TINT),
     dayLaneInnerClass: (info) => (info.isStack ? "m-inline-xs" : "ms-inline-xs me-inline-lg"),
 
     // Time axis
@@ -117,7 +119,7 @@ export function buildAgendaCalendarOptions(): CalendarOptions {
     nowIndicatorLineClass: "border-t-2 border-text-highlight-red",
     nowIndicatorHeaderClass: "rounded-full border-text-highlight-red",
     nowIndicatorDotClass: "rounded-full border-text-highlight-red bg-text-highlight-red",
-    highlightClass: "bg-surface-secondary",
+    highlightClass: "border border-dashed border-stroke-primary-active bg-surface-secondary",
     nonBusinessHoursClass: "bg-surface-primary",
 
     // Block events (all-day bars, month, columns)
@@ -125,7 +127,8 @@ export function buildAgendaCalendarOptions(): CalendarOptions {
     blockEventInnerClass: "flex min-w-0 flex-1",
     rowEventClass: "mx-inline-xs mb-stack-xs",
     rowEventInnerClass: "flex items-center px-component-xs py-stack-xs",
-    columnEventClass: "ring-1 ring-surface-highlight-white",
+    // The selection mirror (no item) fills the whole cell: it cancels the lane's inset. Real items keep it.
+    columnEventClass: (info) => (info.isMirror && !itemOf(info) ? "-ms-inline-xs -me-inline-lg" : "ring-1 ring-surface-highlight-white"),
     columnEventInnerClass: (info) => cn("flex min-w-0 flex-col", info.isShort ? "px-component-xs" : "p-component-xs"),
     columnEventBeforeClass: (info) =>
       info.isStartResizable && cn(resizeHit, "top-0 h-component-xs cursor-n-resize", info.isSelected && "top-0"),

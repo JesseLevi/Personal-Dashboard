@@ -4,8 +4,8 @@ Claude-designed (#486, #487, #488), ADR-0037, no Figma node · Code: `app/(app)/
 New components: `PlanDrawer` and `PlanChoices` (own notes). The rest is page composition: `PageHeader`, `ButtonToggle`, `AgendaCalendar`, `SidePanel`, `InputField`, `Checkbox`, `Button`, `DeleteConfirm`, `PortionStepper`, `AnimatedAddToBasketButton`, `Toast`.
 
 ## Anatomy
-- Header: `PageHeader` with the period as title, then "Week naar mand" (`AnimatedAddToBasketButton`, "Week" below `md`), Vandaag, previous/next, the `Settings` button that opens the calendars panel (`AgendaCalendarsPanel.md`) and a `ButtonToggle` for Dag/Week/Maand/Lijst. The title block, the buttons and the toggle are three flex items (`contents` wrapper). From `md` they share one row (toggle `w-96`); below `md` the header wraps and the toggle gets its own row with icons only.
-- Body: `AgendaBody` gives the calendar a definite height (`100dvh` minus the chrome, at least 28rem) and `pr-page-right-equal`; the grid scrolls inside. The `PlanDrawer` sits beside it from `md`, under it below.
+- Header: `PageHeader` with the period as title, then a `ButtonToggle` for Dag/Week/Maand/Lijst, then at the far right "Week naar mand" (`AnimatedAddToBasketButton`, "Week" below `lg`), Vandaag, previous/next and the `Settings` button that opens the calendars panel (`AgendaCalendarsPanel.md`). The title never wraps (`whitespace-nowrap`). From `lg` toggle (`w-96`) and buttons sit in one right-aligned wrapping group: when the page is too narrow for both on a row (sidebar open on a tablet landscape), the buttons drop under the toggle, right-aligned. Below `lg` (tablet portrait counts as mobile) the wrapper is `contents`: title and buttons share a row, the toggle gets its own row with icons only, and the buttons wrap on a 320px phone.
+- Body: `AgendaBody` gives the calendar a definite height (`100dvh` minus the chrome, at least 28rem) and `pr-page-right-equal`; the grid scrolls inside. The `PlanDrawer` sits beside it from `lg` and only when the page container is at least 44rem wide (container query; the sidebar and the 128px page padding leave a 1024px viewport only about 570px), under it otherwise.
 - Event panel: one persistent `SidePanel` for create (tap or drag an empty slot) and edit; an imported event opens it read-only (disabled fields, no footer, "Uit <agendanaam>" above them). A saved event, imported or own, also shows "Gekoppeld" with its recipes, cards and notes (`AgendaEventLinks.md`). Delete is the two-step `DeleteConfirm`.
 - Meal panel (`AgendaMealPanel`, `SidePanel`): recipe (a `Button` that opens the recipe page), moment (select), servings (`PortionStepper`), date (disabled while the meal is attached to an event), "Naar mand" (`AnimatedAddToBasketButton` with the #429 basket popover), Verwijderen (`DeleteConfirm`) and Opslaan. "Naar mand" saves pending edits first so the basket gets the servings on screen.
 - Above the calendar: basket notices after a sync deleted an event with a meal (`AgendaSyncNotices`). `page.tsx` also starts the lazy sync in `after()`.
@@ -25,13 +25,13 @@ New components: `PlanDrawer` and `PlanChoices` (own notes). The rest is page com
 - `position` is not in the timeline function, so `getAgendaItems` reads it for the meals in one extra query.
 
 ## Token gaps and flags
-- `h-[calc(100dvh-…)]`, `min-h-[28rem]`, `md:w-80` and `h-[32rem]` in `AgendaBody` are layout sizes, not scale values.
+- `h-[calc(100dvh-…)]`, `min-h-[28rem]`, `lg:@min-[44rem]:w-80` and `h-[32rem]` in `AgendaBody` are layout sizes, not scale values.
 - No token for a disabled field: read-only inputs look editable; a notice says why.
 - Icons borrowed from the closed set: view toggle `Calendar`, `Columns3`, `Table`, `List`; the recipe link uses `CookingPot`.
 
 ## Gotchas
 - `PageHeaderTitle` morphs the title on every previous/next press.
-- The mobile header and bottom-sheet shapes follow the viewport, not the container: Ladle stories only baseline the desktop shape. The "Week" button below `md` is as wide as its "Toegevoegd" face (the grid sizes to the wider face).
+- The mobile header and bottom-sheet shapes follow the viewport, not the container: Ladle stories only baseline the desktop shape. The "Week" button below `lg` hugs its visible face (the hidden face leaves the flow), so it grows when "Toegevoegd" shows. The week turns into three days below `lg` (`NARROW_QUERY` in `AgendaCalendar`, 1023px).
 - `page.tsx` cannot be tried against hosted until the agenda migrations are applied there.
 - `getAgendaEvent` and `getMealPlan` are separate reads because `agenda_items` carries no location, description or recipe id.
 - A meal whose ingredients were all merged into earlier meals' lines has no basket item of its own, so a second "Week naar mand" would send it again.

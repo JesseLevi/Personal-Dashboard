@@ -72,7 +72,7 @@ export function CodeBlockView({ node, editor, updateAttributes }: NodeViewProps)
         {editor.isEditable ? (
           // Re-keyed on the language so choosing an option collapses the list.
           <Dropdown key={current} id={`${labelId}-language`} label={t("languageLabel")} defaultOpen={false} className="w-56">
-            <Button variant="filled" align="left">
+            <Button presentational variant="filled" align="left">
               {currentLabel}
             </Button>
             {CODE_LANGUAGE_IDS.map((id) => (

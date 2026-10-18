@@ -237,6 +237,10 @@
     },
     "page": {
       "clearAllLabel": "Leeg mand",
+      "clearAllConfirmLabel": "Alle items verwijderen?",
+      "clearAllConfirmButtonLabel": "Leegmaken",
+      "clearAllDeletingLabel": "Legen…",
+      "cancelLabel": "Annuleren",
       "deleteItemLabel": "Verwijder {name}",
       "sortLabel": "Sorteer",
       "addItemLabel": "Item",
@@ -806,6 +810,9 @@
         "removeIngredientLabel": "Verwijder ingrediënt",
         "stepLabel": "Stap {number}",
         "stepPlaceholder": "Typ hier een instructie...",
+        "removeStepLabel": "Verwijder stap {number}",
+        "moveStepUpLabel": "Verplaats stap {number} omhoog",
+        "moveStepDownLabel": "Verplaats stap {number} omlaag",
         "needsReviewLabel": "controleren"
       },
       "addRowLabel": "Voeg toe",

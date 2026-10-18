@@ -5,10 +5,9 @@ import { Button } from "@/components/atoms/Button";
 import { DELETE_CONFIRM_INITIAL, deleteConfirmReducer } from "@/lib/dom/delete-confirm";
 
 // #288: the two-step delete confirmation shared by every panel/page that
-// deletes (recipes, categories, notes, cards). Pure refactor of six verbatim
-// copies — no Figma node exists for the confirm row
-// (docs/open-questions.md#notes-delete-has-no-confirmation), so the markup
-// is the transient state those copies already shared.
+// deletes (recipes, categories, notes, cards, the basket). Pure refactor of six
+// verbatim copies — no Figma node exists for the confirm row, so the markup is
+// the transient state those copies already shared (design/notes/NoteEditor.md).
 
 export function useDeleteConfirm() {
   const [state, dispatch] = useReducer(deleteConfirmReducer, DELETE_CONFIRM_INITIAL);

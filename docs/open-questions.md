@@ -44,16 +44,6 @@ No loading frame for the note editor; `NoteEditorSkeleton` renders only the iner
 
 `semantic.duration.base` (200ms) and `semantic.easing.base` are this codebase's own defaults (frame `3859:6647` has no timing). Needs ratification; `Dropdown` grid-rows and `ButtonToggle` track still hardcode `duration-200 ease-out`.
 
-### dropdown-row-not-fully-clickable
-
-**Product call.** #108 asked for the whole Status/Prioriteit/Grootte row to open; only the pill is a target (chevron decorative, as in Figma). A clickable row means nested buttons or a `role="button"` wrapper (ARIA anti-patterns). Decide: accept pill-only, or make `Dropdown` own the one button.
-
-## Recepten
-
-### step-rows-no-delete-reorder
-
-**Product call.** Ingredient rows have a delete (#166); steps have no delete or reorder (`3717:2844`, `4025:10628`), so a step cannot be removed once added. Decide: add controls (Claude designs) or steps are immutable.
-
 ### recipe-image-field-personen-label
 
 The image-upload field's Title reads "Personen" in both frames (`3968:11192` / `3953:9875`), a copy-paste artifact. `ImageUploadField` renders no visible label. Claude may add a label ("Afbeelding" / "Foto") when touched.
@@ -67,10 +57,6 @@ The image-upload field's Title reads "Personen" in both frames (`3968:11192` / `
 ### winkelmand-gangpad-grouping-not-built
 
 **Product call.** Annotation on `4052:13970` wants "Gangpad" (aisle) grouping; NEVO's 27 groups are food-science groups (canned tomato puree lands in `Groente`). An aisle layer needs a curated map plus name-pattern overrides: new data, so its own ADR. Shipped: Voedingsgroep only.
-
-### winkelmand-clear-all-no-confirmation
-
-**Product call.** "Verwijder alles" (`4053:14285`) empties the list in one click, no confirm, no undo; built as a literal read. Decide: ratify, or add `RecipeDetailPage`'s two-step confirm (Claude may design it).
 
 ### winkelmand-send-no-success-feedback
 
@@ -117,10 +103,6 @@ The `/notities` search clear button (`InputField` `onTrailingIconClick`, #231) h
 ### notes-category-panel-not-designed
 
 `Pages/Notities/Breakpoints` (`3934:32790`) has no category panel; #232 reuses the shared `CategoryPanel` (#287). By precedent: the 14-icon set (`NOTE_CATEGORY_ICONS`), two-step delete confirm, generic wording despite the `notes.category_id` cascade. Claude may design these when touched. -> `design/notes/CategoryPanel.md`.
-
-### notes-delete-has-no-confirmation
-
-`/notities/[noteId]` "Verwijderen" (`3978:14809` / `3978:14839`) has no drawn confirm; #233 reuses the two-step confirm idiom (`RecipeDetailPage`, `CategoryPanel`). Claude may redesign it when touched.
 
 ### notes-prose-font-scale-no-tokens
 
@@ -175,3 +157,7 @@ TOC rail (#342) is Claude-designed on request. Untokenised: rail width (`w-44`),
 - `notes-table-ui-not-designed`, `notes-prose-typography-not-designed`
 - `import-skeleton-bars-unbound`, `import-link-panel-input-chevron`, `import-description-not-stored`, `import-range-and-pack-note-dropped`
 - `notes-link-chip-undesigned`, `notes-editingbar-mobile-image-button-out-of-scope`
+- `winkelmand-clear-all-no-confirmation`
+- `notes-delete-has-no-confirmation`
+- `dropdown-row-not-fully-clickable`
+- `step-rows-no-delete-reorder`

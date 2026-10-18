@@ -36,7 +36,6 @@ One client component for the whole page body (like `RecipeDetailPage`). Header: 
 - `tests/visual/table-columns.spec.ts` must fail if `table-layout` goes back to `auto`.
 
 ## Open
-- `docs/open-questions.md#notes-delete-has-no-confirmation`
 - `docs/open-questions.md#notes-prose-font-scale-no-tokens`
 - `docs/open-questions.md#button-no-disabled-state`
 - `docs/open-questions.md#notes-slash-menu-icon-glyphs-missing`
