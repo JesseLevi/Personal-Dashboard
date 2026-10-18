@@ -34,7 +34,7 @@ The user chose (c): Atlas is a small app for friends and family, and the feature
    - Rows older than 1 hour are deleted on each call (indexed on `attempted_at`).
    - The lookup matches `auth.users.email` exactly (GoTrue stores it lowercase) and skips deleted and banned users.
    - The address is stored only as a hash, never in clear text.
-3. **The server action is the only caller.** The browser never talks to Supabase (ADR-0003).
+3. **The server action is the only caller.** The browser never talks to Supabase (ADR-0033).
    - The anon key is server-only in this app (no `NEXT_PUBLIC_` Supabase vars), which is what makes granting `anon` acceptable.
    - The action derives `p_client_key` as `sha256(<client IP> + LOGIN_GREETING_SALT)`. The IP is `x-real-ip` (set by Vercel), else the first `x-forwarded-for` entry. The IP itself is never stored. A salt shorter than 16 characters fails closed.
    - It calls the RPC through a stateless anon client (`lib/supabase/anon.ts`, no cookies or session), so the role is always `anon`.
@@ -58,7 +58,7 @@ The user chose (c): Atlas is a small app for friends and family, and the feature
 - The Cloudflare widget must be invisible/non-interactive and have its own hostname allowlist in the Cloudflare dashboard.
 - The Supabase Cloud "Exposed schemas" setting must not include `private`.
 - A legitimate user who mistypes repeatedly may stop seeing their name for 15 minutes. The login itself is unaffected.
-- `display_name` is not yet editable in the UI (#9). Until it is, names must be filled in by hand for the feature to show anything.
+- `display_name` is set via Settings (#398/#404).
 - New environment variables (`TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `LOGIN_GREETING_SALT`) must be set in Vercel. Until then, production fails closed and shows the generic greeting.
 - Tests:
   - `supabase/tests` asserts that `anon` cannot read or write `private.login_greeting_attempts`;
