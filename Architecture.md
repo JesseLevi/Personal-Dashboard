@@ -8,7 +8,7 @@ This document describes the **current** system. Why each piece is the way it is 
 Browser (PWA) ──HTTPS──► Next.js on Vercel (fra1)
                           ├── Supabase Cloud: Postgres + Auth + RLS  (RLS-bound client per request)
                           ├── Cloudflare R2: uploaded images         (lib/storage, presigned GET)
-                          ├── Anthropic API: Claude Haiku            (lib/ai, recipe import)
+                          ├── Anthropic API: Claude Haiku            (lib/ai, recipe import, unit weights)
                           └── public web pages                       (lib/net/safe-fetch, recipe import)
 ```
 
@@ -116,7 +116,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 
 ## 6. AI and async work
 
-- **Today**: `lib/ai/` exposes one provider-neutral function (prompt + zod schema in, validated object out). It runs Claude Haiku via Anthropic. Its only consumer is the recipe import pipeline, which runs in `after()` with a lazy sweep for stuck rows (ADR-0019).
+- **Today**: `lib/ai/` exposes one provider-neutral function (prompt + zod schema in, validated object out). It runs Claude Haiku via Anthropic. Consumers: the recipe import pipeline, in `after()` with a lazy sweep for stuck rows (ADR-0019), and a recipe save that estimates a re-linked line's missing weight per unit (`lib/recipes/unit-weights.ts`).
 - **Phase 8 shape** (ADR-0006, amended by 0018), with the model and host still open:
   - triggers enqueue `embed` jobs for notes and recipes;
   - a handler builds canonical text, skips unchanged content by hash, chunks, embeds and upserts `embeddings`;
