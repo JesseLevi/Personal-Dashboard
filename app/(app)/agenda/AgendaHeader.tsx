@@ -58,14 +58,23 @@ export function AgendaHeader({
   return (
     <PageHeader
       title={title}
-      className="max-md:flex-wrap max-md:gap-y-stack-md"
+      className="gap-x-inline-xl max-lg:flex-wrap max-lg:gap-y-stack-md lg:items-start lg:[&>div:first-child]:h-12 [&_h1]:whitespace-nowrap [&>div:first-child]:shrink-0"
       actions={
-        <div className="contents">
-          <div className="flex items-center gap-inline-sm ml-auto md:mr-inline-xl">
+        <div className="max-lg:contents lg:flex lg:min-w-0 lg:flex-1 lg:flex-wrap lg:items-center lg:justify-end lg:gap-x-inline-xl lg:gap-y-stack-md">
+          <ButtonToggle
+            aria-label={t("viewLabel")}
+            items={items}
+            defaultValue={view}
+            iconOnlyBelowLg
+            onValueChange={(value) => onViewChange(value as AgendaToggleView)}
+            className="max-lg:order-last max-lg:basis-full lg:w-96 lg:max-w-full"
+          />
+          <div className="flex max-w-full flex-wrap items-center justify-end gap-inline-sm max-lg:ml-auto">
             {weekToBasket && (
               <AnimatedAddToBasketButton
                 label={t("weekToBasketLabel")}
                 shortLabel={t("weekToBasketShortLabel")}
+                shortLabelBelow="lg"
                 addedLabel={t("weekToBasketAddedLabel")}
                 onAddToBasket={weekToBasket.onSend}
                 baskets={weekToBasket.baskets}
@@ -77,14 +86,6 @@ export function AgendaHeader({
             <Button icon="ArrowRight" aria-label={t("nextLabel")} onClick={onNext} />
             {onOpenCalendars && <Button icon="Settings" aria-label={t("calendarsLabel")} onClick={onOpenCalendars} />}
           </div>
-          <ButtonToggle
-            aria-label={t("viewLabel")}
-            items={items}
-            defaultValue={view}
-            iconOnlyBelowMd
-            onValueChange={(value) => onViewChange(value as AgendaToggleView)}
-            className="max-md:basis-full max-md:order-last md:w-96"
-          />
         </div>
       }
     />

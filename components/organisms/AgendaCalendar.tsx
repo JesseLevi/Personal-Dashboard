@@ -13,11 +13,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AgendaItem } from "@/lib/agenda/types";
 import type { AgendaView } from "@/lib/agenda/view";
 import {
+  AGENDA_SLOT_MINUTES,
+  AGENDA_SNAP_MINUTES,
   AGENDA_TRAY_ATTRIBUTE,
+  clipBox,
   compareEventOrder,
   normalizeSpan,
+  slotBox,
+  slotForSingleSnap,
   toEventInputs,
   type AgendaSpan,
+  type Box,
   type EventOrderSubject,
 } from "@/lib/ui/agenda-calendar";
 import { cn } from "@/lib/ui/cn";
@@ -40,6 +46,79 @@ export interface AgendaExternalDrop {
 }
 
 const EVENT_ID_ATTRIBUTE = "data-agenda-event-id";
+const ITEM_ATTRIBUTE = "data-agenda-item";
+const HOVER_QUERY = "(hover: hover) and (pointer: fine)";
+/** A tap that follows a `select` within this time is the same gesture: do not select twice. */
+const TAP_DEDUPE_MS = 400;
+const CELL_SELECTOR = '[role="cell"][data-date]';
+const INTERACTIVE_SELECTOR = `[${ITEM_ATTRIBUTE}], a, button, [role="button"]`;
+
+function toBox(rect: DOMRect): Box {
+  return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
+}
+
+function scrollParent(el: Element, within: Element): Element | null {
+  for (let node = el.parentElement; node && node !== within; node = node.parentElement) {
+    if (/(auto|scroll)/.test(getComputedStyle(node).overflowY)) return node;
+  }
+  return null;
+}
+
+/**
+ * Dashed outline under the mouse on the empty cell it would select: one slot of
+ * a day column in the time grid, a whole cell in the all-day row and month.
+ * Pointer-driven and frame-throttled, no React state; the overlay is positioned
+ * imperatively (like FullCalendar does for its own geometry).
+ */
+function useCellHover(
+  rootRef: React.RefObject<HTMLDivElement | null>,
+  overlayRef: React.RefObject<HTMLDivElement | null>,
+  viewName: string,
+) {
+  useEffect(() => {
+    const root = rootRef.current;
+    const overlay = overlayRef.current;
+    if (!root || !overlay || !window.matchMedia(HOVER_QUERY).matches) return;
+    const timeGrid = viewName.startsWith("timeGrid");
+    let frame = 0;
+    const hide = () => {
+      cancelAnimationFrame(frame);
+      overlay.classList.add("hidden");
+    };
+    const place = (box: Box) => {
+      const origin = root.getBoundingClientRect();
+      overlay.style.top = `${box.top - origin.top}px`;
+      overlay.style.left = `${box.left - origin.left}px`;
+      overlay.style.width = `${box.width}px`;
+      overlay.style.height = `${box.height}px`;
+      overlay.classList.remove("hidden");
+    };
+    const onMove = (event: PointerEvent) => {
+      hide();
+      if (event.pointerType !== "mouse" || event.buttons !== 0 || !(event.target instanceof Element)) return;
+      const { target, clientY } = event;
+      frame = requestAnimationFrame(() => {
+        const cell = target.closest(CELL_SELECTOR);
+        if (!cell || !root.contains(cell) || target.closest(INTERACTIVE_SELECTOR)) return;
+        const rect = toBox(cell.getBoundingClientRect());
+        const scroller = timeGrid ? scrollParent(cell, root) : null;
+        const box = scroller ? clipBox(slotBox(rect, clientY), toBox(scroller.getBoundingClientRect())) : rect;
+        if (box) place(box);
+      });
+    };
+    root.addEventListener("pointermove", onMove);
+    root.addEventListener("pointerleave", hide);
+    root.addEventListener("pointerdown", hide);
+    root.addEventListener("scroll", hide, true);
+    return () => {
+      hide();
+      root.removeEventListener("pointermove", onMove);
+      root.removeEventListener("pointerleave", hide);
+      root.removeEventListener("pointerdown", hide);
+      root.removeEventListener("scroll", hide, true);
+    };
+  }, [rootRef, overlayRef, viewName]);
+}
 
 // A drop is reported per date; the event under the pointer is found in the DOM.
 function elementsAtPoint(event: Event): Element[] {
@@ -81,9 +160,9 @@ const VIEW_NAMES: Record<AgendaView, string> = {
 };
 
 const TIME_FORMAT = { hour: "2-digit", minute: "2-digit", hour12: false } as const;
-const NARROW_QUERY = "(max-width: 767px)";
+const NARROW_QUERY = "(max-width: 1023px)";
 
-/** True below the `md` breakpoint; false during SSR and the first client render. */
+/** True below the `lg` breakpoint; false during SSR and the first client render. */
 export function useIsNarrow(): boolean {
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
@@ -125,7 +204,11 @@ export function AgendaCalendar({
   const locale = useLocale();
   const narrow = useIsNarrow();
   const calendarRef = useRef<CalendarRef>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const hoverRef = useRef<HTMLDivElement>(null);
+  const lastSelectRef = useRef(0);
   const viewName = VIEW_NAMES[effectiveAgendaView(view, narrow)];
+  useCellHover(rootRef, hoverRef, viewName);
 
   const labels = useMemo<AgendaItemLabels>(
     () => ({
@@ -186,8 +269,8 @@ export function AgendaCalendar({
     eventTimeFormat: TIME_FORMAT,
     slotHeaderFormat: TIME_FORMAT,
     slotHeaderInterval: { hours: 1 },
-    slotDuration: { minutes: 30 },
-    snapDuration: { minutes: 15 },
+    slotDuration: { minutes: AGENDA_SLOT_MINUTES },
+    snapDuration: { minutes: AGENDA_SNAP_MINUTES },
     scrollTime: { hours: 7 },
     nowIndicator: true,
     allDayText: t("allDay"),
@@ -201,6 +284,7 @@ export function AgendaCalendar({
     eventDidMount: (info) => {
       // Drag mirrors of external items carry no agenda item.
       const item = itemOf(info.event) as AgendaItem | undefined;
+      if (item) info.el.setAttribute(ITEM_ATTRIBUTE, "");
       if (item?.kind === "event") info.el.setAttribute(EVENT_ID_ATTRIBUTE, item.id);
     },
     editable: true,
@@ -227,7 +311,25 @@ export function AgendaCalendar({
       },
       dayGrid: { dayHeaderFormat: { weekday: "short" } },
     },
-    select: (info) => onSelectSlot?.(normalizeSpan({ start: info.startStr, end: info.endStr, allDay: info.allDay })),
+    select: (info) => {
+      lastSelectRef.current = Date.now();
+      const span = normalizeSpan({ start: info.startStr, end: info.endStr, allDay: info.allDay });
+      // A click (one snap) selects the whole slot, like the hover outline shows.
+      const slot = slotForSingleSnap(span, AGENDA_SNAP_MINUTES, AGENDA_SLOT_MINUTES);
+      if (slot) calendarRef.current?.getApi().select(slot.start, slot.end);
+      else onSelectSlot?.(span);
+    },
+    // A tap selects the cell like a click does on desktop; FullCalendar skips it for scrolls and event taps.
+    dateClick: (info) => {
+      const tappedAt = Date.now();
+      const api = calendarRef.current?.getApi();
+      window.setTimeout(() => {
+        if (!api || lastSelectRef.current >= tappedAt - TAP_DEDUPE_MS) return;
+        if (info.allDay) api.select(info.dateStr);
+        // One snap, so `select` widens it to the slot it falls in.
+        else api.select(info.date, new Date(info.date.getTime() + AGENDA_SNAP_MINUTES * 60_000));
+      }, TAP_DEDUPE_MS / 4);
+    },
     eventClick: (info) => onItemClick?.(itemOf(info.event), info.el),
     eventDragStop: (info) => {
       const item = itemOf(info.event) as AgendaItem | undefined;
@@ -245,8 +347,13 @@ export function AgendaCalendar({
   };
 
   return (
-    <div className={cn("h-full min-h-0", className)} role="region" aria-label={t("label")}>
+    <div ref={rootRef} className={cn("relative h-full min-h-0", className)} role="region" aria-label={t("label")}>
       <FullCalendar ref={calendarRef} {...options} />
+      <div
+        ref={hoverRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute z-20 hidden rounded-control-inner border border-dashed border-stroke-primary-active"
+      />
     </div>
   );
 }

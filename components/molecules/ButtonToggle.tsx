@@ -34,6 +34,8 @@ type ButtonToggleBaseProps = {
   onValueChange?: (value: string) => void;
   /** Below `md` only the icons show; the label stays as the accessible name. */
   iconOnlyBelowMd?: boolean;
+  /** Same, below `lg`. */
+  iconOnlyBelowLg?: boolean;
   className?: string;
 };
 
@@ -52,6 +54,7 @@ export function ButtonToggle({
   defaultValue,
   onValueChange,
   iconOnlyBelowMd,
+  iconOnlyBelowLg,
   title,
   className,
   "aria-label": ariaLabel,
@@ -184,7 +187,13 @@ export function ButtonToggle({
             onKeyDown={(event) => handleKeyDown(event, index)}
             className="relative grow basis-0 hover:bg-transparent! active:bg-transparent!"
           >
-            {iconOnlyBelowMd ? <span className="max-md:sr-only">{item.label}</span> : item.label}
+            {iconOnlyBelowLg ? (
+              <span className="max-lg:sr-only">{item.label}</span>
+            ) : iconOnlyBelowMd ? (
+              <span className="max-md:sr-only">{item.label}</span>
+            ) : (
+              item.label
+            )}
           </Button>
         ))}
       </div>
