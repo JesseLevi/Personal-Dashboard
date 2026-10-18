@@ -97,6 +97,22 @@ export const AGENDA_TRAY_ATTRIBUTE = "data-agenda-tray";
 /** The time grid is one lane of `AGENDA_SLOTS_PER_DAY` slots per day (no min/max time). */
 export const AGENDA_SLOT_MINUTES = 30;
 export const AGENDA_SLOTS_PER_DAY = (24 * 60) / AGENDA_SLOT_MINUTES;
+/** Events and drag-selections snap to this; a click selects a whole slot. */
+export const AGENDA_SNAP_MINUTES = 15;
+
+/**
+ * A click without drag selects one snap (15 minutes): widen it to the whole slot,
+ * start floored to the slot boundary in the browser's zone. Longer selections and
+ * all-day spans return null and stay as dragged.
+ */
+export function slotForSingleSnap(span: AgendaSpan, snapMinutes: number, slotMinutes: number): { start: Date; end: Date } | null {
+  if (span.allDay || !span.end) return null;
+  const start = new Date(span.start);
+  const length = new Date(span.end).getTime() - start.getTime();
+  if (length !== snapMinutes * 60_000) return null;
+  start.setMinutes(Math.floor(start.getMinutes() / slotMinutes) * slotMinutes, 0, 0);
+  return { start, end: new Date(start.getTime() + slotMinutes * 60_000) };
+}
 
 export interface Box {
   top: number;

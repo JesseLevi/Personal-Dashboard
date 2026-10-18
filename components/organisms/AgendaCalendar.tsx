@@ -14,11 +14,13 @@ import type { AgendaItem } from "@/lib/agenda/types";
 import type { AgendaView } from "@/lib/agenda/view";
 import {
   AGENDA_SLOT_MINUTES,
+  AGENDA_SNAP_MINUTES,
   AGENDA_TRAY_ATTRIBUTE,
   clipBox,
   compareEventOrder,
   normalizeSpan,
   slotBox,
+  slotForSingleSnap,
   toEventInputs,
   type AgendaSpan,
   type Box,
@@ -268,7 +270,7 @@ export function AgendaCalendar({
     slotHeaderFormat: TIME_FORMAT,
     slotHeaderInterval: { hours: 1 },
     slotDuration: { minutes: AGENDA_SLOT_MINUTES },
-    snapDuration: { minutes: 15 },
+    snapDuration: { minutes: AGENDA_SNAP_MINUTES },
     scrollTime: { hours: 7 },
     nowIndicator: true,
     allDayText: t("allDay"),
@@ -311,7 +313,11 @@ export function AgendaCalendar({
     },
     select: (info) => {
       lastSelectRef.current = Date.now();
-      onSelectSlot?.(normalizeSpan({ start: info.startStr, end: info.endStr, allDay: info.allDay }));
+      const span = normalizeSpan({ start: info.startStr, end: info.endStr, allDay: info.allDay });
+      // A click (one snap) selects the whole slot, like the hover outline shows.
+      const slot = slotForSingleSnap(span, AGENDA_SNAP_MINUTES, AGENDA_SLOT_MINUTES);
+      if (slot) calendarRef.current?.getApi().select(slot.start, slot.end);
+      else onSelectSlot?.(span);
     },
     // A tap selects the cell like a click does on desktop; FullCalendar skips it for scrolls and event taps.
     dateClick: (info) => {
