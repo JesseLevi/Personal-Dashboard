@@ -12,6 +12,12 @@
 --   default calendar, an imported calendar or event), AG422 invalid input.
 
 -- ============================================================================
+-- calendars.color, nullable until the backfill below has run
+-- ============================================================================
+
+alter table public.calendars add column color text;
+
+-- ============================================================================
 -- The next colour for a new calendar
 -- ============================================================================
 
@@ -38,10 +44,8 @@ revoke execute on function private.next_calendar_color(uuid) from public, anon;
 grant execute on function private.next_calendar_color(uuid) to authenticated, service_role;
 
 -- ============================================================================
--- calendars.color
+-- Backfill and constraints
 -- ============================================================================
-
-alter table public.calendars add column color text;
 
 -- The default calendar starts blue, imported calendars violet, other own
 -- calendars take the first colour their owner does not use yet.
