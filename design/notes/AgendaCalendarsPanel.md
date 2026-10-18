@@ -4,7 +4,7 @@ Claude-designed (#490), ADR-0037 §5–7, ADR-0039, no Figma node · Code: `app/
 No new component, no new token: both are page-level composition of `SidePanel`, `Card`, `CardContentTicket`, `Tag`, `InputField`, `Button` and `DeleteConfirm`, like `AgendaEventPanel`. Nothing existing fitted a status row better than a `Card` with a ticket body (title plus slot).
 
 ## Anatomy
-- **Entry**: a `Settings` icon `Button` in `AgendaHeader` (`onOpenCalendars`), after previous/next. Without the prop the button is absent.
+- **Entry**: the "Agenda's en categorieën" item of the header's ⋯ menu (`AgendaMoreMenu`, `onOpenCalendars`). Without the prop the item is absent.
 - **Panel** (one persistent `SidePanel`, title "Agenda's" for assistive tech only):
   - "Gekoppelde agenda's": one `Card` per account. `CardContentTicket` title is the name; the slot holds a status `Tag` and an icon-only destructive `Trash` button. Tag: `low` for synced (relative time), `urgent` for failed (reason), `neutral` for never synced.
   - "ICS-link toevoegen": name, link (`Link` leading icon, no autocomplete), the privacy line, and the three "where do I find the link" lines (Outlook, Google, iCloud).
