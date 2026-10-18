@@ -13,6 +13,7 @@ Tickets are issues on `JesseLevi/Personal-Dashboard`, one milestone per phase. T
 - **Move the card to "In progress" before writing code.** That column is the crash-safe map of what is mid-flight. Check it before starting anything new, and finish what is already there.
 - **Delegating counts as starting.** The orchestrator moves the card. **Subagents never touch the board**: they race on it and often lack the `project` scope.
 - **"In review" needs proof the work is reachable**: an open PR, or the commit on `origin/main`. Confirm with `gh pr list --head <branch>`. A branch with no PR is not in review. Unmerged "done" work has never reached production before (#307).
+- **The orchestrator keeps `docs/HANDOFF.md` current.** When a wave of tickets starts, a PR merges, or a hosted action runs, rewrite the affected bullets in a docs PR. Subagents never edit it.
 - Leave the issue open; the user reviews and closes. Don't reorder the board or close other people's issues.
 
 ## Verifying a subagent's work
