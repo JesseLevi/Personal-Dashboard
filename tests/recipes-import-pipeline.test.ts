@@ -12,7 +12,10 @@ vi.mock("@/lib/recipes/import/match-ingredients", async (importOriginal) => ({
   resolveIngredientId: vi.fn(),
   widenMatches: vi.fn(),
 }));
-vi.mock("@/lib/recipes/import/unit-grams", () => ({ loadUnitGrams: vi.fn() }));
+vi.mock("@/lib/recipes/import/unit-grams", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/recipes/import/unit-grams")>()),
+  loadUnitGrams: vi.fn(),
+}));
 
 import { AiError, setProviderForTests, type AiProvider } from "@/lib/ai";
 import { SafeFetchError, type SafeFetchResult } from "@/lib/net/safe-fetch";
