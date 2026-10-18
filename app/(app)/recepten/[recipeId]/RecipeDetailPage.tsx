@@ -294,6 +294,7 @@ export function RecipeDetailPage({
             <AnimatedAddToBasketButton
               label={t("addToBasketLabel")}
               shortLabel={t("addToBasketShortLabel")}
+              iconOnlyBelow400
               addedLabel={t("addedToBasketLabel")}
               onAddToBasket={handleSendToList}
               baskets={baskets}
