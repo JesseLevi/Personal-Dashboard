@@ -6,6 +6,8 @@
  * without offset (`2026-10-14T09:00:00` or `2026-10-14T09:00:00+02:00`). An all-day
  * item carries a date (`2026-10-14`) and an exclusive `end` (or null: one day).
  */
+import type { AgendaColor } from "@/lib/agenda/colors";
+
 export type MealSlot = "breakfast" | "lunch" | "dinner" | "snack";
 
 export interface AgendaItemBase {
@@ -23,6 +25,8 @@ export interface AgendaEventItem extends AgendaItemBase {
   kind: "event";
   source: "manual" | "sync";
   calendarId: string;
+  /** Palette key of the event's calendar (ADR-0040). */
+  color: AgendaColor;
   /** Set when the source no longer returns the event (`missing_since`). */
   missingSince: string | null;
 }

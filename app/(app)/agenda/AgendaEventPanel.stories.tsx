@@ -41,6 +41,7 @@ const event: AgendaEventItem = {
   kind: "event",
   source: "manual",
   calendarId: "cal-1",
+  color: "blue",
   missingSince: null,
   id: "own-1",
   title: "Tandarts",

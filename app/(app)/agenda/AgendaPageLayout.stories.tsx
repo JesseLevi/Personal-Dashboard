@@ -19,6 +19,7 @@ const event = (id: string, title: string, start: string, end: string, source: "m
   kind: "event",
   source,
   calendarId: "cal-1",
+  color: source === "sync" ? "violet" : "blue",
   missingSince: null,
   id,
   title,
