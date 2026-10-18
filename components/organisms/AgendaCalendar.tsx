@@ -326,7 +326,8 @@ export function AgendaCalendar({
       window.setTimeout(() => {
         if (!api || lastSelectRef.current >= tappedAt - TAP_DEDUPE_MS) return;
         if (info.allDay) api.select(info.dateStr);
-        else api.select(info.date, new Date(info.date.getTime() + AGENDA_SLOT_MINUTES * 60_000));
+        // One snap, so `select` widens it to the slot it falls in.
+        else api.select(info.date, new Date(info.date.getTime() + AGENDA_SNAP_MINUTES * 60_000));
       }, TAP_DEDUPE_MS / 4);
     },
     eventClick: (info) => onItemClick?.(itemOf(info.event), info.el),
