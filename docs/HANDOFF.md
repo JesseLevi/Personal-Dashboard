@@ -2,7 +2,7 @@
 
 State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace stale bullets; never append history. Ticket status lives on the board, rules in `CLAUDE.md` and the guides, and the system in `Architecture.md`.
 
-## State (2026-10-12)
+## State (2026-10-18)
 
 - Atlas is in production use by real accounts. Phases 0–6 are done: account, Te doen, Recepten (incl. URL import and nutrition), Winkelmand, Notities (full editor round, images, note links).
 - Open PR **#411** (#407, login greeting, ADR-0031). Before it works on production it needs:
@@ -38,7 +38,7 @@ Open: the recipe header wraps to two rows at ~400 px (three buttons). Making the
 
 1. **On `main`, not on hosted**: ADR-0039 (#482, lazy sync plus one daily Vercel Cron on Hobby), the schema (#483, migration `20261014000001`), `agenda_items` + `lib/agenda` (#484, `…0002`) and `AgendaCalendar` (#485). Both migrations go to hosted only with the user's go, before #486 can be tested there.
 2. **Next: #486** (Agenda page). Its issue starts with a "Herzien" section holding the contracts from #483–#485. Then #487–#489; #490 (ICS, builds ADR-0039, needs `CRON_SECRET` in Vercel) after #486.
-3. **Design pass later, by the user's choice**: the system comes first. Open: pastel items in dark mode (no dark `surface-highlight-*`/`text-highlight-*` tokens, ~3:1 contrast) and truncated titles in the 3-day mobile view.
+3. **Agenda redesign, epic #527** (ADR-0040–0042 in PR #528, user decisions of 2026-10-18). Wave 1 in progress: #529 header and tray, #530 palette tokens and item style, #531 recurring events (migration `20261018000001`). Wave 2 after those merge: #532 categories (migration `…0002`), #533 now and navigation. Wave 3: #534 quick add. Merging needs the user's review (ruleset). Neither migration goes to hosted without the user's go. #530 resolves the open pastel-in-dark and truncated-title items.
 4. Phases 8 and 9 (#31, #32) stay in the backlog. Their bodies follow ADR-0018 (hosted models, no worker host). Each needs its own ADR first: the embedding model and the privacy of notes.
 
 ## Small open items
