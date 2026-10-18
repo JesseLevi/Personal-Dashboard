@@ -404,11 +404,16 @@
           "month": "Month",
           "list": "List"
         },
-        "calendarsLabel": "Manage calendars",
+        "calendarsLabel": "Calendars and categories",
         "weekToBasketLabel": "Week to basket",
-        "weekToBasketShortLabel": "Week",
-        "weekToBasketAddedLabel": "Added",
-        "chooseBasketLabel": "Choose a basket"
+        "chooseBasketLabel": "Choose a basket",
+        "planLabel": "Plan",
+        "newLabel": "New",
+        "moreLabel": "More",
+        "backLabel": "Back",
+        "trayShowLabel": "Show plan tray",
+        "trayHideLabel": "Hide plan tray",
+        "weekToBasketToast": "This week's meals are in your basket"
       }
     },
     "sidePanel": {
@@ -1127,7 +1132,11 @@
       "noRecipes": "No recipes found.",
       "dragHint": "Drag a recipe onto a day, or onto an event, in the agenda.",
       "planRecipeLabel": "Plan {name}",
-      "planMenuLabel": "Choose a day"
+      "planMenuLabel": "Choose a day",
+      "weekToBasketLabel": "Week to basket",
+      "weekToBasketAddedLabel": "Added",
+      "weekToBasketHint": "Sends this week's meals to a basket",
+      "chooseBasketLabel": "Choose a basket"
     },
     "planChoices": {
       "momentLabel": "Moment",
