@@ -5,9 +5,9 @@ import { isAdminFromClaims, requireUserIdResult, userIdFromClaims } from "@/lib/
 
 // Shared by lib/boards/queries.ts and app/(app)/te-doen/actions.ts (and, via
 // lib/recipes/session.ts's re-export, every recipes/shopping call site too):
-// RLS is the real ownership boundary, but every read/write also filters on
-// this id explicitly rather than trusting a client-supplied user_id (ADR-0002
-// / ADR-0003, and the "don't trust the client for ownership" note on #92).
+// RLS is the ownership boundary (ADR-0033/0035). Inserts stamp this id as
+// `user_id` rather than trusting a client-supplied one; reads and writes leave
+// access to the policies instead of filtering on it app-side.
 //
 // #168: was `getAuthenticatedUserId(supabase)` calling `supabase.auth.
 // getUser()` -- a network round trip to Supabase Auth on every call, and a
