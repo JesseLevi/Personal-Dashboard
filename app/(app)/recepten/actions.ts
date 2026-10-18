@@ -8,6 +8,7 @@ import { nextPosition } from "@/lib/boards/positioning";
 import { searchIngredientLibrary } from "@/lib/recipes/queries";
 import { findOrCreateOwnIngredient } from "@/lib/recipes/ingredients";
 import { replaceRecipeContents } from "@/lib/recipes/contents";
+import { fillMissingUnitWeights, type PreviousLine } from "@/lib/recipes/unit-weights";
 import {
   uploadRecipeThumbnail as uploadRecipeThumbnailToStorage,
   deleteRecipeThumbnail,
@@ -295,6 +296,8 @@ export async function createRecipe(input: unknown): Promise<ActionResult<RecipeR
     return { success: false, error: "generic" };
   }
 
+  await fillMissingUnitWeights(supabase, auth.userId, parsed.data.ingredients, []);
+
   revalidatePath("/recepten", "layout");
   return { success: true, data: recipe };
 }
@@ -382,8 +385,22 @@ export async function updateRecipe(input: unknown): Promise<ActionResult> {
   // one replaceRecipeContents call, one RPC transaction, no partial-write
   // window left between them (module header comment).
   if (ingredients !== undefined && steps !== undefined) {
+    // The lines as they were, so a re-linked line can keep its weight per unit.
+    const { data: previousRows, error: previousError } = await supabase
+      .from("recipe_ingredients")
+      .select("name, unit, ingredient_id")
+      .eq("recipe_id", recipeId)
+      .eq("user_id", auth.userId);
+    if (previousError) logDbError("updateRecipe/previous-lines", previousError);
+    const previous: PreviousLine[] = (previousRows ?? []).map((row) => ({
+      name: row.name,
+      unit: row.unit,
+      ingredientId: row.ingredient_id,
+    }));
+
     const result = await replaceRecipeContents(supabase, auth.userId, recipeId, ingredients, steps);
     if (!result.ok) return { success: false, error: "generic" };
+    await fillMissingUnitWeights(supabase, auth.userId, ingredients, previous);
   }
 
   revalidatePath("/recepten", "layout");

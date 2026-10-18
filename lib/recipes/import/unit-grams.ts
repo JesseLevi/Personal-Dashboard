@@ -71,3 +71,23 @@ export async function loadUnitGrams(supabase: Client, userId: string, ingredient
     return mass.status === "resolved" ? mass.grams : null;
   };
 }
+
+/** Grams with one decimal below 10 g, whole grams above. */
+export function roundGrams(grams: number): number {
+  return grams >= 10 ? Math.round(grams) : Math.round(grams * 10) / 10;
+}
+
+/** Stores estimated weights per unit as the user's own override; best effort, an existing row is never overwritten. */
+export async function saveUnitWeights(
+  supabase: Client,
+  userId: string,
+  weights: Array<{ ingredientId: string; unit: UnitCode; grams: number }>,
+): Promise<void> {
+  const unique = new Map(weights.map((w) => [`${w.ingredientId}:${w.unit}`, w]));
+  if (unique.size === 0) return;
+  const { error } = await supabase.from("ingredient_unit_masses").upsert(
+    [...unique.values()].map((w) => ({ user_id: userId, ingredient_id: w.ingredientId, unit: w.unit, grams: w.grams })),
+    { onConflict: "user_id,ingredient_id,unit", ignoreDuplicates: true },
+  );
+  if (error) console.error("[recipes] unit weights failed:", error.code, error.message);
+}
