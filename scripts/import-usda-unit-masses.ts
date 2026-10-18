@@ -874,7 +874,7 @@ function parseDelimitedText(text: string, delimiter: string): string[][] {
   return rows;
 }
 
-function parseCsv(text: string): Record<string, string>[] {
+export function parseCsv(text: string): Record<string, string>[] {
   const withoutBom = text.startsWith("﻿") ? text.slice(1) : text;
   const table = parseDelimitedText(withoutBom, ",");
   if (table.length === 0) return [];
