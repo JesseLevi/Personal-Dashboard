@@ -28,6 +28,7 @@ Every item has a palette colour (ADR-0040, `lib/agenda/colors.ts`): an event tak
 | Kind | Look |
 |---|---|
 | Event (own or imported) | block: `event-<c>-surface` fill, `event-<c>-text`, `border-s-4` stripe in `event-<c>-accent`; imported adds the `CalendarSync` icon |
+| Recurring own event (`recurring`) | the event block, plus a small `Repeat` icon (12px) after the title with an `sr-only` "Terugkerende afspraak"; it sits in the title row because day and month items have no meta row |
 | Meal | green block, slot icon (Croissant, Sandwich, Utensils, Cookie), recipe title; always all-day. The moment ("Diner") is not drawn behind the title in the all-day row, month and grid: it stays in `sr-only` text and `title`. List and day-row meta show it |
 | Planned card | amber block, `Columns3` icon, board and column |
 | Deadline | no fill, `event-red-text`, `AlarmClockCheck`; hover and selected fill `event-red-surface`; lives in the all-day row |
@@ -59,7 +60,7 @@ Light surfaces are 1.09-1.22:1 against the white grid; the stripe and text carry
 - No FullCalendar theme plugin, `theme.css` or `--fc-*` variables. `skeleton.css` (positioning only) is imported by the component.
 - All events render as blocks (`display: "block"`), also in month view, so kinds keep their surface instead of FullCalendar's dot style. `eventContent` is ours; labels are resolved with `useTranslations` once and passed in, because FullCalendar renders content outside our hook scope.
 - Meals are day items: they sit in the all-day zone (week, day), never as a block on the hour grid. `eventOrder` is `compareEventOrder`: all-day items first (deadlines, planned cards, events, then meals by moment and `position`), timed items by start.
-- Editability per kind (`itemEditability`): synced events and deadlines are fixed; meals and planned cards move but keep their length; manual events move, and resize when timed. FullCalendar enforces it via `startEditable`/`durationEditable`.
+- Editability per kind (`itemEditability`): synced events and deadlines are fixed; meals and planned cards move but keep their length; manual events move, and resize when timed. FullCalendar enforces it via `startEditable`/`durationEditable`. An occurrence of a recurring event moves and resizes like any own event; the page saves that as "Alleen deze" (the row becomes detached, ADR-0042).
 - Overlapping timed items sit side by side (`slotEventOverlap: false`).
 - `week` becomes `threeDay` below `md` (`useIsNarrow`, wide on SSR). Day view is the other mobile default. FullCalendar has no swipe between days: the page header carries prev/next arrows.
 - External dragging: `useAgendaDraggable(ref, payload)` wraps `Draggable` with `create: false`; the drop reports `{ payload, start, allDay, eventId? }` through `onExternalDrop` and the parent creates the item. `eventId` is the event under the pointer (`eventDidMount` stamps `data-agenda-event-id` on event elements; the drop looks them up with `elementsFromPoint`, also for touch), so a drop on an appointment can attach to it. The payload travels in a `WeakMap`, not the DOM.

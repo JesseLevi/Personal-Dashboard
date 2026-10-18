@@ -29,6 +29,8 @@ export interface AgendaEventItem extends AgendaItemBase {
   color: AgendaColor;
   /** Set when the source no longer returns the event (`missing_since`). */
   missingSince: string | null;
+  /** An occurrence of a recurring own event (`series_id` is set). */
+  recurring?: boolean;
 }
 
 /** `meal_plans`, always an all-day item on its date. `title` is the recipe title. */
@@ -73,4 +75,13 @@ export interface AgendaEventDetail {
   calendarId: string;
   /** Name of the calendar the event is in (the source of an imported event). */
   calendarName: string | null;
+  /** The rule of the series this occurrence belongs to; null for a single event. */
+  repeat: AgendaRepeatRule | null;
+}
+
+/** `calendar_event_series` rule: `until` is a date, inclusive, null = never ends. */
+export interface AgendaRepeatRule {
+  freq: "daily" | "weekly" | "monthly" | "yearly";
+  interval: number;
+  until: string | null;
 }

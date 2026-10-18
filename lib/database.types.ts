@@ -175,6 +175,77 @@ export type Database = {
           },
         ]
       }
+      calendar_event_series: {
+        Row: {
+          all_day: boolean
+          calendar_id: string
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          excluded_on: string[]
+          freq: string
+          id: string
+          interval: number
+          location: string | null
+          materialized_until: string | null
+          start_time: string | null
+          starts_on: string
+          time_zone: string
+          title: string
+          until: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          all_day?: boolean
+          calendar_id: string
+          created_at?: string
+          description?: string | null
+          duration_minutes: number
+          excluded_on?: string[]
+          freq: string
+          id?: string
+          interval?: number
+          location?: string | null
+          materialized_until?: string | null
+          start_time?: string | null
+          starts_on: string
+          time_zone?: string
+          title: string
+          until?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          all_day?: boolean
+          calendar_id?: string
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          excluded_on?: string[]
+          freq?: string
+          id?: string
+          interval?: number
+          location?: string | null
+          materialized_until?: string | null
+          start_time?: string | null
+          starts_on?: string
+          time_zone?: string
+          title?: string
+          until?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_event_series_calendar_id_fkey"
+            columns: ["calendar_id"]
+            isOneToOne: false
+            referencedRelation: "calendars"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_events: {
         Row: {
           all_day: boolean
@@ -188,6 +259,9 @@ export type Database = {
           id: string
           location: string | null
           missing_since: string | null
+          occurrence_on: string | null
+          series_detached: boolean
+          series_id: string | null
           source: string
           starts_at: string
           title: string
@@ -206,6 +280,9 @@ export type Database = {
           id?: string
           location?: string | null
           missing_since?: string | null
+          occurrence_on?: string | null
+          series_detached?: boolean
+          series_id?: string | null
           source?: string
           starts_at: string
           title: string
@@ -224,6 +301,9 @@ export type Database = {
           id?: string
           location?: string | null
           missing_since?: string | null
+          occurrence_on?: string | null
+          series_detached?: boolean
+          series_id?: string | null
           source?: string
           starts_at?: string
           title?: string
@@ -243,6 +323,13 @@ export type Database = {
             columns: ["calendar_id"]
             isOneToOne: false
             referencedRelation: "calendars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_events_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_event_series"
             referencedColumns: ["id"]
           },
         ]
@@ -1252,6 +1339,7 @@ export type Database = {
           link_count: number
           missing_since: string
           planned_on: string
+          series_id: string
           servings: number
           slot: string
           source: string
@@ -1275,11 +1363,33 @@ export type Database = {
         Returns: boolean
       }
       avatar_path_for: { Args: { p_user_id: string }; Returns: string }
+      create_event_series: {
+        Args: {
+          p_all_day: boolean
+          p_calendar_id: string
+          p_description?: string
+          p_ends_at: string
+          p_event_id?: string
+          p_freq: string
+          p_interval: number
+          p_location?: string
+          p_starts_at: string
+          p_time_zone?: string
+          p_title: string
+          p_until?: string
+        }
+        Returns: string
+      }
       create_ics_calendar: {
         Args: { p_name: string; p_url: string }
         Returns: string
       }
+      delete_event_series: {
+        Args: { p_event_id: string; p_scope: string }
+        Returns: undefined
+      }
       ensure_user_defaults: { Args: never; Returns: undefined }
+      extend_event_series: { Args: never; Returns: number }
       get_calendar_account_secret: {
         Args: { p_account_id: string }
         Returns: string
@@ -1398,6 +1508,22 @@ export type Database = {
         Returns: undefined
       }
       toggle_board_favorite: { Args: { p_board_id: string }; Returns: boolean }
+      update_event_series: {
+        Args: {
+          p_all_day: boolean
+          p_description?: string
+          p_ends_at: string
+          p_event_id: string
+          p_freq?: string
+          p_interval?: number
+          p_location?: string
+          p_scope: string
+          p_starts_at: string
+          p_title: string
+          p_until?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       recipe_import_status: "importing" | "done" | "failed"
