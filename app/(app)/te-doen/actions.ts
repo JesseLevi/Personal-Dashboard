@@ -25,11 +25,12 @@ import type { Database } from "@/lib/database.types";
 // Write side of #92 — board/column/card CRUD + card move, called from the
 // Kanban UI (later tickets). Every action:
 //   1. parses its input with the matching lib/boards/schemas.ts schema;
-//   2. resolves the signed-in user and filters every query on that id
-//      explicitly, on top of RLS (see the ticket's "don't trust the client
-//      for ownership" note — RLS alone would let a column_id from another
-//      of the same user's boards through unnoticed; moveCard's own guard
-//      against that now lives in the public.move_card RPC, #169);
+//   2. resolves the signed-in user, stamps `user_id` on inserts and leaves
+//      access to the RLS policies: no app-side `user_id` filter on reads,
+//      updates or deletes (ADR-0033/0035, #507). Writes hit by RLS return no
+//      row (`not-found`) or raise 42501 (`read-only`); moveCard's guard
+//      against a column_id from another board lives in the public.move_card
+//      RPC, #169;
 //   3. returns a typed ActionResult instead of throwing, so the UI can look
 //      up `boards.errors.${error}` in the message catalog. Errors never
 //      carry a database message or user-supplied content (only db.code is
@@ -58,9 +59,18 @@ function logDbError(action: string, error: { code: string; message: string }) {
   console.error(`[boards] ${action} failed:`, error.code, error.message);
 }
 
-// Position of the last row (by `position`) owned by `userId`, optionally
-// further scoped to one parent — the shared "append at the end" building
-// block for createBoard/createColumn/createCard. Null if there are no
+// A write RLS refuses with an error raises 42501 (insufficient privilege):
+// that is `read-only` (a shared board the caller may only read), anything else
+// is `generic`. A write RLS refuses silently returns no row and is `not-found`.
+function readOnlyOrGeneric(error: { code: string }): "read-only" | "generic" {
+  return error.code === "42501" ? "read-only" : "generic";
+}
+
+// Position of the last row (by `position`) -- the shared "append at the end"
+// building block for createBoard/createColumn/createCard. Columns and cards
+// are scoped to their parent and RLS decides which rows count; boards have no
+// parent, so they stay filtered on the caller's own `userId` (otherwise a
+// shared board would shift the caller's own position sequence). Null if there are no
 // matching rows. Three thin variants rather than one table-generic helper:
 // each table's scoping column differs, and a single function parameterized
 // over the table name can't stay soundly typed across all three shapes.
@@ -75,15 +85,10 @@ async function lastBoardPosition(supabase: Client, userId: string): Promise<numb
   return data?.position ?? null;
 }
 
-async function lastColumnPosition(
-  supabase: Client,
-  userId: string,
-  boardId: string,
-): Promise<number | null> {
+async function lastColumnPosition(supabase: Client, boardId: string): Promise<number | null> {
   const { data } = await supabase
     .from("board_columns")
     .select("position")
-    .eq("user_id", userId)
     .eq("board_id", boardId)
     .order("position", { ascending: false })
     .limit(1)
@@ -91,15 +96,10 @@ async function lastColumnPosition(
   return data?.position ?? null;
 }
 
-async function lastCardPosition(
-  supabase: Client,
-  userId: string,
-  columnId: string,
-): Promise<number | null> {
+async function lastCardPosition(supabase: Client, columnId: string): Promise<number | null> {
   const { data } = await supabase
     .from("cards")
     .select("position")
-    .eq("user_id", userId)
     .eq("column_id", columnId)
     .order("position", { ascending: false })
     .limit(1)
@@ -164,13 +164,12 @@ export async function renameBoard(input: unknown): Promise<ActionResult> {
     .from("boards")
     .update({ name: parsed.data.name })
     .eq("id", parsed.data.boardId)
-    .eq("user_id", auth.userId)
     .select("id")
     .maybeSingle();
 
   if (error) {
     logDbError("renameBoard", error);
-    return { success: false, error: "generic" };
+    return { success: false, error: readOnlyOrGeneric(error) };
   }
   if (!data) return { success: false, error: "not-found" };
 
@@ -223,15 +222,14 @@ export async function createColumn(
     .from("boards")
     .select("id")
     .eq("id", parsed.data.boardId)
-    .eq("user_id", auth.userId)
     .maybeSingle();
   if (boardError) {
     logDbError("createColumn/board-lookup", boardError);
-    return { success: false, error: "generic" };
+    return { success: false, error: readOnlyOrGeneric(boardError) };
   }
   if (!board) return { success: false, error: "not-found" };
 
-  const last = await lastColumnPosition(supabase, auth.userId, parsed.data.boardId);
+  const last = await lastColumnPosition(supabase, parsed.data.boardId);
   const position = nextPosition(last, null);
 
   const { data, error } = await supabase
@@ -271,13 +269,12 @@ export async function renameColumn(input: unknown): Promise<ActionResult> {
         : { name: parsed.data.name, icon: parsed.data.icon },
     )
     .eq("id", parsed.data.columnId)
-    .eq("user_id", auth.userId)
     .select("id")
     .maybeSingle();
 
   if (error) {
     logDbError("renameColumn", error);
-    return { success: false, error: "generic" };
+    return { success: false, error: readOnlyOrGeneric(error) };
   }
   if (!data) return { success: false, error: "not-found" };
 
@@ -298,13 +295,12 @@ export async function deleteColumn(input: unknown): Promise<ActionResult> {
     .from("board_columns")
     .delete()
     .eq("id", parsed.data.columnId)
-    .eq("user_id", auth.userId)
     .select("id")
     .maybeSingle();
 
   if (error) {
     logDbError("deleteColumn", error);
-    return { success: false, error: "generic" };
+    return { success: false, error: readOnlyOrGeneric(error) };
   }
   if (!data) return { success: false, error: "not-found" };
 
@@ -324,15 +320,14 @@ export async function createCard(input: unknown): Promise<ActionResult<CardRow>>
     .from("board_columns")
     .select("id")
     .eq("id", parsed.data.columnId)
-    .eq("user_id", auth.userId)
     .maybeSingle();
   if (columnError) {
     logDbError("createCard/column-lookup", columnError);
-    return { success: false, error: "generic" };
+    return { success: false, error: readOnlyOrGeneric(columnError) };
   }
   if (!column) return { success: false, error: "not-found" };
 
-  const last = await lastCardPosition(supabase, auth.userId, parsed.data.columnId);
+  const last = await lastCardPosition(supabase, parsed.data.columnId);
   const position = nextPosition(last, null);
 
   const { data, error } = await supabase
@@ -389,13 +384,12 @@ export async function updateCard(input: unknown): Promise<ActionResult> {
     .from("cards")
     .update(update)
     .eq("id", cardId)
-    .eq("user_id", auth.userId)
     .select("id")
     .maybeSingle();
 
   if (error) {
     logDbError("updateCard", error);
-    return { success: false, error: "generic" };
+    return { success: false, error: readOnlyOrGeneric(error) };
   }
   if (!data) return { success: false, error: "not-found" };
 
@@ -426,7 +420,7 @@ export async function planCard(input: unknown): Promise<ActionResult> {
 
   if (error) {
     logDbError("planCard", error);
-    return { success: false, error: error.code === "42501" ? "read-only" : "generic" };
+    return { success: false, error: readOnlyOrGeneric(error) };
   }
   if (!data) return { success: false, error: "not-found" };
 
@@ -446,13 +440,12 @@ export async function deleteCard(input: unknown): Promise<ActionResult> {
     .from("cards")
     .delete()
     .eq("id", parsed.data.cardId)
-    .eq("user_id", auth.userId)
     .select("id")
     .maybeSingle();
 
   if (error) {
     logDbError("deleteCard", error);
-    return { success: false, error: "generic" };
+    return { success: false, error: readOnlyOrGeneric(error) };
   }
   if (!data) return { success: false, error: "not-found" };
 
