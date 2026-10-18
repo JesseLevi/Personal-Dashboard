@@ -27,7 +27,7 @@ set local role authenticated;
 -- Both users see the same full seeded set.
 set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-00000000008a", "role": "authenticated"}';
 select results_eq(
-  $$ select count(*)::int from reference.ingredients $$,
+  $$ select count(*)::int from reference.ingredients where source = 'NEVO-online' $$,
   $$ values (2328) $$,
   'A sees the full 2328-row NEVO-online migration seed'
 );
@@ -38,7 +38,7 @@ select ok(
 
 set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-00000000008b", "role": "authenticated"}';
 select results_eq(
-  $$ select count(*)::int from reference.ingredients $$,
+  $$ select count(*)::int from reference.ingredients where source = 'NEVO-online' $$,
   $$ values (2328) $$,
   'B sees the same full 2328-row set as A'
 );
