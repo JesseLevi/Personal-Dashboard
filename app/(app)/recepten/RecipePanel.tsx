@@ -62,6 +62,9 @@ const SERVINGS_SELECT_OPTIONS = SERVINGS_OPTIONS.map((value) => ({
 }));
 
 let rowIdCounter = 0;
+// Stand-in disabled look: docs/open-questions.md#button-no-disabled-state
+const DISABLED_LOOK = "disabled:opacity-40";
+
 function nextRowId(prefix: string): string {
   rowIdCounter += 1;
   return `${prefix}-${rowIdCounter}`;
@@ -636,7 +639,7 @@ export function RecipePanel({
                   id={`recipe-panel-step-${row.localId}-up`}
                   icon="ArrowUp"
                   aria-label={t("fields.moveStepUpLabel", { number: index + 1 })}
-                  className="disabled:opacity-40"
+                  className={DISABLED_LOOK}
                   onClick={() => handleMoveStepRow(row.localId, "up")}
                   disabled={index === 0}
                 />
@@ -644,7 +647,7 @@ export function RecipePanel({
                   id={`recipe-panel-step-${row.localId}-down`}
                   icon="ArrowDown"
                   aria-label={t("fields.moveStepDownLabel", { number: index + 1 })}
-                  className="disabled:opacity-40"
+                  className={DISABLED_LOOK}
                   onClick={() => handleMoveStepRow(row.localId, "down")}
                   disabled={index === steps.length - 1}
                 />
@@ -652,7 +655,7 @@ export function RecipePanel({
                   variant="destructive"
                   icon="Trash"
                   aria-label={t("fields.removeStepLabel", { number: index + 1 })}
-                  className="disabled:opacity-40"
+                  className={DISABLED_LOOK}
                   onClick={() => handleRemoveStepRow(row.localId)}
                   disabled={steps.length <= 1}
                 />
