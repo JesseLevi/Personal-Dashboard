@@ -10,9 +10,7 @@ const nextConfig: NextConfig = {
     // lucide-react already declares sideEffects:false and ships one ESM
     // module per icon, so standard tree-shaking already dropped everything
     // components/atoms/Icon.tsx doesn't import. Kept anyway — Next's own
-    // docs recommend it for this package and it isn't harmful — but the
-    // real fix if lucide-react ever regresses this lives in
-    // design/notes/Icon.md, not here.
+    // docs recommend it for this package and it isn't harmful.
     optimizePackageImports: ["lucide-react"],
     serverActions: {
       // lib/recipes/thumbnail-validation.ts's MAX_THUMBNAIL_BYTES allows
