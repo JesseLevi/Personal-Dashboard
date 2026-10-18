@@ -237,8 +237,8 @@
     },
     "page": {
       "clearAllLabel": "Leeg mand",
-      "clearAllConfirmLabel": "Alle items uit de mand verwijderen?",
-      "clearAllConfirmButtonLabel": "Ja, leeg mand",
+      "clearAllConfirmLabel": "Alle items verwijderen?",
+      "clearAllConfirmButtonLabel": "Leegmaken",
       "clearAllDeletingLabel": "Legen…",
       "cancelLabel": "Annuleren",
       "deleteItemLabel": "Verwijder {name}",

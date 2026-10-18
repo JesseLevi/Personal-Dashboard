@@ -237,8 +237,8 @@
     },
     "page": {
       "clearAllLabel": "Empty basket",
-      "clearAllConfirmLabel": "Remove all items from the basket?",
-      "clearAllConfirmButtonLabel": "Yes, empty basket",
+      "clearAllConfirmLabel": "Remove all items?",
+      "clearAllConfirmButtonLabel": "Empty",
       "clearAllDeletingLabel": "Emptying…",
       "cancelLabel": "Cancel",
       "deleteItemLabel": "Delete {name}",
