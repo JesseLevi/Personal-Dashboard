@@ -33,12 +33,16 @@ test("hover shows the handle, the menu duplicates, moves and deletes, undo resto
   await trigger.click();
   await page.getByRole("menuitem", { name: "Dupliceren" }).click();
   await expect(blocks(page)).toHaveCount(before.length + 1);
+  await expect(page.locator(".tiptap")).toBeFocused();
   await page.keyboard.press("ControlOrMeta+z");
+  // Focus must be back in the editor before Mod-z, and the undo must land before the next hover (the spec was flaky on main).
+  await expect.poll(() => blockTexts(page)).toEqual(before);
 
   await page.locator(".tiptap > p").first().hover();
   await trigger.click();
   await page.getByRole("menuitem", { name: "Verwijderen" }).click();
   await expect.poll(() => blockTexts(page)).not.toContain(before[1]);
+  await expect(page.locator(".tiptap")).toBeFocused();
   await page.keyboard.press("ControlOrMeta+z");
   await expect.poll(() => blockTexts(page)).toEqual(before);
 });
@@ -119,6 +123,7 @@ test("works on code blocks and details: duplicate, move, delete, undo", async ({
   await expect(page.getByRole("menuitemradio")).toHaveCount(0);
   await page.getByRole("menuitem", { name: "Dupliceren" }).click();
   await expect(page.locator(".tiptap > [data-type=details]")).toHaveCount(2);
+  await expect(page.locator(".tiptap")).toBeFocused();
   await page.keyboard.press("ControlOrMeta+z");
   await expect(page.locator(".tiptap > [data-type=details]")).toHaveCount(1);
 
@@ -127,12 +132,14 @@ test("works on code blocks and details: duplicate, move, delete, undo", async ({
   await expect(page.getByRole("menuitemradio", { name: "Codeblok" })).toHaveAttribute("aria-checked", "true");
   await page.getByRole("menuitem", { name: "Omhoog verplaatsen" }).click();
   await expect(page.locator(".tiptap > *").first()).toContainText("let a = 1;");
+  await expect(page.locator(".tiptap")).toBeFocused();
   await page.keyboard.press("ControlOrMeta+z");
 
   await page.locator(".tiptap > :has(pre)").hover();
   await trigger.click();
   await page.getByRole("menuitem", { name: "Verwijderen" }).click();
   await expect(page.locator(".tiptap > :has(pre)")).toHaveCount(0);
+  await expect(page.locator(".tiptap")).toBeFocused();
   await page.keyboard.press("ControlOrMeta+z");
   await expect(page.locator(".tiptap > :has(pre)")).toHaveCount(1);
   await expect(page.locator(".tiptap > [data-type=details]")).toHaveCount(1);

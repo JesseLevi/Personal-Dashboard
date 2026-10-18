@@ -4,13 +4,9 @@
 import { cn } from "@/lib/ui/cn";
 import {
   Children,
-  cloneElement,
-  isValidElement,
   useState,
   type HTMLAttributes,
   type KeyboardEvent,
-  type MouseEvent,
-  type ReactElement,
   type ReactNode,
 } from "react";
 import { Icon } from "./Icon";
@@ -20,11 +16,12 @@ import { Icon } from "./Icon";
  * variant/state axis. Full history: `design/notes/Dropdown.md`.
  *
  * `Field`+`Title` → `label` (requires `id`); SLOT `Slot` → required
- * `children`, whose first child is both the current selection AND the
- * disclosure trigger (caller-supplied — see the trigger-ownership note
- * below); the title renders as inert text. When labelled, Dropdown renders
- * its own trailing chevron next to the trigger (#112) — the caller's trigger
- * must NOT render its own trailing icon. Figma has no open/closed state, so
+ * `children`, whose first child is the current selection. When labelled,
+ * Dropdown owns the one `<button>` (the disclosure trigger) that spans the
+ * whole row: the first child is rendered inside it, next to Dropdown's own
+ * chevron, so it must be non-interactive (a `Tag`, or a `Button` with
+ * `presentational`). The label is a native `<label for>` of that button, so
+ * clicking it opens the list too. Figma has no open/closed state, so
  * "closed" is this atom's own interpretation: panel chrome always renders,
  * first child always visible, only the rest collapse. Client Component:
  * open/closed is intrinsic, identical-for-every-caller behaviour.
@@ -55,14 +52,6 @@ export type DropdownProps =
     })
   | (DropdownBaseProps & { label?: never; defaultOpen?: never });
 
-type TriggerProps = {
-  id?: string;
-  className?: string;
-  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
-  "aria-expanded"?: boolean;
-  "aria-controls"?: string;
-};
-
 export function Dropdown({
   label,
   id,
@@ -91,18 +80,6 @@ export function Dropdown({
     }
   }
 
-  // The first child becomes the disclosure trigger by injecting aria-* onto
-  // the caller's own interactive element — never by wrapping it in a second
-  // `<button>`, which would be invalid HTML. See design/notes/Dropdown.md.
-  const trigger =
-    label && isValidElement(selectedChild)
-      ? cloneElement(selectedChild as ReactElement<TriggerProps>, {
-          id: triggerId,
-          "aria-expanded": isOpen,
-          "aria-controls": panelId,
-        })
-      : selectedChild;
-
   return (
     <div
       // `rounded-control-outer` here, not just on the panel: without it a
@@ -115,9 +92,13 @@ export function Dropdown({
       onKeyDown={label ? handleRootKeyDown : undefined}
     >
       {label ? (
-        <span id={id} className="w-fit text-base font-semibold text-text-secondary">
+        <label
+          id={id}
+          htmlFor={triggerId}
+          className="w-fit cursor-pointer text-base font-semibold text-text-secondary"
+        >
           {label}
-        </span>
+        </label>
       ) : null}
 
       <div
@@ -137,16 +118,22 @@ export function Dropdown({
       >
         {label ? (
           <>
-            {/* Trigger row: the chevron is Dropdown's own fixed trailing
-                column, never the trigger's. See design/notes/Dropdown.md. */}
-            <div
+            {/* Trigger row: ONE button owns the selection and the chevron.
+                The chevron is Dropdown's own fixed trailing column, never the
+                caller's. See design/notes/Dropdown.md. */}
+            <button
+              type="button"
+              id={triggerId}
               // spacing-flag: `gap-3` trigger row — no measurable Figma
               // node (Slot's own fetched children have no separate
               // trigger+chevron wrapper frame to read). design/notes/Dropdown.md.
-              className="flex w-full cursor-pointer items-center gap-3"
+              className="flex w-full cursor-pointer items-center gap-3 text-left"
+              aria-expanded={isOpen}
+              aria-controls={panelId}
+              aria-labelledby={`${id} ${triggerId}`}
               onClick={() => setIsOpen((open) => !open)}
             >
-              <div className="min-w-0 flex-1">{trigger}</div>
+              <span className="min-w-0 flex-1">{selectedChild}</span>
               <Icon
                 name="ChevronDown"
                 className={cn(
@@ -154,7 +141,7 @@ export function Dropdown({
                   isOpen && "rotate-180",
                 )}
               />
-            </div>
+            </button>
             <div
               id={panelId}
               aria-labelledby={id}

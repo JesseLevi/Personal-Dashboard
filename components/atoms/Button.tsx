@@ -75,6 +75,8 @@ type ButtonBaseProps = Omit<
     /** Figma "With icon" boolean — pass an IconName to render the leading icon; omit to hide it. */
     icon?: IconName;
     size?: "default" | "compact";
+    /** Renders the button's look on a `<span>`, for a parent control that owns the interaction (`Dropdown`'s trigger row). Never combine with `onClick`. */
+    presentational?: boolean;
   };
 
 // Icon-only (no `children`) requires `aria-label` (type-enforced, `Icon` is
@@ -104,6 +106,7 @@ export function Button({
   children,
   className,
   type = "button",
+  presentational = false,
   ...props
 }: ButtonProps) {
   // Icon-only + default/omitted size resolves to the internal `iconOnlyDefault` key (structural 40x40).
@@ -112,21 +115,26 @@ export function Button({
   // align only applies to the labelled branch; icon-only keeps size's own justify-center.
   const resolvedAlign =
     resolvedSize === "default" ? (align ?? "center") : undefined;
-  return (
-    <button
-      type={type}
-      className={cn(
-        buttonVariants({ variant, size: resolvedSize, align: resolvedAlign }),
-        className,
-      )}
-      {...props}
-    >
+  const classes = cn(
+    buttonVariants({ variant, size: resolvedSize, align: resolvedAlign }),
+    className,
+  );
+  const content = (
+    <>
       {/* Mirrors Figma's "Leading + Text" frame (row, gap-inline-sm = 8px, #112) as the root's first slot. */}
       <span className="flex items-center gap-inline-sm">
         {icon && <Icon name={icon} />}
         {children}
       </span>
       {trailingIcon && <Icon name={trailingIcon} />}
+    </>
+  );
+  if (presentational) {
+    return <span className={classes}>{content}</span>;
+  }
+  return (
+    <button type={type} className={classes} {...props}>
+      {content}
     </button>
   );
 }

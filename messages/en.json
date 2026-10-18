@@ -237,6 +237,10 @@
     },
     "page": {
       "clearAllLabel": "Empty basket",
+      "clearAllConfirmLabel": "Remove all items?",
+      "clearAllConfirmButtonLabel": "Empty",
+      "clearAllDeletingLabel": "Emptying…",
+      "cancelLabel": "Cancel",
       "deleteItemLabel": "Delete {name}",
       "sortLabel": "Sort",
       "addItemLabel": "Item",
@@ -806,6 +810,9 @@
         "removeIngredientLabel": "Remove ingredient",
         "stepLabel": "Step {number}",
         "stepPlaceholder": "Type an instruction here...",
+        "removeStepLabel": "Remove step {number}",
+        "moveStepUpLabel": "Move step {number} up",
+        "moveStepDownLabel": "Move step {number} down",
         "needsReviewLabel": "check"
       },
       "addRowLabel": "Add",

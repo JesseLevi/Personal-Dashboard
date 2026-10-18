@@ -329,7 +329,7 @@ export function CardDetailPanel({
           id="card-detail-status"
           defaultOpen={false}
         >
-          <Button variant="filled" icon={selectedColumn.icon} align="left">
+          <Button presentational variant="filled" icon={selectedColumn.icon} align="left">
             {selectedColumn.name}
           </Button>
           {otherColumns.map((column) => (
@@ -351,20 +351,8 @@ export function CardDetailPanel({
         id="card-detail-priority"
         defaultOpen={false}
       >
-        {/* Selected item doubles as the disclosure trigger (#100) — Tag has
-            no interactive semantics of its own, so this plain <button>
-            supplies the click target; Dropdown clones aria-expanded/
-            aria-controls/onClick onto it and renders its own trailing
-            chevron alongside it (#112), rather than wrapping it in a second
-            <button>. */}
-        {/* spacing-flag: rounded-lg — this wrapper is a code-only click
-            target (no Figma node of its own); it hugs Tag exactly, and
-            Tag's own rounded-lg is measured `radius/control` (node
-            3626:4515, design/notes/Tag.md #205), but that is Tag's binding,
-            not this button's — design/notes/CardDetailPanel.md #219. */}
-        <button type="button" className="inline-flex w-fit items-center rounded-lg">
-          <Tag variant={priority}>{tPriority(priority)}</Tag>
-        </button>
+        {/* The selected Tag sits inside Dropdown's own trigger button. */}
+        <Tag variant={priority}>{tPriority(priority)}</Tag>
         {otherPriorities.map((value) => (
           <button
             key={value}
@@ -384,12 +372,7 @@ export function CardDetailPanel({
         id="card-detail-size"
         defaultOpen={false}
       >
-        {/* Same trigger pattern as Prioriteit above — see that comment. */}
-        {/* spacing-flag: rounded-lg — same wrapper pattern as the Priority
-            trigger above — design/notes/CardDetailPanel.md#219. */}
-        <button type="button" className="inline-flex w-fit items-center rounded-lg">
-          <Tag variant="neutral">{size ? size.toUpperCase() : t("fields.sizePlaceholder")}</Tag>
-        </button>
+        <Tag variant="neutral">{size ? size.toUpperCase() : t("fields.sizePlaceholder")}</Tag>
         {otherSizes.map((value) => (
           <button
             key={value ?? "none"}
