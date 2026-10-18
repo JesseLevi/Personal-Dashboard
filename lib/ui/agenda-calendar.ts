@@ -99,6 +99,19 @@ export const AGENDA_SLOT_MINUTES = 30;
 export const AGENDA_SLOTS_PER_DAY = (24 * 60) / AGENDA_SLOT_MINUTES;
 /** Events and drag-selections snap to this; a click selects a whole slot. */
 export const AGENDA_SNAP_MINUTES = 15;
+/** A timed item shorter than this shows its title and start time on one line. */
+export const AGENDA_SHORT_MINUTES = 45;
+
+/** `09:05`: the 24-hour clock time of a date in the browser's zone, as the grid labels it. */
+export function formatClock(date: Date): string {
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+/** Whether a timed span is shorter than `AGENDA_SHORT_MINUTES`. An open end counts as long: FullCalendar gives it an hour. */
+export function isShortSpan(start: Date | null, end: Date | null): boolean {
+  if (!start || !end) return false;
+  return end.getTime() - start.getTime() < AGENDA_SHORT_MINUTES * 60_000;
+}
 
 /**
  * A click without drag selects one snap (15 minutes): widen it to the whole slot,

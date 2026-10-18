@@ -1,6 +1,7 @@
 // design: Claude-designed (#485)
 import type { EventDisplayInfo } from "@fullcalendar/react";
 import type { AgendaItem, MealSlot } from "@/lib/agenda/types";
+import { formatClock, isShortSpan } from "@/lib/ui/agenda-calendar";
 import { cn } from "@/lib/ui/cn";
 import { Icon, type IconName } from "../atoms/Icon";
 import { itemKey } from "./AgendaCalendarTheme";
@@ -51,49 +52,56 @@ export function AgendaItemContent({ info, labels }: { info: EventDisplayInfo; la
 
   const view = info.view.type;
   const isList = view.startsWith("list");
-  const isColumn = view.startsWith("timeGrid") && !info.event.allDay;
-  const stacked = isColumn && !info.isShort;
+  const isGrid = view.startsWith("timeGrid");
+  const isColumn = isGrid && !info.event.allDay;
+  const oneLine = isColumn && isShortSpan(info.event.start, info.event.end);
+  const stacked = isColumn && !oneLine;
   const icon = leadingIcon(item);
   const timeText = item.allDay ? "" : info.timeText;
   const meta = metaLine(item, isColumn || isList ? timeText : "", labels);
-  const inlineTime = !isColumn && !isList && timeText && item.kind !== "meal";
-  const secondary = item.kind === "event" && item.source === "manual" ? "text-text-secondary" : "opacity-80";
+  // Three phone-width columns leave no room beside a title: the time moves to the tooltip.
+  const startTime = oneLine && view !== "timeGridThreeDay" && info.event.start ? formatClock(info.event.start) : "";
+  const inlineTime = oneLine ? startTime : !isColumn && !isList && item.kind !== "meal" ? timeText : "";
+  const moment = item.kind === "meal" ? labels.slots[item.slot] : null;
 
   const title = (
-    <span className={"truncate text-sm font-semibold"}>
+    <span className={cn("text-sm font-semibold", isGrid && !oneLine ? "line-clamp-2 wrap-anywhere" : "truncate")}>
       <span className="sr-only">{labels.kinds[itemKey(item)]}: </span>
       {item.title}
+      {moment && !isList && <span className="sr-only"> ({moment})</span>}
     </span>
   );
 
   const links =
     item.linkCount > 0 && !info.isNarrow ? (
-      <span className={cn("ms-auto flex shrink-0 items-center gap-inline-xs text-xs font-semibold", secondary)} title={labels.links(item.linkCount)}>
+      <span className="ms-auto flex shrink-0 items-center gap-inline-xs text-xs font-semibold" title={labels.links(item.linkCount)}>
         <Icon name="Link" size={12} />
         {item.linkCount}
       </span>
     ) : null;
 
+  const tooltip = moment ? `${item.title} (${moment})` : oneLine && info.event.start ? `${item.title} ${formatClock(info.event.start)}` : item.title;
+
   if (stacked) {
     return (
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex min-w-0 items-center gap-inline-xs">
+      <div className="flex min-w-0 flex-1 flex-col" title={tooltip}>
+        <div className="flex min-w-0 items-start gap-inline-xs">
           {icon && <Icon name={icon} size={16} className="shrink-0" />}
           {title}
           {links}
         </div>
-        {meta && <span className={cn("truncate text-xs font-semibold", secondary)}>{meta}</span>}
+        {meta && <span className="truncate text-xs font-semibold">{meta}</span>}
       </div>
     );
   }
 
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-inline-xs">
+    <div className="flex min-w-0 flex-1 items-center gap-inline-xs" title={tooltip}>
       {icon && <Icon name={icon} size={16} className="shrink-0" />}
-      {inlineTime && <span className={cn("shrink-0 text-xs font-semibold", secondary)}>{timeText}</span>}
+      {inlineTime && !oneLine && <span className="shrink-0 text-xs font-semibold">{inlineTime}</span>}
       {title}
-      {meta && (isList || isColumn) && <span className={cn("truncate text-xs font-semibold", secondary)}>{meta}</span>}
-      {item.kind === "meal" && !isList && !isColumn && <span className={cn("truncate text-xs font-semibold", secondary)}>{labels.slots[item.slot]}</span>}
+      {inlineTime && oneLine && <span className="shrink-0 text-xs font-semibold">{inlineTime}</span>}
+      {meta && isList && <span className="truncate text-xs font-semibold">{meta}</span>}
       {links}
     </div>
   );

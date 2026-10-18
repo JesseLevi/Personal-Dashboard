@@ -49,6 +49,8 @@ const DARK_STORIES = [
   "agenda-page-layout--month",
   "agenda-page-layout--loading",
   "agenda-calendar--week",
+  "agenda-calendar--every-color",
+  "agenda-calendar--item-lengths",
   "agenda-calendar--month",
   "agenda-calendar--list",
   "agenda-calendar--mobile",
