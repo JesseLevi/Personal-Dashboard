@@ -132,13 +132,20 @@ const lengths: AgendaItem[] = [
   own("t4", "Een uur met een heel lange titel die over twee regels moet lopen en daarna wordt afgekapt", "2026-01-01T12:30:00", "2026-01-01T13:30:00", 1, "pink"),
 ];
 
+const nowItems: AgendaItem[] = [
+  own("n1", "Stand-up", "2026-01-01T12:00:00", "2026-01-01T12:30:00"),
+  own("n2", "Review", "2026-01-01T15:00:00", "2026-01-01T16:30:00", 0, "violet"),
+  own("n3", "Tandarts", "2025-12-31T13:00:00", "2025-12-31T14:00:00", 0, "teal"),
+  own("n4", "Padel", "2026-01-02T18:00:00", "2026-01-02T19:30:00", 0, "orange"),
+];
+
 const Frame = ({ children, className = "h-[44rem]" }: { children: React.ReactNode; className?: string }) => (
   <div className={className}>{children}</div>
 );
 
 const Calendar = ({ view, items }: { view: AgendaView; items: AgendaItem[] }) => (
   <Frame>
-    <AgendaCalendar items={items} view={view} date={DATE} />
+    <AgendaCalendar items={items} view={view} date={DATE} scrollToNow={false} />
   </Frame>
 );
 
@@ -148,6 +155,32 @@ export const Month = () => <Calendar view="month" items={allKinds} />;
 export const List = () => <Calendar view="list" items={allKinds} />;
 export const OverlappingItems = () => <Calendar view="week" items={overlapping} />;
 export const AllDayAndDeadlines = () => <Calendar view="week" items={allDay} />;
+// Opens one hour before the frozen "now" (Thursday 14:00): the label and the today chip are in red.
+export const Now = () => (
+  <Frame className="h-[28rem]">
+    <AgendaCalendar items={nowItems} view="week" date={DATE} />
+  </Frame>
+);
+
+export const NowDay = () => (
+  <Frame className="h-[28rem]">
+    <AgendaCalendar items={nowItems} view="day" date={DATE} />
+  </Frame>
+);
+
+// A week without today opens on 07:00 and has no now line.
+export const OtherWeek = () => (
+  <Frame className="h-[28rem]">
+    <AgendaCalendar items={[]} view="week" date="2026-01-12" />
+  </Frame>
+);
+
+export const NowMobile = () => (
+  <div className="h-[40rem] w-[22.5rem]">
+    <AgendaCalendar items={nowItems} view="threeDay" date={DATE} />
+  </div>
+);
+
 export const Empty = () => <Calendar view="week" items={[]} />;
 export const EmptyList = () => <Calendar view="list" items={[]} />;
 
@@ -157,19 +190,19 @@ export const ItemLengths = () => <Calendar view="day" items={lengths} />;
 
 export const MobileTitles = () => (
   <div className="h-[40rem] w-[22.5rem]">
-    <AgendaCalendar items={lengths} view="threeDay" date={DATE} />
+    <AgendaCalendar items={lengths} view="threeDay" date={DATE} scrollToNow={false} />
   </div>
 );
 
 export const Mobile = () => (
   <div className="h-[40rem] w-[22.5rem]">
-    <AgendaCalendar items={allKinds} view="threeDay" date={DATE} />
+    <AgendaCalendar items={allKinds} view="threeDay" date={DATE} scrollToNow={false} />
   </div>
 );
 
 export const MobileDay = () => (
   <div className="h-[40rem] w-[22.5rem]">
-    <AgendaCalendar items={overlapping} view="day" date={DATE} />
+    <AgendaCalendar items={overlapping} view="day" date={DATE} scrollToNow={false} />
   </div>
 );
 
@@ -222,6 +255,7 @@ export const ExternalDrag = () => {
           items={items}
           view="week"
           date={DATE}
+          scrollToNow={false}
           onExternalDrop={(drop) => {
             setLog(`${drop.payload.type}:${drop.payload.id} @ ${drop.start} allDay=${drop.allDay}${drop.eventId ? ` event=${drop.eventId}` : ""}`);
             setItems((current) => [
@@ -258,6 +292,7 @@ export const Interactive = () => {
           items={items}
           view="week"
           date={DATE}
+          scrollToNow={false}
           onSelectSlot={(span) => setLog(`select ${span.start} - ${span.end}`)}
           onItemClick={(item) => setLog(`click ${item.id}`)}
           onItemMove={(change) => {

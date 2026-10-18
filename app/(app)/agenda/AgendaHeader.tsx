@@ -1,7 +1,7 @@
 // design: Claude-designed (#486, #529)
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { ButtonToggle, type ButtonToggleItem } from "@/components/molecules/ButtonToggle";
@@ -10,6 +10,7 @@ import { Toast } from "@/components/organisms/Toast";
 import type { AgendaView } from "@/lib/agenda/view";
 import type { BasketOption } from "@/lib/shopping/baskets";
 import type { ActionResult } from "@/lib/shopping/types";
+import { AgendaDatePicker } from "./AgendaDatePicker";
 import { AgendaMoreMenu } from "./AgendaMoreMenu";
 
 // The toggle offers four choices; `threeDay` is only what `week` becomes on a phone.
@@ -29,8 +30,16 @@ export function toToggleView(view: AgendaView): AgendaToggleView {
 export interface AgendaHeaderProps {
   /** The visible period, e.g. "13–19 okt". */
   title: string;
-  /** Initially selected view; the toggle owns its state after that. */
+  /** The selected view; a shortcut can change it without a click on the toggle. */
   view: AgendaToggleView;
+  /** The ISO week number shown next to the title (week, three-day and list views). Omitted: none. */
+  weekNumber?: number;
+  /** The date the calendar shows, `YYYY-MM-DD`; the date picker starts on it. */
+  date?: string;
+  /** The date picker's choice. Omitted: the title is plain text (the loading skeleton). */
+  onGoToDate?: (date: string) => void;
+  /** Reports whether a popover of the header (menu or date picker) is open; the page leaves its shortcuts alone then. */
+  onOverlayChange?: (open: boolean) => void;
   onViewChange: (view: AgendaToggleView) => void;
   onPrevious: () => void;
   onNext: () => void;
@@ -47,13 +56,20 @@ export interface AgendaHeaderProps {
     onSend: (listId?: string) => Promise<ActionResult>;
     baskets: BasketOption[];
   };
-  /** Story-only: renders with the menu already open. */
+  /** Story-only: renders with the menu already open, on this step. */
   defaultMenuOpen?: boolean;
+  defaultMenuStep?: "menu" | "shortcuts";
+  /** Story-only: renders with the date picker already open. */
+  defaultPickerOpen?: boolean;
 }
 
 export function AgendaHeader({
   title,
   view,
+  weekNumber,
+  date,
+  onGoToDate,
+  onOverlayChange,
   onViewChange,
   onPrevious,
   onNext,
@@ -64,15 +80,36 @@ export function AgendaHeader({
   onOpenCalendars,
   weekToBasket,
   defaultMenuOpen,
+  defaultMenuStep,
+  defaultPickerOpen = false,
 }: AgendaHeaderProps) {
   const t = useTranslations("components.pageHeader.agenda");
   const [toast, setToast] = useState<string | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(defaultPickerOpen);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const titleRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => onOverlayChange?.(pickerOpen || menuOpen), [pickerOpen, menuOpen, onOverlayChange]);
+
+  function closePicker(restoreFocus: boolean) {
+    setPickerOpen(false);
+    if (restoreFocus) titleRef.current?.focus();
+  }
+
   const items = VIEW_ITEMS.map((item) => ({ ...item, label: t(`views.${item.value}`) }));
 
   return (
     <>
       <PageHeader
         title={title}
+        titleTrigger={
+          onGoToDate && { onClick: () => setPickerOpen((open) => !open), expanded: pickerOpen, buttonRef: titleRef }
+        }
+        titleAdornments={
+          weekNumber !== undefined && (
+            <span className="text-base font-semibold whitespace-nowrap text-text-secondary">{t("weekNumber", { number: weekNumber })}</span>
+          )
+        }
         className="gap-x-inline-xl max-lg:flex-wrap max-lg:gap-y-stack-md lg:items-start lg:[&>div:first-child]:h-12 [&_h1]:whitespace-nowrap [&>div:first-child]:shrink-0"
         actions={
           <div className="max-lg:contents lg:flex lg:min-w-0 lg:flex-1 lg:flex-wrap lg:items-center lg:justify-end lg:gap-x-inline-xl lg:gap-y-stack-md lg:pt-component-xs">
@@ -80,6 +117,7 @@ export function AgendaHeader({
               aria-label={t("viewLabel")}
               items={items}
               defaultValue={view}
+              value={view}
               size="small"
               iconOnlyBelowLg
               onValueChange={(value) => onViewChange(value as AgendaToggleView)}
@@ -101,7 +139,9 @@ export function AgendaHeader({
                 onOpenCalendars={onOpenCalendars}
                 weekToBasket={weekToBasket}
                 onWeekSent={() => setToast(t("weekToBasketToast"))}
+                onOpenChange={setMenuOpen}
                 defaultOpen={defaultMenuOpen}
+                defaultStep={defaultMenuStep}
               />
               <Button className="max-lg:hidden" variant="white" icon="Plus" onClick={onNew}>
                 {t("newLabel")}
@@ -117,6 +157,9 @@ export function AgendaHeader({
         onClick={onNew}
         className="fixed right-component-lg bottom-[calc(1rem+env(safe-area-inset-bottom))] z-20 size-14 border border-stroke-primary shadow-sm lg:hidden"
       />
+      {onGoToDate && date && (
+        <AgendaDatePicker open={pickerOpen} anchorRef={titleRef} date={date} onSelect={onGoToDate} onClose={closePicker} />
+      )}
       <Toast message={toast} onDismiss={() => setToast(null)} />
     </>
   );

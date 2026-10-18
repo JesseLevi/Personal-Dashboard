@@ -413,7 +413,21 @@
         "backLabel": "Back",
         "trayShowLabel": "Show plan tray",
         "trayHideLabel": "Hide plan tray",
-        "weekToBasketToast": "This week's meals are in your basket"
+        "weekToBasketToast": "This week's meals are in your basket",
+        "weekNumber": "Week {number}",
+        "goToDateLabel": "Go to date",
+        "goToDateConfirm": "Go to date",
+        "shortcutsLabel": "Keyboard shortcuts",
+        "shortcuts": {
+          "today": "Today",
+          "day": "Day view",
+          "week": "Week view",
+          "month": "Month view",
+          "list": "List view",
+          "previous": "Previous period",
+          "next": "Next period",
+          "tray": "Show or hide the plan tray"
+        }
       }
     },
     "sidePanel": {

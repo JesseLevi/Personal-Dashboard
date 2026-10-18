@@ -12,10 +12,10 @@ Controlled: `items` map to FullCalendar events (`toEventInput`, the item rides i
 |---|---|---|
 | Frame | `viewClass` | `rounded-card`, `border-stroke-primary`, `bg-surface-highlight-white`, `overflow-clip` (not `hidden`: keeps sticky headers) |
 | Grid lines | `dayCellClass`, `slotLaneClass`, `dayHeaderClass`, ... | `border-stroke-lines`; half-hour lines dotted |
-| Today | `dayCellClass`, `dayLaneClass`, header | `bg-surface-secondary/40` column tint (translucent, so the slot lines stay visible in dark mode), `bg-surface-secondary` number chip; not in the single-day view |
+| Today | `dayCellClass`, `dayLaneClass`, header | `bg-surface-secondary/40` column tint (translucent, so the slot lines stay visible in dark mode), the date as a `TODAY_CHIP` (`bg-event-red-surface text-event-red-text`, in the day header and the month cell); the tint is not in the single-day view |
 | Day header / time labels | `dayHeaderInnerClass`, `slotHeaderInnerClass` | `text-sm`/`text-xs font-semibold text-text-secondary` |
 | All-day row | `allDayDividerClass` | `bg-surface-primary` band |
-| Now line | `nowIndicatorLineClass` | `border-text-highlight-red` |
+| Now line, dot, label | `nowIndicatorLineClass`, `nowIndicatorDotClass`, `nowIndicatorHeaderClass` + `nowIndicatorHeaderContent` | line and dot `event-red-accent`; the label (`HH:mm`, `formatClock`) is a `TODAY_CHIP` on the time axis |
 | Items | `eventClass`, `blockEventClass`, `columnEventInnerClass`, `rowEventInnerClass` | per kind, below; `rounded-control-inner` |
 | "+N meer", popover | `rowMoreLinkClass`, `popoverClass` | `text-text-secondary`, white-hover/active; card-like popover |
 | List view | `views.list`, `listDay*Class`, `listItemEventClass` | `bg-surface-primary` day band, rows hover `surface-highlight-white-hover` |
@@ -68,13 +68,14 @@ Light surfaces are 1.09-1.22:1 against the white grid; the stripe and text carry
 - Hover outline: on `(hover: hover) and (pointer: fine)` an overlay (`aria-hidden`, `pointer-events-none`) follows the mouse and outlines the empty cell it would select: one 30-minute slot of a day column in the time grid (`slotBox`, clipped to the scroller with `clipBox`), the whole cell in the all-day row and month. It hides over items (`data-agenda-item`), links and buttons, while a button is down, on scroll and on leave. It works through `pointermove` + `requestAnimationFrame` with no React state; its `top/left/width/height` are set imperatively on the overlay (the one inline style we write, like FullCalendar's own geometry).
 - Tap to create: `dateClick` calls `api.select` (30 minutes for a time slot, the whole day for all-day/month cells), so a tap behaves as a desktop click-select. FullCalendar ignores scroll gestures and event taps; a tap within 400 ms of a `select` is dropped, so a mouse click does not select twice.
 - Touch: `AGENDA_LONG_PRESS_MS` (350) for the external draggable, `eventLongPressDelay`, `selectLongPressDelay` and `longPressDelay`, so a tray or grid still scrolls on a quick swipe.
-- Scrollbars are hidden inside the frame (same as Carousel/EditingBar); the grid opens scrolled to 07:00.
+- Scrollbars are hidden inside the frame (same as Carousel/EditingBar).
+- Opening scroll (`scrollTime`, recomputed per render from `initialScrollHour`): a range that holds today opens at the hour before now (14:48 opens at 13:00, floored to the hour so a gridline sits on top; never before 00:00), any other range at 07:00. FullCalendar re-applies `scrollTime` whenever the range changes (`scrollTimeReset`), so stepping to another week scrolls to 07:00 and back to today's week to the hour before now. The prop `scrollNowKey` (the page bumps it on "Vandaag") scrolls again when the date does not change, so FullCalendar would not. A grid shorter than the day clamps at the bottom, as in any scroll. `scrollToNow={false}` keeps 07:00; the older stories use it so their baselines keep their items in view.
+- The time axis has one label width (`AXIS_LABEL`, `w-14`, right-aligned) shared by the hour labels, "Hele dag" and the now label. FullCalendar sizes the axis from the widest label, and the now label sits in an overlay as wide as the whole view, so equal widths are what lets it lie exactly over its hour label (`start-0` plus the same margin). Near a full hour the real label shows below the pill.
 - The skeleton mirrors the week grid (three days below `md`), real card/surface tokens, `animate-breathe`, one `role="status"`.
 
 ## Token gaps and flags
 - The palette tokens have no hover/active/selected steps: those states move the border (see above). `surface-highlight-*` still has no dark values elsewhere (`Tag`).
-- No accent or "today" token: today is a `surface-secondary/40` tint plus a `surface-secondary` chip. The opacity modifier keeps the slot lines visible; an opaque `surface-primary` hid them in dark mode.
-- The now line borrows `text-highlight-red`; there is no red stroke token.
+- No "today" token: the column is a `surface-secondary/40` tint (an opaque `surface-primary` hid the slot lines in dark mode); the chip and the now line reuse the red palette tokens. Chip contrast is the red text/surface pair above (6.86 light, 11.14 dark).
 - No opacity token: `opacity-60` marks dragging and removed items.
 - `min-w-56` on the popover and the `w-16` time column in the skeleton are layout sizes, not scale values. Other-month days dim with `opacity-50`: `text-placeholder` has no dark value.
 
@@ -83,5 +84,5 @@ Light surfaces are 1.09-1.22:1 against the white grid; the stripe and text carry
 - `views.list.eventClass` replaces the kind surface in list view; the top-level `eventClass` applies to every view. Per-view settings are keyed by view type (`timeGrid`, `dayGrid`, `list`), not by name.
 - Time zones: FullCalendar runs in the browser zone (`timeZone: "local"`) and returns offsets. Convert on the page/server boundary (#486); all-day items are dates without zone.
 - Selecting a slot leaves FullCalendar's mirror until `items` change or the view moves; the page opens its panel from `onSelectSlot`.
-- Visual stories assume the suite's frozen clock (Thursday 2026-01-01) for the today marker and now line.
+- Visual stories assume the suite's frozen clock (Thursday 2026-01-01 14:00) for the today marker, now line and opening scroll. `Now`, `NowDay`, `NowMobile` and `OtherWeek` open on the clock; the rest set `scrollToNow={false}`.
 - Thumbnails (`thumbnailPath`) are not drawn in the grid; the recipe tray/list can use them later.

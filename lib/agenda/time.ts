@@ -54,6 +54,30 @@ export function startOfWeek(date: string): string {
   return addDays(date, -((dow + 6) % 7));
 }
 
+/** The ISO 8601 week number (1-53) of `date`: weeks start on Monday and week 1 holds the year's first Thursday. */
+export function isoWeek(date: string): number {
+  const thursday = addDays(startOfWeek(date), 3);
+  const jan1 = Date.UTC(Number(thursday.slice(0, 4)), 0, 1);
+  return Math.floor((Date.parse(`${thursday}T00:00:00Z`) - jan1) / (7 * DAY_MS)) + 1;
+}
+
+/** `date` as the browser's local calendar day, `YYYY-MM-DD`. */
+export function localDay(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+export const AGENDA_DEFAULT_SCROLL_HOUR = 7;
+
+/**
+ * The hour a time grid opens on: one hour before `now` when the shown range
+ * holds today (the grid and its now line follow the browser's clock), else 07:00.
+ */
+export function initialScrollHour(range: { start: string; end: string }, now: Date): number {
+  const today = localDay(now);
+  return today >= range.start && today < range.end ? Math.max(0, now.getHours() - 1) : AGENDA_DEFAULT_SCROLL_HOUR;
+}
+
 /** Today's date in the Agenda zone. */
 export function todayInAgendaZone(now: Date = new Date()): string {
   return localDate(now.toISOString(), AGENDA_TIME_ZONE);

@@ -10,6 +10,7 @@ import nlLocale from "@fullcalendar/react/locales/nl";
 import timeGridPlugin from "@fullcalendar/react/timegrid";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AGENDA_DEFAULT_SCROLL_HOUR, initialScrollHour, visibleRange } from "@/lib/agenda/time";
 import type { AgendaItem } from "@/lib/agenda/types";
 import type { AgendaView } from "@/lib/agenda/view";
 import {
@@ -18,6 +19,7 @@ import {
   AGENDA_TRAY_ATTRIBUTE,
   clipBox,
   compareEventOrder,
+  formatClock,
   normalizeSpan,
   slotBox,
   slotForSingleSnap,
@@ -28,7 +30,7 @@ import {
 } from "@/lib/ui/agenda-calendar";
 import { cn } from "@/lib/ui/cn";
 import { AgendaItemContent, type AgendaItemLabels } from "./AgendaCalendarItem";
-import { buildAgendaCalendarOptions } from "./AgendaCalendarTheme";
+import { buildAgendaCalendarOptions, TODAY_CHIP } from "./AgendaCalendarTheme";
 import { AGENDA_LONG_PRESS_MS, getAgendaDragPayload, type AgendaDragPayload } from "./useAgendaDraggable";
 
 export type { AgendaView };
@@ -148,6 +150,10 @@ export interface AgendaCalendarProps {
   onExternalDrop?: (drop: AgendaExternalDrop) => void;
   /** An item from the grid was dropped on the plan drawer (an element with `AGENDA_TRAY_ATTRIBUTE`). */
   onItemDropOut?: (item: AgendaItem) => void;
+  /** Bump to scroll a time grid that holds today to just before now again (the page's "Vandaag"). */
+  scrollNowKey?: number;
+  /** Open one hour before now when the range holds today (default); false keeps 07:00, for stories. */
+  scrollToNow?: boolean;
   className?: string;
 }
 
@@ -198,6 +204,8 @@ export function AgendaCalendar({
   onItemResize,
   onExternalDrop,
   onItemDropOut,
+  scrollNowKey = 0,
+  scrollToNow = true,
   className,
 }: AgendaCalendarProps) {
   const t = useTranslations("components.agendaCalendar");
@@ -207,7 +215,12 @@ export function AgendaCalendar({
   const rootRef = useRef<HTMLDivElement>(null);
   const hoverRef = useRef<HTMLDivElement>(null);
   const lastSelectRef = useRef(0);
-  const viewName = VIEW_NAMES[effectiveAgendaView(view, narrow)];
+  const effectiveView = effectiveAgendaView(view, narrow);
+  const viewName = VIEW_NAMES[effectiveView];
+  const scrollHour = useCallback(
+    () => (scrollToNow ? initialScrollHour(visibleRange(effectiveView, date), new Date()) : AGENDA_DEFAULT_SCROLL_HOUR),
+    [scrollToNow, effectiveView, date],
+  );
   useCellHover(rootRef, hoverRef, viewName);
 
   const labels = useMemo<AgendaItemLabels>(
@@ -248,6 +261,15 @@ export function AgendaCalendar({
     calendarRef.current?.getApi().unselect();
   }, [items]);
 
+  // "Vandaag" on a range that is already shown: the date does not change, so FullCalendar does not scroll by itself.
+  const lastScrollKey = useRef(scrollNowKey);
+  useEffect(() => {
+    if (lastScrollKey.current === scrollNowKey) return;
+    lastScrollKey.current = scrollNowKey;
+    const api = calendarRef.current?.getApi();
+    if (api?.view.type.startsWith("timeGrid")) api.scrollToTime({ hours: scrollHour() });
+  }, [scrollNowKey, scrollHour]);
+
   const handleMove = useCallback<NonNullable<CalendarOptions["eventDrop"]>>(
     (info) => onItemMove?.({ item: itemOf(info.event), ...spanOf(info.event) }, info.revert),
     [onItemMove],
@@ -272,8 +294,9 @@ export function AgendaCalendar({
     slotHeaderInterval: { hours: 1 },
     slotDuration: { minutes: AGENDA_SLOT_MINUTES },
     snapDuration: { minutes: AGENDA_SNAP_MINUTES },
-    scrollTime: { hours: 7 },
+    scrollTime: { hours: scrollHour() },
     nowIndicator: true,
+    nowIndicatorHeaderContent: (info) => formatClock(info.date),
     allDayText: t("allDay"),
     noEventsText: t("noItems"),
     moreLinkText: (count) => t("moreLink", { count }),
@@ -304,7 +327,7 @@ export function AgendaCalendar({
         dayHeaderContent: (info) => (
           <>
             <span>{info.weekdayText}</span>
-            <span className={cn("rounded-control-inner px-component-xs", info.isToday && "bg-surface-secondary text-text-primary")}>
+            <span className={cn("rounded-control-inner px-component-xs", info.isToday && TODAY_CHIP)}>
               {info.dayNumberText}
             </span>
           </>

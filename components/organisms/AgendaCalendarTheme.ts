@@ -109,9 +109,15 @@ function eventSurface(info: EventDisplayInfo): string {
 // A tint, not an opaque fill: the slot lines underneath the day lanes stay visible in light and dark.
 const TODAY_TINT = "bg-surface-secondary/40";
 
+/** The date of today in a day header or month cell, and the time label on the axis. */
+export const TODAY_CHIP = "bg-event-red-surface text-event-red-text";
+
 const todayCell = (isToday: boolean, isOther?: boolean) => cn(isToday && TODAY_TINT, isOther && "text-text-secondary");
 
 const isSingleDay = (viewType: string) => viewType === "timeGridDay";
+
+// Every label of the time axis has one width, so the now label can sit exactly over an hour label.
+const AXIS_LABEL = "mx-component-sm my-component-xs w-14 text-xs font-semibold text-text-secondary";
 
 const resizeHit = "absolute inset-x-0 z-10";
 
@@ -145,7 +151,7 @@ export function buildAgendaCalendarOptions(): CalendarOptions {
     dayCellTopInnerClass: (info) =>
       cn(
         "rounded-control-inner px-component-xs text-sm font-semibold",
-        info.isToday ? "bg-surface-secondary text-text-primary" : "text-text-secondary",
+        info.isToday ? TODAY_CHIP : "text-text-secondary",
         info.isOther && "opacity-50",
       ),
     dayLaneClass: (info) => cn("border", LINE, info.isToday && !isSingleDay(info.view.type) && TODAY_TINT),
@@ -155,14 +161,14 @@ export function buildAgendaCalendarOptions(): CalendarOptions {
     slotLaneClass: (info) => cn("border", LINE, info.isMinor && "border-dotted"),
     slotHeaderRowClass: cn("border", LINE),
     slotHeaderClass: (info) => cn(info.isTime ? "justify-end" : "", "border", LINE, info.isMinor && "border-dotted"),
-    slotHeaderInnerClass: "mx-component-sm my-component-xs text-xs font-semibold text-text-secondary",
+    slotHeaderInnerClass: cn(AXIS_LABEL, "text-end"),
     slotHeaderDividerClass: cn("border-e", LINE),
     allDayHeaderClass: "flex items-center justify-end",
-    allDayHeaderInnerClass: "mx-component-sm my-component-xs text-xs font-semibold text-text-secondary",
+    allDayHeaderInnerClass: cn(AXIS_LABEL, "text-end"),
     allDayDividerClass: cn("border-y bg-surface-primary", LINE),
-    nowIndicatorLineClass: "border-t-2 border-text-highlight-red",
-    nowIndicatorHeaderClass: "rounded-full border-text-highlight-red",
-    nowIndicatorDotClass: "rounded-full border-text-highlight-red bg-text-highlight-red",
+    nowIndicatorLineClass: "border-t-2 border-event-red-accent",
+    nowIndicatorHeaderClass: cn(AXIS_LABEL, "start-0 -translate-y-1/2 rounded-control-inner text-center", TODAY_CHIP),
+    nowIndicatorDotClass: "rounded-full border-event-red-accent bg-event-red-accent",
     highlightClass: "border border-dashed border-stroke-primary-active bg-surface-secondary",
     nonBusinessHoursClass: "bg-surface-primary",
 

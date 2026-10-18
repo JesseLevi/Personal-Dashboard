@@ -31,6 +31,8 @@ type ButtonToggleBaseProps = {
   items: readonly ButtonToggleItem[];
   /** Initially-selected segment's `value`. Required: the fetched node never shows an unselected track. */
   defaultValue: string;
+  /** Follows the parent when given (a keyboard shortcut moved the selection); the segments still report clicks. */
+  value?: string;
   onValueChange?: (value: string) => void;
   /** Below `md` only the icons show; the label stays as the accessible name. */
   iconOnlyBelowMd?: boolean;
@@ -54,6 +56,7 @@ export type ButtonToggleProps =
 export function ButtonToggle({
   items,
   defaultValue,
+  value: controlledValue,
   onValueChange,
   iconOnlyBelowMd,
   iconOnlyBelowLg,
@@ -62,7 +65,8 @@ export function ButtonToggle({
   className,
   "aria-label": ariaLabel,
 }: ButtonToggleProps) {
-  const [value, setValue] = useState(defaultValue);
+  const [ownValue, setValue] = useState(defaultValue);
+  const value = controlledValue ?? ownValue;
   const titleId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLSpanElement>(null);

@@ -6,7 +6,7 @@ Rebuilt from scratch as a molecule in #265. The retired atom (node `3623:4345`, 
 ## Anatomy
 Root `flex w-full flex-col gap-stack-sm`: optional `Titel` text, then the `Container` (`role="radiogroup"`, `relative flex w-full gap-inline-xs rounded-card bg-surface-highlight-white p-component-xs`). Inside: an absolutely-positioned `ActiveBackground` indicator span plus one `Button variant="transparent"` per item (icon + label), `role="radio"`.
 
-Props: `items` (`value`, `icon`, `label`), required `defaultValue`, `onValueChange`, `size` (`default` | `small`), and `title` XOR `aria-label`.
+Props: `items` (`value`, `icon`, `label`), required `defaultValue`, optional `value` (controlled: when given it overrides the internal state, so a keyboard shortcut can move the selection; clicks still call `onValueChange`), `onValueChange`, `size` (`default` | `small`), and `title` XOR `aria-label`.
 
 Bindings measured via `boundVariables`:
 
