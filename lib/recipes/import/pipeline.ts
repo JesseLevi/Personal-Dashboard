@@ -22,7 +22,7 @@ import {
 } from "@/lib/recipes/import/match-ingredients";
 import { parseIngredientLine, type ParsedIngredient } from "@/lib/recipes/import/parse-ingredient";
 import { ImportRateLimitError } from "@/lib/recipes/import/rate-limit";
-import { loadUnitGrams, type UnitGramsLookup } from "@/lib/recipes/import/unit-grams";
+import { loadUnitGrams, roundGrams, saveUnitWeights, type UnitGramsLookup } from "@/lib/recipes/import/unit-grams";
 import { hostOf } from "@/lib/recipes/import/url";
 import type { UnitCode } from "@/lib/recipes/units";
 import type { Locale } from "@/lib/profile/types";
@@ -104,11 +104,6 @@ async function fetchThumbnailPath(job: ImportJob, imageUrl: string, fetchPage: t
   }
 }
 
-/** Grams with one decimal below 10 g, whole grams above. */
-function roundGrams(grams: number): number {
-  return grams >= 10 ? Math.round(grams) : Math.round(grams * 10) / 10;
-}
-
 export type AmountPlan =
   /** Keep the amount as written; the calculator can already weigh it (or nothing can). */
   | { kind: "keep" }
@@ -133,21 +128,6 @@ export function planAmount(line: FilledLine, ingredientId: string | null, unitGr
   if (line.gramsEstimate === null || line.gramsEstimate <= 0) return { kind: "keep" };
   if (unit === null) return { kind: "grams", grams: roundGrams(line.gramsEstimate) };
   return { kind: "unit-weight", gramsPerUnit: roundGrams(line.gramsEstimate / quantity) };
-}
-
-/** Stores estimated weights per unit; best effort, an existing row is never overwritten. */
-async function saveUnitWeights(
-  supabase: Client,
-  userId: string,
-  weights: Array<{ ingredientId: string; unit: UnitCode; grams: number }>,
-): Promise<void> {
-  const unique = new Map(weights.map((w) => [`${w.ingredientId}:${w.unit}`, w]));
-  if (unique.size === 0) return;
-  const { error } = await supabase.from("ingredient_unit_masses").upsert(
-    [...unique.values()].map((w) => ({ user_id: userId, ingredient_id: w.ingredientId, unit: w.unit, grams: w.grams })),
-    { onConflict: "user_id,ingredient_id,unit", ignoreDuplicates: true },
-  );
-  if (error) console.error("[recipes] import unit weights failed:", error.code, error.message);
 }
 
 async function run(job: ImportJob, deps: PipelineDeps): Promise<void> {

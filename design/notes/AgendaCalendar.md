@@ -12,14 +12,15 @@ Controlled: `items` map to FullCalendar events (`toEventInput`, the item rides i
 |---|---|---|
 | Frame | `viewClass` | `rounded-card`, `border-stroke-primary`, `bg-surface-highlight-white`, `overflow-clip` (not `hidden`: keeps sticky headers) |
 | Grid lines | `dayCellClass`, `slotLaneClass`, `dayHeaderClass`, ... | `border-stroke-lines`; half-hour lines dotted |
-| Today | `dayCellClass`, `dayLaneClass`, header | `bg-surface-primary` column, `bg-surface-secondary` number chip; not in the single-day view |
+| Today | `dayCellClass`, `dayLaneClass`, header | `bg-surface-secondary/40` column tint (translucent, so the slot lines stay visible in dark mode), `bg-surface-secondary` number chip; not in the single-day view |
 | Day header / time labels | `dayHeaderInnerClass`, `slotHeaderInnerClass` | `text-sm`/`text-xs font-semibold text-text-secondary` |
 | All-day row | `allDayDividerClass` | `bg-surface-primary` band |
 | Now line | `nowIndicatorLineClass` | `border-text-highlight-red` |
 | Items | `eventClass`, `blockEventClass`, `columnEventInnerClass`, `rowEventInnerClass` | per kind, below; `rounded-control-inner` |
 | "+N meer", popover | `rowMoreLinkClass`, `popoverClass` | `text-text-secondary`, white-hover/active; card-like popover |
 | List view | `views.list`, `listDay*Class`, `listItemEventClass` | `bg-surface-primary` day band, rows hover `surface-highlight-white-hover` |
-| Selection / drop target | `highlightClass` | `bg-surface-secondary` |
+| Selection / drop target (all-day, month) | `highlightClass` | dashed `border-stroke-primary-active`, `bg-surface-secondary` |
+| Hover outline | overlay in `AgendaCalendar` | dashed `border-stroke-primary-active`, `rounded-control-inner`, no fill |
 
 ## Item language
 | Kind | Look |
@@ -42,6 +43,9 @@ Coloured kinds have no hover/active/selected fill tokens, so those states move t
 - Overlapping timed items sit side by side (`slotEventOverlap: false`).
 - `week` becomes `threeDay` below `md` (`useIsNarrow`, wide on SSR). Day view is the other mobile default. FullCalendar has no swipe between days: the page header carries prev/next arrows.
 - External dragging: `useAgendaDraggable(ref, payload)` wraps `Draggable` with `create: false`; the drop reports `{ payload, start, allDay, eventId? }` through `onExternalDrop` and the parent creates the item. `eventId` is the event under the pointer (`eventDidMount` stamps `data-agenda-event-id` on event elements; the drop looks them up with `elementsFromPoint`, also for touch), so a drop on an appointment can attach to it. The payload travels in a `WeakMap`, not the DOM.
+- Selection fills the whole cell: the time-grid selection mirror (an event without item) cancels the lane inset with negative margins in `columnEventClass`; real items keep the inset.
+- Hover outline: on `(hover: hover) and (pointer: fine)` an overlay (`aria-hidden`, `pointer-events-none`) follows the mouse and outlines the empty cell it would select: one 30-minute slot of a day column in the time grid (`slotBox`, clipped to the scroller with `clipBox`), the whole cell in the all-day row and month. It hides over items (`data-agenda-item`), links and buttons, while a button is down, on scroll and on leave. It works through `pointermove` + `requestAnimationFrame` with no React state; its `top/left/width/height` are set imperatively on the overlay (the one inline style we write, like FullCalendar's own geometry).
+- Tap to create: `dateClick` calls `api.select` (30 minutes for a time slot, the whole day for all-day/month cells), so a tap behaves as a desktop click-select. FullCalendar ignores scroll gestures and event taps; a tap within 400 ms of a `select` is dropped, so a mouse click does not select twice.
 - Touch: `AGENDA_LONG_PRESS_MS` (350) for the external draggable, `eventLongPressDelay`, `selectLongPressDelay` and `longPressDelay`, so a tray or grid still scrolls on a quick swipe.
 - Scrollbars are hidden inside the frame (same as Carousel/EditingBar); the grid opens scrolled to 07:00.
 - The skeleton mirrors the week grid (three days below `md`), real card/surface tokens, `animate-breathe`, one `role="status"`.
@@ -49,13 +53,13 @@ Coloured kinds have no hover/active/selected fill tokens, so those states move t
 ## Token gaps and flags
 - `surface-highlight-blue/green/yellow` and `text-highlight-*` have no dark overrides, so coloured items stay pastel in dark mode (as `Tag` does) and the text on them is about 3:1. There is no on-highlight text token.
 - No hover/active/selected tokens for the blue, green and yellow surfaces (see above).
-- No accent or "today" token: today is a `surface-primary` tint plus a `surface-secondary` chip.
+- No accent or "today" token: today is a `surface-secondary/40` tint plus a `surface-secondary` chip. The opacity modifier keeps the slot lines visible; an opaque `surface-primary` hid them in dark mode.
 - The now line borrows `text-highlight-red`; there is no red stroke token.
 - No opacity token: `opacity-60` marks dragging and removed items.
 - `min-w-56` on the popover and the `w-16` time column in the skeleton are layout sizes, not scale values. Other-month days dim with `opacity-50`: `text-placeholder` has no dark value.
 
 ## Gotchas
-- FullCalendar writes event geometry inline (`top`, `height`, `inset-inline`); that is the only inline style, and none comes from our code. Its `fc-*` skeleton classes are `!important`: never fight them with utilities.
+- FullCalendar writes event geometry inline (`top`, `height`, `inset-inline`); the only other inline style is the hover overlay's position (see above), and none comes from JSX. Its `fc-*` skeleton classes are `!important`: never fight them with utilities.
 - `views.list.eventClass` replaces the kind surface in list view; the top-level `eventClass` applies to every view. Per-view settings are keyed by view type (`timeGrid`, `dayGrid`, `list`), not by name.
 - Time zones: FullCalendar runs in the browser zone (`timeZone: "local"`) and returns offsets. Convert on the page/server boundary (#486); all-day items are dates without zone.
 - Selecting a slot leaves FullCalendar's mirror until `items` change or the view moves; the page opens its panel from `onSelectSlot`.
