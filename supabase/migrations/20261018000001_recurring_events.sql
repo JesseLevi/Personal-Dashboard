@@ -428,9 +428,11 @@ $$;
 
 -- Changes an occurrence by scope.
 --   this:      the row itself, which becomes detached;
---   following: this occurrence and the later ones that are not detached move to
---              the changed rule (a new series, or the series itself when this is
---              its first occurrence); the old series ends the day before;
+--   following: this occurrence and the later ones that are not detached are
+--              refilled from the changed rule in a new series (or in the series
+--              itself when this is its first occurrence), keeping their ids;
+--              detached later ones move along with their own dates; the old
+--              series ends the day before;
 --   all:       the series and its occurrences from today on that are not
 --              detached; earlier ones stay as history.
 -- The rule parameters are ignored for 'this'.

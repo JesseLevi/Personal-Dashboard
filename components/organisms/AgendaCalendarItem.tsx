@@ -11,6 +11,7 @@ export interface AgendaItemLabels {
   kinds: Record<"event" | "sync" | "meal" | "planned_card" | "deadline", string>;
   servings: (count: number) => string;
   missingFromSource: string;
+  recurring: string;
   links: (count: number) => string;
 }
 
@@ -66,6 +67,14 @@ export function AgendaItemContent({ info, labels }: { info: EventDisplayInfo; la
     </span>
   );
 
+  const recurring =
+    item.kind === "event" && item.recurring ? (
+      <span className="flex shrink-0 items-center" title={labels.recurring}>
+        <Icon name="Repeat" size={12} />
+        <span className="sr-only">{labels.recurring}</span>
+      </span>
+    ) : null;
+
   const links =
     item.linkCount > 0 && !info.isNarrow ? (
       <span className={cn("ms-auto flex shrink-0 items-center gap-inline-xs text-xs font-semibold", secondary)} title={labels.links(item.linkCount)}>
@@ -80,6 +89,7 @@ export function AgendaItemContent({ info, labels }: { info: EventDisplayInfo; la
         <div className="flex min-w-0 items-center gap-inline-xs">
           {icon && <Icon name={icon} size={16} className="shrink-0" />}
           {title}
+          {recurring}
           {links}
         </div>
         {meta && <span className={cn("truncate text-xs font-semibold", secondary)}>{meta}</span>}
@@ -92,6 +102,7 @@ export function AgendaItemContent({ info, labels }: { info: EventDisplayInfo; la
       {icon && <Icon name={icon} size={16} className="shrink-0" />}
       {inlineTime && <span className={cn("shrink-0 text-xs font-semibold", secondary)}>{timeText}</span>}
       {title}
+      {recurring}
       {meta && (isList || isColumn) && <span className={cn("truncate text-xs font-semibold", secondary)}>{meta}</span>}
       {item.kind === "meal" && !isList && !isColumn && <span className={cn("truncate text-xs font-semibold", secondary)}>{labels.slots[item.slot]}</span>}
       {links}

@@ -75,7 +75,7 @@ const deadline = (id: string, title: string, day: string): AgendaItem => ({
 });
 
 const allKinds: AgendaItem[] = [
-  own("e1", "Tandarts", "2025-12-30T09:00:00", "2025-12-30T10:00:00"),
+  { ...own("e1", "Tandarts", "2025-12-30T09:00:00", "2025-12-30T10:00:00"), recurring: true } as AgendaItem,
   own("e2", "Verjaardag Eric", "2026-01-01T19:00:00", "2026-01-01T21:30:00", 2),
   imported("s1", "Teamoverleg", "2025-12-31T10:00:00", "2025-12-31T11:30:00"),
   imported("s2", "Sprintplanning", "2026-01-02T13:00:00", "2026-01-02T14:00:00"),

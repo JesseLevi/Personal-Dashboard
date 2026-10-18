@@ -9,9 +9,10 @@ import { InputField } from "@/components/atoms/InputField";
 import { SidePanel } from "@/components/organisms/SidePanel";
 import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import type { AgendaLink, AgendaLinkCandidate } from "@/lib/agenda/links";
-import type { AgendaActionResult, AgendaErrorCode } from "@/lib/agenda/schemas";
+import { REPEAT_CHOICES, choiceToRule, ruleChanged, ruleToChoice, type RepeatChoice } from "@/lib/agenda/repeat";
+import type { AgendaActionResult, AgendaErrorCode, SeriesScope } from "@/lib/agenda/schemas";
 import { addDays, spanToUtc } from "@/lib/agenda/time";
-import type { AgendaEventDetail, AgendaEventItem } from "@/lib/agenda/types";
+import type { AgendaEventDetail, AgendaEventItem, AgendaRepeatRule } from "@/lib/agenda/types";
 import type { AgendaSpan } from "@/lib/ui/agenda-calendar";
 import { AgendaEventLinks } from "./AgendaEventLinks";
 import { AgendaLinkSearchPanel, linkKey } from "./AgendaLinkSearchPanel";
@@ -46,7 +47,13 @@ interface FormValues {
   end: string;
   location: string;
   description: string;
+  repeat: RepeatChoice;
+  /** "Eindigt": false = never, true = on `until`. */
+  endsOn: boolean;
+  until: string;
 }
+
+const SCOPES: SeriesScope[] = ["this", "following", "all"];
 
 const DEFAULT_START_TIME = "09:00";
 const DEFAULT_END_TIME = "10:00";
@@ -54,7 +61,14 @@ const DEFAULT_END_TIME = "10:00";
 // Inputs hold wall-clock text: `YYYY-MM-DDTHH:mm` (timed) or `YYYY-MM-DD` (all day, last day inclusive).
 function initialValues(target: AgendaPanelTarget): FormValues {
   const span = target.mode === "create" ? target.span : target.item;
-  const base = { title: target.mode === "edit" ? target.item.title : "", location: "", description: "" };
+  const base = {
+    title: target.mode === "edit" ? target.item.title : "",
+    location: "",
+    description: "",
+    repeat: "none" as RepeatChoice,
+    endsOn: false,
+    until: "",
+  };
   if (span.allDay) {
     const start = span.start.slice(0, 10);
     const last = span.end ? addDays(span.end.slice(0, 10), -1) : start;
@@ -107,12 +121,16 @@ export function AgendaEventPanel({
   const [links, setLinks] = useState<AgendaLink[] | null>(null);
   const [linksFailure, setLinksFailure] = useState<AgendaErrorCode | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [originalRule, setOriginalRule] = useState<AgendaRepeatRule | null>(null);
+  const [scopePrompt, setScopePrompt] = useState<"save" | "delete" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { confirming, ask, cancel } = useDeleteConfirm();
 
   const item = target.mode === "edit" ? target.item : null;
   const readOnly = item?.source === "sync";
+  // An occurrence of a series asks for a scope when it is saved or deleted (ADR-0042 §5-6).
+  const isOccurrence = item?.recurring === true;
   const targetKey =
     target.mode === "edit" ? `edit-${target.item.id}` : `create-${target.span.start}-${target.span.end}`;
 
@@ -132,6 +150,8 @@ export function AgendaEventPanel({
       setLinks(null);
       setLinksFailure(null);
       setSearchOpen(false);
+      setOriginalRule(null);
+      setScopePrompt(null);
       setError(null);
       cancel();
     }
@@ -145,11 +165,16 @@ export function AgendaEventPanel({
     void onLoadEvent({ id: editId }).then((result) => {
       if (cancelled) return;
       if (result.success) {
+        const loadedRule = result.data.repeat;
         setValues((current) => ({
           ...current,
           location: result.data.location ?? "",
           description: result.data.description ?? "",
+          repeat: ruleToChoice(loadedRule),
+          endsOn: loadedRule?.until != null,
+          until: loadedRule?.until ?? "",
         }));
+        setOriginalRule(loadedRule);
         setCalendarName(result.data.calendarName);
         setDetailLoaded(true);
       } else {
@@ -201,10 +226,18 @@ export function AgendaEventPanel({
   }
 
   const spanIsValid = values.start !== "" && values.end !== "" && values.end >= values.start;
-  const canSave = !isPending && values.title.trim() !== "" && spanIsValid && (target.mode === "create" || detailLoaded);
+  const rule = choiceToRule(values.repeat, values.endsOn ? values.until : null, originalRule);
+  const untilIsValid = !rule || !values.endsOn || (values.until !== "" && values.until >= values.start.slice(0, 10));
+  const canSave =
+    !isPending &&
+    values.title.trim() !== "" &&
+    spanIsValid &&
+    untilIsValid &&
+    (target.mode === "create" || detailLoaded);
 
-  function handleSave() {
+  function handleSave(scope?: SeriesScope) {
     setError(null);
+    setScopePrompt(null);
     startTransition(async () => {
       const fields = {
         title: values.title.trim(),
@@ -212,10 +245,12 @@ export function AgendaEventPanel({
         location: values.location,
         description: values.description,
       };
+      // "Alleen deze" leaves the rule alone, so it is not sent.
+      const repeat = rule && scope !== "this" ? { repeat: rule } : {};
       const result =
         target.mode === "create"
-          ? await onCreateEvent(fields)
-          : await onUpdateEvent({ id: target.item.id, ...fields });
+          ? await onCreateEvent({ ...fields, ...repeat })
+          : await onUpdateEvent({ id: target.item.id, ...fields, ...repeat, ...(scope ? { scope } : {}) });
       if (!result.success) {
         setError(tErrors(result.error));
         return;
@@ -225,11 +260,12 @@ export function AgendaEventPanel({
     });
   }
 
-  function handleDelete() {
+  function handleDelete(scope?: SeriesScope) {
     if (!item) return;
     setError(null);
+    setScopePrompt(null);
     startTransition(async () => {
-      const result = await onDeleteEvent({ id: item.id });
+      const result = await onDeleteEvent({ id: item.id, ...(scope ? { scope } : {}) });
       if (!result.success) {
         setError(tErrors(result.error));
         cancel();
@@ -240,15 +276,41 @@ export function AgendaEventPanel({
     });
   }
 
+  // Changing how often an occurrence repeats cannot apply to "Alleen deze".
+  const saveScopes = ruleChanged(originalRule, rule) ? SCOPES.filter((scope) => scope !== "this") : SCOPES;
+
   let footer;
   if (readOnly) footer = undefined;
-  else if (item && confirming) {
+  else if (scopePrompt) {
+    const deleting = scopePrompt === "delete";
+    footer = (
+      <>
+        <p className="text-base font-semibold text-text-primary">{t(deleting ? "scope.deletePrompt" : "scope.savePrompt")}</p>
+        <div className="flex flex-col gap-inline-sm">
+          {(deleting ? SCOPES : saveScopes).map((scope) => (
+            <Button
+              key={scope}
+              variant={deleting ? "destructive" : "filled"}
+              icon={deleting ? "Trash" : "Save"}
+              onClick={() => (deleting ? handleDelete(scope) : handleSave(scope))}
+              disabled={isPending}
+            >
+              {t(`scope.${scope}`)}
+            </Button>
+          ))}
+          <Button variant="outline" onClick={() => setScopePrompt(null)} disabled={isPending}>
+            {t("cancelLabel")}
+          </Button>
+        </div>
+      </>
+    );
+  } else if (item && confirming) {
     footer = (
       <DeleteConfirm
         layout="stacked"
         isPending={isPending}
         onCancel={cancel}
-        onConfirm={handleDelete}
+        onConfirm={() => handleDelete()}
         labels={{
           prompt: t("deleteConfirmLabel"),
           cancel: t("cancelLabel"),
@@ -261,11 +323,23 @@ export function AgendaEventPanel({
     footer = (
       <div className="flex gap-inline-sm">
         {item && (
-          <Button variant="destructive" icon="Trash" className="grow basis-0" onClick={ask} disabled={isPending}>
+          <Button
+            variant="destructive"
+            icon="Trash"
+            className="grow basis-0"
+            onClick={isOccurrence ? () => setScopePrompt("delete") : ask}
+            disabled={isPending}
+          >
             {t("deleteLabel")}
           </Button>
         )}
-        <Button variant="filled" icon="Save" className="grow basis-0" onClick={handleSave} disabled={!canSave}>
+        <Button
+          variant="filled"
+          icon="Save"
+          className="grow basis-0"
+          onClick={isOccurrence ? () => setScopePrompt("save") : () => handleSave()}
+          disabled={!canSave}
+        >
           {isPending ? t("savingLabel") : t("saveLabel")}
         </Button>
       </div>
@@ -273,6 +347,15 @@ export function AgendaEventPanel({
   }
 
   const inputType = values.allDay ? "date" : "datetime-local";
+
+  // A series always repeats: an occurrence has no "Niet" (to stop it, end it or delete it).
+  const repeatOptions = [...REPEAT_CHOICES, ...(values.repeat === "custom" ? (["custom"] as const) : [])]
+    .filter((choice) => !(isOccurrence && choice === "none"))
+    .map((choice) => ({ value: choice, label: t(`repeatOptions.${choice}`) }));
+  const endsOptions = [
+    { value: "never", label: t("endsOptions.never") },
+    { value: "on", label: t("endsOptions.on") },
+  ];
 
   const shownError = error ?? (linksFailure ? tErrors(linksFailure) : null);
   const linkedKeys = new Set((links ?? []).map((link) => linkKey(link.kind, link.targetId)));
@@ -334,6 +417,38 @@ export function AgendaEventPanel({
           onChange={(event) => update({ end: event.target.value })}
           disabled={readOnly}
         />
+        {!readOnly && (
+          <InputField
+            label={t("fields.repeatLabel")}
+            id="agenda-event-repeat"
+            options={repeatOptions}
+            leadingIcon="Repeat"
+            trailingIcon="ChevronDown"
+            value={values.repeat}
+            onChange={(event) => update({ repeat: event.target.value as RepeatChoice })}
+            disabled={!detailLoaded}
+          />
+        )}
+        {!readOnly && values.repeat !== "none" && (
+          <InputField
+            label={t("fields.endsLabel")}
+            id="agenda-event-ends"
+            options={endsOptions}
+            trailingIcon="ChevronDown"
+            value={values.endsOn ? "on" : "never"}
+            onChange={(event) => update({ endsOn: event.target.value === "on" })}
+          />
+        )}
+        {!readOnly && values.repeat !== "none" && values.endsOn && (
+          <InputField
+            label={t("fields.untilLabel")}
+            id="agenda-event-until"
+            type="date"
+            leadingIcon="Calendar"
+            value={values.until}
+            onChange={(event) => update({ until: event.target.value })}
+          />
+        )}
         <InputField
           label={t("fields.locationLabel")}
           id="agenda-event-location"

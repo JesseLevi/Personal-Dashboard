@@ -36,6 +36,7 @@ export const agendaRowSchema = z.object({
   thumbnail_path: z.string().nullable(),
   board_name: z.string().nullable(),
   column_name: z.string().nullable(),
+  series_id: z.string().uuid().nullish(),
 });
 
 export type AgendaRow = z.infer<typeof agendaRowSchema>;
@@ -114,6 +115,7 @@ export function mapAgendaRow(row: AgendaRow, timeZone: string): AgendaItem {
         source: requireValue(row.source, "source"),
         calendarId: requireValue(row.calendar_id, "calendar_id"),
         missingSince: row.missing_since,
+        ...(row.series_id ? { recurring: true } : {}),
       };
     case "meal":
       return {
