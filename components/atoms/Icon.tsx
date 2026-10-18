@@ -3,6 +3,7 @@ import type { ComponentType } from "react";
 import {
   PanelLeftClose,
   PanelLeftOpen,
+  PanelRight,
   ShoppingBasket,
   Lightbulb,
   AlarmClockCheck,
@@ -175,6 +176,7 @@ const FLAG_ICONS = {
 const ICONS = {
   PanelLeftClose: PanelLeftClose,
   PanelLeftOpen: PanelLeftOpen,
+  PanelRight: PanelRight,
   ShoppingBasket: ShoppingBasket,
   Lightbulb: Lightbulb,
   AlarmClockCheck: AlarmClockCheck,
