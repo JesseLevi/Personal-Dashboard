@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SOURCE_COLORS } from "@/lib/agenda/colors";
 import type { AgendaItem } from "@/lib/agenda/types";
 
 // Pure half of lib/agenda: row validation and mapping to the AgendaItem union.
@@ -106,15 +107,18 @@ export function mapAgendaRow(row: AgendaRow, timeZone: string): AgendaItem {
   };
 
   switch (row.kind) {
-    case "event":
+    case "event": {
+      const source = requireValue(row.source, "source");
       return {
         ...base,
         ...timeOf(),
         kind: "event",
-        source: requireValue(row.source, "source"),
+        source,
         calendarId: requireValue(row.calendar_id, "calendar_id"),
+        color: SOURCE_COLORS[source],
         missingSince: row.missing_since,
       };
+    }
     case "meal":
       return {
         ...base,

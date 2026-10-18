@@ -1,5 +1,6 @@
 import { NextIntlClientProvider } from "next-intl";
 import { useRef, useState } from "react";
+import { AGENDA_COLORS, type AgendaColor } from "../../lib/agenda/colors";
 import type { AgendaItem } from "../../lib/agenda/types";
 import en from "../../messages/en.json";
 import { Icon } from "../atoms/Icon";
@@ -12,11 +13,12 @@ const DATE = "2026-01-01";
 
 const base = { linkCount: 0, end: null, allDay: false } as const;
 
-const own = (id: string, title: string, start: string, end: string, linkCount = 0): AgendaItem => ({
+const own = (id: string, title: string, start: string, end: string, linkCount = 0, color: AgendaColor = "blue"): AgendaItem => ({
   ...base,
   kind: "event",
   source: "manual",
   calendarId: "cal-1",
+  color,
   missingSince: null,
   id,
   title,
@@ -30,6 +32,7 @@ const imported = (id: string, title: string, start: string, end: string): Agenda
   kind: "event",
   source: "sync",
   calendarId: "cal-2",
+  color: "violet",
   missingSince: null,
   id,
   title,
@@ -113,6 +116,22 @@ const allDay: AgendaItem[] = [
   own("l5", "Lunch met oma", "2026-01-02T12:00:00", "2026-01-02T13:30:00"),
 ];
 
+// One timed event per palette colour, spread over the week so none overlap.
+const WEEK_DAYS = ["2025-12-29", "2025-12-30", "2025-12-31", "2026-01-01", "2026-01-02", "2026-01-03", "2026-01-04"];
+const everyColor: AgendaItem[] = AGENDA_COLORS.map((color, i) => {
+  const day = WEEK_DAYS[i % 7];
+  const hour = i < 7 ? "09" : "13";
+  return own(`k${i}`, color, `${day}T${hour}:00:00`, `${day}T${hour === "09" ? "10" : "14"}:30:00`, 0, color);
+});
+
+// Lengths around the 45-minute switch from one line to title and time stacked.
+const lengths: AgendaItem[] = [
+  own("t1", "Korte afspraak van twintig minuten", "2026-01-01T09:00:00", "2026-01-01T09:20:00"),
+  own("t2", "Net onder de drie kwartier", "2026-01-01T10:00:00", "2026-01-01T10:40:00", 0, "teal"),
+  own("t3", "Precies drie kwartier met een lange titel die doorloopt", "2026-01-01T11:00:00", "2026-01-01T11:45:00", 0, "orange"),
+  own("t4", "Een uur met een heel lange titel die over twee regels moet lopen en daarna wordt afgekapt", "2026-01-01T12:30:00", "2026-01-01T13:30:00", 1, "pink"),
+];
+
 const Frame = ({ children, className = "h-[44rem]" }: { children: React.ReactNode; className?: string }) => (
   <div className={className}>{children}</div>
 );
@@ -131,6 +150,16 @@ export const OverlappingItems = () => <Calendar view="week" items={overlapping} 
 export const AllDayAndDeadlines = () => <Calendar view="week" items={allDay} />;
 export const Empty = () => <Calendar view="week" items={[]} />;
 export const EmptyList = () => <Calendar view="list" items={[]} />;
+
+export const EveryColor = () => <Calendar view="week" items={everyColor} />;
+export const EveryColorList = () => <Calendar view="list" items={everyColor} />;
+export const ItemLengths = () => <Calendar view="day" items={lengths} />;
+
+export const MobileTitles = () => (
+  <div className="h-[40rem] w-[22.5rem]">
+    <AgendaCalendar items={lengths} view="threeDay" date={DATE} />
+  </div>
+);
 
 export const Mobile = () => (
   <div className="h-[40rem] w-[22.5rem]">

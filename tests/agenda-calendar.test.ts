@@ -1,15 +1,36 @@
 import { describe, expect, it } from "vitest";
 import { itemKey } from "@/components/organisms/AgendaCalendarTheme";
 import type { AgendaItem } from "@/lib/agenda/types";
-import { clipBox, itemEditability, normalizeSpan, slotBox, slotForSingleSnap, toEventInput } from "@/lib/ui/agenda-calendar";
+import { clipBox, formatClock, isShortSpan, itemEditability, normalizeSpan, slotBox, slotForSingleSnap, toEventInput } from "@/lib/ui/agenda-calendar";
 
 const base = { id: "i1", title: "T", start: "2026-01-01T09:00:00", end: "2026-01-01T10:00:00", allDay: false, linkCount: 0 };
 
-const manual: AgendaItem = { ...base, kind: "event", source: "manual", calendarId: "c", missingSince: null };
-const synced: AgendaItem = { ...manual, source: "sync" };
+const manual: AgendaItem = { ...base, kind: "event", source: "manual", calendarId: "c", color: "blue", missingSince: null };
+const synced: AgendaItem = { ...manual, source: "sync", color: "violet" };
 const meal: AgendaItem = { ...base, kind: "meal", slot: "dinner", servings: 4, thumbnailPath: null, attached: false, position: 1000 };
 const card: AgendaItem = { ...base, kind: "planned_card", board: "B", column: "C" };
 const deadline: AgendaItem = { ...base, kind: "deadline", allDay: true, start: "2026-01-01", end: null };
+
+describe("isShortSpan", () => {
+  const at = (minutes: number) => new Date(2026, 0, 1, 9, minutes);
+  it("is short below 45 minutes and long from 45 on", () => {
+    expect(isShortSpan(at(0), at(30))).toBe(true);
+    expect(isShortSpan(at(0), at(44))).toBe(true);
+    expect(isShortSpan(at(0), at(45))).toBe(false);
+    expect(isShortSpan(at(0), at(90))).toBe(false);
+  });
+  it("counts an open end as long", () => {
+    expect(isShortSpan(at(0), null)).toBe(false);
+    expect(isShortSpan(null, null)).toBe(false);
+  });
+});
+
+describe("formatClock", () => {
+  it("pads to a 24-hour HH:MM", () => {
+    expect(formatClock(new Date(2026, 0, 1, 9, 5))).toBe("09:05");
+    expect(formatClock(new Date(2026, 0, 1, 17, 30))).toBe("17:30");
+  });
+});
 
 describe("itemEditability", () => {
   it("lets manual timed events move and resize", () => {
