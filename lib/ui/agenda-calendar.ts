@@ -107,10 +107,10 @@ export function formatClock(date: Date): string {
   return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
-/** Whether a timed span is shorter than `AGENDA_SHORT_MINUTES`. An open end counts as long: FullCalendar gives it an hour. */
-export function isShortSpan(start: Date | null, end: Date | null): boolean {
+/** Whether a timed span is shorter than `minutes` (default `AGENDA_SHORT_MINUTES`). An open end counts as long: FullCalendar gives it an hour. */
+export function isShortSpan(start: Date | null, end: Date | null, minutes: number = AGENDA_SHORT_MINUTES): boolean {
   if (!start || !end) return false;
-  return end.getTime() - start.getTime() < AGENDA_SHORT_MINUTES * 60_000;
+  return end.getTime() - start.getTime() < minutes * 60_000;
 }
 
 /**

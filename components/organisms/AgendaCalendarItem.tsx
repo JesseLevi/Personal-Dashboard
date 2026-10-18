@@ -1,7 +1,7 @@
 // design: Claude-designed (#485)
 import type { EventDisplayInfo } from "@fullcalendar/react";
 import type { AgendaItem, MealSlot } from "@/lib/agenda/types";
-import { formatClock, isShortSpan } from "@/lib/ui/agenda-calendar";
+import { AGENDA_SLOT_MINUTES, formatClock, isShortSpan } from "@/lib/ui/agenda-calendar";
 import { cn } from "@/lib/ui/cn";
 import { Icon, type IconName } from "../atoms/Icon";
 import { itemKey } from "./AgendaCalendarTheme";
@@ -56,6 +56,8 @@ export function AgendaItemContent({ info, labels }: { info: EventDisplayInfo; la
   const isColumn = isGrid && !info.event.allDay;
   const oneLine = isColumn && isShortSpan(info.event.start, info.event.end);
   const stacked = isColumn && !oneLine;
+  // Under one slot the block is too low for a text-sm line.
+  const tiny = oneLine && isShortSpan(info.event.start, info.event.end, AGENDA_SLOT_MINUTES);
   const icon = leadingIcon(item);
   const timeText = item.allDay ? "" : info.timeText;
   const meta = metaLine(item, isColumn || isList ? timeText : "", labels);
@@ -65,7 +67,7 @@ export function AgendaItemContent({ info, labels }: { info: EventDisplayInfo; la
   const moment = item.kind === "meal" ? labels.slots[item.slot] : null;
 
   const title = (
-    <span className={cn("text-sm font-semibold", isGrid && !oneLine ? "line-clamp-2 wrap-anywhere" : "truncate")}>
+    <span className={cn("text-sm font-semibold", isGrid && !oneLine ? "line-clamp-2 leading-tight wrap-anywhere" : "truncate", tiny && "text-xs leading-none")}>
       <span className="sr-only">{labels.kinds[itemKey(item)]}: </span>
       {item.title}
       {moment && !isList && <span className="sr-only"> ({moment})</span>}
@@ -100,7 +102,7 @@ export function AgendaItemContent({ info, labels }: { info: EventDisplayInfo; la
       {icon && <Icon name={icon} size={16} className="shrink-0" />}
       {inlineTime && !oneLine && <span className="shrink-0 text-xs font-semibold">{inlineTime}</span>}
       {title}
-      {inlineTime && oneLine && <span className="shrink-0 text-xs font-semibold">{inlineTime}</span>}
+      {inlineTime && oneLine && <span className="shrink-0 text-xs font-semibold leading-none">{inlineTime}</span>}
       {meta && isList && <span className="truncate text-xs font-semibold">{meta}</span>}
       {links}
     </div>
