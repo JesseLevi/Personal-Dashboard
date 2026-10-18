@@ -142,7 +142,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - `calendar_event_series`: rule and template of a recurring own event; occurrences are `calendar_events` rows (`series_id`), 400 days ahead, extended on Agenda load (ADR-0042).
 - **Sync** (ADR-0037 §5): `ics` → `caldav` → Graph/Google on need, via `safe-fetch`; recurring instances expanded −30 d / +400 d, upserted by UID + instance start; a failed, empty or halved fetch deletes nothing; two-miss deletion with a basket notice; writes only on a changed hash.
 - **UI**: FullCalendar standard (MIT) packages, themed with semantic tokens, Claude-designed (ADR-0034); `ical.js` parses feeds.
-- **Colour and creation**: items take their calendar's `event-<colour>-*` tokens; hiding is a per-device cookie (ADR-0040). One quick-add popover parses text with `chrono-node` plus own rules, no AI (ADR-0041).
+- **Colour, creation**: items use their calendar's `event-<colour>-*` tokens (ADR-0040); quick add parses with `chrono-node`, no AI (ADR-0041).
 - **Sync trigger** (ADR-0039): opening the Agenda syncs the user's accounts older than an hour in `after()`; a daily cron syncs every account older than 20 hours. `apply_calendar_sync` (`security definer`, advisory lock) applies a parsed feed per account: upsert, hash, two-miss deletion, and a `calendar_sync_notices` row (item ids kept, as `meal_plan_id` is nulled). The URL sits in Vault; `lib/agenda/sync.ts` and `app/api/cron/` call it.
 
 ## 8. Testing and CI gates
