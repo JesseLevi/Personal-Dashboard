@@ -81,9 +81,9 @@ const VIEW_NAMES: Record<AgendaView, string> = {
 };
 
 const TIME_FORMAT = { hour: "2-digit", minute: "2-digit", hour12: false } as const;
-const NARROW_QUERY = "(max-width: 767px)";
+const NARROW_QUERY = "(max-width: 1023px)";
 
-/** True below the `md` breakpoint; false during SSR and the first client render. */
+/** True below the `lg` breakpoint; false during SSR and the first client render. */
 export function useIsNarrow(): boolean {
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
