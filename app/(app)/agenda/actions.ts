@@ -8,6 +8,7 @@ import {
   deleteEventSchema,
   eventIdSchema,
   moveEventSchema,
+  repeatRuleSchema,
   rangeSchema,
   updateEventSchema,
   type AgendaActionResult,
@@ -87,7 +88,7 @@ export async function getAgendaEvent(input: unknown): Promise<AgendaActionResult
       source: data.source === "sync" ? "sync" : "manual",
       calendarId: data.calendar_id,
       calendarName: data.calendar?.name ?? null,
-      repeat: data.series ?? null,
+      repeat: repeatRuleSchema.safeParse(data.series).data ?? null,
     },
   };
 }
