@@ -22,10 +22,11 @@ values ('00000000-0000-0000-0000-531000000121', '00000000-0000-0000-0000-5310000
         'A feed', 'ics', '00000000-0000-0000-0000-531000000111');
 
 insert into public.calendar_event_series (id, user_id, calendar_id, title, all_day, starts_on,
-                                           start_time, duration_minutes, freq, until)
+                                           start_time, duration_minutes, freq, until,
+                                           materialized_until)
 values ('00000000-0000-0000-0000-531000000a01', '00000000-0000-0000-0000-531000000001',
         current_setting('test.a_cal')::uuid, 'Basis', false, '2026-01-01', '09:00', 60,
-        'daily', '2026-01-03');
+        'daily', '2026-01-03', '2026-01-03');
 
 -- ---- Constraints (as the table owner, so only the constraint can fire) -------
 select throws_ok(
@@ -139,7 +140,7 @@ select is(
   'anon can execute none of the series RPCs'
 );
 select is(
-  (select count(*)::int from series_rpcs p2 join pg_proc p on p.oid = p2.oid
+  (select count(*)::int from series_rpcs s join pg_proc p on p.oid = s.oid
    where not p.prosecdef and p.proconfig::text like '%search_path%'),
   4,
   'the series RPCs are security invoker with a fixed search_path'
@@ -150,8 +151,8 @@ set local role authenticated;
 set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-531000000001", "role": "authenticated"}';
 
 select set_config('test.c1', public.create_event_series(
-  current_setting('test.a_cal')::uuid, 'Dagelijks', null, null,
-  '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'daily', 1, '2026-01-10')::text, true);
+  current_setting('test.a_cal')::uuid, 'Dagelijks',
+  '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'daily', 1, p_until => '2026-01-10')::text, true);
 select is(
   (select count(*)::int from public.calendar_events
    where series_id = (select series_id from public.calendar_events where id = current_setting('test.c1')::uuid)),
@@ -159,8 +160,8 @@ select is(
 );
 
 select set_config('test.c2', public.create_event_series(
-  current_setting('test.a_cal')::uuid, 'Elke 3 dagen', null, null,
-  '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'daily', 3, '2026-01-10')::text, true);
+  current_setting('test.a_cal')::uuid, 'Elke 3 dagen',
+  '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'daily', 3, p_until => '2026-01-10')::text, true);
 select is(
   (select count(*)::int from public.calendar_events
    where series_id = (select series_id from public.calendar_events where id = current_setting('test.c2')::uuid)),
@@ -168,8 +169,8 @@ select is(
 );
 
 select set_config('test.c3', public.create_event_series(
-  current_setting('test.a_cal')::uuid, 'Wekelijks', null, null,
-  '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'weekly', 1, '2026-01-31')::text, true);
+  current_setting('test.a_cal')::uuid, 'Wekelijks',
+  '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'weekly', 1, p_until => '2026-01-31')::text, true);
 select is(
   (select count(*)::int from public.calendar_events
    where series_id = (select series_id from public.calendar_events where id = current_setting('test.c3')::uuid)),
@@ -177,8 +178,8 @@ select is(
 );
 
 select set_config('test.c4', public.create_event_series(
-  current_setting('test.a_cal')::uuid, 'Om de week', null, null,
-  '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'weekly', 2, '2026-01-31')::text, true);
+  current_setting('test.a_cal')::uuid, 'Om de week',
+  '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'weekly', 2, p_until => '2026-01-31')::text, true);
 select is(
   (select count(*)::int from public.calendar_events
    where series_id = (select series_id from public.calendar_events where id = current_setting('test.c4')::uuid)),
@@ -186,8 +187,8 @@ select is(
 );
 
 select set_config('test.c5', public.create_event_series(
-  current_setting('test.a_cal')::uuid, 'Maandelijks', null, null,
-  '2026-01-15 08:00Z', '2026-01-15 09:00Z', false, 'monthly', 1, '2026-12-31')::text, true);
+  current_setting('test.a_cal')::uuid, 'Maandelijks',
+  '2026-01-15 08:00Z', '2026-01-15 09:00Z', false, 'monthly', 1, p_until => '2026-12-31')::text, true);
 select is(
   (select count(*)::int from public.calendar_events
    where series_id = (select series_id from public.calendar_events where id = current_setting('test.c5')::uuid)),
@@ -195,8 +196,8 @@ select is(
 );
 
 select set_config('test.c6', public.create_event_series(
-  current_setting('test.a_cal')::uuid, 'Elke 31e', null, null,
-  '2026-01-31 08:00Z', '2026-01-31 09:00Z', false, 'monthly', 1, '2026-06-30')::text, true);
+  current_setting('test.a_cal')::uuid, 'Elke 31e',
+  '2026-01-31 08:00Z', '2026-01-31 09:00Z', false, 'monthly', 1, p_until => '2026-06-30')::text, true);
 select is(
   (select array_agg(occurrence_on order by occurrence_on) from public.calendar_events
    where series_id = (select series_id from public.calendar_events where id = current_setting('test.c6')::uuid)),
@@ -205,8 +206,8 @@ select is(
 );
 
 select set_config('test.c7', public.create_event_series(
-  current_setting('test.a_cal')::uuid, 'Schrikkeldag', null, null,
-  '2020-02-29 08:00Z', '2020-02-29 09:00Z', false, 'yearly', 1, '2026-12-31')::text, true);
+  current_setting('test.a_cal')::uuid, 'Schrikkeldag',
+  '2020-02-29 08:00Z', '2020-02-29 09:00Z', false, 'yearly', 1, p_until => '2026-12-31')::text, true);
 select is(
   (select array_agg(occurrence_on order by occurrence_on) from public.calendar_events
    where series_id = (select series_id from public.calendar_events where id = current_setting('test.c7')::uuid)),
@@ -215,8 +216,8 @@ select is(
 );
 
 select set_config('test.c8', public.create_event_series(
-  current_setting('test.a_cal')::uuid, 'Jaarlijks', null, null,
-  '2022-03-10 08:00Z', '2022-03-10 09:00Z', false, 'yearly', 1, '2026-03-10')::text, true);
+  current_setting('test.a_cal')::uuid, 'Jaarlijks',
+  '2022-03-10 08:00Z', '2022-03-10 09:00Z', false, 'yearly', 1, p_until => '2026-03-10')::text, true);
 select is(
   (select count(*)::int from public.calendar_events
    where series_id = (select series_id from public.calendar_events where id = current_setting('test.c8')::uuid)),
@@ -224,8 +225,8 @@ select is(
 );
 
 select set_config('test.c9', public.create_event_series(
-  current_setting('test.a_cal')::uuid, 'Vakantie', null, null,
-  '2026-02-02 00:00Z', '2026-02-04 00:00Z', true, 'weekly', 1, '2026-02-16')::text, true);
+  current_setting('test.a_cal')::uuid, 'Vakantie',
+  '2026-02-02 00:00Z', '2026-02-04 00:00Z', true, 'weekly', 1, p_until => '2026-02-16')::text, true);
 select is(
   (select array_agg(to_char(ends_at at time zone 'UTC', 'YYYY-MM-DD') order by occurrence_on)
    from public.calendar_events
@@ -236,8 +237,8 @@ select is(
 
 -- ---- Wall-clock time across the daylight saving change (25 October 2026) ------
 select set_config('test.dst', public.create_event_series(
-  current_setting('test.a_cal')::uuid, 'Stand-up', null, null,
-  '2026-10-24 07:00Z', '2026-10-24 08:00Z', false, 'daily', 1, '2026-10-26')::text, true);
+  current_setting('test.a_cal')::uuid, 'Stand-up',
+  '2026-10-24 07:00Z', '2026-10-24 08:00Z', false, 'daily', 1, p_until => '2026-10-26')::text, true);
 select is(
   (select array_agg(starts_at order by occurrence_on) from public.calendar_events
    where series_id = (select series_id from public.calendar_events where id = current_setting('test.dst')::uuid)),
@@ -253,10 +254,10 @@ select is(
 
 -- ---- An endless series, excluded dates and extension --------------------------
 select set_config('test.x', public.create_event_series(
-  current_setting('test.a_cal')::uuid, 'Eindeloos', null, null,
+  current_setting('test.a_cal')::uuid, 'Eindeloos',
   (current_date::timestamp + time '09:00') at time zone 'Europe/Amsterdam',
   (current_date::timestamp + time '10:00') at time zone 'Europe/Amsterdam',
-  false, 'daily', 1, null)::text, true);
+  false, 'daily', 1)::text, true);
 select set_config('test.xs', (select series_id::text from public.calendar_events
   where id = current_setting('test.x')::uuid), true);
 select is(
@@ -305,32 +306,33 @@ values ('00000000-0000-0000-0000-531000000e02', '00000000-0000-0000-0000-5310000
         current_setting('test.a_cal')::uuid, 'Los', '2026-03-01 08:00Z', '2026-03-01 09:00Z');
 
 select throws_ok(
-  $$ select public.create_event_series('00000000-0000-0000-0000-531000000121', 'x', null, null,
-       '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'daily', 1, '2026-01-03') $$,
+  $$ select public.create_event_series('00000000-0000-0000-0000-531000000121', 'x',
+       '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'daily', 1, p_until => '2026-01-03') $$,
   'AG403', null, 'a series cannot be created in an imported calendar'
 );
 select throws_ok(
-  $$ select public.create_event_series(current_setting('test.a_cal')::uuid, 'x', null, null,
-       '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'daily', 1, '2026-01-03', null, 'Mars/Olympus') $$,
+  $$ select public.create_event_series(current_setting('test.a_cal')::uuid, 'x',
+       '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'daily', 1,
+       p_until => '2026-01-03', p_time_zone => 'Mars/Olympus') $$,
   'AG422', null, 'an unknown time zone is rejected'
 );
 select throws_ok(
-  $$ select public.create_event_series(current_setting('test.a_cal')::uuid, 'x', null, null,
-       '2000-01-01 08:00Z', '2000-01-01 09:00Z', false, 'daily', 1, null) $$,
+  $$ select public.create_event_series(current_setting('test.a_cal')::uuid, 'x',
+       '2000-01-01 08:00Z', '2000-01-01 09:00Z', false, 'daily', 1) $$,
   'AG422', null, 'a series that would hold over 2000 occurrences is rejected'
 );
 select throws_ok(
-  $$ select public.create_event_series(current_setting('test.a_cal')::uuid, 'x', null, null,
-       '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'daily', 0, null) $$,
+  $$ select public.create_event_series(current_setting('test.a_cal')::uuid, 'x',
+       '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'daily', 0) $$,
   '23514', null, 'an interval of 0 is rejected by the RPC'
 );
 select throws_ok(
-  $$ select public.create_event_series(current_setting('test.a_cal')::uuid, 'x', null, null,
-       '2026-01-10 08:00Z', '2026-01-10 09:00Z', false, 'daily', 1, '2026-01-09') $$,
+  $$ select public.create_event_series(current_setting('test.a_cal')::uuid, 'x',
+       '2026-01-10 08:00Z', '2026-01-10 09:00Z', false, 'daily', 1, p_until => '2026-01-09') $$,
   '23514', null, 'an end before the start is rejected by the RPC'
 );
 select throws_ok(
-  $$ select public.update_event_series(current_setting('test.c1')::uuid, 'sometimes', 'x', null, null,
+  $$ select public.update_event_series(current_setting('test.c1')::uuid, 'sometimes', 'x',
        '2026-01-01 08:00Z', '2026-01-01 09:00Z', false) $$,
   'AG422', null, 'an unknown scope is rejected on update'
 );
@@ -339,7 +341,7 @@ select throws_ok(
   'AG422', null, 'an unknown scope is rejected on delete'
 );
 select throws_ok(
-  $$ select public.update_event_series('00000000-0000-0000-0000-531000000e02', 'this', 'x', null, null,
+  $$ select public.update_event_series('00000000-0000-0000-0000-531000000e02', 'this', 'x',
        '2026-03-01 08:00Z', '2026-03-01 09:00Z', false) $$,
   'AG404', null, 'a single event is not an occurrence (update)'
 );
@@ -353,8 +355,8 @@ set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-531000000002",
 
 select is((select count(*)::int from public.calendar_event_series), 0, 'B sees none of A''s series');
 select throws_ok(
-  $$ select public.update_event_series(current_setting('test.c1')::uuid, 'all', 'gekaapt', null, null,
-       '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'daily', 1, null) $$,
+  $$ select public.update_event_series(current_setting('test.c1')::uuid, 'all', 'gekaapt',
+       '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, p_freq => 'daily', p_interval => 1) $$,
   'AG404', null, 'B cannot update an occurrence of A''s series'
 );
 select throws_ok(
@@ -362,8 +364,8 @@ select throws_ok(
   'AG404', null, 'B cannot delete A''s series'
 );
 select throws_ok(
-  $$ select public.create_event_series(current_setting('test.a_cal')::uuid, 'sneaky', null, null,
-       '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'daily', 1, '2026-01-03') $$,
+  $$ select public.create_event_series(current_setting('test.a_cal')::uuid, 'sneaky',
+       '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'daily', 1, p_until => '2026-01-03') $$,
   'AG404', null, 'B cannot create a series in A''s calendar'
 );
 select throws_ok(
@@ -384,8 +386,8 @@ select is_empty(
 select is(public.extend_event_series(), 0, 'B''s extension leaves A''s series alone');
 
 select set_config('test.b1', public.create_event_series(
-  current_setting('test.b_cal')::uuid, 'B reeks', null, null,
-  '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'daily', 1, '2026-01-03')::text, true);
+  current_setting('test.b_cal')::uuid, 'B reeks',
+  '2026-01-01 08:00Z', '2026-01-01 09:00Z', false, 'daily', 1, p_until => '2026-01-03')::text, true);
 select set_config('test.bs', (select series_id::text from public.calendar_events
   where id = current_setting('test.b1')::uuid), true);
 select is((select count(*)::int from public.calendar_event_series), 1, 'B sees only their own series');
@@ -411,10 +413,10 @@ select is(
 
 -- ---- Scopes: a weekly series from two weeks ago to two weeks ahead ---------------------
 select set_config('test.p1', public.create_event_series(
-  current_setting('test.a_cal')::uuid, 'Oud', null, null,
+  current_setting('test.a_cal')::uuid, 'Oud',
   ((current_date - 14)::timestamp + time '09:00') at time zone 'Europe/Amsterdam',
   ((current_date - 14)::timestamp + time '10:00') at time zone 'Europe/Amsterdam',
-  false, 'weekly', 1, current_date + 14)::text, true);
+  false, 'weekly', 1, p_until => current_date + 14)::text, true);
 select set_config('test.p', (select series_id::text from public.calendar_events
   where id = current_setting('test.p1')::uuid), true);
 select is(
@@ -427,10 +429,10 @@ select lives_ok(
   $$ select public.update_event_series(
        (select id from public.calendar_events
         where series_id = current_setting('test.p')::uuid and occurrence_on = current_date + 14),
-       'this', 'Los', 'Kantoor', null,
+       'this', 'Los',
        ((current_date + 14)::timestamp + time '09:00') at time zone 'Europe/Amsterdam',
        ((current_date + 14)::timestamp + time '10:00') at time zone 'Europe/Amsterdam',
-       false) $$,
+       false, p_location => 'Kantoor') $$,
   'this: one occurrence can be changed on its own'
 );
 select is(
@@ -445,10 +447,10 @@ select set_config('test.p7', (select id::text from public.calendar_events
   where series_id = current_setting('test.p')::uuid and occurrence_on = current_date + 7), true);
 select lives_ok(
   $$ select public.update_event_series(
-       current_setting('test.p7')::uuid, 'all', 'Nieuw', null, null,
+       current_setting('test.p7')::uuid, 'all', 'Nieuw',
        ((current_date + 7)::timestamp + time '10:00') at time zone 'Europe/Amsterdam',
        ((current_date + 7)::timestamp + time '11:00') at time zone 'Europe/Amsterdam',
-       false, 'weekly', 1, current_date + 14) $$,
+       false, p_freq => 'weekly', p_interval => 1, p_until => current_date + 14) $$,
   'all: the series can be changed from an occurrence'
 );
 select is(
@@ -475,10 +477,10 @@ select is(
 -- Deze en volgende: the old series ends, a new one starts, ids stay.
 select lives_ok(
   $$ select public.update_event_series(
-       current_setting('test.p7')::uuid, 'following', 'Vanaf', null, null,
+       current_setting('test.p7')::uuid, 'following', 'Vanaf',
        ((current_date + 7)::timestamp + time '11:00') at time zone 'Europe/Amsterdam',
        ((current_date + 7)::timestamp + time '12:00') at time zone 'Europe/Amsterdam',
-       false, 'weekly', 1, current_date + 21) $$,
+       false, p_freq => 'weekly', p_interval => 1, p_until => current_date + 21) $$,
   'following: this and the later occurrences can be changed'
 );
 select is(
@@ -505,10 +507,10 @@ select is(
 -- Deze en volgende on the first occurrence: the series changes in place.
 select lives_ok(
   $$ select public.update_event_series(
-       current_setting('test.p7')::uuid, 'following', 'Eerste', null, null,
+       current_setting('test.p7')::uuid, 'following', 'Eerste',
        ((current_date + 7)::timestamp + time '11:00') at time zone 'Europe/Amsterdam',
        ((current_date + 7)::timestamp + time '12:00') at time zone 'Europe/Amsterdam',
-       false, 'weekly', 1, current_date + 21) $$,
+       false, p_freq => 'weekly', p_interval => 1, p_until => current_date + 21) $$,
   'following on the first occurrence changes the series itself'
 );
 select is(
@@ -595,9 +597,9 @@ select lives_ok(
 
 select is(
   public.create_event_series(
-    current_setting('test.a_cal')::uuid, 'Eenmalig', null, null,
-    '2026-03-01 08:00Z', '2026-03-01 09:00Z', false, 'weekly', 1, '2026-03-22',
-    '00000000-0000-0000-0000-531000000e02'),
+    current_setting('test.a_cal')::uuid, 'Eenmalig',
+    '2026-03-01 08:00Z', '2026-03-01 09:00Z', false, 'weekly', 1,
+    p_until => '2026-03-22', p_event_id => '00000000-0000-0000-0000-531000000e02'),
   '00000000-0000-0000-0000-531000000e02'::uuid,
   'a single event becomes the first occurrence and keeps its id'
 );

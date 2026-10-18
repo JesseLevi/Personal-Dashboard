@@ -338,14 +338,14 @@ $$;
 create function public.create_event_series(
   p_calendar_id uuid,
   p_title text,
-  p_location text,
-  p_description text,
   p_starts_at timestamptz,
   p_ends_at timestamptz,
   p_all_day boolean,
   p_freq text,
   p_interval integer,
-  p_until date,
+  p_location text default null,
+  p_description text default null,
+  p_until date default null,
   p_event_id uuid default null,
   p_time_zone text default 'Europe/Amsterdam'
 )
@@ -438,11 +438,11 @@ create function public.update_event_series(
   p_event_id uuid,
   p_scope text,
   p_title text,
-  p_location text,
-  p_description text,
   p_starts_at timestamptz,
   p_ends_at timestamptz,
   p_all_day boolean,
+  p_location text default null,
+  p_description text default null,
   p_freq text default null,
   p_interval integer default null,
   p_until date default null
@@ -818,14 +818,14 @@ revoke execute on function public.agenda_items(timestamptz, timestamptz, text) f
 grant execute on function public.agenda_items(timestamptz, timestamptz, text) to authenticated;
 
 revoke execute on function
-  public.create_event_series(uuid, text, text, text, timestamptz, timestamptz, boolean, text, integer, date, uuid, text),
-  public.update_event_series(uuid, text, text, text, text, timestamptz, timestamptz, boolean, text, integer, date),
+  public.create_event_series(uuid, text, timestamptz, timestamptz, boolean, text, integer, text, text, date, uuid, text),
+  public.update_event_series(uuid, text, text, timestamptz, timestamptz, boolean, text, text, text, integer, date),
   public.delete_event_series(uuid, text),
   public.extend_event_series()
   from public, anon;
 grant execute on function
-  public.create_event_series(uuid, text, text, text, timestamptz, timestamptz, boolean, text, integer, date, uuid, text),
-  public.update_event_series(uuid, text, text, text, text, timestamptz, timestamptz, boolean, text, integer, date),
+  public.create_event_series(uuid, text, timestamptz, timestamptz, boolean, text, integer, text, text, date, uuid, text),
+  public.update_event_series(uuid, text, text, timestamptz, timestamptz, boolean, text, text, text, integer, date),
   public.delete_event_series(uuid, text),
   public.extend_event_series()
   to authenticated, service_role;
