@@ -134,11 +134,12 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 
 - **One timeline, nothing copied**: manual events (editable), synced events (source fields read-only, never written back), `meal_plans`, `cards.planned_for` and the `cards.due_at` overlay, unioned by one `security invoker` function.
 - **Schema**:
-  - `calendars`: the container (ADR-0035); a default per user (ADR-0017); an imported feed is its own calendar.
+  - `calendars`: the container (ADR-0035); a default per user (ADR-0017); an imported feed is its own calendar. A manual calendar is a "category" in the UI, and every calendar has a `color` from a nine-colour palette (ADR-0040).
   - `calendar_accounts`: provider, credentials in Vault (ADR-0002), `sync_state`, `last_synced_at`.
   - `calendar_events`: `calendar_id`, `starts_at`/`ends_at`, `all_day`, `source` `manual|sync`, `external_id` unique per account, `missing_since`.
   - `meal_plans`: `calendar_id`, `recipe_id`, `servings`, `slot` (breakfast/lunch/dinner/snack), and either `planned_on` or `calendar_event_id`; "naar mand" sets `shopping_list_items.meal_plan_id`.
   - `calendar_event_links`: an event plus exactly one card, recipe or note, cascading on both sides.
+  - `calendar_event_series`: the rule (`freq`, `interval`, `until`, `excluded_on`) and template of a recurring own event; occurrences are `calendar_events` rows with `series_id`, `occurrence_on`, `series_detached`, kept 400 days ahead and extended lazily on Agenda load (ADR-0042).
 - **Sync**:
   - providers `ics` → `caldav` (`tsdav`) → Graph/Google only on need; Outlook is ICS or Graph, never CalDAV;
   - fetches through `safe-fetch`; recurring instances expanded within −30 d / +400 d, `external_id` = UID + instance start;
@@ -146,6 +147,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - an event is deleted after two consecutive successful syncs miss it; its links and attached meal plans go with it, basket items stay and the user gets a notice;
   - write only on a changed content hash; past events are kept as history.
 - **UI**: FullCalendar standard (MIT) packages, themed with semantic tokens, Claude-designed (ADR-0034); `ical.js` parses feeds.
+- **Colour and creation**: items take their calendar's colour through the `event-<colour>-*` tokens; meals, planned cards and deadlines have fixed colours; hidden calendars and kinds are a per-device cookie (ADR-0040). One quick-add popover (+ Nieuw, `N`, slot click) parses Dutch or English text with `chrono-node` and own rules in `lib/agenda/quick-add.ts`, without AI (ADR-0041).
 - **Sync trigger** (ADR-0039): opening the Agenda syncs the user's accounts older than an hour in `after()`; a daily cron syncs every account older than 20 hours. `apply_calendar_sync` (`security definer`, advisory lock) applies a parsed feed per account: upsert, hash, two-miss deletion, and a `calendar_sync_notices` row (item ids kept, as `meal_plan_id` is nulled). The URL sits in Vault; `lib/agenda/sync.ts` and `app/api/cron/` call it.
 
 ## 8. Testing and CI gates
