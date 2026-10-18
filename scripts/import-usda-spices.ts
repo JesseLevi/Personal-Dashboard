@@ -16,7 +16,8 @@
 // food_portion.csv rows (referenced by id, amount 1).
 //
 // Looked for in SR Legacy and absent (so not seeded): garam masala, harissa,
-// curry leaves, star anise (only aniseed, which NEVO already has).
+// curry leaves, star anise (only aniseed, which NEVO already has). Baking
+// powder is deliberately not seeded: it is added as an `eigen` row by an admin.
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -72,13 +73,13 @@ export const SPICES: readonly SpicePairing[] = [
     nameNl: "Koriander gemalen", nameEn: "Coriander seed",
     usdaFdcId: "170922", usdaDescription: "Spices, coriander seed",
     units: { theelepel: tsp("87542", "tsp"), eetlepel: tsp("87543", "tbsp") },
-    aliases: ["gemalen koriander", "korianderzaad"],
+    aliases: ["korianderzaad"],
   },
   {
     nameNl: "Gember gemalen", nameEn: "Ginger ground",
     usdaFdcId: "170926", usdaDescription: "Spices, ginger, ground",
     units: { theelepel: tsp("87550", "tsp"), eetlepel: tsp("87551", "tbsp") },
-    aliases: ["gemalen gember", "gemberpoeder"],
+    aliases: ["gemberpoeder"],
   },
   {
     nameNl: "Laurierblad gedroogd", nameEn: "Bay leaf dried",
@@ -111,15 +112,6 @@ export const SPICES: readonly SpicePairing[] = [
     usdaFdcId: "171323", usdaDescription: "Spices, fennel seed",
     units: { theelepel: tsp("88435", "tsp, whole"), eetlepel: tsp("88436", "tbsp, whole") },
     aliases: ["venkelzaad"],
-  },
-  {
-    // Dutch bakpoeder is phosphate-based, so the straight-phosphate row
-    // rather than the sodium aluminum sulfate one.
-    nameNl: "Bakpoeder", nameEn: "Baking powder",
-    usdaFdcId: "172804",
-    usdaDescription: "Leavening agents, baking powder, double-acting, straight phosphate",
-    units: { theelepel: tsp("91439", "tsp") },
-    aliases: ["bakpoeder", "zakje bakpoeder"],
   },
   {
     nameNl: "Vanille-extract", nameEn: "Vanilla extract",

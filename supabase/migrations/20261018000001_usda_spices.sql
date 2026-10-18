@@ -22,8 +22,10 @@
 --
 -- Alias keys are the output of normalizeIngredientName (lib/recipes/import/
 -- normalize-name.ts), the same function the importer applies on lookup. It
--- strips "verse"/"gemalen", so "verse tijm" and "gemalen gember" collapse to
--- "tijm" and "gember". "tijm" maps to the dried row, as the ticket asks.
+-- strips "verse"/"gemalen", so "verse tijm" collapses to "tijm", which maps to
+-- the dried row. The bare keys "gember" and "koriander" are deliberately not
+-- claimed (they would capture "verse gember"/"verse koriander"), and neither is
+-- "bakpoeder": baking powder is added by an admin as an eigen row.
 --
 -- fdc_id | name_nl                | USDA description
 -- 172231 | Kurkuma gemalen        | Spices, turmeric, ground
@@ -35,7 +37,6 @@
 -- 170938 | Tijm gedroogd          | Spices, thyme, dried
 -- 173470 | Tijm vers              | Thyme, fresh
 -- 171323 | Venkelzaad             | Spices, fennel seed
--- 172804 | Bakpoeder              | Leavening agents, baking powder, double-acting, straight phosphate
 -- 173471 | Vanille-extract        | Vanilla extract
 -- 171322 | Dille gedroogd         | Spices, dill weed, dried
 -- 172233 | Dille vers             | Dill weed, fresh
@@ -61,7 +62,6 @@ select v.* from (values
   ('Tijm gedroogd', 'Thyme dried', 'Kruiden en specerijen', 'Herbs and spices', 'per_100g', 276, 9.11, 63.94, 7.43, 37, 'USDA-SR-Legacy', '170938', '2018-04'),
   ('Tijm vers', 'Thyme fresh', 'Kruiden en specerijen', 'Herbs and spices', 'per_100g', 101, 5.56, 24.45, 1.68, 14, 'USDA-SR-Legacy', '173470', '2018-04'),
   ('Venkelzaad', 'Fennel seed', 'Kruiden en specerijen', 'Herbs and spices', 'per_100g', 345, 15.8, 52.29, 14.87, 39.8, 'USDA-SR-Legacy', '171323', '2018-04'),
-  ('Bakpoeder', 'Baking powder', 'Kruiden en specerijen', 'Herbs and spices', 'per_100g', 51, 0.1, 24.1, 0, 0.2, 'USDA-SR-Legacy', '172804', '2018-04'),
   ('Vanille-extract', 'Vanilla extract', 'Kruiden en specerijen', 'Herbs and spices', 'per_100g', 288, 0.06, 12.65, 0.06, 0, 'USDA-SR-Legacy', '173471', '2018-04'),
   ('Dille gedroogd', 'Dill weed dried', 'Kruiden en specerijen', 'Herbs and spices', 'per_100g', 253, 19.96, 55.82, 4.36, 13.6, 'USDA-SR-Legacy', '171322', '2018-04'),
   ('Dille vers', 'Dill weed fresh', 'Kruiden en specerijen', 'Herbs and spices', 'per_100g', 43, 3.46, 7.02, 1.12, 2.1, 'USDA-SR-Legacy', '172233', '2018-04'),
@@ -100,7 +100,6 @@ from (values
   ('173470', 'theelepel', 0.8, 'USDA-SR-Legacy', '2018-04'),
   ('171323', 'theelepel', 2, 'USDA-SR-Legacy', '2018-04'),
   ('171323', 'eetlepel', 5.8, 'USDA-SR-Legacy', '2018-04'),
-  ('172804', 'theelepel', 4.6, 'USDA-SR-Legacy', '2018-04'),
   ('173471', 'theelepel', 4.2, 'USDA-SR-Legacy', '2018-04'),
   ('173471', 'eetlepel', 13, 'USDA-SR-Legacy', '2018-04'),
   ('171322', 'theelepel', 1, 'USDA-SR-Legacy', '2018-04'),
@@ -132,9 +131,7 @@ from (values
   ('kurkuma', 'USDA-SR-Legacy', '172231'),
   ('geelwortel', 'USDA-SR-Legacy', '172231'),
   ('fenegriek', 'USDA-SR-Legacy', '171324'),
-  ('koriander', 'USDA-SR-Legacy', '170922'),
   ('korianderzaad', 'USDA-SR-Legacy', '170922'),
-  ('gember', 'USDA-SR-Legacy', '170926'),
   ('gemberpoeder', 'USDA-SR-Legacy', '170926'),
   ('laurierblad', 'USDA-SR-Legacy', '170917'),
   ('laurier', 'USDA-SR-Legacy', '170917'),
@@ -142,8 +139,6 @@ from (values
   ('tijm', 'USDA-SR-Legacy', '170938'),
   ('tijmtakje', 'USDA-SR-Legacy', '173470'),
   ('venkelzaad', 'USDA-SR-Legacy', '171323'),
-  ('bakpoeder', 'USDA-SR-Legacy', '172804'),
-  ('zakje bakpoeder', 'USDA-SR-Legacy', '172804'),
   ('vanille extract', 'USDA-SR-Legacy', '173471'),
   ('salie', 'USDA-SR-Legacy', '170935'),
   ('dragon', 'USDA-SR-Legacy', '170937'),

@@ -135,7 +135,9 @@ describe("buildAliasRows", () => {
     expect(keyToRef.get("tijm")).toBe("USDA-SR-Legacy:170938");
     expect(keyToRef.get("tijmtakje")).toBe("USDA-SR-Legacy:173470");
     expect(keyToRef.get("venkelzaad")).toBe("USDA-SR-Legacy:171323");
-    expect(keyToRef.get("zakje bakpoeder")).toBe("USDA-SR-Legacy:172804");
+    for (const key of ["bakpoeder", "zakje bakpoeder", "gember", "koriander"]) {
+      expect(keyToRef.has(key)).toBe(false);
+    }
     expect(keyToRef.get("vanille extract")).toBe("USDA-SR-Legacy:173471");
     expect(keyToRef.get("kerriepoeder")).toBe("NEVO-online:1223");
   });

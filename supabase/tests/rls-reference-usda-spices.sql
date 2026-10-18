@@ -15,8 +15,8 @@ values ('00000000-0000-0000-0000-00000000052a', 'admin@test.local'),
 -- ---- seed shape (as the postgres superuser) --------------------------------
 select is(
   (select count(*)::int from reference.ingredients where source = 'USDA-SR-Legacy'),
-  21,
-  'all 21 USDA spice rows are seeded'
+  20,
+  'all 20 USDA spice rows are seeded'
 );
 select is(
   (select count(*)::int from reference.ingredients
@@ -26,7 +26,7 @@ select is(
       and nutrient_basis = 'per_100g'
       and category_nl = 'Kruiden en specerijen'
       and category_en = 'Herbs and spices'),
-  21,
+  20,
   'every USDA row carries source_ref, version, per_100g basis and the spices category pair'
 );
 select is(
@@ -63,10 +63,9 @@ select is(
   'alias tijmtakje (verse tijmtakjes) -> Tijm vers'
 );
 select is(
-  (select ri.name_nl from reference.ingredient_aliases a join reference.ingredients ri on ri.id = a.ingredient_id
-    where a.alias_normalized = 'bakpoeder'),
-  'Bakpoeder',
-  'alias bakpoeder -> Bakpoeder'
+  (select count(*)::int from reference.ingredient_aliases where alias_normalized in ('bakpoeder', 'gember', 'koriander')),
+  0,
+  'the migration claims neither bakpoeder (admin adds it) nor the bare gember/koriander keys'
 );
 select is(
   (select ri.name_nl from reference.ingredient_aliases a join reference.ingredients ri on ri.id = a.ingredient_id
@@ -158,8 +157,8 @@ select is(
 );
 select is(
   (select count(*)::int from reference.ingredients where source = 'USDA-SR-Legacy'),
-  21,
-  'all 21 USDA rows survive'
+  20,
+  'all 20 USDA rows survive'
 );
 select is(
   (select count(*)::int from reference.ingredient_unit_masses where source = 'USDA-SR-Legacy' and unit in ('theelepel', 'eetlepel')
