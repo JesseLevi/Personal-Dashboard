@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { Editor } from "@tiptap/react";
+import type CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
 import { noteExtensions } from "../lib/notes/extensions";
 import { toPlainText, type TipTapDocument } from "../lib/notes/document";
 import { loadCodeLanguage, rehighlightCodeBlocks, CODE_LANGUAGE_IDS } from "../lib/notes/code-languages";
@@ -51,10 +52,19 @@ describe("code blocks", () => {
   });
 
   it("highlights only after the grammar is lazily registered", async () => {
-    const target = make({
-      type: "doc",
-      content: [{ type: "codeBlock", attrs: { language: "json" }, content: [{ type: "text", text: '{"a": 1}' }] }],
+    // Without a mounted <EditorContent>, TipTap renders React node views as a bare placeholder.
+    // Drop the code block's node view so the plain <pre><code> carries the highlight decorations.
+    const extensions = noteExtensions.map((extension) =>
+      extension.name === "codeBlock" ? (extension as typeof CodeBlockLowlight).extend({ addNodeView: () => null }) : extension,
+    );
+    const target = new Editor({
+      extensions,
+      content: {
+        type: "doc",
+        content: [{ type: "codeBlock", attrs: { language: "json" }, content: [{ type: "text", text: '{"a": 1}' }] }],
+      },
     });
+    editor = target;
     expect(target.view.dom.querySelector(".hljs-attr")).toBeNull();
     expect(await loadCodeLanguage("json")).toBe(true);
     rehighlightCodeBlocks(target);
