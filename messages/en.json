@@ -237,6 +237,10 @@
     },
     "page": {
       "clearAllLabel": "Empty basket",
+      "clearAllConfirmLabel": "Remove all items from the basket?",
+      "clearAllConfirmButtonLabel": "Yes, empty basket",
+      "clearAllDeletingLabel": "Emptying…",
+      "cancelLabel": "Cancel",
       "deleteItemLabel": "Delete {name}",
       "sortLabel": "Sort",
       "addItemLabel": "Item",

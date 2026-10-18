@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/organisms/PageHeader";
 import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
+import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import type { IconName } from "@/components/atoms/Icon";
 import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import type { ShoppingListOption } from "./ShoppingListPanel";
@@ -40,6 +41,8 @@ export interface WinkelmandHeaderProps {
   onClearAll: () => void;
   /** Story-only: renders with the basket switcher already open. */
   defaultListMenuOpen?: boolean;
+  /** Story-only: renders with the "Leeg mand" confirmation already asked. */
+  defaultClearConfirming?: boolean;
 }
 
 // Both floating panels close the same way: a pointer down outside their
@@ -72,10 +75,14 @@ export function WinkelmandHeader({
   onAddItem,
   onClearAll,
   defaultListMenuOpen = false,
+  defaultClearConfirming = false,
 }: WinkelmandHeaderProps) {
   const t = useTranslations("shopping.page");
   const tSort = useTranslations("shopping.page.sortOptions");
 
+  const { confirming: clearConfirming, ask: askClear, cancel: cancelClear } = useDeleteConfirm();
+  const [storyAsked, setStoryAsked] = useState(defaultClearConfirming);
+  const confirmingClear = clearConfirming || storyAsked;
   const [listMenuOpen, setListMenuOpen] = useState(defaultListMenuOpen);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const listMenuRef = useRef<HTMLDivElement>(null);
@@ -114,7 +121,7 @@ export function WinkelmandHeader({
   // Icon-only below md, as the fetched mobile node draws ("With text" off);
   // four buttons no longer fit the 370px header row with a text label.
   const clearAllButton = (
-    <Button variant="destructive" icon="Trash" aria-label={t("clearAllLabel")} onClick={onClearAll}>
+    <Button variant="destructive" icon="Trash" aria-label={t("clearAllLabel")} onClick={askClear}>
       <span className="hidden md:inline">{t("clearAllLabel")}</span>
     </Button>
   );
@@ -185,6 +192,30 @@ export function WinkelmandHeader({
       // as flat siblings of <header>, which is itself `justify-between`).
       // Empty state: Sort is hidden, "+ Item" stays by user instruction.
       actions={
+        confirmingClear ? (
+          // "Leeg mand" is two-step (the RecipeDetailPage idiom): the first
+          // click swaps the buttons for the confirm row. The clear itself is
+          // optimistic, so there is no pending state to show.
+          <DeleteConfirm
+            layout="inline"
+            isPending={false}
+            onCancel={() => {
+              setStoryAsked(false);
+              cancelClear();
+            }}
+            onConfirm={() => {
+              setStoryAsked(false);
+              cancelClear();
+              onClearAll();
+            }}
+            labels={{
+              prompt: t("clearAllConfirmLabel"),
+              cancel: t("cancelLabel"),
+              confirm: t("clearAllConfirmButtonLabel"),
+              deleting: t("clearAllDeletingLabel"),
+            }}
+          />
+        ) : (
         <div className="flex items-center gap-inline-sm md:gap-inline-xl">
           {addItemButton}
           {!isEmpty && (
@@ -224,6 +255,7 @@ export function WinkelmandHeader({
           )}
           {clearAllButton}
         </div>
+        )
       }
     />
   );

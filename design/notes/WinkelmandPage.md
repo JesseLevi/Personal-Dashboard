@@ -11,6 +11,7 @@ No new components. `PageHeader` (actions in one flex wrapper), one `Card` per gr
 - Figma's mobile Sort text reads "Voeg toe aan mand" (copy-paste artifact); built as "Sorteer" everywhere (#179).
 - Header buttons live in one flex wrapper: a Fragment passed to `actions` renders as flat siblings and `PageHeader`'s `justify-between` spreads them apart (#182).
 - Sort is icon-only below `md` (`hidden md:inline` span inside the Button) with a permanent `aria-label`, so the accessible name never depends on which text is visible. "+ Item" and "Leeg" follow the same two-span pattern; never a bare `hidden` on a `Button` root (cva `inline-flex` wins in the cascade, the #263 trap; `md:` variants win) (#182, #222).
+- "Leeg mand" is two-step: the first click swaps the header buttons for `DeleteConfirm layout="inline"` (prompt, "Annuleren", "Ja, leeg mand"), as `RecipeDetailPage`. The clear is optimistic, so the confirm shows no pending state. Figma draws no confirm; user decision 2026-10-18.
 - "Leeg mand" copy is a user instruction that deviates from Figma, which still draws "Verwijder alles" (`4053:14274` / `4053:14285`) and "Alles verwijderen " in the EmptyState frames. `clearAllLabel` = "Leeg mand" / "Empty basket" on desktop. Below `md` the button is icon-only with that label as `aria-label`, as the mobile header node draws (`With text` off): with four header buttons the short "Leeg" text no longer fits 370px (#179, #222, #424).
 - Clear-all is a single click, no confirm: Figma draws none, and importing the recipe-detail two-step confirm uninvited is an invention (#177).
 - Sort dropdown anchor: wrapper stays `relative` at every breakpoint; `usePopoverPosition` with `anchor: { base: "left", md: "right" }`, `prefer: "below"`. Left-anchored to the trigger on mobile by user decision (Figma draws no open mobile dropdown; right-aligning to the group put the panel far from the tapped button); desktop `right` anchor is flush with the Sort button's right edge (measured 0.00px diff at 1440px). The hook clamps to the viewport; a fixed-offset anchor broke when #222 shortened the trailing label (`docs/incidents.md`, 2026-08-18) (#182).
@@ -42,7 +43,6 @@ No new components. `PageHeader` (actions in one flex wrapper), one `Card` per gr
 
 ## Open
 - `docs/open-questions.md#winkelmand-no-section-grouping` (`shopping_list_items.section` is still fetched but unread)
-- `docs/open-questions.md#winkelmand-clear-all-no-confirmation`
 - `docs/open-questions.md#winkelmand-mobile-sort-dropdown-anchor-undesigned`
 - `docs/open-questions.md#winkelmand-mobile-header-content-overflows-320px`
 - `docs/open-questions.md#winkelmand-empty-state-add-button-not-in-figma`

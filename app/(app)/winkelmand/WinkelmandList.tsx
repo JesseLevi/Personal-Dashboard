@@ -270,9 +270,7 @@ export function WinkelmandList({ listId, lists, items, share, owner, people, inv
   }
 
   function handleClearAll() {
-    // No confirmation step -- Figma draws none for this button, unlike the
-    // recipe-detail delete's two-step confirm. See
-    // docs/open-questions.md#winkelmand-clear-all-no-confirmation.
+    // Called after WinkelmandHeader's two-step confirm.
     runAction(() => [], () => clearShoppingList({ listId }));
   }
 

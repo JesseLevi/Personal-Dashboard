@@ -68,10 +68,6 @@ The image-upload field's Title reads "Personen" in both frames (`3968:11192` / `
 
 **Product call.** Annotation on `4052:13970` wants "Gangpad" (aisle) grouping; NEVO's 27 groups are food-science groups (canned tomato puree lands in `Groente`). An aisle layer needs a curated map plus name-pattern overrides: new data, so its own ADR. Shipped: Voedingsgroep only.
 
-### winkelmand-clear-all-no-confirmation
-
-**Product call.** "Verwijder alles" (`4053:14285`) empties the list in one click, no confirm, no undo; built as a literal read. Decide: ratify, or add `RecipeDetailPage`'s two-step confirm (Claude may design it).
-
 ### winkelmand-send-no-success-feedback
 
 **Product call.** No node shows send acknowledgement. Since #290 `AnimatedAddToBasketButton` plays "Toegevoegd" only on `success: true`; on failure it silently rests, so there is no failure signal. Decide: toast, inline confirmation, basket badge, or silence.
@@ -117,10 +113,6 @@ The `/notities` search clear button (`InputField` `onTrailingIconClick`, #231) h
 ### notes-category-panel-not-designed
 
 `Pages/Notities/Breakpoints` (`3934:32790`) has no category panel; #232 reuses the shared `CategoryPanel` (#287). By precedent: the 14-icon set (`NOTE_CATEGORY_ICONS`), two-step delete confirm, generic wording despite the `notes.category_id` cascade. Claude may design these when touched. -> `design/notes/CategoryPanel.md`.
-
-### notes-delete-has-no-confirmation
-
-`/notities/[noteId]` "Verwijderen" (`3978:14809` / `3978:14839`) has no drawn confirm; #233 reuses the two-step confirm idiom (`RecipeDetailPage`, `CategoryPanel`). Claude may redesign it when touched.
 
 ### notes-prose-font-scale-no-tokens
 
@@ -175,3 +167,5 @@ TOC rail (#342) is Claude-designed on request. Untokenised: rail width (`w-44`),
 - `notes-table-ui-not-designed`, `notes-prose-typography-not-designed`
 - `import-skeleton-bars-unbound`, `import-link-panel-input-chevron`, `import-description-not-stored`, `import-range-and-pack-note-dropped`
 - `notes-link-chip-undesigned`, `notes-editingbar-mobile-image-button-out-of-scope`
+- `winkelmand-clear-all-no-confirmation`
+- `notes-delete-has-no-confirmation`

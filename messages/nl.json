@@ -237,6 +237,10 @@
     },
     "page": {
       "clearAllLabel": "Leeg mand",
+      "clearAllConfirmLabel": "Alle items uit de mand verwijderen?",
+      "clearAllConfirmButtonLabel": "Ja, leeg mand",
+      "clearAllDeletingLabel": "Legen…",
+      "cancelLabel": "Annuleren",
       "deleteItemLabel": "Verwijder {name}",
       "sortLabel": "Sorteer",
       "addItemLabel": "Item",
