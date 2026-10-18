@@ -29,6 +29,9 @@ const stylePath = path.join(__dirname, "screenshot-override.css");
 const DARK_STORIES = [
   "agenda-calendars-panel--with-calendars",
   "agenda-calendars-panel--delete-confirm",
+  "agenda-calendars-panel--editor-open",
+  "agenda-event-panel--edit-event-other-category",
+  "color-swatches--default",
   "agenda-sync-notices--default",
   "agenda-event-panel--create-event",
   "agenda-event-panel--edit-event",

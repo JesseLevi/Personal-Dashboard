@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AGENDA_COLORS, type AgendaColor } from "@/lib/agenda/colors";
 
 // Pure half of calendar management (#490): input schemas, URL normalisation and
 // the views the panel shows. Safe to import from client components. The secret
@@ -13,6 +14,8 @@ export type CalendarErrorCode =
   | "unreadable"
   | "empty"
   | "limit"
+  | "category-limit"
+  | "read-only"
   | "generic";
 
 export type CalendarActionResult<T = undefined> =
@@ -41,19 +44,51 @@ export const addIcsCalendarSchema = z.object({
 
 export const accountIdSchema = z.object({ id: z.uuid() });
 
+const calendarName = z.string().trim().min(1).max(100);
+
+/** The most own (manual) calendars a user can have, the default one included. */
+export const MAX_CATEGORIES = 20;
+
+export const createCalendarSchema = z.object({ name: calendarName, color: z.enum(AGENDA_COLORS) });
+
+// A name changes only on an own, non-default calendar: the default one is named by its translation.
+export const updateCalendarSchema = z
+  .object({ id: z.uuid(), name: calendarName.optional(), color: z.enum(AGENDA_COLORS).optional() })
+  .refine((value) => value.name !== undefined || value.color !== undefined);
+
+export const calendarIdSchema = z.object({ id: z.uuid() });
+
 export const resolveNoticeSchema = z.object({ id: z.uuid(), removeItems: z.boolean() });
 
 export type SyncStatus = "never" | "ok" | "failed";
 
+/** One own calendar, a category (ADR-0040). `name` is null for the default one: the panel shows its translation. */
+export interface CalendarCategoryView {
+  /** The calendar's id, which is what an event and the hidden list refer to. */
+  id: string;
+  name: string | null;
+  color: AgendaColor;
+  isDefault: boolean;
+}
+
 /** One imported calendar as the panel lists it. */
 export interface CalendarAccountView {
   id: string;
+  /** The id of the account's calendar: its colour and the hidden list belong to it. */
+  calendarId: string;
+  color: AgendaColor;
   name: string;
   status: SyncStatus;
   /** ISO instant of the last successful sync. */
   lastSyncedAt: string | null;
   /** A machine code from `sync_state`; the panel translates it. */
   errorCode: string | null;
+}
+
+/** What the settings panel lists: own categories and imported calendars. */
+export interface CalendarOverview {
+  categories: CalendarCategoryView[];
+  accounts: CalendarAccountView[];
 }
 
 /** A basket notice after a sync deleted an event with a planned meal (ADR-0037 §6). */
