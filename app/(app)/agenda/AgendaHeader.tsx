@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
-import { ButtonToggle, type ButtonToggleItem } from "@/components/molecules/ButtonToggle";
+import { ButtonToggle } from "@/components/molecules/ButtonToggle";
 import { PageHeader } from "@/components/organisms/PageHeader";
 import { Toast } from "@/components/organisms/Toast";
 import type { AgendaView } from "@/lib/agenda/view";
@@ -16,12 +16,7 @@ import { AgendaMoreMenu } from "./AgendaMoreMenu";
 // The toggle offers four choices; `threeDay` is only what `week` becomes on a phone.
 export type AgendaToggleView = Exclude<AgendaView, "threeDay">;
 
-const VIEW_ITEMS: ReadonlyArray<{ value: AgendaToggleView; icon: ButtonToggleItem["icon"] }> = [
-  { value: "day", icon: "Calendar" },
-  { value: "week", icon: "Columns3" },
-  { value: "month", icon: "Table" },
-  { value: "list", icon: "List" },
-];
+const VIEW_ITEMS: ReadonlyArray<{ value: AgendaToggleView }> = [{ value: "day" }, { value: "week" }, { value: "month" }, { value: "list" }];
 
 export function toToggleView(view: AgendaView): AgendaToggleView {
   return view === "threeDay" ? "week" : view;
@@ -110,10 +105,10 @@ export function AgendaHeader({
         }
         titleAdornments={
           weekNumber !== undefined && (
-            <span className="text-base font-semibold whitespace-nowrap text-text-secondary">{t("weekNumber", { number: weekNumber })}</span>
+            <span className="text-sm font-semibold whitespace-nowrap text-text-secondary">{t("weekNumber", { number: weekNumber })}</span>
           )
         }
-        className="gap-x-inline-xl max-lg:flex-wrap max-lg:gap-y-stack-md lg:items-start lg:[&>div:first-child]:h-12 [&_h1]:whitespace-nowrap [&>div:first-child]:shrink-0"
+        className="gap-x-inline-xl max-lg:flex-wrap max-lg:gap-y-stack-md lg:items-start lg:[&>div:first-child]:h-12 [&_h1]:text-2xl [&_h1]:whitespace-nowrap [&>div:first-child]:shrink-0"
         actions={
           <div className="max-lg:contents lg:flex lg:min-w-0 lg:flex-1 lg:flex-wrap lg:items-center lg:justify-end lg:gap-x-inline-xl lg:gap-y-stack-md lg:pt-component-xs">
             <ButtonToggle
@@ -122,17 +117,16 @@ export function AgendaHeader({
               defaultValue={view}
               value={view}
               size="small"
-              iconOnlyBelowLg
               onValueChange={(value) => onViewChange(value as AgendaToggleView)}
               className="max-lg:order-last max-lg:basis-full lg:w-96 lg:max-w-full"
             />
             <div className="flex max-w-full flex-wrap items-center justify-end gap-inline-sm max-lg:ml-auto">
-              <Button icon="ArrowLeft" aria-label={t("previousLabel")} onClick={onPrevious} />
-              <Button className="max-lg:hidden" onClick={onToday}>
+              <Button className="text-sm" icon="ArrowLeft" aria-label={t("previousLabel")} onClick={onPrevious} />
+              <Button className="text-sm max-lg:hidden" onClick={onToday}>
                 {t("todayLabel")}
               </Button>
-              <Button icon="ArrowRight" aria-label={t("nextLabel")} onClick={onNext} />
-              <Button className="max-lg:hidden" icon="PanelRight" aria-pressed={trayOpen} onClick={onTrayToggle}>
+              <Button className="text-sm" icon="ArrowRight" aria-label={t("nextLabel")} onClick={onNext} />
+              <Button className="text-sm max-lg:hidden" icon="PanelRight" aria-pressed={trayOpen} onClick={onTrayToggle}>
                 {t("planLabel")}
               </Button>
               <AgendaMoreMenu
@@ -147,7 +141,7 @@ export function AgendaHeader({
                 defaultStep={defaultMenuStep}
               />
               <span ref={newButtonRef} className="inline-flex max-lg:hidden">
-                <Button variant="white" icon="Plus" onClick={onNew}>
+                <Button className="text-sm" variant="white" icon="Plus" onClick={onNew}>
                   {t("newLabel")}
                 </Button>
               </span>
