@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { itemKey } from "@/components/organisms/AgendaCalendarTheme";
 import type { AgendaItem } from "@/lib/agenda/types";
-import { clipBox, formatClock, isShortSpan, itemEditability, normalizeSpan, slotBox, slotForSingleSnap, toEventInput } from "@/lib/ui/agenda-calendar";
+import { clipBox, formatClock, isShortSpan, itemEditability, normalizeSpan, slotBox, slotsForSelection, toEventInput } from "@/lib/ui/agenda-calendar";
 
 const base = { id: "i1", title: "T", start: "2026-01-01T09:00:00", end: "2026-01-01T10:00:00", allDay: false, linkCount: 0 };
 
@@ -90,20 +90,37 @@ describe("itemKey", () => {
   });
 });
 
-describe("slotForSingleSnap", () => {
+describe("slotsForSelection", () => {
   const at = (h: number, m: number) => new Date(2026, 0, 1, h, m).toISOString();
   const span = (start: string, end: string) => ({ start, end, allDay: false });
+  const clock = (d: Date) => `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const run = (sh: number, sm: number, eh: number, em: number) => {
+    const r = slotsForSelection(span(at(sh, sm), at(eh, em)), 30);
+    return r && [clock(r.start), clock(r.end)];
+  };
 
-  it("widens a one-snap click to the whole slot, floored", () => {
-    const r = slotForSingleSnap(span(at(8, 15), at(8, 30)), 15, 30);
-    expect(r?.start.getHours()).toBe(8);
-    expect(r?.start.getMinutes()).toBe(0);
-    expect(r && r.end.getTime() - r.start.getTime()).toBe(30 * 60_000);
+  it("widens a one-snap click to the whole slot", () => {
+    expect(run(8, 0, 8, 15)).toEqual(["8:00", "8:30"]);
+    expect(run(8, 15, 8, 30)).toEqual(["8:00", "8:30"]);
   });
 
-  it("leaves drags and all-day spans alone", () => {
-    expect(slotForSingleSnap(span(at(8, 15), at(8, 45)), 15, 30)).toBeNull();
-    expect(slotForSingleSnap({ start: "2026-01-01", end: "2026-01-02", allDay: true }, 15, 30)).toBeNull();
+  it("starts a drag in the lower half of a cell at the cell start", () => {
+    expect(run(8, 15, 9, 0)).toEqual(["8:00", "9:00"]);
+    expect(run(8, 15, 8, 45)).toEqual(["8:00", "9:00"]);
+  });
+
+  it("ends a drag released in the upper half at the cell end", () => {
+    expect(run(8, 0, 9, 15)).toEqual(["8:00", "9:30"]);
+    expect(run(8, 30, 9, 45)).toEqual(["8:30", "10:00"]);
+  });
+
+  it("covers both cells when dragging upward (FullCalendar hands over ordered ranges)", () => {
+    expect(run(8, 15, 9, 15)).toEqual(["8:00", "9:30"]);
+  });
+
+  it("returns null for ranges already on slots and for all-day spans", () => {
+    expect(run(8, 0, 9, 30)).toBeNull();
+    expect(slotsForSelection({ start: "2026-01-01", end: "2026-01-02", allDay: true }, 30)).toBeNull();
   });
 });
 

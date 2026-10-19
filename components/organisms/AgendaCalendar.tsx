@@ -22,7 +22,7 @@ import {
   formatClock,
   normalizeSpan,
   slotBox,
-  slotForSingleSnap,
+  slotsForSelection,
   toEventInputs,
   type AgendaSpan,
   type Box,
@@ -360,8 +360,8 @@ export function AgendaCalendar({
     select: (info) => {
       lastSelectRef.current = Date.now();
       const span = normalizeSpan({ start: info.startStr, end: info.endStr, allDay: info.allDay });
-      // A click (one snap) selects the whole slot, like the hover outline shows.
-      const slot = slotForSingleSnap(span, AGENDA_SNAP_MINUTES, AGENDA_SLOT_MINUTES);
+      // A click or drag selects whole slots, like the hover outline shows; moving and resizing items stays on the snap.
+      const slot = slotsForSelection(span, AGENDA_SLOT_MINUTES);
       if (slot) calendarRef.current?.getApi().select(slot.start, slot.end);
       else onSelectSlot?.(span);
     },

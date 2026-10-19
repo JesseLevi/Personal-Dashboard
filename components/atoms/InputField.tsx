@@ -32,6 +32,8 @@ type InputFieldSharedProps = {
   leading?: ReactNode;
   /** Figma `Trekking-icon` (= trailing) — icon rendered after the content. */
   trailingIcon?: IconName;
+  /** Sits right after the label text, e.g. a small help button. Ignored without a `label`. */
+  labelAdornment?: ReactNode;
   /** Figma `Button` SLOT — rendered inside the container, below the input row. */
   button?: ReactNode;
   /** Merged onto the outermost wrapper; the inner control keeps its own classes. */
@@ -111,6 +113,7 @@ export function InputField({
   onTrailingIconClick,
   trailingIconLabel,
   button,
+  labelAdornment,
   className,
   boxClassName,
   multiline,
@@ -133,9 +136,18 @@ export function InputField({
   return (
     <div className={cn("flex w-full flex-col gap-stack-sm", className)}>
       {label ? (
-        <label htmlFor={id} className="text-base font-semibold text-text-secondary">
-          {label}
-        </label>
+        labelAdornment ? (
+          <div className="flex items-center gap-inline-xs">
+            <label htmlFor={id} className="text-base font-semibold text-text-secondary">
+              {label}
+            </label>
+            {labelAdornment}
+          </div>
+        ) : (
+          <label htmlFor={id} className="text-base font-semibold text-text-secondary">
+            {label}
+          </label>
+        )
       ) : null}
 
       {/* items-start, not items-center: keeps the leading+text row's top edge aligned instead of centering it inside the taller trailing-icon column. */}

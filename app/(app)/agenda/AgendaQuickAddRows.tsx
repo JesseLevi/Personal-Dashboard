@@ -1,10 +1,12 @@
 // design: Claude-designed (#534)
 "use client";
 
-import type { ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { Checkbox } from "@/components/atoms/Checkbox";
+import { Dropdown } from "@/components/atoms/Dropdown";
+import { Icon } from "@/components/atoms/Icon";
 import { InputField } from "@/components/atoms/InputField";
 import { ColorDot } from "@/components/molecules/ColorSwatches";
 import type { CalendarCategoryView } from "@/lib/agenda/calendars";
@@ -13,6 +15,8 @@ import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import { rankRecipes } from "@/lib/agenda/quick-add";
 import { REPEAT_CHOICES, type RepeatChoice } from "@/lib/agenda/repeat";
 import type { MealSlot } from "@/lib/agenda/types";
+import { useOutsidePress } from "@/lib/dom/use-outside-press";
+import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 
 // The editable rows of the quick-add window, one set per kind (ADR-0041). Every row shows what the text
 // said and lets the user change it; `AgendaQuickAdd` owns the values.
@@ -44,6 +48,49 @@ interface RowsProps {
 const ID = "agenda-quick-add";
 const MEAL_SLOTS: MealSlot[] = ["breakfast", "lunch", "dinner", "snack"];
 const SUGGESTED_RECIPES = 4;
+
+// A small "?" after the label "Met": a click, Enter or Space opens a popover with the hint; Escape or a click outside closes it.
+function PeopleHelp() {
+  const t = useTranslations("components.agendaQuickAdd");
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLSpanElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const popover = usePopoverPosition(wrapperRef, popoverRef, { open, anchor: "left", prefer: "below" });
+
+  useOutsidePress([wrapperRef], () => {
+    if (open) setOpen(false);
+  });
+
+  function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (event.key !== "Escape" || !open) return;
+    event.stopPropagation();
+    setOpen(false);
+    buttonRef.current?.focus();
+  }
+
+  return (
+    <span ref={wrapperRef} className="relative inline-flex" onKeyDown={handleKeyDown}>
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-label={t("peopleHelpLabel")}
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className="inline-flex items-center rounded-full text-text-secondary"
+      >
+        <Icon name="CircleHelp" className="size-4" />
+      </button>
+      {open && (
+        <div ref={popoverRef} className="z-10 w-56" style={popover.style}>
+          <Dropdown className="shadow-sm" role="tooltip">
+            <p className="text-sm text-text-secondary">{t("peopleHelp")}</p>
+          </Dropdown>
+        </div>
+      )}
+    </span>
+  );
+}
 
 export function EventRows({ values, set, disabled, categories }: RowsProps & { categories: CalendarCategoryView[] }) {
   const t = useTranslations("components.agendaQuickAdd");
@@ -105,6 +152,7 @@ export function EventRows({ values, set, disabled, categories }: RowsProps & { c
       <div className="flex gap-inline-md">
         <InputField
           label={t("fields.people")}
+          labelAdornment={<PeopleHelp />}
           id={`${ID}-people`}
           placeholder={t("peoplePlaceholder")}
           value={values.people}
@@ -114,6 +162,7 @@ export function EventRows({ values, set, disabled, categories }: RowsProps & { c
         <InputField
           label={t("fields.place")}
           id={`${ID}-place`}
+          placeholder={t("placePlaceholder")}
           value={values.place}
           onChange={(event) => set("place", event.target.value)}
           disabled={disabled}

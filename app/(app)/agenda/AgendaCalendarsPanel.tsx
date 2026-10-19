@@ -367,7 +367,6 @@ export function AgendaCalendarsPanel({
       closeLabel={tSidePanel("closeLabel")}
       footer={footer}
     >
-      <p className="text-base text-text-secondary">{t("intro")}</p>
       {error && <p className="text-base font-semibold text-priority-urgent">{error}</p>}
       {overview === null && <p className="text-base text-text-secondary">{t("loadingLabel")}</p>}
 
@@ -376,6 +375,7 @@ export function AgendaCalendarsPanel({
           <h3 id="agenda-categories-heading" className="text-base font-semibold text-text-primary">
             {t("categoriesHeading")}
           </h3>
+          <p className="text-base text-text-secondary">{t("intro")}</p>
           {overview.categories.map((category) => {
             const title = categoryName(category);
             return (

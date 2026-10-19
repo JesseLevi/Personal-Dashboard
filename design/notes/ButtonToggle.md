@@ -30,6 +30,8 @@ Bindings measured via `boundVariables`:
 - `title` (visible, supplies `aria-labelledby` via `useId`) XOR `aria-label` (no visible title), the same required-one-of idiom as `Dropdown`'s `label` / `id`. (#265)
 - Client Component with internal selection state: which segment is selected is the group's own behaviour, identical for every caller (same reasoning as `Dropdown`; contrast `Checkbox`, whose `checked` varies per call site and stays composer-owned). (#43, #45)
 
+- `tone="button"` (Agenda header, #548) swaps the colours: the track is `bg-surface-secondary` (a default Button's fill) and the indicator `bg-surface-highlight-white` (`Button variant="white"`, like + Nieuw). The default tone is unchanged for the theme setting and the quick-add kind toggle. `hugFromLg` makes the segments `lg:grow-0 lg:basis-auto` so the toggle hugs its labels from `lg` (the caller sets `lg:w-auto` on the root); below `lg` it keeps the equal full-width segments. Claude-designed, no Figma axis.
+
 ## Token gaps and flags
 - ActiveBackground fill is `#D9D9D9`, unbound, matching no Tailwind stone step (stone-200 `#E7E5E4`, stone-300 `#D6D3D1`). It is Figma's default new-shape fill, i.e. never styled. Used `bg-surface-secondary` (stone-200) as the nearest static neutral surface; not `surface-secondary-hover` (pixel-closer but a hover-role token). Stands until Figma applies a real fill. (#265)
 - The Slot's 4 px inter-segment gap binds no variable (the Slot is `layoutMode: NONE`, children manually positioned); modelled as flex `gap-inline-xs`.

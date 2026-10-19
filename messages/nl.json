@@ -1090,7 +1090,10 @@
         "moment": "Moment",
         "card": "Kaart"
       },
-      "peoplePlaceholder": "Namen, gescheiden door komma's",
+      "peoplePlaceholder": "Namen",
+      "peopleHelp": "Meerdere namen scheid je met komma's.",
+      "peopleHelpLabel": "Uitleg bij Met",
+      "placePlaceholder": "Groningen",
       "recipeSearchPlaceholder": "Zoek een recept",
       "recipesEmpty": "Geen recepten gevonden.",
       "newCard": "Nieuwe kaart",
