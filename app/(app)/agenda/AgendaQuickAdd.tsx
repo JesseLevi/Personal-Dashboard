@@ -17,6 +17,7 @@ import {
 import { createPortal } from "react-dom";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
+import type { IconName } from "@/components/atoms/Icon";
 import { InputField } from "@/components/atoms/InputField";
 import { ButtonToggle } from "@/components/molecules/ButtonToggle";
 import { useIsNarrow } from "@/components/organisms/AgendaCalendar";
@@ -73,7 +74,11 @@ export interface AgendaQuickAddProps {
   forceSheet?: boolean;
 }
 
-const KIND_ITEMS: ReadonlyArray<{ value: QuickAddKind }> = [{ value: "event" }, { value: "meal" }, { value: "todo" }];
+const KIND_ITEMS: ReadonlyArray<{ value: QuickAddKind; icon: IconName }> = [
+  { value: "event", icon: "Calendar" },
+  { value: "meal", icon: "Utensils" },
+  { value: "todo", icon: "Columns3" },
+];
 const DEFAULT_START = "09:00";
 const TEXT_ID = "agenda-quick-add-text";
 const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled])';
@@ -240,7 +245,7 @@ function QuickAddForm({
     <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1 flex-col gap-stack-md overflow-y-auto [scrollbar-gutter:stable] px-component-lg pb-component-lg">
         <ButtonToggle aria-label={t("kindLabel")} items={items} defaultValue={kind} value={kind} size="small" onValueChange={(value) => setPickedKind(value as QuickAddKind)} />
-        {pickedKind !== null && pickedKind !== parsed.autoKind && (
+        {pickedKind === "event" && pickedKind !== parsed.autoKind && (
           <p className="-mt-stack-sm text-sm font-semibold text-text-secondary">
             {t("kindPicked")} ·{" "}
             <button type="button" className="underline" onClick={() => setPickedKind(null)}>

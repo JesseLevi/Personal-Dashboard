@@ -10,7 +10,7 @@ Server Component. Outer `flex-col gap-stack-sm`: optional `label`, then the bord
 - Token bindings (all four states byte-identical): box `gap-stack-md` and `rounded-control-outer` and `p-component-xs`; root `gap-stack-sm`; leading+text row `gap-inline-sm` and `pl-component-sm` and `py-` / `pt-component-sm`; trailing column `py-component-sm pr-component-sm`.
 
 ## Deliberate decisions
-- `type="date" | "time" | "datetime-local" | "month" | "week"` renders through the client `InputFieldPickerInput`: a click anywhere in the input calls `showPicker()` (`lib/ui/open-picker.ts`, in try/catch; unsupported keeps the browser default, typing still works). The label row already forwards clicks on the icon and padding to the input.
+- `type="date" | "time" | "datetime-local" | "month" | "week"` renders through the client `InputFieldPickerInput`: the browser's own trailing picker icon is hidden (`[&::-webkit-calendar-picker-indicator]:hidden`), so only our leading icon shows; a click anywhere in the input calls `showPicker()` (`lib/ui/open-picker.ts`, in try/catch; unsupported keeps the browser default, typing still works). The label row already forwards clicks on the icon and padding to the input.
 - `items-start` on the box (not `items-center`): Figma's row has no alignItems override, and centring the 32 px leading+text column inside the 40 px trailing-icon row added a phantom ~4 px offset. Still load-bearing when `button` makes the content column taller. (#44, #78)
 - The leading+text row uses symmetric `py-component-sm` (intrinsic height 40) so the box hugs a stable 48 px for all four icon combinations. Figma's raw padding is 8/0/0/8 and its four fetched states all show a trailing icon, so the no-trailing-icon case is structurally undemonstrable; this is a deliberate deviation. With `button` present the bottom padding drops to `pt-component-sm` (Figma's real top/left-only value), and the box is unchanged without `button`. (#78, #149)
 - `options` is a native `<select>`, not `Dropdown`: Figma models Personen / Eenheid as this same field with a chevron. A native select gives the OS picker on mobile, full keyboard / screen-reader semantics and a compact closed state with no JS; `appearance-none` leaves only the atom's own `trailingIcon`. (#149)
@@ -32,6 +32,7 @@ Server Component. Outer `flex-col gap-stack-sm`: optional `label`, then the bord
 ## Gotchas
 - Plain `InputField` / `multiline` without `button` must render pixel-identically to before #149; check the full visual suite when touching the padding or height rules.
 - The content column's `self-stretch` is what lets a fixed multiline height reach the text row (the box's `items-start` otherwise leaves an auto-height child unstretched).
+- `labelAdornment` (optional node) sits right after the label text in a `flex items-center gap-inline-xs` row, outside the `<label>` so its own name does not leak into the field's. Used by quick add's "Met" help button. Ignored without `label`.
 
 ## Open
 - `docs/open-questions.md#notes-search-clear-button-states-undesigned`

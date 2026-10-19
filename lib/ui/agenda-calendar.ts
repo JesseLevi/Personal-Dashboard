@@ -114,17 +114,22 @@ export function isShortSpan(start: Date | null, end: Date | null, minutes: numbe
 }
 
 /**
- * A click without drag selects one snap (15 minutes): widen it to the whole slot,
- * start floored to the slot boundary in the browser's zone. Longer selections and
- * all-day spans return null and stay as dragged.
+ * A timed selection always covers whole slots, like the hover outline shows: the
+ * start floors to the slot boundary and the end ceils to it, in the browser's zone.
+ * Returns the widened range, or null when the span is all-day, open-ended or already
+ * on slot boundaries (so re-selecting the result does not loop).
  */
-export function slotForSingleSnap(span: AgendaSpan, snapMinutes: number, slotMinutes: number): { start: Date; end: Date } | null {
+export function slotsForSelection(span: AgendaSpan, slotMinutes: number): { start: Date; end: Date } | null {
   if (span.allDay || !span.end) return null;
+  const slotMs = slotMinutes * 60_000;
   const start = new Date(span.start);
-  const length = new Date(span.end).getTime() - start.getTime();
-  if (length !== snapMinutes * 60_000) return null;
-  start.setMinutes(Math.floor(start.getMinutes() / slotMinutes) * slotMinutes, 0, 0);
-  return { start, end: new Date(start.getTime() + slotMinutes * 60_000) };
+  const end = new Date(span.end);
+  const floorStart = new Date(start);
+  floorStart.setMinutes(Math.floor(start.getMinutes() / slotMinutes) * slotMinutes, 0, 0);
+  const remainder = (end.getTime() - floorStart.getTime()) % slotMs;
+  const ceilEnd = new Date(remainder === 0 ? end.getTime() : end.getTime() + slotMs - remainder);
+  if (floorStart.getTime() === start.getTime() && ceilEnd.getTime() === end.getTime()) return null;
+  return { start: floorStart, end: ceilEnd };
 }
 
 export interface Box {

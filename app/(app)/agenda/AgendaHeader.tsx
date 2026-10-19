@@ -117,8 +117,10 @@ export function AgendaHeader({
               defaultValue={view}
               value={view}
               size="small"
+              tone="button"
+              hugFromLg
               onValueChange={(value) => onViewChange(value as AgendaToggleView)}
-              className="max-lg:order-last max-lg:basis-full lg:w-96 lg:max-w-full"
+              className="max-lg:order-last max-lg:basis-full lg:w-auto lg:max-w-full lg:shrink-0"
             />
             <div className="flex max-w-full flex-wrap items-center justify-end gap-inline-sm max-lg:ml-auto">
               <Button className="text-sm" icon="ArrowLeft" aria-label={t("previousLabel")} onClick={onPrevious} />
