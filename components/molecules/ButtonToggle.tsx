@@ -22,7 +22,8 @@ import type { IconName } from "../atoms/Icon";
 export interface ButtonToggleItem {
   /** Stable identifier for this segment, returned by `onValueChange`. */
   value: string;
-  icon: IconName;
+  /** Optional: a text-only toggle (Agenda) leaves it out. */
+  icon?: IconName;
   /** Segment label — also the accessible name (WAI-ARIA radio pattern). */
   label: string;
 }
@@ -163,7 +164,11 @@ export function ButtonToggle({
         // Full width, not hug: Figma's `Container` is `hSize: FILL` (the
         // retired atom's `w-fit self-start` was hug-width reasoning that
         // doesn't apply here). See design/notes/ButtonToggle.md.
-        className="relative flex w-full items-stretch gap-inline-xs rounded-card bg-surface-highlight-white p-component-xs"
+        className={cn(
+          "relative flex w-full items-stretch gap-inline-xs bg-surface-highlight-white p-component-xs",
+          // small: outer radius = a normal Button's; the segments get outer - padding.
+          size === "small" ? "rounded-control" : "rounded-card",
+        )}
       >
         <span
           ref={indicatorRef}
@@ -174,7 +179,10 @@ export function ButtonToggle({
           // deliberate value). `surface-secondary` (stone-200) is the
           // nearest existing "static neutral surface" role token — flagged,
           // not invented. See design/notes/ButtonToggle.md.
-          className="pointer-events-none absolute top-0 left-0 rounded-control bg-surface-secondary transition-[transform,width,height] duration-200 ease-out motion-reduce:transition-none"
+          className={cn(
+            "pointer-events-none absolute top-0 left-0 bg-surface-secondary transition-[transform,width,height] duration-200 ease-out motion-reduce:transition-none",
+            size === "small" ? "rounded-card-inner" : "rounded-control",
+          )}
         />
         {items.map((item, index) => (
           // `relative` stacks each segment above the indicator; fill-less in
@@ -193,7 +201,10 @@ export function ButtonToggle({
             tabIndex={item.value === value ? 0 : -1}
             onClick={() => select(item.value)}
             onKeyDown={(event) => handleKeyDown(event, index)}
-            className="relative grow basis-0 hover:bg-transparent! active:bg-transparent!"
+            className={cn(
+              "relative grow basis-0 hover:bg-transparent! active:bg-transparent!",
+              size === "small" && "rounded-card-inner text-sm",
+            )}
           >
             {iconOnlyBelowLg ? (
               <span className="max-lg:sr-only">{item.label}</span>

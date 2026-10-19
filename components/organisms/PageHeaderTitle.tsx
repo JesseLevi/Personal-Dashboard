@@ -19,6 +19,11 @@ interface Morph {
   step: "from" | "to";
 }
 
+// With a trigger the button's padding is part of the h1's width, so measure the button, not the bare text.
+function measure(text: HTMLElement, hasTrigger: boolean) {
+  return (hasTrigger && text.parentElement ? text.parentElement : text).getBoundingClientRect().width;
+}
+
 // Slack after the width transition, so the cleanup never cuts it short.
 const SETTLE_MS = 60;
 
@@ -31,6 +36,7 @@ export interface PageHeaderTitleTrigger {
 
 export function PageHeaderTitle({ title, pending = false, trigger }: { title: string; pending?: boolean; trigger?: PageHeaderTitleTrigger }) {
   const reduced = usePrefersReducedMotion();
+  const hasTrigger = !!trigger;
   const h1Ref = useRef<HTMLHeadingElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
   const previous = useRef<{ text: string; width: number } | null>(null);
@@ -48,7 +54,7 @@ export function PageHeaderTitle({ title, pending = false, trigger }: { title: st
     const h1 = h1Ref.current;
     const text = textRef.current;
     if (pending || !h1 || !text) return;
-    const toWidth = text.getBoundingClientRect().width;
+    const toWidth = measure(text, hasTrigger);
     const last = previous.current;
     let from: { text: string; width: number } | null = null;
     if (last && last.text !== title) {
@@ -70,7 +76,7 @@ export function PageHeaderTitle({ title, pending = false, trigger }: { title: st
     }
     h1.style.setProperty("--title-w", `${from.width}px`);
     setMorph({ out: from.text, fromWidth: from.width, toWidth, step: "from" });
-  }, [title, pending, reduced]);
+  }, [title, pending, reduced, hasTrigger]);
 
   // Lets an armed board switch read the visible name and its current width.
   useEffect(() => {
@@ -78,9 +84,9 @@ export function PageHeaderTitle({ title, pending = false, trigger }: { title: st
     return registerLiveTitle(() => {
       const text = textRef.current;
       const current = previous.current;
-      return text && current ? { text: current.text, width: text.getBoundingClientRect().width } : null;
+      return text && current ? { text: current.text, width: measure(text, hasTrigger) } : null;
     });
-  }, [pending]);
+  }, [pending, hasTrigger]);
 
   // from -> to on the next frames, then back to the natural width.
   useEffect(() => {
@@ -119,13 +125,14 @@ export function PageHeaderTitle({ title, pending = false, trigger }: { title: st
       ref={h1Ref}
       className={cn(
         "relative text-xl font-semibold text-text-primary",
+        trigger && "-ms-component-sm",
         pending && held === null && "invisible",
         morph &&
           "w-[var(--title-w)] shrink-0 overflow-hidden whitespace-nowrap transition-[width] duration-[var(--blur-fade-in-duration)] ease-[var(--blur-fade-ease)]",
       )}
     >
       {morph?.out != null && (
-        <span aria-hidden className="absolute top-0 left-0 animate-blur-out">
+        <span aria-hidden className={cn("absolute top-0 left-0 animate-blur-out", trigger && "px-component-sm py-component-xs")}>
           {morph.out}
         </span>
       )}
@@ -136,7 +143,7 @@ export function PageHeaderTitle({ title, pending = false, trigger }: { title: st
           aria-haspopup="dialog"
           aria-expanded={trigger.expanded}
           onClick={trigger.onClick}
-          className="cursor-pointer rounded-control-inner outline-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-secondary-active"
+          className="cursor-pointer rounded-control px-component-sm py-component-xs outline-none transition-colors hover:bg-surface-secondary-hover active:bg-surface-secondary-active focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-secondary-active"
         >
           {text}
         </button>
