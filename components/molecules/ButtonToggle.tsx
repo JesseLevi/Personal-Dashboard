@@ -41,6 +41,10 @@ type ButtonToggleBaseProps = {
   iconOnlyBelowLg?: boolean;
   /** `small` uses 32 px segments, so the track is 40 px high, like a default Button. */
   size?: "default" | "small";
+  /** `button` swaps the colours: the track reads like a default `Button`, the active indicator like `Button variant="white"`. */
+  tone?: "default" | "button";
+  /** From `lg` the segments hug their label instead of sharing the width evenly. */
+  hugFromLg?: boolean;
   className?: string;
 };
 
@@ -62,6 +66,8 @@ export function ButtonToggle({
   iconOnlyBelowMd,
   iconOnlyBelowLg,
   size = "default",
+  tone = "default",
+  hugFromLg = false,
   title,
   className,
   "aria-label": ariaLabel,
@@ -165,7 +171,8 @@ export function ButtonToggle({
         // retired atom's `w-fit self-start` was hug-width reasoning that
         // doesn't apply here). See design/notes/ButtonToggle.md.
         className={cn(
-          "relative flex w-full items-stretch gap-inline-xs bg-surface-highlight-white p-component-xs",
+          "relative flex w-full items-stretch gap-inline-xs p-component-xs",
+          tone === "button" ? "bg-surface-secondary" : "bg-surface-highlight-white",
           // small: outer radius = a normal Button's; the segments get outer - padding.
           size === "small" ? "rounded-control" : "rounded-card",
         )}
@@ -180,7 +187,8 @@ export function ButtonToggle({
           // nearest existing "static neutral surface" role token — flagged,
           // not invented. See design/notes/ButtonToggle.md.
           className={cn(
-            "pointer-events-none absolute top-0 left-0 bg-surface-secondary transition-[transform,width,height] duration-200 ease-out motion-reduce:transition-none",
+            "pointer-events-none absolute top-0 left-0 transition-[transform,width,height] duration-200 ease-out motion-reduce:transition-none",
+            tone === "button" ? "bg-surface-highlight-white" : "bg-surface-secondary",
             size === "small" ? "rounded-card-inner" : "rounded-control",
           )}
         />
@@ -202,7 +210,9 @@ export function ButtonToggle({
             onClick={() => select(item.value)}
             onKeyDown={(event) => handleKeyDown(event, index)}
             className={cn(
-              "relative grow basis-0 hover:bg-transparent! active:bg-transparent!",
+              "relative grow basis-0",
+              hugFromLg && "lg:grow-0 lg:basis-auto",
+              "hover:bg-transparent! active:bg-transparent!",
               size === "small" && "rounded-card-inner text-sm",
             )}
           >

@@ -1090,7 +1090,10 @@
         "moment": "Moment",
         "card": "Card"
       },
-      "peoplePlaceholder": "Names, separated by commas",
+      "peoplePlaceholder": "Names",
+      "peopleHelp": "Separate multiple names with commas.",
+      "peopleHelpLabel": "Help for With",
+      "placePlaceholder": "Groningen",
       "recipeSearchPlaceholder": "Search a recipe",
       "recipesEmpty": "No recipes found.",
       "newCard": "New card",
