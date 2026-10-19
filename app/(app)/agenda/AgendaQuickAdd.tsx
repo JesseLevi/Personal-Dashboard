@@ -18,7 +18,7 @@ import { createPortal } from "react-dom";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { InputField } from "@/components/atoms/InputField";
-import { ButtonToggle, type ButtonToggleItem } from "@/components/molecules/ButtonToggle";
+import { ButtonToggle } from "@/components/molecules/ButtonToggle";
 import { useIsNarrow } from "@/components/organisms/AgendaCalendar";
 import type { CalendarCategoryView } from "@/lib/agenda/calendars";
 import type { PlanCardGroup, QuickAddBoard } from "@/lib/agenda/plan-cards";
@@ -73,11 +73,7 @@ export interface AgendaQuickAddProps {
   forceSheet?: boolean;
 }
 
-const KIND_ITEMS: ReadonlyArray<{ value: QuickAddKind; icon: ButtonToggleItem["icon"] }> = [
-  { value: "event", icon: "Calendar" },
-  { value: "meal", icon: "Utensils" },
-  { value: "todo", icon: "Columns3" },
-];
+const KIND_ITEMS: ReadonlyArray<{ value: QuickAddKind }> = [{ value: "event" }, { value: "meal" }, { value: "todo" }];
 const DEFAULT_START = "09:00";
 const TEXT_ID = "agenda-quick-add-text";
 const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled])';

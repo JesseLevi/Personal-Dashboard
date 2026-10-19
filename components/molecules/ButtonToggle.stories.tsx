@@ -74,3 +74,20 @@ export const SmallBesideButton = () => (
     <Button>Vandaag</Button>
   </div>
 );
+
+// Text only: `icon` is optional (Agenda's view toggle).
+export const SmallTextOnly = () => (
+  <div className="w-[368px]">
+    <ButtonToggle
+      items={[
+        { value: "day", label: "Dag" },
+        { value: "week", label: "Week" },
+        { value: "month", label: "Maand" },
+        { value: "list", label: "Lijst" },
+      ]}
+      defaultValue="week"
+      size="small"
+      aria-label="Weergave"
+    />
+  </div>
+);
