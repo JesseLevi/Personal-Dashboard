@@ -15,7 +15,7 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
 
 1. The user promotes `main` to production. Then run `deploy.yml` with `target: migrate` for #513's migration. That needs the user's go, already given for this one.
 2. Turn on Dependabot alerts in the repo settings (user).
-3. Agenda backlog: CalDAV import (#491). Design debt: pastel items in dark mode (no dark `surface-highlight-*`/`text-highlight-*` tokens, ~3:1 contrast) and truncated titles in the 3-day mobile view.
+3. **Agenda redesign, epic #527** (ADR-0040–0042, user decisions of 2026-10-18): #529–#534 via PRs #535–#540, merged in that order with the user's go (admin bypass, 2026-10-19). Migrations `20261018000003` (recurring events, changes `agenda_items()`) and `…0004` (categories) go to hosted only with the user's go, together with the code that reads them. Not yet run end to end against a database: recurring-event panel, categories, quick add. #530 resolves the pastel-in-dark and truncated-title debt. Backlog: CalDAV import (#491).
 4. Phases 8 and 9 (#31, #32) stay in the backlog. Each needs its own ADR first: the embedding model and the privacy of notes (ADR-0018: hosted models, no worker host).
 
 ## Small open items
