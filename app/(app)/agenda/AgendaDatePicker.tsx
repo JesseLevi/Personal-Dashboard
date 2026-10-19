@@ -69,7 +69,7 @@ export function AgendaDatePicker({ open, anchorRef, date, onSelect, onClose }: A
             value={value}
             onChange={(event) => setValue(event.target.value)}
           />
-          <Button type="submit" variant="filled" icon="Check" disabled={!DATE.test(value)}>
+          <Button type="submit" variant="filled" trailingIcon="ArrowRight" disabled={!DATE.test(value)}>
             {t("goToDateConfirm")}
           </Button>
         </form>

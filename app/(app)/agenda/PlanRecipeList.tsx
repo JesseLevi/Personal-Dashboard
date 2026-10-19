@@ -1,10 +1,9 @@
 "use client";
 
 // design: Claude-designed (#487)
-import { useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
+import { useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { InputField } from "@/components/atoms/InputField";
 import { CardContentRecipe } from "@/components/molecules/CardContentRecipe";
@@ -34,6 +33,55 @@ export interface PlanRecipeListProps {
   };
 }
 
+/** A press that moved this far was a drag, not a click. */
+const DRAG_THRESHOLD_PX = 5;
+
+/**
+ * Makes a draggable plan row the trigger of its own "plan on a day" menu: click, Enter or Space opens it,
+ * a drag never does, Escape closes it and puts focus back on the row.
+ */
+export function usePlanMenu(rowRef: RefObject<HTMLDivElement | null>, popoverRef: RefObject<HTMLDivElement | null>) {
+  const [open, setOpen] = useState(false);
+  const pressRef = useRef<{ x: number; y: number } | null>(null);
+  const popover = usePopoverPosition(rowRef, popoverRef, { open, anchor: "right", prefer: "below", strategy: "fixed" });
+
+  function close(restoreFocus: boolean) {
+    setOpen(false);
+    if (restoreFocus) rowRef.current?.focus();
+  }
+
+  const triggerProps = {
+    role: "button" as const,
+    tabIndex: 0,
+    "aria-haspopup": "true" as const,
+    "aria-expanded": open,
+    onPointerDown: (event: { clientX: number; clientY: number }) => {
+      pressRef.current = { x: event.clientX, y: event.clientY };
+    },
+    onClick: (event: MouseEvent<HTMLDivElement>) => {
+      // The portalled menu bubbles through the React tree; only a click inside the row counts.
+      if (!event.currentTarget.contains(event.target as Node)) return;
+      const press = pressRef.current;
+      pressRef.current = null;
+      if (press && Math.hypot(event.clientX - press.x, event.clientY - press.y) > DRAG_THRESHOLD_PX) return;
+      // The drag handler swallows the press's default focus, so Escape would have nowhere to land.
+      event.currentTarget.focus();
+      setOpen((current) => !current);
+    },
+    onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
+      if (event.key === "Escape" && open) {
+        event.stopPropagation();
+        close(true);
+      } else if ((event.key === "Enter" || event.key === " ") && event.target === event.currentTarget) {
+        event.preventDefault();
+        setOpen((current) => !current);
+      }
+    },
+  };
+
+  return { open, popover, close, triggerProps };
+}
+
 function PlanRecipeRow({
   recipe,
   today,
@@ -48,22 +96,17 @@ function PlanRecipeRow({
   const t = useTranslations("components.planDrawer");
   const tRecipe = useTranslations("components.cardContentRecipe");
   const rowRef = useRef<HTMLDivElement>(null);
-  const wrapperRef = useRef<HTMLSpanElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
-  const popover = usePopoverPosition(wrapperRef, popoverRef, {
-    open,
-    anchor: "right",
-    prefer: "below",
-    strategy: "fixed",
-  });
+  const { open, popover, close, triggerProps } = usePlanMenu(rowRef, popoverRef);
 
   useAgendaDraggable(rowRef, { type: "recipe", id: recipe.id, title: recipe.title });
 
   return (
     <div
       ref={rowRef}
-      className="flex cursor-grab items-center gap-inline-sm rounded-control-outer border border-stroke-primary bg-surface-highlight-white p-component-xs"
+      aria-label={t("planRecipeLabel", { name: recipe.title })}
+      {...triggerProps}
+      className="flex cursor-grab items-center gap-inline-sm rounded-card border border-stroke-primary bg-surface-highlight-white p-component-sm"
     >
       <CardContentRecipe
         compact
@@ -77,24 +120,15 @@ function PlanRecipeRow({
         }
         duration={recipe.timeMinutes != null ? tRecipe("durationMinutes", { minutes: recipe.timeMinutes }) : undefined}
       />
-      <span ref={wrapperRef} className="inline-flex shrink-0">
-        <Button
-          variant="transparent"
-          icon="Calendar"
-          aria-label={t("planRecipeLabel", { name: recipe.title })}
-          aria-expanded={open}
-          onClick={() => setOpen((current) => !current)}
-        />
-      </span>
       {open &&
         createPortal(
-          <PopoverBody popoverRef={popoverRef} style={popover.style} onClose={() => setOpen(false)} wrapperRef={wrapperRef}>
+          <PopoverBody popoverRef={popoverRef} style={popover.style} onClose={() => close(false)} wrapperRef={rowRef}>
             <Dropdown className="shadow-sm">
               <PlanChoices
                 today={today}
                 onPlan={(plannedOn, slot) => onPlan(recipe.id, plannedOn, slot)}
                 onPlanned={(plannedOn, slot) => {
-                  setOpen(false);
+                  close(false);
                   onPlanned(plannedOn, slot);
                 }}
               />
@@ -115,7 +149,7 @@ export function PopoverBody({
   children,
 }: {
   popoverRef: RefObject<HTMLDivElement | null>;
-  wrapperRef: RefObject<HTMLSpanElement | null>;
+  wrapperRef: RefObject<HTMLElement | null>;
   style: CSSProperties;
   onClose: () => void;
   children: ReactNode;
@@ -173,7 +207,7 @@ export function PlanRecipeList({ recipes, categories, today, onPlan, onPlanned, 
         {visible.length === 0 ? (
           <p className="text-base font-semibold text-text-secondary">{t("noRecipes")}</p>
         ) : (
-          <ul className="flex flex-col gap-stack-sm">
+          <ul className="flex flex-col gap-stack-md">
             {visible.map((recipe) => (
               <li key={recipe.id}>
                 <PlanRecipeRow recipe={recipe} today={today} onPlan={onPlan} onPlanned={onPlanned} />

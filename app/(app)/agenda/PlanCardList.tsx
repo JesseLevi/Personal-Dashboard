@@ -4,15 +4,13 @@
 import { useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useFormatter, useTranslations } from "next-intl";
-import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { InputField } from "@/components/atoms/InputField";
 import { PlanChoices } from "@/components/molecules/PlanChoices";
 import { useAgendaDraggable } from "@/components/organisms/useAgendaDraggable";
 import { filterPlanCards, type PlanCard, type PlanCardGroup } from "@/lib/agenda/plan-cards";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
-import { usePopoverPosition } from "@/lib/dom/use-popover-position";
-import { PopoverBody } from "./PlanRecipeList";
+import { PopoverBody, usePlanMenu } from "./PlanRecipeList";
 
 export interface PlanCardListProps {
   groups: readonly PlanCardGroup[];
@@ -36,15 +34,8 @@ function PlanCardRow({
   const t = useTranslations("components.planDrawer");
   const format = useFormatter();
   const rowRef = useRef<HTMLDivElement>(null);
-  const wrapperRef = useRef<HTMLSpanElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
-  const popover = usePopoverPosition(wrapperRef, popoverRef, {
-    open,
-    anchor: "right",
-    prefer: "below",
-    strategy: "fixed",
-  });
+  const { open, popover, close, triggerProps } = usePlanMenu(rowRef, popoverRef);
 
   useAgendaDraggable(rowRef, { type: "card", id: card.id, title: card.title });
 
@@ -60,7 +51,9 @@ function PlanCardRow({
   return (
     <div
       ref={rowRef}
-      className="flex cursor-grab items-center gap-inline-sm rounded-control-outer border border-stroke-primary bg-surface-highlight-white p-component-xs"
+      aria-label={t("planCardLabel", { name: card.title })}
+      {...triggerProps}
+      className="flex cursor-grab items-center gap-inline-sm rounded-card border border-stroke-primary bg-surface-highlight-white p-component-sm"
     >
       <div className="flex min-w-0 flex-1 flex-col">
         <p className="truncate text-base font-semibold text-text-primary">{card.title}</p>
@@ -68,25 +61,16 @@ function PlanCardRow({
           {planned ? t("cardPlannedOn", { column: card.columnName, date: planned }) : card.columnName}
         </p>
       </div>
-      <span ref={wrapperRef} className="inline-flex shrink-0">
-        <Button
-          variant="transparent"
-          icon="Calendar"
-          aria-label={t("planCardLabel", { name: card.title })}
-          aria-expanded={open}
-          onClick={() => setOpen((current) => !current)}
-        />
-      </span>
       {open &&
         createPortal(
-          <PopoverBody popoverRef={popoverRef} style={popover.style} onClose={() => setOpen(false)} wrapperRef={wrapperRef}>
+          <PopoverBody popoverRef={popoverRef} style={popover.style} onClose={() => close(false)} wrapperRef={rowRef}>
             <Dropdown className="shadow-sm">
               <PlanChoices
                 showSlot={false}
                 today={today}
                 onPlan={(plannedOn) => onPlan(card.id, plannedOn)}
                 onPlanned={(plannedOn) => {
-                  setOpen(false);
+                  close(false);
                   onPlanned(card.title, plannedOn);
                 }}
               />
@@ -134,7 +118,7 @@ export function PlanCardList({ groups, today, onPlan, onPlanned }: PlanCardListP
         visible.map((group) => (
           <section key={group.boardId} aria-label={group.boardName} className="flex flex-col gap-stack-sm">
             <h3 className="text-sm font-semibold text-text-secondary">{group.boardName}</h3>
-            <ul className="flex flex-col gap-stack-sm">
+            <ul className="flex flex-col gap-stack-md">
               {group.cards.map((card) => (
                 <li key={card.id}>
                   <PlanCardRow card={card} today={today} onPlan={onPlan} onPlanned={onPlanned} />
