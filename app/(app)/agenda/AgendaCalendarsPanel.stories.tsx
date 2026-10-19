@@ -1,58 +1,120 @@
-import { useEffect, useRef } from "react";
-import type { CalendarAccountView, CalendarActionResult } from "@/lib/agenda/calendars";
+import { useEffect, useRef, useState } from "react";
+import type { CalendarActionResult, CalendarOverview } from "@/lib/agenda/calendars";
+import { NOTHING_HIDDEN, type AgendaHidden } from "@/lib/agenda/hidden";
 import nl from "@/messages/nl.json";
-import { AgendaCalendarsPanel } from "./AgendaCalendarsPanel";
+import { AgendaCalendarsPanel, type AgendaCalendarsPanelProps } from "./AgendaCalendarsPanel";
+
+const strings = nl.components.agendaCalendarsPanel;
 
 // The visual suite freezes the clock at 2026-01-01T14:00 local time.
-const accounts: CalendarAccountView[] = [
-  { id: "a1", name: "Werk (Outlook)", status: "ok", lastSyncedAt: "2026-01-01T13:55:00", errorCode: null },
-  { id: "a2", name: "Gezin (Google)", status: "failed", lastSyncedAt: "2025-12-31T09:00:00", errorCode: "fetch_http_error" },
-  { id: "a3", name: "Verjaardagen (iCloud)", status: "never", lastSyncedAt: null, errorCode: null },
-];
+const overview: CalendarOverview = {
+  categories: [
+    { id: "c-default", name: null, color: "blue", isDefault: true },
+    { id: "c-social", name: "Sociaal", color: "pink", isDefault: false },
+    { id: "c-sport", name: "Sport", color: "orange", isDefault: false },
+  ],
+  accounts: [
+    { id: "a1", calendarId: "c-work", color: "violet", name: "Werk (Outlook)", status: "ok", lastSyncedAt: "2026-01-01T13:55:00", errorCode: null },
+    { id: "a2", calendarId: "c-family", color: "teal", name: "Gezin (Google)", status: "failed", lastSyncedAt: "2025-12-31T09:00:00", errorCode: "fetch_http_error" },
+    { id: "a3", calendarId: "c-birthdays", color: "stone", name: "Verjaardagen (iCloud)", status: "never", lastSyncedAt: null, errorCode: null },
+  ],
+};
 
 // Dev-only mock actions: the panel never imports the real "use server" module.
-const listed = (data: CalendarAccountView[]) => async (): Promise<CalendarActionResult<CalendarAccountView[]>> => ({
-  success: true,
-  data,
-});
-async function mockAdd(): Promise<CalendarActionResult<{ id: string }>> {
+const listed = (data: CalendarOverview) => async (): Promise<CalendarActionResult<CalendarOverview>> => ({ success: true, data });
+async function mockCreate(): Promise<CalendarActionResult<{ id: string }>> {
   return { success: true, data: { id: "new" } };
 }
-async function mockRemove(): Promise<CalendarActionResult> {
+async function mockDone(): Promise<CalendarActionResult> {
   return { success: true, data: undefined };
 }
 
-const common = { open: true, onClose: () => {}, onAdd: mockAdd, onRemove: mockRemove };
-const withAccounts = listed(accounts);
-const none = listed([]);
+type Props = Partial<AgendaCalendarsPanelProps>;
 
 // The panel is `position: fixed`; the min-h wrapper gives the screenshot root a height (SidePanel.stories.tsx).
+const Panel = ({ data = overview, startHidden = NOTHING_HIDDEN, ...rest }: Props & { data?: CalendarOverview; startHidden?: AgendaHidden }) => {
+  const [hidden, setHidden] = useState(startHidden);
+  return (
+    <AgendaCalendarsPanel
+      open
+      onClose={() => {}}
+      initialOverview={data}
+      hidden={hidden}
+      onHiddenChange={setHidden}
+      onList={listed(data)}
+      onAdd={mockCreate}
+      onRemove={mockDone}
+      onCreate={mockCreate}
+      onUpdate={mockDone}
+      onDelete={mockDone}
+      {...rest}
+    />
+  );
+};
+
+// Clicks the buttons found by `steps`, one per frame, so each click sees the result of the one before.
+function ClickThrough({ steps, children }: { steps: Array<(root: HTMLElement) => HTMLElement | undefined>; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      for (const find of steps) {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+        if (cancelled || !ref.current) return;
+        find(document.body)?.click();
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [steps]);
+  return (
+    <div ref={ref} className="min-h-screen">
+      {children}
+    </div>
+  );
+}
+
+const byText = (text: string) => (root: HTMLElement) =>
+  Array.from(root.querySelectorAll("button")).find((button) => button.textContent?.trim() === text);
+
+const openSport = [byText("Sport")];
+const openWork = [byText("Werk (Outlook)")];
+const askDelete = [byText("Sport"), byText(strings.deleteCategoryLabel)];
+
 export const WithCalendars = () => (
   <div className="min-h-screen">
-    <AgendaCalendarsPanel {...common} initialAccounts={accounts} onList={withAccounts} />
+    <Panel />
+  </div>
+);
+
+export const EditorOpen = () => (
+  <ClickThrough steps={openSport}>
+    <Panel />
+  </ClickThrough>
+);
+
+export const LinkedEditorOpen = () => (
+  <ClickThrough steps={openWork}>
+    <Panel />
+  </ClickThrough>
+);
+
+export const SomeHidden = () => (
+  <div className="min-h-screen">
+    <Panel startHidden={{ calendars: ["c-social", "c-family"], kinds: ["deadline"] }} />
   </div>
 );
 
 export const Empty = () => (
   <div className="min-h-screen">
-    <AgendaCalendarsPanel {...common} initialAccounts={[]} onList={none} />
+    <Panel data={{ categories: overview.categories.slice(0, 1), accounts: [] }} />
   </div>
 );
 
-const deleteLabel = nl.components.agendaCalendarsPanel.deleteLabel.replace("{name}", accounts[0].name);
-
-// Clicks the first delete button once on mount to show the confirm footer.
-export const DeleteConfirm = () => {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const button = Array.from(ref.current?.querySelectorAll("button") ?? []).find(
-      (candidate) => candidate.getAttribute("aria-label") === deleteLabel,
-    );
-    button?.click();
-  }, []);
-  return (
-    <div ref={ref} className="min-h-screen">
-      <AgendaCalendarsPanel {...common} initialAccounts={accounts} onList={withAccounts} />
-    </div>
-  );
-};
+// Clicks Sport and then its Verwijderen once on mount to show the confirm footer.
+export const DeleteConfirm = () => (
+  <ClickThrough steps={askDelete}>
+    <Panel />
+  </ClickThrough>
+);

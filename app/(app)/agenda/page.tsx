@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { after } from "next/server";
 import { Suspense } from "react";
+import { getCalendarOverview } from "@/lib/agenda/calendar-list";
+import { AGENDA_HIDDEN_COOKIE, parseHidden } from "@/lib/agenda/hidden";
 import { getSyncNotices } from "@/lib/agenda/notices";
 import { getAgendaItems, getPlannableCards } from "@/lib/agenda/queries";
 import { extendEventSeries } from "@/lib/agenda/series";
@@ -29,6 +31,7 @@ async function AgendaPageBody() {
   const view = isAgendaView(stored) ? stored : DEFAULT_AGENDA_VIEW;
   const storedTray = jar.get(AGENDA_TRAY_COOKIE)?.value;
   const trayOpen = (isAgendaTray(storedTray) ? storedTray : DEFAULT_AGENDA_TRAY) === "open";
+  const hidden = parseHidden(jar.get(AGENDA_HIDDEN_COOKIE)?.value);
   const today = todayInAgendaZone();
   const window = loadWindow(today);
   const supabase = await createSupabaseServerClient();
@@ -36,7 +39,7 @@ async function AgendaPageBody() {
   after(() => syncStaleAccounts(supabase).catch(() => console.error("[agenda] lazy sync failed")));
   // ADR-0042: recurring own events that fall short of 400 days ahead are topped up the same way.
   after(() => extendEventSeries(supabase).catch(() => console.error("[agenda] series extension failed")));
-  const [items, notices, categories, baskets, userId, cardGroups] = await Promise.all([
+  const [items, notices, categories, baskets, userId, cardGroups, calendars] = await Promise.all([
     getAgendaItems({
       from: wallClockToUtc(`${window.from}T00:00:00`),
       to: wallClockToUtc(`${window.to}T00:00:00`),
@@ -47,6 +50,7 @@ async function AgendaPageBody() {
     getRecipeBaskets(),
     getAuthenticatedUserId(),
     getPlannableCards(),
+    getCalendarOverview(supabase),
   ]);
 
   // Imports still running or failed cannot be planned.
@@ -69,6 +73,8 @@ async function AgendaPageBody() {
       today={today}
       initialItems={items}
       initialNotices={notices}
+      initialHidden={hidden}
+      initialCalendars={calendars}
       recipes={recipes}
       recipeCategories={categories.map(({ id, name }) => ({ id, name }))}
       cardGroups={cardGroups}
