@@ -1,7 +1,8 @@
-/** What a key does on the Agenda page; `N` (quick add) is reserved for a later ticket. */
-export type AgendaShortcut = "today" | "day" | "week" | "month" | "list" | "previous" | "next" | "tray";
+/** What a key does on the Agenda page; `N` opens quick add (ADR-0041). */
+export type AgendaShortcut = "new" | "today" | "day" | "week" | "month" | "list" | "previous" | "next" | "tray";
 
 const SHORTCUT_KEYS: Readonly<Record<string, AgendaShortcut>> = {
+  n: "new",
   t: "today",
   d: "day",
   w: "week",
@@ -14,6 +15,7 @@ const SHORTCUT_KEYS: Readonly<Record<string, AgendaShortcut>> = {
 
 /** The overview in the ⋯ menu, in display order. */
 export const AGENDA_SHORTCUT_KEYS: ReadonlyArray<{ shortcut: AgendaShortcut; keys: string }> = [
+  { shortcut: "new", keys: "N" },
   { shortcut: "today", keys: "T" },
   { shortcut: "day", keys: "D" },
   { shortcut: "week", keys: "W" },

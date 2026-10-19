@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
 import { isAgendaColor, type AgendaColor } from "@/lib/agenda/colors";
 import { mapAgendaRows } from "@/lib/agenda/map";
-import { groupOpenCards, type PlanBoardInput, type PlanCardGroup } from "@/lib/agenda/plan-cards";
+import { groupOpenCards, type PlanBoardInput, type PlanCardGroup, type QuickAddBoard } from "@/lib/agenda/plan-cards";
 import type { AgendaItem } from "@/lib/agenda/types";
 
 // There is no stored user time zone yet, so the caller passes an IANA name
@@ -86,6 +86,31 @@ async function withMealPositions(supabase: Supabase, items: AgendaItem[]): Promi
  * plan drawer. RLS decides which boards and cards these are (ADR-0033, ADR-0035).
  * Empty array if signed out.
  */
+/**
+ * The column quick add puts a new card in: the first column of the user's favourite board, else of their
+ * first board. Null without a board. RLS decides what is readable (ADR-0033).
+ */
+export async function getQuickAddBoard(): Promise<QuickAddBoard | null> {
+  const supabase = await createSupabaseServerClient();
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return null;
+
+  const { data, error } = await supabase
+    .from("boards")
+    .select("name, board_columns ( id, name, position )")
+    .eq("user_id", userId)
+    .order("is_favorite", { ascending: false })
+    .order("position", { ascending: true })
+    .limit(1);
+  if (error) {
+    console.error("[agenda] getQuickAddBoard failed:", error.code, error.message);
+    throw new Error("Failed to load the quick add board");
+  }
+  const board = data[0];
+  const column = board ? [...board.board_columns].sort((a, b) => a.position - b.position)[0] : undefined;
+  return board && column ? { boardName: board.name, columnId: column.id, columnName: column.name } : null;
+}
+
 export async function getPlannableCards(): Promise<PlanCardGroup[]> {
   const supabase = await createSupabaseServerClient();
   const userId = await getAuthenticatedUserId();

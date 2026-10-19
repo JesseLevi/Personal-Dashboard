@@ -19,8 +19,17 @@ import type { AgendaSpan } from "@/lib/ui/agenda-calendar";
 import { AgendaEventLinks } from "./AgendaEventLinks";
 import { AgendaLinkSearchPanel, linkKey } from "./AgendaLinkSearchPanel";
 
+/** What quick add hands over with "Meer details" (ADR-0041): the panel opens with these filled in. */
+export interface AgendaEventPrefill {
+  title: string;
+  location: string;
+  description: string;
+  calendarId: string;
+  repeat: RepeatChoice;
+}
+
 export type AgendaPanelTarget =
-  | { mode: "create"; span: AgendaSpan }
+  | { mode: "create"; span: AgendaSpan; prefill?: AgendaEventPrefill }
   | { mode: "edit"; item: AgendaEventItem };
 
 export interface AgendaEventPanelProps {
@@ -67,12 +76,16 @@ const DEFAULT_END_TIME = "10:00";
 // Inputs hold wall-clock text: `YYYY-MM-DDTHH:mm` (timed) or `YYYY-MM-DD` (all day, last day inclusive).
 function initialValues(target: AgendaPanelTarget, categories: CalendarCategoryView[]): FormValues {
   const span = target.mode === "create" ? target.span : target.item;
+  const prefill = target.mode === "create" ? target.prefill : undefined;
   const base = {
-    title: target.mode === "edit" ? target.item.title : "",
-    location: "",
-    description: "",
-    calendarId: target.mode === "edit" ? target.item.calendarId : (categories.find((c) => c.isDefault)?.id ?? ""),
-    repeat: "none" as RepeatChoice,
+    title: target.mode === "edit" ? target.item.title : (prefill?.title ?? ""),
+    location: prefill?.location ?? "",
+    description: prefill?.description ?? "",
+    calendarId:
+      target.mode === "edit"
+        ? target.item.calendarId
+        : (prefill?.calendarId ?? categories.find((c) => c.isDefault)?.id ?? ""),
+    repeat: (prefill?.repeat ?? "none") as RepeatChoice,
     endsOn: false,
     until: "",
   };

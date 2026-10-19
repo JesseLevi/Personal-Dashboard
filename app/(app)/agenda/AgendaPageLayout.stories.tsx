@@ -132,7 +132,7 @@ export const Navigation = () => {
     } else if (shortcut === "previous") setDate(stepDate(view, date, -1));
     else if (shortcut === "next") setDate(stepDate(view, date, 1));
     else if (shortcut === "tray") setTrayOpen((open) => !open);
-    else setView(shortcut);
+    else if (shortcut !== "new") setView(shortcut);
   }, overlay);
   return (
     <Surface>

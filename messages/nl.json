@@ -419,6 +419,7 @@
         "goToDateConfirm": "Ga naar datum",
         "shortcutsLabel": "Sneltoetsen",
         "shortcuts": {
+          "new": "Nieuw item",
           "today": "Vandaag",
           "day": "Dagweergave",
           "week": "Weekweergave",
@@ -1059,6 +1060,48 @@
       "importedFrom": "Uit {name}",
       "importedFromFallback": "Uit een andere agenda"
     },
+    "agendaQuickAdd": {
+      "dialogLabel": "Nieuw item",
+      "closeLabel": "Sluiten",
+      "kindLabel": "Soort",
+      "kinds": {
+        "event": "Afspraak",
+        "meal": "Maaltijd",
+        "todo": "Te doen"
+      },
+      "kindAuto": "Soort automatisch herkend",
+      "kindPicked": "Soort zelf gekozen",
+      "kindBackToAuto": "terug naar automatisch",
+      "textLabel": "Wat wil je plannen?",
+      "textPlaceholder": "Bijv. Film vrijdag 20u met Youri",
+      "recognisedLabel": "Herkend",
+      "noDayToday": "Geen dag herkend, dus vandaag.",
+      "noDaySlot": "Geen dag herkend, dus de dag van het gekozen vak.",
+      "fields": {
+        "title": "Titel",
+        "date": "Dag",
+        "allDay": "Hele dag",
+        "start": "Van",
+        "end": "Tot",
+        "people": "Met",
+        "place": "Waar",
+        "repeat": "Herhalen",
+        "category": "Categorie",
+        "recipe": "Recept",
+        "moment": "Moment",
+        "card": "Kaart"
+      },
+      "peoplePlaceholder": "Namen, gescheiden door komma's",
+      "recipeSearchPlaceholder": "Zoek een recept",
+      "recipesEmpty": "Geen recepten gevonden.",
+      "newCard": "Nieuwe kaart",
+      "todoTarget": "Komt in {board}, kolom {column}.",
+      "noBoard": "Je hebt nog geen bord. Kies een open kaart, of maak eerst een bord in Te doen.",
+      "withNames": "Met {names}",
+      "moreDetails": "Meer details",
+      "addLabel": "Toevoegen",
+      "addingLabel": "Toevoegen..."
+    },
     "agendaEventLinks": {
       "title": "Gekoppeld",
       "linkLabel": "Koppelen",
@@ -1265,6 +1308,7 @@
       "keepLabel": "Laten staan"
     },
     "plan": {
+      "eventAddedNotice": "{title} toegevoegd op {date}",
       "plannedNotice": "Gepland als {slot} op {date}",
       "cardPlannedNotice": "{title} gepland op {date}",
       "cardClearedNotice": "{title} staat niet meer in de agenda",

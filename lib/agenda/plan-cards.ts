@@ -17,6 +17,13 @@ export interface PlanCardGroup {
   cards: PlanCard[];
 }
 
+/** Where quick add puts a new card: the first column of the favourite board (else the first board). */
+export interface QuickAddBoard {
+  boardName: string;
+  columnId: string;
+  columnName: string;
+}
+
 /** One board as read from the database; columns and cards in any order. */
 export interface PlanBoardInput {
   id: string;

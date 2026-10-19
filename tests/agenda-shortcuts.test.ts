@@ -27,8 +27,10 @@ describe("agendaShortcut", () => {
     expect(agendaShortcut(press("T"), false)).toBe("today");
   });
 
-  it("leaves N alone: it is reserved for quick add", () => {
-    expect(agendaShortcut(press("n"), false)).toBeNull();
+  it("maps N to quick add, but not while typing or with a modifier", () => {
+    expect(agendaShortcut(press("n"), false)).toBe("new");
+    expect(agendaShortcut(press("n", { target: { tagName: "INPUT" } }), false)).toBeNull();
+    expect(agendaShortcut(press("n", { metaKey: true }), false)).toBeNull();
   });
 
   it("ignores other keys", () => {
