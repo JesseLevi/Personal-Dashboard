@@ -1249,7 +1249,7 @@
       "planMenuLabel": "Choose a day",
       "weekToBasketLabel": "Week to basket",
       "weekToBasketAddedLabel": "Added",
-      "weekToBasketHint": "Sends this week's meals to a basket",
+      "weekToBasketHint": "Send this week's meals to your basket",
       "chooseBasketLabel": "Choose a basket"
     },
     "planChoices": {

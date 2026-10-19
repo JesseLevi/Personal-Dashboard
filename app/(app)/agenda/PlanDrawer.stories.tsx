@@ -119,7 +119,7 @@ const planLabel = nl.components.planDrawer.planRecipeLabel.replace("{name}", "La
 export const PlanMenuOpen = () => {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    ref.current?.querySelector<HTMLButtonElement>(`button[aria-label="${planLabel}"]`)?.click();
+    ref.current?.querySelector<HTMLElement>(`[role="button"][aria-label="${planLabel}"]`)?.click();
   }, []);
   return (
     <div ref={ref} className="h-[40rem] w-80">
@@ -134,7 +134,7 @@ const planCardLabel = nl.components.planDrawer.planCardLabel.replace("{name}", "
 export const CardsPlanMenuOpen = () => {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    ref.current?.querySelector<HTMLButtonElement>(`button[aria-label="${planCardLabel}"]`)?.click();
+    ref.current?.querySelector<HTMLElement>(`[role="button"][aria-label="${planCardLabel}"]`)?.click();
   }, []);
   return (
     <div ref={ref} className="h-[40rem] w-80">

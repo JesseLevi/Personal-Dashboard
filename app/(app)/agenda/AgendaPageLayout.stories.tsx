@@ -117,7 +117,7 @@ export const Loading = () => (
   </Surface>
 );
 
-// Header and calendar wired like AgendaPage for navigation: keys, date picker and "Vandaag". Try T, D, W, M, L, P and the arrows.
+// Header and calendar wired like AgendaPage for navigation: keys, date picker and "Vandaag". Try T, D, W, M, L, P (the tray animates) and the arrows.
 export const Navigation = () => {
   const [view, setView] = useState<"day" | "week" | "month" | "list">("week");
   const [date, setDate] = useState(DATE);
@@ -151,7 +151,24 @@ export const Navigation = () => {
         onTrayToggle={() => setTrayOpen((open) => !open)}
         onNew={noop}
       />
-      <AgendaBody>
+      <AgendaBody
+        drawerOpen={trayOpen}
+        drawer={
+          <PlanDrawer
+            className="h-full"
+            recipes={
+              <PlanRecipeList
+                recipes={recipes}
+                categories={[{ id: "main", name: "Hoofdgerecht" }]}
+                today={DATE}
+                onPlan={noPlan}
+                onPlanned={noop}
+                weekToBasket={{ onSend: noPlan, baskets }}
+              />
+            }
+          />
+        }
+      >
         <AgendaCalendar items={items} view={view} date={date} scrollNowKey={scrollNowKey} />
       </AgendaBody>
     </Surface>

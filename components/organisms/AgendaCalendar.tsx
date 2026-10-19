@@ -55,6 +55,11 @@ const TAP_DEDUPE_MS = 400;
 const CELL_SELECTOR = '[role="cell"][data-date]';
 const INTERACTIVE_SELECTOR = `[${ITEM_ATTRIBUTE}], a, button, [role="button"]`;
 
+/** Day headers start with a capital: "ma 19" reads as "Ma 19". Only the first letter, per the UI locale. */
+function capitalize(text: string, locale: string): string {
+  return text.charAt(0).toLocaleUpperCase(locale) + text.slice(1);
+}
+
 function toBox(rect: DOMRect): Box {
   return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
 }
@@ -340,14 +345,17 @@ export function AgendaCalendar({
         dayHeaderFormat: { weekday: "short", day: "numeric" },
         dayHeaderContent: (info) => (
           <>
-            <span>{info.weekdayText}</span>
+            <span>{capitalize(info.weekdayText, locale)}</span>
             <span className={cn("rounded-control-inner px-component-xs", info.isToday && TODAY_CHIP)}>
               {info.dayNumberText}
             </span>
           </>
         ),
       },
-      dayGrid: { dayHeaderFormat: { weekday: "short" } },
+      dayGrid: {
+        dayHeaderFormat: { weekday: "short" },
+        dayHeaderContent: (info) => capitalize(info.text, locale),
+      },
     },
     select: (info) => {
       lastSelectRef.current = Date.now();
