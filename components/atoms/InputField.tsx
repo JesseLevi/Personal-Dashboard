@@ -1,5 +1,6 @@
 // figma: node-id=3705:4402
 import { cn } from "@/lib/ui/cn";
+import { hasNativePicker } from "@/lib/ui/open-picker";
 import type {
   InputHTMLAttributes,
   ReactNode,
@@ -7,6 +8,7 @@ import type {
   TextareaHTMLAttributes,
 } from "react";
 import { Icon, type IconName } from "./Icon";
+import { InputFieldPickerInput } from "./InputFieldPickerInput";
 
 /**
  * Atom/InputField — Figma "Input-field" (node-id 3705:4402). Full history:
@@ -126,6 +128,7 @@ export function InputField({
   // at Figma's 124px instead of the plain-multiline 144px, with the row
   // flexing (not `h-full`) to share that height with the button row.
   const hasButtonRow = Boolean(button);
+  const SingleLineInput = hasNativePicker((props as { type?: string }).type) ? InputFieldPickerInput : "input";
 
   return (
     <div className={cn("flex w-full flex-col gap-stack-sm", className)}>
@@ -189,7 +192,7 @@ export function InputField({
                 ))}
               </select>
             ) : (
-              <input
+              <SingleLineInput
                 id={id}
                 {...(props as Omit<InputHTMLAttributes<HTMLInputElement>, "className">)}
                 className={`${NATIVE_CONTROL_BASE} w-full placeholder:text-placeholder focus:outline-none`}

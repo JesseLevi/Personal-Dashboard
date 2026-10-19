@@ -242,7 +242,7 @@ function QuickAddForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex min-h-0 flex-1 flex-col gap-stack-md overflow-y-auto px-component-lg pb-component-lg">
+      <div className="flex min-h-0 flex-1 flex-col gap-stack-md overflow-y-auto [scrollbar-gutter:stable] px-component-lg pb-component-lg">
         <ButtonToggle aria-label={t("kindLabel")} items={items} defaultValue={kind} value={kind} size="small" onValueChange={(value) => setPickedKind(value as QuickAddKind)} />
         {pickedKind !== null && pickedKind !== parsed.autoKind && (
           <p className="-mt-stack-sm text-sm font-semibold text-text-secondary">
