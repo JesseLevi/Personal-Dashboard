@@ -60,9 +60,15 @@ export const createEventSchema = eventFieldsSchema
   .refine(spanIsValid);
 
 // `scope` is required for an occurrence of a series; `repeat` for the scopes that change the rule,
-// and on a single event it turns that event into a series.
+// and on a single event it turns that event into a series. `calendarId` is the category (ADR-0040):
+// a different one moves the event, or the occurrences the scope reaches.
 export const updateEventSchema = eventFieldsSchema
-  .extend({ id: z.uuid(), scope: seriesScopeSchema.optional(), repeat: repeatRuleSchema.optional() })
+  .extend({
+    id: z.uuid(),
+    scope: seriesScopeSchema.optional(),
+    repeat: repeatRuleSchema.optional(),
+    calendarId: z.uuid().optional(),
+  })
   .refine(spanIsValid);
 
 export const moveEventSchema = span.extend({ id: z.uuid() }).refine(spanIsValid);

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import type { CalendarCategoryView } from "@/lib/agenda/calendars";
 import type { AgendaLink, AgendaLinkCandidate } from "@/lib/agenda/links";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { AgendaEventDetail, AgendaEventItem } from "@/lib/agenda/types";
@@ -58,9 +59,18 @@ const imported: AgendaEventItem = { ...event, source: "sync", id: "sync-1", titl
 
 const holiday: AgendaEventItem = { ...event, id: "own-2", title: "Vakantie Marie", start: "2026-01-02", end: "2026-01-06", allDay: true };
 
+const categories: CalendarCategoryView[] = [
+  { id: "cal-1", name: null, color: "blue", isDefault: true },
+  { id: "cal-social", name: "Sociaal", color: "pink", isDefault: false },
+  { id: "cal-sport", name: "Sport", color: "orange", isDefault: false },
+];
+
+const social: AgendaEventItem = { ...event, id: "own-3", title: "Koffie met Youri", calendarId: "cal-social", color: "pink" };
+
 const panelProps = {
   open: true,
   onClose: () => {},
+  categories,
   onLoadEvent: mockLoad,
   onCreateEvent: mockCreate,
   onUpdateEvent: mockMutate,
@@ -90,6 +100,12 @@ export const CreateAllDay = () => (
 export const EditEvent = () => (
   <div className="min-h-screen">
     <AgendaEventPanel {...panelProps} target={{ mode: "edit", item: event }} />
+  </div>
+);
+
+export const EditEventOtherCategory = () => (
+  <div className="min-h-screen">
+    <AgendaEventPanel {...panelProps} target={{ mode: "edit", item: social }} />
   </div>
 );
 

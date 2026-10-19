@@ -75,13 +75,22 @@ describe("timed events", () => {
         missing_since: "2026-10-10T00:00:00Z",
       }),
       AMS,
+      new Map([[ID(9), "teal" as const]]),
     );
     expect(item).toMatchObject({
       source: "sync",
-      color: "violet",
+      color: "teal",
       calendarId: ID(9),
       missingSince: "2026-10-10T00:00:00Z",
     });
+  });
+
+  it("takes the colour of the event's calendar, own or imported, and falls back to blue", () => {
+    const colors = new Map([[ID(9), "pink" as const]]);
+    const times = { starts_at: "2026-10-14T07:00:00Z", ends_at: "2026-10-14T08:00:00Z" };
+    expect(mapAgendaRow(event(times), AMS, colors)).toMatchObject({ color: "pink" });
+    expect(mapAgendaRow(event({ ...times, source: "sync" }), AMS, colors)).toMatchObject({ color: "pink" });
+    expect(mapAgendaRow(event({ ...times, calendar_id: ID(8) }), AMS, colors)).toMatchObject({ color: "blue" });
   });
 });
 

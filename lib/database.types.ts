@@ -372,6 +372,7 @@ export type Database = {
       calendars: {
         Row: {
           calendar_account_id: string | null
+          color: string
           created_at: string
           id: string
           is_default: boolean
@@ -383,6 +384,7 @@ export type Database = {
         }
         Insert: {
           calendar_account_id?: string | null
+          color: string
           created_at?: string
           id?: string
           is_default?: boolean
@@ -394,6 +396,7 @@ export type Database = {
         }
         Update: {
           calendar_account_id?: string | null
+          color?: string
           created_at?: string
           id?: string
           is_default?: boolean
@@ -1384,6 +1387,10 @@ export type Database = {
         Args: { p_name: string; p_url: string }
         Returns: string
       }
+      delete_calendar_moving_contents: {
+        Args: { p_calendar_id: string }
+        Returns: undefined
+      }
       delete_event_series: {
         Args: { p_event_id: string; p_scope: string }
         Returns: undefined
@@ -1422,6 +1429,10 @@ export type Database = {
       move_card: {
         Args: { p_card_id: string; p_column_id: string; p_target_index: number }
         Returns: number
+      }
+      move_event_calendar: {
+        Args: { p_calendar_id: string; p_event_id: string; p_scope?: string }
+        Returns: undefined
       }
       move_note: {
         Args: {

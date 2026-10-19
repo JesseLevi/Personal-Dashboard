@@ -26,6 +26,8 @@ import { Icon, type IconName } from "./Icon";
 type InputFieldSharedProps = {
   /** Figma `Leading-icon` — icon rendered before the input. */
   leadingIcon?: IconName;
+  /** Replaces `leadingIcon` with any node of icon size, e.g. the colour dot of a category select (#532). */
+  leading?: ReactNode;
   /** Figma `Trekking-icon` (= trailing) — icon rendered after the content. */
   trailingIcon?: IconName;
   /** Figma `Button` SLOT — rendered inside the container, below the input row. */
@@ -102,6 +104,7 @@ const NATIVE_CONTROL_BASE = "border-0 bg-transparent p-0 text-base font-semibold
 export function InputField({
   label,
   leadingIcon,
+  leading,
   trailingIcon,
   onTrailingIconClick,
   trailingIconLabel,
@@ -160,9 +163,8 @@ export function InputField({
               multiline ? "min-h-0 flex-1 items-start" : "items-center",
             )}
           >
-            {leadingIcon ? (
-              <Icon name={leadingIcon} className="text-text-secondary" />
-            ) : null}
+            {leading ??
+              (leadingIcon ? <Icon name={leadingIcon} className="text-text-secondary" /> : null)}
             {multiline ? (
               <textarea
                 id={id}
