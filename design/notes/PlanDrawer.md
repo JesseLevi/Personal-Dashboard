@@ -6,10 +6,10 @@ Nothing existing holds a tabbed, scrolling tray of draggable things: `SidePanel`
 
 ## Anatomy
 - Shell: `rounded-card border border-stroke-primary bg-surface-highlight-white p-component-sm`, a `ButtonToggle` (`CookingPot` Recepten, `Columns3` Kaarten) and a scroll area (scrollbar hidden, like `Carousel`). The caller gives it a height (`className="h-full"` inside `AgendaBody`'s drawer slot).
-- Placement: `AgendaBody` puts it beside the calendar from `md` (`md:w-80`, same height as the calendar) and under it below `md` (`h-[32rem]`, the page scrolls).
+- Placement: closed by default ("Plannen" in the Agenda header toggles it, cookie `agenda-tray`). Open, `AgendaBody` puts it beside the calendar from `lg` when the page container is at least 44rem (`w-80`, same height as the calendar) and under it otherwise (`h-[32rem]`, the page scrolls). Closed, it stays mounted but `hidden`, so its tab and search survive.
 - Props: `recipes: ReactNode` and an optional `cards?: ReactNode` (without it the tab shows `components.planDrawer.cardsEmpty`). The tab state is internal (`defaultTab`). The root carries `AGENDA_TRAY_ATTRIBUTE` (`data-agenda-tray`): an item dragged from the grid and dropped on it is reported as `onItemDropOut` by `AgendaCalendar`.
 - Kaarten tab (`PlanCardList`): a search `InputField`, a drag hint, then the open cards of every board under a board heading (favourite board first, `groupOpenCards`). Open means not in the board's rightmost column, the same rule as the done styling on the board. A row has the same shape as a recipe row: title, a second line with the column (and "gepland op za 17 okt" once planned) and an icon-only `Calendar` button that opens `PlanChoices showSlot={false}`. The row is draggable with `useAgendaDraggable(ref, { type: "card", id, title })`; a drop sets `cards.planned_for` to `drop.start.slice(0, 10)` through `planCard`.
-- Recipes tab: search `InputField` (leading `Search`, clear `X`), category select `InputField`, a drag hint, then rows. A row is `CardContentRecipe compact` plus an icon-only `Calendar` button that opens `PlanChoices` in a portalled `Dropdown` (`usePopoverPosition` `strategy: "fixed"`, because the tray scrolls). The whole row is the drag handle (`useAgendaDraggable`, long press on touch).
+- Recipes tab: search `InputField` (leading `Search`, clear `X`), category select `InputField` and a drag hint stay fixed; only the rows scroll. An optional footer (`weekToBasket`) holds a one-line explanation and a full-width `AnimatedAddToBasketButton` "Week naar mand" (same `onSend` and baskets as the menu item in the header). Rows: A row is `CardContentRecipe compact` plus an icon-only `Calendar` button that opens `PlanChoices` in a portalled `Dropdown` (`usePopoverPosition` `strategy: "fixed"`, because the tray scrolls). The whole row is the drag handle (`useAgendaDraggable`, long press on touch).
 
 ## Deliberate decisions
 - Dragging is never the only route: the plan button works with keyboard and touch where a drag from a tray under the calendar is awkward. Drag and button both create the meal through `createMealPlan`, or set the day of a card through `planCard`.
@@ -20,7 +20,7 @@ Nothing existing holds a tabbed, scrolling tray of draggable things: `SidePanel`
 - Search ignores case and accents (`filterPlanRecipes`); the category filter is a native select like the other forms.
 
 ## Token gaps and flags
-- `md:w-80` and `h-[32rem]` are layout sizes, not scale values.
+- `lg:@min-[44rem]:w-80` and `h-[32rem]` are layout sizes, not scale values.
 - A card row has no thumbnail and no tag: title and column only, so a tray of many cards stays scannable.
 - Recipe thumbnails in `compact` are 48px (`h-12 w-12`), a size outside the spacing scale; see `CardContentRecipe.md`.
 

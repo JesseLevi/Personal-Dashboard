@@ -71,6 +71,27 @@ export const Recipes = () => (
   </Column>
 );
 
+const baskets = [{ id: "own", name: "Boodschappen", shared: false }];
+
+// The footer stays put while the list scrolls.
+export const RecipesWithWeekToBasket = () => (
+  <Column>
+    <PlanDrawer
+      className="h-full"
+      recipes={
+        <PlanRecipeList
+          recipes={recipes}
+          categories={categories}
+          today="2026-01-01"
+          onPlan={noPlan}
+          onPlanned={() => {}}
+          weekToBasket={{ onSend: noPlan, baskets }}
+        />
+      }
+    />
+  </Column>
+);
+
 export const CardsTabEmpty = () => (
   <Column>
     <PlanDrawer className="h-full" recipes={<List />} cards={<Cards groups={[]} />} defaultTab="cards" />

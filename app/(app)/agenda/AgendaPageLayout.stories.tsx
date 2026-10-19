@@ -62,14 +62,36 @@ const Surface = ({ children }: { children: React.ReactNode }) => (
   <div className="-m-8 flex flex-col gap-page-stack bg-surface-primary p-8">{children}</div>
 );
 
-const Page = ({ view, title }: { view: AgendaView; title: string }) => (
+const Page = ({ view, title, trayOpen = false }: { view: AgendaView; title: string; trayOpen?: boolean }) => (
   <Surface>
-    <AgendaHeader title={title} view={view === "threeDay" ? "week" : view} onViewChange={noop} onPrevious={noop} onNext={noop} onToday={noop} onOpenCalendars={noop} weekToBasket={{ onSend: noPlan, baskets }} />
+    <AgendaHeader
+      title={title}
+      view={view === "threeDay" ? "week" : view}
+      trayOpen={trayOpen}
+      onViewChange={noop}
+      onPrevious={noop}
+      onNext={noop}
+      onToday={noop}
+      onTrayToggle={noop}
+      onNew={noop}
+      onOpenCalendars={noop}
+      weekToBasket={{ onSend: noPlan, baskets }}
+    />
     <AgendaBody
+      drawerOpen={trayOpen}
       drawer={
         <PlanDrawer
           className="h-full"
-          recipes={<PlanRecipeList recipes={recipes} categories={[{ id: "main", name: "Hoofdgerecht" }]} today={DATE} onPlan={noPlan} onPlanned={noop} />}
+          recipes={
+            <PlanRecipeList
+              recipes={recipes}
+              categories={[{ id: "main", name: "Hoofdgerecht" }]}
+              today={DATE}
+              onPlan={noPlan}
+              onPlanned={noop}
+              weekToBasket={{ onSend: noPlan, baskets }}
+            />
+          }
         />
       }
     >
@@ -79,6 +101,7 @@ const Page = ({ view, title }: { view: AgendaView; title: string }) => (
 );
 
 export const Week = () => <Page view="week" title="29 dec – 4 jan" />;
+export const WeekTrayOpen = () => <Page view="week" title="29 dec – 4 jan" trayOpen />;
 export const Month = () => <Page view="month" title="januari 2026" />;
 export const List = () => <Page view="list" title="29 dec – 4 jan" />;
 export const Loading = () => (

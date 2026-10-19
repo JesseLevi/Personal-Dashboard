@@ -8,6 +8,7 @@ import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { InputField } from "@/components/atoms/InputField";
 import { CardContentRecipe } from "@/components/molecules/CardContentRecipe";
+import { AnimatedAddToBasketButton } from "@/components/molecules/AnimatedAddToBasketButton";
 import { PlanChoices } from "@/components/molecules/PlanChoices";
 import { useAgendaDraggable } from "@/components/organisms/useAgendaDraggable";
 import { filterPlanRecipes, type PlanRecipe } from "@/lib/agenda/plan-recipes";
@@ -16,6 +17,8 @@ import type { MealSlot } from "@/lib/agenda/types";
 import { useOutsidePress } from "@/lib/dom/use-outside-press";
 import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import { recipeThumbnailRouteUrl } from "@/lib/recipes/thumbnail-url";
+import type { BasketOption } from "@/lib/shopping/baskets";
+import type { ActionResult } from "@/lib/shopping/types";
 
 export interface PlanRecipeListProps {
   recipes: readonly PlanRecipe[];
@@ -24,6 +27,11 @@ export interface PlanRecipeListProps {
   today: string;
   onPlan: (recipeId: string, plannedOn: string, slot: MealSlot) => Promise<AgendaActionResult<unknown>>;
   onPlanned: (plannedOn: string, slot: MealSlot) => void;
+  /** "Week naar mand" as the tab's footer: sends the visible week's unsent meals. Omitted: no footer. */
+  weekToBasket?: {
+    onSend: (listId?: string) => Promise<ActionResult>;
+    baskets: BasketOption[];
+  };
 }
 
 function PlanRecipeRow({
@@ -121,7 +129,7 @@ export function PopoverBody({
   );
 }
 
-export function PlanRecipeList({ recipes, categories, today, onPlan, onPlanned }: PlanRecipeListProps) {
+export function PlanRecipeList({ recipes, categories, today, onPlan, onPlanned, weekToBasket }: PlanRecipeListProps) {
   const t = useTranslations("components.planDrawer");
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -129,7 +137,7 @@ export function PlanRecipeList({ recipes, categories, today, onPlan, onPlanned }
   const visible = useMemo(() => filterPlanRecipes(recipes, { query, categoryId }), [recipes, query, categoryId]);
 
   return (
-    <>
+    <div className="flex min-h-0 flex-1 flex-col gap-stack-sm">
       {query ? (
         <InputField
           id="plan-recipes-search"
@@ -161,17 +169,32 @@ export function PlanRecipeList({ recipes, categories, today, onPlan, onPlanned }
         onChange={(event) => setCategoryId(event.target.value)}
       />
       <p className="text-sm font-semibold text-text-secondary">{t("dragHint")}</p>
-      {visible.length === 0 ? (
-        <p className="text-base font-semibold text-text-secondary">{t("noRecipes")}</p>
-      ) : (
-        <ul className="flex flex-col gap-stack-sm">
-          {visible.map((recipe) => (
-            <li key={recipe.id}>
-              <PlanRecipeRow recipe={recipe} today={today} onPlan={onPlan} onPlanned={onPlanned} />
-            </li>
-          ))}
-        </ul>
+      <div className="flex min-h-0 flex-1 flex-col gap-stack-sm overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+        {visible.length === 0 ? (
+          <p className="text-base font-semibold text-text-secondary">{t("noRecipes")}</p>
+        ) : (
+          <ul className="flex flex-col gap-stack-sm">
+            {visible.map((recipe) => (
+              <li key={recipe.id}>
+                <PlanRecipeRow recipe={recipe} today={today} onPlan={onPlan} onPlanned={onPlanned} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {weekToBasket && (
+        <div className="flex flex-col gap-stack-sm border-t border-stroke-primary pt-component-md">
+          <p className="text-sm font-semibold text-text-secondary">{t("weekToBasketHint")}</p>
+          <AnimatedAddToBasketButton
+            label={t("weekToBasketLabel")}
+            addedLabel={t("weekToBasketAddedLabel")}
+            onAddToBasket={weekToBasket.onSend}
+            baskets={weekToBasket.baskets}
+            chooseBasketLabel={t("chooseBasketLabel")}
+            className="w-full justify-center"
+          />
+        </div>
       )}
-    </>
+    </div>
   );
 }

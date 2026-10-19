@@ -404,11 +404,16 @@
           "month": "Maand",
           "list": "Lijst"
         },
-        "calendarsLabel": "Agenda's beheren",
+        "calendarsLabel": "Agenda's en categorieën",
         "weekToBasketLabel": "Week naar mand",
-        "weekToBasketShortLabel": "Week",
-        "weekToBasketAddedLabel": "Toegevoegd",
-        "chooseBasketLabel": "Kies een mand"
+        "chooseBasketLabel": "Kies een mand",
+        "planLabel": "Plannen",
+        "newLabel": "Nieuw",
+        "moreLabel": "Meer",
+        "backLabel": "Terug",
+        "trayShowLabel": "Planlade tonen",
+        "trayHideLabel": "Planlade verbergen",
+        "weekToBasketToast": "De maaltijden van deze week staan in je mand"
       }
     },
     "sidePanel": {
@@ -1127,7 +1132,11 @@
       "noRecipes": "Geen recepten gevonden.",
       "dragHint": "Sleep een recept naar een dag of een afspraak in de agenda.",
       "planRecipeLabel": "{name} plannen",
-      "planMenuLabel": "Kies een dag"
+      "planMenuLabel": "Kies een dag",
+      "weekToBasketLabel": "Week naar mand",
+      "weekToBasketAddedLabel": "Toegevoegd",
+      "weekToBasketHint": "Stuurt de maaltijden van deze week naar een mand",
+      "chooseBasketLabel": "Kies een mand"
     },
     "planChoices": {
       "momentLabel": "Moment",

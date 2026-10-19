@@ -36,6 +36,8 @@ type ButtonToggleBaseProps = {
   iconOnlyBelowMd?: boolean;
   /** Same, below `lg`. */
   iconOnlyBelowLg?: boolean;
+  /** `small` uses 32 px segments, so the track is 40 px high, like a default Button. */
+  size?: "default" | "small";
   className?: string;
 };
 
@@ -55,6 +57,7 @@ export function ButtonToggle({
   onValueChange,
   iconOnlyBelowMd,
   iconOnlyBelowLg,
+  size = "default",
   title,
   className,
   "aria-label": ariaLabel,
@@ -179,6 +182,7 @@ export function ButtonToggle({
             key={item.value}
             type="button"
             variant="transparent"
+            size={size}
             icon={item.icon}
             role="radio"
             aria-checked={item.value === value}
