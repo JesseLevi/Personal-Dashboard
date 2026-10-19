@@ -8,3 +8,14 @@ allowBuilds:
   msw: false
   sharp: true
   unrs-resolver: true
+
+# Security overrides (#512): transitive pins that upstream has not bumped yet.
+overrides:
+  "next>postcss": "^8.5.23"
+  "next>sharp": "^0.35.5"
+  "browserslist": "^4.28.7"
+  "baseline-browser-mapping": "^2.11.0"
+  "prosemirror-view": "^1.42.3"
+  # One copy of the ProseMirror core packages, or editor schema instances clash.
+  "prosemirror-model": "1.25.12"
+  "prosemirror-transform": "1.12.2"

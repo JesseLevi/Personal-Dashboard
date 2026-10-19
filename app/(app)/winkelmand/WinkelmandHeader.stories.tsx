@@ -12,7 +12,7 @@ const lists: ShoppingListOption[] = [
 
 const noop = () => {};
 
-const Header = ({ open = false, ownerLists = lists, compact = false }: { open?: boolean; ownerLists?: ShoppingListOption[]; compact?: boolean }) => (
+const Header = ({ open = false, ownerLists = lists, compact = false, confirmClear = false }: { open?: boolean; ownerLists?: ShoppingListOption[]; compact?: boolean; confirmClear?: boolean }) => (
   // Room below the header so the open switcher is part of the baseline crop.
   <div className={compact ? undefined : "-mx-4 min-h-[360px]"}>
     <WinkelmandHeader
@@ -28,12 +28,16 @@ const Header = ({ open = false, ownerLists = lists, compact = false }: { open?: 
       onAddItem={noop}
       onClearAll={noop}
       defaultListMenuOpen={open}
+      defaultClearConfirming={confirmClear}
     />
   </div>
 );
 
 // Closed: title, chevron, and "+ Item", Sorteer, Leeg mand.
 export const Default = () => <Header />;
+
+// "Leeg mand" asked: the buttons give way to the two-step confirm row.
+export const ClearAllConfirm = () => <Header confirmClear compact />;
 
 // Switcher open: one option per basket (`User` icon, trailing `Settings` button), the current one filled, plus "Toevoegen".
 export const SwitcherOpen = () => <Header open />;

@@ -1,6 +1,7 @@
 // figma: node-id=3705:4446
 import { Button } from "./Button";
 import { Dropdown } from "./Dropdown";
+import { Tag } from "./Tag";
 
 // Dev-only demo copy — not user-facing (real labels/option text come from
 // next-intl catalogs at the call site).
@@ -8,20 +9,17 @@ import { Dropdown } from "./Dropdown";
 // The fetched Figma example: a label plus three stacked options, the first
 // shown "selected" via Button's own filled variant (a choice made by the
 // composing content, not by Dropdown itself). The first/selected Button is
-// also the disclosure trigger (#100) — Dropdown clones aria-expanded/
-// aria-controls/onClick onto it and renders its own trailing chevron in a
-// fixed right-hand column next to it (#112), rather than the trigger
-// carrying its own `trailingIcon` or Dropdown wrapping it in a second
-// <button>.
+// presentational: Dropdown's own single button spans the whole row (label,
+// selection and chevron) and is the disclosure trigger.
 
-// Closed: the `Field` label (now inert text) plus the bordered container
+// Closed: the `Field` label (a native label of the one trigger button) plus the bordered container
 // showing the first/selected option hugging its own content, with the
 // chevron pinned to the panel's far right edge. The other two are collapsed,
 // not removed: click the selected option (or focus + Enter/Space) to open
 // them.
 export const Closed = () => (
   <Dropdown id="demo-closed" label="Field" defaultOpen={false}>
-    <Button variant="filled" icon="Plus" align="left">
+    <Button presentational variant="filled" icon="Plus" align="left">
       Categorie
     </Button>
     <Button variant="white" icon="Plus" align="left">
@@ -39,7 +37,7 @@ export const Closed = () => (
 // and returns focus to it.
 export const Open = () => (
   <Dropdown id="demo-open" label="Field" defaultOpen>
-    <Button variant="filled" icon="Plus" align="left">
+    <Button presentational variant="filled" icon="Plus" align="left">
       Categorie
     </Button>
     <Button variant="white" icon="Plus" align="left">
@@ -57,7 +55,7 @@ export const Open = () => (
 // rotation) — click again to watch it expand back out.
 export const Animated = () => (
   <Dropdown id="demo-animated" label="Field" defaultOpen>
-    <Button variant="filled" icon="Plus" align="left">
+    <Button presentational variant="filled" icon="Plus" align="left">
       Categorie
     </Button>
     <Button variant="white" icon="Plus" align="left">
@@ -66,5 +64,15 @@ export const Animated = () => (
     <Button variant="white" icon="Plus" align="left">
       Categorie
     </Button>
+  </Dropdown>
+);
+
+// Tag as the selection (CardDetailPanel's Prioriteit / Grootte): the Tag is
+// inert content inside the same single trigger button.
+export const WithTagSelection = () => (
+  <Dropdown id="demo-tag" label="Prioriteit" defaultOpen={false}>
+    <Tag variant="urgent">Urgent</Tag>
+    <Tag variant="medium">Gemiddeld</Tag>
+    <Tag variant="low">Laag</Tag>
   </Dropdown>
 );

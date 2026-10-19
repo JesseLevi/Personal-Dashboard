@@ -4,49 +4,29 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
 
 ## State (2026-10-18)
 
-- Atlas is in production use by real accounts. Phases 0–6 are done: account, Te doen, Recepten (incl. URL import and nutrition), Winkelmand, Notities (full editor round, images, note links).
-- Open PR **#411** (#407, login greeting, ADR-0031). Before it works on production it needs:
-  - its migration (`20261011000003`);
-  - Turnstile keys and `LOGIN_GREETING_SALT` in Vercel (`docs/operations.md`).
-  
-  It also carries ADR-0031. Two edits to that ADR are not on the PR yet: cite ADR-0033 instead of ADR-0003, and replace the line "display_name not editable" with "set via Settings (#398/#404)". `design/notes/LoginForm.md` should be condensed to the contract shape once #411 is merged.
-- **Docs reform #412**:
-  - ADR index;
-  - ADR-0032 (deploy), ADR-0033 (server-only data), ADR-0034 (Claude designs UI);
-  - Architecture rewritten to the current state;
-  - design notes condensed to contracts;
-  - `phase-log.md` replaced by `docs/operations.md`.
+- Atlas is in production use by real accounts. Phases 0–7 are built: account, Te doen, Recepten (incl. URL import, nutrition, USDA spices, sharing as a copy), Winkelmand (incl. shared baskets), Notities, Agenda.
+- Delen fase 1 (#420) and Recept delen (#464) passed the user's two-account end-to-end test (2026-10-18).
+- **Production** runs `7005994` (#488). `main` is ahead by #508, #510, #511, #516, #518, #519, #520, #523, #524 and #526. The user promotes production.
+- **Hosted DB**: every migration up to `20261018000001` (USDA spices) is applied. One migration is pending: `20261018000002_drop_profiles_avatar_url` (#513). It is destructive. The user agreed to apply it after the next production promotion. Nothing reads the column, so the order does not matter for correctness.
+- `pnpm audit --prod` is clean (#512). Dev-only findings are in #525.
+- The visual gate now runs for `app/**/*.tsx` and `app/globals.css`. The Ladle story frame resets `scrollbar-gutter`, so the app's gutter (#508) does not shift baselines.
 
-## Delen, fase 1 (epic #420, ADR-0035): built, not live
+## Next
 
-All tickets (#421–#429, #434) are merged on `main`; the user reviews and closes them. Their three migrations (`20261012000001`–`…0003`) are applied on hosted (2026-10-12, `deploy.yml` migrate run 38285635989). Before a `main` build with this code is promoted:
-1. Production keeps working meanwhile: the migrations are additive.
-2. Test end to end with two accounts (steps in PRs #440, #441, #442): invite, accept, both see items, tick-off visible within ~15 s, leave, revoke, delete. Also create/rename/delete a basket and the recipe → basket popover.
-
-Follow-ups:
-- A later migration drops `profiles.avatar_url` once #434's code is live (destructive: the user runs it).
-- Open product question: a member sees the owner's unnamed default basket as "Mijn mand", next to their own.
-- HEIC upload fails cleanly when `sharp` lacks a HEVC decoder.
-
-## Recept delen als kopie (epic #464, ADR-0036): live
-
-#465–#467 are merged and in production. The user reviews and closes them. Migration `20261013000002` is applied on hosted (2026-10-13, `deploy.yml` migrate run 38383067710). Still to do: an end-to-end test with two accounts (share, the offer at the top of the first column, accept makes a copy with its photo, decline).
-
-Open: the recipe header wraps to two rows at ~400 px (three buttons). Making them icon-only on mobile needs a design decision.
-
-## Next: Phase 7, Agenda (#33)
-
-1. **On `main`, not on hosted**: ADR-0039 (#482, lazy sync plus one daily Vercel Cron on Hobby), the schema (#483, migration `20261014000001`), `agenda_items` + `lib/agenda` (#484, `…0002`) and `AgendaCalendar` (#485). Both migrations go to hosted only with the user's go, before #486 can be tested there.
-2. **Next: #486** (Agenda page). Its issue starts with a "Herzien" section holding the contracts from #483–#485. Then #487–#489; #490 (ICS, builds ADR-0039, needs `CRON_SECRET` in Vercel) after #486.
-3. **Agenda redesign, epic #527** (ADR-0040–0042 in PR #528, user decisions of 2026-10-18). All six tickets are built and green, none merged (merging needs the user's review):
-   - wave 1 against `main`: #535 (#529 header, tray, Button/ButtonToggle `small`), #536 (#530 `event-*` palette, item style), #537 (#531 recurring events, migration `20261018000003`, changes `agenda_items()`);
-   - stacked: #538 (#532 categories, migration `…0004`) and #539 (#533 now label, week number, shortcuts) on `agenda/golf-1` (= the three wave-1 branches merged); #540 (#534 quick add, `chrono-node`) on `agenda/golf-2` (= golf-1 + #532 + #533).
-   - After #535–#537 merge, retarget #538/#539 to `main` and rebase; then #540. Both migrations go to hosted only with the user's go, together with the code that reads them. Not yet run end to end against a database: the recurring-event panel, categories and quick add.
-4. Phases 8 and 9 (#31, #32) stay in the backlog. Their bodies follow ADR-0018 (hosted models, no worker host). Each needs its own ADR first: the embedding model and the privacy of notes.
+1. The user promotes `main` to production. Then run `deploy.yml` with `target: migrate` for #513's migration. That needs the user's go, already given for this one.
+2. Turn on Dependabot alerts in the repo settings (user).
+3. **Agenda redesign, epic #527** (ADR-0040–0042, user decisions of 2026-10-18): #529–#534 via PRs #535–#540, merged in that order with the user's go (admin bypass, 2026-10-19). Migrations `20261018000003` (recurring events, changes `agenda_items()`) and `…0004` (categories) go to hosted only with the user's go, together with the code that reads them. Not yet run end to end against a database: recurring-event panel, categories, quick add. #530 resolves the pastel-in-dark and truncated-title debt. Backlog: CalDAV import (#491).
+4. Phases 8 and 9 (#31, #32) stay in the backlog. Each needs its own ADR first: the embedding model and the privacy of notes (ADR-0018: hosted models, no worker host).
 
 ## Small open items
 
-- `lib/defaults/ensure.ts`: the regenerated types now contain `ensure_user_defaults`, so the typed cast can go.
-- Check on hosted that migrations `20261011000001` (drop thumbnail bucket, #384) and `20261011000002` (`last_name`, #404) are applied. A dispatch needs the user's go.
-- Confirm `ANTHROPIC_API_KEY` and the Console spend cap are set in production. Recipe import runs degraded without them.
-- `components/molecules/CardContentIngredient.stories.tsx` has a stale comment about the removed Active pill. `next.config.ts` points to a lucide fix in `design/notes/Icon.md` that the note never had.
+- Confirm `CRON_SECRET` is set in Vercel production. Without it the daily calendar-sync backstop answers 401; lazy sync still works (`docs/operations.md`).
+- `design/notes/LoginForm.md` should be condensed to the contract shape (#411 is merged).
+- The Winkelmand clear-all confirm row wraps to two lines below ~370 px (`DeleteConfirm` idiom); it fits at 390 px.
+- After promotion, check a note with a code block: TipTap 3.32 changed how node views render without `EditorContent` (#520).
+
+## Open product questions
+
+- A basket member sees the owner's unnamed default basket as "Mijn mand", next to their own.
+- HEIC upload fails cleanly when `sharp` lacks a HEVC decoder.
+- The rest live in `docs/open-questions.md`, by slug.

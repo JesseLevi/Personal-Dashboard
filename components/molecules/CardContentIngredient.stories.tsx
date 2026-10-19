@@ -63,8 +63,8 @@ Playground.argTypes = {
 
 // Base variant axis side by side (Checkbox None/Unchecked/Checked). Delete
 // moved to its own SwipeToDelete story below (#160: it's a gesture, not an
-// always-visible row). Click-and-hold (:active) the Unchecked row for the
-// Active pill — see design/notes/CardContentIngredient.md (no Hover state).
+// always-visible row). No pointer-state fill exists (see
+// design/notes/CardContentIngredient.md).
 export const AllVariants = () => (
   <div className="flex w-96 flex-col gap-2">
     <CardContentIngredient name="Banana" quantity="300 gr" />
@@ -101,7 +101,7 @@ export const NoQuantityWithDivider = () => {
 // reveal, opt-in via `swipeAction="delete"` — the shopping basket (#29,
 // Phase 5) is its first live consumer (#177). Renders at rest (closed); the
 // open/revealed pill state needs a live drag and isn't captured by the
-// static screenshot baseline, same as the Active pill above.
+// static screenshot baseline.
 export const SwipeToDelete = () => (
   <div className="w-96">
     <CardContentIngredient
