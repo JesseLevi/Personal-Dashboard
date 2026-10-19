@@ -992,7 +992,8 @@
       },
       "servings": "{count, plural, one {# serving} other {# servings}}",
       "missingFromSource": "Removed at source",
-      "links": "{count, plural, one {# link} other {# links}}"
+      "recurring": "Recurring event",
+      "links":"{count, plural, one {# link} other {# links}}"
     },
     "agendaPanel": {
       "addTitle": "Add event",
@@ -1007,7 +1008,30 @@
         "endDateLabel": "Last day",
         "locationLabel": "Location",
         "descriptionLabel": "Description",
-        "calendarLabel": "Calendar"
+        "calendarLabel": "Calendar",
+        "repeatLabel": "Repeat",
+        "endsLabel": "Ends",
+        "untilLabel": "Last day"
+      },
+      "repeatOptions": {
+        "none": "Does not repeat",
+        "daily": "Every day",
+        "weekly": "Every week",
+        "biweekly": "Every two weeks",
+        "monthly": "Every month",
+        "yearly": "Every year",
+        "custom": "Custom"
+      },
+      "endsOptions": {
+        "never": "Never",
+        "on": "On date"
+      },
+      "scope": {
+        "savePrompt": "Which events do you want to change?",
+        "deletePrompt": "Which events do you want to delete?",
+        "this": "Only this one",
+        "following": "This and following",
+        "all": "All"
       },
       "defaultCalendarName": "Calendar",
       "readOnlyNotice": "This event comes from another calendar and can only be changed there.",

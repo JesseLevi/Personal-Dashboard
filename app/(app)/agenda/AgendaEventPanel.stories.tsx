@@ -18,6 +18,7 @@ async function mockLoad(input: unknown): Promise<AgendaActionResult<AgendaEventD
       source: id === "sync-1" ? "sync" : "manual",
       calendarId: "cal-1",
       calendarName: id === "sync-1" ? "Outlook" : null,
+      repeat: id === "rec-1" ? { freq: "weekly", interval: 1, until: "2026-12-31" } : null,
     },
   };
 }
@@ -50,6 +51,8 @@ const event: AgendaEventItem = {
   allDay: false,
   linkCount: 0,
 };
+
+const recurring: AgendaEventItem = { ...event, id: "rec-1", title: "Teamlunch", recurring: true };
 
 const imported: AgendaEventItem = { ...event, source: "sync", id: "sync-1", title: "Teamoverleg" };
 
@@ -109,6 +112,7 @@ export const ImportedReadOnly = () => (
 );
 
 const deleteLabel = nl.components.agendaPanel.deleteLabel;
+const saveLabel = nl.components.agendaPanel.saveLabel;
 
 // Clicks "Verwijderen" once on mount to show the confirm footer, as CardDetailPanel's story does.
 export const EditEventDeleteConfirm = () => {
@@ -122,6 +126,80 @@ export const EditEventDeleteConfirm = () => {
   return (
     <div ref={ref} className="min-h-screen">
       <AgendaEventPanel {...panelProps} target={{ mode: "edit", item: event }} />
+    </div>
+  );
+};
+
+// Clicks the enabled button with this label; false while it is missing or still disabled.
+function clickButton(root: HTMLElement | null, label: string): boolean {
+  const button = Array.from(root?.querySelectorAll("button") ?? []).find((candidate) => candidate.textContent?.trim() === label);
+  if (!button || button.disabled) return false;
+  button.click();
+  return true;
+}
+
+// Sets a native field the way a user would, so React's onChange runs.
+function setField(id: string, value: string) {
+  const field = document.getElementById(id) as HTMLSelectElement | HTMLInputElement | null;
+  if (!field) return;
+  const proto = field instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype;
+  Object.getOwnPropertyDescriptor(proto, "value")?.set?.call(field, value);
+  field.dispatchEvent(new Event(field instanceof HTMLSelectElement ? "change" : "input", { bubbles: true }));
+}
+
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+// Picks "Elke week" ending on a date, as a user would in the create panel.
+export const CreateRepeating = () => {
+  useEffect(() => {
+    void (async () => {
+      setField("agenda-event-repeat", "weekly");
+      await tick();
+      setField("agenda-event-ends", "on");
+      await tick();
+      setField("agenda-event-until", "2026-06-30");
+    })();
+  }, []);
+  return (
+    <div className="min-h-screen">
+      <AgendaEventPanel
+        {...panelProps}
+        target={{ mode: "create", span: { start: "2026-01-02T14:00:00+01:00", end: "2026-01-02T15:00:00+01:00", allDay: false } }}
+      />
+    </div>
+  );
+};
+
+export const EditRecurringEvent = () => (
+  <div className="min-h-screen">
+    <AgendaEventPanel {...panelProps} target={{ mode: "edit", item: recurring }} />
+  </div>
+);
+
+// Waits for the series to load (Opslaan stays disabled until then), then asks for the scope.
+export const EditRecurringScopeSave = () => {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (clickButton(ref.current, saveLabel)) clearInterval(timer);
+    }, 20);
+    return () => clearInterval(timer);
+  }, []);
+  return (
+    <div ref={ref} className="min-h-screen">
+      <AgendaEventPanel {...panelProps} target={{ mode: "edit", item: recurring }} />
+    </div>
+  );
+};
+
+export const EditRecurringScopeDelete = () => {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    clickButton(ref.current, deleteLabel);
+  }, []);
+  return (
+    <div ref={ref} className="min-h-screen">
+      <AgendaEventPanel {...panelProps} target={{ mode: "edit", item: recurring }} />
     </div>
   );
 };

@@ -19,6 +19,7 @@ Single wrapper around `lucide-react` (^1.25.0). Props: `name`, `size` (default 2
 - `Share` is the "Delen" button on the recipe page (ADR-0036); no Figma vector, presence-only check that it is a real lucide export.
 - `PanelRight` is the "Plannen" button of the Agenda header (the tray sits on the right); no Figma vector, presence-only check that it is a real lucide export.
 - `CalendarSync` marks imported events in the Agenda (`AgendaCalendar`); no Figma vector, presence-only check that it is a real lucide export.
+- `Repeat` marks an occurrence of a recurring own event in the Agenda (`AgendaCalendarItem`, ADR-0042); no Figma vector, presence-only check that it is a real lucide export.
 - `Minus` has no Figma node (Figma draws `Icon/Plus` on both stepper sides); it is coordinate-identical to Plus's horizontal bar. (#123)
 - `optimizePackageImports: ["lucide-react"]` (`next.config.ts`) was measured with no production effect (lucide is `sideEffects: false` with one ESM file per icon, so tree-shaking already drops unused icons; lucide chunk byte-identical before/after). Kept as Next's documented default and for dev cold start. (#173)
 

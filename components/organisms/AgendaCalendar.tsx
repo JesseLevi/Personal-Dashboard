@@ -227,6 +227,7 @@ export function AgendaCalendar({
       },
       servings: (count) => t("servings", { count }),
       missingFromSource: t("missingFromSource"),
+      recurring: t("recurring"),
       links: (count) => t("links", { count }),
     }),
     [t],

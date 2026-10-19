@@ -4,6 +4,7 @@ import { after } from "next/server";
 import { Suspense } from "react";
 import { getSyncNotices } from "@/lib/agenda/notices";
 import { getAgendaItems, getPlannableCards } from "@/lib/agenda/queries";
+import { extendEventSeries } from "@/lib/agenda/series";
 import { syncStaleAccounts } from "@/lib/agenda/sync";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import { AGENDA_TIME_ZONE, loadWindow, todayInAgendaZone, wallClockToUtc } from "@/lib/agenda/time";
@@ -33,6 +34,8 @@ async function AgendaPageBody() {
   const supabase = await createSupabaseServerClient();
   // ADR-0039: stale feeds sync after the response, with the user's own client; the page shows what is stored.
   after(() => syncStaleAccounts(supabase).catch(() => console.error("[agenda] lazy sync failed")));
+  // ADR-0042: recurring own events that fall short of 400 days ahead are topped up the same way.
+  after(() => extendEventSeries(supabase).catch(() => console.error("[agenda] series extension failed")));
   const [items, notices, categories, baskets, userId, cardGroups] = await Promise.all([
     getAgendaItems({
       from: wallClockToUtc(`${window.from}T00:00:00`),

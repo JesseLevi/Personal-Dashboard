@@ -42,15 +42,34 @@ export const eventFieldsSchema = span.extend({
   description: text(2000),
 });
 
+// The repeat rule of a recurring own event (ADR-0042); `until` is inclusive, null = never ends.
+export const repeatRuleSchema = z.object({
+  freq: z.enum(["daily", "weekly", "monthly", "yearly"]),
+  interval: z.int().min(1).max(99),
+  until: date.nullable(),
+});
+
+/** Which occurrences a change or delete reaches (ADR-0042 §5-6). */
+export const seriesScopeSchema = z.enum(["this", "following", "all"]);
+
+export type RepeatRule = z.infer<typeof repeatRuleSchema>;
+export type SeriesScope = z.infer<typeof seriesScopeSchema>;
+
 export const createEventSchema = eventFieldsSchema
-  .extend({ calendarId: z.uuid().optional() })
+  .extend({ calendarId: z.uuid().optional(), repeat: repeatRuleSchema.optional() })
   .refine(spanIsValid);
 
-export const updateEventSchema = eventFieldsSchema.extend({ id: z.uuid() }).refine(spanIsValid);
+// `scope` is required for an occurrence of a series; `repeat` for the scopes that change the rule,
+// and on a single event it turns that event into a series.
+export const updateEventSchema = eventFieldsSchema
+  .extend({ id: z.uuid(), scope: seriesScopeSchema.optional(), repeat: repeatRuleSchema.optional() })
+  .refine(spanIsValid);
 
 export const moveEventSchema = span.extend({ id: z.uuid() }).refine(spanIsValid);
 
 export const eventIdSchema = z.object({ id: z.uuid() });
+
+export const deleteEventSchema = eventIdSchema.extend({ scope: seriesScopeSchema.optional() });
 
 const mealSlot = z.enum(["breakfast", "lunch", "dinner", "snack"]);
 
