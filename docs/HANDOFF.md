@@ -2,7 +2,7 @@
 
 State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace stale bullets; never append history. Ticket status lives on the board, rules in `CLAUDE.md` and the guides, and the system in `Architecture.md`.
 
-## State (2026-10-18)
+## State (2026-10-19)
 
 - Atlas is in production use by real accounts. Phases 0–7 are built: account, Te doen, Recepten (incl. URL import, nutrition, USDA spices, sharing as a copy), Winkelmand (incl. shared baskets), Notities, Agenda.
 - Delen fase 1 (#420) and Recept delen (#464) passed the user's two-account end-to-end test (2026-10-18).
@@ -13,9 +13,9 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
 
 ## Next
 
-1. The user promotes `main` to production. Then run `deploy.yml` with `target: migrate` for #513's migration. That needs the user's go, already given for this one.
+1. Migrations `20261018000002` (#513), `…0003` and `…0004` (agenda redesign) are applied on hosted (2026-10-19, `deploy.yml` migrate run 39234405820). Production still runs `3fbefe9`: the user promotes `main` next.
 2. Turn on Dependabot alerts in the repo settings (user).
-3. **Agenda redesign, epic #527** (ADR-0040–0042, user decisions of 2026-10-18): #529–#534 via PRs #535–#540, merged in that order with the user's go (admin bypass, 2026-10-19). Migrations `20261018000003` (recurring events, changes `agenda_items()`) and `…0004` (categories) go to hosted only with the user's go, together with the code that reads them. Not yet run end to end against a database: recurring-event panel, categories, quick add. #530 resolves the pastel-in-dark and truncated-title debt. Backlog: CalDAV import (#491).
+3. **Agenda redesign, epic #527** (ADR-0040–0042): #529–#534 are on `main` (PRs #535–#537, #541, #539, #540; #538 was merged into the stacking branch by mistake and replaced by #541). Their migrations are on hosted. After promotion, test end to end: edit a recurring event with "Deze en volgende", delete a category (events move to Persoonlijk), quick add "film op vrijdag met youri". The branches `agenda/golf-1` and `agenda/golf-2` can go. Backlog: CalDAV import (#491).
 4. Phases 8 and 9 (#31, #32) stay in the backlog. Each needs its own ADR first: the embedding model and the privacy of notes (ADR-0018: hosted models, no worker host).
 
 ## Small open items
