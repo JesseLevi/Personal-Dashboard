@@ -419,6 +419,7 @@
         "goToDateConfirm": "Go to date",
         "shortcutsLabel": "Keyboard shortcuts",
         "shortcuts": {
+          "new": "New item",
           "today": "Today",
           "day": "Day view",
           "week": "Week view",
@@ -1059,6 +1060,48 @@
       "importedFrom": "From {name}",
       "importedFromFallback": "From another calendar"
     },
+    "agendaQuickAdd": {
+      "dialogLabel": "New item",
+      "closeLabel": "Close",
+      "kindLabel": "Kind",
+      "kinds": {
+        "event": "Event",
+        "meal": "Meal",
+        "todo": "To do"
+      },
+      "kindAuto": "Kind recognised automatically",
+      "kindPicked": "Kind chosen by you",
+      "kindBackToAuto": "back to automatic",
+      "textLabel": "What do you want to plan?",
+      "textPlaceholder": "E.g. Movie Friday 8pm with Youri",
+      "recognisedLabel": "Recognised",
+      "noDayToday": "No day recognised, so today.",
+      "noDaySlot": "No day recognised, so the day of the chosen slot.",
+      "fields": {
+        "title": "Title",
+        "date": "Day",
+        "allDay": "All day",
+        "start": "From",
+        "end": "To",
+        "people": "With",
+        "place": "Where",
+        "repeat": "Repeat",
+        "category": "Category",
+        "recipe": "Recipe",
+        "moment": "Moment",
+        "card": "Card"
+      },
+      "peoplePlaceholder": "Names, separated by commas",
+      "recipeSearchPlaceholder": "Search a recipe",
+      "recipesEmpty": "No recipes found.",
+      "newCard": "New card",
+      "todoTarget": "Goes in {board}, column {column}.",
+      "noBoard": "You have no board yet. Pick an open card, or create a board in To do first.",
+      "withNames": "With {names}",
+      "moreDetails": "More details",
+      "addLabel": "Add",
+      "addingLabel": "Adding..."
+    },
     "agendaEventLinks": {
       "title": "Linked",
       "linkLabel": "Link",
@@ -1265,6 +1308,7 @@
       "keepLabel": "Keep"
     },
     "plan": {
+      "eventAddedNotice": "{title} added on {date}",
       "plannedNotice": "Planned for {slot} on {date}",
       "cardPlannedNotice": "{title} planned for {date}",
       "cardClearedNotice": "{title} is no longer on the agenda",

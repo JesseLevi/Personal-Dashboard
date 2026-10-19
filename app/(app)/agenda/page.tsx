@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { getCalendarOverview } from "@/lib/agenda/calendar-list";
 import { AGENDA_HIDDEN_COOKIE, parseHidden } from "@/lib/agenda/hidden";
 import { getSyncNotices } from "@/lib/agenda/notices";
-import { getAgendaItems, getPlannableCards } from "@/lib/agenda/queries";
+import { getAgendaItems, getPlannableCards, getQuickAddBoard } from "@/lib/agenda/queries";
 import { extendEventSeries } from "@/lib/agenda/series";
 import { syncStaleAccounts } from "@/lib/agenda/sync";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
@@ -39,7 +39,7 @@ async function AgendaPageBody() {
   after(() => syncStaleAccounts(supabase).catch(() => console.error("[agenda] lazy sync failed")));
   // ADR-0042: recurring own events that fall short of 400 days ahead are topped up the same way.
   after(() => extendEventSeries(supabase).catch(() => console.error("[agenda] series extension failed")));
-  const [items, notices, categories, baskets, userId, cardGroups, calendars] = await Promise.all([
+  const [items, notices, categories, baskets, userId, cardGroups, calendars, todoBoard] = await Promise.all([
     getAgendaItems({
       from: wallClockToUtc(`${window.from}T00:00:00`),
       to: wallClockToUtc(`${window.to}T00:00:00`),
@@ -51,6 +51,8 @@ async function AgendaPageBody() {
     getAuthenticatedUserId(),
     getPlannableCards(),
     getCalendarOverview(supabase),
+    // A failed read only hides the "new card" target; the rest of the page still works.
+    getQuickAddBoard().catch(() => null),
   ]);
 
   // Imports still running or failed cannot be planned.
@@ -78,6 +80,7 @@ async function AgendaPageBody() {
       recipes={recipes}
       recipeCategories={categories.map(({ id, name }) => ({ id, name }))}
       cardGroups={cardGroups}
+      todoBoard={todoBoard}
       baskets={baskets}
     />
   );

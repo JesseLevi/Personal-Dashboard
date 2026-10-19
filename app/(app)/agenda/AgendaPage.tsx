@@ -16,8 +16,7 @@ import { isItemHidden, persistHidden, type AgendaHidden } from "@/lib/agenda/hid
 import { PlanDrawer } from "@/components/organisms/PlanDrawer";
 import { Toast } from "@/components/organisms/Toast";
 import { weekRange } from "@/lib/agenda/meals";
-import { nextFullHourSpan } from "@/lib/agenda/new-event";
-import { toAgendaResult, withPlannedFor, type PlanCardGroup } from "@/lib/agenda/plan-cards";
+import { toAgendaResult, withPlannedFor, type PlanCardGroup, type QuickAddBoard } from "@/lib/agenda/plan-cards";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { AgendaShortcut } from "@/lib/agenda/shortcuts";
@@ -32,7 +31,8 @@ import { planCard } from "../te-doen/actions";
 import { createEvent, deleteEvent, getAgendaEvent, loadAgendaRange, moveEvent, updateEvent } from "./actions";
 import { AgendaBody } from "./AgendaBody";
 import { AgendaCalendarsPanel } from "./AgendaCalendarsPanel";
-import { AgendaEventPanel, type AgendaPanelTarget } from "./AgendaEventPanel";
+import { AgendaEventPanel, type AgendaEventPrefill, type AgendaPanelTarget } from "./AgendaEventPanel";
+import { AgendaQuickAdd, type QuickAddAdded } from "./AgendaQuickAdd";
 import { getAgendaEventLinks, linkToEvent, searchAgendaLinkTargets, unlinkFromEvent } from "./link-actions";
 import { AgendaHeader, toToggleView, type AgendaToggleView } from "./AgendaHeader";
 import { AgendaSyncNotices } from "./AgendaSyncNotices";
@@ -46,6 +46,7 @@ import {
   updateCalendar,
 } from "./calendars-actions";
 import { AgendaMealPanel } from "./AgendaMealPanel";
+import { createPlannedCard } from "./card-actions";
 import { createMealPlan, deleteMealPlan, getMealPlan, sendMealToBasket, sendWeekToBasket, updateMealPlan } from "./meal-actions";
 import { PlanCardList } from "./PlanCardList";
 import { PlanRecipeList } from "./PlanRecipeList";
@@ -66,6 +67,8 @@ export interface AgendaPageProps {
   recipeCategories: { id: string; name: string }[];
   /** Open cards the plan drawer offers, per board. */
   cardGroups: PlanCardGroup[];
+  /** Where quick add puts a new card; null without a board. */
+  todoBoard: QuickAddBoard | null;
   /** Baskets "Naar mand" can target. */
   baskets: BasketOption[];
   /** Calendars and kinds this device hides (cookie `agenda-hidden`). */
@@ -96,6 +99,7 @@ export function AgendaPage({
   recipes,
   recipeCategories,
   cardGroups,
+  todoBoard,
   baskets,
   initialHidden,
   initialCalendars,
@@ -115,6 +119,7 @@ export function AgendaPage({
     open: false,
     target: { mode: "create", span: { start: `${today}T09:00:00`, end: null, allDay: false } },
   });
+  const [quickAdd, setQuickAdd] = useState<{ open: boolean; slot: AgendaSpan | null }>({ open: false, slot: null });
   const [calendarsOpen, setCalendarsOpen] = useState(false);
   const [calendars, setCalendars] = useState(initialCalendars);
   const [hidden, setHidden] = useState(initialHidden);
@@ -125,6 +130,7 @@ export function AgendaPage({
   const [headerOverlayOpen, setHeaderOverlayOpen] = useState(false);
   const [scrollNowKey, setScrollNowKey] = useState(0);
   const latestRequest = useRef(0);
+  const newButtonRef = useRef<HTMLElement>(null);
 
   const effectiveView = effectiveAgendaView(view, narrow);
   const visibleItems = useMemo(() => items.filter((item) => !isItemHidden(item, hidden)), [items, hidden]);
@@ -168,9 +174,11 @@ export function AgendaPage({
   }
 
   // Keyboard shortcuts stay quiet while typing, with a modifier, or while a panel or popover is open.
-  const shortcutsBlocked = panel.open || mealPanel.open || calendarsOpen || headerOverlayOpen;
+  const shortcutsBlocked = panel.open || mealPanel.open || calendarsOpen || headerOverlayOpen || quickAdd.open;
   const runShortcut = (shortcut: AgendaShortcut) => {
     switch (shortcut) {
+      case "new":
+        return openQuickAdd(null);
       case "today":
         return goToday();
       case "day":
@@ -188,8 +196,22 @@ export function AgendaPage({
   };
   useAgendaShortcuts(runShortcut, shortcutsBlocked);
 
-  function openCreate(span: AgendaSpan) {
-    setPanel({ open: true, target: { mode: "create", span } });
+  // "+ Nieuw", the floating button, N and a click or drag on an empty slot all open quick add (ADR-0041).
+  function openQuickAdd(slot: AgendaSpan | null) {
+    setQuickAdd({ open: true, slot });
+  }
+
+  function openDetails(span: AgendaSpan, prefill: AgendaEventPrefill) {
+    setPanel({ open: true, target: { mode: "create", span, prefill } });
+  }
+
+  function handleQuickAdded(added: QuickAddAdded) {
+    setQuickAdd((current) => ({ ...current, open: false }));
+    setError(null);
+    void loadAround(date);
+    if (added.kind === "event") setNotice(tPlan("eventAddedNotice", { title: added.title, date: dayLabel(added.date) }));
+    else if (added.kind === "meal") announcePlanned(added.date, added.slot);
+    else announceCardPlanned(added.title, added.date);
   }
 
   function handleTrayToggle() {
@@ -401,7 +423,8 @@ export function AgendaPage({
         onToday={goToday}
         trayOpen={trayOpen}
         onTrayToggle={handleTrayToggle}
-        onNew={() => openCreate(nextFullHourSpan())}
+        onNew={() => (quickAdd.open ? setQuickAdd((current) => ({ ...current, open: false })) : openQuickAdd(null))}
+        newButtonRef={newButtonRef}
         onOpenCalendars={() => setCalendarsOpen(true)}
         weekToBasket={{ onSend: handleWeekToBasket, baskets }}
       />
@@ -438,7 +461,7 @@ export function AgendaPage({
           view={view}
           date={date}
           scrollNowKey={scrollNowKey}
-          onSelectSlot={openCreate}
+          onSelectSlot={openQuickAdd}
           onItemClick={handleItemClick}
           onItemMove={handleChange}
           onItemResize={handleChange}
@@ -461,6 +484,23 @@ export function AgendaPage({
           onMutated={() => void loadAround(date)}
         />
       )}
+      <AgendaQuickAdd
+        open={quickAdd.open}
+        onClose={() => setQuickAdd((current) => ({ ...current, open: false }))}
+        anchorRef={newButtonRef}
+        slot={quickAdd.slot}
+        today={today}
+        categories={calendars?.categories ?? []}
+        recipes={recipes}
+        cardGroups={groups}
+        todoBoard={todoBoard}
+        onCreateEvent={createEvent}
+        onCreateMeal={createMealPlan}
+        onCreateCard={createPlannedCard}
+        onPlanCard={savePlannedFor}
+        onAdded={handleQuickAdded}
+        onMoreDetails={openDetails}
+      />
       <AgendaEventPanel
         open={panel.open}
         onClose={() => setPanel((current) => ({ ...current, open: false }))}

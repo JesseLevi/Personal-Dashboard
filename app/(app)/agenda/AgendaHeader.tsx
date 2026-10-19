@@ -1,7 +1,7 @@
 // design: Claude-designed (#486, #529)
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { ButtonToggle, type ButtonToggleItem } from "@/components/molecules/ButtonToggle";
@@ -47,8 +47,10 @@ export interface AgendaHeaderProps {
   /** Whether the plan tray is open; "Plannen" reports it with `aria-pressed`. */
   trayOpen: boolean;
   onTrayToggle: () => void;
-  /** "+ Nieuw" (the floating button below `lg`). */
+  /** "+ Nieuw" and the floating button below `lg`: opens quick add (ADR-0041). */
   onNew: () => void;
+  /** The "+ Nieuw" button in the bar (from `lg`); the quick-add popover hangs from it. */
+  newButtonRef?: RefObject<HTMLElement | null>;
   /** Opens the calendars panel from the menu; the item is hidden without it. */
   onOpenCalendars?: () => void;
   /** "Week naar mand" in the menu: sends the visible week's unsent meals. Omitted: no item. */
@@ -77,6 +79,7 @@ export function AgendaHeader({
   trayOpen,
   onTrayToggle,
   onNew,
+  newButtonRef,
   onOpenCalendars,
   weekToBasket,
   defaultMenuOpen,
@@ -143,9 +146,11 @@ export function AgendaHeader({
                 defaultOpen={defaultMenuOpen}
                 defaultStep={defaultMenuStep}
               />
-              <Button className="max-lg:hidden" variant="white" icon="Plus" onClick={onNew}>
-                {t("newLabel")}
-              </Button>
+              <span ref={newButtonRef} className="inline-flex max-lg:hidden">
+                <Button variant="white" icon="Plus" onClick={onNew}>
+                  {t("newLabel")}
+                </Button>
+              </span>
             </div>
           </div>
         }

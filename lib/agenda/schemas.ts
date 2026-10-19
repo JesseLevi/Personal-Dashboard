@@ -71,6 +71,12 @@ export const updateEventSchema = eventFieldsSchema
   })
   .refine(spanIsValid);
 
+// A new card from quick add: it lands in the favourite board's first column, planned on a day.
+export const createPlannedCardSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+  plannedFor: date,
+});
+
 export const moveEventSchema = span.extend({ id: z.uuid() }).refine(spanIsValid);
 
 export const eventIdSchema = z.object({ id: z.uuid() });
