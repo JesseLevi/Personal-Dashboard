@@ -69,6 +69,9 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 
 | ADR | Decides | Status |
 | --- | --- | --- |
-| [0037](0037-agenda-as-planner.md) | Agenda = one timeline over events, meal plans and planned cards; `calendars` container; links on any event; safe sync deletion; ics → caldav → Graph/Google; FullCalendar (MIT) + `ical.js` | Accepted |
+| [0037](0037-agenda-as-planner.md) | Agenda = one timeline over events, meal plans and planned cards; `calendars` container; links on any event; safe sync deletion; ics → caldav → Graph/Google; FullCalendar (MIT) + `ical.js` | Accepted, amended by 0042 |
+| [0040](0040-agenda-categories-are-calendars.md) | Categories are manual calendars with `calendars.color` (9-colour palette, code-only tokens); delete moves contents; visibility per device | Accepted |
+| [0041](0041-agenda-quick-add.md) | One quick-add surface (+ Nieuw, slot, `N`); deterministic parsing with `chrono-node` + own rules, no AI | Accepted |
+| [0042](0042-recurring-own-events.md) | Recurring own events: rule in `calendar_event_series`, occurrences materialised 400 days ahead, edit/delete scope | Accepted |
 | [0008](0008-calendar-sync-and-ui-library.md) | Read-only sync, Schedule-X, SSRF guard | Superseded by 0037 |
 | [0006](0006-embedding-pipeline.md) | Jobs + embeddings + `search_semantic` shape; model and host reopened by 0018 | Accepted, amended by 0018 |

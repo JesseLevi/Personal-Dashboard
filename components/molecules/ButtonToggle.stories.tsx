@@ -1,4 +1,5 @@
 // figma: node-id=4160:33335
+import { Button } from "../atoms/Button";
 import { ButtonToggle, type ButtonToggleItem } from "./ButtonToggle";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
@@ -63,5 +64,13 @@ const mixedWidthItems: readonly ButtonToggleItem[] = [
 export const VariableWidthSegments = () => (
   <div className="w-[368px]">
     <ButtonToggle items={mixedWidthItems} defaultValue="b" aria-label="Variable width demo" />
+  </div>
+);
+
+// `size="small"`: the track is as high as the default Button next to it (40 px).
+export const SmallBesideButton = () => (
+  <div className="flex w-[560px] items-center gap-4">
+    <ButtonToggle items={themeItems} defaultValue="light" size="small" aria-label={nl.components.settingsPanel.themeLabel} className="w-80" />
+    <Button>Vandaag</Button>
   </div>
 );

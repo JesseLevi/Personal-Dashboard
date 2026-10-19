@@ -58,8 +58,9 @@ De plek waar de modules samenkomen: één tijdlijn waarop je Atlas-dingen plant 
 - **Weekmenu**: een recept op een dag of aan een afspraak zetten, en de ingrediënten in één keer naar een mand sturen.
 - Kaarten uit Te doen op een dag plannen, naast hun deadline.
 - Recepten, kaarten en notities koppelen aan elke afspraak, ook een geïmporteerde. Vervalt die afspraak, dan gaat wat eraan hing uit de planning; de mand laat Atlas aan jou.
+- Snel toevoegen in gewone taal ("film vrijdag met Youri"), categorieën met een eigen kleur, en eigen afspraken die herhalen (ADR-0040–0042).
 
-*Buiten scope voor nu*: tweerichtingssync, uitnodigingen versturen, herhaalregels voor eigen afspraken.
+*Buiten scope voor nu*: tweerichtingssync, uitnodigingen versturen.
 
 ### Assistent 💭
 Het AI-gedeelte. Signalen uit je eigen data (vastgelopen taken, terugkerende thema's) worden kort en in gewone taal gemeld. Later komt daar een gesprek bij over je eigen informatie, gebaseerd op semantisch zoeken over notities en recepten. De agent heeft geen tools en geen schrijfrechten buiten zijn eigen meldingen.

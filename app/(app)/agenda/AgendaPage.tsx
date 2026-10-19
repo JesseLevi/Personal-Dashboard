@@ -15,15 +15,17 @@ import type { SyncNoticeView } from "@/lib/agenda/calendars";
 import { PlanDrawer } from "@/components/organisms/PlanDrawer";
 import { Toast } from "@/components/organisms/Toast";
 import { weekRange } from "@/lib/agenda/meals";
+import { nextFullHourSpan } from "@/lib/agenda/new-event";
 import { toAgendaResult, withPlannedFor, type PlanCardGroup } from "@/lib/agenda/plan-cards";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import { addDays, loadWindow, spanToUtc, stepDate, visibleRange } from "@/lib/agenda/time";
 import type { AgendaItem, AgendaMealItem, AgendaPlannedCardItem, MealSlot } from "@/lib/agenda/types";
+import { persistAgendaTray } from "@/lib/agenda/tray";
 import { persistAgendaView, type AgendaView } from "@/lib/agenda/view";
 import type { BasketOption } from "@/lib/shopping/baskets";
 import type { ActionResult } from "@/lib/shopping/types";
-import type { AgendaSpan } from "@/lib/ui/agenda-calendar";
+import { AGENDA_TRAY_ATTRIBUTE, type AgendaSpan } from "@/lib/ui/agenda-calendar";
 import { planCard } from "../te-doen/actions";
 import { createEvent, deleteEvent, getAgendaEvent, loadAgendaRange, moveEvent, updateEvent } from "./actions";
 import { AgendaBody } from "./AgendaBody";
@@ -40,6 +42,8 @@ import { PlanRecipeList } from "./PlanRecipeList";
 
 export interface AgendaPageProps {
   initialView: AgendaView;
+  /** Whether the plan tray starts open (cookie `agenda-tray`). */
+  initialTrayOpen: boolean;
   /** Today in the Agenda zone, `YYYY-MM-DD`. */
   today: string;
   /** The items of `loadWindow(today)`. */
@@ -70,6 +74,7 @@ function liveMeal(items: AgendaItem[], fallback: AgendaMealItem): AgendaMealItem
 
 export function AgendaPage({
   initialView,
+  initialTrayOpen,
   today,
   initialItems,
   initialNotices,
@@ -94,6 +99,7 @@ export function AgendaPage({
     target: { mode: "create", span: { start: `${today}T09:00:00`, end: null, allDay: false } },
   });
   const [calendarsOpen, setCalendarsOpen] = useState(false);
+  const [trayOpen, setTrayOpen] = useState(initialTrayOpen);
   const [mealPanel, setMealPanel] = useState<{ open: boolean; item: AgendaMealItem | null }>({ open: false, item: null });
   const [groups, setGroups] = useState(cardGroups);
   const [notice, setNotice] = useState<string | null>(null);
@@ -131,6 +137,14 @@ export function AgendaPage({
 
   function openCreate(span: AgendaSpan) {
     setPanel({ open: true, target: { mode: "create", span } });
+  }
+
+  function handleTrayToggle() {
+    const next = !trayOpen;
+    setTrayOpen(next);
+    persistAgendaTray(next ? "open" : "closed");
+    // Under the calendar the tray is off screen; bring it into view.
+    if (next) requestAnimationFrame(() => document.querySelector(`[${AGENDA_TRAY_ATTRIBUTE}]`)?.scrollIntoView({ block: "nearest" }));
   }
 
   function handleItemClick(item: AgendaItem) {
@@ -328,12 +342,16 @@ export function AgendaPage({
         onPrevious={() => goTo(stepDate(effectiveView, date, -1))}
         onNext={() => goTo(stepDate(effectiveView, date, 1))}
         onToday={() => goTo(today)}
+        trayOpen={trayOpen}
+        onTrayToggle={handleTrayToggle}
+        onNew={() => openCreate(nextFullHourSpan())}
         onOpenCalendars={() => setCalendarsOpen(true)}
         weekToBasket={{ onSend: handleWeekToBasket, baskets }}
       />
       <AgendaSyncNotices initialNotices={initialNotices} onResolve={resolveSyncNotice} />
       {error && <p className="pr-page-right-equal text-base font-semibold text-priority-urgent">{error}</p>}
       <AgendaBody
+        drawerOpen={trayOpen}
         drawer={
           <PlanDrawer
             className="h-full"
@@ -344,6 +362,7 @@ export function AgendaPage({
                 today={today}
                 onPlan={(recipeId, plannedOn, slot) => planRecipe(recipeId, { plannedOn, slot })}
                 onPlanned={announcePlanned}
+                weekToBasket={{ onSend: handleWeekToBasket, baskets }}
               />
             }
             cards={
