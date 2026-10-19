@@ -3,10 +3,13 @@ import { PlanDrawer } from "@/components/organisms/PlanDrawer";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaItem } from "@/lib/agenda/types";
 import type { AgendaView } from "@/lib/agenda/view";
+import { useState } from "react";
+import { isoWeek, stepDate, visibleRange } from "@/lib/agenda/time";
 import { AgendaBody } from "./AgendaBody";
 import { AgendaHeader } from "./AgendaHeader";
 import { AgendaPageSkeleton } from "./AgendaPageSkeleton";
 import { PlanRecipeList } from "./PlanRecipeList";
+import { useAgendaShortcuts } from "./useAgendaShortcuts";
 
 // The page as composed in AgendaPage.tsx, without data fetching or actions.
 // The visual suite freezes the clock on Thursday 2026-01-01.
@@ -68,6 +71,9 @@ const Page = ({ view, title, trayOpen = false }: { view: AgendaView; title: stri
     <AgendaHeader
       title={title}
       view={view === "threeDay" ? "week" : view}
+      weekNumber={view === "week" || view === "list" ? 1 : undefined}
+      date={DATE}
+      onGoToDate={noop}
       trayOpen={trayOpen}
       onViewChange={noop}
       onPrevious={noop}
@@ -96,7 +102,7 @@ const Page = ({ view, title, trayOpen = false }: { view: AgendaView; title: stri
         />
       }
     >
-      <AgendaCalendar items={items} view={view} date={DATE} />
+      <AgendaCalendar items={items} view={view} date={DATE} scrollToNow={false} />
     </AgendaBody>
   </Surface>
 );
@@ -110,3 +116,44 @@ export const Loading = () => (
     <AgendaPageSkeleton />
   </Surface>
 );
+
+// Header and calendar wired like AgendaPage for navigation: keys, date picker and "Vandaag". Try T, D, W, M, L, P and the arrows.
+export const Navigation = () => {
+  const [view, setView] = useState<"day" | "week" | "month" | "list">("week");
+  const [date, setDate] = useState(DATE);
+  const [overlay, setOverlay] = useState(false);
+  const [trayOpen, setTrayOpen] = useState(false);
+  const [scrollNowKey, setScrollNowKey] = useState(0);
+  const range = visibleRange(view, date);
+  useAgendaShortcuts((shortcut) => {
+    if (shortcut === "today") {
+      setDate(DATE);
+      setScrollNowKey((key) => key + 1);
+    } else if (shortcut === "previous") setDate(stepDate(view, date, -1));
+    else if (shortcut === "next") setDate(stepDate(view, date, 1));
+    else if (shortcut === "tray") setTrayOpen((open) => !open);
+    else setView(shortcut);
+  }, overlay);
+  return (
+    <Surface>
+      <AgendaHeader
+        title={`${range.start} – ${range.end}`}
+        view={view}
+        weekNumber={view === "week" || view === "list" ? isoWeek(range.start) : undefined}
+        date={date}
+        onGoToDate={setDate}
+        onOverlayChange={setOverlay}
+        trayOpen={trayOpen}
+        onViewChange={setView}
+        onPrevious={() => setDate(stepDate(view, date, -1))}
+        onNext={() => setDate(stepDate(view, date, 1))}
+        onToday={() => setDate(DATE)}
+        onTrayToggle={() => setTrayOpen((open) => !open)}
+        onNew={noop}
+      />
+      <AgendaBody>
+        <AgendaCalendar items={items} view={view} date={date} scrollNowKey={scrollNowKey} />
+      </AgendaBody>
+    </Surface>
+  );
+};

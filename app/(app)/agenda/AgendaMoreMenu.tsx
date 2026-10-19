@@ -1,11 +1,12 @@
 // design: Claude-designed (#529)
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { Fragment, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
+import { AGENDA_SHORTCUT_KEYS } from "@/lib/agenda/shortcuts";
 import { useOutsidePress } from "@/lib/dom/use-outside-press";
 import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import { needsBasketChoice, type BasketOption } from "@/lib/shopping/baskets";
@@ -15,6 +16,8 @@ import type { ActionResult } from "@/lib/shopping/types";
 function visibleItems(root: HTMLElement | null): HTMLElement[] {
   return Array.from(root?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []).filter((item) => item.offsetParent !== null);
 }
+
+const STEP_LABELS = { menu: null, baskets: "chooseBasketLabel", shortcuts: "shortcutsLabel" } as const;
 
 export interface AgendaMoreMenuProps {
   onToday: () => void;
@@ -29,8 +32,12 @@ export interface AgendaMoreMenuProps {
   };
   /** Called after the week was sent; the header confirms it. */
   onWeekSent: () => void;
+  /** The page leaves its keyboard shortcuts alone while the menu is open. */
+  onOpenChange?: (open: boolean) => void;
   /** Story-only: renders with the menu already open. */
   defaultOpen?: boolean;
+  /** Story-only: the step the open menu starts on. */
+  defaultStep?: "menu" | "shortcuts";
 }
 
 // The menu of the header's "⋯" button. Below `lg` it also holds what the header drops: Vandaag and the tray toggle.
@@ -41,11 +48,13 @@ export function AgendaMoreMenu({
   onOpenCalendars,
   weekToBasket,
   onWeekSent,
+  onOpenChange,
   defaultOpen = false,
+  defaultStep = "menu",
 }: AgendaMoreMenuProps) {
   const t = useTranslations("components.pageHeader.agenda");
   const [open, setOpen] = useState(defaultOpen);
-  const [step, setStep] = useState<"menu" | "baskets">("menu");
+  const [step, setStep] = useState<"menu" | "baskets" | "shortcuts">(defaultStep);
   const wrapperRef = useRef<HTMLSpanElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const popover = usePopoverPosition(wrapperRef, popoverRef, {
@@ -55,6 +64,8 @@ export function AgendaMoreMenu({
     strategy: "fixed",
   });
   const placed = popover.style.visibility !== "hidden";
+
+  useEffect(() => onOpenChange?.(open), [open, onOpenChange]);
 
   function close(restoreFocus = true) {
     setOpen(false);
@@ -128,7 +139,7 @@ export function AgendaMoreMenu({
       {open &&
         createPortal(
           <div ref={popoverRef} className="z-[999] w-72" style={popover.style} onKeyDown={handleKeyDown}>
-            <Dropdown className="shadow-sm" role="menu" aria-label={step === "baskets" ? t("chooseBasketLabel") : t("moreLabel")}>
+            <Dropdown className="shadow-sm" role="menu" aria-label={STEP_LABELS[step] ? t(STEP_LABELS[step]) : t("moreLabel")}>
               {step === "menu" ? (
                 <>
                   <Button role="menuitem" variant="white" align="left" icon="Calendar" className="lg:hidden" onClick={() => choose(onToday)}>
@@ -153,6 +164,29 @@ export function AgendaMoreMenu({
                       {t("calendarsLabel")}
                     </Button>
                   )}
+                  <Button role="menuitem" variant="white" align="left" icon="Lightbulb" className="max-lg:hidden" onClick={() => setStep("shortcuts")}>
+                    {t("shortcutsLabel")}
+                  </Button>
+                </>
+              ) : step === "shortcuts" ? (
+                <>
+                  <Button role="menuitem" variant="white" align="left" icon="ArrowLeft" onClick={() => setStep("menu")}>
+                    {t("backLabel")}
+                  </Button>
+                  <dl className="grid grid-cols-[auto_1fr] items-center gap-x-inline-md gap-y-stack-xs px-component-sm py-component-xs">
+                    {AGENDA_SHORTCUT_KEYS.map(({ shortcut, keys }) => (
+                      <Fragment key={shortcut}>
+                        <dt>
+                          <kbd className="inline-flex min-w-6 justify-center rounded-control-inner border border-stroke-primary px-component-xs font-sans text-sm font-semibold text-text-primary">
+                            {keys}
+                          </kbd>
+                        </dt>
+                        <dd className="text-sm font-semibold text-text-secondary">
+                          {t(`shortcuts.${shortcut}`)}
+                        </dd>
+                      </Fragment>
+                    ))}
+                  </dl>
                 </>
               ) : (
                 <>

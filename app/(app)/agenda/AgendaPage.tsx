@@ -20,7 +20,8 @@ import { nextFullHourSpan } from "@/lib/agenda/new-event";
 import { toAgendaResult, withPlannedFor, type PlanCardGroup } from "@/lib/agenda/plan-cards";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
-import { addDays, loadWindow, spanToUtc, stepDate, visibleRange } from "@/lib/agenda/time";
+import type { AgendaShortcut } from "@/lib/agenda/shortcuts";
+import { addDays, isoWeek, loadWindow, spanToUtc, stepDate, visibleRange } from "@/lib/agenda/time";
 import type { AgendaItem, AgendaMealItem, AgendaPlannedCardItem, MealSlot } from "@/lib/agenda/types";
 import { persistAgendaTray } from "@/lib/agenda/tray";
 import { persistAgendaView, type AgendaView } from "@/lib/agenda/view";
@@ -48,6 +49,7 @@ import { AgendaMealPanel } from "./AgendaMealPanel";
 import { createMealPlan, deleteMealPlan, getMealPlan, sendMealToBasket, sendWeekToBasket, updateMealPlan } from "./meal-actions";
 import { PlanCardList } from "./PlanCardList";
 import { PlanRecipeList } from "./PlanRecipeList";
+import { useAgendaShortcuts } from "./useAgendaShortcuts";
 
 export interface AgendaPageProps {
   initialView: AgendaView;
@@ -120,6 +122,8 @@ export function AgendaPage({
   const [mealPanel, setMealPanel] = useState<{ open: boolean; item: AgendaMealItem | null }>({ open: false, item: null });
   const [groups, setGroups] = useState(cardGroups);
   const [notice, setNotice] = useState<string | null>(null);
+  const [headerOverlayOpen, setHeaderOverlayOpen] = useState(false);
+  const [scrollNowKey, setScrollNowKey] = useState(0);
   const latestRequest = useRef(0);
 
   const effectiveView = effectiveAgendaView(view, narrow);
@@ -153,10 +157,36 @@ export function AgendaPage({
     if (loadWindow(next).from !== loadedFrom) void loadAround(next);
   }
 
+  function goToday() {
+    goTo(today);
+    setScrollNowKey((key) => key + 1);
+  }
+
   function handleViewChange(next: AgendaToggleView) {
     setView(next);
     persistAgendaView(next);
   }
+
+  // Keyboard shortcuts stay quiet while typing, with a modifier, or while a panel or popover is open.
+  const shortcutsBlocked = panel.open || mealPanel.open || calendarsOpen || headerOverlayOpen;
+  const runShortcut = (shortcut: AgendaShortcut) => {
+    switch (shortcut) {
+      case "today":
+        return goToday();
+      case "day":
+      case "week":
+      case "month":
+      case "list":
+        return handleViewChange(shortcut);
+      case "previous":
+        return goTo(stepDate(effectiveView, date, -1));
+      case "next":
+        return goTo(stepDate(effectiveView, date, 1));
+      case "tray":
+        return handleTrayToggle();
+    }
+  };
+  useAgendaShortcuts(runShortcut, shortcutsBlocked);
 
   function openCreate(span: AgendaSpan) {
     setPanel({ open: true, target: { mode: "create", span } });
@@ -360,11 +390,15 @@ export function AgendaPage({
     <>
       <AgendaHeader
         title={title}
-        view={toToggleView(initialView)}
+        view={toToggleView(view)}
+        weekNumber={effectiveView === "week" || effectiveView === "threeDay" || effectiveView === "list" ? isoWeek(range.start) : undefined}
+        date={date}
+        onGoToDate={goTo}
+        onOverlayChange={setHeaderOverlayOpen}
         onViewChange={handleViewChange}
         onPrevious={() => goTo(stepDate(effectiveView, date, -1))}
         onNext={() => goTo(stepDate(effectiveView, date, 1))}
-        onToday={() => goTo(today)}
+        onToday={goToday}
         trayOpen={trayOpen}
         onTrayToggle={handleTrayToggle}
         onNew={() => openCreate(nextFullHourSpan())}
@@ -403,6 +437,7 @@ export function AgendaPage({
           items={visibleItems}
           view={view}
           date={date}
+          scrollNowKey={scrollNowKey}
           onSelectSlot={openCreate}
           onItemClick={handleItemClick}
           onItemMove={handleChange}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type Ref } from "react";
+import { Icon } from "@/components/atoms/Icon";
 import { BLUR_FADE, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 import { clearTitleMorph, peekTitleMorph, registerLiveTitle } from "@/lib/ui/title-morph";
 import { cn } from "@/lib/ui/cn";
@@ -21,7 +22,14 @@ interface Morph {
 // Slack after the width transition, so the cleanup never cuts it short.
 const SETTLE_MS = 60;
 
-export function PageHeaderTitle({ title, pending = false }: { title: string; pending?: boolean }) {
+/** Makes the title a button that opens something (Agenda's date picker); a chevron after the text shows it. */
+export interface PageHeaderTitleTrigger {
+  onClick: () => void;
+  expanded: boolean;
+  buttonRef?: Ref<HTMLButtonElement>;
+}
+
+export function PageHeaderTitle({ title, pending = false, trigger }: { title: string; pending?: boolean; trigger?: PageHeaderTitleTrigger }) {
   const reduced = usePrefersReducedMotion();
   const h1Ref = useRef<HTMLHeadingElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
@@ -100,6 +108,12 @@ export function PageHeaderTitle({ title, pending = false }: { title: string; pen
   }, [fading, morph, reduced]);
 
   const shown = pending ? (held ?? title) : title;
+  const text = (
+    <span key={shown} ref={textRef} className={cn(fading && !pending && "animate-blur-in")}>
+      {shown}
+      {trigger && <Icon name="ChevronDown" size={16} className="ms-inline-xs inline text-text-secondary" />}
+    </span>
+  );
   return (
     <h1
       ref={h1Ref}
@@ -115,9 +129,20 @@ export function PageHeaderTitle({ title, pending = false }: { title: string; pen
           {morph.out}
         </span>
       )}
-      <span key={shown} ref={textRef} className={cn(fading && !pending && "animate-blur-in")}>
-        {shown}
-      </span>
+      {trigger ? (
+        <button
+          type="button"
+          ref={trigger.buttonRef}
+          aria-haspopup="dialog"
+          aria-expanded={trigger.expanded}
+          onClick={trigger.onClick}
+          className="cursor-pointer rounded-control-inner outline-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-secondary-active"
+        >
+          {text}
+        </button>
+      ) : (
+        text
+      )}
     </h1>
   );
 }
