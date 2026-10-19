@@ -44,6 +44,7 @@ describe("timed events", () => {
     );
     expect(item).toMatchObject({
       kind: "event",
+      color: "blue",
       start: "2026-10-14T09:00:00",
       end: "2026-10-14T10:30:00",
       allDay: false,
@@ -77,6 +78,7 @@ describe("timed events", () => {
     );
     expect(item).toMatchObject({
       source: "sync",
+      color: "violet",
       calendarId: ID(9),
       missingSince: "2026-10-10T00:00:00Z",
     });

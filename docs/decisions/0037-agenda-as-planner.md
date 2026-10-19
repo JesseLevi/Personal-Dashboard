@@ -1,6 +1,6 @@
 # ADR-0037: Agenda as Atlas's planner, with external calendars as imports
 
-**Status**: Accepted (user decision, 2026-10-13, #33). **Supersedes** ADR-0008.
+**Status**: Accepted (user decision, 2026-10-13, #33). **Supersedes** ADR-0008. §11 amended by ADR-0042 (recurring own events).
 
 ## Context
 
@@ -54,7 +54,7 @@
    - `tsdav` (MIT) for CalDAV.
 10. **Kept from ADR-0008:**
    - deleting a calendar account cascades its synced events.
-11. **Out of scope:** two-way sync, sending invitations, and recurrence rules for manual events. Each needs a new ADR.
+11. **Out of scope:** two-way sync and sending invitations. Each needs a new ADR. Recurrence rules for manual events: ADR-0042.
 
 ## Consequences
 

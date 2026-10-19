@@ -103,3 +103,17 @@ export const Alignment = () => (
     </div>
   </div>
 );
+
+// Labelled sizes side by side (40 and 32 px), plus the icon-only compact box.
+export const Sizes = () => (
+  <div className="flex items-center gap-4">
+    <Button icon="Plus">Standaard</Button>
+    <Button icon="Plus" size="small">
+      Klein
+    </Button>
+    <Button size="small" variant="white">
+      Klein wit
+    </Button>
+    <Button icon="Plus" size="compact" aria-label="Compact" />
+  </div>
+);

@@ -26,11 +26,12 @@ const buttonVariants = cva(
   "chrome-touch inline-flex shrink-0 items-center gap-1 rounded-control text-base font-semibold transition-colors",
   {
     variants: {
-      // No Figma Size property — compact/iconOnlyDefault are structural
-      // (size-N, width=height stated directly). iconOnlyDefault is
-      // internal-only; see design/notes/Button.md.
+      // No Figma Size property — small/compact/iconOnlyDefault are structural
+      // (h-N or size-N, stated directly). small is the labelled 32 px height;
+      // iconOnlyDefault is internal-only; see design/notes/Button.md.
       size: {
         default: "h-10 px-component-sm",
+        small: "h-8 px-component-sm",
         compact: "size-8 justify-center",
         iconOnlyDefault: "size-10 justify-center",
       },
@@ -74,7 +75,7 @@ type ButtonBaseProps = Omit<
   Omit<VariantProps<typeof buttonVariants>, "size" | "align"> & {
     /** Figma "With icon" boolean — pass an IconName to render the leading icon; omit to hide it. */
     icon?: IconName;
-    size?: "default" | "compact";
+    size?: "default" | "small" | "compact";
     /** Renders the button's look on a `<span>`, for a parent control that owns the interaction (`Dropdown`'s trigger row). Never combine with `onClick`. */
     presentational?: boolean;
   };
@@ -86,13 +87,14 @@ type ButtonBaseProps = Omit<
 export type ButtonProps =
   | (ButtonBaseProps & {
       children: ReactNode;
-      size?: "default";
+      size?: "default" | "small";
       trailingIcon?: IconName;
       align?: "center" | "left";
     })
   | (ButtonBaseProps & {
       children?: never;
       "aria-label": string;
+      size?: "default" | "compact";
       trailingIcon?: never;
       align?: never;
     });
@@ -114,7 +116,7 @@ export function Button({
     !children && size !== "compact" ? "iconOnlyDefault" : (size ?? "default");
   // align only applies to the labelled branch; icon-only keeps size's own justify-center.
   const resolvedAlign =
-    resolvedSize === "default" ? (align ?? "center") : undefined;
+    resolvedSize === "default" || resolvedSize === "small" ? (align ?? "center") : undefined;
   const classes = cn(
     buttonVariants({ variant, size: resolvedSize, align: resolvedAlign }),
     className,

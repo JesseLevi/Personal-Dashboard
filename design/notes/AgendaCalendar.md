@@ -23,18 +23,38 @@ Controlled: `items` map to FullCalendar events (`toEventInput`, the item rides i
 | Hover outline | overlay in `AgendaCalendar` | dashed `border-stroke-primary-active`, `rounded-control-inner`, no fill |
 
 ## Item language
+Every item has a palette colour (ADR-0040, `lib/agenda/colors.ts`): an event takes `AgendaEventItem.color` (until `calendars.color` exists, `manual` is blue and `sync` violet), meals are green, planned cards amber, deadlines red. A colour is three tokens, `event-<colour>-surface`, `-text` and `-accent`, read through the literal lookup table in `AgendaCalendarTheme.ts` (Tailwind needs whole class names).
+
 | Kind | Look |
 |---|---|
-| Own event | white surface, `border-stroke-primary`; hover/active/selected use the white fill steps |
-| Recurring own event (`recurring`) | the own-event look, plus a small `Repeat` icon (12px) after the title with an `sr-only` "Terugkerende afspraak"; it sits in the title row because day and month items have no meta row |
-| Imported event (`source: sync`) | `surface-highlight-blue`, `CalendarSync` icon; fixed |
-| Meal | `surface-highlight-green`, slot icon (Croissant, Sandwich, Utensils, Cookie), recipe title, slot and servings; always all-day (see below) |
-| Planned card | `surface-highlight-yellow`, `Columns3` icon, board and column |
-| Deadline | no fill, `text-highlight-red`, `AlarmClockCheck`; hover/active tint `surface-highlight-red-*`; lives in the all-day row |
-| Removed at source (`missingSince`) | own style, dashed border, `opacity-60`, "Verwijderd bij bron" |
+| Event (own or imported) | block: `event-<c>-surface` fill, `event-<c>-text`, `border-s-4` stripe in `event-<c>-accent`; imported adds the `CalendarSync` icon |
+| Recurring own event (`recurring`) | the event block, plus a small `Repeat` icon (12px) after the title with an `sr-only` "Terugkerende afspraak"; it sits in the title row because day and month items have no meta row |
+| Meal | green block, slot icon (Croissant, Sandwich, Utensils, Cookie), recipe title; always all-day. The moment ("Diner") is not drawn behind the title in the all-day row, month and grid: it stays in `sr-only` text and `title`. List and day-row meta show it |
+| Planned card | amber block, `Columns3` icon, board and column |
+| Deadline | no fill, `event-red-text`, `AlarmClockCheck`; hover and selected fill `event-red-surface`; lives in the all-day row |
+| Removed at source (`missingSince`) | colour block with dashed border, `opacity-60`, "Verwijderd bij bron" |
 | Draft (selection mirror, drag ghost) | dashed `border-stroke-primary-active` on white |
 
-Coloured kinds have no hover/active/selected fill tokens, so those states move the border (`stroke-primary-hover/-active/-selected`), like Button Outline. Dragging dims the source (`opacity-60`) and the mirror takes `border-stroke-primary-active`.
+Hover, active and selected move the border on the top, bottom and end sides (`stroke-primary-hover/-active/-selected`), so the stripe keeps its colour. Dragging dims the source (`opacity-60`) and the mirror takes `border-stroke-primary-active`. The list view keeps the stripe and the text colour on a transparent row; month and the all-day row use the same blocks as the grid.
+
+Content in the time grid: shorter than 45 minutes (`AGENDA_SHORT_MINUTES`) is one line, title then start time (under 30 minutes the text drops to `text-xs`; the three-day view drops the time to the `title`: no room beside a title); from 45 minutes the title runs on at most two lines (`line-clamp-2`, `wrap-anywhere`) and the time range follows. Blocks clip their content (`overflow-clip`). Lane inset is `inline-xs` on both sides; overlapping items still sit side by side.
+
+## Palette and contrast (ADR-0040 §7)
+Nine colours (red, orange, amber, green, teal, blue, violet, pink, stone), each with a light and dark value, code only (`figma: null`). Light: surface = Tailwind 100, text = 800, accent = 500. Dark: surface = **950**, text = 200, accent = 400. A dark 900 surface (the first idea) is 1.01-1.13:1 against the dark grid (`surface-highlight-white`, stone-700) and stone is 1.70:1, so blocks would not stand out; 950 gives 1.41-1.57:1 (stone 1.92) and raises text contrast. The accent stripe is decorative. Measured (WCAG contrast ratios computed from Tailwind's oklch values):
+
+| Colour | Text/surface light | Text/surface dark | Dark surface vs stone-700 | Accent/surface light | Accent/surface dark |
+|---|---|---|---|---|---|
+| red | 6.86 | 11.14 | 1.57 | 3.13 | 5.58 |
+| orange | 6.41 | 11.55 | 1.52 | 2.52 | 6.58 |
+| amber | 6.41 | 12.03 | 1.46 | 1.93 | 8.73 |
+| green | 6.45 | 12.32 | 1.45 | 2.02 | 8.40 |
+| teal | 6.69 | 11.50 | 1.41 | 2.15 | 7.76 |
+| blue | 7.25 | 10.35 | 1.43 | 3.08 | 5.58 |
+| violet | 7.71 | 10.99 | 1.49 | 3.70 | 5.36 |
+| pink | 6.71 | 10.89 | 1.47 | 3.05 | 5.47 |
+| stone | 13.93 | 15.72 | 1.92 | 4.41 | 7.63 |
+
+Light surfaces are 1.09-1.22:1 against the white grid; the stripe and text carry the difference. Moving the palette to Figma later means filling `figma` and `figmaVariableId` for the 27 tokens.
 
 ## Deliberate decisions
 - No FullCalendar theme plugin, `theme.css` or `--fc-*` variables. `skeleton.css` (positioning only) is imported by the component.
@@ -44,7 +64,7 @@ Coloured kinds have no hover/active/selected fill tokens, so those states move t
 - Overlapping timed items sit side by side (`slotEventOverlap: false`).
 - `week` becomes `threeDay` below `md` (`useIsNarrow`, wide on SSR). Day view is the other mobile default. FullCalendar has no swipe between days: the page header carries prev/next arrows.
 - External dragging: `useAgendaDraggable(ref, payload)` wraps `Draggable` with `create: false`; the drop reports `{ payload, start, allDay, eventId? }` through `onExternalDrop` and the parent creates the item. `eventId` is the event under the pointer (`eventDidMount` stamps `data-agenda-event-id` on event elements; the drop looks them up with `elementsFromPoint`, also for touch), so a drop on an appointment can attach to it. The payload travels in a `WeakMap`, not the DOM.
-- Selection fills the whole cell: the time-grid selection mirror (an event without item) cancels the lane inset with negative margins in `columnEventClass`; real items keep the inset.
+- Selection fills the whole cell: the time-grid selection mirror (an event without item) cancels the lane inset with a negative margin in `columnEventClass`; real items keep the inset.
 - Hover outline: on `(hover: hover) and (pointer: fine)` an overlay (`aria-hidden`, `pointer-events-none`) follows the mouse and outlines the empty cell it would select: one 30-minute slot of a day column in the time grid (`slotBox`, clipped to the scroller with `clipBox`), the whole cell in the all-day row and month. It hides over items (`data-agenda-item`), links and buttons, while a button is down, on scroll and on leave. It works through `pointermove` + `requestAnimationFrame` with no React state; its `top/left/width/height` are set imperatively on the overlay (the one inline style we write, like FullCalendar's own geometry).
 - Tap to create: `dateClick` calls `api.select` (30 minutes for a time slot, the whole day for all-day/month cells), so a tap behaves as a desktop click-select. FullCalendar ignores scroll gestures and event taps; a tap within 400 ms of a `select` is dropped, so a mouse click does not select twice.
 - Touch: `AGENDA_LONG_PRESS_MS` (350) for the external draggable, `eventLongPressDelay`, `selectLongPressDelay` and `longPressDelay`, so a tray or grid still scrolls on a quick swipe.
@@ -52,8 +72,7 @@ Coloured kinds have no hover/active/selected fill tokens, so those states move t
 - The skeleton mirrors the week grid (three days below `md`), real card/surface tokens, `animate-breathe`, one `role="status"`.
 
 ## Token gaps and flags
-- `surface-highlight-blue/green/yellow` and `text-highlight-*` have no dark overrides, so coloured items stay pastel in dark mode (as `Tag` does) and the text on them is about 3:1. There is no on-highlight text token.
-- No hover/active/selected tokens for the blue, green and yellow surfaces (see above).
+- The palette tokens have no hover/active/selected steps: those states move the border (see above). `surface-highlight-*` still has no dark values elsewhere (`Tag`).
 - No accent or "today" token: today is a `surface-secondary/40` tint plus a `surface-secondary` chip. The opacity modifier keeps the slot lines visible; an opaque `surface-primary` hid them in dark mode.
 - The now line borrows `text-highlight-red`; there is no red stroke token.
 - No opacity token: `opacity-60` marks dragging and removed items.

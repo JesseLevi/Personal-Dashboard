@@ -182,11 +182,13 @@ describe("token → theme pipeline (ADR-0010)", () => {
       expect(css).not.toContain("--color-surface-hover:");
     });
 
-    it("the only current figma:null exception is `overlay` (#222 — a codebase-only scrim token with no Figma counterpart, same documented shape as the historical surface-hover)", () => {
+    it("the figma:null exceptions are `overlay` (#222, a codebase-only scrim) and the 27 agenda palette tokens (#530, ADR-0040 §7)", () => {
       const nullFigma = Object.entries<{ figma: string | null }>(tokens.semantic.color).filter(
         ([, def]) => def.figma === null,
       );
-      expect(nullFigma.map(([name]) => name)).toEqual(["overlay"]);
+      const names = nullFigma.map(([name]) => name);
+      expect(names.filter((name) => !name.startsWith("event-"))).toEqual(["overlay"]);
+      expect(names.filter((name) => name.startsWith("event-"))).toHaveLength(27);
     });
 
     it("accent is retired: no primitive, no semantic entry, no CSS var", () => {

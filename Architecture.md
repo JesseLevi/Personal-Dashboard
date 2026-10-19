@@ -74,7 +74,7 @@ worker/               job-consumer skeleton (unused until a scheduled-work mecha
 | Sharing | `shares` (ADR-0035) |
 | Notities | `note_categories`, `notes` (`content` TipTap JSON, derived `title` + `content_text`), `note_links` (derived on save) |
 
-Planned for Phase 7: `calendars`, `calendar_accounts`, `calendar_events`, `calendar_event_links`, `meal_plans`, `cards.planned_for` (§7).
+Agenda tables: §7.
 
 ### 4.3 Search
 
@@ -134,18 +134,15 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 
 - **One timeline, nothing copied**: manual events (editable), synced events (source fields read-only, never written back), `meal_plans`, `cards.planned_for` and the `cards.due_at` overlay, unioned by one `security invoker` function.
 - **Schema**:
-  - `calendars`: the container (ADR-0035); a default per user (ADR-0017); an imported feed is its own calendar.
+  - `calendars`: the container (ADR-0035); a default per user (ADR-0017); an imported feed is its own calendar. Manual calendars are the UI's categories; each calendar has a palette `color` (ADR-0040).
   - `calendar_accounts`: provider, credentials in Vault (ADR-0002), `sync_state`, `last_synced_at`.
   - `calendar_events`: `calendar_id`, `starts_at`/`ends_at`, `all_day`, `source` `manual|sync`, `external_id` unique per account, `missing_since`.
   - `meal_plans`: `calendar_id`, `recipe_id`, `servings`, `slot` (breakfast/lunch/dinner/snack), and either `planned_on` or `calendar_event_id`; "naar mand" sets `shopping_list_items.meal_plan_id`.
   - `calendar_event_links`: an event plus exactly one card, recipe or note, cascading on both sides.
-- **Sync**:
-  - providers `ics` → `caldav` (`tsdav`) → Graph/Google only on need; Outlook is ICS or Graph, never CalDAV;
-  - fetches through `safe-fetch`; recurring instances expanded within −30 d / +400 d, `external_id` = UID + instance start;
-  - upsert, never delete-and-insert; a failed or empty fetch, or a drop over half, deletes nothing;
-  - an event is deleted after two consecutive successful syncs miss it; its links and attached meal plans go with it, basket items stay and the user gets a notice;
-  - write only on a changed content hash; past events are kept as history.
+  - `calendar_event_series`: rule and template of a recurring own event; occurrences are `calendar_events` rows (`series_id`), 400 days ahead, extended on Agenda load (ADR-0042).
+- **Sync** (ADR-0037 §5): `ics` → `caldav` → Graph/Google on need, via `safe-fetch`; recurring instances expanded −30 d / +400 d, upserted by UID + instance start; a failed, empty or halved fetch deletes nothing; two-miss deletion with a basket notice; writes only on a changed hash.
 - **UI**: FullCalendar standard (MIT) packages, themed with semantic tokens, Claude-designed (ADR-0034); `ical.js` parses feeds.
+- **Colour, creation**: items use their calendar's `event-<colour>-*` tokens (ADR-0040); quick add parses with `chrono-node`, no AI (ADR-0041).
 - **Sync trigger** (ADR-0039): opening the Agenda syncs the user's accounts older than an hour in `after()`; a daily cron syncs every account older than 20 hours. `apply_calendar_sync` (`security definer`, advisory lock) applies a parsed feed per account: upsert, hash, two-miss deletion, and a `calendar_sync_notices` row (item ids kept, as `meal_plan_id` is nulled). The URL sits in Vault; `lib/agenda/sync.ts` and `app/api/cron/` call it.
 
 ## 8. Testing and CI gates

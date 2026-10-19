@@ -8,6 +8,7 @@ import { extendEventSeries } from "@/lib/agenda/series";
 import { syncStaleAccounts } from "@/lib/agenda/sync";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import { AGENDA_TIME_ZONE, loadWindow, todayInAgendaZone, wallClockToUtc } from "@/lib/agenda/time";
+import { AGENDA_TRAY_COOKIE, DEFAULT_AGENDA_TRAY, isAgendaTray } from "@/lib/agenda/tray";
 import { AGENDA_VIEW_COOKIE, DEFAULT_AGENDA_VIEW, isAgendaView } from "@/lib/agenda/view";
 import { getRecipeCategoriesWithRecipes } from "@/lib/recipes/queries";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
@@ -23,8 +24,11 @@ export const metadata: Metadata = {
 };
 
 async function AgendaPageBody() {
-  const stored = (await cookies()).get(AGENDA_VIEW_COOKIE)?.value;
+  const jar = await cookies();
+  const stored = jar.get(AGENDA_VIEW_COOKIE)?.value;
   const view = isAgendaView(stored) ? stored : DEFAULT_AGENDA_VIEW;
+  const storedTray = jar.get(AGENDA_TRAY_COOKIE)?.value;
+  const trayOpen = (isAgendaTray(storedTray) ? storedTray : DEFAULT_AGENDA_TRAY) === "open";
   const today = todayInAgendaZone();
   const window = loadWindow(today);
   const supabase = await createSupabaseServerClient();
@@ -61,6 +65,7 @@ async function AgendaPageBody() {
   return (
     <AgendaPage
       initialView={view}
+      initialTrayOpen={trayOpen}
       today={today}
       initialItems={items}
       initialNotices={notices}
