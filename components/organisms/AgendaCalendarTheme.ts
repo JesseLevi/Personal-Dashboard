@@ -1,4 +1,5 @@
 import type { CalendarOptions, EventDisplayInfo } from "@fullcalendar/react";
+import { isUnderNowLabel } from "@/lib/agenda/time";
 import { itemColor, type AgendaColor } from "@/lib/agenda/colors";
 import type { AgendaItem } from "@/lib/agenda/types";
 import { cn } from "@/lib/ui/cn";
@@ -119,6 +120,13 @@ const isSingleDay = (viewType: string) => viewType === "timeGridDay";
 // Every label of the time axis has one width, so the now label can sit exactly over an hour label.
 const AXIS_LABEL = "mx-component-sm my-component-xs w-14 text-xs font-semibold text-text-secondary";
 
+// The now label sits over the hour labels near it (only where the grid shows today); they keep their space.
+function hiddenByNowLabel(info: { time?: { milliseconds: number }; view: { currentStart: Date; currentEnd: Date } }): boolean {
+  const now = new Date();
+  if (info.time === undefined || now < info.view.currentStart || now >= info.view.currentEnd) return false;
+  return isUnderNowLabel(info.time.milliseconds / 60_000, now);
+}
+
 const resizeHit = "absolute inset-x-0 z-10";
 
 export function buildAgendaCalendarOptions(): CalendarOptions {
@@ -161,7 +169,7 @@ export function buildAgendaCalendarOptions(): CalendarOptions {
     slotLaneClass: (info) => cn("border", LINE, info.isMinor && "border-dotted"),
     slotHeaderRowClass: cn("border", LINE),
     slotHeaderClass: (info) => cn(info.isTime ? "justify-end" : "", "border", LINE, info.isMinor && "border-dotted"),
-    slotHeaderInnerClass: cn(AXIS_LABEL, "text-end"),
+    slotHeaderInnerClass: (info) => cn(AXIS_LABEL, "text-end", hiddenByNowLabel(info) && "invisible"),
     slotHeaderDividerClass: cn("border-e", LINE),
     allDayHeaderClass: "flex items-center justify-end",
     allDayHeaderInnerClass: cn(AXIS_LABEL, "text-end"),

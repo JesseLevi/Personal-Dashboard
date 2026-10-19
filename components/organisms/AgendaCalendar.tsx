@@ -181,6 +181,18 @@ export function useIsNarrow(): boolean {
   return narrow;
 }
 
+const MINUTE_MS = 60_000;
+
+/** Changes once a minute, on the minute. */
+function useMinute(): number {
+  const [minute, setMinute] = useState(() => Math.floor(Date.now() / MINUTE_MS));
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMinute(Math.floor(Date.now() / MINUTE_MS)), MINUTE_MS - (Date.now() % MINUTE_MS));
+    return () => window.clearTimeout(timer);
+  }, [minute]);
+  return minute;
+}
+
 /** A week does not fit a phone: it becomes three days. */
 export function effectiveAgendaView(view: AgendaView, narrow: boolean): AgendaView {
   return narrow && view === "week" ? "threeDay" : view;
@@ -247,7 +259,9 @@ export function AgendaCalendar({
   );
 
   const events = useMemo(() => toEventInputs(items), [items]);
-  const theme = useMemo(buildAgendaCalendarOptions, []);
+  // The class settings read the clock (hour labels under the now label): new functions each minute make FullCalendar re-run them.
+  const minute = useMinute();
+  const theme = useMemo(buildAgendaCalendarOptions, [minute]);
 
   useEffect(() => {
     const api = calendarRef.current?.getApi();

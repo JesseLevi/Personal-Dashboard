@@ -78,6 +78,14 @@ export function initialScrollHour(range: { start: string; end: string }, now: Da
   return today >= range.start && today < range.end ? Math.max(0, now.getHours() - 1) : AGENDA_DEFAULT_SCROLL_HOUR;
 }
 
+/** Hour labels this close to now (minutes) give way to the now label. */
+export const NOW_LABEL_CLEARANCE_MINUTES = 15;
+
+/** Whether the axis label of the slot starting at `slotMinutes` after midnight lies under the now label. */
+export function isUnderNowLabel(slotMinutes: number, now: Date): boolean {
+  return Math.abs(slotMinutes - (now.getHours() * 60 + now.getMinutes())) <= NOW_LABEL_CLEARANCE_MINUTES;
+}
+
 /** Today's date in the Agenda zone. */
 export function todayInAgendaZone(now: Date = new Date()): string {
   return localDate(now.toISOString(), AGENDA_TIME_ZONE);

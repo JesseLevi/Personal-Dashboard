@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AGENDA_DEFAULT_SCROLL_HOUR, initialScrollHour, isoWeek, localDay, visibleRange } from "@/lib/agenda/time";
+import { AGENDA_DEFAULT_SCROLL_HOUR, initialScrollHour, isoWeek, isUnderNowLabel, localDay, visibleRange } from "@/lib/agenda/time";
 
 describe("isoWeek", () => {
   it("counts the week with the year's first Thursday as week 1", () => {
@@ -61,5 +61,21 @@ describe("initialScrollHour", () => {
 describe("localDay", () => {
   it("pads month and day in the local zone", () => {
     expect(localDay(new Date(2026, 0, 5, 23, 59))).toBe("2026-01-05");
+  });
+});
+
+describe("isUnderNowLabel", () => {
+  const now = new Date(2026, 0, 1, 14, 0);
+
+  it("covers the hour label at and within 15 minutes of now", () => {
+    expect(isUnderNowLabel(14 * 60, now)).toBe(true);
+    expect(isUnderNowLabel(14 * 60, new Date(2026, 0, 1, 14, 15))).toBe(true);
+    expect(isUnderNowLabel(14 * 60, new Date(2026, 0, 1, 13, 45))).toBe(true);
+  });
+
+  it("leaves labels further away", () => {
+    expect(isUnderNowLabel(14 * 60, new Date(2026, 0, 1, 14, 16))).toBe(false);
+    expect(isUnderNowLabel(13 * 60, now)).toBe(false);
+    expect(isUnderNowLabel(15 * 60, now)).toBe(false);
   });
 });
