@@ -1008,7 +1008,7 @@
         "endDateLabel": "Last day",
         "locationLabel": "Location",
         "descriptionLabel": "Description",
-        "calendarLabel": "Calendar",
+        "categoryLabel": "Category",
         "repeatLabel": "Repeat",
         "endsLabel": "Ends",
         "untilLabel": "Last day"
@@ -1033,7 +1033,6 @@
         "following": "This and following",
         "all": "All"
       },
-      "defaultCalendarName": "Calendar",
       "readOnlyNotice": "This event comes from another calendar and can only be changed there.",
       "loadingLabel": "Loading...",
       "saveLabel": "Save",
@@ -1080,13 +1079,31 @@
       "more": "+{count} more"
     },
     "agendaCalendarsPanel": {
-      "title": "Calendars",
-      "listHeading": "Linked calendars",
+      "title": "Calendars and categories",
+      "intro": "Untick to hide on this device. Click a name to change it.",
+      "categoriesHeading": "Categories",
+      "linkedHeading": "Linked calendars",
+      "fixedHeading": "Fixed kinds",
+      "defaultBadge": "default",
+      "fixedBadge": "fixed colour",
+      "showLabel": "Show {name}",
+      "kinds": {
+        "meal": "Meals",
+        "plannedCard": "To do",
+        "deadline": "Deadlines"
+      },
+      "colorLabel": "Colour",
+      "newCategoryName": "New category",
+      "addCategoryLabel": "Add category",
+      "moveNote": "The events in this category move to {target}.",
+      "deleteCategoryLabel": "Delete",
+      "deleteCategoryConfirmLabel": "Delete “{name}”? Its events move to {target}.",
+      "removeAccountLabel": "Remove link",
       "emptyLabel": "You have not linked a calendar yet.",
       "addHeading": "Add an ICS link",
       "nameLabel": "Name",
       "urlLabel": "ICS link",
-      "addLabel": "Add",
+      "addLabel": "Link calendar",
       "addingLabel": "Checking...",
       "loadingLabel": "Loading...",
       "privacyNotice": "Anyone with this link can read your calendar. Atlas stores the link encrypted and never shows it again.",
@@ -1101,7 +1118,6 @@
         "ok": "Updated {time}",
         "failed": "Failed"
       },
-      "deleteLabel": "Delete {name}",
       "deleteConfirmLabel": "Delete “{name}” and its imported events? The calendar itself stays where it is.",
       "deleteConfirmButtonLabel": "Yes, delete",
       "deletingLabel": "Deleting...",
@@ -1115,6 +1131,8 @@
         "unreadable": "This link does not return a readable calendar.",
         "empty": "This calendar has no events. Check that you have the right link.",
         "limit": "You can link at most 10 calendars.",
+        "category-limit": "You can have at most 20 categories.",
+        "read-only": "This calendar cannot be changed or deleted.",
         "generic": "Something went wrong. Please try again."
       },
       "syncErrors": {
@@ -1132,6 +1150,19 @@
         "drop": "More than half of the events disappeared, so nothing was deleted.",
         "no_secret": "The link could not be read.",
         "apply_failed": "The events could not be saved."
+      }
+    },
+    "colorSwatches": {
+      "colors": {
+        "red": "Red",
+        "orange": "Orange",
+        "amber": "Yellow",
+        "green": "Green",
+        "teal": "Mint",
+        "blue": "Blue",
+        "violet": "Purple",
+        "pink": "Pink",
+        "stone": "Grey"
       }
     },
     "planDrawer": {
@@ -1202,6 +1233,7 @@
     }
   },
   "agenda": {
+    "defaultCalendarName": "Personal",
     "errors": {
       "invalid-input": "Check the information you entered.",
       "unauthenticated": "Sign in again to continue.",

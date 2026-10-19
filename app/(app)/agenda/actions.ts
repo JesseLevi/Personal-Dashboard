@@ -191,13 +191,26 @@ async function writeEvent(action: string, id: string, update: EventUpdate, detac
 export async function updateEvent(input: unknown): Promise<AgendaActionResult> {
   const parsed = updateEventSchema.safeParse(input);
   if (!parsed.success) return { success: false, error: "invalid-input" };
-  const { id, title, startsAt, endsAt, allDay, location, description, scope, repeat } = parsed.data;
+  const { id, title, startsAt, endsAt, allDay, location, description, scope, repeat, calendarId } = parsed.data;
 
   const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
   const supabase = await createSupabaseServerClient();
   const loaded = await loadManualEvent(supabase, id);
   if ("error" in loaded) return loaded.error;
+
+  // The category is changed after the fields, so the scope of an occurrence is already applied (ADR-0040).
+  // A single event that starts repeating moves as a whole series.
+  const moveTo = calendarId && calendarId !== loaded.event.calendarId ? calendarId : null;
+  async function withCategory(result: AgendaActionResult): Promise<AgendaActionResult> {
+    if (!result.success || !moveTo) return result;
+    const { error } = await supabase.rpc("move_event_calendar", {
+      p_event_id: id,
+      p_calendar_id: moveTo,
+      p_scope: scope ?? "all",
+    });
+    return error ? failure("updateEvent category", error) : result;
+  }
 
   if (loaded.event.seriesId) {
     // An occurrence is changed by scope; the rule travels with the scopes that change it.
@@ -216,7 +229,7 @@ export async function updateEvent(input: unknown): Promise<AgendaActionResult> {
       p_until: repeat?.until ?? undefined,
     });
     if (error) return failure("updateEvent", error);
-    return { success: true, data: undefined };
+    return withCategory({ success: true, data: undefined });
   }
 
   if (repeat) {
@@ -235,17 +248,19 @@ export async function updateEvent(input: unknown): Promise<AgendaActionResult> {
       p_event_id: id,
     });
     if (error) return failure("updateEvent", error);
-    return { success: true, data: undefined };
+    return withCategory({ success: true, data: undefined });
   }
 
-  return writeEvent("updateEvent", id, {
-    title,
-    starts_at: startsAt,
-    ends_at: endsAt,
-    all_day: allDay,
-    location,
-    description,
-  });
+  return withCategory(
+    await writeEvent("updateEvent", id, {
+      title,
+      starts_at: startsAt,
+      ends_at: endsAt,
+      all_day: allDay,
+      location,
+      description,
+    }),
+  );
 }
 
 /** Drag and resize: only the span changes. An occurrence of a series becomes detached. */

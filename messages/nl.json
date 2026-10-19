@@ -1008,7 +1008,7 @@
         "endDateLabel": "Laatste dag",
         "locationLabel": "Locatie",
         "descriptionLabel": "Omschrijving",
-        "calendarLabel": "Agenda",
+        "categoryLabel": "Categorie",
         "repeatLabel": "Herhalen",
         "endsLabel": "Eindigt",
         "untilLabel": "Laatste dag"
@@ -1033,7 +1033,6 @@
         "following": "Deze en volgende",
         "all": "Alle"
       },
-      "defaultCalendarName": "Agenda",
       "readOnlyNotice": "Deze afspraak komt uit een andere agenda en kan alleen daar worden gewijzigd.",
       "loadingLabel": "Laden...",
       "saveLabel": "Opslaan",
@@ -1080,13 +1079,31 @@
       "more": "+{count} meer"
     },
     "agendaCalendarsPanel": {
-      "title": "Agenda's",
-      "listHeading": "Gekoppelde agenda's",
+      "title": "Agenda's en categorieën",
+      "intro": "Vink uit om te verbergen op dit apparaat. Klik op een naam om te wijzigen.",
+      "categoriesHeading": "Categorieën",
+      "linkedHeading": "Gekoppelde agenda's",
+      "fixedHeading": "Vaste soorten",
+      "defaultBadge": "standaard",
+      "fixedBadge": "vaste kleur",
+      "showLabel": "{name} tonen",
+      "kinds": {
+        "meal": "Maaltijden",
+        "plannedCard": "Te doen",
+        "deadline": "Deadlines"
+      },
+      "colorLabel": "Kleur",
+      "newCategoryName": "Nieuwe categorie",
+      "addCategoryLabel": "Categorie toevoegen",
+      "moveNote": "De afspraken in deze categorie gaan naar {target}.",
+      "deleteCategoryLabel": "Verwijderen",
+      "deleteCategoryConfirmLabel": "“{name}” verwijderen? De afspraken gaan naar {target}.",
+      "removeAccountLabel": "Koppeling verwijderen",
       "emptyLabel": "Je hebt nog geen agenda gekoppeld.",
       "addHeading": "ICS-link toevoegen",
       "nameLabel": "Naam",
       "urlLabel": "ICS-link",
-      "addLabel": "Toevoegen",
+      "addLabel": "Agenda koppelen",
       "addingLabel": "Controleren...",
       "loadingLabel": "Laden...",
       "privacyNotice": "Iedereen met deze link kan je agenda lezen. Atlas bewaart de link versleuteld en laat hem nooit meer zien.",
@@ -1101,7 +1118,6 @@
         "ok": "Bijgewerkt {time}",
         "failed": "Mislukt"
       },
-      "deleteLabel": "{name} verwijderen",
       "deleteConfirmLabel": "“{name}” en de geïmporteerde afspraken verwijderen? De agenda zelf blijft staan.",
       "deleteConfirmButtonLabel": "Ja, verwijderen",
       "deletingLabel": "Verwijderen...",
@@ -1115,6 +1131,8 @@
         "unreadable": "Deze link geeft geen leesbare agenda terug.",
         "empty": "Deze agenda bevat geen afspraken. Controleer of je de juiste link hebt.",
         "limit": "Je kunt maximaal 10 agenda's koppelen.",
+        "category-limit": "Je kunt maximaal 20 categorieën hebben.",
+        "read-only": "Deze agenda kan niet worden gewijzigd of verwijderd.",
         "generic": "Er ging iets mis. Probeer het opnieuw."
       },
       "syncErrors": {
@@ -1132,6 +1150,19 @@
         "drop": "Er verdween meer dan de helft van de afspraken, dus er is niets verwijderd.",
         "no_secret": "De link kon niet worden gelezen.",
         "apply_failed": "De afspraken konden niet worden opgeslagen."
+      }
+    },
+    "colorSwatches": {
+      "colors": {
+        "red": "Rood",
+        "orange": "Oranje",
+        "amber": "Geel",
+        "green": "Groen",
+        "teal": "Mint",
+        "blue": "Blauw",
+        "violet": "Paars",
+        "pink": "Roze",
+        "stone": "Grijs"
       }
     },
     "planDrawer": {
@@ -1202,6 +1233,7 @@
     }
   },
   "agenda": {
+    "defaultCalendarName": "Persoonlijk",
     "errors": {
       "invalid-input": "Controleer de ingevoerde gegevens.",
       "unauthenticated": "Log opnieuw in om door te gaan.",
