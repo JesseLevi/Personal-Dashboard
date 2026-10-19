@@ -6,8 +6,10 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { Checkbox } from "@/components/atoms/Checkbox";
 import { InputField } from "@/components/atoms/InputField";
+import { ColorDot } from "@/components/molecules/ColorSwatches";
 import { SidePanel } from "@/components/organisms/SidePanel";
 import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
+import type { CalendarCategoryView } from "@/lib/agenda/calendars";
 import type { AgendaLink, AgendaLinkCandidate } from "@/lib/agenda/links";
 import { REPEAT_CHOICES, choiceToRule, ruleChanged, ruleToChoice, type RepeatChoice } from "@/lib/agenda/repeat";
 import type { AgendaActionResult, AgendaErrorCode, SeriesScope } from "@/lib/agenda/schemas";
@@ -25,6 +27,8 @@ export interface AgendaEventPanelProps {
   open: boolean;
   onClose: () => void;
   target: AgendaPanelTarget;
+  /** The user's own calendars (ADR-0040) for the Categorie field; the default one is first. Without them the field is absent. */
+  categories?: CalendarCategoryView[];
   onLoadEvent: (input: unknown) => Promise<AgendaActionResult<AgendaEventDetail>>;
   onCreateEvent: (input: unknown) => Promise<AgendaActionResult<{ id: string }>>;
   onUpdateEvent: (input: unknown) => Promise<AgendaActionResult>;
@@ -47,6 +51,8 @@ interface FormValues {
   end: string;
   location: string;
   description: string;
+  /** The category: id of the event's calendar. */
+  calendarId: string;
   repeat: RepeatChoice;
   /** "Eindigt": false = never, true = on `until`. */
   endsOn: boolean;
@@ -59,12 +65,13 @@ const DEFAULT_START_TIME = "09:00";
 const DEFAULT_END_TIME = "10:00";
 
 // Inputs hold wall-clock text: `YYYY-MM-DDTHH:mm` (timed) or `YYYY-MM-DD` (all day, last day inclusive).
-function initialValues(target: AgendaPanelTarget): FormValues {
+function initialValues(target: AgendaPanelTarget, categories: CalendarCategoryView[]): FormValues {
   const span = target.mode === "create" ? target.span : target.item;
   const base = {
     title: target.mode === "edit" ? target.item.title : "",
     location: "",
     description: "",
+    calendarId: target.mode === "edit" ? target.item.calendarId : (categories.find((c) => c.isDefault)?.id ?? ""),
     repeat: "none" as RepeatChoice,
     endsOn: false,
     until: "",
@@ -100,6 +107,7 @@ export function AgendaEventPanel({
   open,
   onClose,
   target,
+  categories = [],
   onLoadEvent,
   onCreateEvent,
   onUpdateEvent,
@@ -114,8 +122,9 @@ export function AgendaEventPanel({
   const t = useTranslations("components.agendaPanel");
   const tSidePanel = useTranslations("components.sidePanel");
   const tErrors = useTranslations("agenda.errors");
+  const tAgenda = useTranslations("agenda");
 
-  const [values, setValues] = useState(() => initialValues(target));
+  const [values, setValues] = useState(() => initialValues(target, categories));
   const [detailLoaded, setDetailLoaded] = useState(target.mode === "create");
   const [calendarName, setCalendarName] = useState<string | null>(null);
   const [links, setLinks] = useState<AgendaLink[] | null>(null);
@@ -144,7 +153,7 @@ export function AgendaEventPanel({
     setPrevOpen(open);
     setPrevTargetKey(targetKey);
     if (shouldReset) {
-      setValues(initialValues(target));
+      setValues(initialValues(target, categories));
       setDetailLoaded(target.mode === "create");
       setCalendarName(null);
       setLinks(null);
@@ -225,6 +234,13 @@ export function AgendaEventPanel({
     setValues((current) => ({ ...current, ...patch }));
   }
 
+  const hasCategories = !readOnly && categories.length > 0;
+  const selectedCategory = categories.find((category) => category.id === values.calendarId);
+  const categoryOptions = categories.map((category) => ({
+    value: category.id,
+    label: category.name ?? tAgenda("defaultCalendarName"),
+  }));
+
   const spanIsValid = values.start !== "" && values.end !== "" && values.end >= values.start;
   const rule = choiceToRule(values.repeat, values.endsOn ? values.until : null, originalRule);
   const untilIsValid = !rule || !values.endsOn || (values.until !== "" && values.until >= values.start.slice(0, 10));
@@ -244,6 +260,8 @@ export function AgendaEventPanel({
         ...spanToUtc(toSpan(values)),
         location: values.location,
         description: values.description,
+        // Without categories (the field is absent) the event keeps its calendar, or goes to the default one.
+        ...(hasCategories && values.calendarId ? { calendarId: values.calendarId } : {}),
       };
       // "Alleen deze" leaves the rule alone, so it is not sent.
       const repeat = rule && scope !== "this" ? { repeat: rule } : {};
@@ -385,6 +403,23 @@ export function AgendaEventPanel({
           disabled={readOnly}
           required
         />
+        {hasCategories && (
+          <InputField
+            label={t("fields.categoryLabel")}
+            id="agenda-event-category"
+            leading={
+              selectedCategory ? (
+                <span className="flex size-6 shrink-0 items-center justify-center">
+                  <ColorDot color={selectedCategory.color} />
+                </span>
+              ) : undefined
+            }
+            options={categoryOptions}
+            trailingIcon="ChevronDown"
+            value={values.calendarId}
+            onChange={(event) => update({ calendarId: event.target.value })}
+          />
+        )}
         <div className="flex items-center gap-inline-sm">
           <Checkbox
             id="agenda-event-all-day"
@@ -464,14 +499,6 @@ export function AgendaEventPanel({
           onChange={(event) => update({ description: event.target.value })}
           placeholder={detailLoaded ? undefined : t("loadingLabel")}
           disabled={readOnly || !detailLoaded}
-        />
-        <InputField
-          label={t("fields.calendarLabel")}
-          id="agenda-event-calendar"
-          leadingIcon="Calendar"
-          value={t("defaultCalendarName")}
-          readOnly
-          disabled
         />
         {eventId && onLoadLinks && (
           <AgendaEventLinks

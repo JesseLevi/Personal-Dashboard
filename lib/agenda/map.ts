@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SOURCE_COLORS } from "@/lib/agenda/colors";
+import { FALLBACK_EVENT_COLOR, type AgendaColor } from "@/lib/agenda/colors";
 import type { AgendaItem } from "@/lib/agenda/types";
 
 // Pure half of lib/agenda: row validation and mapping to the AgendaItem union.
@@ -92,7 +92,10 @@ function mealDay(row: AgendaRow, timeZone: string) {
   return { start: localDate(startsAt, row.all_day ? "UTC" : timeZone), end: null, allDay: true };
 }
 
-export function mapAgendaRow(row: AgendaRow, timeZone: string): AgendaItem {
+/** Palette key per calendar id (`calendars.color`): an event takes its calendar's colour (ADR-0040). */
+export type CalendarColors = ReadonlyMap<string, AgendaColor>;
+
+export function mapAgendaRow(row: AgendaRow, timeZone: string, colors: CalendarColors = new Map()): AgendaItem {
   const base = { id: row.id, title: row.title, linkCount: row.link_count };
 
   // A day-bound item, or one that borrows its event's time (attached meal).
@@ -110,13 +113,14 @@ export function mapAgendaRow(row: AgendaRow, timeZone: string): AgendaItem {
   switch (row.kind) {
     case "event": {
       const source = requireValue(row.source, "source");
+      const calendarId = requireValue(row.calendar_id, "calendar_id");
       return {
         ...base,
         ...timeOf(),
         kind: "event",
         source,
-        calendarId: requireValue(row.calendar_id, "calendar_id"),
-        color: SOURCE_COLORS[source],
+        calendarId,
+        color: colors.get(calendarId) ?? FALLBACK_EVENT_COLOR,
         missingSince: row.missing_since,
         ...(row.series_id ? { recurring: true } : {}),
       };
@@ -168,10 +172,10 @@ export function compareAgendaItems(a: AgendaItem, b: AgendaItem): number {
   );
 }
 
-export function mapAgendaRows(rows: unknown, timeZone: string): AgendaItem[] {
+export function mapAgendaRows(rows: unknown, timeZone: string, colors?: CalendarColors): AgendaItem[] {
   return agendaRowSchema
     .array()
     .parse(rows)
-    .map((row) => mapAgendaRow(row, timeZone))
+    .map((row) => mapAgendaRow(row, timeZone, colors))
     .sort(compareAgendaItems);
 }

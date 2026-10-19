@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
+import { isAgendaColor, type AgendaColor } from "@/lib/agenda/colors";
 import { mapAgendaRows } from "@/lib/agenda/map";
 import { groupOpenCards, type PlanBoardInput, type PlanCardGroup } from "@/lib/agenda/plan-cards";
 import type { AgendaItem } from "@/lib/agenda/types";
@@ -38,20 +39,34 @@ export async function getAgendaItems(input: {
   const userId = await getAuthenticatedUserId();
   if (!userId) return [];
 
-  const { data, error } = await supabase.rpc("agenda_items", {
-    p_from: from.toISOString(),
-    p_to: to.toISOString(),
-    p_time_zone: timeZone,
-  });
+  const [{ data, error }, colors] = await Promise.all([
+    supabase.rpc("agenda_items", {
+      p_from: from.toISOString(),
+      p_to: to.toISOString(),
+      p_time_zone: timeZone,
+    }),
+    getCalendarColors(supabase),
+  ]);
 
   if (error) {
     console.error("[agenda] getAgendaItems failed:", error.code, error.message);
     throw new Error("Failed to load agenda");
   }
-  return withMealPositions(supabase, mapAgendaRows(data, timeZone));
+  return withMealPositions(supabase, mapAgendaRows(data, timeZone, colors));
 }
 
 type Supabase = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
+// `agenda_items()` carries the calendar id only; the colour is mapped on here (ADR-0040).
+// A failed read leaves the map empty, so events show in the fallback colour instead of the page failing.
+async function getCalendarColors(supabase: Supabase): Promise<Map<string, AgendaColor>> {
+  const { data, error } = await supabase.from("calendars").select("id, color");
+  if (error) {
+    console.error("[agenda] calendar colours failed:", error.code, error.message);
+    return new Map();
+  }
+  return new Map(data.flatMap((row) => (isAgendaColor(row.color) ? [[row.id, row.color] as const] : [])));
+}
 
 // The timeline function carries no `position`, so meals get it in one extra read.
 async function withMealPositions(supabase: Supabase, items: AgendaItem[]): Promise<AgendaItem[]> {

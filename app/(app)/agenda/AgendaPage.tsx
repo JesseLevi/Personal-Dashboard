@@ -1,7 +1,7 @@
 // design: Claude-designed (#486)
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import {
@@ -11,7 +11,8 @@ import {
   type AgendaChange,
   type AgendaExternalDrop,
 } from "@/components/organisms/AgendaCalendar";
-import type { SyncNoticeView } from "@/lib/agenda/calendars";
+import type { CalendarOverview, SyncNoticeView } from "@/lib/agenda/calendars";
+import { isItemHidden, persistHidden, type AgendaHidden } from "@/lib/agenda/hidden";
 import { PlanDrawer } from "@/components/organisms/PlanDrawer";
 import { Toast } from "@/components/organisms/Toast";
 import { weekRange } from "@/lib/agenda/meals";
@@ -35,7 +36,15 @@ import { AgendaEventPanel, type AgendaPanelTarget } from "./AgendaEventPanel";
 import { getAgendaEventLinks, linkToEvent, searchAgendaLinkTargets, unlinkFromEvent } from "./link-actions";
 import { AgendaHeader, toToggleView, type AgendaToggleView } from "./AgendaHeader";
 import { AgendaSyncNotices } from "./AgendaSyncNotices";
-import { addIcsCalendar, listCalendarAccounts, removeCalendarAccount, resolveSyncNotice } from "./calendars-actions";
+import {
+  addIcsCalendar,
+  createCalendar,
+  deleteCalendar,
+  listCalendars,
+  removeCalendarAccount,
+  resolveSyncNotice,
+  updateCalendar,
+} from "./calendars-actions";
 import { AgendaMealPanel } from "./AgendaMealPanel";
 import { createMealPlan, deleteMealPlan, getMealPlan, sendMealToBasket, sendWeekToBasket, updateMealPlan } from "./meal-actions";
 import { PlanCardList } from "./PlanCardList";
@@ -59,6 +68,10 @@ export interface AgendaPageProps {
   cardGroups: PlanCardGroup[];
   /** Baskets "Naar mand" can target. */
   baskets: BasketOption[];
+  /** Calendars and kinds this device hides (cookie `agenda-hidden`). */
+  initialHidden: AgendaHidden;
+  /** Own categories and imported calendars; null when the read failed. */
+  initialCalendars: CalendarOverview | null;
 }
 
 const utc = (date: string) => new Date(`${date}T00:00:00Z`);
@@ -84,6 +97,8 @@ export function AgendaPage({
   recipeCategories,
   cardGroups,
   baskets,
+  initialHidden,
+  initialCalendars,
 }: AgendaPageProps) {
   const tErrors = useTranslations("agenda.errors");
   const tPlan = useTranslations("agenda.plan");
@@ -101,6 +116,8 @@ export function AgendaPage({
     target: { mode: "create", span: { start: `${today}T09:00:00`, end: null, allDay: false } },
   });
   const [calendarsOpen, setCalendarsOpen] = useState(false);
+  const [calendars, setCalendars] = useState(initialCalendars);
+  const [hidden, setHidden] = useState(initialHidden);
   const [trayOpen, setTrayOpen] = useState(initialTrayOpen);
   const [mealPanel, setMealPanel] = useState<{ open: boolean; item: AgendaMealItem | null }>({ open: false, item: null });
   const [groups, setGroups] = useState(cardGroups);
@@ -110,6 +127,12 @@ export function AgendaPage({
   const latestRequest = useRef(0);
 
   const effectiveView = effectiveAgendaView(view, narrow);
+  const visibleItems = useMemo(() => items.filter((item) => !isItemHidden(item, hidden)), [items, hidden]);
+
+  function handleHiddenChange(next: AgendaHidden) {
+    setHidden(next);
+    persistHidden(next);
+  }
 
   // Keeps the current items on screen until the new window arrives: no empty flash.
   const loadAround = useCallback(
@@ -411,7 +434,7 @@ export function AgendaPage({
         }
       >
         <AgendaCalendar
-          items={items}
+          items={visibleItems}
           view={view}
           date={date}
           scrollNowKey={scrollNowKey}
@@ -442,6 +465,7 @@ export function AgendaPage({
         open={panel.open}
         onClose={() => setPanel((current) => ({ ...current, open: false }))}
         target={panel.target}
+        categories={calendars?.categories}
         onLoadEvent={getAgendaEvent}
         onCreateEvent={createEvent}
         onUpdateEvent={updateEvent}
@@ -456,9 +480,16 @@ export function AgendaPage({
       <AgendaCalendarsPanel
         open={calendarsOpen}
         onClose={() => setCalendarsOpen(false)}
-        onList={listCalendarAccounts}
+        initialOverview={calendars ?? undefined}
+        hidden={hidden}
+        onHiddenChange={handleHiddenChange}
+        onList={listCalendars}
         onAdd={addIcsCalendar}
         onRemove={removeCalendarAccount}
+        onCreate={createCalendar}
+        onUpdate={updateCalendar}
+        onDelete={deleteCalendar}
+        onOverviewChange={setCalendars}
         onMutated={() => void loadAround(date)}
       />
     </>
