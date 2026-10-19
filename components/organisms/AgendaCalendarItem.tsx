@@ -48,7 +48,7 @@ function metaLine(item: AgendaItem, timeText: string, labels: AgendaItemLabels):
 export function AgendaItemContent({ info, labels }: { info: EventDisplayInfo; labels: AgendaItemLabels }) {
   const item = info.event.extendedProps.item as AgendaItem | undefined;
   if (!item) {
-    return <span className="truncate px-component-xs text-sm font-semibold">{info.event.title}</span>;
+    return <span className="truncate px-component-xs text-xs font-semibold">{info.event.title}</span>;
   }
 
   const view = info.view.type;
@@ -57,7 +57,7 @@ export function AgendaItemContent({ info, labels }: { info: EventDisplayInfo; la
   const isColumn = isGrid && !info.event.allDay;
   const oneLine = isColumn && isShortSpan(info.event.start, info.event.end);
   const stacked = isColumn && !oneLine;
-  // Under one slot the block is too low for a text-sm line.
+  // Under one slot the block is too low for a full text-xs line height.
   const tiny = oneLine && isShortSpan(info.event.start, info.event.end, AGENDA_SLOT_MINUTES);
   const icon = leadingIcon(item);
   const timeText = item.allDay ? "" : info.timeText;
@@ -68,7 +68,7 @@ export function AgendaItemContent({ info, labels }: { info: EventDisplayInfo; la
   const moment = item.kind === "meal" ? labels.slots[item.slot] : null;
 
   const title = (
-    <span className={cn("text-sm font-semibold", isGrid && !oneLine ? "line-clamp-2 leading-tight wrap-anywhere" : "truncate", tiny && "text-xs leading-none")}>
+    <span className={cn("text-xs font-semibold", isGrid && !oneLine ? "line-clamp-2 leading-tight wrap-anywhere" : "truncate", tiny && "leading-none")}>
       <span className="sr-only">{labels.kinds[itemKey(item)]}: </span>
       {item.title}
       {moment && !isList && <span className="sr-only"> ({moment})</span>}

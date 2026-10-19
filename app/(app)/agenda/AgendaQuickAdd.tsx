@@ -244,18 +244,14 @@ function QuickAddForm({
     <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1 flex-col gap-stack-md overflow-y-auto px-component-lg pb-component-lg">
         <ButtonToggle aria-label={t("kindLabel")} items={items} defaultValue={kind} value={kind} size="small" onValueChange={(value) => setPickedKind(value as QuickAddKind)} />
-        <p className="-mt-stack-sm text-sm font-semibold text-text-secondary">
-          {pickedKind !== null && pickedKind !== parsed.autoKind ? (
-            <>
-              {t("kindPicked")} ·{" "}
-              <button type="button" className="underline" onClick={() => setPickedKind(null)}>
-                {t("kindBackToAuto")}
-              </button>
-            </>
-          ) : (
-            t("kindAuto")
-          )}
-        </p>
+        {pickedKind !== null && pickedKind !== parsed.autoKind && (
+          <p className="-mt-stack-sm text-sm font-semibold text-text-secondary">
+            {t("kindPicked")} ·{" "}
+            <button type="button" className="underline" onClick={() => setPickedKind(null)}>
+              {t("kindBackToAuto")}
+            </button>
+          </p>
+        )}
         <InputField
           label={t("textLabel")}
           id={TEXT_ID}
@@ -366,7 +362,7 @@ function PopoverShell({
       role="dialog"
       aria-label={t("dialogLabel")}
       onKeyDown={onKeyDown}
-      className="z-[999] flex max-h-[calc(100dvh-10rem)] w-104 flex-col rounded-control-outer border border-stroke-primary bg-surface-highlight-white pt-component-lg shadow-sm"
+      className="z-[999] flex max-h-[calc(100dvh-10rem)] w-104 flex-col rounded-control-outer border border-stroke-primary bg-surface-primary pt-component-lg shadow-sm"
       style={style}
     >
       {children}

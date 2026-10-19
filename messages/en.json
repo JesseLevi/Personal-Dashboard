@@ -1069,7 +1069,6 @@
         "meal": "Meal",
         "todo": "To do"
       },
-      "kindAuto": "Kind recognised automatically",
       "kindPicked": "Kind chosen by you",
       "kindBackToAuto": "back to automatic",
       "textLabel": "What do you want to plan?",
