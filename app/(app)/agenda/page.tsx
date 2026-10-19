@@ -51,7 +51,8 @@ async function AgendaPageBody() {
     getAuthenticatedUserId(),
     getPlannableCards(),
     getCalendarOverview(supabase),
-    getQuickAddBoard(),
+    // A failed read only hides the "new card" target; the rest of the page still works.
+    getQuickAddBoard().catch(() => null),
   ]);
 
   // Imports still running or failed cannot be planned.
