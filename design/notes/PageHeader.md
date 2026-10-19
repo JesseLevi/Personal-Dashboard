@@ -14,6 +14,9 @@ Figma: "Header" frame (plain `FRAME`, not a Component/ComponentSet; duplicated p
 - `chrome-touch` class: header chrome is not reading content, so on coarse pointers it gets no text selection or callout (see `app/globals.css`) (#172).
 - Radius/spacing tokens: `gap-inline-lg` read via `boundVariables` on `3878:7959` ("Onderwerp" child `itemSpacing` = `spacing/inline/gap-lg`). Right padding uses the page-padding token `pr-page-right-equal` (16 mobile / 128 desktop) per the ticket's page-padding rule (#205).
 
+## Title as a button
+`titleTrigger` (`PageHeaderTitleTrigger`: `onClick`, `expanded`, `buttonRef`) wraps the title text in a `<button>` inside the `<h1>` (`aria-haspopup="dialog"`, `aria-expanded`, underline on hover) and adds a `ChevronDown` after the text. The chevron sits inside the morphing text span, so it is part of the measured width and fades with the title instead of being clipped by the h1's `overflow-hidden`. Only Agenda uses it (date picker). The visible text is the accessible name.
+
 ## Title motion
 - `PageHeaderTitle` morphs the title whenever `title` changes on a mounted header (rename) and when a header mounts right after a board switch. The old name (absolute, `animate-blur-out`) and the new name (`animate-blur-in`) overlap while the h1's width goes from the old to the new text width, so the adornments glide. The width is measured (`getBoundingClientRect`), not `interpolate-size`, so Safari and iOS work. The value reaches the h1 as the `--title-w` custom property set via ref and read by `w-[var(--title-w)]`; the property and the width classes are removed when the transition ends, so the h1 returns to its natural width. Duration and easing are the `--blur-fade-in-duration` / `--blur-fade-ease` variables.
 - First paint, reloads and static titles (Recepten) never animate: a first render with nothing armed has no "previous" title.

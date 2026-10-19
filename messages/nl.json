@@ -413,7 +413,21 @@
         "backLabel": "Terug",
         "trayShowLabel": "Planlade tonen",
         "trayHideLabel": "Planlade verbergen",
-        "weekToBasketToast": "De maaltijden van deze week staan in je mand"
+        "weekToBasketToast": "De maaltijden van deze week staan in je mand",
+        "weekNumber": "Week {number}",
+        "goToDateLabel": "Naar datum",
+        "goToDateConfirm": "Ga naar datum",
+        "shortcutsLabel": "Sneltoetsen",
+        "shortcuts": {
+          "today": "Vandaag",
+          "day": "Dagweergave",
+          "week": "Weekweergave",
+          "month": "Maandweergave",
+          "list": "Lijstweergave",
+          "previous": "Vorige periode",
+          "next": "Volgende periode",
+          "tray": "Planlade tonen of verbergen"
+        }
       }
     },
     "sidePanel": {
