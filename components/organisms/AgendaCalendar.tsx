@@ -198,9 +198,9 @@ function useMinute(): number {
   return minute;
 }
 
-/** A week does not fit a phone: it becomes three days. */
+/** Below `lg` the agenda shows one day; the day strip in the header picks it. */
 export function effectiveAgendaView(view: AgendaView, narrow: boolean): AgendaView {
-  return narrow && view === "week" ? "threeDay" : view;
+  return narrow ? "day" : view;
 }
 
 function itemOf(event: { extendedProps: Record<string, unknown> }): AgendaItem {
@@ -304,6 +304,8 @@ export function AgendaCalendar({
     initialView: viewName,
     initialDate: date,
     headerToolbar: false,
+    // Below `lg` the header's day strip already names the day.
+    dayHeaders: !(narrow && effectiveView === "day"),
     height: "100%",
     expandRows: true,
     locale: locale === "nl" ? nlLocale : "en",

@@ -397,6 +397,7 @@
         "todayLabel": "Vandaag",
         "previousLabel": "Vorige",
         "nextLabel": "Volgende",
+        "dayStripLabel": "Dagen van de week",
         "viewLabel": "Weergave",
         "views": {
           "day": "Dag",

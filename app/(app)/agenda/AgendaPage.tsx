@@ -3,7 +3,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useFormatter, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import {
   AgendaCalendar,
   effectiveAgendaView,
@@ -77,6 +77,11 @@ export interface AgendaPageProps {
   initialCalendars: CalendarOverview | null;
 }
 
+// Day and month names in the title start with a capital: "Ma 20 Okt".
+function capitalizeWords(text: string, locale: string): string {
+  return text.replace(/\p{L}+/gu, (word) => word.charAt(0).toLocaleUpperCase(locale) + word.slice(1));
+}
+
 const utc = (date: string) => new Date(`${date}T00:00:00Z`);
 
 // Item times are wall-clock strings: a timed one without offset, an all-day one a date.
@@ -107,6 +112,7 @@ export function AgendaPage({
   const tErrors = useTranslations("agenda.errors");
   const tPlan = useTranslations("agenda.plan");
   const format = useFormatter();
+  const locale = useLocale();
   const router = useRouter();
   const narrow = useIsNarrow();
 
@@ -411,10 +417,11 @@ export function AgendaPage({
   return (
     <>
       <AgendaHeader
-        title={title}
+        title={capitalizeWords(title, locale)}
         view={toToggleView(view)}
         weekNumber={effectiveView === "week" || effectiveView === "threeDay" || effectiveView === "list" ? isoWeek(range.start) : undefined}
         date={date}
+        today={today}
         onGoToDate={goTo}
         onOverlayChange={setHeaderOverlayOpen}
         onViewChange={handleViewChange}
