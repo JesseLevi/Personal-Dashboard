@@ -254,14 +254,30 @@ describe("token → theme pipeline (ADR-0010)", () => {
       expect(dark).toContain("--color-surface-highlight-red:");
     });
 
-    it("$pendingFigmaValue: #204's batch is fully resolved; #222 later added one permanent, user-accepted deviation (stroke-primary's dark value)", () => {
+    it("$pendingFigmaValue: #204's batch is fully resolved; only user-directed dark deviations remain (#222 stroke-primary, the alert-palette highlights)", () => {
       const stillPending = Object.entries(tokens.semantic.color).filter(
         ([, def]) => (def as { $pendingFigmaValue?: unknown }).$pendingFigmaValue,
       );
-      expect(stillPending.map(([name]) => name)).toEqual(["stroke-primary"]);
-      const [, def] = stillPending[0] as [string, { $pendingFigmaValue?: { dark?: string } }];
-      // Only the dark mode is deviating — light was left untouched by #222.
-      expect(def.$pendingFigmaValue).toEqual({ dark: "#44403B" });
+      expect(stillPending.map(([name]) => name).sort()).toEqual(
+        [
+          "stroke-primary",
+          "text-highlight-red",
+          "surface-highlight-red",
+          "surface-highlight-red-selected",
+          "surface-highlight-red-hover",
+          "surface-highlight-red-active",
+          "text-highlight-blue",
+          "surface-highlight-blue",
+          "text-highlight-green",
+          "surface-highlight-green",
+          "text-highlight-yellow",
+          "surface-highlight-yellow",
+        ].sort(),
+      );
+      // Every deviation is dark-only; light still matches Figma.
+      for (const [, def] of stillPending) {
+        expect(Object.keys((def as { $pendingFigmaValue: object }).$pendingFigmaValue)).toEqual(["dark"]);
+      }
     });
   });
 
@@ -279,16 +295,22 @@ describe("token → theme pipeline (ADR-0010)", () => {
       expect(light).toContain("--color-surface-highlight-red-active: var(--color-red-300);");
     });
 
-    it("Distructive's highlight ramp collapses to red-50 in dark mode (Figma's own dark data, deliberately accepted, not fixed)", () => {
+    it("highlight colours follow the agenda alert palette in dark mode (surface 950, text 200; red ramp steps up)", () => {
       const css = generateTheme(tokens);
       const dark = css.slice(css.indexOf('[data-theme="dark"]'));
-      for (const name of [
-        "surface-highlight-red",
-        "surface-highlight-red-selected",
-        "surface-highlight-red-hover",
-        "surface-highlight-red-active",
+      for (const [name, value] of [
+        ["surface-highlight-red", "red-950"],
+        ["surface-highlight-red-selected", "red-900"],
+        ["surface-highlight-red-hover", "red-800"],
+        ["text-highlight-red", "red-200"],
+        ["surface-highlight-blue", "blue-950"],
+        ["text-highlight-blue", "blue-200"],
+        ["surface-highlight-green", "green-950"],
+        ["text-highlight-green", "green-200"],
+        ["surface-highlight-yellow", "orange-950"],
+        ["text-highlight-yellow", "orange-200"],
       ]) {
-        expect(dark).toContain(`--color-${name}: var(--color-red-50);`);
+        expect(dark).toContain(`--color-${name}: var(--color-${value});`);
       }
     });
 

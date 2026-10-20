@@ -29,7 +29,7 @@ Root: `chrome-touch inline-flex shrink-0 items-center gap-1 rounded-control text
 ## Token gaps and flags
 - Root `gap-1` stays raw, marked `spacing-flag:` in the code. Figma is internally inconsistent: every `Alignment=Left` root binds `itemSpacing` to `spacing/component/padding-xs`, every `Alignment=Center` root leaves a literal 4. Both render 4 px, so the value is correct either way; a design-side decision (bind all eight or unbind all eight). (#205, #218)
 - Figma's Filled / Selected instance has uniform 8 px padding versus 4 / 8 elsewhere: treated as auto-layout drift, not modelled.
-- Dark-mode Figma facts, accepted and not fixed: all four Destructive states resolve to the same `red-50` (no hover / press / selected feedback in dark); `surface-highlight-white-active` dark (stone-400) is lighter than `-hover` (stone-500), backwards from light. (#204)
+- Dark mode: Destructive overrides Figma's placeholder `red-50` with the agenda alert palette: fill `red-950`, hover `red-900`, press `red-800`, text `red-200` (user call, 2026-10-20; tokens carry `$pendingFigmaValue.dark`). Still a Figma fact, accepted: `surface-highlight-white-active` dark (stone-400) is lighter than `-hover` (stone-500), backwards from light. (#204)
 - No disabled look or token exists; callers fake it (see Open).
 
 ## Gotchas
