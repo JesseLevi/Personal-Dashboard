@@ -57,12 +57,14 @@ async function AgendaPageBody() {
 
   // Imports still running or failed cannot be planned.
   const ready = categories.flatMap((category) => category.recipes.filter((recipe) => recipe.import_status === "done"));
+  const categoryNames = new Map(categories.map((category) => [category.id, category.name]));
   const thumbnails = await presignRecipeThumbnails(userId, ready, "card");
   const recipes: PlanRecipe[] = ready.map((recipe) => ({
     id: recipe.id,
     title: recipe.title,
     servings: recipe.servings,
     categoryId: recipe.category_id,
+    categoryName: categoryNames.get(recipe.category_id) ?? "",
     timeMinutes: recipe.time_minutes,
     thumbnailUrl: thumbnails[recipe.id] ?? null,
     thumbnailPath: recipe.thumbnail_path,

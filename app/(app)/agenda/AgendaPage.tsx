@@ -15,7 +15,7 @@ import type { CalendarOverview, SyncNoticeView } from "@/lib/agenda/calendars";
 import { isItemHidden, persistHidden, type AgendaHidden } from "@/lib/agenda/hidden";
 import { PlanDrawer } from "@/components/organisms/PlanDrawer";
 import { Toast } from "@/components/organisms/Toast";
-import { weekRange } from "@/lib/agenda/meals";
+import { defaultSlotForCategory, weekRange } from "@/lib/agenda/meals";
 import { toAgendaResult, withPlannedFor, type PlanCardGroup, type QuickAddBoard } from "@/lib/agenda/plan-cards";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
@@ -341,9 +341,13 @@ export function AgendaPage({
       return;
     }
     if (drop.payload.type !== "recipe") return;
+    const recipeId = drop.payload.id;
+    const categoryName = recipes.find((recipe) => recipe.id === recipeId)?.categoryName ?? null;
     void planRecipe(
-      drop.payload.id,
-      drop.eventId ? { calendarEventId: drop.eventId } : { plannedOn: drop.start.slice(0, 10) },
+      recipeId,
+      drop.eventId
+        ? { calendarEventId: drop.eventId }
+        : { plannedOn: drop.start.slice(0, 10), slot: defaultSlotForCategory(categoryName) },
     );
   }
 

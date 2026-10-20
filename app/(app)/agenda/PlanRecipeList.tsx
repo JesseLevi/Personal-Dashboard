@@ -10,6 +10,7 @@ import { CardContentRecipe } from "@/components/molecules/CardContentRecipe";
 import { AnimatedAddToBasketButton } from "@/components/molecules/AnimatedAddToBasketButton";
 import { PlanChoices } from "@/components/molecules/PlanChoices";
 import { useAgendaDraggable } from "@/components/organisms/useAgendaDraggable";
+import { defaultSlotForCategory } from "@/lib/agenda/meals";
 import { filterPlanRecipes, type PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { MealSlot } from "@/lib/agenda/types";
@@ -126,6 +127,7 @@ function PlanRecipeRow({
             <Dropdown className="shadow-sm">
               <PlanChoices
                 today={today}
+                defaultSlot={defaultSlotForCategory(recipe.categoryName)}
                 onPlan={(plannedOn, slot) => onPlan(recipe.id, plannedOn, slot)}
                 onPlanned={(plannedOn, slot) => {
                   close(false);

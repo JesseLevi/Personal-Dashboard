@@ -46,6 +46,7 @@ const recipe = (id: string, title: string, timeMinutes: number | null): PlanReci
   title,
   servings: 4,
   categoryId: "main",
+  categoryName: "Hoofdgerecht",
   timeMinutes,
   thumbnailUrl: null,
   thumbnailPath: null,

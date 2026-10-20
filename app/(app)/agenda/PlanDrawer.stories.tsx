@@ -6,11 +6,19 @@ import type { PlanCardGroup } from "@/lib/agenda/plan-cards";
 import { PlanCardList } from "./PlanCardList";
 import { PlanRecipeList } from "./PlanRecipeList";
 
+const categories = [
+  { id: "breakfast", name: "Ontbijt" },
+  { id: "lunch", name: "Lunch" },
+  { id: "main", name: "Hoofdgerecht" },
+  { id: "dessert", name: "Toetje" },
+];
+
 const recipe = (id: string, title: string, categoryId: string, timeMinutes: number | null): PlanRecipe => ({
   id,
   title,
   servings: 4,
   categoryId,
+  categoryName: categories.find((category) => category.id === categoryId)?.name ?? "",
   timeMinutes,
   thumbnailUrl: null,
   thumbnailPath: null,
@@ -23,13 +31,6 @@ const recipes = [
   recipe("r4", "Risotto met paddenstoelen", "main", 45),
   recipe("r5", "Appeltaart", "dessert", 90),
   recipe("r6", "Pasta pesto", "main", 20),
-];
-
-const categories = [
-  { id: "breakfast", name: "Ontbijt" },
-  { id: "lunch", name: "Lunch" },
-  { id: "main", name: "Hoofdgerecht" },
-  { id: "dessert", name: "Toetje" },
 ];
 
 const noPlan = async () => ({ success: true as const, data: undefined });
