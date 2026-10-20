@@ -3,6 +3,7 @@
 
 import {
   Fragment,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -81,6 +82,9 @@ const KIND_ITEMS: ReadonlyArray<{ value: QuickAddKind; icon: IconName }> = [
 ];
 const DEFAULT_START = "09:00";
 const TEXT_ID = "agenda-quick-add-text";
+const SHEET_ID = "agenda-quick-add-sheet";
+// Safety net if `animationend` never fires (hidden tab, animations switched off): the sheet unmounts anyway.
+const EXIT_FALLBACK_MS = 600;
 const FOCUSABLE = 'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled])';
 
 // A field the user edited keeps its value until the text yields something else for it.
@@ -267,8 +271,8 @@ function QuickAddForm({
         {noDay && (
           <p className="text-sm font-semibold text-text-secondary">{t(slotValue ? "noDaySlot" : "noDayToday")}</p>
         )}
-        {kind === "event" && <EventRows values={values} set={set} disabled={isPending} categories={categories} />}
-        {kind === "meal" && <MealRows values={values} set={set} disabled={isPending} recipes={recipes} />}
+        {kind === "event" && <EventRows stacked={sheet} values={values} set={set} disabled={isPending} categories={categories} />}
+        {kind === "meal" && <MealRows stacked={sheet} values={values} set={set} disabled={isPending} recipes={recipes} />}
         {kind === "todo" && <TodoRows values={values} set={set} disabled={isPending} groups={cardGroups} board={todoBoard} />}
         {error && <p className="text-base font-semibold text-priority-urgent">{error}</p>}
       </div>
@@ -299,9 +303,16 @@ function QuickAddForm({
   );
 }
 
-function Sheet({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+function Sheet({ onClose, leaving, onLeft, children }: { onClose: () => void; leaving: boolean; onLeft: () => void; children: ReactNode }) {
   const t = useTranslations("components.agendaQuickAdd");
   const sheetRef = useRef<HTMLDivElement>(null);
+
+  // Unmount once the exit animation is over (or the fallback fires).
+  useEffect(() => {
+    if (!leaving) return;
+    const timer = window.setTimeout(onLeft, EXIT_FALLBACK_MS);
+    return () => window.clearTimeout(timer);
+  }, [leaving, onLeft]);
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === "Escape") {
@@ -313,10 +324,12 @@ function Sheet({ onClose, children }: { onClose: () => void; children: ReactNode
     const focusable = Array.from(sheetRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? []);
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
+    const active = document.activeElement;
+    // The sheet itself holds focus on open (no keyboard): Shift+Tab must wrap, Tab walks into the first field.
+    if (event.shiftKey && (active === first || active === sheetRef.current)) {
       event.preventDefault();
       last?.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
+    } else if (!event.shiftKey && active === last) {
       event.preventDefault();
       first?.focus();
     }
@@ -324,15 +337,28 @@ function Sheet({ onClose, children }: { onClose: () => void; children: ReactNode
 
   return (
     <>
-      <div aria-hidden="true" onClick={onClose} className="fixed inset-0 z-40 bg-overlay/60" />
+      <div
+        aria-hidden="true"
+        onClick={onClose}
+        className={cn("fixed inset-0 z-40 bg-overlay/60", leaving ? "animate-scrim-out" : "animate-scrim-in")}
+      />
       <div
         ref={sheetRef}
+        id={SHEET_ID}
         role="dialog"
         aria-modal="true"
         aria-label={t("dialogLabel")}
+        tabIndex={-1}
+        inert={leaving}
         onKeyDown={handleKeyDown}
+        onAnimationEnd={(event) => {
+          if (leaving && event.target === event.currentTarget) onLeft();
+        }}
         // layout-size: the sheet never covers the whole screen — design/notes/AgendaPage.md
-        className="fixed inset-x-0 bottom-0 z-50 flex max-h-[90dvh] flex-col rounded-t-container bg-surface-primary"
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-50 flex max-h-[90dvh] flex-col rounded-t-container bg-surface-primary outline-none",
+          leaving ? "animate-sheet-out" : "animate-sheet-in",
+        )}
       >
         <div className="relative flex h-14 shrink-0 items-center justify-end px-component-lg">
           <span aria-hidden="true" className="absolute top-3 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-stroke-primary" />
@@ -389,14 +415,17 @@ export function AgendaQuickAdd({ open, onClose, anchorRef, forceSheet = false, .
     if (open && !narrow) onClose();
   });
 
-  // Focus goes to the text field once the window is placed, and back to where it came from on close.
+  // Focus goes to the text field (popover) or the sheet itself, and back to where it came from on close.
   useEffect(() => {
     if (!open) return;
     returnFocus.current = document.activeElement as HTMLElement | null;
     return () => returnFocus.current?.focus();
   }, [open]);
   useEffect(() => {
-    if (open && (narrow || placed)) document.getElementById(TEXT_ID)?.focus();
+    if (!open) return;
+    // The sheet keeps the keyboard down: focus goes to the dialog, the text field only gets it in the popover.
+    if (narrow) document.getElementById(SHEET_ID)?.focus();
+    else if (placed) document.getElementById(TEXT_ID)?.focus();
   }, [open, narrow, placed]);
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -405,15 +434,23 @@ export function AgendaQuickAdd({ open, onClose, anchorRef, forceSheet = false, .
     onClose();
   }
 
-  if (!open) return null;
-  if (narrow) {
+  // The sheet stays mounted while it slides out; the form keeps its last state meanwhile.
+  const [leaving, setLeaving] = useState(false);
+  const onLeft = useCallback(() => setLeaving(false), []);
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    setLeaving(!open && narrow);
+  }
+  if (narrow && (open || leaving)) {
     return createPortal(
-      <Sheet onClose={onClose}>
+      <Sheet onClose={onClose} leaving={!open} onLeft={onLeft}>
         <QuickAddForm onClose={onClose} sheet {...form} />
       </Sheet>,
       document.body,
     );
   }
+  if (!open) return null;
   return createPortal(
     <PopoverShell popoverRef={popoverRef} style={popover.style} onKeyDown={handleKeyDown}>
       <QuickAddForm onClose={onClose} sheet={false} {...form} />

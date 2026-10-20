@@ -14,6 +14,12 @@ export const Desktop = () => (
   <AgendaHeader title="29 dec – 4 jan" view="week" weekNumber={1} trayOpen={false} weekToBasket={weekToBasket} {...handlers} />
 );
 
+// Titles below `lg` are three days; the longest realistic ones (a month boundary) must keep the title row to one line with the week number.
+export const ThreeDay = () => <AgendaHeader title="20–22 okt" view="week" weekNumber={43} trayOpen={false} {...handlers} />;
+export const ThreeDayAcrossMonths = () => (
+  <AgendaHeader title="30 dec – 1 jan" view="week" weekNumber={53} trayOpen={false} {...handlers} />
+);
+
 export const TrayOpen = () => (
   <AgendaHeader title="29 dec – 4 jan" view="week" weekNumber={1} trayOpen weekToBasket={weekToBasket} {...handlers} />
 );

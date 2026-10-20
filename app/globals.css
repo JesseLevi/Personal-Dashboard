@@ -38,6 +38,10 @@
   --plan-tray-ease: var(--blur-fade-ease);
   --plan-tray-shift: 12px;
   --plan-tray-width: 20rem;
+  /* Quick-add bottom sheet (AgendaQuickAdd): slides up from the bottom edge, closes quicker; scrim fades alongside. */
+  --sheet-open-duration: 320ms;
+  --sheet-close-duration: 220ms;
+  --sheet-ease: var(--blur-fade-ease);
 }
 @keyframes blur-fade-in {
   from {
@@ -94,6 +98,48 @@
     min(calc(var(--fade-index, 0) * var(--blur-fade-step)), var(--blur-fade-max-delay)) both;
   @media (prefers-reduced-motion: reduce) {
     animation: blur-fade-out-reduced var(--blur-fade-reduced-duration) linear 0s both;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes sheet-out {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+/* Bottom sheet and its scrim. Reduced motion: no slide, only a short opacity fade. */
+@utility animate-sheet-in {
+  animation: sheet-in var(--sheet-open-duration) var(--sheet-ease) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: blur-fade-in-reduced var(--blur-fade-reduced-duration) linear both;
+  }
+}
+@utility animate-sheet-out {
+  animation: sheet-out var(--sheet-close-duration) var(--sheet-ease) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation: blur-fade-out-reduced var(--blur-fade-reduced-duration) linear both;
+  }
+}
+@utility animate-scrim-in {
+  animation: blur-fade-in-reduced var(--sheet-open-duration) var(--sheet-ease) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: var(--blur-fade-reduced-duration);
+  }
+}
+@utility animate-scrim-out {
+  animation: blur-fade-out-reduced var(--sheet-close-duration) var(--sheet-ease) both;
+  @media (prefers-reduced-motion: reduce) {
+    animation-duration: var(--blur-fade-reduced-duration);
   }
 }
 
