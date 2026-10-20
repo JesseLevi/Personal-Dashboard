@@ -23,6 +23,7 @@ const recipe = (id: string, title: string): PlanRecipe => ({
   title,
   servings: 4,
   categoryId: "main",
+  categoryName: "Hoofdgerecht",
   timeMinutes: null,
   thumbnailUrl: null,
   thumbnailPath: null,

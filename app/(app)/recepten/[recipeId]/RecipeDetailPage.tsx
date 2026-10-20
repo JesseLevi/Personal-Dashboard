@@ -47,6 +47,7 @@ import { confirmIngredientMatch } from "../import-actions";
 import { SourceLink } from "./SourceLink";
 import { addIngredientToShoppingList, sendRecipeToShoppingList } from "../../winkelmand/actions";
 import { createMealPlan } from "../../agenda/meal-actions";
+import { defaultSlotForCategory } from "@/lib/agenda/meals";
 import { todayInAgendaZone } from "@/lib/agenda/time";
 
 // #127/#160 recipe detail route body — V2 Figma "Recept/Mobile" (3997:14737)
@@ -334,6 +335,7 @@ export function RecipeDetailPage({
                   <Dropdown className="shadow-sm">
                     <PlanChoices
                       today={todayInAgendaZone()}
+                      defaultSlot={defaultSlotForCategory(categories.find((category) => category.id === recipe.category_id)?.name ?? null)}
                       header={
                         <Button variant="white" align="left" icon="ArrowLeft" onClick={() => setOverflowView("menu")}>
                           {t("planLabel")}

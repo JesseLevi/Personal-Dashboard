@@ -14,6 +14,29 @@ import {
 export const MEAL_SLOTS: readonly MealSlot[] = ["breakfast", "lunch", "dinner", "snack"];
 export const DEFAULT_MEAL_SLOT: MealSlot = "dinner";
 
+// Words in a recipe category's name that point at a moment (names are free text, nl and en).
+const CATEGORY_SLOT_WORDS: Record<string, MealSlot> = {
+  ontbijt: "breakfast", breakfast: "breakfast",
+  brunch: "lunch", lunch: "lunch",
+  avond: "dinner", avondeten: "dinner", diner: "dinner", dinner: "dinner", supper: "dinner", hoofdgerecht: "dinner", main: "dinner",
+  snack: "snack", tussendoor: "snack", tussendoortje: "snack",
+};
+
+/** The moment a recipe category's name points at ("Ontbijt", "Avond", ...), or null when it names none; the first matching word wins. */
+export function slotForCategoryName(name: string | null): MealSlot | null {
+  if (!name) return null;
+  const words = name.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase().split(/[^\p{L}\p{N}]+/u);
+  for (const word of words) {
+    if (Object.hasOwn(CATEGORY_SLOT_WORDS, word)) return CATEGORY_SLOT_WORDS[word];
+  }
+  return null;
+}
+
+/** The moment a recipe in the category called `name` starts on: its category's moment, else the default. */
+export function defaultSlotForCategory(name: string | null): MealSlot {
+  return slotForCategoryName(name) ?? DEFAULT_MEAL_SLOT;
+}
+
 /** How many days, today included, the "Plannen" menu lists before "Other date". */
 export const PLAN_DAY_COUNT = 5;
 
