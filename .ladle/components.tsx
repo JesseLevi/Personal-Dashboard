@@ -1,5 +1,4 @@
 import "../app/globals.css";
-import "./story-frame.css";
 import type { GlobalProvider } from "@ladle/react";
 import { NextIntlClientProvider } from "next-intl";
 import nl from "../messages/nl.json";

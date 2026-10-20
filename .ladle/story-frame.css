@@ -1,8 +1,0 @@
-/*
- * Story iframe only. app/globals.css reserves the scrollbar gutter on <html>
- * for the app shell; a story canvas has no navigation to stabilise, and the
- * reserved 15px would shrink every screenshot baseline.
- */
-html {
-  scrollbar-gutter: auto;
-}
