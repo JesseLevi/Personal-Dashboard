@@ -164,14 +164,21 @@ html {
      glitch; in the standalone app there's no chrome to reveal, just a
      dead-end scroll past real content, so it's suppressed everywhere. */
   overscroll-behavior: none;
-  /* Reserve the scrollbar gutter always: a loading skeleton and the page it
-     resolves to rarely share a height, so the scrollbar appeared and vanished
-     on navigation and shifted the whole layout. */
-  scrollbar-gutter: stable;
   /* No grey/blue flash on tap — native apps have no such highlight, and
      every tappable component here already renders its own hover/active
      state, so the browser default is pure noise on top of it. */
   -webkit-tap-highlight-color: transparent;
+}
+
+/* No visible scrollbars anywhere (user request, 2026-10-20): they flashed on
+   every navigation as a skeleton resolved to a page of another height.
+   Wheel, touch and keyboard scrolling are unaffected, and with no scrollbar
+   there is no gutter to reserve, so the layout cannot shift either. */
+* {
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  display: none;
 }
 
 /* No browser focus outline anywhere (user request, 2026-10-07). Components'
