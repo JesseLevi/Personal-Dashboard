@@ -397,6 +397,7 @@
         "todayLabel": "Today",
         "previousLabel": "Previous",
         "nextLabel": "Next",
+        "dayStripLabel": "Days of the week",
         "viewLabel": "View",
         "views": {
           "day": "Day",
