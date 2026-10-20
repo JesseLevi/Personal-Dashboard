@@ -27,10 +27,11 @@ import { persistAgendaView, type AgendaView } from "@/lib/agenda/view";
 import type { BasketOption } from "@/lib/shopping/baskets";
 import type { ActionResult } from "@/lib/shopping/types";
 import { AGENDA_TRAY_ATTRIBUTE, type AgendaSpan } from "@/lib/ui/agenda-calendar";
-import { planCard } from "../te-doen/actions";
+import { planCard, updateCard } from "../te-doen/actions";
 import { createEvent, deleteEvent, getAgendaEvent, loadAgendaRange, moveEvent, updateEvent } from "./actions";
 import { AgendaBody } from "./AgendaBody";
 import { AgendaCalendarsPanel } from "./AgendaCalendarsPanel";
+import { AgendaCardPanel, agendaCardId, type AgendaCardPanelItem } from "./AgendaCardPanel";
 import { AgendaEventPanel, type AgendaEventPrefill, type AgendaPanelTarget } from "./AgendaEventPanel";
 import { AgendaQuickAdd, type QuickAddAdded } from "./AgendaQuickAdd";
 import { getAgendaEventLinks, linkToEvent, searchAgendaLinkTargets, unlinkFromEvent } from "./link-actions";
@@ -131,6 +132,7 @@ export function AgendaPage({
   const [hidden, setHidden] = useState(initialHidden);
   const [trayOpen, setTrayOpen] = useState(initialTrayOpen);
   const [mealPanel, setMealPanel] = useState<{ open: boolean; item: AgendaMealItem | null }>({ open: false, item: null });
+  const [cardPanel, setCardPanel] = useState<{ open: boolean; item: AgendaCardPanelItem | null }>({ open: false, item: null });
   const [groups, setGroups] = useState(cardGroups);
   const [notice, setNotice] = useState<string | null>(null);
   const [headerOverlayOpen, setHeaderOverlayOpen] = useState(false);
@@ -180,7 +182,7 @@ export function AgendaPage({
   }
 
   // Keyboard shortcuts stay quiet while typing, with a modifier, or while a panel or popover is open.
-  const shortcutsBlocked = panel.open || mealPanel.open || calendarsOpen || headerOverlayOpen || quickAdd.open;
+  const shortcutsBlocked = panel.open || mealPanel.open || cardPanel.open || calendarsOpen || headerOverlayOpen || quickAdd.open;
   const runShortcut = (shortcut: AgendaShortcut) => {
     switch (shortcut) {
       case "new":
@@ -234,10 +236,8 @@ export function AgendaPage({
         setPanel({ open: true, target: { mode: "edit", item } });
         break;
       case "deadline":
-        router.push(`/te-doen?card=${item.id.replace(/^deadline:/, "")}`);
-        break;
       case "planned_card":
-        router.push(`/te-doen?card=${item.id}`);
+        setCardPanel({ open: true, item });
         break;
       case "meal":
         setMealPanel({ open: true, item });
@@ -285,6 +285,27 @@ export function AgendaPage({
       setGroups((current) => withPlannedFor(current, cardId, plannedFor));
       void loadAround(date);
     }
+    return result;
+  }
+
+  // The card panel's remove: a planned card loses its day, a deadline is cleared. The card itself stays.
+  async function removeFromAgenda(item: AgendaCardPanelItem): Promise<AgendaActionResult> {
+    if (item.kind === "planned_card") {
+      const result = await savePlannedFor(item.id, null);
+      if (result.success) setNotice(tPlan("cardClearedNotice", { title: item.title }));
+      return result;
+    }
+    const result = toAgendaResult(await updateCard({ cardId: agendaCardId(item), dueAt: null }));
+    if (result.success) {
+      setError(null);
+      void loadAround(date);
+    }
+    return result;
+  }
+
+  async function saveCardDay(cardId: string, day: string): Promise<AgendaActionResult> {
+    const result = await savePlannedFor(cardId, day);
+    if (result.success && cardPanel.item) announceCardPlanned(cardPanel.item.title, day);
     return result;
   }
 
@@ -493,6 +514,16 @@ export function AgendaPage({
           onSendMeal={sendMealToBasket}
           onOpenRecipe={(recipeId) => router.push(`/recepten/${recipeId}`)}
           onMutated={() => void loadAround(date)}
+        />
+      )}
+      {cardPanel.item && (
+        <AgendaCardPanel
+          open={cardPanel.open}
+          onClose={() => setCardPanel((current) => ({ ...current, open: false }))}
+          item={cardPanel.item}
+          onSaveDay={saveCardDay}
+          onRemove={removeFromAgenda}
+          onOpenCard={(cardId) => router.push(`/te-doen?card=${cardId}`)}
         />
       )}
       <AgendaQuickAdd
