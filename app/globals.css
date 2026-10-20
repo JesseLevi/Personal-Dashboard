@@ -39,9 +39,11 @@
   --plan-tray-shift: 12px;
   --plan-tray-width: 20rem;
   /* Quick-add bottom sheet (AgendaQuickAdd): slides up from the bottom edge, closes quicker; scrim fades alongside. */
-  --sheet-open-duration: 320ms;
+  --sheet-open-duration: 420ms;
   --sheet-close-duration: 220ms;
   --sheet-ease: var(--blur-fade-ease);
+  /* Overshoot of a bottom sheet opening, in pixels (not a % of the sheet's height). */
+  --sheet-bounce: 10px;
 }
 @keyframes blur-fade-in {
   from {
@@ -102,26 +104,31 @@
 }
 
 @keyframes sheet-in {
-  from {
+  0% {
     transform: translateY(100%);
   }
-  to {
+  70% {
+    transform: translateY(calc(-1 * var(--sheet-bounce)));
+  }
+  100% {
     transform: none;
   }
 }
+/* --sheet-drag-offset: set by use-sheet-drag on a close after a drag, so the exit starts at the finger. */
 @keyframes sheet-out {
   from {
-    transform: none;
+    transform: translateY(var(--sheet-drag-offset, 0px));
   }
   to {
     transform: translateY(100%);
   }
 }
-/* Bottom sheet and its scrim. Reduced motion: no slide, only a short opacity fade. */
+/* Bottom sheet and its scrim. Reduced motion: no slide or bounce, only a short opacity fade.
+   `backwards`, not `both`: a held end state would override the inline drag transform. */
 @utility animate-sheet-in {
-  animation: sheet-in var(--sheet-open-duration) var(--sheet-ease) both;
+  animation: sheet-in var(--sheet-open-duration) var(--sheet-ease) backwards;
   @media (prefers-reduced-motion: reduce) {
-    animation: blur-fade-in-reduced var(--blur-fade-reduced-duration) linear both;
+    animation: blur-fade-in-reduced var(--blur-fade-reduced-duration) linear backwards;
   }
 }
 @utility animate-sheet-out {
