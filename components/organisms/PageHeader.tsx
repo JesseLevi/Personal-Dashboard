@@ -33,7 +33,7 @@ export function PageHeader({ title, titlePending, titleTrigger, titleAdornments,
         "sticky top-[env(safe-area-inset-top)] z-10 flex items-center justify-between bg-surface-primary pr-page-right-equal",
         // #172: header chrome, not reading content — see app/globals.css.
         "chrome-touch",
-        // #552: the strip over the safe area (iPhone status bar) above the stuck header, full viewport width, so scrolled content never shows through it.
+        // The strip over the safe area (iPhone status bar) above the stuck header, full viewport width, so scrolled content never shows through it.
         "before:pointer-events-none before:fixed before:inset-x-0 before:top-0 before:h-[env(safe-area-inset-top)] before:bg-surface-primary before:content-['']",
         className,
       )}

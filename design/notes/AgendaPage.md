@@ -44,7 +44,7 @@ New components: `PlanDrawer` and `PlanChoices` (own notes). The rest is page com
 - **Under the calendar** (narrow): no height animation. The wrapper is `hidden` when closed; opening plays `animate-blur-in` (not on first paint, only after the prop changes).
 - **`prefers-reduced-motion`**: no column or shift transition; the content only fades, 120ms (`--blur-fade-reduced-duration`), linear.
 
-## Quick-add sheet animation (#552)
+## Quick-add sheet animation
 - Open: the sheet slides `translateY(100%)` -> 0 over `--sheet-open-duration` 320ms, the scrim fades in alongside. Close (X, scrim, Escape, add, Meer details): slides down over `--sheet-close-duration` 220ms, scrim fades out, then it unmounts. Curve `--sheet-ease` = `--blur-fade-ease`. Variables sit next to the plan-tray ones in `app/globals.css`; utilities `animate-sheet-in/out`, `animate-scrim-in/out`.
 - `AgendaQuickAdd` keeps the sheet mounted while `leaving` (set when `open` turns false while narrow) and unmounts on the sheet's own `animationend`, with a 600ms timeout as fallback so an invisible scrim can never keep blocking the page. While leaving the sheet is `inert`. Reopening during the exit just plays the open animation again.
 - `prefers-reduced-motion`: no slide, only a 120ms opacity fade.
