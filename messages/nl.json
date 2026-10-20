@@ -1009,7 +1009,7 @@
       "servings": "{count, plural, one {# portie} other {# porties}}",
       "missingFromSource": "Verwijderd bij bron",
       "recurring": "Terugkerende afspraak",
-      "links":"{count, plural, one {# koppeling} other {# koppelingen}}"
+      "links": "{count, plural, one {# koppeling} other {# koppelingen}}"
     },
     "agendaPanel": {
       "addTitle": "Afspraak toevoegen",
@@ -1304,6 +1304,19 @@
       "deleteConfirmButtonLabel": "Ja, verwijderen",
       "deletingLabel": "Verwijderen...",
       "cancelLabel": "Annuleren"
+    },
+    "cardPanel": {
+      "plannedTitle": "Ingepland",
+      "deadlineTitle": "Deadline",
+      "cardLabel": "Te doen",
+      "location": "{board} · {column}",
+      "dateLabel": "Datum",
+      "deadlineLabel": "Deadline",
+      "deadlineNotice": "Een deadline verzet je op de kaart in Te doen.",
+      "unplanLabel": "Uit agenda",
+      "clearDeadlineLabel": "Deadline wissen",
+      "saveLabel": "Opslaan",
+      "savingLabel": "Opslaan..."
     }
   },
   "agenda": {

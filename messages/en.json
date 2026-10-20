@@ -1009,7 +1009,7 @@
       "servings": "{count, plural, one {# serving} other {# servings}}",
       "missingFromSource": "Removed at source",
       "recurring": "Recurring event",
-      "links":"{count, plural, one {# link} other {# links}}"
+      "links": "{count, plural, one {# link} other {# links}}"
     },
     "agendaPanel": {
       "addTitle": "Add event",
@@ -1304,6 +1304,19 @@
       "deleteConfirmButtonLabel": "Yes, delete",
       "deletingLabel": "Deleting...",
       "cancelLabel": "Cancel"
+    },
+    "cardPanel": {
+      "plannedTitle": "Planned",
+      "deadlineTitle": "Deadline",
+      "cardLabel": "To do",
+      "location": "{board} · {column}",
+      "dateLabel": "Date",
+      "deadlineLabel": "Deadline",
+      "deadlineNotice": "Move a deadline on the card in To do.",
+      "unplanLabel": "Remove from agenda",
+      "clearDeadlineLabel": "Clear deadline",
+      "saveLabel": "Save",
+      "savingLabel": "Saving..."
     }
   },
   "agenda": {
