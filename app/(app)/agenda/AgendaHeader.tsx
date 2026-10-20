@@ -42,9 +42,9 @@ export interface AgendaHeaderProps {
   /** Whether the plan tray is open; "Plannen" reports it with `aria-pressed`. */
   trayOpen: boolean;
   onTrayToggle: () => void;
-  /** "+ Nieuw" and the floating button below `lg`: opens quick add (ADR-0041). */
+  /** "+ Nieuw": opens quick add (ADR-0041). */
   onNew: () => void;
-  /** The "+ Nieuw" button in the bar (from `lg`); the quick-add popover hangs from it. */
+  /** The "+ Nieuw" button in the bar; the quick-add popover (from `lg`) hangs from it. */
   newButtonRef?: RefObject<HTMLElement | null>;
   /** Opens the calendars panel from the menu; the item is hidden without it. */
   onOpenCalendars?: () => void;
@@ -105,12 +105,13 @@ export function AgendaHeader({
         }
         titleAdornments={
           weekNumber !== undefined && (
-            <span className="text-sm font-semibold whitespace-nowrap text-text-secondary">{t("weekNumber", { number: weekNumber })}</span>
+            <span className="text-sm font-semibold whitespace-nowrap text-text-secondary max-lg:hidden">{t("weekNumber", { number: weekNumber })}</span>
           )
         }
-        className="gap-x-inline-xl max-lg:flex-wrap max-lg:gap-y-stack-md lg:items-start lg:[&>div:first-child]:h-12 [&_h1]:text-2xl [&_h1]:whitespace-nowrap [&>div:first-child]:shrink-0"
+        className="gap-x-inline-sm max-lg:flex-wrap max-lg:gap-y-stack-md lg:gap-x-inline-xl lg:items-start lg:[&>div:first-child]:h-12 [&_h1]:text-2xl [&_h1]:whitespace-nowrap [&>div:first-child]:shrink-0"
         actions={
           <div className="max-lg:contents lg:flex lg:min-w-0 lg:flex-1 lg:flex-wrap lg:items-center lg:justify-end lg:gap-x-inline-xl lg:gap-y-stack-md lg:pt-component-xs">
+            <span aria-hidden="true" className="hidden h-0 basis-full max-lg:order-3 max-lg:block" />
             <ButtonToggle
               aria-label={t("viewLabel")}
               items={items}
@@ -120,17 +121,18 @@ export function AgendaHeader({
               tone="button"
               hugFromLg
               onValueChange={(value) => onViewChange(value as AgendaToggleView)}
-              className="max-lg:order-last max-lg:basis-full lg:w-auto lg:max-w-full lg:shrink-0"
+              className="max-lg:order-4 max-lg:min-w-0 max-lg:flex-1 lg:w-auto lg:max-w-full lg:shrink-0"
             />
-            <div className="flex max-w-full flex-wrap items-center justify-end gap-inline-sm max-lg:ml-auto">
-              <Button className="text-sm" icon="ArrowLeft" aria-label={t("previousLabel")} onClick={onPrevious} />
+            <div className="flex max-w-full flex-wrap items-center justify-end gap-inline-sm max-lg:contents">
+              <Button className="text-sm max-lg:order-5" icon="ArrowLeft" aria-label={t("previousLabel")} onClick={onPrevious} />
               <Button className="text-sm max-lg:hidden" onClick={onToday}>
                 {t("todayLabel")}
               </Button>
-              <Button className="text-sm" icon="ArrowRight" aria-label={t("nextLabel")} onClick={onNext} />
+              <Button className="text-sm max-lg:order-6" icon="ArrowRight" aria-label={t("nextLabel")} onClick={onNext} />
               <Button className="text-sm max-lg:hidden" icon="PanelRight" aria-pressed={trayOpen} onClick={onTrayToggle}>
                 {t("planLabel")}
               </Button>
+              <span className="inline-flex max-lg:order-1 max-lg:ml-auto">
               <AgendaMoreMenu
                 onToday={onToday}
                 trayOpen={trayOpen}
@@ -142,7 +144,8 @@ export function AgendaHeader({
                 defaultOpen={defaultMenuOpen}
                 defaultStep={defaultMenuStep}
               />
-              <span ref={newButtonRef} className="inline-flex max-lg:hidden">
+              </span>
+              <span ref={newButtonRef} className="inline-flex max-lg:order-2">
                 <Button className="text-sm" variant="white" icon="Plus" onClick={onNew}>
                   {t("newLabel")}
                 </Button>
@@ -150,13 +153,6 @@ export function AgendaHeader({
             </div>
           </div>
         }
-      />
-      <Button
-        variant="white"
-        icon="Plus"
-        aria-label={t("newLabel")}
-        onClick={onNew}
-        className="fixed right-component-lg bottom-[calc(1rem+env(safe-area-inset-bottom))] z-20 size-14 border border-stroke-primary shadow-sm lg:hidden"
       />
       {onGoToDate && date && (
         <AgendaDatePicker open={pickerOpen} anchorRef={titleRef} date={date} onSelect={onGoToDate} onClose={closePicker} />

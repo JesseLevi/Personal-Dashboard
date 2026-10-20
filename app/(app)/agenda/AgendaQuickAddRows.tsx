@@ -40,6 +40,8 @@ export interface QuickAddValues {
 export type SetQuickAddValue = <K extends keyof QuickAddValues>(key: K, value: QuickAddValues[K]) => void;
 
 interface RowsProps {
+  /** In the bottom sheet every field sits on its own row; the popover pairs them. */
+  stacked?: boolean;
   values: QuickAddValues;
   set: SetQuickAddValue;
   disabled: boolean;
@@ -92,7 +94,7 @@ function PeopleHelp() {
   );
 }
 
-export function EventRows({ values, set, disabled, categories }: RowsProps & { categories: CalendarCategoryView[] }) {
+export function EventRows({ stacked, values, set, disabled, categories }: RowsProps & { categories: CalendarCategoryView[] }) {
   const t = useTranslations("components.agendaQuickAdd");
   const tPanel = useTranslations("components.agendaPanel");
   const tAgenda = useTranslations("agenda");
@@ -107,7 +109,7 @@ export function EventRows({ values, set, disabled, categories }: RowsProps & { c
         onChange={(event) => set("title", event.target.value)}
         disabled={disabled}
       />
-      <div className="flex items-end gap-inline-md">
+      <div className={stacked ? "flex flex-col gap-stack-md" : "flex items-end gap-inline-md"}>
         <InputField
           label={t("fields.date")}
           id={`${ID}-date`}
@@ -130,7 +132,7 @@ export function EventRows({ values, set, disabled, categories }: RowsProps & { c
         </div>
       </div>
       {!values.allDay && (
-        <div className="flex gap-inline-md">
+        <div className={stacked ? "flex flex-col gap-stack-md" : "flex gap-inline-md"}>
           <InputField
             label={t("fields.start")}
             id={`${ID}-start`}
@@ -149,7 +151,7 @@ export function EventRows({ values, set, disabled, categories }: RowsProps & { c
           />
         </div>
       )}
-      <div className="flex gap-inline-md">
+      <div className={stacked ? "flex flex-col gap-stack-md" : "flex gap-inline-md"}>
         <InputField
           label={t("fields.people")}
           labelAdornment={<PeopleHelp />}
@@ -168,7 +170,7 @@ export function EventRows({ values, set, disabled, categories }: RowsProps & { c
           disabled={disabled}
         />
       </div>
-      <div className="flex gap-inline-md">
+      <div className={stacked ? "flex flex-col gap-stack-md" : "flex gap-inline-md"}>
         <InputField
           label={t("fields.repeat")}
           id={`${ID}-repeat`}
@@ -205,7 +207,7 @@ export function EventRows({ values, set, disabled, categories }: RowsProps & { c
   );
 }
 
-export function MealRows({ values, set, disabled, recipes }: RowsProps & { recipes: PlanRecipe[] }) {
+export function MealRows({ stacked, values, set, disabled, recipes }: RowsProps & { recipes: PlanRecipe[] }) {
   const t = useTranslations("components.agendaQuickAdd");
   const tSlots = useTranslations("agenda.plan.slots");
   const found = values.recipeSearch.trim() === "" ? recipes : rankRecipes(values.recipeSearch, recipes);
@@ -251,7 +253,7 @@ export function MealRows({ values, set, disabled, recipes }: RowsProps & { recip
           })}
         </ul>
       )}
-      <div className="flex gap-inline-md">
+      <div className={stacked ? "flex flex-col gap-stack-md" : "flex gap-inline-md"}>
         <InputField
           label={t("fields.date")}
           id={`${ID}-date`}
