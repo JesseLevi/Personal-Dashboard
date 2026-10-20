@@ -375,7 +375,7 @@ function Sheet({ onClose, leaving, onLeft, children }: { onClose: () => void; le
         }}
         // layout-size: the sheet never covers the whole screen — design/notes/AgendaPage.md
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 flex max-h-[90dvh] flex-col rounded-t-container bg-surface-primary shadow-[0_var(--sheet-bounce)_0_0_var(--color-surface-primary)] outline-none transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+          "fixed inset-x-0 bottom-0 z-50 flex max-h-[90dvh] flex-col rounded-t-container bg-surface-primary [--sheet-fill:var(--color-surface-primary)] outline-none transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
           leaving ? "animate-sheet-out" : "animate-sheet-in",
         )}
       >

@@ -156,8 +156,8 @@ export function SidePanel({
             ? "visible translate-x-0 translate-y-0 max-md:animate-sheet-in max-md:transition-[transform]"
             : "invisible translate-y-full md:translate-x-full md:translate-y-0",
           footer
-            ? "max-md:shadow-[0_var(--sheet-bounce)_0_0_var(--color-surface-highlight-white)]"
-            : "max-md:shadow-[0_var(--sheet-bounce)_0_0_var(--color-surface-primary)]",
+            ? "max-md:[--sheet-fill:var(--color-surface-highlight-white)]"
+            : "max-md:[--sheet-fill:var(--color-surface-primary)]",
           className,
         )}
       >

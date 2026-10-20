@@ -103,15 +103,20 @@
   }
 }
 
+/* box-shadow: fills the overshoot gap under the sheet in --sheet-fill (set by the sheet) and only exists
+   while the animation runs, so it never widens the sheet's painted box at rest. */
 @keyframes sheet-in {
   0% {
     transform: translateY(100%);
+    box-shadow: 0 var(--sheet-bounce) 0 0 var(--sheet-fill, transparent);
   }
   70% {
     transform: translateY(calc(-1 * var(--sheet-bounce)));
+    box-shadow: 0 var(--sheet-bounce) 0 0 var(--sheet-fill, transparent);
   }
   100% {
     transform: none;
+    box-shadow: 0 var(--sheet-bounce) 0 0 var(--sheet-fill, transparent);
   }
 }
 /* --sheet-drag-offset: set by use-sheet-drag on a close after a drag, so the exit starts at the finger. */
