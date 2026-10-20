@@ -1166,11 +1166,25 @@
       "addingLabel": "Controleren...",
       "loadingLabel": "Laden...",
       "privacyNotice": "Iedereen met deze link kan je agenda lezen. Atlas bewaart de link versleuteld en laat hem nooit meer zien.",
+      "steps": {
+        "heading": "Zo koppel je een agenda",
+        "one": "Kopieer de deellink van je agenda (zie hieronder).",
+        "two": "Plak de link hierboven, geef een naam en kies Agenda koppelen.",
+        "three": "Atlas houdt je afspraken bij. Wijzigen doe je in je eigen agenda-app."
+      },
       "help": {
-        "heading": "Waar vind ik de link?",
-        "outlook": "Outlook: Instellingen, Agenda, Gedeelde agenda's. Publiceer je agenda en kopieer de ICS-link.",
-        "google": "Google Agenda: Instellingen, kies de agenda, Agenda integreren. Kopieer het geheime adres in iCal-indeling.",
-        "icloud": "iCloud: deel de agenda in Agenda op je iPhone of Mac, zet Openbare agenda aan en kopieer de link."
+        "google": {
+          "label": "Google Agenda",
+          "body": "Open Google Agenda op een computer. Ga naar Instellingen, kies de agenda en open Agenda integreren. Kopieer het geheime adres in iCal-indeling."
+        },
+        "outlook": {
+          "label": "Outlook",
+          "body": "Open Outlook op het web. Ga naar Instellingen, Agenda, Gedeelde agenda's. Publiceer de agenda en kopieer de ICS-link."
+        },
+        "icloud": {
+          "label": "iPhone (iCloud)",
+          "body": "Open Agenda op je iPhone, tik op Agenda's en op (i) naast de agenda. Zet Openbare agenda aan en kopieer de link. Doe dit voor elke agenda die je wilt zien."
+        }
       },
       "status": {
         "never": "Nog niet gesynchroniseerd",
