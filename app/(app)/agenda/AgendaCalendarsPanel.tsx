@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useTransition, type ReactNode } from "reac
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { Checkbox } from "@/components/atoms/Checkbox";
+import { Icon } from "@/components/atoms/Icon";
 import { InputField } from "@/components/atoms/InputField";
 import { ColorDot, ColorSwatches } from "@/components/molecules/ColorSwatches";
 import { SidePanel } from "@/components/organisms/SidePanel";
@@ -39,7 +40,8 @@ export interface AgendaCalendarsPanelProps {
   onOverviewChange?: (overview: CalendarOverview) => void;
 }
 
-const HELP_KEYS = ["outlook", "google", "icloud"] as const;
+const HELP_KEYS = ["google", "outlook", "icloud"] as const;
+const STEP_KEYS = ["one", "two", "three"] as const;
 
 // Static class names, so Tailwind sees every token.
 const TINT_CLASSES: Record<AgendaColor, { row: string; selected: string }> = {
@@ -139,6 +141,7 @@ export function AgendaCalendarsPanel({
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [removing, setRemoving] = useState<Removing | null>(null);
+  const [openHelp, setOpenHelp] = useState<ReadonlySet<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const { confirming, ask, cancel } = useDeleteConfirm();
   const focusNameRef = useRef(false);
@@ -179,6 +182,7 @@ export function AgendaCalendarsPanel({
       setUrl("");
       setError(null);
       setRemoving(null);
+      setOpenHelp(new Set());
       cancel();
     }
   }
@@ -207,6 +211,14 @@ export function AgendaCalendarsPanel({
     setError(null);
     setSelected((value) => (value === id ? null : id));
     setDraftName(current);
+  }
+
+  function toggleHelp(key: string) {
+    setOpenHelp((current) => {
+      const next = new Set(current);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
   }
 
   function setVisible(target: { calendar: string } | { kind: HiddenKind }, visible: boolean) {
@@ -354,7 +366,7 @@ export function AgendaCalendarsPanel({
         }}
       />
     ) : (
-      <Button variant="filled" icon="Plus" className="grow basis-0" onClick={handleAdd} disabled={!canAdd}>
+      <Button variant="filled" icon="Plus" onClick={handleAdd} disabled={!canAdd}>
         {isPending ? t("addingLabel") : t("addLabel")}
       </Button>
     );
@@ -510,12 +522,43 @@ export function AgendaCalendarsPanel({
       />
       <p className="text-base text-text-secondary">{t("privacyNotice")}</p>
 
-      <h3 className="text-base font-semibold text-text-primary">{t("help.heading")}</h3>
-      <ul className="flex flex-col gap-stack-sm text-base text-text-secondary">
-        {HELP_KEYS.map((key) => (
-          <li key={key}>{t(`help.${key}`)}</li>
+      <h3 className="text-base font-semibold text-text-primary">{t("steps.heading")}</h3>
+      <ol className="flex list-decimal flex-col gap-stack-sm ps-component-lg text-base text-text-secondary">
+        {STEP_KEYS.map((key) => (
+          <li key={key}>{t(`steps.${key}`)}</li>
         ))}
-      </ul>
+      </ol>
+      <div className="flex flex-col gap-stack-sm">
+        {HELP_KEYS.map((key) => {
+          const isOpen = openHelp.has(key);
+          const bodyId = `agenda-help-${key}`;
+          return (
+            <div key={key} className="flex flex-col gap-stack-sm">
+              <button
+                type="button"
+                className="flex items-center gap-inline-sm rounded-control border border-stroke-primary bg-surface-highlight-white p-component-sm text-start text-base font-semibold text-text-primary"
+                aria-expanded={isOpen}
+                aria-controls={bodyId}
+                onClick={() => toggleHelp(key)}
+              >
+                <span className="min-w-0 grow">{t(`help.${key}.label`)}</span>
+                <Icon
+                  name="ChevronDown"
+                  className={cn(
+                    "shrink-0 text-text-secondary transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+                    isOpen && "rotate-180",
+                  )}
+                />
+              </button>
+              {isOpen && (
+                <p id={bodyId} className="px-component-sm text-base text-text-secondary">
+                  {t(`help.${key}.body`)}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </SidePanel>
   );
 }
