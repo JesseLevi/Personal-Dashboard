@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   compareMeals,
+  defaultSlotForCategory,
   lastMealPosition,
   mealBasketLines,
   planDays,
+  slotForCategoryName,
   weekBasketLines,
   weekRange,
   type MealForBasket,
@@ -165,6 +167,7 @@ describe("filterPlanRecipes", () => {
     title,
     servings: 4,
     categoryId,
+    categoryName: categoryId,
     timeMinutes: null,
     thumbnailUrl: null,
     thumbnailPath: null,
@@ -214,5 +217,39 @@ describe("compareEventOrder", () => {
       compareEventOrder,
     );
     expect(sorted.map((s) => s.title)).toEqual(["T", "b", "d1", "d2", "s"]);
+  });
+});
+
+describe("slotForCategoryName", () => {
+  it("reads the default Dutch categories", () => {
+    expect(slotForCategoryName("Ontbijt")).toBe("breakfast");
+    expect(slotForCategoryName("Lunch")).toBe("lunch");
+    expect(slotForCategoryName("Avond")).toBe("dinner");
+  });
+
+  it("reads English names and ignores case and accents", () => {
+    expect(slotForCategoryName("BREAKFAST")).toBe("breakfast");
+    expect(slotForCategoryName("Dinner ideas")).toBe("dinner");
+    expect(slotForCategoryName("Tussendoor")).toBe("snack");
+    expect(slotForCategoryName("Hoofdgerecht")).toBe("dinner");
+    expect(slotForCategoryName("Brunch")).toBe("lunch");
+  });
+
+  it("matches whole words in longer names, the first one winning", () => {
+    expect(slotForCategoryName("Snack & lunch")).toBe("snack");
+    expect(slotForCategoryName("Zoete snack-ideeen")).toBe("snack");
+  });
+
+  it("returns null for unknown or empty names", () => {
+    expect(slotForCategoryName("Soepen")).toBeNull();
+    expect(slotForCategoryName("")).toBeNull();
+    expect(slotForCategoryName(null)).toBeNull();
+    expect(slotForCategoryName("constructor")).toBeNull();
+  });
+
+  it("falls back to dinner for the default", () => {
+    expect(defaultSlotForCategory("Soepen")).toBe("dinner");
+    expect(defaultSlotForCategory(null)).toBe("dinner");
+    expect(defaultSlotForCategory("Ontbijt")).toBe("breakfast");
   });
 });

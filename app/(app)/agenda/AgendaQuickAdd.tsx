@@ -32,6 +32,7 @@ import {
   type QuickAddLocale,
   type QuickAddResult,
 } from "@/lib/agenda/quick-add";
+import { defaultSlotForCategory } from "@/lib/agenda/meals";
 import { choiceToRule } from "@/lib/agenda/repeat";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import { addDays, spanToUtc } from "@/lib/agenda/time";
@@ -100,7 +101,13 @@ function useOverridable(base: QuickAddValues): [QuickAddValues, SetQuickAddValue
   return [values, set];
 }
 
-function baseValues(parsed: QuickAddResult, today: string, slot: AgendaSpan | null, defaultCategory: string): QuickAddValues {
+function baseValues(
+  parsed: QuickAddResult,
+  today: string,
+  slot: AgendaSpan | null,
+  defaultCategory: string,
+  recipes: readonly PlanRecipe[],
+): QuickAddValues {
   const slotDate = slot ? slot.start.slice(0, 10) : null;
   const slotStart = slot && !slot.allDay ? slot.start.slice(11, 16) : null;
   const slotEnd = slot && !slot.allDay && slot.end && slot.end.slice(0, 10) === slotDate ? slot.end.slice(11, 16) : null;
@@ -119,7 +126,7 @@ function baseValues(parsed: QuickAddResult, today: string, slot: AgendaSpan | nu
     categoryId: parsed.categoryId ?? defaultCategory,
     recipeSearch: parsed.recipeQuery,
     recipeId: parsed.recipeId ?? "",
-    moment: parsed.slot ?? "dinner",
+    moment: parsed.slot ?? defaultSlotForCategory(recipes.find((recipe) => recipe.id === parsed.recipeId)?.categoryName ?? null),
     cardId: "",
   };
 }
@@ -180,7 +187,17 @@ function QuickAddForm({
   );
   const defaultCategory = categories.find((category) => category.isDefault)?.id ?? categories[0]?.id ?? "";
   const slotValue = slot ?? null;
-  const [values, set] = useOverridable(baseValues(parsed, today, slotValue, defaultCategory));
+  const [values, setValue] = useOverridable(baseValues(parsed, today, slotValue, defaultCategory, recipes));
+  // A recipe picked by hand moves the moment to its category, unless the text or the user chose one.
+  const [momentChosen, setMomentChosen] = useState(false);
+  const set: SetQuickAddValue = (key, value) => {
+    if (key === "moment") setMomentChosen(true);
+    setValue(key, value);
+    if (key === "recipeId" && !momentChosen && parsed.slot === null) {
+      const picked = recipes.find((recipe) => recipe.id === value);
+      setValue("moment", defaultSlotForCategory(picked?.categoryName ?? null));
+    }
+  };
   const { kind } = parsed;
 
   const names = values.people.split(",").map((name) => name.trim()).filter(Boolean);

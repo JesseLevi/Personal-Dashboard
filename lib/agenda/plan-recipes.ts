@@ -6,6 +6,8 @@ export interface PlanRecipe {
   /** Servings stored on the recipe. */
   servings: number;
   categoryId: string;
+  /** Name of that category; the moment a plan starts on follows it. */
+  categoryName: string;
   timeMinutes: number | null;
   /** Presigned card thumbnail, if the recipe has a photo. */
   thumbnailUrl: string | null;

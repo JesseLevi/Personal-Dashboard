@@ -6,6 +6,7 @@ const weekToBasket = { onSend: async () => ({ success: true as const, data: unde
 
 const handlers = {
   date: "2026-01-01",
+  today: "2026-01-01",
   onGoToDate: noop, onViewChange: noop, onPrevious: noop, onNext: noop, onToday: noop, onTrayToggle: noop, onNew: noop, onOpenCalendars: noop };
 
 // The mobile shape (toggle on its own row) follows the viewport, not the
@@ -14,7 +15,7 @@ export const Desktop = () => (
   <AgendaHeader title="29 dec – 4 jan" view="week" weekNumber={1} trayOpen={false} weekToBasket={weekToBasket} {...handlers} />
 );
 
-// Titles below `lg` are three days; the longest realistic ones (a month boundary) must keep the title row to one line with the week number.
+// Short ranges, the longest realistic ones across a month boundary, keep the title row to one line with the week number.
 export const ThreeDay = () => <AgendaHeader title="20–22 okt" view="week" weekNumber={43} trayOpen={false} {...handlers} />;
 export const ThreeDayAcrossMonths = () => (
   <AgendaHeader title="30 dec – 1 jan" view="week" weekNumber={53} trayOpen={false} {...handlers} />

@@ -11,6 +11,7 @@ import type { AgendaView } from "@/lib/agenda/view";
 import type { BasketOption } from "@/lib/shopping/baskets";
 import type { ActionResult } from "@/lib/shopping/types";
 import { AgendaDatePicker } from "./AgendaDatePicker";
+import { AgendaDayStrip } from "./AgendaDayStrip";
 import { AgendaMoreMenu } from "./AgendaMoreMenu";
 
 // The toggle offers four choices; `threeDay` is only what `week` becomes on a phone.
@@ -31,6 +32,8 @@ export interface AgendaHeaderProps {
   weekNumber?: number;
   /** The date the calendar shows, `YYYY-MM-DD`; the date picker starts on it. */
   date?: string;
+  /** Today, `YYYY-MM-DD`; with `date` and `onGoToDate` it shows the day strip below `lg`. */
+  today?: string;
   /** The date picker's choice. Omitted: the title is plain text (the loading skeleton). */
   onGoToDate?: (date: string) => void;
   /** Reports whether a popover of the header (menu or date picker) is open; the page leaves its shortcuts alone then. */
@@ -65,6 +68,7 @@ export function AgendaHeader({
   view,
   weekNumber,
   date,
+  today,
   onGoToDate,
   onOverlayChange,
   onViewChange,
@@ -121,14 +125,17 @@ export function AgendaHeader({
               tone="button"
               hugFromLg
               onValueChange={(value) => onViewChange(value as AgendaToggleView)}
-              className="max-lg:order-4 max-lg:min-w-0 max-lg:flex-1 lg:w-auto lg:max-w-full lg:shrink-0"
+              className="max-lg:hidden lg:w-auto lg:max-w-full lg:shrink-0"
             />
+            {onGoToDate && date && today && (
+              <AgendaDayStrip date={date} today={today} onSelect={onGoToDate} className="w-full max-lg:order-4 lg:hidden" />
+            )}
             <div className="flex max-w-full flex-wrap items-center justify-end gap-inline-sm max-lg:contents">
-              <Button className="text-sm max-lg:order-5" icon="ArrowLeft" aria-label={t("previousLabel")} onClick={onPrevious} />
+              <Button className="text-sm max-lg:hidden" icon="ArrowLeft" aria-label={t("previousLabel")} onClick={onPrevious} />
               <Button className="text-sm max-lg:hidden" onClick={onToday}>
                 {t("todayLabel")}
               </Button>
-              <Button className="text-sm max-lg:order-6" icon="ArrowRight" aria-label={t("nextLabel")} onClick={onNext} />
+              <Button className="text-sm max-lg:hidden" icon="ArrowRight" aria-label={t("nextLabel")} onClick={onNext} />
               <Button className="text-sm max-lg:hidden" icon="PanelRight" aria-pressed={trayOpen} onClick={onTrayToggle}>
                 {t("planLabel")}
               </Button>

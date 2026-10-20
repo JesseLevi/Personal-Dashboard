@@ -3,7 +3,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useFormatter, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import {
   AgendaCalendar,
   effectiveAgendaView,
@@ -15,7 +15,7 @@ import type { CalendarOverview, SyncNoticeView } from "@/lib/agenda/calendars";
 import { isItemHidden, persistHidden, type AgendaHidden } from "@/lib/agenda/hidden";
 import { PlanDrawer } from "@/components/organisms/PlanDrawer";
 import { Toast } from "@/components/organisms/Toast";
-import { weekRange } from "@/lib/agenda/meals";
+import { defaultSlotForCategory, weekRange } from "@/lib/agenda/meals";
 import { toAgendaResult, withPlannedFor, type PlanCardGroup, type QuickAddBoard } from "@/lib/agenda/plan-cards";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
@@ -27,10 +27,11 @@ import { persistAgendaView, type AgendaView } from "@/lib/agenda/view";
 import type { BasketOption } from "@/lib/shopping/baskets";
 import type { ActionResult } from "@/lib/shopping/types";
 import { AGENDA_TRAY_ATTRIBUTE, type AgendaSpan } from "@/lib/ui/agenda-calendar";
-import { planCard } from "../te-doen/actions";
+import { planCard, updateCard } from "../te-doen/actions";
 import { createEvent, deleteEvent, getAgendaEvent, loadAgendaRange, moveEvent, updateEvent } from "./actions";
 import { AgendaBody } from "./AgendaBody";
 import { AgendaCalendarsPanel } from "./AgendaCalendarsPanel";
+import { AgendaCardPanel, agendaCardId, type AgendaCardPanelItem } from "./AgendaCardPanel";
 import { AgendaEventPanel, type AgendaEventPrefill, type AgendaPanelTarget } from "./AgendaEventPanel";
 import { AgendaQuickAdd, type QuickAddAdded } from "./AgendaQuickAdd";
 import { getAgendaEventLinks, linkToEvent, searchAgendaLinkTargets, unlinkFromEvent } from "./link-actions";
@@ -77,6 +78,11 @@ export interface AgendaPageProps {
   initialCalendars: CalendarOverview | null;
 }
 
+// Day and month names in the title start with a capital: "Ma 20 Okt".
+function capitalizeWords(text: string, locale: string): string {
+  return text.replace(/\p{L}+/gu, (word) => word.charAt(0).toLocaleUpperCase(locale) + word.slice(1));
+}
+
 const utc = (date: string) => new Date(`${date}T00:00:00Z`);
 
 // Item times are wall-clock strings: a timed one without offset, an all-day one a date.
@@ -107,6 +113,7 @@ export function AgendaPage({
   const tErrors = useTranslations("agenda.errors");
   const tPlan = useTranslations("agenda.plan");
   const format = useFormatter();
+  const locale = useLocale();
   const router = useRouter();
   const narrow = useIsNarrow();
 
@@ -125,6 +132,7 @@ export function AgendaPage({
   const [hidden, setHidden] = useState(initialHidden);
   const [trayOpen, setTrayOpen] = useState(initialTrayOpen);
   const [mealPanel, setMealPanel] = useState<{ open: boolean; item: AgendaMealItem | null }>({ open: false, item: null });
+  const [cardPanel, setCardPanel] = useState<{ open: boolean; item: AgendaCardPanelItem | null }>({ open: false, item: null });
   const [groups, setGroups] = useState(cardGroups);
   const [notice, setNotice] = useState<string | null>(null);
   const [headerOverlayOpen, setHeaderOverlayOpen] = useState(false);
@@ -174,7 +182,7 @@ export function AgendaPage({
   }
 
   // Keyboard shortcuts stay quiet while typing, with a modifier, or while a panel or popover is open.
-  const shortcutsBlocked = panel.open || mealPanel.open || calendarsOpen || headerOverlayOpen || quickAdd.open;
+  const shortcutsBlocked = panel.open || mealPanel.open || cardPanel.open || calendarsOpen || headerOverlayOpen || quickAdd.open;
   const runShortcut = (shortcut: AgendaShortcut) => {
     switch (shortcut) {
       case "new":
@@ -228,10 +236,8 @@ export function AgendaPage({
         setPanel({ open: true, target: { mode: "edit", item } });
         break;
       case "deadline":
-        router.push(`/te-doen?card=${item.id.replace(/^deadline:/, "")}`);
-        break;
       case "planned_card":
-        router.push(`/te-doen?card=${item.id}`);
+        setCardPanel({ open: true, item });
         break;
       case "meal":
         setMealPanel({ open: true, item });
@@ -279,6 +285,27 @@ export function AgendaPage({
       setGroups((current) => withPlannedFor(current, cardId, plannedFor));
       void loadAround(date);
     }
+    return result;
+  }
+
+  // The card panel's remove: a planned card loses its day, a deadline is cleared. The card itself stays.
+  async function removeFromAgenda(item: AgendaCardPanelItem): Promise<AgendaActionResult> {
+    if (item.kind === "planned_card") {
+      const result = await savePlannedFor(item.id, null);
+      if (result.success) setNotice(tPlan("cardClearedNotice", { title: item.title }));
+      return result;
+    }
+    const result = toAgendaResult(await updateCard({ cardId: agendaCardId(item), dueAt: null }));
+    if (result.success) {
+      setError(null);
+      void loadAround(date);
+    }
+    return result;
+  }
+
+  async function saveCardDay(cardId: string, day: string): Promise<AgendaActionResult> {
+    const result = await savePlannedFor(cardId, day);
+    if (result.success && cardPanel.item) announceCardPlanned(cardPanel.item.title, day);
     return result;
   }
 
@@ -335,9 +362,13 @@ export function AgendaPage({
       return;
     }
     if (drop.payload.type !== "recipe") return;
+    const recipeId = drop.payload.id;
+    const categoryName = recipes.find((recipe) => recipe.id === recipeId)?.categoryName ?? null;
     void planRecipe(
-      drop.payload.id,
-      drop.eventId ? { calendarEventId: drop.eventId } : { plannedOn: drop.start.slice(0, 10) },
+      recipeId,
+      drop.eventId
+        ? { calendarEventId: drop.eventId }
+        : { plannedOn: drop.start.slice(0, 10), slot: defaultSlotForCategory(categoryName) },
     );
   }
 
@@ -411,10 +442,11 @@ export function AgendaPage({
   return (
     <>
       <AgendaHeader
-        title={title}
+        title={capitalizeWords(title, locale)}
         view={toToggleView(view)}
         weekNumber={effectiveView === "week" || effectiveView === "threeDay" || effectiveView === "list" ? isoWeek(range.start) : undefined}
         date={date}
+        today={today}
         onGoToDate={goTo}
         onOverlayChange={setHeaderOverlayOpen}
         onViewChange={handleViewChange}
@@ -482,6 +514,16 @@ export function AgendaPage({
           onSendMeal={sendMealToBasket}
           onOpenRecipe={(recipeId) => router.push(`/recepten/${recipeId}`)}
           onMutated={() => void loadAround(date)}
+        />
+      )}
+      {cardPanel.item && (
+        <AgendaCardPanel
+          open={cardPanel.open}
+          onClose={() => setCardPanel((current) => ({ ...current, open: false }))}
+          item={cardPanel.item}
+          onSaveDay={saveCardDay}
+          onRemove={removeFromAgenda}
+          onOpenCard={(cardId) => router.push(`/te-doen?card=${cardId}`)}
         />
       )}
       <AgendaQuickAdd

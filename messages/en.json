@@ -397,6 +397,7 @@
         "todayLabel": "Today",
         "previousLabel": "Previous",
         "nextLabel": "Next",
+        "dayStripLabel": "Days of the week",
         "viewLabel": "View",
         "views": {
           "day": "Day",
@@ -1008,7 +1009,7 @@
       "servings": "{count, plural, one {# serving} other {# servings}}",
       "missingFromSource": "Removed at source",
       "recurring": "Recurring event",
-      "links":"{count, plural, one {# link} other {# links}}"
+      "links": "{count, plural, one {# link} other {# links}}"
     },
     "agendaPanel": {
       "addTitle": "Add event",
@@ -1166,11 +1167,25 @@
       "addingLabel": "Checking...",
       "loadingLabel": "Loading...",
       "privacyNotice": "Anyone with this link can read your calendar. Atlas stores the link encrypted and never shows it again.",
+      "steps": {
+        "heading": "How to connect a calendar",
+        "one": "Copy your calendar's share link (see below).",
+        "two": "Paste the link above, add a name and choose Link calendar.",
+        "three": "Atlas keeps your events up to date. Make changes in your own calendar app."
+      },
       "help": {
-        "heading": "Where do I find the link?",
-        "outlook": "Outlook: Settings, Calendar, Shared calendars. Publish your calendar and copy the ICS link.",
-        "google": "Google Calendar: Settings, pick the calendar, Integrate calendar. Copy the secret address in iCal format.",
-        "icloud": "iCloud: share the calendar in Calendar on your iPhone or Mac, turn on Public Calendar and copy the link."
+        "google": {
+          "label": "Google Calendar",
+          "body": "Open Google Calendar on a computer. Go to Settings, pick the calendar and open Integrate calendar. Copy the secret address in iCal format."
+        },
+        "outlook": {
+          "label": "Outlook",
+          "body": "Open Outlook on the web. Go to Settings, Calendar, Shared calendars. Publish the calendar and copy the ICS link."
+        },
+        "icloud": {
+          "label": "iPhone (iCloud)",
+          "body": "Open Calendar on your iPhone, tap Calendars and the (i) next to the calendar. Turn on Public Calendar and copy the link. Do this for each calendar you want to see."
+        }
       },
       "status": {
         "never": "Not synced yet",
@@ -1289,6 +1304,19 @@
       "deleteConfirmButtonLabel": "Yes, delete",
       "deletingLabel": "Deleting...",
       "cancelLabel": "Cancel"
+    },
+    "cardPanel": {
+      "plannedTitle": "Planned",
+      "deadlineTitle": "Deadline",
+      "cardLabel": "To do",
+      "location": "{board} · {column}",
+      "dateLabel": "Date",
+      "deadlineLabel": "Deadline",
+      "deadlineNotice": "Move a deadline on the card in To do.",
+      "unplanLabel": "Remove from agenda",
+      "clearDeadlineLabel": "Clear deadline",
+      "saveLabel": "Save",
+      "savingLabel": "Saving..."
     }
   },
   "agenda": {

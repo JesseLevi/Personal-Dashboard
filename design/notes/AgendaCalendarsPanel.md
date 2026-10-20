@@ -9,8 +9,8 @@ No new token. The panel composes `SidePanel`, `Checkbox`, `InputField`, `Button`
   - **Categorieën** (the intro "Vink uit om te verbergen…" sits directly under this heading): the user's own calendars, default first. Meta "standaard" on the default one. Editor: name (`InputField`, not for the default one, whose name is the translation "Persoonlijk"), `ColorSwatches`, and, except for the default one, the note that its events go to Persoonlijk plus a destructive "Verwijderen". "Categorie toevoegen" creates "Nieuwe categorie" in the next free colour and focuses its name.
   - **Gekoppelde agenda's**: one row per account. Meta "Mislukt" only when the last sync failed. Editor: status or failure reason, `ColorSwatches`, "Koppeling verwijderen".
   - **Vaste soorten**: Maaltijden, Te doen, Deadlines with only the show checkbox and "vaste kleur".
-  - "ICS-link toevoegen": name, link (`Link` leading icon, no autocomplete), the privacy line, and the three "where do I find the link" lines (Outlook, Google, iCloud).
-  - Footer: filled "Agenda koppelen" (the ICS form); when a delete was asked it becomes the stacked `DeleteConfirm`. A category's prompt says its events go to Persoonlijk; an account's says its imported events go and the calendar stays.
+  - "ICS-link toevoegen": name, link (`Link` leading icon, no autocomplete), the privacy line, then "Zo koppel je een agenda": three numbered steps and three disclosure rows (Google Agenda, Outlook, iPhone (iCloud)). Each row is a button with `aria-expanded` / `aria-controls` and a `ChevronDown` that rotates; several may be open, all start closed and reset when the panel opens.
+  - Footer: filled "Agenda koppelen" (the ICS form; no width/basis class, the column footer already stretches it); when a delete was asked it becomes the stacked `DeleteConfirm`. A category's prompt says its events go to Persoonlijk; an account's says its imported events go and the calendar stays.
 - **Notices**: above the calendar, one `Card` per deleted event whose meal left open basket items. The ticket title is one sentence with the event title and the item names (`Intl.ListFormat`, six names, then "en N andere"); the slot holds "Weghalen" (`Trash`) and "Laten staan" (`X`). Both dismiss the notice; only "Weghalen" deletes the listed items that are still open.
 
 ## Deliberate decisions
@@ -27,7 +27,7 @@ No new token. The panel composes `SidePanel`, `Checkbox`, `InputField`, `Button`
 
 ## Token gaps and flags
 - The notices inherit `CardContentTicket`'s raw `gap-4`/`gap-2` (flagged in its own note).
-- The help lines are plain text: there is no external-link style, and the three providers' menus change names, so they name the path rather than link.
+- The provider explanations are plain text: there is no external-link style, and the providers' menus change names, so they name the path rather than link. The disclosure rows are inline in the panel (no `Accordion` component), styled like the other bordered rows.
 
 ## Gotchas
 - Row tints are listed statically (`TINT_CLASSES`), like the swatches; a new palette colour needs a line there.

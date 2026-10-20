@@ -20,18 +20,20 @@ export interface PlanChoicesProps {
   header?: ReactNode;
   /** Show the moment select. Off for things without a moment, such as cards; `onPlan` then gets the default moment. */
   showSlot?: boolean;
+  /** The moment the select starts on; omitted: `DEFAULT_MEAL_SLOT`. */
+  defaultSlot?: MealSlot;
 }
 
 /**
  * The rows of a "Plannen" menu: moment, today, tomorrow, the days after, and any other date.
  * Meant to sit inside a labelless `Dropdown` popover. Contract: design/notes/PlanChoices.md.
  */
-export function PlanChoices({ today, onPlan, onPlanned, header, showSlot = true }: PlanChoicesProps) {
+export function PlanChoices({ today, onPlan, onPlanned, header, showSlot = true, defaultSlot = DEFAULT_MEAL_SLOT }: PlanChoicesProps) {
   const t = useTranslations("components.planChoices");
   const tErrors = useTranslations("agenda.errors");
   const format = useFormatter();
   const slotOptions = MEAL_SLOTS.map((value) => ({ value, label: t(`slots.${value}`) }));
-  const [slot, setSlot] = useState<MealSlot>(DEFAULT_MEAL_SLOT);
+  const [slot, setSlot] = useState<MealSlot>(defaultSlot);
   const [otherDate, setOtherDate] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
