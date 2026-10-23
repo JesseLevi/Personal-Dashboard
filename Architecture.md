@@ -13,7 +13,7 @@ Browser (PWA) ──HTTPS──► Next.js on Vercel (fra1)
 ```
 
 - The browser only talks to Atlas (ADR-0033). There is one hosted environment, production. Builds, promotion and migrations follow ADR-0032. Hosted settings that live outside the repo are listed in `docs/operations.md`.
-- Async work runs after the response via Next.js `after()`, plus daily cron routes. There is no always-on worker (ADR-0018 §4). Embeddings drain lazily, with a daily cron as backstop (ADR-0043).
+- Async work runs after the response via Next.js `after()`, plus daily cron routes. There is no always-on worker (ADR-0018 §4).
 
 ## 2. Repository layout
 
