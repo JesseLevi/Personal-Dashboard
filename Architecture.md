@@ -84,7 +84,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 
 - R2 holds image bytes under keys `<user_id>/<module>/…`. The owning row in Postgres decides ownership (ADR-0024).
 - Uploads are re-encoded server-side with `sharp`: magic-byte check, WebP, EXIF stripped.
-- Delivery is an app route that checks session and ownership, then redirects to an hour-stable presigned URL. Server-rendered pages may presign directly (#391).
+- Delivery is an app route that checks session and ownership, then redirects to an hour-stable presigned URL. Server-rendered pages may presign directly.
 - There are no RLS policies on objects, so Vitest ownership tests per consumer replace them.
 
 ## 5. Security model
@@ -96,10 +96,10 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - one server-only module per external seam;
   - `check:server-only` enforces these.
 - **Auth**:
-  - Supabase Auth with password or a 6-digit e-mail code (plus fallback link); self-signup disabled (ADR-0038).
-  - Mail goes out through Resend SMTP; the template is `supabase/templates/magic_link.html`, hosted config is set by `pnpm auth:email`.
-  - `middleware.ts` only refreshes tokens; the redirect lives in `app/(app)/layout.tsx`.
-  - `getClaims()` verifies locally, so a revoked session lasts until token expiry (#168).
+  - Supabase Auth with password or a 6-digit e-mail code (plus fallback link); self-signup disabled (ADR-0038); DB-throttled, Turnstile on submit (ADR-0045).
+  - Mail goes through Resend SMTP; template `supabase/templates/magic_link.html`, hosted config via `pnpm auth:email`.
+  - `middleware.ts` only refreshes tokens; the redirect is in `app/(app)/layout.tsx`.
+  - `getClaims()` verifies locally, so a revoked session lasts until token expiry.
   - Admins: `app_metadata.role = 'admin'` (ADR-0020).
 - **Untrusted input**:
   - user URLs go through `safe-fetch`: https only, DNS-pinned, private ranges blocked, 3 redirects, 3 MB, 10 s;
@@ -111,7 +111,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - per-user rate limit;
   - provider spend cap;
   - degraded mode without a key.
-- **Known accepted trade-off**: the login greeting reveals a first name for a known address, throttled (ADR-0031).
+- **Known accepted trade-off**: the login greeting shows a known address's first name, throttled (ADR-0031).
 - **Backups**: Supabase Cloud backups cover Postgres. R2 has no second copy (ADR-0024).
 
 ## 6. AI and async work
