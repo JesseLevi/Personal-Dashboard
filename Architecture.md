@@ -13,7 +13,7 @@ Browser (PWA) ──HTTPS──► Next.js on Vercel (fra1)
 ```
 
 - The browser only talks to Atlas (ADR-0033). There is one hosted environment, production. Builds, promotion and migrations follow ADR-0032. Hosted settings that live outside the repo are listed in `docs/operations.md`.
-- Async work: short tasks run after the response via Next.js `after()`. There is no always-on worker (ADR-0018 §4). `worker/` is a skeleton.
+- Async work runs after the response via Next.js `after()`, plus daily cron routes. There is no always-on worker (ADR-0018 §4).
 
 ## 2. Repository layout
 
@@ -32,7 +32,7 @@ supabase/migrations/  every schema change     supabase/tests/  pgTAP RLS suite
 design/               tokens.json, figma-variables/, figma-map.json, notes/<Component>.md
 scripts/              CI gates, token sync, data imports (NEVO, USDA)
 tests/                Vitest; tests/visual = Playwright screenshot suite over Ladle
-worker/               job-consumer skeleton (unused until a scheduled-work mechanism is chosen)
+worker/               unused skeleton, removed in Phase 8 (ADR-0043)
 ```
 
 ## 3. Frontend and design system
@@ -78,7 +78,7 @@ Agenda tables: §7.
 
 ### 4.3 Search
 
-Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredient matching runs own alias, then shared alias, then `pg_trgm` (`match_ingredient_candidates`), then the LLM (ADR-0020). Semantic search is Phase 8 (§6).
+Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredient matching runs own alias, then shared alias, then `pg_trgm` (`match_ingredient_candidates`), then the LLM (ADR-0020). Phase 8 adds semantic search across modules (§6).
 
 ### 4.4 Object storage
 
@@ -117,20 +117,17 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 ## 6. AI and async work
 
 - **Today**: `lib/ai/` exposes one provider-neutral function (prompt + zod schema in, validated object out). It runs Claude Haiku via Anthropic. Consumers: the recipe import pipeline, in `after()` with a lazy sweep for stuck rows (ADR-0019), and a recipe save that estimates a re-linked line's missing weight per unit (`lib/recipes/unit-weights.ts`).
-- **Phase 8 shape** (ADR-0006, amended by 0018), with the model and host still open:
-  - triggers enqueue `embed` jobs for notes and recipes;
-  - a handler builds canonical text, skips unchanged content by hash, chunks, embeds and upserts `embeddings`;
-  - `search_semantic()` is `security invoker`, so RLS filters results.
-- **Phase 9 shape**:
-  - SQL detectors produce candidate signals;
-  - one LLM call phrases each signal into `agent_signals`;
-  - the agent has no tools and no writes beyond its own rows, and its output is plain text.
-- **Scheduled work** (ADR-0039, Vercel Hobby): a lazy "sync when stale" in `after()` where a user is present, plus one daily Vercel Cron route behind `CRON_SECRET` as a backstop. The cron route is not a user request, so it may use `service_role`. Anything more frequent needs a new ADR.
-- **Open decisions** (each needs an ADR before its phase starts):
-  1. the hosted multilingual embedding model and its dimension;
-  2. the privacy stance on sending notes to a provider (ADR-0018 requires it to be explicit).
+- **Phase 8** (ADR-0043, epic #31), the connections layer:
+  - `embed()` in `lib/ai/` runs `@cf/baai/bge-m3` (1024d) on Cloudflare Workers AI; the free daily quota is the spend cap;
+  - opt-in per member (`profiles.ai_enabled`); without it nothing leaves Atlas (keyword search only);
+  - `embeddings`: a row per chunk, exclusive arc over notes, recipes, cards, events and basket items, `halfvec(1024)`, owner-only RLS, exact search;
+  - no queue: `embedding_backlog()` finds stale sources; a lazy `after()` drain (at most every 10 min) and the daily `/api/cron/embeddings` embed them, reusing vectors for identical text;
+  - search across modules merges `search_text()` and `search_semantic()` (`security invoker`) with RRF.
+- **History** (ADR-0044): triggers append basket adds and checks to `activity_events`; `settle_cooked_meals()` adds `recipe_cooked` for past meal plans. Every member, no AI.
+- **Phase 9**: SQL detectors over `activity_events`, `embeddings` and cards; one LLM call per signal (consenting members) into `agent_signals`; no tools, no other writes, plain text.
+- **Scheduled work** (ADR-0039, Vercel Hobby): a lazy "when stale" run in `after()` where a user is present, plus daily Vercel Cron routes behind `CRON_SECRET` as a backstop. Cron routes may use `service_role` (no user request). Anything more frequent needs a new ADR.
 
-## 7. Agenda (Phase 7, planned, ADR-0037)
+## 7. Agenda (ADR-0037)
 
 - **One timeline, nothing copied**: manual events (editable), synced events (source fields read-only, never written back), `meal_plans`, `cards.planned_for` and the `cards.due_at` overlay, unioned by one `security invoker` function.
 - **Schema**:
@@ -140,10 +137,9 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - `meal_plans`: `calendar_id`, `recipe_id`, `servings`, `slot` (breakfast/lunch/dinner/snack), and either `planned_on` or `calendar_event_id`; "naar mand" sets `shopping_list_items.meal_plan_id`.
   - `calendar_event_links`: an event plus exactly one card, recipe or note, cascading on both sides.
   - `calendar_event_series`: rule and template of a recurring own event; occurrences are `calendar_events` rows (`series_id`), 400 days ahead, extended on Agenda load (ADR-0042).
-- **Sync** (ADR-0037 §5): `ics` → `caldav` → Graph/Google on need, via `safe-fetch`; recurring instances expanded −30 d / +400 d, upserted by UID + instance start; a failed, empty or halved fetch deletes nothing; two-miss deletion with a basket notice; writes only on a changed hash.
-- **UI**: FullCalendar standard (MIT) packages, themed with semantic tokens, Claude-designed (ADR-0034); `ical.js` parses feeds.
+- **Sync** (ADR-0037 §5): `ics` → `caldav` → Graph/Google on need, via `safe-fetch`, parsed by `ical.js`; recurring instances expanded −30 d / +400 d, upserted by UID + instance start; a failed, empty or halved fetch deletes nothing; two-miss deletion with a basket notice; writes only on a changed hash.
 - **Colour, creation**: items use their calendar's `event-<colour>-*` tokens (ADR-0040); quick add parses with `chrono-node`, no AI (ADR-0041).
-- **Sync trigger** (ADR-0039): opening the Agenda syncs the user's accounts older than an hour in `after()`; a daily cron syncs every account older than 20 hours. `apply_calendar_sync` (`security definer`, advisory lock) applies a parsed feed per account: upsert, hash, two-miss deletion, and a `calendar_sync_notices` row (item ids kept, as `meal_plan_id` is nulled). The URL sits in Vault; `lib/agenda/sync.ts` and `app/api/cron/` call it.
+- **Sync trigger** (ADR-0039): opening the Agenda syncs the user's accounts older than an hour in `after()`; the daily cron syncs accounts older than 20 hours. `apply_calendar_sync` (`security definer`, advisory lock) applies a parsed feed per account: upsert, hash, two-miss deletion, and a `calendar_sync_notices` row (item ids kept, as `meal_plan_id` is nulled). The URL sits in Vault; `lib/agenda/sync.ts` and `app/api/cron/` call it.
 
 ## 8. Testing and CI gates
 
@@ -163,9 +159,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 | --- | --- |
 | 0 Foundation, 1 Account, 2 Design system | ✅ (Resend hookup on hosted is open, #10) |
 | 3 Te doen, 4 Recepten (incl. import, nutrition), 5 Winkelmand, 6 Notities | ✅ in production use |
-| Delen, fase 1: Winkelmand (#420) | 🔜 now (ADR-0035) |
-| 7 Agenda, incl. meal and card planning | 🔜 after #420 (#33, ADR-0037) |
-| 8 AI pipeline: embeddings and semantic search | backlog (#31) |
+| Delen fase 1 (#420) and 2 (#464), 7 Agenda (#33) | ✅ built |
+| 8 Connections layer and activity history (#31, ADR-0043/0044) | 🔜 next |
 | 9 Assistent: agent signals | backlog (#32) |
-| Delen, fase 2: Recept als kopie (#464) | backend gebouwd (ADR-0036), UI volgt |
 | Later | sharing boards (ADR-0035), live recipe sharing, mail integration (`Vision.md`) |

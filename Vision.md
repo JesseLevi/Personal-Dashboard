@@ -19,7 +19,7 @@ Het doel is een rustiger hoofd, geen productiviteitssysteem om het systeem.
 - **Meertalig**: NL en EN nu; een taal toevoegen is een catalogusbestand.
 - **Door één persoon te onderhouden, met AI als vaste ontwikkelpartner.**
 - **Eén designsysteem**: componenten en semantische tokens op de Tailwind-schaal. Claude ontwerpt nieuwe UI in code vanuit dat systeem; een Figma-ontwerp is leidend wanneer het genoemd wordt (ADR-0034).
-- **Goedkoop in beheer**: Vercel + Supabase Cloud + Cloudflare R2. AI via gehoste API's, alleen waar gewone code tekortschiet, met een bestedingslimiet (ADR-0018).
+- **Goedkoop in beheer**: Vercel + Supabase Cloud + Cloudflare R2. AI via gehoste API's, alleen waar gewone code tekortschiet, met een bestedingslimiet (ADR-0018). Embeddings draaien op Cloudflare Workers AI binnen de gratis dagquota, alleen voor leden die dat zelf aanzetten (ADR-0043).
 - **Open source waar het kan.**
 
 ## 3. Modules
@@ -50,7 +50,8 @@ Een rijke editor met slash-menu, tabellen, taken, code, afbeeldingen en inklapba
 
 ### Winkelmand ✅
 Lopende boodschappenlijsten in één of meer manden, handmatig of vanuit recepten gevuld (je kiest de mand), gegroepeerd en af te vinken. Een mand deel je met een ander lid 🔜 (#420).
-*Buiten scope*: prijsvergelijking, voorraadbeheer.
+Atlas onthoudt wat je toevoegt en afvinkt, zodat je koopritme zichtbaar wordt (ADR-0044).
+*Buiten scope*: prijsvergelijking, voorraadbeheer (bijhouden wat er in huis is, houdbaarheid).
 
 ### Agenda 🔜
 De plek waar de modules samenkomen: één tijdlijn waarop je Atlas-dingen plant (ADR-0037).
@@ -62,8 +63,11 @@ De plek waar de modules samenkomen: één tijdlijn waarop je Atlas-dingen plant 
 
 *Buiten scope voor nu*: tweerichtingssync, uitnodigingen versturen.
 
+### Zoeken 🔜
+Eén zoekveld over alle modules: notities, recepten, kaarten, afspraken en boodschappen. Het vindt op trefwoord en op betekenis, ook over talen heen. Zoeken op betekenis werkt alleen voor leden die het aanzetten; zonder toestemming gaat er niets naar buiten (ADR-0043).
+
 ### Assistent 💭
-Het AI-gedeelte. Signalen uit je eigen data (vastgelopen taken, terugkerende thema's) worden kort en in gewone taal gemeld. Later komt daar een gesprek bij over je eigen informatie, gebaseerd op semantisch zoeken over notities en recepten. De agent heeft geen tools en geen schrijfrechten buiten zijn eigen meldingen.
+Het AI-gedeelte. Signalen uit je eigen data (vastgelopen taken, terugkerende thema's, ritmes zoals "je koopt elke vier weken pindakaas" of hoe vaak je een recept kookt) worden kort en in gewone taal gemeld. Ritmes komen uit de gebruiksgeschiedenis, met gewone code (ADR-0044). Later komt daar een gesprek bij over je eigen informatie, gebaseerd op semantisch zoeken over al je data. De agent heeft geen tools en geen schrijfrechten buiten zijn eigen meldingen.
 
 ### Later 💭
 - **Delen** van borden, receptenverzamelingen en losse recepten, op hetzelfde model als de mand (ADR-0035).

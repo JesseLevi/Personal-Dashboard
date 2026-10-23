@@ -1,6 +1,6 @@
 # ADR-0006: One generic embedding pipeline — jobs table + worker + bge-m3
 
-**Status**: Accepted. **Amended by ADR-0018 (2026-10-07)**: the queue/trigger/`embeddings`/`search_semantic` design stands, but "bge-m3 via Ollama" is reopened. Phase 8 picks a hosted multilingual embedding model behind `lib/ai/`, and the worker host is undecided.
+**Status**: Superseded by ADR-0043 (2026-10-23). Amended earlier by ADR-0018 (2026-10-07), which reopened "bge-m3 via Ollama" and the worker host.
 
 ## Context
 
