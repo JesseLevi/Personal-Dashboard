@@ -155,6 +155,20 @@
   }
 }
 
+/* Agenda items after the skeleton (AgendaCalendar): only a `from`, so the fade ends on the item's own
+   opacity (removed items stay dimmed), and no fill afterwards. */
+@keyframes agenda-item-in {
+  from {
+    opacity: 0;
+  }
+}
+@utility animate-agenda-item-in {
+  animation: agenda-item-in var(--blur-fade-in-duration) var(--blur-fade-ease) backwards;
+  @media (prefers-reduced-motion: reduce) {
+    animation: agenda-item-in var(--blur-fade-reduced-duration) linear backwards;
+  }
+}
+
 /* #115 (components/organisms/BoardView.tsx SortableCard): iOS Safari's
    native long-press callout/text-selection has no Tailwind utility
    (`-webkit-touch-callout` isn't part of the utility set) and would

@@ -187,7 +187,7 @@ export function useIsNarrow(): boolean {
 }
 
 const MINUTE_MS = 60_000;
-/** Longer than `--blur-fade-in-duration`, so the first fade-in runs to the end. */
+/** Longer than `--blur-fade-in-duration` (`animate-agenda-item-in`), so the first fade-in runs to the end. */
 const ENTER_MS = 600;
 
 /** True for the first moments after mount: the items fade in once, not on every later re-render. */

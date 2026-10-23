@@ -131,7 +131,7 @@ const resizeHit = "absolute inset-x-0 z-10";
 
 /** `entering`: the items fade in, for the first paint after the skeleton. */
 export function buildAgendaCalendarOptions(entering = false): CalendarOptions {
-  const enter = entering && "animate-blur-in";
+  const enter = entering && "animate-agenda-item-in";
   return {
     className: "flex h-full min-h-0 flex-col text-sm text-text-primary",
     viewClass:
