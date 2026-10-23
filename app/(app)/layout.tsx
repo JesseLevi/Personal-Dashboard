@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
 import { ensureUserDefaults } from "@/lib/defaults/ensure";
+import { runLazyEmbeddingDrain } from "@/lib/embeddings/lazy";
 import { getAvatarSrc, getLastName, getProfileForNav } from "@/lib/profile/queries";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AppShellNav } from "./_components/AppShellNav";
 
 // Auth guard for the whole (app) route group. #168 added middleware.ts,
@@ -16,6 +19,9 @@ import { AppShellNav } from "./_components/AppShellNav";
 // (one extra query, `getProfileForNav`, itself `cache()`'d) — server-side,
 // same "browser never talks to Supabase directly" rule every other page
 // data fetch in this codebase follows.
+// after() shares this segment's max duration; the lazy embedding drain stays well under it.
+export const maxDuration = 60;
+
 export default async function AppLayout({
   children,
 }: {
@@ -35,6 +41,10 @@ export default async function AppLayout({
     getLastName(),
     getAvatarSrc(),
   ]);
+
+  // ADR-0043 §5: the member's own backlog drains after the response, RLS client, never awaited.
+  const supabase = await createSupabaseServerClient();
+  after(() => runLazyEmbeddingDrain(supabase, userId));
 
   return (
     <AppShellNav

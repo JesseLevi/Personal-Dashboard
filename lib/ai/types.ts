@@ -49,3 +49,19 @@ export interface AiProvider {
 
 /** Includes thinking tokens (Haiku 5.5 thinks adaptively) and the ~30% larger tokenizer. */
 export const DEFAULT_MAX_OUTPUT_TOKENS = 4096;
+
+/** Stored in `embeddings.model`; changing it means a new ADR and a re-embed (ADR-0043 §1). */
+export const EMBEDDING_MODEL = "@cf/baai/bge-m3";
+export const EMBEDDING_DIMENSIONS = 1024;
+
+export type EmbedRequest = {
+  /** One vector comes back per text, in the same order. Empty strings are rejected. */
+  texts: string[];
+  /** Short snake_case tag for the usage log, e.g. "search_query". Never content. */
+  purpose: string;
+};
+
+export interface EmbeddingProvider {
+  /** Resolves to `texts.length` vectors of EMBEDDING_DIMENSIONS numbers; rejects with AiError. */
+  embed(request: EmbedRequest): Promise<number[][]>;
+}

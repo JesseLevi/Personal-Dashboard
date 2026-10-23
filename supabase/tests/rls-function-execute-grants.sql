@@ -5,7 +5,7 @@
 -- rls-move-note-rpc.sql and rls-recipe_step_ingredients.sql.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(5);
+select plan(7);
 
 -- Every non-extension function postgres owns in public.
 create temporary view own_public_functions as
@@ -49,6 +49,22 @@ select ok(
   and has_function_privilege('authenticated', 'public.pending_recipe_shares()', 'EXECUTE')
   and has_function_privilege('authenticated', 'public.accept_recipe_share(uuid)', 'EXECUTE'),
   'authenticated keeps EXECUTE on the RPCs'
+);
+
+select ok(
+  has_function_privilege('authenticated', 'public.set_ai_enabled(boolean)', 'EXECUTE')
+  and has_function_privilege('authenticated', 'public.claim_embedding_drain()', 'EXECUTE')
+  and has_function_privilege('authenticated', 'public.embedding_backlog(text, int)', 'EXECUTE')
+  and has_function_privilege('authenticated', 'public.search_text(text, text[], int)', 'EXECUTE')
+  and has_function_privilege('authenticated', 'public.search_semantic(extensions.halfvec, text[], int)', 'EXECUTE'),
+  'authenticated keeps EXECUTE on the embedding RPCs (#577)'
+);
+
+select ok(
+  has_function_privilege('service_role', 'public.embedding_backlog_for(uuid, text, int)', 'EXECUTE')
+  and not has_function_privilege('authenticated', 'public.embedding_backlog_for(uuid, text, int)', 'EXECUTE')
+  and not has_function_privilege('anon', 'public.embedding_backlog_for(uuid, text, int)', 'EXECUTE'),
+  'embedding_backlog_for is executable by service_role only (#577)'
 );
 
 -- A function created after the migration (as a later migration would) gets

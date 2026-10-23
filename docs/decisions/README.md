@@ -66,7 +66,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | [0022](0022-note-images-storage.md) | Images in notes (storage per 0024) | Accepted, amended by 0024 |
 | [0023](0023-note-links-and-backlinks.md) | `[[` note links, `note_links`, backlinks | Accepted |
 
-## Agenda and AI (next phases)
+## Agenda, AI and history
 
 | ADR | Decides | Status |
 | --- | --- | --- |
@@ -74,5 +74,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | [0040](0040-agenda-categories-are-calendars.md) | Categories are manual calendars with `calendars.color` (9-colour palette, code-only tokens); delete moves contents; visibility per device | Accepted |
 | [0041](0041-agenda-quick-add.md) | One quick-add surface (+ Nieuw, slot, `N`); deterministic parsing with `chrono-node` + own rules, no AI | Accepted |
 | [0042](0042-recurring-own-events.md) | Recurring own events: rule in `calendar_event_series`, occurrences materialised 400 days ahead, edit/delete scope | Accepted |
+| [0043](0043-connections-layer-embeddings.md) | Embeddings: `bge-m3` on Cloudflare Workers AI, opt-in per member, backlog scan instead of a queue, exclusive-arc `embeddings`, hybrid search across modules | Accepted |
+| [0044](0044-activity-history.md) | Append-only `activity_events`: basket items added/checked and meals cooked, recorded by triggers for every member | Accepted |
 | [0008](0008-calendar-sync-and-ui-library.md) | Read-only sync, Schedule-X, SSRF guard | Superseded by 0037 |
-| [0006](0006-embedding-pipeline.md) | Jobs + embeddings + `search_semantic` shape; model and host reopened by 0018 | Accepted, amended by 0018 |
+| [0006](0006-embedding-pipeline.md) | Jobs + worker + `bge-m3` via Ollama | Superseded by 0043 |
