@@ -1407,12 +1407,7 @@ export type Database = {
         Returns: string
       }
       login_rate_limit: {
-        Args: {
-          p_action: string
-          p_client_key: string
-          p_email: string
-          p_mode: string
-        }
+        Args: { p_action: string; p_client_key: string; p_email: string }
         Returns: boolean
       }
       match_ingredient_candidates: {

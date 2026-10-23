@@ -13,18 +13,17 @@ export type LoginRateAction = "password" | "verify" | "send";
 // PostgREST "function not found" / Postgres undefined_function.
 const MISSING_FUNCTION_CODES = new Set(["PGRST202", "42883"]);
 
-async function call(
+/** Counts one attempt; false = over a limit, the caller must refuse without trying. */
+export async function consumeLoginAttempt(
   action: LoginRateAction,
   email: string,
   clientKey: string,
-  mode: "consume" | "refund",
 ): Promise<boolean> {
   try {
     const { data, error } = await createSupabaseAnonClient().rpc("login_rate_limit", {
       p_action: action,
       p_email: email,
       p_client_key: clientKey,
-      p_mode: mode,
     });
     if (error) {
       if (error.code && MISSING_FUNCTION_CODES.has(error.code)) {
@@ -38,11 +37,3 @@ async function call(
     return false;
   }
 }
-
-/** Counts one attempt; false = over a limit, the caller must refuse without trying. */
-export const consumeLoginAttempt = (action: LoginRateAction, email: string, clientKey: string) =>
-  call(action, email, clientKey, "consume");
-
-/** Gives the latest attempt back after a success. */
-export const refundLoginAttempt = (action: LoginRateAction, email: string, clientKey: string) =>
-  call(action, email, clientKey, "refund");

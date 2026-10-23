@@ -10,7 +10,7 @@ vi.mock("next/headers", () => ({
   headers: async () => ({ get: (k: string) => headerMap[k] ?? null }),
 }));
 
-import { consumeLoginAttempt, refundLoginAttempt } from "../lib/auth/login-rate-limit";
+import { consumeLoginAttempt } from "../lib/auth/login-rate-limit";
 import { checkLoginTurnstile, getRequestContext, TURNSTILE_TEST_SECRET } from "../lib/auth/turnstile";
 
 const fetchMock = vi.fn();
@@ -27,18 +27,15 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("consumeLoginAttempt / refundLoginAttempt", () => {
-  it("calls the RPC with action, address, client key and mode", async () => {
+describe("consumeLoginAttempt", () => {
+  it("calls the RPC with action, address and client key", async () => {
     rpc.mockResolvedValue({ data: true, error: null });
     expect(await consumeLoginAttempt("verify", "a@b.nl", "key")).toBe(true);
     expect(rpc).toHaveBeenCalledWith("login_rate_limit", {
       p_action: "verify",
       p_email: "a@b.nl",
       p_client_key: "key",
-      p_mode: "consume",
     });
-    await refundLoginAttempt("verify", "a@b.nl", "key");
-    expect(rpc.mock.calls[1][1].p_mode).toBe("refund");
   });
 
   it("refuses when the database says no", async () => {

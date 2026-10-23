@@ -7,11 +7,9 @@ const {
   cookieSet,
   cookieGet,
   consumeMock,
-  refundMock,
   turnstileMock,
 } = vi.hoisted(() => ({
   consumeMock: vi.fn(),
-  refundMock: vi.fn(),
   turnstileMock: vi.fn(),
   signInWithOtpMock: vi.fn(),
   verifyOtpMock: vi.fn(),
@@ -22,7 +20,6 @@ const {
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth/login-rate-limit", () => ({
   consumeLoginAttempt: consumeMock,
-  refundLoginAttempt: refundMock,
 }));
 vi.mock("@/lib/auth/turnstile", () => ({
   getRequestContext: async () => ({ ip: "1.2.3.4", host: "atlas.test", clientKey: "client-key" }),
@@ -58,7 +55,7 @@ const IDLE_SEND = { status: "idle" } as const;
 const IDLE_VERIFY = { status: "idle" } as const;
 
 beforeEach(() => {
-  for (const mock of [signInWithOtpMock, verifyOtpMock, redirectMock, cookieSet, cookieGet, consumeMock, refundMock, turnstileMock]) {
+  for (const mock of [signInWithOtpMock, verifyOtpMock, redirectMock, cookieSet, cookieGet, consumeMock, turnstileMock]) {
     mock.mockReset();
   }
   consumeMock.mockResolvedValue(true);
@@ -236,15 +233,5 @@ describe("login rate limits and bot check", () => {
     expect(state).toEqual({ status: "error", errorKey: "rate-limited" });
     expect(consumeMock).toHaveBeenCalledWith("verify", "victim@b.nl", "client-key");
     expect(verifyOtpMock).not.toHaveBeenCalled();
-  });
-
-  it("verify: a wrong code stays counted, a right one is given back", async () => {
-    withCookie("a@b.nl");
-    verifyOtpMock.mockResolvedValue({ error: { status: 403, code: "otp_expired" } });
-    await verifyLoginCode(IDLE_VERIFY, form({ code: "000000" }));
-    expect(refundMock).not.toHaveBeenCalled();
-    verifyOtpMock.mockResolvedValue({ error: null });
-    await verifyLoginCode(IDLE_VERIFY, form({ code: "123456" }));
-    expect(refundMock).toHaveBeenCalledWith("verify", "a@b.nl", "client-key");
   });
 });

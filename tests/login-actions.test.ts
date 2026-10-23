@@ -1,15 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { signInWithPasswordMock, redirectMock, consumeMock, refundMock, turnstileMock } = vi.hoisted(() => ({
+const { signInWithPasswordMock, redirectMock, consumeMock, turnstileMock } = vi.hoisted(() => ({
   signInWithPasswordMock: vi.fn(),
   redirectMock: vi.fn(),
   consumeMock: vi.fn(),
-  refundMock: vi.fn(),
   turnstileMock: vi.fn(),
 }));
 vi.mock("@/lib/auth/login-rate-limit", () => ({
   consumeLoginAttempt: consumeMock,
-  refundLoginAttempt: refundMock,
 }));
 vi.mock("@/lib/auth/turnstile", () => ({
   getRequestContext: async () => ({ ip: "1.2.3.4", host: "atlas.test", clientKey: "client-key" }),
@@ -33,7 +31,7 @@ function form(email: string, password: string) {
 
 describe("signInWithPassword", () => {
   beforeEach(() => {
-    for (const mock of [signInWithPasswordMock, redirectMock, consumeMock, refundMock, turnstileMock]) mock.mockReset();
+    for (const mock of [signInWithPasswordMock, redirectMock, consumeMock, turnstileMock]) mock.mockReset();
     consumeMock.mockResolvedValue(true);
     turnstileMock.mockResolvedValue(true);
   });
@@ -58,17 +56,10 @@ describe("signInWithPassword", () => {
     expect(signInWithPasswordMock).not.toHaveBeenCalled();
   });
 
-  it("counts the attempt per address and client, and gives it back on success", async () => {
+  it("counts every attempt per address and client", async () => {
     signInWithPasswordMock.mockResolvedValue({ error: null });
     await signInWithPassword({ status: "idle" }, form("a@b.nl", "secret"));
     expect(consumeMock).toHaveBeenCalledWith("password", "a@b.nl", "client-key");
-    expect(refundMock).toHaveBeenCalledWith("password", "a@b.nl", "client-key");
-  });
-
-  it("keeps the attempt counted after a wrong password", async () => {
-    signInWithPasswordMock.mockResolvedValue({ error: new Error("nope") });
-    await signInWithPassword({ status: "idle" }, form("a@b.nl", "wrong"));
-    expect(refundMock).not.toHaveBeenCalled();
   });
 
   it("refuses with rate-limited over the limit, without asking Supabase", async () => {

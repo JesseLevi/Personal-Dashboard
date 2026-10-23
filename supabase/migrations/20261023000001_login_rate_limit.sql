@@ -3,10 +3,10 @@
 -- in the `private` schema (RLS on, no policies, no client grants) that only the
 -- security definer function below touches.
 --
--- Events are attempts, not failures: 'consume' checks and records in one step
--- under an advisory lock, so parallel requests cannot all slip under the limit;
--- 'refund' removes the latest event per key after a success. A blocked call
--- records nothing, so it does not extend a lockout.
+-- Every attempt counts, success or not: the function checks and records in one
+-- step under an advisory lock, so parallel requests cannot all slip under the
+-- limit. It only ever adds events (apart from the send reset below and the
+-- hourly purge). A blocked call records nothing, so it does not extend a lockout.
 
 create table private.login_rate_events (
   key text not null,
@@ -34,8 +34,7 @@ revoke all on private.login_rate_events from anon, authenticated;
 create function public.login_rate_limit(
   p_action text,
   p_email text,
-  p_client_key text,
-  p_mode text
+  p_client_key text
 )
 returns boolean
 language plpgsql
@@ -51,10 +50,8 @@ declare
   v_email_limit int;
   v_ip_limit int;
   v_global_limit int;
-  v_key text;
 begin
   if p_action is null or p_action not in ('password', 'verify', 'send')
-     or p_mode is null or p_mode not in ('consume', 'refund')
      or v_email = ''
      or pg_catalog.length(v_email) > 254
      or pg_catalog.length(coalesce(p_client_key, '')) > 128 then
@@ -66,19 +63,6 @@ begin
   v_email_key := p_action || '|email:' || v_hash;
   v_ip_key := p_action || '|ip:' || coalesce(p_client_key, '');
   v_global_key := p_action || '|global';
-
-  if p_mode = 'refund' then
-    foreach v_key in array array[v_email_key, v_ip_key, v_global_key] loop
-      delete from private.login_rate_events e
-      where e.ctid = (
-        select e2.ctid from private.login_rate_events e2
-        where e2.key = v_key
-        order by e2.created_at desc
-        limit 1
-      );
-    end loop;
-    return true;
-  end if;
 
   v_email_limit := case p_action when 'password' then 8 when 'verify' then 5 else 3 end;
   v_ip_limit := case p_action when 'send' then 10 else 20 end;
@@ -114,8 +98,8 @@ begin
 end;
 $$;
 
-revoke execute on function public.login_rate_limit(text, text, text, text) from public, authenticated;
-grant execute on function public.login_rate_limit(text, text, text, text) to anon;
+revoke execute on function public.login_rate_limit(text, text, text) from public, authenticated;
+grant execute on function public.login_rate_limit(text, text, text) to anon;
 
-comment on function public.login_rate_limit(text, text, text, text) is
+comment on function public.login_rate_limit(text, text, text) is
   'Rate limit for login actions: true = allowed. Security definer, anon-callable like login_greeting_name; called only by lib/auth/login-rate-limit.ts.';

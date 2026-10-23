@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { loginCodeSchema, magicLinkSchema, passwordLoginSchema } from "@/lib/auth/schemas";
 import { clearLoginEmail, getLoginEmail, setLoginEmail } from "@/lib/auth/login-email-cookie";
-import { consumeLoginAttempt, refundLoginAttempt } from "@/lib/auth/login-rate-limit";
+import { consumeLoginAttempt } from "@/lib/auth/login-rate-limit";
 import { checkLoginTurnstile, getRequestContext } from "@/lib/auth/turnstile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -45,7 +45,7 @@ export async function signInWithPassword(
   if (!parsed.success) return { status: "error", errorKey: "invalid-input" };
 
   // Bot check, then a per-address/client/global attempt budget (identical answer
-  // for known and unknown addresses). A success gives its attempt back.
+  // for known and unknown addresses). Every attempt counts.
   const ctx = await getRequestContext();
   if (!(await checkLoginTurnstile(formData.get("turnstileToken"), ctx))) {
     return { status: "error", errorKey: "rate-limited" };
@@ -60,7 +60,6 @@ export async function signInWithPassword(
     return { status: "error", errorKey: isRateLimited(error) ? "rate-limited" : "invalid-credentials" };
   }
 
-  await refundLoginAttempt("password", parsed.data.email, ctx.clientKey);
   return { status: "success" };
 }
 
@@ -140,7 +139,6 @@ export async function verifyLoginCode(
     return { status: "error", errorKey: isRateLimited(error) ? "rate-limited" : "invalid-code" };
   }
 
-  await refundLoginAttempt("verify", email, clientKey);
   await clearLoginEmail();
   return { status: "success" };
 }
