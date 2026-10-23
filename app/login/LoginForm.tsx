@@ -2,6 +2,7 @@
 
 import {
   useActionState,
+  useCallback,
   useEffect,
   useId,
   useRef,
@@ -108,12 +109,20 @@ export function LoginForm({
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string | null>(null);
 
+  // The bot-check token rides along with the submit; with no widget it is empty.
+  const withToken = useCallback(
+    async <S,>(action: (prev: S, formData: FormData) => Promise<S>, prev: S, formData: FormData) => {
+      formData.set("turnstileToken", (await getToken()) ?? "");
+      return action(prev, formData);
+    },
+    [getToken],
+  );
   const [passwordState, passwordFormAction, passwordPending] = useActionState(
-    signInWithPasswordAction,
+    (prev: PasswordLoginState, formData: FormData) => withToken(signInWithPasswordAction, prev, formData),
     initialState?.password ?? IDLE_PASSWORD_STATE,
   );
   const [loginCodeState, loginCodeFormAction, loginCodePending] = useActionState(
-    sendLoginCodeAction,
+    (prev: LoginCodeSendState, formData: FormData) => withToken(sendLoginCodeAction, prev, formData),
     initialState?.loginCode ?? IDLE_LOGIN_CODE_STATE,
   );
 

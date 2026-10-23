@@ -19,7 +19,7 @@ Hosted settings that code review cannot see. Every change here is a hosted write
 | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_AI_API_TOKEN` | `lib/ai/cloudflare.ts` | Token with Workers AI scope only. Either unset = keyword search only. Check that Workers Paid stays off: the free allocation is the spend cap (ADR-0043) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` | `lib/storage/` | Production bucket + its bucket-scoped token |
 | `CRON_SECRET` | `app/api/cron/calendar-sync`, `app/api/cron/embeddings` | At least 16 random characters (`openssl rand -hex 32`). Vercel Cron sends it as `Authorization: Bearer`. Unset = both routes answer 401 and the daily backstops do nothing (the lazy paths still work) |
-| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `LOGIN_GREETING_SALT` | login greeting (ADR-0031, PR #411) | Missing = greeting fails closed |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `LOGIN_GREETING_SALT` | login greeting (ADR-0031) and login submits | Set before deploying the login rate-limit change: without the secret, password and code-send submits fail closed in production. Missing salt = greeting fails closed; the login limits fall back to an unsalted hash |
 
 ## Supabase Cloud (one project, production)
 
@@ -74,9 +74,18 @@ Expect anonymous GETs to fail, a PUT to the other bucket to return 403, and PUT 
 
 ## Cloudflare Turnstile
 
-Not set up yet. It is needed for the login greeting (PR #411):
-- an invisible widget with production site and secret keys;
+Needed for the login greeting and the password and code-send submits:
+- an invisible widget with production site and secret keys, widget action `login`;
 - local, CI and Ladle use Cloudflare's documented test keys.
+
+## Login hardening (hosted, set by hand)
+
+Auth → Providers → Email and Auth → Rate limits, in the dashboard:
+- minimum password length 12 or more;
+- leaked-password protection on;
+- e-mail send rate limit set explicitly (`pnpm auth:email`, dry run first).
+
+The app's own login limits need `20261023000005_login_rate_limit.sql` applied first; until then they are skipped with an error log.
 
 ## Anthropic
 

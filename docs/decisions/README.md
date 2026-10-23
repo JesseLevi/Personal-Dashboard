@@ -35,6 +35,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | [0020](0020-curated-ingredient-mappings-and-admin-role.md) | Admin role in `app_metadata`; admin-written `reference` rows | Accepted |
 | [0024](0024-object-storage-on-r2.md) | Uploaded binaries in R2 via `lib/storage/`; presigned delivery | Accepted |
 | [0031](0031-login-greeting-name-lookup.md) | Login greeting by e-mail: accepted enumeration trade-off, rate-limited | Accepted |
+| [0045](0045-login-rate-limit.md) | Login actions throttled per address, client and globally in one definer function; Turnstile on password submit and code send | Accepted |
 
 ## Te doen (Kanban)
 
