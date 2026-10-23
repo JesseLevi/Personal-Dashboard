@@ -1,9 +1,14 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { SECURITY_HEADERS } from "./lib/security/headers";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+  },
   experimental: {
     // #173: Next's documented default for lucide-react's ~1500-icon barrel.
     // Measured before/after here: no production bundle-size change, because
