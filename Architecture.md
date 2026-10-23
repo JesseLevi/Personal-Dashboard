@@ -13,7 +13,7 @@ Browser (PWA) ──HTTPS──► Next.js on Vercel (fra1)
 ```
 
 - The browser only talks to Atlas (ADR-0033). There is one hosted environment, production. Builds, promotion and migrations follow ADR-0032. Hosted settings that live outside the repo are listed in `docs/operations.md`.
-- Async work: short tasks run after the response via Next.js `after()`. There is no always-on worker (ADR-0018 §4). `worker/` is a skeleton.
+- Async work: short tasks run after the response via Next.js `after()`. There is no always-on worker (ADR-0018 §4). Embeddings drain lazily, with a daily cron (ADR-0043).
 
 ## 2. Repository layout
 
@@ -26,13 +26,13 @@ lib/                  server and shared logic, one folder per domain or seam:
   storage/            R2 seam (ADR-0024)          net/      safe-fetch, the SSRF guard
   auth/ profile/      session, greeting, profile  defaults/ ensure_user_defaults call
   boards/ notes/ recipes/ shopping/   domain queries, schemas, pure logic
+  embeddings/         canonical text, chunking, drain
   ui/                 cn() and UI helpers
 messages/             nl.json, en.json (ADR-0007)
 supabase/migrations/  every schema change     supabase/tests/  pgTAP RLS suite
 design/               tokens.json, figma-variables/, figma-map.json, notes/<Component>.md
 scripts/              CI gates, token sync, data imports (NEVO, USDA)
 tests/                Vitest; tests/visual = Playwright screenshot suite over Ladle
-worker/               job-consumer skeleton (unused until a scheduled-work mechanism is chosen)
 ```
 
 ## 3. Frontend and design system

@@ -7,7 +7,7 @@ Hosted settings that code review cannot see. Every change here is a hosted write
 - `vercel.json`:
   - builds `main` only (`ignoreCommand`, #408);
   - `github.autoAlias: false`, so no build goes live by itself;
-  - `crons`: one daily call to `/api/cron/calendar-sync` (04:00 UTC, Hobby allows once a day; ADR-0039). Vercel runs it on production only, and only once `CRON_SECRET` is set.
+  - `crons`: two daily calls, `/api/cron/calendar-sync` (04:00 UTC) and `/api/cron/embeddings` (05:00 UTC); Hobby allows each once a day (ADR-0039, ADR-0043). Vercel runs them on production only, and only once `CRON_SECRET` is set.
 - Promote by hand: dashboard "Promote to Production" or `vercel promote <url>`. Apply pending migrations first.
 - Production env vars (no `NEXT_PUBLIC_` prefix on any of them; mark secrets Sensitive):
 
@@ -18,7 +18,7 @@ Hosted settings that code review cannot see. Every change here is a hosted write
 | `ANTHROPIC_API_KEY` | `lib/ai/` | Unset = recipe import runs degraded |
 | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_AI_API_TOKEN` | `lib/ai/cloudflare.ts` | Token with Workers AI scope only. Either unset = keyword search only. Check that Workers Paid stays off: the free allocation is the spend cap (ADR-0043) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` | `lib/storage/` | Production bucket + its bucket-scoped token |
-| `CRON_SECRET` | `app/api/cron/calendar-sync` | At least 16 random characters (`openssl rand -hex 32`). Vercel Cron sends it as `Authorization: Bearer`. Unset = the route answers 401 and the daily backstop does nothing (lazy sync still works) |
+| `CRON_SECRET` | `app/api/cron/calendar-sync`, `app/api/cron/embeddings` | At least 16 random characters (`openssl rand -hex 32`). Vercel Cron sends it as `Authorization: Bearer`. Unset = both routes answer 401 and the daily backstops do nothing (the lazy paths still work) |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `LOGIN_GREETING_SALT` | login greeting (ADR-0031, PR #411) | Missing = greeting fails closed |
 
 ## Supabase Cloud (one project, production)

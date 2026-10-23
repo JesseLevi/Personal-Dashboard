@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ADR-0002/0003 guards, run in CI:
-# 1. service_role usage may only exist in worker/ and scripts/ (never app/, components/, lib/ except lib/database.types.ts
+# 1. service_role usage may only exist in scripts/ (never app/, components/, lib/ except lib/database.types.ts
 #    and lib/supabase/service.ts, which only app/api/cron/ may import: ADR-0039 §4).
 # 2. No NEXT_PUBLIC_ Supabase config — the browser never talks to Supabase.
 # 3. No dangerouslySetInnerHTML on user/model content paths (§7).
@@ -14,7 +14,7 @@ cd "${1:-.}"
 fail=0
 
 if grep -rn "SERVICE_ROLE" app/ components/ lib/ 2>/dev/null | grep -v "lib/database.types.ts" | grep -v "^lib/supabase/service.ts:"; then
-  echo "FAIL: service_role referenced outside worker/scripts and lib/supabase/service.ts (ADR-0002, ADR-0039)." >&2; fail=1
+  echo "FAIL: service_role referenced outside scripts and lib/supabase/service.ts (ADR-0002, ADR-0039)." >&2; fail=1
 fi
 
 # ADR-0039 §4: the service client is for the cron route only, never a user path.
@@ -30,13 +30,13 @@ if grep -rn "dangerouslySetInnerHTML" app/ components/ 2>/dev/null; then
   echo "FAIL: dangerouslySetInnerHTML is forbidden on this codebase (Architecture §7)." >&2; fail=1
 fi
 
-r2_scan=(); for p in app components lib worker middleware.ts; do [[ -e "$p" ]] && r2_scan+=("$p"); done
+r2_scan=(); for p in app components lib middleware.ts; do [[ -e "$p" ]] && r2_scan+=("$p"); done
 if [[ ${#r2_scan[@]} -gt 0 ]] && grep -rnE '\bR2_[A-Z]|aws4fetch|@aws-sdk' "${r2_scan[@]}" 2>/dev/null \
   | grep -v '^lib/storage/'; then
   echo "FAIL: R2_* env or S3 client referenced outside lib/storage/ (ADR-0024 §2)." >&2; fail=1
 fi
 
-cf_scan=(); for p in app components lib worker middleware.ts; do [[ -e "$p" ]] && cf_scan+=("$p"); done
+cf_scan=(); for p in app components lib middleware.ts; do [[ -e "$p" ]] && cf_scan+=("$p"); done
 if [[ ${#cf_scan[@]} -gt 0 ]] && grep -rnE 'CLOUDFLARE_[A-Z]|api\.cloudflare\.com' "${cf_scan[@]}" 2>/dev/null \
   | grep -v '^lib/ai/cloudflare.ts:'; then
   echo "FAIL: CLOUDFLARE_* env or Workers AI endpoint referenced outside lib/ai/cloudflare.ts (ADR-0043)." >&2; fail=1

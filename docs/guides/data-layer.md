@@ -2,7 +2,7 @@
 
 Read this before touching `supabase/`, server components/actions, storage, AI, or any user-facing string. Hosted settings live in `docs/operations.md`.
 
-- **All data access goes through Next.js server code** — the browser never talks to Supabase directly, and `service_role` never leaves server/worker modules (ADR-0033); in app code only `lib/supabase/service.ts`, imported by `app/api/cron/` alone (ADR-0039).
+- **All data access goes through Next.js server code** — the browser never talks to Supabase directly, and `service_role` never leaves server modules (ADR-0033); in app code only `lib/supabase/service.ts`, imported by `app/api/cron/` alone (ADR-0039): `calendar-sync` and `embeddings`. The embedding backlog drains in `lib/embeddings/drain.ts` with whichever client it is given (RLS client lazily from `app/(app)/layout.tsx`, service client in the cron).
 - Every table gets a `user_id` FK and an RLS policy, **plus an RLS test in `supabase/tests` in the same PR** (copy `rls-profiles.sql`) — CI fails on untested tables (ADR-0009). Schema changes only via `supabase/migrations`.
 - **A new table's migration must also grant access**: `grant select, insert, update, delete on public.<table> to authenticated;` and `grant select on public.<table> to anon;`. Without the grants every query fails with `42501` — this project's Supabase does not auto-expose new tables. Copy the block in `20260720000001_profiles.sql`.
 - Ownership is `user_id`; sharing is per container through `shares` (ADR-0035). Keep access decisions in RLS policies (via `private.<type>_role()` for shared types), never app-side `user_id` filters. A new module keeps a clear owning container.
