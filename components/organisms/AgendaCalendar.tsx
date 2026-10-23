@@ -187,6 +187,18 @@ export function useIsNarrow(): boolean {
 }
 
 const MINUTE_MS = 60_000;
+/** Longer than `--blur-fade-in-duration` (`animate-agenda-item-in`), so the first fade-in runs to the end. */
+const ENTER_MS = 600;
+
+/** True for the first moments after mount: the items fade in once, not on every later re-render. */
+function useEntering(): boolean {
+  const [entering, setEntering] = useState(true);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setEntering(false), ENTER_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
+  return entering;
+}
 
 /** Changes once a minute, on the minute. */
 function useMinute(): number {
@@ -266,7 +278,9 @@ export function AgendaCalendar({
   const events = useMemo(() => toEventInputs(items), [items]);
   // The class settings read the clock (hour labels under the now label): new functions each minute make FullCalendar re-run them.
   const minute = useMinute();
-  const theme = useMemo(buildAgendaCalendarOptions, [minute]);
+  const entering = useEntering();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- `minute` only forces new class functions.
+  const theme = useMemo(() => buildAgendaCalendarOptions(entering), [minute, entering]);
 
   useEffect(() => {
     const api = calendarRef.current?.getApi();
