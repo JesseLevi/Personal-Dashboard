@@ -1406,6 +1406,15 @@ export type Database = {
         Args: { p_client_key: string; p_email: string }
         Returns: string
       }
+      login_rate_limit: {
+        Args: {
+          p_action: string
+          p_client_key: string
+          p_email: string
+          p_mode: string
+        }
+        Returns: boolean
+      }
       match_ingredient_candidates: {
         Args: { p_limit?: number; p_names: string[] }
         Returns: {

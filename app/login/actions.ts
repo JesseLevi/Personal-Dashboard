@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { loginCodeSchema, magicLinkSchema, passwordLoginSchema } from "@/lib/auth/schemas";
 import { clearLoginEmail, getLoginEmail, setLoginEmail } from "@/lib/auth/login-email-cookie";
+import { consumeLoginAttempt, refundLoginAttempt } from "@/lib/auth/login-rate-limit";
+import { checkLoginTurnstile, getRequestContext } from "@/lib/auth/turnstile";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // #158 rewrote both actions from redirect-with-querystring to the
@@ -16,7 +18,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export type PasswordLoginState =
   | { status: "idle" }
   | { status: "success" }
-  | { status: "error"; errorKey: "invalid-input" | "invalid-credentials" };
+  | { status: "error"; errorKey: "invalid-input" | "invalid-credentials" | "rate-limited" };
 
 export type LoginCodeSendState =
   | { status: "idle" }
@@ -42,10 +44,23 @@ export async function signInWithPassword(
   });
   if (!parsed.success) return { status: "error", errorKey: "invalid-input" };
 
+  // Bot check, then a per-address/client/global attempt budget (identical answer
+  // for known and unknown addresses). A success gives its attempt back.
+  const ctx = await getRequestContext();
+  if (!(await checkLoginTurnstile(formData.get("turnstileToken"), ctx))) {
+    return { status: "error", errorKey: "rate-limited" };
+  }
+  if (!(await consumeLoginAttempt("password", parsed.data.email, ctx.clientKey))) {
+    return { status: "error", errorKey: "rate-limited" };
+  }
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
-  if (error) return { status: "error", errorKey: "invalid-credentials" };
+  if (error) {
+    return { status: "error", errorKey: isRateLimited(error) ? "rate-limited" : "invalid-credentials" };
+  }
 
+  await refundLoginAttempt("password", parsed.data.email, ctx.clientKey);
   return { status: "success" };
 }
 
@@ -59,7 +74,11 @@ export async function sendLoginCode(
 ): Promise<LoginCodeSendState> {
   const parsed = magicLinkSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) return { status: "error", errorKey: "invalid-input" };
-  return deliverLoginCode(parsed.data.email);
+  const ctx = await getRequestContext();
+  if (!(await checkLoginTurnstile(formData.get("turnstileToken"), ctx))) {
+    return { status: "error", errorKey: "rate-limited" };
+  }
+  return deliverLoginCode(parsed.data.email, ctx.clientKey);
 }
 
 // Same as sendLoginCode, but for an address already in the cookie and without
@@ -67,10 +86,17 @@ export async function sendLoginCode(
 export async function resendLoginCode(): Promise<LoginCodeSendState> {
   const email = await getLoginEmail();
   if (!email) return { status: "error", errorKey: "invalid-input" };
-  return deliverLoginCode(email);
+  // No Turnstile here: /login/code has no widget, and the address comes from
+  // the cookie a bot-checked send set.
+  return deliverLoginCode(email, (await getRequestContext()).clientKey);
 }
 
-async function deliverLoginCode(email: string): Promise<LoginCodeSendState> {
+async function deliverLoginCode(email: string, clientKey: string): Promise<LoginCodeSendState> {
+  // Same answer for known and unknown addresses; a granted send also resets
+  // that address's verify budget (the new code is a new secret).
+  if (!(await consumeLoginAttempt("send", email, clientKey))) {
+    return { status: "error", errorKey: "rate-limited" };
+  }
   const supabase = await createSupabaseServerClient();
   const origin = (await headers()).get("origin");
   const { error } = await supabase.auth.signInWithOtp({
@@ -102,12 +128,19 @@ export async function verifyLoginCode(
   const email = await getLoginEmail();
   if (!email) return { status: "error", errorKey: "invalid-code" };
 
+  // Budget per address, counted whatever cookie or session the guess comes from.
+  const { clientKey } = await getRequestContext();
+  if (!(await consumeLoginAttempt("verify", email, clientKey))) {
+    return { status: "error", errorKey: "rate-limited" };
+  }
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.verifyOtp({ email, token: parsed.data.code, type: "email" });
   if (error) {
     return { status: "error", errorKey: isRateLimited(error) ? "rate-limited" : "invalid-code" };
   }
 
+  await refundLoginAttempt("verify", email, clientKey);
   await clearLoginEmail();
   return { status: "success" };
 }

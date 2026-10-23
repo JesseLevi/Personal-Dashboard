@@ -428,3 +428,7 @@ guessed.
 - **Submit:** `onComplete` calls `requestSubmit()`; the Inloggen button is the fallback and stays disabled until six digits. A wrong code empties the field and refocuses it; typing retires the message.
 - **Messages:** one collapsing line under the field (`role="alert"` for errors, `role="status"` for "nieuwe code gestuurd"). Resend uses this inline line instead of a toast: the page has no Toast host.
 - **Unknown account:** `sendLoginCode` answers `sent` when Supabase refuses an unknown address, so the screen is no enumeration oracle (ADR-0031); such a code simply never verifies.
+
+## Bot check on submit
+
+The password and send-code submits carry the invisible Turnstile token (`turnstileToken` form field, taken from the same pre-fetched pool as the greeting; empty without a site key). A refused bot check or an exceeded login limit shows the existing `errors.rate-limited` line. No visual change.

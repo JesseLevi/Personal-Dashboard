@@ -37,7 +37,7 @@ beforeEach(() => {
   vi.stubEnv("LOGIN_GREETING_SALT", "test-salt-0123456789abcdef");
   headerMap = { "x-forwarded-for": "1.2.3.4, 5.6.7.8", host: "atlas.test" };
   rpc.mockResolvedValue({ data: "Carlotta", error: null });
-  siteverify({ success: true, action: "login_greeting", hostname: "atlas.test" });
+  siteverify({ success: true, action: "login", hostname: "atlas.test" });
 });
 
 afterEach(() => {
@@ -72,15 +72,15 @@ describe("lookupGreetingName", () => {
 
   it("compares the hostname lowercase and without port", async () => {
     headerMap = { host: "Atlas.test:3000" };
-    siteverify({ success: true, action: "login_greeting", hostname: "ATLAS.test" });
+    siteverify({ success: true, action: "login", hostname: "ATLAS.test" });
     expect(await run(valid)).toEqual({ name: "Carlotta" });
   });
 
   it("uses TURNSTILE_ALLOWED_HOSTNAMES over the request host when set", async () => {
     vi.stubEnv("TURNSTILE_ALLOWED_HOSTNAMES", "app.example, www.example");
-    siteverify({ success: true, action: "login_greeting", hostname: "atlas.test" });
+    siteverify({ success: true, action: "login", hostname: "atlas.test" });
     expect(await run(valid)).toEqual({ name: null });
-    siteverify({ success: true, action: "login_greeting", hostname: "WWW.example" });
+    siteverify({ success: true, action: "login", hostname: "WWW.example" });
     expect(await run(valid)).toEqual({ name: "Carlotta" });
   });
 
@@ -119,7 +119,7 @@ describe("lookupGreetingName", () => {
     [
       "wrong hostname",
       () =>
-        siteverify({ success: true, action: "login_greeting", hostname: "evil.test" }),
+        siteverify({ success: true, action: "login", hostname: "evil.test" }),
     ],
     [
       "non-test secret with an empty action",

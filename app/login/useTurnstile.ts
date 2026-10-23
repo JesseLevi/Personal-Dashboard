@@ -87,7 +87,7 @@ export function useTurnstile(siteKey: string | null | undefined) {
       apiRef.current = api;
       widgetIdRef.current = api.render(container, {
         sitekey: siteKey,
-        action: "login_greeting",
+        action: "login",
         execution: "execute",
         callback: (token) => sourceRef.current?.onToken(token),
         "error-callback": () => sourceRef.current?.onError(),
