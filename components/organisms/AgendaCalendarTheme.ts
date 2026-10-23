@@ -129,7 +129,9 @@ function hiddenByNowLabel(info: { time?: { milliseconds: number }; view: { curre
 
 const resizeHit = "absolute inset-x-0 z-10";
 
-export function buildAgendaCalendarOptions(): CalendarOptions {
+/** `entering`: the items fade in, for the first paint after the skeleton. */
+export function buildAgendaCalendarOptions(entering = false): CalendarOptions {
+  const enter = entering && "animate-blur-in";
   return {
     className: "flex h-full min-h-0 flex-col text-sm text-text-primary",
     viewClass:
@@ -137,7 +139,7 @@ export function buildAgendaCalendarOptions(): CalendarOptions {
     fillerClass: cn("border", LINE),
     tableHeaderClass: "bg-surface-highlight-white",
 
-    eventClass: (info) => eventSurface(info),
+    eventClass: (info) => cn(eventSurface(info), enter),
     navLinkClass: "hover:underline",
 
     // Day header
@@ -214,7 +216,7 @@ export function buildAgendaCalendarOptions(): CalendarOptions {
     listDayHeaderInnerClass: "text-sm font-semibold text-text-primary last:text-text-secondary",
     views: {
       list: {
-        eventClass: (info) => cn("border-0 bg-transparent", listText(info)),
+        eventClass: (info) => cn("border-0 bg-transparent", listText(info), enter),
       },
     },
     listItemEventClass: (info) =>
