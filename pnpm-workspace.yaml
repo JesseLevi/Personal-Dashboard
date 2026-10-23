@@ -26,4 +26,6 @@ overrides:
   "nanoid@<4": "^3.3.18"
   "decode-uri-component": ">=0.4.3"
   "source-map-js": "^1.2.2"
+  "vite@<7": "^6.4.4"
+  "vite@>=7 <8": "^7.3.7"
   "postcss": "^8.5.23"
