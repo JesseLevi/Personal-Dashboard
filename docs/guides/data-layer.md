@@ -2,7 +2,7 @@
 
 Read this before touching `supabase/`, server components/actions, storage, AI, or any user-facing string. Hosted settings live in `docs/operations.md`.
 
-- **All data access goes through Next.js server code** — the browser never talks to Supabase directly, and `service_role` never leaves server/worker modules (ADR-0033); in app code only `lib/supabase/service.ts`, imported by `app/api/cron/` alone (ADR-0039).
+- **All data access goes through Next.js server code** — the browser never talks to Supabase directly, and `service_role` never leaves server modules (ADR-0033); in app code only `lib/supabase/service.ts`, imported by `app/api/cron/` alone (ADR-0039): `calendar-sync` and `embeddings`. The embedding backlog drains in `lib/embeddings/drain.ts` with whichever client it is given (RLS client lazily from `app/(app)/layout.tsx`, service client in the cron).
 - Every table gets a `user_id` FK and an RLS policy, **plus an RLS test in `supabase/tests` in the same PR** (copy `rls-profiles.sql`) — CI fails on untested tables (ADR-0009). Schema changes only via `supabase/migrations`.
 - **A new table's migration must also grant access**: `grant select, insert, update, delete on public.<table> to authenticated;` and `grant select on public.<table> to anon;`. Without the grants every query fails with `42501` — this project's Supabase does not auto-expose new tables. Copy the block in `20260720000001_profiles.sql`.
 - Ownership is `user_id`; sharing is per container through `shares` (ADR-0035). Keep access decisions in RLS policies (via `private.<type>_role()` for shared types), never app-side `user_id` filters. A new module keeps a clear owning container.
@@ -10,7 +10,7 @@ Read this before touching `supabase/`, server components/actions, storage, AI, o
 - No hardcoded user-facing strings — next-intl catalogs, `messages/nl.json` + `messages/en.json` in the same PR (ADR-0007); `tests/messages-key-parity.test.ts` fails on key-set drift.
 - Render stored rich text only through TipTap's React renderer (fixed extension whitelist); render AI-agent output as plain text. Never `dangerouslySetInnerHTML` on user or model content.
 - `Vision.md` lists explicit "buiten scope" items per module — real boundaries, not backlog.
-- AI goes only through `lib/ai/` (prompt + zod schema in, validated object out): deterministic code first, per-user rate limit, degraded mode without a key, output rendered as plain text (ADR-0018/0019). Short async work runs in `after()` with a lazy sweep for stuck rows; there is no worker host yet.
+- AI goes only through `lib/ai/` (prompt + zod schema in, validated object out): deterministic code first, per-user rate limit, degraded mode without a key, output rendered as plain text (ADR-0018/0019). Short async work runs in `after()` with a lazy sweep for stuck rows; there is no worker host yet. `embed()` (bge-m3 on Cloudflare Workers AI, ADR-0043) needs `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_API_TOKEN` and throws `not_configured` without them.
 - User-supplied URLs are fetched only through `lib/net/safe-fetch` (SSRF guard).
 
 ## Migrations reach hosted deliberately (ADR-0032)

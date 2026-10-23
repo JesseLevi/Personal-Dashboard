@@ -514,6 +514,96 @@ export type Database = {
           },
         ]
       }
+      embeddings: {
+        Row: {
+          calendar_event_id: string | null
+          card_id: string | null
+          chunk_index: number
+          content_hash: string
+          content_text: string
+          created_at: string
+          embedding: unknown
+          id: string
+          model: string
+          note_id: string | null
+          recipe_id: string | null
+          shopping_list_item_id: string | null
+          source_updated_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          calendar_event_id?: string | null
+          card_id?: string | null
+          chunk_index?: number
+          content_hash: string
+          content_text: string
+          created_at?: string
+          embedding: unknown
+          id?: string
+          model: string
+          note_id?: string | null
+          recipe_id?: string | null
+          shopping_list_item_id?: string | null
+          source_updated_at: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          calendar_event_id?: string | null
+          card_id?: string | null
+          chunk_index?: number
+          content_hash?: string
+          content_text?: string
+          created_at?: string
+          embedding?: unknown
+          id?: string
+          model?: string
+          note_id?: string | null
+          recipe_id?: string | null
+          shopping_list_item_id?: string | null
+          source_updated_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "embeddings_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embeddings_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embeddings_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embeddings_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embeddings_shopping_list_item_id_fkey"
+            columns: ["shopping_list_item_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_list_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingredient_aliases: {
         Row: {
           alias_normalized: string
@@ -822,6 +912,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          ai_enabled: boolean
+          ai_enabled_at: string | null
           avatar_path: string | null
           created_at: string
           display_name: string | null
@@ -831,6 +923,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ai_enabled?: boolean
+          ai_enabled_at?: string | null
           avatar_path?: string | null
           created_at?: string
           display_name?: string | null
@@ -840,6 +934,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ai_enabled?: boolean
+          ai_enabled_at?: string | null
           avatar_path?: string | null
           created_at?: string
           display_name?: string | null
@@ -1366,6 +1462,7 @@ export type Database = {
         Returns: boolean
       }
       avatar_path_for: { Args: { p_user_id: string }; Returns: string }
+      claim_embedding_drain: { Args: never; Returns: boolean }
       create_event_series: {
         Args: {
           p_all_day: boolean
@@ -1394,6 +1491,22 @@ export type Database = {
       delete_event_series: {
         Args: { p_event_id: string; p_scope: string }
         Returns: undefined
+      }
+      embedding_backlog: {
+        Args: { p_limit: number; p_model: string }
+        Returns: {
+          source_id: string
+          source_type: string
+          updated_at: string
+        }[]
+      }
+      embedding_backlog_for: {
+        Args: { p_limit: number; p_model: string; p_user: string }
+        Returns: {
+          source_id: string
+          source_type: string
+          updated_at: string
+        }[]
       }
       ensure_user_defaults: { Args: never; Returns: undefined }
       extend_event_series: { Args: never; Returns: number }
@@ -1503,6 +1616,22 @@ export type Database = {
           updated_at: string
         }[]
       }
+      search_semantic: {
+        Args: { p_match_count: number; p_query: unknown; p_types: string[] }
+        Returns: {
+          score: number
+          source_id: string
+          source_type: string
+        }[]
+      }
+      search_text: {
+        Args: { p_match_count: number; p_query: string; p_types: string[] }
+        Returns: {
+          score: number
+          source_id: string
+          source_type: string
+        }[]
+      }
       seed_board_for: { Args: { p_user_id: string }; Returns: undefined }
       seed_calendars_for: { Args: { p_user_id: string }; Returns: undefined }
       seed_keys: { Args: never; Returns: string[] }
@@ -1518,6 +1647,7 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: undefined
       }
+      set_ai_enabled: { Args: { p_enabled: boolean }; Returns: undefined }
       toggle_board_favorite: { Args: { p_board_id: string }; Returns: boolean }
       update_event_series: {
         Args: {
