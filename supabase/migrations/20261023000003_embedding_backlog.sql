@@ -87,6 +87,14 @@ comment on function public.embedding_backlog_for is
 -- Callers need EXECUTE on the private scan because the wrappers are invokers;
 -- service_role also needs USAGE on the schema (authenticated has it already).
 grant usage on schema private to service_role;
+
+-- The cron route (service_role) runs the same scan and builds the canonical
+-- text, so it reads the sources. service_role has no default table grants here.
+grant select on
+  public.profiles, public.notes, public.recipes, public.recipe_ingredients,
+  public.recipe_steps, public.cards, public.card_labels, public.labels,
+  public.calendar_events, public.shopping_list_items
+  to service_role;
 revoke execute on function private.embedding_backlog_scan(uuid, text, integer) from public, anon;
 grant execute on function private.embedding_backlog_scan(uuid, text, integer) to authenticated, service_role;
 revoke execute on function public.embedding_backlog(text, integer) from public, anon;
