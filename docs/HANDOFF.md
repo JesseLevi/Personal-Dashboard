@@ -6,9 +6,10 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
 
 - Atlas is in production use by real accounts. Phases 0–7 are built: account, Te doen, Recepten (incl. URL import, nutrition, USDA spices, sharing as a copy), Winkelmand (incl. shared baskets), Notities, Agenda.
 - Delen fase 1 (#420) and Recept delen (#464) passed the user's two-account end-to-end test (2026-10-18).
-- **Production** runs `7005994` (#488). `main` is ahead by #508, #510, #511, #516, #518, #519, #520, #523, #524, #526, the agenda redesign (#535–#540) and its feedback rounds (#545, #546, #549, #551, #553), #564 and the dark alert palette for tags, Destructive buttons and error text. The user promotes production.
+- **Production** runs `7005994` (#488). `main` is ahead by #508, #510, #511, #516, #518, #519, #520, #523, #524, #526, the agenda redesign (#535–#540) and its feedback rounds (#545, #546, #549, #551, #553), #564, the dark alert palette for tags, Destructive buttons and error text, and #569 (panel transitions). The user promotes production.
 - **Hosted DB**: every migration up to `20261018000001` (USDA spices) is applied. One migration is pending: `20261018000002_drop_profiles_avatar_url` (#513). It is destructive. The user agreed to apply it after the next production promotion. Nothing reads the column, so the order does not matter for correctness.
-- `pnpm audit --prod` is clean (#512). Dev-only findings are in #525.
+- **Panels (#569, 2026-10-20)**: every `SidePanel` slides in and out again (broken since #477). The quick-add sheet's handle drags to close through the shared `lib/dom/use-sheet-drag.ts`. Bottom sheets open with a 10px bounce. Checked in Ladle only; still to check on a real iPhone and in the signed-in app: Settings, + Nieuw drag and bounce, and that #477's login glitch stays gone.
+- `pnpm audit` is clean, dev dependencies included (#512, #554, #572). Dev-chain pins live in `pnpm-workspace.yaml` `overrides`.
 - The visual gate now runs for `app/**/*.tsx` and `app/globals.css`. Scrollbars are hidden app-wide in `app/globals.css` (no gutter).
 
 ## Next
