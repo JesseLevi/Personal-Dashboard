@@ -5,13 +5,23 @@ import { z } from "zod";
 
 vi.mock("server-only", () => ({}));
 
-import { generateObject, isAiConfigured, setProviderForTests, type AiProvider } from "@/lib/ai";
+import {
+  EMBEDDING_DIMENSIONS,
+  embed,
+  generateObject,
+  isAiConfigured,
+  isEmbeddingConfigured,
+  setEmbeddingProviderForTests,
+  setProviderForTests,
+  type AiProvider,
+} from "@/lib/ai";
 
 const schema = z.object({ ok: z.boolean() });
 const request = { system: "s", prompt: "p", schema, purpose: "seam_test" };
 
 afterEach(() => {
   setProviderForTests(undefined);
+  setEmbeddingProviderForTests(undefined);
   vi.unstubAllEnvs();
 });
 
@@ -32,6 +42,37 @@ describe("generateObject", () => {
   });
 });
 
+describe("embed", () => {
+  it("rejects with not_configured without Cloudflare credentials", async () => {
+    vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "");
+    vi.stubEnv("CLOUDFLARE_AI_API_TOKEN", "");
+    expect(isEmbeddingConfigured()).toBe(false);
+    await expect(embed({ texts: ["a"], purpose: "seam_test" })).rejects.toMatchObject({ code: "not_configured" });
+  });
+
+  it("is configured with both variables set", () => {
+    vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "acc");
+    vi.stubEnv("CLOUDFLARE_AI_API_TOKEN", "tok");
+    expect(isEmbeddingConfigured()).toBe(true);
+  });
+
+  it("re-checks count and dimension of an injected provider", async () => {
+    const good = Array.from({ length: EMBEDDING_DIMENSIONS }, () => 0.1);
+    setEmbeddingProviderForTests({ embed: vi.fn().mockResolvedValue([good.slice(1)]) });
+    await expect(embed({ texts: ["a"], purpose: "seam_test" })).rejects.toMatchObject({ code: "invalid_output" });
+    setEmbeddingProviderForTests({ embed: vi.fn().mockResolvedValue([good]) });
+    await expect(embed({ texts: ["a", "b"], purpose: "seam_test" })).rejects.toMatchObject({ code: "invalid_output" });
+    await expect(embed({ texts: ["a"], purpose: "seam_test" })).resolves.toEqual([good]);
+  });
+
+  it("returns an empty list for no texts without calling the provider", async () => {
+    const provider = { embed: vi.fn() };
+    setEmbeddingProviderForTests(provider);
+    await expect(embed({ texts: [], purpose: "seam_test" })).resolves.toEqual([]);
+    expect(provider.embed).not.toHaveBeenCalled();
+  });
+});
+
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const full = path.join(dir, name);
@@ -49,5 +90,15 @@ describe("provider swappability", () => {
       .filter((file) => sdk.test(readFileSync(file, "utf8")))
       .map((file) => path.relative(root, file));
     expect(offenders).toEqual(["lib/ai/anthropic.ts"]);
+  });
+
+  it("only lib/ai/cloudflare.ts knows the Workers AI endpoint and CLOUDFLARE_* env", () => {
+    const root = path.resolve(__dirname, "..");
+    const known = /api\.cloudflare\.com|CLOUDFLARE_[A-Z]/;
+    const offenders = ["lib", "app", "components", "worker"]
+      .flatMap((dir) => sourceFiles(path.join(root, dir)))
+      .filter((file) => known.test(readFileSync(file, "utf8")))
+      .map((file) => path.relative(root, file));
+    expect(offenders).toEqual(["lib/ai/cloudflare.ts"]);
   });
 });

@@ -7,6 +7,7 @@
 # 4. No raw hex colors in components — tokens only (CLAUDE.md/ADR-0010).
 # 5. R2_* env vars and the S3 client (aws4fetch, @aws-sdk) only under lib/storage/ (ADR-0024 §2).
 #    scripts/, tests/, docs/ and .env.example are not scanned.
+# 6. CLOUDFLARE_* env and the Workers AI endpoint only in lib/ai/cloudflare.ts (ADR-0043 §1).
 # Optional $1 = repo root to scan (used by tests/storage.test.ts).
 set -euo pipefail
 cd "${1:-.}"
@@ -33,6 +34,12 @@ r2_scan=(); for p in app components lib worker middleware.ts; do [[ -e "$p" ]] &
 if [[ ${#r2_scan[@]} -gt 0 ]] && grep -rnE '\bR2_[A-Z]|aws4fetch|@aws-sdk' "${r2_scan[@]}" 2>/dev/null \
   | grep -v '^lib/storage/'; then
   echo "FAIL: R2_* env or S3 client referenced outside lib/storage/ (ADR-0024 §2)." >&2; fail=1
+fi
+
+cf_scan=(); for p in app components lib worker middleware.ts; do [[ -e "$p" ]] && cf_scan+=("$p"); done
+if [[ ${#cf_scan[@]} -gt 0 ]] && grep -rnE 'CLOUDFLARE_[A-Z]|api\.cloudflare\.com' "${cf_scan[@]}" 2>/dev/null \
+  | grep -v '^lib/ai/cloudflare.ts:'; then
+  echo "FAIL: CLOUDFLARE_* env or Workers AI endpoint referenced outside lib/ai/cloudflare.ts (ADR-0043)." >&2; fail=1
 fi
 
 # Raw-hex guard. Candidates are `#`/`%23` + 3-8 hex digits, then filtered: a

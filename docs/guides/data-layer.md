@@ -10,7 +10,7 @@ Read this before touching `supabase/`, server components/actions, storage, AI, o
 - No hardcoded user-facing strings — next-intl catalogs, `messages/nl.json` + `messages/en.json` in the same PR (ADR-0007); `tests/messages-key-parity.test.ts` fails on key-set drift.
 - Render stored rich text only through TipTap's React renderer (fixed extension whitelist); render AI-agent output as plain text. Never `dangerouslySetInnerHTML` on user or model content.
 - `Vision.md` lists explicit "buiten scope" items per module — real boundaries, not backlog.
-- AI goes only through `lib/ai/` (prompt + zod schema in, validated object out): deterministic code first, per-user rate limit, degraded mode without a key, output rendered as plain text (ADR-0018/0019). Short async work runs in `after()` with a lazy sweep for stuck rows; there is no worker host yet.
+- AI goes only through `lib/ai/` (prompt + zod schema in, validated object out): deterministic code first, per-user rate limit, degraded mode without a key, output rendered as plain text (ADR-0018/0019). Short async work runs in `after()` with a lazy sweep for stuck rows; there is no worker host yet. `embed()` (bge-m3 on Cloudflare Workers AI, ADR-0043) needs `CLOUDFLARE_ACCOUNT_ID` + `CLOUDFLARE_AI_API_TOKEN` and throws `not_configured` without them.
 - User-supplied URLs are fetched only through `lib/net/safe-fetch` (SSRF guard).
 
 ## Migrations reach hosted deliberately (ADR-0032)

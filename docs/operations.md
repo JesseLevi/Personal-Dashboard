@@ -16,6 +16,7 @@ Hosted settings that code review cannot see. Every change here is a hosted write
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | `lib/supabase/server.ts` | The anon key is server-only too (ADR-0033) |
 | `SUPABASE_SERVICE_ROLE_KEY` | server-only maintenance modules | Never on a user's request path |
 | `ANTHROPIC_API_KEY` | `lib/ai/` | Unset = recipe import runs degraded |
+| `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_AI_API_TOKEN` | `lib/ai/cloudflare.ts` | Token with Workers AI scope only. Either unset = keyword search only. Check that Workers Paid stays off: the free allocation is the spend cap (ADR-0043) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` | `lib/storage/` | Production bucket + its bucket-scoped token |
 | `CRON_SECRET` | `app/api/cron/calendar-sync` | At least 16 random characters (`openssl rand -hex 32`). Vercel Cron sends it as `Authorization: Bearer`. Unset = the route answers 401 and the daily backstop does nothing (lazy sync still works) |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `LOGIN_GREETING_SALT` | login greeting (ADR-0031, PR #411) | Missing = greeting fails closed |
