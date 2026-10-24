@@ -429,6 +429,10 @@ guessed.
 - **Messages:** one collapsing line under the field (`role="alert"` for errors, `role="status"` for "nieuwe code gestuurd"). Resend uses this inline line instead of a toast: the page has no Toast host.
 - **Unknown account:** `sendLoginCode` answers `sent` when Supabase refuses an unknown address, so the screen is no enumeration oracle (ADR-0031); such a code simply never verifies.
 
+## Link confirm screen (`/auth/confirm`, Claude-designed, no Figma)
+
+`app/auth/confirm/ConfirmForm.tsx` inside the login frame (`layout.tsx` re-exports `app/login/layout.tsx`). Same 312 px column, `text-xl` heading, `text-base` secondary line. A GET only renders it; the Inloggen button posts `confirmMagicLink`, which calls `verifyOtp`. With the `atlas_login_email` cookie the heading is "Inloggen als j****@…"; without it (link opened elsewhere) a generic heading plus the line to continue only when you requested the link. "Terug naar inloggen" is a transparent `Button` (presentational) inside a `Link` to `/login`. The cookie's path is `/` so this route receives it. Stories: `KnownAddress`, `UnknownAddress`, `InPageFrame*`.
+
 ## Bot check on submit
 
 The password and send-code submits carry the invisible Turnstile token (`turnstileToken` form field, taken from the same pre-fetched pool as the greeting; empty without a site key). A refused bot check or an exceeded login limit shows the existing `errors.rate-limited` line. No visual change.

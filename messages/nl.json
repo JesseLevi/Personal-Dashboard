@@ -35,6 +35,14 @@
       "magic-link-invalid": "Deze inloglink is ongeldig of verlopen. Vraag een nieuwe aan.",
       "generic": "Er ging iets mis. Probeer het opnieuw."
     },
+    "confirm": {
+      "titleKnown": "Inloggen als {email}",
+      "titleUnknown": "Inloggen bij Atlas",
+      "descriptionKnown": "Bevestig dat jij dit bent.",
+      "descriptionUnknown": "Ga alleen verder als je deze inloglink zelf hebt aangevraagd.",
+      "submit": "Inloggen",
+      "back": "Terug naar inloggen"
+    },
     "code": {
       "title": "Vul je code in",
       "description": "We hebben een code van 6 cijfers gestuurd naar {email}.",
