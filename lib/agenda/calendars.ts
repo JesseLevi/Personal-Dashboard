@@ -116,16 +116,20 @@ export function readSyncState(raw: unknown): { status: SyncStatus; errorCode: st
   };
 }
 
+/** Epoch ms of the latest attempt, successful or not; 0 when the account was never tried. */
+export function lastAttemptMs(account: { last_synced_at: string | null; sync_state: unknown }): number {
+  const { attemptedAt } = readSyncState(account.sync_state);
+  return Math.max(
+    attemptedAt ? Date.parse(attemptedAt) || 0 : 0,
+    account.last_synced_at ? Date.parse(account.last_synced_at) || 0 : 0,
+  );
+}
+
 /** True when the last attempt (successful or not) is older than `maxAgeMs`. */
 export function isStale(
   account: { last_synced_at: string | null; sync_state: unknown },
   now: Date,
   maxAgeMs: number,
 ): boolean {
-  const { attemptedAt } = readSyncState(account.sync_state);
-  const last = Math.max(
-    attemptedAt ? Date.parse(attemptedAt) || 0 : 0,
-    account.last_synced_at ? Date.parse(account.last_synced_at) || 0 : 0,
-  );
-  return now.getTime() - last > maxAgeMs;
+  return now.getTime() - lastAttemptMs(account) > maxAgeMs;
 }

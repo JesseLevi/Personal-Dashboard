@@ -40,6 +40,8 @@ const TITLE_MAX = 200;
 const LOCATION_MAX = 200;
 const MAX_EVENTS = 20_000;
 const MAX_OCCURRENCES_PER_SERIES = 20_000;
+/** Iterator steps across all series, in or out of the window, so CPU per feed stays bounded. */
+const MAX_TOTAL_ITERATIONS = 150_000;
 const DAY_MS = 86_400_000;
 
 export function syncWindow(now: Date): { from: Date; to: Date } {
@@ -211,6 +213,7 @@ export function parseIcs(text: string, window: { from: Date; to: Date }): SyncEv
   const recurrenceKey = (time: ICAL.Time) =>
     time.isDate ? time.toString() : new Date(toInstant(time)).toISOString();
 
+  let iterations = 0;
   const orphans: ICAL.Event[] = [];
   for (const exception of exceptions) {
     const master = masters.get(exception.uid);
@@ -226,6 +229,7 @@ export function parseIcs(text: string, window: { from: Date; to: Date }): SyncEv
       }
       const iterator = event.iterator();
       for (let n = 0; n < MAX_OCCURRENCES_PER_SERIES; n++) {
+        if (++iterations > MAX_TOTAL_ITERATIONS) throw new IcsError("too_large");
         const occurrence = iterator.next();
         if (!occurrence || toInstant(occurrence) >= toMs) break;
         const details = event.getOccurrenceDetails(occurrence);
