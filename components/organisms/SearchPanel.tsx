@@ -113,6 +113,8 @@ export function SearchPanel({
   const [view, setView] = useState<View>({ status: "idle" });
   const [active, setActive] = useState(0);
   const fieldRef = useRef<HTMLDivElement>(null);
+  // A pre-filled query searches at once: there is no typing to wait out (and the Ladle baselines stay deterministic).
+  const searchNow = useRef(initialQuery !== undefined);
 
   const trimmedQuery = query.trim();
   const searchable = trimmedQuery.length >= NOTES_SEARCH_MIN_QUERY_LENGTH;
@@ -127,6 +129,8 @@ export function SearchPanel({
       return;
     }
     let cancelled = false;
+    const delay = searchNow.current ? 0 : SEARCH_PANEL_DEBOUNCE_MS;
+    searchNow.current = false;
     setView({ status: "loading" });
     const timeoutId = setTimeout(() => {
       onSearch(trimmedQuery)
@@ -138,7 +142,7 @@ export function SearchPanel({
         .catch(() => {
           if (!cancelled) setView({ status: "failed" });
         });
-    }, SEARCH_PANEL_DEBOUNCE_MS);
+    }, delay);
     return () => {
       cancelled = true;
       clearTimeout(timeoutId);
