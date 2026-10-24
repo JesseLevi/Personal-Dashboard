@@ -21,6 +21,7 @@ Tickets are issues on `JesseLevi/Personal-Dashboard`, one milestone per phase. T
 - **Check the work is committed** (`git -C <worktree> status`/`log`). Agents have reported success with everything uncommitted. A killed agent's work usually survives in its worktree.
 - **Re-run the checks yourself**: lint, typecheck, test, the relevant `pnpm check:*`, and the visual suite through CI. An agent that regenerates baselines and then edits more code never re-runs them.
 - **Read the diff against the brief.** Watch for scope creep, invented UI outside ADR-0034's rules, and strings missing from one catalog.
+- **`main` requires signed commits** (ruleset), and local agent commits are unsigned, so auto-merge stays BLOCKED with green checks. Rebase the PR branch onto `main` and rebuild it as one commit with the GraphQL `createCommitOnBranch` mutation, which GitHub signs; check that the tree matches, then point the branch at it. Never merge with admin bypass.
 
 ## Parallel work gotchas
 
