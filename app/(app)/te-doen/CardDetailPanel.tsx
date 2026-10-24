@@ -16,7 +16,7 @@ import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import { PRIORITIES, SIZES, isPriority, isSize, type Size } from "@/lib/boards/enums";
 import type { ActionResult, CardRow, CardWithLabels } from "@/lib/boards/types";
 
-// A Tag row is as tall as a Button row, so these fields match InputField's height.
+// Tag rows get a Button row's metrics: a 40 px tap target, selection aligned with the options.
 const TAG_ROW = "flex h-10 items-center px-component-sm";
 
 // Card-detail SidePanel content (#94) — Figma "Te doen/*/AddItem"
