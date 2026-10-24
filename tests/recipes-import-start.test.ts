@@ -6,7 +6,6 @@ import type { MatcherClient } from "@/lib/recipes/import/match-ingredients";
 import { importUrlSchema, hostOf } from "@/lib/recipes/import/url";
 import { retryImport, startImport } from "@/lib/recipes/import/start";
 import { startRecipeImportSchema } from "@/lib/recipes/schemas";
-import { IMPORTS_PER_HOUR } from "@/lib/recipes/import/rate-limit";
 
 const CATEGORY = "11111111-1111-4111-8111-111111111111";
 
@@ -15,27 +14,28 @@ type Call = { table: string; op: string; args: unknown[] };
 /** Chainable fake: every builder method records itself and returns the chain; terminal reads resolve from `plan`. */
 function fakeClient(plan: {
   category?: { id: string } | null;
-  rateCount?: number;
+  rateAllowed?: boolean;
   firstPosition?: number | null;
   insertedId?: string;
   failed?: Record<string, unknown> | null;
 }) {
   const calls: Call[] = [];
   const supabase = {
+    rpc(name: string) {
+      calls.push({ table: "", op: `rpc:${name}`, args: [] });
+      return Promise.resolve({ data: plan.rateAllowed ?? true, error: null });
+    },
     from(table: string) {
       let op = "select";
-      let head = false;
       const chain: Record<string, unknown> = {};
       const record = (name: string) => (...args: unknown[]) => {
         calls.push({ table, op: name, args });
-        if (name === "select" && args[1] && typeof args[1] === "object") head = true;
         if (name === "insert" || name === "update" || name === "delete") op = name;
         return chain;
       };
       for (const name of ["select", "eq", "not", "gt", "order", "limit", "insert", "update", "delete"]) chain[name] = record(name);
       const result = (): { data: unknown; error: null; count?: number } => {
         if (table === "recipe_categories") return { data: plan.category === undefined ? { id: CATEGORY } : plan.category, error: null };
-        if (head) return { data: null, error: null, count: plan.rateCount ?? 0 };
         if (op === "insert") return { data: { id: plan.insertedId ?? "new-id" }, error: null };
         if (plan.failed !== undefined && calls.some((c) => c.op === "eq" && c.args[0] === "id")) return { data: plan.failed, error: null };
         return { data: plan.firstPosition == null ? null : { position: plan.firstPosition }, error: null };
@@ -98,8 +98,8 @@ describe("startImport", () => {
     expect(insertPayload(calls).position).toBe(1000);
   });
 
-  it("refuses the 21st import in an hour: no insert, nothing scheduled", async () => {
-    const { supabase, calls } = fakeClient({ rateCount: IMPORTS_PER_HOUR });
+  it("refuses when the attempt counter says the hour is full: no insert, nothing scheduled", async () => {
+    const { supabase, calls } = fakeClient({ rateAllowed: false });
     const schedule = vi.fn();
     const result = await startImport(supabase, "u1", { categoryId: CATEGORY, url: "https://a.nl", locale: "nl" }, schedule);
     expect(result).toEqual({ ok: false, error: "rate-limited" });
@@ -125,7 +125,7 @@ describe("retryImport", () => {
     const result = await retryImport(supabase, "u1", "old", "nl", schedule);
     expect(result).toEqual({ ok: true, recipeId: "fresh" });
     expect(insertPayload(calls)).toMatchObject({ source_url: "https://a.nl/x", category_id: CATEGORY, import_status: "importing" });
-    expect(calls.some((c) => c.table === "recipes" && c.op === "select" && c.args[1] !== undefined)).toBe(true); // count query ran
+    expect(calls.some((c) => c.op === "rpc:consume_recipe_import_attempt")).toBe(true); // attempt recorded
     expect(calls.some((c) => c.op === "delete")).toBe(true);
     expect(schedule).toHaveBeenCalledTimes(1);
     expect(schedule.mock.calls[0]![0]).toMatchObject({ url: "https://a.nl/x", locale: "nl" });
@@ -138,7 +138,7 @@ describe("retryImport", () => {
 
   it("a rate-limited retry keeps the failed card", async () => {
     const { supabase, calls } = fakeClient({
-      rateCount: IMPORTS_PER_HOUR,
+      rateAllowed: false,
       failed: { id: "old", category_id: CATEGORY, source_url: "https://a.nl/x", import_status: "failed" },
     });
     expect(await retryImport(supabase, "u1", "old", "nl", vi.fn())).toEqual({ ok: false, error: "rate-limited" });

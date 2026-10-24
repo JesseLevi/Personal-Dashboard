@@ -1463,6 +1463,7 @@ export type Database = {
       }
       avatar_path_for: { Args: { p_user_id: string }; Returns: string }
       claim_embedding_drain: { Args: never; Returns: boolean }
+      consume_recipe_import_attempt: { Args: never; Returns: boolean }
       create_event_series: {
         Args: {
           p_all_day: boolean
