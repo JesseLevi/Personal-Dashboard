@@ -17,6 +17,8 @@ Page-level composition, not a leaf component, so not in `design/figma-map.json` 
 - Empty or whitespace names become `null` (#404).
 - `lastName` comes from the separate, error-swallowing `getLastName` query, not `getProfileForNav`, so a hosted DB without the #404 migration only loses this field (#404).
 - The photo saves immediately through `uploadAvatar` / `removeAvatar`, not with Opslaan (an upload is too heavy to hold back, and a failed theme/name save must not drop it). Its own `avatarError` and pending state; errors from `profile.errors.*`. The actions revalidate the layout, so the Sidebar follows. The stored file is one 120×120 WebP (server re-encode, EXIF stripped); URL `?v=<updated_at>` busts the immutable cache (#434).
+- "Verbanden en slim zoeken" (ADR-0043 §2, #579) is a Claude-designed section from the `Checkbox` atom and text, last before the error line. It saves immediately through `setAiEnabled` (a consent, not a form field). Turning off swaps the footer for `DeleteConfirm` (it wipes the index). `aiAvailable` (`isEmbeddingConfigured()`) and `aiEnabled` (`getAiEnabled`, error-swallowing) come from the layout; unavailable shows "Nog niet beschikbaar" and a disabled checkbox.
+- Ladle aliases `@/lib/profile/actions` to `.ladle/mocks/profile-actions.ts`; keep its exports in step with the real module.
 - No email/password fields: undesigned (#265).
 - `Eenheid` annotations on the Taal container are leftovers from the Add-recipe frame; ignored per the ticket (#265).
 

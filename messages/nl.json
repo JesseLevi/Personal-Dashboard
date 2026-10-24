@@ -456,6 +456,18 @@
         "inputLabel": "Profielfoto",
         "remove": "Foto verwijderen",
         "placeholder": "Selecteer afbeelding"
+      },
+      "ai": {
+        "title": "Verbanden en slim zoeken",
+        "checkboxLabel": "Verbanden en slim zoeken gebruiken",
+        "unavailable": "Nog niet beschikbaar",
+        "sendsLabel": "Wat er naartoe gaat: de tekst van je notities, recepten, kaarten en afspraken (ook geïmporteerde) en je zoekvragen.",
+        "recipientLabel": "Naar wie: Cloudflare Workers AI. Je data wordt niet gebruikt om modellen te trainen. De verwerking vindt niet gegarandeerd in de EU plaats.",
+        "offLabel": "Uitzetten wist de opgebouwde index direct. Je notities zelf blijven staan.",
+        "confirmPrompt": "Verbanden en slim zoeken uitzetten? De opgebouwde index wordt gewist. Je notities blijven staan.",
+        "cancelLabel": "Annuleren",
+        "confirmLabel": "Uitzetten",
+        "confirmingLabel": "Uitzetten..."
       }
     },
     "boardPanel": {

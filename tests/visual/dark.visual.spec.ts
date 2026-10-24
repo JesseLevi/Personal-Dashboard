@@ -111,6 +111,9 @@ const DARK_STORIES = [
   "step--sequence",
   "step-ingredient-panel--with-selection",
   "tag--all-variants",
+  "settings-panel--ai-off",
+  "settings-panel--ai-on",
+  "settings-panel--ai-unavailable",
 ];
 
 const storyIds = new Set(loadStoryIds());

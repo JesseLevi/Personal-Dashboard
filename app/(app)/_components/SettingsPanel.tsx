@@ -7,9 +7,11 @@ import { SidePanel } from "@/components/organisms/SidePanel";
 import { ButtonToggle, type ButtonToggleItem } from "@/components/molecules/ButtonToggle";
 import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
+import { Checkbox } from "@/components/atoms/Checkbox";
 import type { IconName } from "@/components/atoms/Icon";
 import { ImageUploadField } from "@/components/molecules/ImageUploadField";
-import { removeAvatar, updateLocale, updateName, uploadAvatar } from "@/lib/profile/actions";
+import { removeAvatar, setAiEnabled, updateLocale, updateName, uploadAvatar } from "@/lib/profile/actions";
+import { DeleteConfirm, useDeleteConfirm } from "./DeleteConfirm";
 import { DISPLAY_NAME_MAX_LENGTH } from "@/lib/profile/schemas";
 import type { Locale } from "@/lib/profile/types";
 
@@ -49,6 +51,10 @@ export interface SettingsPanelProps {
   currentLastName: string | null;
   /** #434: whether the user has a profile photo (seeds the filled state of the photo field). */
   hasAvatar: boolean;
+  /** #579: server-resolved `profiles.ai_enabled` (ADR-0043 §2) — seeds the opt-in checkbox. */
+  aiEnabled: boolean;
+  /** #579: server-resolved `isEmbeddingConfigured()`; false shows "Nog niet beschikbaar" and disables the checkbox. */
+  aiAvailable: boolean;
 }
 
 export function SettingsPanel({
@@ -58,6 +64,8 @@ export function SettingsPanel({
   currentDisplayName,
   currentLastName,
   hasAvatar,
+  aiEnabled,
+  aiAvailable,
 }: SettingsPanelProps) {
   const t = useTranslations("components.settingsPanel");
   const tSidePanel = useTranslations("components.sidePanel");
@@ -65,6 +73,7 @@ export function SettingsPanel({
   const languageFieldId = useId();
   const firstNameFieldId = useId();
   const lastNameFieldId = useId();
+  const aiHeadingId = useId();
 
   const { theme, setTheme } = useTheme();
   const themeItems: readonly ButtonToggleItem[] = (
@@ -144,6 +153,36 @@ export function SettingsPanel({
     });
   }
 
+  // #579: the opt-in saves on its own like the photo (it is a consent, not a
+  // form field). Turning on is immediate; turning off asks first because it
+  // wipes the index (DeleteConfirm idiom, replaces the footer).
+  const [pendingAi, setPendingAi] = useState(aiEnabled);
+  useEffect(() => {
+    setPendingAi(aiEnabled);
+  }, [aiEnabled]);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [isAiPending, startAiTransition] = useTransition();
+  const { confirming, ask, cancel } = useDeleteConfirm();
+  useEffect(() => {
+    if (!open) cancel();
+  }, [open, cancel]);
+
+  function applyAi(enabled: boolean) {
+    setAiError(null);
+    startAiTransition(async () => {
+      const result = await setAiEnabled({ enabled });
+      if (result.success) setPendingAi(enabled);
+      else setAiError(tErrors(result.error));
+      cancel();
+    });
+  }
+
+  function handleAiToggle() {
+    if (!aiAvailable || isAiPending) return;
+    if (pendingAi) ask();
+    else applyAi(true);
+  }
+
   function handleSave() {
     setError(null);
     startTransition(async () => {
@@ -197,14 +236,29 @@ export function SettingsPanel({
         // own footer comment says it plainly: "a lone button already fills
         // 100% for free"), which collapsed this button to 24px tall instead
         // of Figma's 40px. See design/notes/SettingsPanel.md.
-        <Button
-          variant="filled"
-          icon="Save"
-          onClick={handleSave}
-          disabled={isPending}
-        >
-          {isPending ? t("savingLabel") : t("saveLabel")}
-        </Button>
+        confirming ? (
+          <DeleteConfirm
+            layout="stacked"
+            isPending={isAiPending}
+            onCancel={cancel}
+            onConfirm={() => applyAi(false)}
+            labels={{
+              prompt: t("ai.confirmPrompt"),
+              cancel: t("ai.cancelLabel"),
+              confirm: t("ai.confirmLabel"),
+              deleting: t("ai.confirmingLabel"),
+            }}
+          />
+        ) : (
+          <Button
+            variant="filled"
+            icon="Save"
+            onClick={handleSave}
+            disabled={isPending}
+          >
+            {isPending ? t("savingLabel") : t("saveLabel")}
+          </Button>
+        )
       }
     >
       <ButtonToggle
@@ -261,6 +315,25 @@ export function SettingsPanel({
         value={pendingLastName}
         onChange={(event: ChangeEvent<HTMLInputElement>) => setPendingLastName(event.target.value)}
       />
+      <section className="flex flex-col gap-stack-sm" aria-labelledby={aiHeadingId}>
+        <h3 id={aiHeadingId} className="text-base font-semibold text-text-primary">
+          {t("ai.title")}
+        </h3>
+        {aiAvailable ? null : <p className="text-base text-text-secondary">{t("ai.unavailable")}</p>}
+        <label className="flex items-center gap-inline-sm text-base text-text-primary">
+          <Checkbox
+            checked={aiAvailable && pendingAi}
+            disabled={!aiAvailable || isAiPending}
+            onClick={handleAiToggle}
+            className="disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          {t("ai.checkboxLabel")}
+        </label>
+        <p className="text-base text-text-secondary">{t("ai.sendsLabel")}</p>
+        <p className="text-base text-text-secondary">{t("ai.recipientLabel")}</p>
+        <p className="text-base text-text-secondary">{t("ai.offLabel")}</p>
+        {aiError ? <p className="text-base font-semibold text-priority-urgent">{aiError}</p> : null}
+      </section>
       {error ? (
         <p className="text-base font-semibold text-priority-urgent">{error}</p>
       ) : null}

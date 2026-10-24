@@ -3,7 +3,8 @@ import { after } from "next/server";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
 import { ensureUserDefaults } from "@/lib/defaults/ensure";
 import { runLazyEmbeddingDrain } from "@/lib/embeddings/lazy";
-import { getAvatarSrc, getLastName, getProfileForNav } from "@/lib/profile/queries";
+import { isEmbeddingConfigured } from "@/lib/ai";
+import { getAiEnabled, getAvatarSrc, getLastName, getProfileForNav } from "@/lib/profile/queries";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AppShellNav } from "./_components/AppShellNav";
 
@@ -36,10 +37,11 @@ export default async function AppLayout({
 
   // #404: separate, error-swallowing query so a not-yet-migrated last_name
   // column (and #434's avatar_path) cannot break the nav profile; all run in parallel.
-  const [profile, lastName, avatarSrc] = await Promise.all([
+  const [profile, lastName, avatarSrc, aiEnabled] = await Promise.all([
     getProfileForNav(),
     getLastName(),
     getAvatarSrc(),
+    getAiEnabled(),
   ]);
 
   // ADR-0043 §5: the member's own backlog drains after the response, RLS client, never awaited.
@@ -52,6 +54,8 @@ export default async function AppLayout({
       avatarSrc={avatarSrc}
       lastName={lastName}
       locale={profile.locale}
+      aiEnabled={aiEnabled}
+      aiAvailable={isEmbeddingConfigured()}
     >
       {children}
     </AppShellNav>
