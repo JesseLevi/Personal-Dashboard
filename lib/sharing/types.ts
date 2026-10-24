@@ -6,6 +6,7 @@ export type SharingErrorCode =
   | "not-found"
   | "already-shared"
   | "rate-limited"
+  | "share-limit"
   | "generic";
 
 export type ActionResult<T = undefined> =

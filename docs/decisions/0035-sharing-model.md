@@ -36,8 +36,8 @@ Alternatives weighed:
    - **Write limits on `shares`**: only the owner inserts, always as `pending`/`editor`. A member may only flip its own row to `accepted`, enforced by `grant update (status, responded_at)` plus the policy.
 5. **Consent**: a share is active only after the member accepts. The invitee sees who invited them and the container's name through `pending_share_invites()`, not through the container's policies.
 6. **Other people's profiles** are readable only through definer RPCs that return name and avatar. The `profiles` policies are never widened.
-   - `member_profiles(ids)` returns only users the caller shares something with, in either direction and any status. That relation is one definer check, `private.shares_with(other)`.
-   - **Profile photos** are stored once, as a 120×120 WebP in R2 (`profiles.avatar_path`, ADR-0024). They are served by `/api/avatar/[userId]` only to the user themselves or to someone `shares_with` them. Without a photo the UI shows a bordered circle with the first letter of the first name.
+   - `member_profiles(ids)` returns only users the caller shares something with. That relation is one definer check, `private.shares_with(other)`; since the 2026-10-24 amendment it is directional while a share is pending.
+   - **Profile photos** are stored once, as a 120×120 WebP in R2 (`profiles.avatar_path`, ADR-0024). They are served by `/api/avatar/[userId]` only to the user themselves or to someone `shares_with` them (same direction rule). Without a photo the UI shows a bordered circle with the first letter of the first name.
    - `search_members(q)` finds **all members by first or last name**. It requires 2 to 64 characters, returns at most 8 results, leaves out the caller and deleted or banned users, and returns the e-mail address only when `q` is exactly that address.
    - The search is rate-limited in a `private` table, using ADR-0031's pattern: 30 per user and 500 globally per 15 minutes.
    - **Accepted trade-off**: any member can look up the names of other members. Atlas is a closed circle without self-signup.
@@ -72,3 +72,12 @@ Alternatives weighed:
   - `user_id` means owner, not "the only reader".
 - Two members editing at once can produce equal `position` values; ordering breaks ties on `created_at`.
 - Polling costs one server render per 15 s per open shared basket. That is acceptable for a small circle, and it is the first thing to revisit if usage grows.
+
+## Amendment (2026-10-24): visibility of a pending share, limits on new shares
+
+Privacy: a profile is shown only to people you share with.
+
+- **Visibility**: `private.shares_with(other)` is true when the caller is the invitee of any share by `other` (pending or accepted: the invitee sees who invites them), or the inviter of an *accepted* share with `other`. The inviter therefore sees the invitee's name and photo (`member_profiles`, `avatar_path_for`) only after acceptance. Recipe offers (ADR-0036) are never accepted, so they show the sender to the recipient and nothing the other way.
+- **Inviter's view of a pending invitee**: the basket panel shows the existing "Unnamed" label with the pending tag until the invitee accepts.
+- **Limits**: a `before insert` trigger on `public.shares` (every invite and offer passes through it) allows 20 new shares per user per hour (counted in `private.share_invite_events`, so withdrawing does not free the allowance) and at most 20 open pending shares per inviter. The error is `share_limit`, shown as the `sharing.errors.share-limit` string.
+- **Still open**: whether `search_members` should keep finding all accounts by name is a product call, see `docs/open-questions.md#member-search-scope`. `search_members` is unchanged.

@@ -33,7 +33,17 @@ export async function getShoppingListShare(listId: string): Promise<ListShare | 
 
   const profiles = await memberProfiles({ ids: [data.member_id] });
   const member = profiles.success ? profiles.data[0] : undefined;
-  return member ? { member, status: data.status } : null;
+  if (member) return { member, status: data.status };
+  // A pending invitee's profile stays hidden until they accept (ADR-0035): the
+  // panel shows its "Unnamed" label and the pending tag instead.
+  if (profiles.success && data.status === "pending") {
+    return { member: anonymousMember(data.member_id), status: data.status };
+  }
+  return null;
+}
+
+function anonymousMember(id: string): MemberProfile {
+  return { id, displayName: null, lastName: null, hasAvatar: false, updatedAt: "" };
 }
 
 async function getOwnProfile(userId: string): Promise<MemberProfile | null> {
