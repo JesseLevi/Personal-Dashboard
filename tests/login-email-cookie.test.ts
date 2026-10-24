@@ -13,13 +13,13 @@ beforeEach(() => {
 });
 
 describe("login e-mail cookie", () => {
-  it("is httpOnly, Lax, scoped to /login and lives ten minutes", async () => {
+  it("is httpOnly, Lax, scoped to the site root and lives ten minutes", async () => {
     await setLoginEmail("a@b.nl");
     expect(cookieSet).toHaveBeenCalledWith("atlas_login_email", "a@b.nl", {
       httpOnly: true,
       secure: false,
       sameSite: "lax",
-      path: "/login",
+      path: "/",
       maxAge: 600,
     });
   });
@@ -45,7 +45,7 @@ describe("login e-mail cookie", () => {
 
   it("clears with maxAge 0 on the same path", async () => {
     await clearLoginEmail();
-    expect(cookieSet).toHaveBeenCalledWith("atlas_login_email", "", expect.objectContaining({ maxAge: 0, path: "/login" }));
+    expect(cookieSet).toHaveBeenCalledWith("atlas_login_email", "", expect.objectContaining({ maxAge: 0, path: "/" }));
   });
 });
 

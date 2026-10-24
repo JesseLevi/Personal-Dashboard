@@ -174,6 +174,35 @@ describe("which accounts are synced", () => {
   });
 });
 
+describe("syncAllStaleAccounts ordering", () => {
+  it("queues a failing account behind accounts that were not tried yet", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const attempted = new Date(NOW.getTime() - 21 * 3600_000).toISOString();
+    const { client, calls } = fakeClient({
+      accounts: [
+        // Never succeeded, but tried 21 hours ago: it must not keep the front of the queue.
+        { id: "failing", last_synced_at: "2026-09-01T00:00:00Z", sync_state: { status: "failed", error: "fetch_timeout", attempted_at: attempted } },
+        { id: "untried", last_synced_at: new Date(NOW.getTime() - 30 * 3600_000).toISOString(), sync_state: null },
+      ],
+    });
+    const fetcher = vi.fn().mockResolvedValue({ ok: true, events: [] });
+    // Only time for one account: the untried one gets it.
+    let tick = 0;
+    vi.spyOn(Date, "now").mockImplementation(() => (tick++ < 2 ? 0 : 1000));
+    const result = await syncAllStaleAccounts(client, { now: NOW, budgetMs: 500, fetcher });
+    const order = calls.filter((c) => c.fn === "get_calendar_account_secret").map((c) => c.args.p_account_id);
+    expect(order).toEqual(["untried"]);
+    expect(result.remaining).toBe(1);
+  });
+
+  it("fetches with the shorter cron timeout", async () => {
+    const { client } = fakeClient({ accounts: [{ id: "a", last_synced_at: null, sync_state: null }] });
+    fetched.mockResolvedValue(body(ICS));
+    await syncAllStaleAccounts(client, { now: NOW, budgetMs: 60_000 });
+    expect(fetched.mock.calls[0][1]).toMatchObject({ timeoutMs: 8_000 });
+  });
+});
+
 describe("isCronAuthorized", () => {
   const secret = "0123456789abcdef0123";
   it("accepts only the exact bearer secret", () => {

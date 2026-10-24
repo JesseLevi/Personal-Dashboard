@@ -78,6 +78,10 @@ By user instruction the empty header carries "+ Item" before "Leeg mand"; Figma'
 
 **Product call.** #179 groups by source recipe and merges same-name/unit lines, but a merged line has one `recipe_id`, so B's "Banaan" sums onto A's row and B's card never shows it; swipe-to-cart and whole-recipe send also merge differently. Options: no cross-recipe merge; show under every recipe (join table); drop `recipe_id` on merge.
 
+### member-search-scope
+
+**Product call.** `search_members` finds every account by partial first or last name (ADR-0035, accepted trade-off for a closed circle). Decide whether that stays, or whether finding someone needs more than a name (exact e-mail address only, or a shared code).
+
 ## Notities
 
 ### notes-tagging-not-designed
@@ -145,6 +149,10 @@ TOC rail (#342) is Claude-designed on request. Untokenised: rail width (`w-44`),
 ### agenda-meal-position-not-in-timeline
 
 `agenda_items()` returns no `meal_plans.position`, so `getAgendaItems` reads it in a second query for the meals in range. Adding the column to the function (a new migration, `create or replace`) would drop that query. -> `design/notes/AgendaPage.md`.
+
+### upload-size-and-storage-quota
+
+**Product call.** `serverActions.bodySizeLimit` is `11mb` for the note-image upload action, and there is no per-user storage quota in R2. Closing both properly means moving uploads to a route handler with streaming limits plus a usage counter; deferred while the circle is small and trusted. Revisit before opening sign-ups.
 
 ---
 

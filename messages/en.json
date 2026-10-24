@@ -35,6 +35,14 @@
       "magic-link-invalid": "This sign-in link is invalid or expired. Request a new one.",
       "generic": "Something went wrong. Please try again."
     },
+    "confirm": {
+      "titleKnown": "Sign in as {email}",
+      "titleUnknown": "Sign in to Atlas",
+      "descriptionKnown": "Confirm that this is you.",
+      "descriptionUnknown": "Only continue if you requested this sign-in link yourself.",
+      "submit": "Sign in",
+      "back": "Back to sign in"
+    },
     "code": {
       "title": "Enter your code",
       "description": "We sent a 6-digit code to {email}.",
@@ -266,6 +274,7 @@
       "not-found": "This item no longer exists or is not yours.",
       "already-shared": "You already share this with this person.",
       "rate-limited": "You searched too often. Try again in a few minutes.",
+      "share-limit": "You have sent too many invitations. Wait a while or withdraw open ones.",
       "generic": "Something went wrong. Try again."
     },
     "invite": {

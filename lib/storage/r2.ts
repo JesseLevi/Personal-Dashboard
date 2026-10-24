@@ -19,6 +19,13 @@ const xmlUnescape = (s: string) =>
     .replace(/&apos;/g, "'")
     .replace(/&amp;/g, "&");
 
+// A key must be plain `/`-separated segments: no empty, `.` or `..` segment, no leading `/`.
+function assertSafeKey(key: string): void {
+  if (key.split("/").some((s) => s === "" || s === "." || s === "..")) {
+    throw new Error(`Invalid object key: ${JSON.stringify(key)}`);
+  }
+}
+
 export function createR2Store(config: R2Config): ObjectStore {
   const client = new AwsClient({
     accessKeyId: config.accessKeyId,
@@ -27,7 +34,10 @@ export function createR2Store(config: R2Config): ObjectStore {
     region: "auto",
   });
   const base = `https://${config.accountId}.r2.cloudflarestorage.com/${config.bucket}`;
-  const objectUrl = (key: string) => `${base}/${key.split("/").map(encodeURIComponent).join("/")}`;
+  const objectUrl = (key: string) => {
+    assertSafeKey(key);
+    return `${base}/${key.split("/").map(encodeURIComponent).join("/")}`;
+  };
 
   // Sign, then call the global fetch with a URL string and the original body. client.fetch
   // would hand Next's patched fetch a Request, which it rebuilds with a stream body: no

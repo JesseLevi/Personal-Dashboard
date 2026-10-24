@@ -16,7 +16,7 @@
 -- from #130 covering runtime behaviour.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(16);
 
 insert into auth.users (id, email)
 values ('00000000-0000-0000-0000-00000000008a', 'a@test.local'),
@@ -95,9 +95,16 @@ select is(
   'non-admin delete left the Banaan row in place'
 );
 
--- Writes fail for anon too.
+-- anon has no access to the reference schema (20261024000004): reads and
+-- writes both fail at the grant.
 set local role anon;
 set local request.jwt.claims to '{}';
+select throws_ok(
+  $$ select 1 from reference.ingredients $$,
+  '42501',
+  null,
+  'anon cannot read reference.ingredients'
+);
 select throws_ok(
   $$ insert into reference.ingredients (name_nl, source, source_version)
      values ('Sneaky', 'test', '1') $$,

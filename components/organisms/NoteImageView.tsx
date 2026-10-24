@@ -8,11 +8,12 @@ import { NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
 import { Button } from "@/components/atoms/Button";
 import { Icon } from "@/components/atoms/Icon";
 import { InputField } from "@/components/atoms/InputField";
+import { isNoteImageSrc } from "@/lib/notes/image-limits";
 import { cn } from "@/lib/ui/cn";
 
 /**
  * Node view of the notes editor's `image`: the picture, or a "not available"
- * block when the object is missing (`onError`), and, while the node is
+ * block when the object is missing (`onError`) or the `src` is not a note-image route, and, while the node is
  * selected in an editable document, an alt-text field plus a delete button.
  * Enter on a selected image moves focus to the field (lib/notes/extensions.ts);
  * Enter or Escape in it returns focus to the document. Rationale and states:
@@ -25,7 +26,7 @@ export function NoteImageView({ node, selected, editor, updateAttributes, delete
   const alt = (node.attrs.alt as string | null) ?? "";
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const [draft, setDraft] = useState(alt);
-  const broken = failedSrc === src;
+  const broken = failedSrc === src || !isNoteImageSrc(src);
   const showTools = selected && editor.isEditable;
 
   useEffect(() => setDraft(alt), [alt]);

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { TipTapDocument } from "@/lib/notes/document";
+import { isNoteImageSrc } from "@/lib/notes/image-limits";
 
 // Validates every server-action input in app/(app)/notities/actions.ts
 // (#228), same pattern and same split (shape/format here, ownership checked
@@ -35,10 +36,25 @@ const tiptapNodeSchema: z.ZodType<{ type: string; text?: string; content?: unkno
 
 // notes.content's default doc (`{"type":"doc","content":[]}`, the migration)
 // is the shape every write must at least match.
-export const tiptapDocumentSchema = z.object({
-  type: z.literal("doc"),
-  content: z.array(tiptapNodeSchema),
-}) as z.ZodType<TipTapDocument>;
+//
+// `image` nodes whose `src` is not the same-origin note-image route are
+// stripped on save (defence in depth: the node view renders `src` as is).
+type RawNode = { type: string; content?: unknown[]; attrs?: { src?: unknown } };
+
+function stripInvalidImages(nodes: unknown[]): unknown[] {
+  return nodes.flatMap((n) => {
+    const node = n as RawNode;
+    if (node.type === "image" && !isNoteImageSrc(node.attrs?.src)) return [];
+    return [node.content ? { ...node, content: stripInvalidImages(node.content) } : node];
+  });
+}
+
+export const tiptapDocumentSchema = z
+  .object({
+    type: z.literal("doc"),
+    content: z.array(tiptapNodeSchema),
+  })
+  .transform((doc) => ({ ...doc, content: stripInvalidImages(doc.content) })) as unknown as z.ZodType<TipTapDocument>;
 
 // ============================================================================
 // Categories

@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { isStale } from "@/lib/agenda/calendars";
+import { isStale, lastAttemptMs } from "@/lib/agenda/calendars";
 import { IcsError, parseIcs, syncWindow, type SyncEvent } from "@/lib/agenda/ics";
 import type { Database } from "@/lib/database.types";
 import { safeFetch, SafeFetchError } from "@/lib/net/safe-fetch";
@@ -17,6 +17,8 @@ type Client = SupabaseClient<Database>;
 const ICS_TYPES = ["text/calendar", "application/ics", "text/x-vcalendar", "text/plain", "application/octet-stream"];
 const ICS_MAX_BYTES = 8 * 1024 * 1024;
 const ICS_TIMEOUT_MS = 20_000;
+/** The cron works through many accounts in one budget, so a slow feed gets less time there. */
+const CRON_ICS_TIMEOUT_MS = 8_000;
 
 /** Lazy trigger: a feed is fresh for an hour. Cron: it syncs what is older than 20 hours. */
 export const LAZY_MAX_AGE_MS = 60 * 60 * 1000;
@@ -26,13 +28,13 @@ const LAZY_ACCOUNT_LIMIT = 5;
 export type FeedResult = { ok: true; events: SyncEvent[] } | { ok: false; error: string };
 export type FeedFetcher = (url: string, now: Date) => Promise<FeedResult>;
 
-export const fetchFeed: FeedFetcher = async (url, now) => {
+export async function fetchFeed(url: string, now: Date, timeoutMs: number = ICS_TIMEOUT_MS): Promise<FeedResult> {
   try {
     const response = await safeFetch(url, {
       contentTypes: ICS_TYPES,
       accept: "text/calendar, text/plain;q=0.8, */*;q=0.1",
       maxBytes: ICS_MAX_BYTES,
-      timeoutMs: ICS_TIMEOUT_MS,
+      timeoutMs,
     });
     const events = parseIcs(response.body.toString("utf8"), syncWindow(now));
     return { ok: true, events };
@@ -41,7 +43,7 @@ export const fetchFeed: FeedFetcher = async (url, now) => {
     if (error instanceof IcsError) return { ok: false, error: error.code };
     return { ok: false, error: "fetch_failed" };
   }
-};
+}
 
 const applyResultSchema = z.object({
   status: z.enum(["ok", "failed", "skipped"]),
@@ -109,10 +111,12 @@ async function listIcsAccounts(client: Client): Promise<AccountRow[]> {
   return data;
 }
 
-/** Oldest attempt first, so a long list is worked through over several runs. */
+/**
+ * Least recently attempted first, so a long list is worked through over several runs.
+ * A failed attempt counts too: a feed that keeps failing queues behind untried accounts.
+ */
 function byLeastRecent(a: AccountRow, b: AccountRow): number {
-  const at = (row: AccountRow) => Date.parse(row.last_synced_at ?? "") || 0;
-  return at(a) - at(b);
+  return lastAttemptMs(a) - lastAttemptMs(b);
 }
 
 /** Lazy trigger (ADR-0039 §1): the signed-in user's own stale accounts, with their client. */
@@ -137,20 +141,21 @@ export interface BackstopResult {
 /** Cron backstop (ADR-0039 §5): every account idle for 20 hours, within a time budget. */
 export async function syncAllStaleAccounts(
   client: Client,
-  options: { now?: Date; budgetMs: number },
+  options: { now?: Date; budgetMs: number; fetcher?: FeedFetcher },
 ): Promise<BackstopResult> {
   const now = options.now ?? new Date();
   const deadline = Date.now() + options.budgetMs;
   const stale = (await listIcsAccounts(client))
     .filter((account) => isStale(account, now, CRON_MAX_AGE_MS))
     .sort(byLeastRecent);
+  const fetcher = options.fetcher ?? ((url, at) => fetchFeed(url, at, CRON_ICS_TIMEOUT_MS));
   const result: BackstopResult = { synced: 0, failed: 0, skipped: 0, remaining: 0 };
   for (const [index, account] of stale.entries()) {
     if (Date.now() >= deadline) {
       result.remaining = stale.length - index;
       break;
     }
-    const outcome = await syncAccount(client, account.id, now);
+    const outcome = await syncAccount(client, account.id, now, fetcher);
     if (outcome.status === "ok") result.synced++;
     else if (outcome.status === "skipped") result.skipped++;
     else result.failed++;

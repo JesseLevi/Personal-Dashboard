@@ -52,7 +52,7 @@ export async function startImport(
   if (!category) return { ok: false, error: "not-found" };
 
   try {
-    await checkImportRateLimit(supabase, userId);
+    await checkImportRateLimit(supabase);
   } catch (error) {
     if (error instanceof ImportRateLimitError) return { ok: false, error: "rate-limited" };
     return { ok: false, error: "generic" };

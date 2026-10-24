@@ -16,6 +16,8 @@ export { MAX_NOTE_IMAGE_BYTES };
 // editor caller is #339.
 
 export const MAX_NOTE_IMAGE_EDGE = 2000;
+// Same decode ceiling as lib/profile/avatar-processing.ts and lib/recipes/thumbnail-processing.ts.
+const MAX_INPUT_PIXELS = 100_000_000;
 const SWEEP_INTERVAL_MS = 60_000;
 // Fresh uploads may not be in a saved document yet; the sweep leaves them.
 const SWEEP_GRACE_MS = 10 * 60_000;
@@ -42,7 +44,7 @@ export function hasImageMagicBytes(b: Uint8Array): boolean {
 
 /** Re-encodes to WebP, long side <= 2000 px; the encoder drops all metadata. Throws on undecodable input. */
 export async function renderNoteImage(bytes: Uint8Array): Promise<Uint8Array> {
-  return sharp(bytes)
+  return sharp(bytes, { limitInputPixels: MAX_INPUT_PIXELS })
     .autoOrient()
     .resize({
       width: MAX_NOTE_IMAGE_EDGE,
