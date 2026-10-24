@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DISPLAY_NAME_MAX_LENGTH, updateNameSchema } from "../lib/profile/schemas";
+import { DISPLAY_NAME_MAX_LENGTH, setAiEnabledSchema, updateNameSchema } from "../lib/profile/schemas";
 
 describe("updateNameSchema", () => {
   it("trims both names", () => {
@@ -27,5 +27,13 @@ describe("updateNameSchema", () => {
     expect(updateNameSchema.safeParse({ firstName: 5, lastName: "" }).success).toBe(false);
     expect(updateNameSchema.safeParse({ firstName: "" }).success).toBe(false);
     expect(updateNameSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe("setAiEnabledSchema", () => {
+  it("accepts a boolean and rejects everything else", () => {
+    expect(setAiEnabledSchema.parse({ enabled: true })).toEqual({ enabled: true });
+    expect(setAiEnabledSchema.safeParse({ enabled: "true" }).success).toBe(false);
+    expect(setAiEnabledSchema.safeParse({}).success).toBe(false);
   });
 });

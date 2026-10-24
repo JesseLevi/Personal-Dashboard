@@ -37,6 +37,15 @@ const chromeThemeHref = `/@fs/${path.resolve(process.cwd(), ".ladle/ladle-theme.
 
 /** @type {import('vite').UserConfig} */
 const ladleViteConfig = {
+  // SettingsPanel imports the real server actions; Ladle gets a no-op stand-in.
+  resolve: {
+    alias: [
+      {
+        find: /^@\/lib\/profile\/actions$/,
+        replacement: path.resolve(process.cwd(), ".ladle/mocks/profile-actions.ts"),
+      },
+    ],
+  },
   plugins: [
     {
       name: "ladle-chrome-theme",

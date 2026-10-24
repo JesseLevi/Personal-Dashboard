@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/profile/session";
-import { updateNameSchema, updateLocaleSchema } from "@/lib/profile/schemas";
+import { updateNameSchema, updateLocaleSchema, setAiEnabledSchema } from "@/lib/profile/schemas";
 import { clearAvatar, storeAvatar } from "@/lib/profile/avatar";
 import type { ActionResult } from "@/lib/profile/types";
 
@@ -75,6 +75,28 @@ export async function updateName(input: unknown): Promise<ActionResult> {
   }
 
   // The name feeds the sidebar account row in the app layout.
+  revalidatePath("/", "layout");
+
+  return { success: true, data: undefined };
+}
+
+// ADR-0043 §2 (#579): set_ai_enabled() is the only writer of the ai_* columns;
+// switching off deletes the member's embeddings in the same transaction.
+export async function setAiEnabled(input: unknown): Promise<ActionResult> {
+  const parsed = setAiEnabledSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("set_ai_enabled", { p_enabled: parsed.data.enabled });
+
+  if (error) {
+    console.error("[profile] setAiEnabled failed:", error.code, error.message);
+    return { success: false, error: "generic" };
+  }
+
   revalidatePath("/", "layout");
 
   return { success: true, data: undefined };

@@ -99,6 +99,26 @@ export const getLastName = cache(async (): Promise<string | null> => {
   return data?.last_name ?? null;
 });
 
+/** #579: `profiles.ai_enabled`. Separate like `getLastName`: a hosted DB without the
+ * embeddings migration only loses this toggle, never the nav. False on any error. */
+export const getAiEnabled = cache(async (): Promise<boolean> => {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return false;
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("ai_enabled")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[profile] getAiEnabled failed:", error.code, error.message);
+    return false;
+  }
+  return data?.ai_enabled ?? false;
+});
+
 /** #434: same-origin avatar URL for the signed-in user, `?v=<updated_at>` busts
  * the immutable cache on replace. Separate from `getProfileForNav` like
  * `getLastName`: a hosted DB without the avatar_path migration only loses the

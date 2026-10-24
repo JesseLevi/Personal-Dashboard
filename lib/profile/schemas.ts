@@ -29,3 +29,8 @@ export const updateNameSchema = z.object({
   firstName: nameField,
   lastName: nameField,
 });
+
+// ADR-0043 §2: the per-member opt-in for sending content to the embedding provider.
+export const setAiEnabledSchema = z.object({
+  enabled: z.boolean(),
+});

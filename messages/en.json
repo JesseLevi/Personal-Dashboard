@@ -456,6 +456,18 @@
         "inputLabel": "Profile photo",
         "remove": "Remove photo",
         "placeholder": "Select image"
+      },
+      "ai": {
+        "title": "Connections and smart search",
+        "checkboxLabel": "Use connections and smart search",
+        "unavailable": "Not available yet",
+        "sendsLabel": "What is sent: the text of your notes, recipes, cards and events (imported ones too) and your search queries.",
+        "recipientLabel": "Sent to: Cloudflare Workers AI. Your data is not used to train models. Processing is not guaranteed to happen in the EU.",
+        "offLabel": "Turning it off deletes the index built so far right away. Your notes themselves stay.",
+        "confirmPrompt": "Turn off connections and smart search? The index built so far will be deleted. Your notes stay.",
+        "cancelLabel": "Cancel",
+        "confirmLabel": "Turn off",
+        "confirmingLabel": "Turning off..."
       }
     },
     "boardPanel": {

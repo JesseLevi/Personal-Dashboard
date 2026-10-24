@@ -144,6 +144,10 @@ export interface AppShellNavProps {
   lastName: string | null;
   /** #265: current locale, seeds SettingsPanel's Taal field. */
   locale: Locale;
+  /** #579: `profiles.ai_enabled` (`getAiEnabled`), seeds SettingsPanel's opt-in checkbox. */
+  aiEnabled: boolean;
+  /** #579: `isEmbeddingConfigured()` resolved on the server; false disables the opt-in. */
+  aiAvailable: boolean;
 }
 
 // Client wrapper: owns the collapse toggle (client-side, expanded by default
@@ -154,7 +158,7 @@ export interface AppShellNavProps {
 // own, so importing it here pulls it into the client bundle — the boundary
 // stops at this file, which is why the layout above stays a Server
 // Component and does the Supabase call.
-export function AppShellNav({ children, displayName, lastName, avatarSrc, locale }: AppShellNavProps) {
+export function AppShellNav({ children, displayName, lastName, avatarSrc, locale, aiEnabled, aiAvailable }: AppShellNavProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
@@ -394,6 +398,8 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
         currentDisplayName={displayName}
         currentLastName={lastName}
         hasAvatar={avatarSrc !== null}
+        aiEnabled={aiEnabled}
+        aiAvailable={aiAvailable}
       />
     </div>
   );
