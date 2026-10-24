@@ -7,7 +7,7 @@ Hosted settings that code review cannot see. Every change here is a hosted write
 - `vercel.json`:
   - builds `main` only (`ignoreCommand`, #408);
   - `github.autoAlias: false`, so no build goes live by itself;
-  - `crons`: two daily calls, `/api/cron/calendar-sync` (04:00 UTC) and `/api/cron/embeddings` (05:00 UTC); Hobby allows each once a day (ADR-0039, ADR-0043). Vercel runs them on production only, and only once `CRON_SECRET` is set.
+  - `crons`: two daily calls, `/api/cron/calendar-sync` (04:00 UTC, also settles cooked meals, ADR-0044) and `/api/cron/embeddings` (05:00 UTC); Hobby allows each once a day (ADR-0039, ADR-0043). Vercel runs them on production only, and only once `CRON_SECRET` is set.
 - Promote by hand: dashboard "Promote to Production" or `vercel promote <url>`. Apply pending migrations first.
 - Production env vars (no `NEXT_PUBLIC_` prefix on any of them; mark secrets Sensitive):
 

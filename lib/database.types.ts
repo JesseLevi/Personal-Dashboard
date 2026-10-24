@@ -1463,6 +1463,8 @@ export type Database = {
       }
       avatar_path_for: { Args: { p_user_id: string }; Returns: string }
       claim_embedding_drain: { Args: never; Returns: boolean }
+      settle_cooked_meals: { Args: never; Returns: number }
+      settle_cooked_meals_for: { Args: { p_user: string }; Returns: number }
       create_event_series: {
         Args: {
           p_all_day: boolean

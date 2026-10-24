@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { after } from "next/server";
 import { Suspense } from "react";
+import { settleCookedMeals } from "@/lib/activity/settle";
 import { getCalendarOverview } from "@/lib/agenda/calendar-list";
 import { AGENDA_HIDDEN_COOKIE, parseHidden } from "@/lib/agenda/hidden";
 import { getSyncNotices } from "@/lib/agenda/notices";
@@ -39,6 +40,8 @@ async function AgendaPageBody() {
   after(() => syncStaleAccounts(supabase).catch(() => console.error("[agenda] lazy sync failed")));
   // ADR-0042: recurring own events that fall short of 400 days ahead are topped up the same way.
   after(() => extendEventSeries(supabase).catch(() => console.error("[agenda] series extension failed")));
+  // ADR-0044: meals whose day has passed become history, after the response.
+  after(() => settleCookedMeals(supabase));
   const [items, notices, categories, baskets, userId, cardGroups, calendars, todoBoard] = await Promise.all([
     getAgendaItems({
       from: wallClockToUtc(`${window.from}T00:00:00`),
