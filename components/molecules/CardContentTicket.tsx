@@ -1,7 +1,6 @@
 // figma: node-id=3670:1696
 import { cn } from "@/lib/ui/cn";
 import type { ReactNode } from "react";
-import { Icon } from "../atoms/Icon";
 import { Tag } from "../atoms/Tag";
 
 /**
@@ -44,8 +43,7 @@ export function CardContentTicket({
       <div className="flex w-full flex-wrap gap-2">
         {children}
         {plannedLabel && (
-          <Tag variant="highlight">
-            <Icon name="Calendar" />
+          <Tag variant="highlight" icon="Calendar">
             {plannedCaption && <span className="sr-only">{plannedCaption}</span>}
             {plannedLabel}
           </Tag>

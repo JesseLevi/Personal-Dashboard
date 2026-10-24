@@ -4,7 +4,7 @@ Figma: `Button/Default` component set · node `3623:4346` (5 Styles x 4 States x
 Colour-state conventions (role / role-hover / role-active, Selected composing with Hover and Active, ramp-step name is not the CSS state name) live in `docs/design-tokens.md`, including the full per-state matrix. This note keeps only what is Button-specific.
 
 ## Anatomy
-Root: `chrome-touch inline-flex shrink-0 items-center gap-1 rounded-control text-base font-semibold transition-colors`, containing a `Leading + Text` span (`gap-inline-sm`, icon then children) and an optional trailing `Icon`.
+Root: `chrome-touch inline-flex shrink-0 items-center gap-1 rounded-control text-sm font-semibold transition-colors`, containing a `Leading + Text` span (`gap-inline-sm`, icon then children) and an optional trailing `Icon`.
 
 - `variant` is Figma `Style`: `filled` (default) / `outline` / `white` / `transparent` / `destructive` (Figma spells it "Distructive"; the code API is `destructive`). (#13)
 - State is never a prop: Hover is `hover:`, Active (pressed) is `active:`, Selected is the caller's standard `aria-pressed` attribute.
@@ -14,6 +14,7 @@ Root: `chrome-touch inline-flex shrink-0 items-center gap-1 rounded-control text
 - Props union: icon-only (no `children`) requires `aria-label` (`Icon` is `aria-hidden`) and forbids `trailingIcon` and `align`; `size="compact"` is only valid icon-only (a fixed 32x32 box would clip a label), and `size="small"` only labelled (an icon-only button stays 40x40 or compact). Each is a type error rather than a silent guess, because Figma samples none of those combinations. (#69, #75, #99, #107)
 
 ## Deliberate decisions
+- Label text is `text-sm` (14 px, Figma text style `text-sm/semibold`) at every size, a deliberate deviation from Figma's `text-base` (user call, 2026-10-24, #604). It lives only in the root class: never set a text size on a Button through `className`.
 - Selected uses `aria-pressed:` rather than `active:`: CSS `:active` means "being pressed", a different non-persistent state. Figma renamed its old `Active` to `Selected` in #42; Figma's current `Active` is the pressed state. (#42, #56)
 - Selected sets only text colour (`aria-pressed:text-text-primary`) on Filled / White / Transparent, so it composes with Hover / Active (which set only background). White, Transparent and Destructive have no Selected fill: never add `aria-pressed:bg-*` there. Destructive text never changes. (#56, #213)
 - Outline is the exception: Selected sets `border-color` (`stroke-primary-selected`), the same property as Hover / Active. The compound variants `aria-pressed:hover:border-stroke-primary-hover` / `aria-pressed:active:border-stroke-secondary-active` are load-bearing (higher specificity than the plain `aria-pressed:` rule, which Tailwind emits after hover / active); do not replace them with a bare `aria-pressed:border-*`. Verified against the compiled `pnpm ladle:build` stylesheet. Outline Active is `Stroke/secondary/active` (stone-800), distinct from InputField's `Stroke/primary/active`. (#68, #204)

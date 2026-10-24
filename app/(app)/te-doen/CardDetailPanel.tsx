@@ -7,6 +7,7 @@ import { InputField } from "@/components/atoms/InputField";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { Tag } from "@/components/atoms/Tag";
 import { Button } from "@/components/atoms/Button";
+import { cn } from "@/lib/ui/cn";
 import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import type { IconName } from "@/components/atoms/Icon";
 import { EventLinkLine } from "@/components/molecules/EventLinkLine";
@@ -14,6 +15,9 @@ import type { AgendaEventRef } from "@/lib/agenda/links";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import { PRIORITIES, SIZES, isPriority, isSize, type Size } from "@/lib/boards/enums";
 import type { ActionResult, CardRow, CardWithLabels } from "@/lib/boards/types";
+
+// Tag rows get a Button row's metrics: a 40 px tap target, selection aligned with the options.
+const TAG_ROW = "flex h-10 items-center px-component-sm";
 
 // Card-detail SidePanel content (#94) — Figma "Te doen/*/AddItem"
 // (3779:4846 mobile, 3779:4938 desktop; same node SidePanel.tsx already
@@ -352,7 +356,9 @@ export function CardDetailPanel({
         defaultOpen={false}
       >
         {/* The selected Tag sits inside Dropdown's own trigger button. */}
-        <Tag variant={priority}>{tPriority(priority)}</Tag>
+        <span className={TAG_ROW}>
+          <Tag variant={priority}>{tPriority(priority)}</Tag>
+        </span>
         {otherPriorities.map((value) => (
           <button
             key={value}
@@ -360,7 +366,7 @@ export function CardDetailPanel({
             onClick={() => setPriority(value)}
             // spacing-flag: rounded-lg — same wrapper pattern, see the flag
             // above — design/notes/CardDetailPanel.md#219.
-            className="flex w-full rounded-lg text-left transition-colors hover:bg-surface-highlight-white-selected"
+            className={cn(TAG_ROW, "w-full rounded-lg text-left transition-colors hover:bg-surface-highlight-white-selected")}
           >
             <Tag variant={value}>{tPriority(value)}</Tag>
           </button>
@@ -372,7 +378,9 @@ export function CardDetailPanel({
         id="card-detail-size"
         defaultOpen={false}
       >
-        <Tag variant="neutral">{size ? size.toUpperCase() : t("fields.sizePlaceholder")}</Tag>
+        <span className={TAG_ROW}>
+          <Tag variant="neutral">{size ? size.toUpperCase() : t("fields.sizePlaceholder")}</Tag>
+        </span>
         {otherSizes.map((value) => (
           <button
             key={value ?? "none"}
@@ -380,7 +388,7 @@ export function CardDetailPanel({
             onClick={() => setSize(value)}
             // spacing-flag: rounded-lg — same wrapper pattern, see the flag
             // above — design/notes/CardDetailPanel.md#219.
-            className="flex w-full rounded-lg text-left transition-colors hover:bg-surface-highlight-white-selected"
+            className={cn(TAG_ROW, "w-full rounded-lg text-left transition-colors hover:bg-surface-highlight-white-selected")}
           >
             <Tag variant="neutral">{value ? value.toUpperCase() : t("fields.sizePlaceholder")}</Tag>
           </button>

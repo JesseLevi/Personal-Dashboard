@@ -35,6 +35,22 @@ import path from "node:path";
  */
 const chromeThemeHref = `/@fs/${path.resolve(process.cwd(), ".ladle/ladle-theme.css").split(path.sep).join("/")}`;
 
+// NoteImageView only renders note-image routes, so stories point at one and Ladle answers it:
+// a two-tone picture, or 404 for MISSING_NOTE_IMAGE_ID (the Broken story).
+const NOTE_IMAGE_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="320"><rect width="640" height="320" fill="steelblue"/><circle cx="480" cy="110" r="60" fill="gold"/><path d="M0 320 L200 140 L360 280 L460 200 L640 320 Z" fill="seagreen"/></svg>';
+const MISSING_NOTE_IMAGE_ID = "00000000-0000-4000-8000-00000000dead";
+
+function noteImageMiddleware(req, res, next) {
+  if (req.method !== "GET" || !req.url?.startsWith("/api/note-image/")) return next();
+  if (req.url.includes(MISSING_NOTE_IMAGE_ID)) {
+    res.statusCode = 404;
+    return res.end();
+  }
+  res.setHeader("content-type", "image/svg+xml");
+  res.end(NOTE_IMAGE_SVG);
+}
+
 /** @type {import('vite').UserConfig} */
 const ladleViteConfig = {
   // SettingsPanel imports the real server actions; Ladle gets a no-op stand-in.
@@ -47,6 +63,11 @@ const ladleViteConfig = {
     ],
   },
   plugins: [
+    {
+      name: "ladle-note-image-route",
+      configureServer: (server) => void server.middlewares.use(noteImageMiddleware),
+      configurePreviewServer: (server) => void server.middlewares.use(noteImageMiddleware),
+    },
     {
       name: "ladle-chrome-theme",
       transformIndexHtml: {

@@ -12,8 +12,8 @@
 # presence -- the pgTAP tests for reference.* tables (#130) are a separate,
 # explicit requirement and are not checked here.
 #
-# ADR-0020 §2 (#322) narrows "select only": anon still holds select only
-# everywhere, and authenticated holds select only EXCEPT on the admin-written
+# ADR-0020 §2 (#322) narrows "select only": anon holds nothing since
+# 20261024000004, and authenticated holds select only EXCEPT on the admin-written
 # tables below, which may carry INSERT/UPDATE/DELETE. Each of those must have
 # at least one RLS policy that references is_admin(), so a write grant is never
 # the only lock. NEVO/USDA immutability (source = 'eigen') is asserted by the
@@ -51,13 +51,13 @@ for t in $ref_tables; do
     missing=1
   fi
 
-  # 2. anon holds select and nothing else everywhere; authenticated too,
+  # 2. anon holds no privilege at all (20261024000004); authenticated holds select only,
   # except on the ADR-0020 admin-write tables (checked below).
   if [[ " $ADMIN_WRITE_TABLES " == *" $t "* ]]; then
     bad_priv=$(psql "$DB_URL" -Atc \
       "select count(*) from information_schema.role_table_grants
        where table_schema = 'reference' and table_name = '$t'
-         and ((grantee = 'anon' and privilege_type != 'SELECT')
+         and (grantee = 'anon'
            or (grantee = 'authenticated'
                and privilege_type not in ('SELECT', 'INSERT', 'UPDATE', 'DELETE')))")
     # Every write grant must be backed by an is_admin() RLS policy.
@@ -74,8 +74,8 @@ for t in $ref_tables; do
     bad_priv=$(psql "$DB_URL" -Atc \
       "select count(*) from information_schema.role_table_grants
        where table_schema = 'reference' and table_name = '$t'
-         and grantee in ('authenticated', 'anon')
-         and privilege_type != 'SELECT'")
+         and ((grantee = 'authenticated' and privilege_type != 'SELECT')
+           or grantee = 'anon')")
   fi
   if [[ "$bad_priv" -ne 0 ]]; then
     echo "FAIL: reference.$t grants more than allowed (ADR-0011 §1 select-only; ADR-0020 §2 admin writes only on: $ADMIN_WRITE_TABLES)." >&2

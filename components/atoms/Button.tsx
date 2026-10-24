@@ -23,7 +23,7 @@ const buttonVariants = cva(
   // Alignment=Left (Figma is internally inconsistent) — design decision,
   // not a conversion call. design/notes/Button.md,
   // docs/open-questions.md#button-root-gap-binding-split.
-  "chrome-touch inline-flex shrink-0 items-center gap-1 rounded-control text-base font-semibold transition-colors",
+  "chrome-touch inline-flex shrink-0 items-center gap-1 rounded-control text-sm font-semibold transition-colors",
   {
     variants: {
       // No Figma Size property — small/compact/iconOnlyDefault are structural

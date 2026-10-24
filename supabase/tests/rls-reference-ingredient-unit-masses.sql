@@ -43,7 +43,7 @@
 --      future reseed that shifts the drop count by a few rows.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(15);
+select plan(16);
 
 insert into auth.users (id, email)
 values ('00000000-0000-0000-0000-00000000009a', 'a@test.local'),
@@ -134,9 +134,16 @@ select is(
   'non-admin delete left the Banaan/stuk fixture in place'
 );
 
--- Writes fail for anon too.
+-- anon has no access to the reference schema (20261024000004): reads and
+-- writes both fail at the grant.
 set local role anon;
 set local request.jwt.claims to '{}';
+select throws_ok(
+  $$ select 1 from reference.ingredient_unit_masses $$,
+  '42501',
+  null,
+  'anon cannot read reference.ingredient_unit_masses'
+);
 select throws_ok(
   $$ insert into reference.ingredient_unit_masses (ingredient_id, unit, grams, source, source_version)
      values ((select id from reference.ingredients where name_nl = 'Appel z schil gem' limit 1), 'gram', 1, 'test', '1') $$,

@@ -191,4 +191,13 @@ END:VCALENDAR`;
     expect(make("een").contentHash).toBe(make("een").contentHash);
     expect(make("een").contentHash).not.toBe(make("twee").contentHash);
   });
+
+  it("stops with too_large when all series together need too many iterations", () => {
+    const series = Array.from(
+      { length: 20 },
+      (_, i) => `BEGIN:VEVENT\nUID:s${i}\nSUMMARY:Dagelijks ${i}\nDTSTART:20000101T100000Z\nDTEND:20000101T110000Z\nRRULE:FREQ=DAILY\nEND:VEVENT`,
+    ).join("\n");
+    const text = `BEGIN:VCALENDAR\nVERSION:2.0\n${series}\nEND:VCALENDAR`;
+    expect(() => parseIcs(text, window)).toThrowError(expect.objectContaining({ code: "too_large" }));
+  }, 20_000);
 });

@@ -20,6 +20,7 @@
    - Supabase Cron and Edge Functions are not used.
 2. **The rules live in the database.** One `security definer` function applies a parsed feed to one account in a single transaction: the upsert on `(calendar_account_id, external_id)`, the content hash, `missing_since`, the two-miss deletion, the failure guards and the basket notice (ADR-0037 §5–6).
    - When called by `authenticated`, it acts only on an account the caller owns (`auth.uid()`).
+   - Trust boundary: `apply_calendar_sync` and `create_ics_calendar` are EXECUTE for `authenticated`, so a signed-in user can write events into their own calendar without the safe-fetch path. That reaches only their own account, so it is accepted.
    - Fetching and parsing (`safe-fetch`, `ical.js`) run in Node, in one server-only module that both triggers call.
 3. **Overlap is harmless.** An account claims its sync with a transaction-scoped advisory lock. A second run that cannot take the lock skips the account.
 4. **Secrets per trigger** (amends ADR-0002):
