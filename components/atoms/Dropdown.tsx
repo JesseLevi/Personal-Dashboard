@@ -103,6 +103,7 @@ export function Dropdown({
 
       <div
         role={label ? undefined : "group"}
+        data-menu-surface={label ? undefined : ""}
         // `gap-1` labelless only — reasoning: design/notes/Dropdown.md.
         // Border states are labelled-only on purpose: labelled Dropdown is a
         // field (user-reported, must match InputField's own ramp and tokens),
