@@ -11,12 +11,16 @@ import {
   type SidebarItemId,
 } from "@/components/organisms/Sidebar";
 import { Button } from "@/components/atoms/Button";
+import { SearchPanel } from "@/components/organisms/SearchPanel";
+import { useIsNarrow } from "@/components/organisms/AgendaCalendar";
+import { searchAllAction } from "@/app/(app)/search-actions";
 import { signOut } from "@/app/login/actions";
 import { isOutsideAllContainers } from "@/lib/dom/outside-pointer";
 import { blurInTotalMs, blurOutTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 import { hasEnterFromLogin } from "@/lib/ui/login-enter";
 import type { Locale } from "@/lib/profile/types";
 import { SettingsPanel } from "./SettingsPanel";
+import { useSearchShortcut } from "./useSearchShortcut";
 
 // Only the routes a ticket has actually built (#88, #177, #230); ids without
 // an entry (assistant) have no page yet, so clicking them is a deliberate
@@ -163,6 +167,8 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
   const [mobileOpen, setMobileOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const narrow = useIsNarrow();
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations("components.sidebar");
@@ -177,6 +183,7 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
     shopping: t("items.shopping"),
     assistant: t("items.assistant"),
   };
+  useSearchShortcut(() => setSearchOpen(true), searchOpen || settingsOpen);
   const toggleLabel = collapsed ? t("expandLabel") : t("collapseLabel");
   const accountName = displayName ?? t("accountFallbackName");
   // Separate ids: both wrappers render a `<Sidebar>` at once (desktop fixed +
@@ -262,6 +269,18 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
     setSettingsOpen(true);
   }
 
+  // #581: from the mobile drawer the drawer closes first, same as Settings.
+  function openSearch() {
+    setAccountMenuOpen(false);
+    setMobileOpen(false);
+    setSearchOpen(true);
+  }
+
+  function openSearchResult(href: string) {
+    setMobileOpen(false);
+    page.go(href);
+  }
+
   function handleLogout() {
     setAccountMenuOpen(false);
     // signOut() (app/login/actions.ts) redirects internally — no local
@@ -294,6 +313,8 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
           onToggle={() => setCollapsed((prev) => !prev)}
           activeItem={activeItemForPath(pathname)}
           labels={labels}
+          searchLabel={t("searchLabel")}
+          onSearchClick={openSearch}
           onNavigate={handleNavigate}
           onItemHover={handleItemHover}
           accountName={accountName}
@@ -340,6 +361,8 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
           onToggle={() => setMobileOpen(false)}
           activeItem={activeItemForPath(pathname)}
           labels={labels}
+          searchLabel={t("searchLabel")}
+          onSearchClick={openSearch}
           onNavigate={handleNavigate}
           onItemHover={handleItemHover}
           accountName={accountName}
@@ -390,6 +413,16 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
           {children}
         </div>
       </main>
+
+      <SearchPanel
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        onSearch={searchAllAction}
+        onOpen={openSearchResult}
+        onOpenSettings={() => setSettingsOpen(true)}
+        canEnableSmartSearch={aiAvailable && !aiEnabled}
+        autoFocusField={!narrow}
+      />
 
       <SettingsPanel
         open={settingsOpen}

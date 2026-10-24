@@ -3,10 +3,11 @@ Figma: `Sidebar` component set · node `3674:5664` (`Collapsed=No` `3674:5665`, 
 
 ## Anatomy
 - `<nav>` root, `justify-between` (Figma `SPACE_BETWEEN`, #265):
-  - a top block (`gap-stack-xxl`) holding the collapse toggle and six nav items (`gap-stack-md`);
+  - a top block (`gap-stack-xxl`) holding the collapse toggle, the Zoeken item and six nav items (`gap-stack-md`);
   - the Account row at the bottom.
 - The only variant axis is `Collapsed` → the `collapsed` prop. All state (`collapsed`, `accountMenuOpen`) is composer-owned (`AppShellNav.tsx`).
 - Nav items come from a closed `NAV_ITEMS` list: Te doen `Columns3`, Agenda `Calendar` (no Figma node; #486), Notities `Notebook`, Recepten `FolderClosed`, Winkelmand `ShoppingBasket`, Assistent `Astroid` (#226, Kleding removed per ADR-0016).
+- **Zoeken** (#581) is a `transparent` Button with `Search` above the modules, outside `NAV_ITEMS`: it is an action, not a route, so it is never active. Props `searchLabel` and `onSearchClick`; `aria-keyshortcuts="Control+K Meta+K"`. It opens `SearchPanel` (`design/notes/SearchPanel.md`), from the mobile drawer too (the drawer closes first).
 - The active item is `Button variant="filled"` + `aria-pressed` + `aria-current="page"` (Button's Selected state). Others are `transparent`.
 - The Account row is a plain `<button>`, not the Button atom (Figma's frame is not a Button instance). Inside: a 40×40 square `Avatar`, then name + `EllipsisVertical` 16px. It opens a labelless `Dropdown` with Settings (`transparent`) and Logout (`destructive`).
 - Labels, `navLabel`, `toggleLabel` and the menu labels are composer-supplied (`components.sidebar.*`).
