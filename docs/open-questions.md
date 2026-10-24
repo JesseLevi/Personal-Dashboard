@@ -38,7 +38,7 @@ No loading frame for the note editor; `NoteEditorSkeleton` renders only the iner
 
 ### no-pointer-affordance
 
-`Button/Toggle` segments have hover/active suppressed (they would paint over the white Active indicator; `3623:4345` has no state axis). `Card-content/Ingredient` (`3727:4021`) has only `Default | Active | Delete`. Claude may design pointer feedback that keeps the indicator visible when touched.
+`Card-content/Ingredient` (`3727:4021`) has only `Default | Active | Delete`, no Hover. Claude may design pointer feedback when touched.
 
 ### sidebar-motion-timing-unsourced
 

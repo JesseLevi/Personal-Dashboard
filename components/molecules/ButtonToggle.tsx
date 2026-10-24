@@ -212,7 +212,17 @@ export function ButtonToggle({
             className={cn(
               "relative grow basis-0",
               hugFromLg && "lg:grow-0 lg:basis-auto",
-              "hover:bg-transparent! active:bg-transparent!",
+              // The active segment stays fill-less so it never covers the
+              // indicator; the others preview it (its fill at half strength)
+              // and darken their label.
+              item.value === value
+                ? "hover:bg-transparent! active:bg-transparent!"
+                : cn(
+                    "hover:text-text-primary",
+                    tone === "button"
+                      ? "hover:bg-surface-highlight-white/50! active:bg-surface-highlight-white!"
+                      : "hover:bg-surface-secondary/50! active:bg-surface-secondary!",
+                  ),
               size === "small" && "rounded-card-inner",
             )}
           >
