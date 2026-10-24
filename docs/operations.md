@@ -55,6 +55,7 @@ Login by 6-digit e-mail code. The only manual part is connecting Resend; hosted 
   - `ci.yml`, `ci-db.yml` and `ci-visual.yml` run on pull requests and by hand, each with its own `paths:` filter, and cancel in-progress runs;
   - `deploy.yml` (`target` = `both|migrate|deploy`) and `visual-update.yml` run by hand only.
   - Free plan: about 2000 CI minutes a month. Two `ci-db` runs cannot overlap (fixed ports); rerun with `gh run rerun <id> --failed`.
+- **Pinning**: every `uses:` is a full commit SHA with the version as a trailing comment, and `deploy.yml` installs an exact Vercel CLI version. Dependabot (`.github/dependabot.yml`, `github-actions`, weekly) proposes the bumps; bump the Vercel CLI by hand.
 - **Board**: project 1, owner `JesseLevi`.
 
 ## Cloudflare R2 (ADR-0024)
