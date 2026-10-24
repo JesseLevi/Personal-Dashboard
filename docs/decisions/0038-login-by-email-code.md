@@ -9,7 +9,7 @@
 
 ## Decision
 
-1. **Login by a 6-digit e-mail code (OTP)**, entered on `/login/code`, plus a fallback link in the same mail (`{{ .SiteURL }}/auth/confirm?token_hash=…&type=email`). Self-signup stays disabled.
+1. **Login by a 6-digit e-mail code (OTP)**, entered on `/login/code`, plus a fallback link in the same mail (`{{ .SiteURL }}/auth/confirm?token_hash=…&type=email`). Opening the link only shows a confirm screen; the sign-in happens on the button's POST, so a GET (or a mail scanner) never consumes the token. Self-signup stays disabled.
 2. **Resend is the SMTP provider** (free tier): `smtp.resend.com`, user `resend`, password = API key, port 465.
 3. **Hosted config is scripted, not clicked.** `pnpm auth:email` PATCHes the Supabase Management API (`/v1/projects/{ref}/config/auth`): SMTP, the magic-link subject and template from `supabase/templates/magic_link.html`, OTP expiry and length, and the e-mail rate limit.
    - It is a dry run by default (masked diff against `GET`); only `--apply` writes, and that needs the user's go (ADR-0032).

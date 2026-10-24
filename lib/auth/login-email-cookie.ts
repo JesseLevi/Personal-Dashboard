@@ -12,7 +12,8 @@ const BASE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "lax",
-  path: "/login",
+  // Site root, not /login: /auth/confirm reads it too (it is a different path prefix).
+  path: "/",
 } as const;
 
 export async function setLoginEmail(email: string): Promise<void> {

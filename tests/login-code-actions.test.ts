@@ -76,7 +76,7 @@ describe("sendLoginCode", () => {
       httpOnly: true,
       secure: false,
       sameSite: "lax",
-      path: "/login",
+      path: "/",
       maxAge: 600,
     });
   });
@@ -139,7 +139,7 @@ describe("verifyLoginCode", () => {
     const state = await verifyLoginCode(IDLE_VERIFY, form({ code: "123456" }));
     expect(state).toEqual({ status: "success" });
     expect(verifyOtpMock).toHaveBeenCalledWith({ email: "a@b.nl", token: "123456", type: "email" });
-    expect(cookieSet).toHaveBeenCalledWith("atlas_login_email", "", expect.objectContaining({ maxAge: 0, path: "/login" }));
+    expect(cookieSet).toHaveBeenCalledWith("atlas_login_email", "", expect.objectContaining({ maxAge: 0, path: "/" }));
     expect(redirectMock).not.toHaveBeenCalled();
   });
 
