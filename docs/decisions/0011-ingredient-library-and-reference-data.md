@@ -25,7 +25,7 @@ Ingredient reference data is not user data. "Rolled oats weigh 81 g per US cup" 
 
 - Shared reference tables live in a **`reference` schema**, never in `public`.
 - `reference` tables carry **no `user_id` column**. ADR-0001 is therefore untouched: its invariant ("every table carries `user_id not null`") continues to hold for every table in `public`, which is where all user data continues to live.
-- `authenticated` and `anon` receive **`select` only**. No `insert`, `update` or `delete` is granted to any client role. Reference data changes exclusively through migrations.
+- `authenticated` receives **`select` only** (`anon` too until migration 20261024000004, which revoked its access: the app never reads this schema anonymously). No `insert`, `update` or `delete` is granted to any client role. Reference data changes exclusively through migrations.
 - RLS is nonetheless **enabled** on every `reference` table, with a single permissive `select using (true)` policy and no write policies at all. The grants already prevent writes; the policy is defence in depth, so a mistaken future grant cannot silently open a write path.
 
 This is not a way around `scripts/check-rls-coverage.sh` — that gate reads `pg_tables where schemaname = 'public'` and would simply not see these tables. Leaving it that way would be the hack. The gate is therefore **extended** (see §6).
@@ -81,7 +81,7 @@ Never mix sources within one ingredient's nutrient set: composition tables use d
 `scripts/check-rls-coverage.sh` currently enumerates `public` only. It gains a second pass asserting, for every table in `reference`:
 
 - no `user_id` column exists (user data must never land here),
-- `authenticated` and `anon` hold `select` and nothing else,
+- `authenticated` holds `select` and nothing else, and `anon` holds nothing,
 - RLS is enabled.
 
 A new shared schema that the security gate cannot see would be exactly the kind of silent gap ADR-0009 exists to prevent.

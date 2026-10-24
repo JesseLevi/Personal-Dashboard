@@ -5,8 +5,8 @@
 -- carries app_metadata.role = 'admin'.
 -- Non-admin authenticated: insert is refused by the with-check (42501);
 -- update/delete are filtered by the using-clause (no error, zero rows).
--- anon holds select only (writes fail at the grant, 42501) and no EXECUTE
--- on is_admin().
+-- anon has no access at all (reads and writes fail at the grant, 42501,
+-- since 20261024000004) and no EXECUTE on is_admin().
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(23);
@@ -116,10 +116,11 @@ select is(
 -- ---- anon -------------------------------------------------------------------
 set local role anon;
 set local request.jwt.claims to '{}';
-select is(
-  (select count(*)::int from reference.ingredient_aliases where alias_normalized = 'bananen'),
-  1,
-  'anon can read shared aliases'
+select throws_ok(
+  $$ select 1 from reference.ingredient_aliases $$,
+  '42501',
+  null,
+  'anon cannot read shared aliases'
 );
 select throws_ok(
   $$ insert into reference.ingredient_aliases (alias_normalized, ingredient_id)

@@ -5,12 +5,10 @@ import { noteExtensions } from "@/lib/notes/extensions";
 import { NoteImageUpload, requestImageUpload } from "@/lib/notes/image-upload";
 import nl from "../../messages/nl.json";
 
-// A flat two-tone picture as a data URI: no network, identical in every run.
-const PICTURE = `data:image/svg+xml,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="320"><rect width="640" height="320" fill="steelblue"/><circle cx="480" cy="110" r="60" fill="gold"/><path d="M0 320 L200 140 L360 280 L460 200 L640 320 Z" fill="seagreen"/></svg>',
-)}`;
-// Not decodable as an image, so the browser fires `error` straight away.
-const MISSING = "data:image/png;base64,AAAA";
+// Route-shaped srcs, served by the note-image middleware in .ladle/vite.config.mjs
+// (a two-tone picture; the missing id answers 404, so the browser fires `error`).
+const PICTURE = "/api/note-image/00000000-0000-4000-8000-000000000001/00000000-0000-4000-8000-000000000002";
+const MISSING = "/api/note-image/00000000-0000-4000-8000-000000000001/00000000-0000-4000-8000-00000000dead";
 
 const intro = { type: "paragraph", content: [{ type: "text", text: "Een notitie met een afbeelding." }] };
 const image = (src: string, alt?: string) => ({ type: "image", attrs: { src, alt: alt ?? null } });
