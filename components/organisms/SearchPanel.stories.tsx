@@ -36,7 +36,8 @@ const results: SearchResult[] = [
 ];
 
 const hybrid: SearchPanelAction = async () => ({ success: true, data: { mode: "hybrid", results } });
-const keyword: SearchPanelAction = async () => ({ success: true, data: { mode: "keyword", results } });
+// A short list, so the hint line stays inside the baseline's viewport.
+const keyword: SearchPanelAction = async () => ({ success: true, data: { mode: "keyword", results: results.slice(0, 2) } });
 const none: SearchPanelAction = async () => ({ success: true, data: { mode: "hybrid", results: [] } });
 const pending: SearchPanelAction = () => new Promise(() => {});
 
