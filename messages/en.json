@@ -367,6 +367,7 @@
         "assistant": "Assistant",
         "agenda": "Agenda"
       },
+      "searchLabel": "Search",
       "accountFallbackName": "Account",
       "settingsLabel": "Settings",
       "logoutLabel": "Log out"
@@ -1338,6 +1339,25 @@
       "clearDeadlineLabel": "Clear deadline",
       "saveLabel": "Save",
       "savingLabel": "Saving..."
+    },
+    "searchPanel": {
+      "title": "Search",
+      "searchLabel": "Search Atlas",
+      "searchPlaceholder": "Search",
+      "promptLabel": "Search your notes, recipes, cards, events and basket.",
+      "searchingLabel": "Searching...",
+      "unavailableLabel": "Search is not available right now.",
+      "noResultsLabel": "Nothing found for \"{query}\".",
+      "resultsLabel": "Search results",
+      "untitled": "Untitled",
+      "smartOffLabel": "Smart search is off. You can turn it on in Settings.",
+      "groups": {
+        "note": "Notes",
+        "recipe": "Recipes",
+        "card": "Cards",
+        "calendar_event": "Events",
+        "shopping_list_item": "Basket"
+      }
     }
   },
   "agenda": {

@@ -16,6 +16,7 @@ export const Variants = () => (
       toggleLabel={enLabels.collapseLabel}
       activeItem="recipes"
       labels={enLabels.items}
+      searchLabel={enLabels.searchLabel}
       accountName="Youri Tukker"
       accountMenuOpen={false}
       accountMenuId="sidebar-story-account-menu-expanded"
@@ -28,6 +29,7 @@ export const Variants = () => (
       toggleLabel={enLabels.expandLabel}
       activeItem="recipes"
       labels={enLabels.items}
+      searchLabel={enLabels.searchLabel}
       accountName="Youri Tukker"
       accountMenuOpen={false}
       accountMenuId="sidebar-story-account-menu-collapsed"
@@ -53,6 +55,7 @@ export const Animated = () => {
         }
         activeItem="recipes"
         labels={nlLabels.items}
+        searchLabel={nlLabels.searchLabel}
         onToggle={() => setCollapsed((prev) => !prev)}
         accountName="Youri Tukker"
         accountMenuOpen={false}
@@ -76,6 +79,7 @@ export const AccountMenuOpen = () => {
         toggleLabel={nlLabels.collapseLabel}
         activeItem="notes"
         labels={nlLabels.items}
+        searchLabel={nlLabels.searchLabel}
         accountName="Youri Tukker"
         accountMenuOpen={open}
         accountMenuId="sidebar-story-account-menu-open"
@@ -88,6 +92,7 @@ export const AccountMenuOpen = () => {
         toggleLabel={enLabels.collapseLabel}
         activeItem="notes"
         labels={enLabels.items}
+        searchLabel={enLabels.searchLabel}
         accountName={enLabels.accountFallbackName}
         accountMenuOpen={false}
         accountMenuId="sidebar-story-account-menu-fallback"

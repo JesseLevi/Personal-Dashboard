@@ -367,6 +367,7 @@
         "assistant": "Assistent",
         "agenda": "Agenda"
       },
+      "searchLabel": "Zoeken",
       "accountFallbackName": "Account",
       "settingsLabel": "Instellingen",
       "logoutLabel": "Uitloggen"
@@ -1338,6 +1339,25 @@
       "clearDeadlineLabel": "Deadline wissen",
       "saveLabel": "Opslaan",
       "savingLabel": "Opslaan..."
+    },
+    "searchPanel": {
+      "title": "Zoeken",
+      "searchLabel": "Zoek in Atlas",
+      "searchPlaceholder": "Zoeken",
+      "promptLabel": "Zoek in je notities, recepten, kaarten, afspraken en winkelmand.",
+      "searchingLabel": "Zoeken...",
+      "unavailableLabel": "Zoeken lukt nu even niet.",
+      "noResultsLabel": "Niets gevonden voor \"{query}\".",
+      "resultsLabel": "Zoekresultaten",
+      "untitled": "Zonder titel",
+      "smartOffLabel": "Slim zoeken staat uit. Aanzetten kan in Instellingen.",
+      "groups": {
+        "note": "Notities",
+        "recipe": "Recepten",
+        "card": "Kaarten",
+        "calendar_event": "Afspraken",
+        "shopping_list_item": "Winkelmand"
+      }
     }
   },
   "agenda": {

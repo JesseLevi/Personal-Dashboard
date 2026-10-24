@@ -59,6 +59,9 @@ export interface SidebarProps {
   activeItem?: SidebarItemId;
   /** One label per fixed module — composer-supplied, see `messages/*.json` `components.sidebar.items.*`. */
   labels: Record<SidebarItemId, string>;
+  /** #581: label of the "Zoeken" item above the modules; it opens the search panel (⌘K), never becomes the active item. */
+  searchLabel: string;
+  onSearchClick?: () => void;
   /** Fired with the item id when a module link is clicked. */
   onNavigate?: (item: SidebarItemId) => void;
   /** #170: fired on `pointerenter`/`focus` — composer's hook for
@@ -94,6 +97,8 @@ export function Sidebar({
   onToggle,
   activeItem,
   labels,
+  searchLabel,
+  onSearchClick,
   onNavigate,
   onItemHover,
   accountName,
@@ -141,6 +146,16 @@ export function Sidebar({
           onClick={onToggle}
         />
         <div className="flex w-full flex-col gap-stack-md">
+          <Button
+            variant="transparent"
+            icon="Search"
+            align="left"
+            aria-keyshortcuts="Control+K Meta+K"
+            onClick={onSearchClick}
+            className="overflow-hidden whitespace-nowrap"
+          >
+            {searchLabel}
+          </Button>
           {NAV_ITEMS.map(({ id, icon }) => {
             const isActive = id === activeItem;
             const variant = isActive ? "filled" : "transparent";
