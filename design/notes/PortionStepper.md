@@ -2,7 +2,7 @@
 Figma: unnamed "Frame 1" · nodes `3953:9750` (mobile) / `3778:5596` (desktop), pixel-identical; restyled after the Pas-aan panel's Personen row `3999:11007` (desktop) / `3998:10928` (mobile) · Code: `components/molecules/PortionStepper.tsx`
 
 ## Anatomy
-Presentational molecule (no `"use client"`, no `useTranslations`): a pill wrapper `inline-flex h-10 items-center gap-1 rounded-control bg-surface-secondary` containing an icon-only `Button` (`Minus`), a count `<span>` (`text-base font-semibold text-text-secondary`) and an icon-only `Button` (`Plus`). Props: `portions`, `label`, `decrementLabel`, `incrementLabel`, `onChange?`, `min` (default 1), `className`. Only consumer: `PasAanPanel`.
+Presentational molecule (no `"use client"`, no `useTranslations`): a pill wrapper `inline-flex h-10 items-center gap-1 rounded-control bg-surface-secondary` containing an icon-only `Button` (`Minus`), a count `<span>` (`text-sm font-semibold text-text-secondary`, matching `Button`'s label) and an icon-only `Button` (`Plus`). Props: `portions`, `label`, `decrementLabel`, `incrementLabel`, `onChange?`, `min` (default 1), `className`. Only consumer: `PasAanPanel`.
 
 ## Deliberate decisions
 - One visual pill, structurally two buttons. Figma's Personen row is a single `Button/Default` (Filled, leading icon, text "6", trailing icon), but a `<button>` cannot nest two buttons and decrement/increment need separate targets (`Atom/Dropdown` documents the same HTML constraint). The wrapper repeats Button's Filled classes, so the inner Filled Buttons blend into it at rest and keep their own hover/active ramp. (#166)

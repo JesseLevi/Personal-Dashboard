@@ -2,6 +2,7 @@
 import { cn } from "@/lib/ui/cn";
 import { cva, type VariantProps } from "class-variance-authority";
 import type { ReactNode } from "react";
+import { Icon, type IconName } from "./Icon";
 
 /**
  * Atom/Tag — small pill/label. Figma component set "Tag" (node-id 3626:4515).
@@ -10,16 +11,11 @@ import type { ReactNode } from "react";
  * semantic `variant` prop matching the card `priority` enum instead of
  * color names: Grey→neutral, Red→urgent, Blue→medium, Green→low. `mid`
  * is retired (#97) — Yellow carries no priority meaning and keeps its own
- * non-priority name, `highlight`. See design/notes/Tag.md.
+ * non-priority name, `highlight`. Size (24 px, `text-xs`) is a deliberate
+ * deviation from the Figma node; see design/notes/Tag.md.
  */
 const tagVariants = cva(
-  // spacing-flag: `gap-2` stays raw (#205): the fetched node binds this itemSpacing to
-  // `spacing/mini`, a Figma variable outside the Semantics/Responsive
-  // collection this pipeline mirrors — no matching semantic token exists.
-  // Value (8px) is never inferred onto `inline-sm`/`component-sm`, which
-  // share the same pixels but are genuinely different Figma variables. See
-  // design/notes/Tag.md.
-  "inline-flex items-center gap-2 px-component-md h-10 rounded-control text-base font-semibold",
+  "inline-flex h-6 items-center gap-inline-xs px-component-sm rounded-control text-xs font-semibold",
   {
     variants: {
       variant: {
@@ -38,11 +34,16 @@ const tagVariants = cva(
 
 export interface TagProps extends VariantProps<typeof tagVariants> {
   children: ReactNode;
+  /** Leading icon, sized by the Tag so it matches the 12 px label. */
+  icon?: IconName;
   className?: string;
 }
 
-export function Tag({ variant, children, className }: TagProps) {
+export function Tag({ variant, icon, children, className }: TagProps) {
   return (
-    <span className={cn(tagVariants({ variant }), className)}>{children}</span>
+    <span className={cn(tagVariants({ variant }), className)}>
+      {icon && <Icon name={icon} size={14} />}
+      {children}
+    </span>
   );
 }

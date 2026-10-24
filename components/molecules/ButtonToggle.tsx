@@ -213,7 +213,7 @@ export function ButtonToggle({
               "relative grow basis-0",
               hugFromLg && "lg:grow-0 lg:basis-auto",
               "hover:bg-transparent! active:bg-transparent!",
-              size === "small" && "rounded-card-inner text-sm",
+              size === "small" && "rounded-card-inner",
             )}
           >
             {iconOnlyBelowLg ? (

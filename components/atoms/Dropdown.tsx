@@ -127,7 +127,7 @@ export function Dropdown({
               // spacing-flag: `gap-3` trigger row — no measurable Figma
               // node (Slot's own fetched children have no separate
               // trigger+chevron wrapper frame to read). design/notes/Dropdown.md.
-              className="flex w-full cursor-pointer items-center gap-3 text-left"
+              className="flex min-h-10 w-full cursor-pointer items-center gap-3 text-left"
               aria-expanded={isOpen}
               aria-controls={panelId}
               aria-labelledby={`${id} ${triggerId}`}
