@@ -21,6 +21,15 @@
   }
 }
 
+/* Menu panels (labelless Dropdown, design/notes/Dropdown.md) sit on
+   surface-highlight-white, which in dark is the same stone step as
+   surface-secondary-hover, so a Transparent row's hover vanished. Inside a
+   menu the rows hover like Button/White instead; light is unchanged. */
+[data-theme="dark"] [data-menu-surface] {
+  --color-surface-secondary-hover: var(--color-surface-highlight-white-selected);
+  --color-surface-secondary-active: var(--color-surface-highlight-white-hover);
+}
+
 /* Blur fade (lib/ui/blur-fade.ts, design/notes/BlurFade.md). Duration,
    easing and stagger are local picks (no motion spec in Figma, no token
    namespace for them); keep BLUR_FADE in blur-fade.ts in step. */
