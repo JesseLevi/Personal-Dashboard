@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { after } from "next/server";
 import { Suspense } from "react";
+import { settleCookedMeals } from "@/lib/activity/settle";
 import { getTranslations } from "next-intl/server";
 import { getRecipeCategoriesWithRecipes, getRecipeCategoryRecipeCounts } from "@/lib/recipes/queries";
 import { getAuthenticatedUserId, isAdmin } from "@/lib/recipes/session";
@@ -35,7 +37,10 @@ async function ReceptenPageContent() {
   // #318 / ADR-0019 §1: stuck `importing` rows (> 5 min) become failed/timeout
   // before the board reads them, so they show as a failed card, not a skeleton.
   const userId = await getAuthenticatedUserId();
-  if (userId) await sweepStuckImports(await createSupabaseServerClient(), userId);
+  const supabase = await createSupabaseServerClient();
+  if (userId) await sweepStuckImports(supabase, userId);
+  // ADR-0044: meals whose day has passed become history, after the response.
+  after(() => settleCookedMeals(supabase));
   const [categories, admin, offers] = await Promise.all([
     getRecipeCategoriesWithRecipes(),
     isAdmin(),

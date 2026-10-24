@@ -9,6 +9,80 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      activity_events: {
+        Row: {
+          id: string
+          item_key: string | null
+          item_name: string | null
+          kind: string
+          meal_plan_id: string | null
+          occurred_at: string
+          quantity: number | null
+          recipe_id: string | null
+          shopping_list_id: string | null
+          shopping_list_item_id: string | null
+          unit: Database["public"]["Enums"]["recipe_unit"] | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          item_key?: string | null
+          item_name?: string | null
+          kind: string
+          meal_plan_id?: string | null
+          occurred_at?: string
+          quantity?: number | null
+          recipe_id?: string | null
+          shopping_list_id?: string | null
+          shopping_list_item_id?: string | null
+          unit?: Database["public"]["Enums"]["recipe_unit"] | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          item_key?: string | null
+          item_name?: string | null
+          kind?: string
+          meal_plan_id?: string | null
+          occurred_at?: string
+          quantity?: number | null
+          recipe_id?: string | null
+          shopping_list_id?: string | null
+          shopping_list_item_id?: string | null
+          unit?: Database["public"]["Enums"]["recipe_unit"] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_events_meal_plan_id_fkey"
+            columns: ["meal_plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_events_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_events_shopping_list_id_fkey"
+            columns: ["shopping_list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_events_shopping_list_item_id_fkey"
+            columns: ["shopping_list_item_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_list_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_columns: {
         Row: {
           board_id: string
@@ -1652,6 +1726,8 @@ export type Database = {
         Returns: undefined
       }
       set_ai_enabled: { Args: { p_enabled: boolean }; Returns: undefined }
+      settle_cooked_meals: { Args: never; Returns: number }
+      settle_cooked_meals_for: { Args: { p_user: string }; Returns: number }
       toggle_board_favorite: { Args: { p_board_id: string }; Returns: boolean }
       update_event_series: {
         Args: {

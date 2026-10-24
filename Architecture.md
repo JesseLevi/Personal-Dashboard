@@ -71,6 +71,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 | Ingredient library | `ingredients` (user layer, nullable `reference_id`), `ingredient_unit_masses` (user overrides), `ingredient_aliases` (user) |
 | Reference | `reference.ingredients` (NEVO + `eigen`, nutrients per 100 g, bilingual names/categories), `reference.ingredient_unit_masses` (NEVO portions, USDA), `reference.ingredient_aliases` (admin) |
 | Winkelmand | `shopping_lists` (container, one `is_default` per user), `shopping_list_items` (`list_id`, `unit`, `checked`, `recipe_id` provenance) |
+| History | `activity_events` |
 | Sharing | `shares` (ADR-0035) |
 | Notities | `note_categories`, `notes` (`content` TipTap JSON, derived `title` + `content_text`), `note_links` (derived on save) |
 
@@ -123,7 +124,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - `embeddings`: a row per chunk, exclusive arc over notes, recipes, cards, events and basket items, `halfvec(1024)`, owner-only RLS, exact search;
   - no queue: `embedding_backlog()` finds stale sources; a lazy `after()` drain (at most every 10 min) and the daily `/api/cron/embeddings` embed them, reusing vectors for identical text;
   - search across modules merges `search_text()` and `search_semantic()` (`security invoker`) with RRF.
-- **History** (ADR-0044): triggers append basket adds and checks to `activity_events`; `settle_cooked_meals()` adds `recipe_cooked` for past meal plans. Every member, no AI.
+- **History** (ADR-0044): triggers log basket adds and checks into `activity_events`; `settle_cooked_meals()` logs past plans. All members, no AI.
 - **Phase 9**: SQL detectors over `activity_events`, `embeddings` and cards; one LLM call per signal (consenting members) into `agent_signals`; no tools, no other writes, plain text.
 - **Scheduled work** (ADR-0039, Vercel Hobby): a lazy "when stale" run in `after()` where a user is present, plus daily Vercel Cron routes behind `CRON_SECRET` as a backstop. Cron routes may use `service_role` (no user request). Anything more frequent needs a new ADR.
 
