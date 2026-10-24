@@ -59,7 +59,7 @@ export function PortionStepper({
         onClick={() => onChange?.(Math.max(min, portions - 1))}
         disabled={atMin}
       />
-      <span className="text-base font-semibold text-text-secondary">{label}</span>
+      <span className="text-sm font-semibold text-text-secondary">{label}</span>
       <Button
         icon="Plus"
         aria-label={incrementLabel}

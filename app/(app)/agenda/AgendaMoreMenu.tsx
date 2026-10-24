@@ -130,7 +130,6 @@ export function AgendaMoreMenu({
   return (
     <span ref={wrapperRef} className="inline-flex">
       <Button
-        className="text-sm"
         icon="Ellipsis"
         aria-label={t("moreLabel")}
         aria-haspopup="menu"
