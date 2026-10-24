@@ -131,12 +131,12 @@ export function AgendaHeader({
               <AgendaDayStrip date={date} today={today} onSelect={onGoToDate} className="w-full max-lg:order-4 lg:hidden" />
             )}
             <div className="flex max-w-full flex-wrap items-center justify-end gap-inline-sm max-lg:contents">
-              <Button className="text-sm max-lg:hidden" icon="ArrowLeft" aria-label={t("previousLabel")} onClick={onPrevious} />
-              <Button className="text-sm max-lg:hidden" onClick={onToday}>
+              <Button className="max-lg:hidden" icon="ArrowLeft" aria-label={t("previousLabel")} onClick={onPrevious} />
+              <Button className="max-lg:hidden" onClick={onToday}>
                 {t("todayLabel")}
               </Button>
-              <Button className="text-sm max-lg:hidden" icon="ArrowRight" aria-label={t("nextLabel")} onClick={onNext} />
-              <Button className="text-sm max-lg:hidden" icon="PanelRight" aria-pressed={trayOpen} onClick={onTrayToggle}>
+              <Button className="max-lg:hidden" icon="ArrowRight" aria-label={t("nextLabel")} onClick={onNext} />
+              <Button className="max-lg:hidden" icon="PanelRight" aria-pressed={trayOpen} onClick={onTrayToggle}>
                 {t("planLabel")}
               </Button>
               <span className="inline-flex max-lg:order-1 max-lg:ml-auto">
@@ -153,7 +153,7 @@ export function AgendaHeader({
               />
               </span>
               <span ref={newButtonRef} className="inline-flex max-lg:order-2">
-                <Button className="text-sm" variant="white" icon="Plus" onClick={onNew}>
+                <Button variant="white" icon="Plus" onClick={onNew}>
                   {t("newLabel")}
                 </Button>
               </span>
