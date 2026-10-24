@@ -57,3 +57,13 @@ describe("R2 request transport (#446)", () => {
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });
+
+describe("R2 key validation", () => {
+  it.each(["../x", "u/../x", "u/./x", "u//x", "/u/x", "u/x/", ""])("refuses %j", async (key) => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(store.get(key)).rejects.toThrow("Invalid object key");
+    await expect(store.presignGet(key)).rejects.toThrow("Invalid object key");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});

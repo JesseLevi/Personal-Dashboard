@@ -10,18 +10,11 @@ import { Plugin, PluginKey, type EditorState } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import type { Node as PMNode, NodeType } from "@tiptap/pm/model";
 import type { ActionResult } from "./types";
-import { MAX_NOTE_IMAGE_BYTES } from "./image-limits";
+import { MAX_NOTE_IMAGE_BYTES, isNoteImageSrc } from "./image-limits";
 
-export { MAX_NOTE_IMAGE_BYTES };
+export { MAX_NOTE_IMAGE_BYTES, isNoteImageSrc };
 export const NOTE_IMAGE_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 export const NOTE_IMAGE_ACCEPT = NOTE_IMAGE_MIME_TYPES.join(",");
-
-const NOTE_IMAGE_SRC = /^\/api\/note-image\/[0-9a-f-]{36}\/[0-9a-f-]{36}$/i;
-
-/** True for the same-origin delivery route of #338 -- the only `src` the editor accepts from outside. */
-export function isNoteImageSrc(src: unknown): src is string {
-  return typeof src === "string" && NOTE_IMAGE_SRC.test(src);
-}
 
 export type ImageFileError = "invalid-file-type" | "file-too-large";
 
