@@ -4,7 +4,7 @@
 -- asserted here, like rls-login-greeting.sql does for ADR-0031.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(42);
+select plan(40);
 
 insert into auth.users (id, email, deleted_at, banned_until)
 values ('00000000-0000-0000-0000-423000006001', 'anna@test.local', null, null),
@@ -97,17 +97,11 @@ select throws_ok(
 -- ============================================================================
 -- member_profiles
 -- ============================================================================
-select is(
-  (select array_agg(id) from public.member_profiles(array[
-    '00000000-0000-0000-0000-423000006002', '00000000-0000-0000-0000-423000006003',
-    '00000000-0000-0000-0000-423000006001']::uuid[])),
-  array['00000000-0000-0000-0000-423000006002']::uuid[],
-  'member_profiles returns only users the caller shares with (not unrelated users, not self)'
-);
-select is(
-  (select has_avatar from public.member_profiles(array['00000000-0000-0000-0000-423000006002']::uuid[])),
-  true,
-  'has_avatar is derived without exposing the path'
+select is_empty(
+  $$ select 1 from public.member_profiles(array[
+     '00000000-0000-0000-0000-423000006002', '00000000-0000-0000-0000-423000006003',
+     '00000000-0000-0000-0000-423000006001']::uuid[]) $$,
+  'member_profiles hides a pending invitee from the inviter (and unrelated users, and self)'
 );
 select ok(
   has_function_privilege('authenticated', 'public.avatar_path_for(uuid)', 'EXECUTE')
@@ -116,18 +110,13 @@ select ok(
 );
 select is(
   public.avatar_path_for('00000000-0000-0000-0000-423000006002'),
-  '00000000-0000-0000-0000-423000006002/avatar/b.webp',
-  'avatar_path_for returns the key of a member the caller shares with (pending counts)'
+  null,
+  'avatar_path_for hides a pending invitee''s photo from the inviter'
 );
 select is(
   public.avatar_path_for('00000000-0000-0000-0000-423000006003'),
   null,
   'avatar_path_for returns null for an unrelated user with a photo'
-);
-select is(
-  (select last_name from public.member_profiles(array['00000000-0000-0000-0000-423000006002']::uuid[])),
-  'Bakker',
-  'member_profiles returns the last name'
 );
 select is(
   (select count(*)::int from public.profiles),

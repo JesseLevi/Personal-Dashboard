@@ -43,6 +43,7 @@ export function toErrorCode(error: { code?: string; message: string }): SharingE
   if (error.code === "23505") return "already-shared";
   if (error.code === "42501") return "not-found";
   if (error.message === "rate_limited") return "rate-limited";
+  if (error.message === "share_limit") return "share-limit";
   return "generic";
 }
 
@@ -173,7 +174,7 @@ export async function searchMembers(input: unknown): Promise<ActionResult<Member
   });
 }
 
-/** Profiles of people the caller shares something with (any direction or status). */
+/** Profiles of people the caller shares something with (an inviter is visible to the invitee at once, an invitee to the inviter once accepted). */
 export async function memberProfiles(input: unknown): Promise<ActionResult<MemberProfile[]>> {
   return withUser(memberProfilesSchema, input, async ({ supabase, data }) => {
     if (data.ids.length === 0) return { success: true, data: [] };

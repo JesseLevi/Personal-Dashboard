@@ -53,8 +53,8 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 - **Every `public` table** has `user_id uuid not null references auth.users on delete cascade`, RLS with the four standard policies, explicit grants, and a pgTAP test in `supabase/tests` (ADR-0009/0035). `user_id` is the owner, not the only reader. `pnpm check:rls-coverage` fails on any gap.
 - **`reference` schema**: shared, non-user data with no `user_id`. Select for everyone. Writes only through migrations, except admin-written `eigen` rows and shared aliases (ADR-0011/0020).
 - **`private` schema**: not exposed by PostgREST; written only by definer functions (ADR-0031). Also holds the sharing role functions (ADR-0035).
-- **Sharing** (ADR-0035): a container (now `shopping_lists`) is shared through `shares` (one nullable FK per shareable type, `pending|accepted`, role `editor`). Rows inside a container carry the owner's `user_id`; their policies call `private.<type>_role(id)`. Other members' names come only from `member_profiles()` / `search_members()`.
-- **Recipe share = copy** (ADR-0036): a recipe offer is a pending `shares` row (`recipe_id`, never `accepted`). The invitee reads it only through `pending_recipe_shares()`; `accept_recipe_share()` (definer) copies the recipe into their own first category, then `lib/sharing/recipes.ts` copies the thumbnail in R2. Afterwards the two recipes are unrelated.
+- **Sharing** (ADR-0035): a container (now `shopping_lists`) is shared through `shares` (one nullable FK per shareable type, `pending|accepted`, role `editor`). Rows inside a container carry the owner's `user_id`; their policies call `private.<type>_role(id)`. Other members' names come only from `member_profiles()` / `search_members()`; an invitee's is shown to the inviter once accepted. A trigger limits invites.
+- **Recipe share = copy** (ADR-0036): a recipe offer is a pending `shares` row (`recipe_id`, never `accepted`). The invitee reads it only through `pending_recipe_shares()`; `accept_recipe_share()` (definer) copies the recipe into their own first category, then `lib/sharing/recipes.ts` copies the thumbnail in R2.
 - **Small closed sets** are text with a check constraint (`priority`, `size`, `source`). Units are the shared enum `public.recipe_unit` (ADR-0028).
 - **Ordering** uses fractional `position` (numeric midpoint), mirrored in TypeScript and SQL (ADR-0015).
 - **Multi-statement writes** are `security invoker` RPCs with `search_path = ''`, an explicit ownership guard, and execute granted only to `authenticated`: `replace_recipe_contents`, `move_card`, `move_recipe`, `move_note`, `toggle_board_favorite`, `save_note_content` (ADR-0015/0030).
@@ -89,7 +89,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 
 ## 5. Security model
 
-- **Isolation**: RLS on every user table, tested in CI (ADR-0009). Access decisions live in policies, not in app code; sharing extends them through role functions, never app-side checks (ADR-0035). A share is active only after the member accepts.
+- **Isolation**: RLS on every user table, tested in CI (ADR-0009). Access decisions live in policies, not app code; sharing extends them through role functions (ADR-0035). A share is active only after the member accepts.
 - **Boundaries** (ADR-0033):
   - no `NEXT_PUBLIC_` Supabase variables;
   - `service_role` only in server-only modules, never in a request on a user's behalf;

@@ -266,6 +266,7 @@
       "not-found": "This item no longer exists or is not yours.",
       "already-shared": "You already share this with this person.",
       "rate-limited": "You searched too often. Try again in a few minutes.",
+      "share-limit": "You have sent too many invitations. Wait a while or withdraw open ones.",
       "generic": "Something went wrong. Try again."
     },
     "invite": {
