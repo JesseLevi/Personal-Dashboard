@@ -9,7 +9,8 @@ Hosted settings that code review cannot see. Every change here is a hosted write
   - `github.autoAlias: false`, so no build goes live by itself;
   - `crons`: two daily calls, `/api/cron/calendar-sync` (04:00 UTC, also settles cooked meals, ADR-0044) and `/api/cron/embeddings` (05:00 UTC); Hobby allows each once a day (ADR-0039, ADR-0043). Vercel runs them on production only, and only once `CRON_SECRET` is set.
 - Promote by hand: dashboard "Promote to Production" or `vercel promote <url>`. Apply pending migrations first.
-- Production env vars (no `NEXT_PUBLIC_` prefix on any of them; mark secrets Sensitive):
+- **Deployment Protection**: Standard Protection (Vercel Authentication) is on. Every build keeps its own URL and runs against the production database, so only the production domain is public. Check: `curl -I` on an old `personal-dashboard-<hash>-…vercel.app/login` gives a 302 to Vercel login or a 410, never a 200.
+- Production env vars (no `NEXT_PUBLIC_` prefix on any of them; mark secrets Sensitive). `SUPABASE_SERVICE_ROLE_KEY`, the production R2 keys and `CRON_SECRET` exist in the Production environment only, not in Preview or Development:
 
 | Var | Used by | Notes |
 | --- | --- | --- |
@@ -20,6 +21,7 @@ Hosted settings that code review cannot see. Every change here is a hosted write
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` | `lib/storage/` | Production bucket + its bucket-scoped token |
 | `CRON_SECRET` | `app/api/cron/calendar-sync`, `app/api/cron/embeddings` | At least 16 random characters (`openssl rand -hex 32`). Vercel Cron sends it as `Authorization: Bearer`. Unset = both routes answer 401 and the daily backstops do nothing (the lazy paths still work) |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `LOGIN_GREETING_SALT` | login greeting (ADR-0031) and login submits | Set before deploying the login rate-limit change: without the secret, password and code-send submits fail closed in production. Missing salt = greeting fails closed; the login limits fall back to an unsalted hash |
+| `TURNSTILE_ALLOWED_HOSTNAMES` | `lib/auth/turnstile.ts` | Comma-separated; the production domain. Unset = the token's hostname must match the request host |
 
 ## Supabase Cloud (one project, production)
 
@@ -28,6 +30,8 @@ Hosted settings that code review cannot see. Every change here is a hosted write
   - Check with `scripts/check-reference-exposed.sh`.
 - **Auth**:
   - self-signup disabled;
+  - URL Configuration: the redirect allow-list holds the production domain only, no wildcards such as `https://*.vercel.app/**`;
+  - run Advisors → Security Advisor after each migration wave; it should report nothing;
   - login by e-mail code needs Resend SMTP (ADR-0038, steps: "Resend / auth e-mail" below);
   - admins have `app_metadata.role = 'admin'` (ADR-0020). The first grant was made 2026-10-10.
 - **Migrations**: before debugging a data-shaped bug, check `supabase_migrations.schema_migrations`. A migration applied outside `db push` needs its ledger version corrected to the filename (ADR-0032).
@@ -76,7 +80,7 @@ Expect anonymous GETs to fail, a PUT to the other bucket to return 403, and PUT 
 ## Cloudflare Turnstile
 
 Needed for the login greeting and the password and code-send submits:
-- an invisible widget with production site and secret keys, widget action `login`;
+- an invisible widget with production site and secret keys, widget action `login`, and a hostname allow-list with the production domain only (`TURNSTILE_ALLOWED_HOSTNAMES` matches it);
 - local, CI and Ladle use Cloudflare's documented test keys.
 
 ## Login hardening (hosted, set by hand)
