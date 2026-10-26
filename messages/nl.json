@@ -468,13 +468,13 @@
         "placeholder": "Selecteer afbeelding"
       },
       "ai": {
-        "title": "Verbanden en slim zoeken",
-        "checkboxLabel": "Verbanden en slim zoeken gebruiken",
+        "title": "Verbanden, slim zoeken en de Assistent",
+        "checkboxLabel": "Verbanden, slim zoeken en de Assistent gebruiken",
         "unavailable": "Nog niet beschikbaar",
-        "sendsLabel": "Wat er naartoe gaat: de tekst van je notities, recepten, kaarten en afspraken (ook geïmporteerde) en je zoekvragen.",
-        "recipientLabel": "Naar wie: Cloudflare Workers AI. Je data wordt niet gebruikt om modellen te trainen. De verwerking vindt niet gegarandeerd in de EU plaats.",
-        "offLabel": "Uitzetten wist de opgebouwde index direct. Je notities zelf blijven staan.",
-        "confirmPrompt": "Verbanden en slim zoeken uitzetten? De opgebouwde index wordt gewist. Je notities blijven staan.",
+        "sendsLabel": "Wat er naartoe gaat: de tekst van je notities, recepten, kaarten en afspraken (ook geïmporteerde) en je zoekvragen. Voor de Assistent gaan ook titels en korte fragmenten van verwante notities en kaarten mee, zodat hij een patroon in gewone taal kan formuleren.",
+        "recipientLabel": "Naar wie: Cloudflare Workers AI (index en zoeken) en Anthropic, het bedrijf achter Claude (Assistent). Geen van beide gebruikt je data om modellen te trainen. Anthropic bewaart invoer en uitvoer normaal maximaal 30 dagen. De verwerking vindt niet gegarandeerd in de EU plaats.",
+        "offLabel": "Uitzetten wist de opgebouwde index en de patroonmeldingen van de Assistent direct. Je notities zelf blijven staan.",
+        "confirmPrompt": "Verbanden, slim zoeken en de Assistent uitzetten? De opgebouwde index en de patroonmeldingen worden gewist. Je notities blijven staan.",
         "cancelLabel": "Annuleren",
         "confirmLabel": "Uitzetten",
         "confirmingLabel": "Uitzetten..."
