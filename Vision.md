@@ -67,7 +67,12 @@ De plek waar de modules samenkomen: één tijdlijn waarop je Atlas-dingen plant 
 Eén zoekveld over alle modules: notities, recepten, kaarten, afspraken en boodschappen. Het vindt op trefwoord en op betekenis, ook over talen heen. Zoeken op betekenis werkt alleen voor leden die het aanzetten; zonder toestemming gaat er niets naar buiten (ADR-0043).
 
 ### Assistent 💭
-Het AI-gedeelte. Signalen uit je eigen data (vastgelopen taken, terugkerende thema's, ritmes zoals "je koopt elke vier weken pindakaas" of hoe vaak je een recept kookt) worden kort en in gewone taal gemeld. Ritmes komen uit de gebruiksgeschiedenis, met gewone code (ADR-0044). Later komt daar een gesprek bij over je eigen informatie, gebaseerd op semantisch zoeken over al je data. De agent heeft geen tools en geen schrijfrechten buiten zijn eigen meldingen.
+Het AI-gedeelte. Signalen uit je eigen data worden kort en in gewone taal gemeld (ADR-0046).
+
+- **Ritmes**, zoals "je koopt elke vier weken pindakaas" of een recept dat je lang niet hebt gekookt. Ze komen uit de gebruiksgeschiedenis, met gewone code, voor iedereen (ADR-0044).
+- **Patronen**, zoals terugkerende thema's of kaarten over één onderwerp die blijven liggen. Die zoekt een taalmodel, alleen als je dat aanzet, en het meldt alleen iets als het helpt.
+
+Atlas meldt nooit alleen dat een kaart vastloopt. Waar de signalen in de app verschijnen, is nog open. Later komt daar een gesprek bij over je eigen informatie, gebaseerd op semantisch zoeken over al je data. De agent heeft geen tools en geen schrijfrechten buiten zijn eigen meldingen.
 
 ### Later 💭
 - **Delen** van borden, receptenverzamelingen en losse recepten, op hetzelfde model als de mand (ADR-0035).
