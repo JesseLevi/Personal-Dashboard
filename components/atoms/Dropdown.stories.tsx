@@ -2,6 +2,9 @@
 import { Button } from "./Button";
 import { Dropdown } from "./Dropdown";
 import { Tag } from "./Tag";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Invoer / Dropdown" } satisfies StoryDefault;
 
 // Dev-only demo copy — not user-facing (real labels/option text come from
 // next-intl catalogs at the call site).

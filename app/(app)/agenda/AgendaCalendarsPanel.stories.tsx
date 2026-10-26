@@ -3,6 +3,9 @@ import type { CalendarActionResult, CalendarOverview } from "@/lib/agenda/calend
 import { NOTHING_HIDDEN, type AgendaHidden } from "@/lib/agenda/hidden";
 import nl from "@/messages/nl.json";
 import { AgendaCalendarsPanel, type AgendaCalendarsPanelProps } from "./AgendaCalendarsPanel";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Agenda / Agenda calendars panel" } satisfies StoryDefault;
 
 const strings = nl.components.agendaCalendarsPanel;
 

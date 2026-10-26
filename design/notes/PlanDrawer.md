@@ -26,4 +26,4 @@ Nothing existing holds a tabbed, scrolling tray of draggable things: `SidePanel`
 
 ## Gotchas
 - Switching tabs unmounts the inactive list, so its draggables are destroyed and re-created (the hook handles both).
-- The popover and the Ladle story `plan-drawer--plan-menu-open` click the plan row on mount; the popover renders in `body`, outside the story root, and is still inside the screenshot region.
+- The popover and the Ladle story `agenda--plan-drawer--plan-menu-open` click the plan row on mount; the popover renders in `body`, outside the story root, and is still inside the screenshot region.

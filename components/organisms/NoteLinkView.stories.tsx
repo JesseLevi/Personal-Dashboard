@@ -3,6 +3,9 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensionsWith } from "@/lib/notes/extensions";
 import { buildNoteLinkResolution } from "@/lib/notes/note-link";
 import type { TipTapDocument } from "@/lib/notes/document";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Blokken / Note link view" } satisfies StoryDefault;
 
 // Fixture content, not app UI. Same extension set and editor root class as NoteEditor.tsx.
 const ALIVE = "11111111-1111-4111-8111-111111111111";

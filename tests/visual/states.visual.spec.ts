@@ -19,7 +19,7 @@ import path from "node:path";
 
 const stylePath = path.join(__dirname, "screenshot-override.css");
 
-const STORY_ID = "button--state-matrix";
+const STORY_ID = "basis--invoer--button--state-matrix";
 const PAD = 8;
 // Row order of the StateMatrix story (components/atoms/Button.stories.tsx).
 const VARIANTS = [

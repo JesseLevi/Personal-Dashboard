@@ -1,5 +1,8 @@
 // figma: node-id=3626:4515
 import { Tag } from "./Tag";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Fundament / Tag" } satisfies StoryDefault;
 
 // Dev-only demo copy — not user-facing (component text always comes from `children` at call sites).
 export const AllVariants = () => (

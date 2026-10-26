@@ -4,6 +4,9 @@ import { useState } from "react";
 import { CategoryPanel, type CategoryPanelTarget } from "@/app/(app)/_components/CategoryPanel";
 import { NOTE_CATEGORY_ICONS } from "./category-icons";
 import type { ActionResult, NoteCategoryRow } from "@/lib/notes/types";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Rondom / Note category panel" } satisfies StoryDefault;
 
 // Dev-only mock actions — the shared CategoryPanel never imports the real
 // "use server" module itself (design/notes/CategoryPanel.md), so these

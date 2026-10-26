@@ -3,6 +3,9 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import { LoginExitProvider, LoginVisual } from "../../login/LoginExit";
 import { ConfirmForm, type ConfirmFormProps } from "./ConfirmForm";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Account / Confirm form" } satisfies StoryDefault;
 
 const mockConfirm = async (formData: FormData) => {
   console.log("confirmMagicLink", Object.fromEntries(formData));

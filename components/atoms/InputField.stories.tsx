@@ -1,5 +1,8 @@
 // figma: node-id=3705:4402
 import { InputField } from "./InputField";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Invoer / Input field" } satisfies StoryDefault;
 
 // Dev-only demo copy — not user-facing (real labels/placeholders come from
 // next-intl catalogs at the call site).

@@ -4,7 +4,7 @@ Figma: `Icons` frame · node `3760:6187` (one `Icon/<Name>` layer per icon) · C
 ## Anatomy
 Single wrapper around `lucide-react` (^1.25.0). Props: `name`, `size` (default 24), `strokeWidth` (default 2), `className` (colour via a text token / `currentColor`). Always `aria-hidden`.
 
-`IconName` is derived, not hand-written: `ICONS` (lucide) and `FLAG_ICONS` are `as const satisfies` tables and `IconName = keyof ICONS | keyof FLAG_ICONS`. `ALL_ICON_NAMES`, `isIconName()` and `Icon.stories.tsx` all read the tables, so adding an icon is a one-edit change (the table) and it shows up in the story and the runtime guard automatically. The `icon--all-icons` baseline grows with it and must be regenerated. (#284)
+`IconName` is derived, not hand-written: `ICONS` (lucide) and `FLAG_ICONS` are `as const satisfies` tables and `IconName = keyof ICONS | keyof FLAG_ICONS`. `ALL_ICON_NAMES`, `isIconName()` and `Icon.stories.tsx` all read the tables, so adding an icon is a one-edit change (the table) and it shows up in the story and the runtime guard automatically. The `basis--fundament--icon--all-icons` baseline grows with it and must be regenerated. (#284)
 
 `NL` / `UK` are the only non-lucide entries: real flag artwork in `public/flags/{nl,uk}.svg` (Figma `4160:34392` / `4160:34393`), rendered through a plain `<img alt="" aria-hidden width height>` ahead of the lucide lookup. `strokeWidth` is an inert no-op on a flag. (#265)
 

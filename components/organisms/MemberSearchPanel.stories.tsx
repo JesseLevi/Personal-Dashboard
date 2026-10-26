@@ -1,6 +1,9 @@
 // figma: node-id=4231:16811 (+4231:17096 result, 4233:17340 selected)
 import { MemberSearchPanel } from "./MemberSearchPanel";
 import type { ActionResult, MemberSearchResult } from "@/lib/sharing/types";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Panelen / Member search panel" } satisfies StoryDefault;
 
 // Dev-only mock search: the panel never imports the real "use server" module
 // (design/notes/MemberSearchPanel.md). Without `hasAvatar` every result shows

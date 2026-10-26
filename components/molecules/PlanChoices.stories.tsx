@@ -1,6 +1,9 @@
 import { Dropdown } from "../atoms/Dropdown";
 import { Button } from "../atoms/Button";
 import { PlanChoices } from "./PlanChoices";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Agenda / Plan choices" } satisfies StoryDefault;
 
 // As the menus place it: inside a labelless Dropdown popover, 16rem wide.
 const plan = async () => ({ success: true as const, data: undefined });

@@ -1,6 +1,9 @@
 // design: Claude-designed on request (#336) -- editable code blocks with the language selector and copy button; grammars load lazily, the baseline settles once they have.
 import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Blokken / Note code block" } satisfies StoryDefault;
 
 const highlighted = `
 <pre><code class="language-javascript">// Totaal van de boodschappen

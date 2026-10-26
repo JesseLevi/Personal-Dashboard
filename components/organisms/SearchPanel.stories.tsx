@@ -2,6 +2,9 @@
 import { SearchPanel } from "./SearchPanel";
 import type { SearchPanelAction } from "@/lib/search/panel";
 import type { SearchResult } from "@/lib/search/query";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Panelen / Search panel" } satisfies StoryDefault;
 
 // Dev-only mock search: the panel never imports the real "use server" module (design/notes/SearchPanel.md).
 const results: SearchResult[] = [

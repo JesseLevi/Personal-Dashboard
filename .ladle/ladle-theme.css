@@ -40,3 +40,62 @@
   --ladle-bg-color-primary: var(--color-surface-highlight-white);
   --ladle-color-primary: var(--color-text-secondary);
 }
+
+/*
+ * Layout of the chrome (#613): sidebar on the left, addons toolbar as a bar above the
+ * canvas. Desktop only (Ladle's own column layout below 768px stays as it is).
+ * Chrome only: `mode=preview` (what the visual suite screenshots) renders none of these
+ * elements, so nothing here can move a story pixel.
+ *
+ * The wrapper is a grid, but keeps `flex-direction: row-reverse`: Ladle reads that
+ * computed value to set `data-reversed`, which flips its sidebar resize handle the right
+ * way round. Grid ignores the property, so it only serves as that signal.
+ */
+@media (min-width: 768px) {
+  html .ladle-wrapper {
+    display: grid;
+    flex-direction: row-reverse;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  html .ladle-aside {
+    grid-area: 1 / 1 / 3 / 2;
+    min-height: 0;
+  }
+
+  html .ladle-resize-handle {
+    grid-area: 1 / 2 / 3 / 3;
+  }
+
+  html .ladle-main {
+    grid-area: 2 / 3;
+    min-height: 0;
+  }
+
+  /* Bar aligned to the story's left edge: main padding plus the Provider's p-8. */
+  html .ladle-addons {
+    grid-area: 1 / 3;
+    position: sticky;
+    top: 0;
+    align-self: start;
+    z-index: 10;
+    margin: 0;
+    padding: 0.5rem calc(var(--ladle-main-padding) + 2rem);
+    background-color: var(--ladle-bg-color-primary);
+    border-bottom: 1px solid var(--ladle-bg-color-secondary);
+  }
+
+  html .ladle-addons li {
+    margin: 0 0.5rem 0 0;
+    border-radius: 0.25em;
+  }
+
+  /* Addon dialogs (width, source, ...) open under the bar instead of bottom-left over the sidebar. */
+  html div[data-reach-dialog-content][data-testid="ladle-dialog"] {
+    top: 4rem;
+    bottom: auto;
+    inset-inline-start: auto;
+    inset-inline-end: 2rem;
+  }
+}

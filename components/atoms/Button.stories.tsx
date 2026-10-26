@@ -2,6 +2,9 @@
 import { Fragment } from "react";
 import type { ButtonProps } from "./Button";
 import { Button } from "./Button";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Invoer / Button" } satisfies StoryDefault;
 
 // Dev-only demo copy — not user-facing (component text always comes from
 // `children` at call sites).

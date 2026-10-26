@@ -4,6 +4,9 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
 import { requestLinkPopover } from "@/lib/notes/link-popover";
 import { LinkPopover } from "./LinkPopover";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Editor / Link popover" } satisfies StoryDefault;
 
 const content = '<p>Lees meer op <a href="https://example.com/recepten">de receptenpagina</a> of mail ons.</p>';
 

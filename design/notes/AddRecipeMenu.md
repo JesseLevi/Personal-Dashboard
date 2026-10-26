@@ -11,4 +11,4 @@ Labelless `Dropdown` (209px wide, its "Field" title hidden) holding two `Button`
 ## Gotchas
 - The outside-pointer check must include the portalled popover as well as the trigger wrapper. Closes on outside pointer down, Escape, or either choice; the Plus button toggles it.
 - Story `OpenInEmptyColumn` is the regression baseline for the clipping fix (#309).
-- The `icon--all-icons` visual baseline moved when `Globe` was added and was not regenerated in #318; regenerate on the next full baseline run if it still drifts.
+- The `basis--fundament--icon--all-icons` visual baseline moved when `Globe` was added and was not regenerated in #318; regenerate on the next full baseline run if it still drifts.

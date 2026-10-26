@@ -2,6 +2,9 @@ import { useState } from "react";
 import type { AgendaColor } from "../../lib/agenda/colors";
 import nl from "../../messages/nl.json";
 import { ColorSwatches } from "./ColorSwatches";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Agenda / Color swatches" } satisfies StoryDefault;
 
 const label = nl.components.agendaCalendarsPanel.colorLabel;
 

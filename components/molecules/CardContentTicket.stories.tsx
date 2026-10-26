@@ -2,6 +2,9 @@
 import { CardContentTicket } from "./CardContentTicket";
 import { Tag } from "../atoms/Tag";
 import { Card } from "./Card";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Kaarten / Card content ticket" } satisfies StoryDefault;
 
 export const Default = () => (
   <div className="w-96">

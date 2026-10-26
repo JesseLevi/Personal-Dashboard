@@ -1,6 +1,9 @@
 // figma: node-id=3749:3091 (panel 3749:3241)
 import { useState } from "react";
 import { StepIngredientPanel } from "./StepIngredientPanel";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Recepten / Step ingredient panel" } satisfies StoryDefault;
 
 // Sample ingredients matching the fetched node's own tags ("1250 Gram",
 // "2 Scoops", "1 Stuk") — RecipePanel.stories.tsx uses the same values for

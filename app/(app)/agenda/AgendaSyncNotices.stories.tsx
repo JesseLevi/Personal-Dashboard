@@ -1,5 +1,8 @@
 import type { CalendarActionResult, SyncNoticeView } from "@/lib/agenda/calendars";
 import { AgendaSyncNotices } from "./AgendaSyncNotices";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Agenda / Agenda sync notices" } satisfies StoryDefault;
 
 async function mockResolve(): Promise<CalendarActionResult> {
   return { success: true, data: undefined };

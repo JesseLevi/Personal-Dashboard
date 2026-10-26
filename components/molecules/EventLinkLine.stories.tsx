@@ -1,5 +1,8 @@
 import type { AgendaEventRef } from "@/lib/agenda/links";
 import { EventLinkLine } from "./EventLinkLine";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Agenda / Event link line" } satisfies StoryDefault;
 
 const event = (id: string, title: string, startsAt: string, allDay = false): AgendaEventRef => ({
   id,

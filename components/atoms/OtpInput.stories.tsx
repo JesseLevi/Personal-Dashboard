@@ -1,6 +1,9 @@
 // design: Claude-designed (#492), see design/notes/OtpInput.md.
 import { useState } from "react";
 import { OtpInput } from "./OtpInput";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Invoer / Otp input" } satisfies StoryDefault;
 
 // Dev-only demo copy — not user-facing.
 function Field({ initial = "", ...props }: { initial?: string } & Partial<React.ComponentProps<typeof OtpInput>>) {

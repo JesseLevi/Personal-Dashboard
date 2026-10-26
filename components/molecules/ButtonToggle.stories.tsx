@@ -3,6 +3,9 @@ import { Button } from "../atoms/Button";
 import { ButtonToggle, type ButtonToggleItem } from "./ButtonToggle";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Invoer / Button toggle" } satisfies StoryDefault;
 
 // Real catalog content, not invented demo strings — the molecule's own real
 // caller (SettingsPanel.tsx, #265) is this exact Kleurenthema toggle.

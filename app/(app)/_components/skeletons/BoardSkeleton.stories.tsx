@@ -1,6 +1,9 @@
 // figma: node-id=4164:25190 (Skeleton/Mobile) / 4164:25197 (Skeleton/Desktop)
 import type { ReactNode } from "react";
 import { BoardSkeleton } from "./BoardSkeleton";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Kaarten / Board skeleton" } satisfies StoryDefault;
 
 // Stands in for AppShellNav's <main>, which supplies the left padding and the
 // page-stack gap the skeleton's own wrapper sits inside.

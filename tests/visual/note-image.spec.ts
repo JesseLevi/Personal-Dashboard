@@ -8,18 +8,18 @@ import { test, expect } from "@playwright/test";
 const story = (id: string) => `/?story=${id}&mode=preview`;
 
 test("uploading: the placeholder is announced and no image node exists yet", async ({ page }) => {
-  await page.goto(story("note-image-view--uploading"));
+  await page.goto(story("notities--blokken--note-image-view--uploading"));
   await expect(page.getByRole("status")).toHaveText("Afbeelding uploaden...");
   await expect(page.locator(".tiptap img")).toHaveCount(0);
 });
 
 test("broken: a missing object shows the not-available block", async ({ page }) => {
-  await page.goto(story("note-image-view--broken"));
+  await page.goto(story("notities--blokken--note-image-view--broken"));
   await expect(page.getByRole("img", { name: /Afbeelding niet beschikbaar/ })).toBeVisible();
 });
 
 test("selected: edit the alt text, Enter returns to the document", async ({ page }) => {
-  await page.goto(story("note-image-view--selected"));
+  await page.goto(story("notities--blokken--note-image-view--selected"));
   const field = page.getByLabel("Alternatieve tekst");
   await expect(field).toHaveValue("Een blauwe lucht boven groene heuvels");
   await field.fill("Nieuwe beschrijving");
@@ -29,7 +29,7 @@ test("selected: edit the alt text, Enter returns to the document", async ({ page
 });
 
 test("selected: Escape discards the draft", async ({ page }) => {
-  await page.goto(story("note-image-view--selected"));
+  await page.goto(story("notities--blokken--note-image-view--selected"));
   const field = page.getByLabel("Alternatieve tekst");
   await field.fill("Weggooien");
   await field.press("Escape");
@@ -38,13 +38,13 @@ test("selected: Escape discards the draft", async ({ page }) => {
 });
 
 test("selected: the delete button removes the image", async ({ page }) => {
-  await page.goto(story("note-image-view--selected"));
+  await page.goto(story("notities--blokken--note-image-view--selected"));
   await page.getByRole("button", { name: "Afbeelding verwijderen" }).click();
   await expect(page.locator(".tiptap img")).toHaveCount(0);
 });
 
 test("keyboard: Enter on a selected image focuses its alt-text field", async ({ page }) => {
-  await page.goto(story("note-image-view--with-image"));
+  await page.goto(story("notities--blokken--note-image-view--with-image"));
   await expect(page.getByLabel("Alternatieve tekst")).toHaveCount(0);
   await page.locator(".tiptap img").click();
   await expect(page.getByLabel("Alternatieve tekst")).toBeVisible();
@@ -54,10 +54,10 @@ test("keyboard: Enter on a selected image focuses its alt-text field", async ({ 
 });
 
 test("mobile bar: the labelled Afbeelding button is on the bar; desktop shows it icon-only (#386)", async ({ page }) => {
-  await page.goto(story("editing-bar--mobile"));
+  await page.goto(story("notities--editor--editing-bar--mobile"));
   await expect(page.getByRole("toolbar", { name: "Opmaakwerkbalk" }).getByRole("button", { name: "Afbeelding" })).toBeVisible();
 
-  await page.goto(story("editing-bar--at-rest"));
+  await page.goto(story("notities--editor--editing-bar--at-rest"));
   await expect(page.getByRole("toolbar", { name: "Opmaakwerkbalk" }).getByRole("button", { name: "Afbeelding" })).toBeVisible();
   await page.getByRole("button", { name: "Meer" }).click();
   await expect(page.getByRole("menuitem", { name: "Afbeelding" })).toHaveCount(0);

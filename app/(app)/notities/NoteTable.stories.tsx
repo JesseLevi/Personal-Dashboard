@@ -1,6 +1,9 @@
 // design: Claude-designed on request (#330) -- editable table with stored column widths, and a pre-#330 table without any.
 import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Blokken / Note table" } satisfies StoryDefault;
 
 const sized = `
 <table><tbody>

@@ -8,7 +8,7 @@ import { test, expect } from "@playwright/test";
 const tableToggle = "[aria-haspopup=dialog]";
 
 test("size picker inserts the chosen size by keyboard and returns focus to the editor", async ({ page }) => {
-  await page.goto("/?story=editing-bar--at-rest&mode=preview");
+  await page.goto("/?story=notities--editor--editing-bar--at-rest&mode=preview");
   await page.locator(".tiptap").click();
   // The slim bar puts the panel under the click point; a stale pointer there would hover-select a cell.
   await page.mouse.move(0, 0);
@@ -27,7 +27,7 @@ test("size picker inserts the chosen size by keyboard and returns focus to the e
 });
 
 test("size picker: Escape closes without inserting, mouse click inserts the largest size", async ({ page }) => {
-  await page.goto("/?story=editing-bar--at-rest&mode=preview");
+  await page.goto("/?story=notities--editor--editing-bar--at-rest&mode=preview");
   await page.locator(".tiptap").click();
   await page.locator(tableToggle).click();
   await page.keyboard.press("Escape");
@@ -42,7 +42,7 @@ test("size picker: Escape closes without inserting, mouse click inserts the larg
 });
 
 test("table menu adds a row, disables merge, and returns focus to the editor", async ({ page }) => {
-  await page.goto("/?story=table-menu--trigger-visible&mode=preview");
+  await page.goto("/?story=notities--blokken--table-menu--trigger-visible&mode=preview");
   const trigger = page.getByRole("button", { name: "Tabel" });
   await trigger.waitFor();
   const rowsBefore = await page.locator(".tiptap tr").count();

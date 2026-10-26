@@ -3,6 +3,9 @@ import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
 import { NoteBlockHandle } from "./NoteBlockHandle";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Editor / Note block handle" } satisfies StoryDefault;
 
 const content = `
 <h2>Weekplanning</h2>

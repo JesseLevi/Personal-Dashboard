@@ -11,4 +11,4 @@ Not in Figma. Shown in the `Card` slot of a recipe with `import_status = 'failed
 
 ## Gotchas
 - Retry = `retryRecipeImport`: inserts a new `importing` row with the same `source_url` and category at the top, then deletes the failed row. It counts against the 20/hour import limit. Delete = the normal `deleteRecipe`.
-- Visual baselines: `card-content-recipe-failed--timeout`, `--long-texts`, `--busy`.
+- Visual baselines: `basis--kaarten--card-content-recipe-failed--timeout`, `--long-texts`, `--busy`.

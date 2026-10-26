@@ -4,6 +4,9 @@ import Image from "next/image";
 import { LoginExitProvider, LoginVisual } from "../LoginExit";
 import type { LoginCodeSendState, VerifyLoginCodeState } from "../actions";
 import { LoginCodeForm, type LoginCodeFormProps } from "./LoginCodeForm";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Account / Login code form" } satisfies StoryDefault;
 
 // Dev-only mock actions: the real ones are "use server" and need Supabase and a request.
 const mockVerify = async (prev: VerifyLoginCodeState, formData: FormData): Promise<VerifyLoginCodeState> => {

@@ -1,6 +1,9 @@
 // figma: node-id=3727:4084
 import { useState } from "react";
 import { Checkbox } from "./Checkbox";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Invoer / Checkbox" } satisfies StoryDefault;
 
 // Checked=No/Yes side by side — the full variant axis from the Figma
 // component set, both rendered statically.

@@ -5,6 +5,9 @@ import { Button } from "../atoms/Button";
 import { InputField } from "../atoms/InputField";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Panelen / Side panel" } satisfies StoryDefault;
 
 // Chrome text — sourced from the message catalog, not typed here directly.
 const closeLabelEn = en.components.sidePanel.closeLabel;

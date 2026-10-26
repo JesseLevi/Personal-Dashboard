@@ -4,6 +4,9 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensionsWith } from "@/lib/notes/extensions";
 import { NoteLinkSuggestion, type NoteLinkSuggestionItem } from "@/lib/notes/note-link-suggestion";
 import { NoteLinkMenu } from "./NoteLinkMenu";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Editor / Note link menu" } satisfies StoryDefault;
 
 // Fixture notes, not app data. Types "[[" plus `query` into an empty note,
 // exactly what the menu reacts to; labels are the nl catalog's, as in every story.

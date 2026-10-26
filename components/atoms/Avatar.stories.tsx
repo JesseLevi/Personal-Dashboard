@@ -1,5 +1,8 @@
 // figma: node-id=4231:16053
 import { Avatar } from "./Avatar";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Fundament / Avatar" } satisfies StoryDefault;
 
 // Dev-only demo data. The image is an inline SVG data URI (no network in visual tests).
 const IMAGE =

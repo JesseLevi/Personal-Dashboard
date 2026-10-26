@@ -10,6 +10,9 @@ import type {
   RecipeRow,
   RecipeWithIngredientsAndSteps,
 } from "@/lib/recipes/types";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Recepten / Recipe panel" } satisfies StoryDefault;
 
 // Dev-only mock actions — RecipePanel never imports the real "use server"
 // module itself (design/notes/RecipePanel.md), same precedent as
