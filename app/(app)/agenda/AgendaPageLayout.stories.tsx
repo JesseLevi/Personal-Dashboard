@@ -10,6 +10,9 @@ import { AgendaHeader } from "./AgendaHeader";
 import { AgendaPageSkeleton } from "./AgendaPageSkeleton";
 import { PlanRecipeList } from "./PlanRecipeList";
 import { useAgendaShortcuts } from "./useAgendaShortcuts";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Agenda / Agenda page layout" } satisfies StoryDefault;
 
 // The page as composed in AgendaPage.tsx, without data fetching or actions.
 // The visual suite freezes the clock on Thursday 2026-01-01.

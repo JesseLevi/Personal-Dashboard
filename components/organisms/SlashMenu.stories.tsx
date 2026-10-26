@@ -5,6 +5,9 @@ import { noteExtensions } from "@/lib/notes/extensions";
 import { SlashCommand } from "@/lib/notes/slash-command";
 import { SLASH_ITEMS } from "@/lib/notes/slash-items";
 import { SlashMenu } from "./SlashMenu";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Editor / Slash menu" } satisfies StoryDefault;
 
 // Types "/" plus `query` into an empty note, exactly what the menu reacts to.
 // Labels are the nl catalog's, as in every other story.

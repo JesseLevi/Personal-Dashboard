@@ -1,5 +1,8 @@
 // figma: node-id=3727:3208
 import { Step } from "./Step";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Fundament / Step" } satisfies StoryDefault;
 
 export const Default = () => <Step>1</Step>;
 

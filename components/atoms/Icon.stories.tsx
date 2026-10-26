@@ -1,5 +1,8 @@
 // figma: node-id=3760:6187
 import { ALL_ICON_NAMES, Icon } from "./Icon";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Fundament / Icon" } satisfies StoryDefault;
 
 // Every IconName comes from the Icon module itself, so a new icon shows up here
 // with no story edit. Flags (NL/UK) share the grid: same atom, same size.

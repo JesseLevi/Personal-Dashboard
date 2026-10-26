@@ -122,7 +122,7 @@ export function CardDetailPanel({
   // also destroyed SidePanel's own dialog `<div>` — its very first paint
   // under the new key was already `open`, with no previously-painted closed
   // frame for the CSS transition to interpolate from. Verified in a real
-  // browser (Playwright, card-detail-panel--interactive story): sampling
+  // browser (Playwright, te-doen--card-detail-panel--interactive story): sampling
   // `getBoundingClientRect().y` frame-by-frame across a target-changing open
   // showed the value jump straight to its final position with zero
   // intermediate frames — on every target change, not only the very first

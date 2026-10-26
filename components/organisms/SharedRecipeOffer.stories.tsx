@@ -1,4 +1,7 @@
 import { SharedRecipeOffer } from "./SharedRecipeOffer";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Recepten / Shared recipe offer" } satisfies StoryDefault;
 
 const noop = () => {};
 const THUMBNAIL =

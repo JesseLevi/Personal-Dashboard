@@ -3,6 +3,9 @@
 // 3991:13224 (Step-03/Error) — see design/notes/LoginForm.md.
 import { LoginForm } from "./LoginForm";
 import type { LoginCodeSendState, PasswordLoginState } from "./actions";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Account / Login form" } satisfies StoryDefault;
 
 // Dev-only mock actions — LoginForm never imports the real "use server"
 // module itself (same precedent as CategoryPanel.stories.tsx): the composer

@@ -5,6 +5,9 @@ import { OwnIngredientPanel } from "./OwnIngredientPanel";
 import { PendingPanel } from "./PendingPanel";
 import type { AdminAlias, AdminEigenIngredient, IngredientCategory, PendingGroup } from "@/lib/recipes/ingredient-admin";
 import type { ActionResult, IngredientSearchResult, ReferenceIngredientRow } from "@/lib/recipes/types";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Recepten / Ingredient admin" } satisfies StoryDefault;
 
 // Dev-only mock actions: the page components never import the real "use server" module.
 async function ok(input: unknown): Promise<ActionResult> {

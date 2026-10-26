@@ -1,6 +1,9 @@
 // design: Claude-designed on request (#330)
 import { useEffect, useRef } from "react";
 import { TableSizePicker } from "./TableSizePicker";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Blokken / Table size picker" } satisfies StoryDefault;
 
 // Opens at first paint and moves the highlight one column right (3 x 4), the
 // same ArrowRight a keyboard user would press.

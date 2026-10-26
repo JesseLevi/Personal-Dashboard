@@ -37,7 +37,7 @@ Root: `chrome-touch inline-flex shrink-0 items-center gap-1 rounded-control text
 - Collapsed Sidebar rail: nav column inner width is 40 px, and `px-component-sm` (8) + 24 px icon + `gap-inline-sm` (8) = 40 exactly, so the label is fully clipped. Changing any of those three numbers reveals a sliver of the label (the old 4 px gap showed one). (#112)
 - `ButtonToggle` segments are `variant="transparent"` with `hover:bg-transparent! active:bg-transparent!` so no fill paints over the sliding indicator; that override is variant-value-independent. See `design/notes/ButtonToggle.md`. (#107)
 - `CardDetailPanel` Prioriteit / Grootte option-row hovers read the White ramp (those rows are `Button variant="white"` in the Dropdown node); see `design/notes/CardDetailPanel.md`. (#213)
-- Visual baselines: only `button--state-matrix` iterates all five variants (Transparent row included); other stories render `filled`. A change to a trailing / leading gap moves baselines across Dropdown, PageHeader, SidePanel, Sidebar, CardDetailPanel, CardContainer and BoardView stories too. (#99, #238)
+- Visual baselines: only `basis--invoer--button--state-matrix` iterates all five variants (Transparent row included); other stories render `filled`. A change to a trailing / leading gap moves baselines across Dropdown, PageHeader, SidePanel, Sidebar, CardDetailPanel, CardContainer and BoardView stories too. (#99, #238)
 
 ## Open
 - `docs/open-questions.md#button-root-gap-binding-split`

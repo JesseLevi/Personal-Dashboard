@@ -8,6 +8,9 @@ import { Tag } from "../atoms/Tag";
 import { Button } from "../atoms/Button";
 import { blurInTotalMs, blurOutTotalMs, usePrefersReducedMotion } from "../../lib/ui/blur-fade";
 import en from "../../messages/en.json";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Kaarten / Board view" } satisfies StoryDefault;
 
 const addLabel = en.components.cardContainer.addLabel;
 const editLabel = en.components.cardContainer.editLabel;

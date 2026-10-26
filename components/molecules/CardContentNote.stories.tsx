@@ -1,7 +1,9 @@
 // figma: node-id=4067:18495
-import type { Story } from "@ladle/react";
+import type { Story, StoryDefault } from "@ladle/react";
 import { CardContentNote } from "./CardContentNote";
 import { Card } from "./Card";
+
+export default { title: "Basis / Kaarten / Card content note" } satisfies StoryDefault;
 
 const SNIPPET = "Text from note that could be this long.";
 

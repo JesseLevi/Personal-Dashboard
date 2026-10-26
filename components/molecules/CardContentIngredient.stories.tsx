@@ -1,8 +1,10 @@
 // figma: node-id=3727:4021
-import type { Story } from "@ladle/react";
+import type { Story, StoryDefault } from "@ladle/react";
 import { CardContentIngredient } from "./CardContentIngredient";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
+
+export default { title: "Basis / Kaarten / Card content ingredient" } satisfies StoryDefault;
 
 // deleteLabel IS user-facing chrome text, so it comes from the message catalog, not a literal.
 const deleteLabelEn = en.components.cardContentIngredient.deleteLabel;

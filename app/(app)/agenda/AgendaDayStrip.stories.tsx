@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { AgendaDayStrip } from "./AgendaDayStrip";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Agenda / Agenda day strip" } satisfies StoryDefault;
 
 const TODAY = "2026-10-20";
 

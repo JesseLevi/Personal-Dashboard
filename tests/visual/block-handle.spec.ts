@@ -10,7 +10,7 @@ const blocks = (page: Page) => page.locator(".tiptap > *");
 const blockTexts = (page: Page) => blocks(page).allTextContents();
 
 test("hover shows the handle, the menu duplicates, moves and deletes, undo restores", async ({ page }) => {
-  await page.goto("/?story=note-block-handle--handle-visible&mode=preview");
+  await page.goto("/?story=notities--editor--note-block-handle--handle-visible&mode=preview");
   const trigger = page.locator(handle);
   await expect(trigger).toBeVisible();
 
@@ -48,7 +48,7 @@ test("hover shows the handle, the menu duplicates, moves and deletes, undo resto
 });
 
 test("Turn into converts the block; Escape closes and returns focus to the editor", async ({ page }) => {
-  await page.goto("/?story=note-block-handle--handle-visible&mode=preview");
+  await page.goto("/?story=notities--editor--note-block-handle--handle-visible&mode=preview");
   await page.locator(handle).click();
   await page.getByRole("menuitemradio", { name: "Kop 1" }).click();
   await expect(page.locator(".tiptap > h1")).toHaveText("Boodschappen doen en het recept voor zondag uitzoeken.");
@@ -62,7 +62,7 @@ test("Turn into converts the block; Escape closes and returns focus to the edito
 });
 
 test("Mod-Shift-Arrow moves the block without a mouse", async ({ page }) => {
-  await page.goto("/?story=note-block-handle--handle-visible&mode=preview");
+  await page.goto("/?story=notities--editor--note-block-handle--handle-visible&mode=preview");
   await expect(page.locator(".tiptap > ul")).toBeVisible();
   const before = await blockTexts(page);
   await page.locator(".tiptap > p").first().click();
@@ -75,7 +75,7 @@ test("Mod-Shift-Arrow moves the block without a mouse", async ({ page }) => {
 });
 
 test("dragging the handle reorders a block and undo restores it", async ({ page }) => {
-  await page.goto("/?story=note-block-handle--handle-visible&mode=preview");
+  await page.goto("/?story=notities--editor--note-block-handle--handle-visible&mode=preview");
   await expect(page.locator(".tiptap > ul")).toBeVisible();
   const before = await blockTexts(page);
   const trigger = page.locator(handle);
@@ -94,7 +94,7 @@ test("dragging the handle reorders a block and undo restores it", async ({ page 
 });
 
 test("the handle floats in the gutter: the reading column does not move on hover", async ({ page }) => {
-  await page.goto("/?story=note-block-handle--handle-visible&mode=preview");
+  await page.goto("/?story=notities--editor--note-block-handle--handle-visible&mode=preview");
   await expect(page.locator(handle)).toBeVisible();
   await page.mouse.move(0, 0);
   const idle = await page.locator(".tiptap").boundingBox();
@@ -106,7 +106,7 @@ test("the handle floats in the gutter: the reading column does not move on hover
 test.describe("touch device", () => {
   test.use({ hasTouch: true, isMobile: true });
   test("renders no handle", async ({ page }) => {
-    await page.goto("/?story=note-block-handle--handle-visible&mode=preview");
+    await page.goto("/?story=notities--editor--note-block-handle--handle-visible&mode=preview");
     await page.locator(".tiptap").waitFor();
     await page.locator(".tiptap > p").first().tap();
     await expect(page.locator(handle)).toHaveCount(0);
@@ -114,7 +114,7 @@ test.describe("touch device", () => {
 });
 
 test("works on code blocks and details: duplicate, move, delete, undo", async ({ page }) => {
-  await page.goto("/?story=note-block-handle--code-and-details&mode=preview");
+  await page.goto("/?story=notities--editor--note-block-handle--code-and-details&mode=preview");
   await expect(page.locator(".tiptap [data-type=details]")).toBeVisible();
   const trigger = page.locator(handle);
 

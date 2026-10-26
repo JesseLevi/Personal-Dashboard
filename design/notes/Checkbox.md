@@ -16,4 +16,4 @@ Fixed `h-8 w-8` square, centered content, no padding. Figma's `Checked=No/Yes` a
 - Fetched node has no "delete" state; needs triage before a ticket adds it. (#16)
 
 ## Gotchas
-- The visual suite renders light mode only (no dark baselines), so dark-border regressions are invisible to it; check `checkbox--states` with `data-theme="dark"` on `<html>` manually.
+- The visual suite renders light mode only (no dark baselines), so dark-border regressions are invisible to it; check `basis--invoer--checkbox--states` with `data-theme="dark"` on `<html>` manually.

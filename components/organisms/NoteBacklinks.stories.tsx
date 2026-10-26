@@ -1,5 +1,8 @@
 // design: Claude-designed on request (#341)
 import { NoteBacklinks } from "./NoteBacklinks";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Rondom / Note backlinks" } satisfies StoryDefault;
 
 // Fixture notes, not app data.
 const backlinks = [

@@ -6,6 +6,9 @@ import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { AgendaSpan } from "@/lib/ui/agenda-calendar";
 import { AgendaQuickAdd } from "./AgendaQuickAdd";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Agenda / Agenda quick add" } satisfies StoryDefault;
 
 // The popover hangs from the "+ Nieuw" button; the visual suite freezes the clock on Thursday 2026-01-01,
 // so "vrijdag" is 2 January. The window is `position: fixed`, so the wrapper gives the screenshot a height.

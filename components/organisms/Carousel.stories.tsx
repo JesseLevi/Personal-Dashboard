@@ -5,6 +5,9 @@ import { CardContainer } from "./CardContainer";
 import { Card } from "../molecules/Card";
 import { CardContentRecipe } from "../molecules/CardContentRecipe";
 import en from "../../messages/en.json";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Kaarten / Carousel" } satisfies StoryDefault;
 
 // Dev-only placeholder photo — no fill of its own to reproduce on the
 // `<img>`; ThumbnailBackdrop below supplies it. See

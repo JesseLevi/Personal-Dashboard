@@ -5,6 +5,9 @@ import nl from "@/messages/nl.json";
 import type { PlanCardGroup } from "@/lib/agenda/plan-cards";
 import { PlanCardList } from "./PlanCardList";
 import { PlanRecipeList } from "./PlanRecipeList";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Agenda / Plan drawer" } satisfies StoryDefault;
 
 const categories = [
   { id: "breakfast", name: "Ontbijt" },

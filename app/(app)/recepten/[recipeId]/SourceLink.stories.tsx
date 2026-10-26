@@ -1,6 +1,9 @@
 // design: Claude-designed on request (#318)
 import { SourceLink } from "./SourceLink";
 import nl from "../../../../messages/nl.json";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Recepten / Source link" } satisfies StoryDefault;
 
 const label = nl.components.recipeDetailPage.sourceLabel;
 

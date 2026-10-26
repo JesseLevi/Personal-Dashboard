@@ -21,7 +21,7 @@ guide_budget() {
   case "$1" in
     data-layer.md)      echo 9000 ;;
     ticket-workflow.md) echo 4000 ;;
-    ui-components.md)   echo 9000 ;;
+    ui-components.md)   echo 10000 ;;
     *)                  echo "" ;;
   esac
 }

@@ -7,6 +7,9 @@ import { CardContentStep } from "./CardContentStep";
 import { Button } from "../atoms/Button";
 import { Tag } from "../atoms/Tag";
 import en from "../../messages/en.json";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Kaarten / Card" } satisfies StoryDefault;
 
 const placeholderContent = (
   <p className="text-base font-semibold text-text-secondary">Card content</p>

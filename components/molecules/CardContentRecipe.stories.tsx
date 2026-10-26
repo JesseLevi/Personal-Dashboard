@@ -1,8 +1,10 @@
 // figma: node-id=3628:67
 import type { ReactNode } from "react";
-import type { Story } from "@ladle/react";
+import type { Story, StoryDefault } from "@ladle/react";
 import { CardContentRecipe } from "./CardContentRecipe";
 import { Card } from "./Card";
+
+export default { title: "Basis / Kaarten / Card content recipe" } satisfies StoryDefault;
 
 // Dev-only 1x1 transparent placeholder; visual footprint comes from the ThumbnailBackdrop below.
 const PLACEHOLDER_IMAGE =

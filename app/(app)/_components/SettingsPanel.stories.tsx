@@ -1,4 +1,7 @@
 import { SettingsPanel } from "./SettingsPanel";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Account / Settings panel" } satisfies StoryDefault;
 
 // Harness-only: SidePanel is `position: fixed`, so the wrapper keeps the
 // Provider div (the baseline crop) from collapsing. Server actions are stood in

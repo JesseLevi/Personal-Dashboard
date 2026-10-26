@@ -5,6 +5,9 @@ import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { AgendaEventDetail, AgendaEventItem } from "@/lib/agenda/types";
 import nl from "@/messages/nl.json";
 import { AgendaEventPanel } from "./AgendaEventPanel";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Agenda / Agenda event panel" } satisfies StoryDefault;
 
 // Dev-only mock actions: the panel never imports the real "use server" module.
 async function mockLoad(input: unknown): Promise<AgendaActionResult<AgendaEventDetail>> {

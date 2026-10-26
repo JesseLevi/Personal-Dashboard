@@ -6,6 +6,9 @@ import { Card } from "@/components/molecules/Card";
 import { CardContentRecipe } from "@/components/molecules/CardContentRecipe";
 import { AddRecipeMenu } from "./AddRecipeMenu";
 import nl from "../../../messages/nl.json";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Recepten / Add recipe menu" } satisfies StoryDefault;
 
 // No photo: CardContentRecipe renders its bg-surface-primary placeholder square.
 const NO_PHOTO = undefined;

@@ -2,6 +2,9 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
 import { setDetailsToggleLabels } from "@/lib/notes/details-labels";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Blokken / Note details" } satisfies StoryDefault;
 
 const content = `
 <p>Tekst boven de secties.</p>

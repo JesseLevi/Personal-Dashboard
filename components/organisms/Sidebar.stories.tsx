@@ -3,6 +3,9 @@ import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Panelen / Sidebar" } satisfies StoryDefault;
 
 // Chrome text — sourced from the message catalog, not typed here directly.
 const enLabels = en.components.sidebar;

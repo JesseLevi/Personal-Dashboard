@@ -83,9 +83,31 @@ When you change a component, rewrite the bullets that changed. Don't append tick
 - **Flake**: `threshold` stays 0 and `maxDiffPixels` 16. Run the full suite twice before believing a lone failure; never bisect, because isolation changes rasterization.
 - **Blind spots**:
   - interaction states are rendered only for Button (`states.visual.spec.ts`);
-  - `.tiptap` prose only via `note-editor-content--prose`;
+  - `.tiptap` prose only via `notities--editor--note-editor-content--prose`;
   - dark mode only for the `DARK_STORIES` subset in `dark.visual.spec.ts`. A new dark-sensitive story belongs in that list.
   
   Check other states and dark values by eye.
 - **Scoped local regeneration**: `pnpm exec playwright test --update-snapshots -g <pattern>`, not `pnpm test:visual:update -- -g` (which regenerates everything). `-g` matches story names, not what they render.
 - **`pnpm ladle:build`** for a non-interactive build. `pnpm ladle` is the dev server.
+
+## Ladle
+
+- **Title** of every story file: `export default { title: "<Group> / <Subgroup> / <Component name>" } satisfies StoryDefault`. The last segment is the component name with spaces; group names follow the app's modules. The story ID is the slug (`basis--invoer--button--state-matrix`) and names the baseline PNGs.
+- **Group rule**: used in two or more modules means `Basis`, in one module means that module. Atoms are always `Basis`. The `CardContent*` family stays together in `Basis / Kaarten`. `SearchPanel` (app-shell search over all modules) sits in `Basis / Panelen`.
+- **Order** (`storyOrder` in `.ladle/config.mjs`, self-contained because Ladle serialises it; test: `tests/ladle-story-order.test.ts`): `Basis`, the modules in `Sidebar` order, `Account` last. Per component `Overview`, `Playground`, `Interactive` lead, then alphabetical. A new group or sub-group needs an entry there.
+- **Chrome** (sidebar left, toolbar above the canvas, width presets 390/768/1024) lives only in `.ladle/ladle-theme.css` and `.ladle/config.mjs`; `mode=preview`, which the visual suite uses, renders none of it.
+
+| Group | Components |
+| --- | --- |
+| Basis / Fundament | Icon, Avatar, AvatarGroup, Tag, Step, BlurFade |
+| Basis / Invoer | Button, ButtonToggle, Checkbox, Dropdown, InputField, OtpInput, ImageUploadField, PortionStepper, AnimatedAddToBasketButton |
+| Basis / Kaarten | Card, CardContainer, CardContent* (Ingredient, Note, Recipe, RecipeFailed, RecipeSkeleton, Step, Ticket), BoardView, Carousel, BoardSkeleton |
+| Basis / Panelen | SidePanel, Sidebar, PageHeader, Toast, SearchPanel, IngredientSearchPanel, MemberSearchPanel |
+| Agenda | AgendaPageLayout, AgendaCalendar, AgendaHeader, AgendaDayStrip, AgendaQuickAdd, AgendaEventPanel, AgendaMealPanel, AgendaCardPanel, AgendaCalendarsPanel, AgendaLinkSearchPanel, AgendaSyncNotices, PlanDrawer, PlanChoices, EventLinkLine, ColorSwatches |
+| Te doen | CardDetailPanel, BoardPanel |
+| Recepten | RecipePanel, CategoryPanel, AddRecipeMenu, LinkImportPanel, SourceLink, RecipeIngredientRow, StepIngredientPanel, IngredientAdmin, SharedRecipeOffer, RecipeDetailSkeleton |
+| Winkelmand | WinkelmandHeader, ShoppingListPanel, ShareInviteBanner |
+| Notities / Editor | NoteEditorContent, EditingBar, NoteBubbleMenu, SlashMenu, NoteMarkdownMenu, NoteBlockHandle, LinkPopover, NoteLinkMenu |
+| Notities / Blokken | NoteCodeBlock, NoteDetails, NoteImageView, NoteLinkView, NoteTable, NoteTableHandles, TableMenu, TableSizePicker |
+| Notities / Rondom | NoteBacklinks, NoteTableOfContents, NoteSaveStatus, NoteCategoryPanel |
+| Account | LoginForm, LoginCodeForm, ConfirmForm, SettingsPanel |

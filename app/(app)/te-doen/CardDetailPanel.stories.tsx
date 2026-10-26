@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { CardDetailPanel, type CardDetailPanelColumn } from "./CardDetailPanel";
 import type { ActionResult, CardRow, CardWithLabels } from "@/lib/boards/types";
 import nl from "@/messages/nl.json";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Te doen / Card detail panel" } satisfies StoryDefault;
 
 // Dev-only mock actions — CardDetailPanel never imports the real "use server"
 // module itself (design/notes/CardDetailPanel.md), so these stand in for

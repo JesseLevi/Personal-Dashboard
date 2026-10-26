@@ -7,6 +7,9 @@ import { Icon } from "../atoms/Icon";
 import { AgendaCalendar, type AgendaView } from "./AgendaCalendar";
 import { AgendaCalendarSkeleton } from "./AgendaCalendarSkeleton";
 import { useAgendaDraggable, type AgendaDragPayload } from "./useAgendaDraggable";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Agenda / Agenda calendar" } satisfies StoryDefault;
 
 // The visual suite freezes the clock on Thursday 2026-01-01.
 const DATE = "2026-01-01";

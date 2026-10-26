@@ -5,6 +5,9 @@ import { Placeholder } from "@tiptap/extensions";
 import { EditingBar } from "./EditingBar";
 import { noteExtensions } from "@/lib/notes/extensions";
 import nl from "../../messages/nl.json";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Editor / Editing bar" } satisfies StoryDefault;
 
 const placeholder = nl.components.noteEditor.placeholder;
 

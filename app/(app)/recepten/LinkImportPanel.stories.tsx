@@ -1,6 +1,9 @@
 // figma: node-id=4164:23722 (+4164:23777 mobile)
 import { LinkImportPanel } from "./LinkImportPanel";
 import type { ActionResult } from "@/lib/recipes/types";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Recepten / Link import panel" } satisfies StoryDefault;
 
 // Dev-only mock action — LinkImportPanel never imports the real "use server"
 // module itself, same precedent as CategoryPanel.stories.tsx.

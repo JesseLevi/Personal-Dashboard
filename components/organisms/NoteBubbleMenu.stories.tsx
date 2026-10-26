@@ -2,6 +2,9 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
 import { NoteBubbleMenu } from "./NoteBubbleMenu";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Editor / Note bubble menu" } satisfies StoryDefault;
 
 const content = "<p>Boodschappen deze week en een stukje tekst om te selecteren.</p>";
 
