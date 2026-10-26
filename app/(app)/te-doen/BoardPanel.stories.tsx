@@ -1,6 +1,9 @@
 // figma: node-id=3878:9060 (+3878:9047 mobile)
 import { BoardPanel } from "./BoardPanel";
 import type { ActionResult, BoardRow } from "@/lib/boards/types";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Te doen / Board panel" } satisfies StoryDefault;
 
 // Dev-only mock actions — same approach as CardDetailPanel.stories.tsx:
 // BoardPanel takes its actions as props and never imports the real

@@ -1,8 +1,10 @@
 // figma: node-id=3968:11192 (desktop) / 3953:9875 (mobile)
-import type { Story } from "@ladle/react";
+import type { Story, StoryDefault } from "@ladle/react";
 import { ImageUploadField } from "./ImageUploadField";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
+
+export default { title: "Basis / Invoer / Image upload field" } satisfies StoryDefault;
 
 const selectImageEn = en.components.imageUploadField.selectImage;
 const selectImageNl = nl.components.imageUploadField.selectImage;

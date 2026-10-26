@@ -4,6 +4,9 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
 import { NoteImageUpload, requestImageUpload } from "@/lib/notes/image-upload";
 import nl from "../../messages/nl.json";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Blokken / Note image view" } satisfies StoryDefault;
 
 // Route-shaped srcs, served by the note-image middleware in .ladle/vite.config.mjs
 // (a two-tone picture; the missing id answers 404, so the browser fires `error`).

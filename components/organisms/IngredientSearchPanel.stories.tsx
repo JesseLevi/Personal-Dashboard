@@ -8,6 +8,9 @@ import type {
   ReferenceIngredientRow,
 } from "@/lib/recipes/types";
 import en from "../../messages/en.json";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Panelen / Ingredient search panel" } satisfies StoryDefault;
 
 // Dev-only mock actions -- IngredientSearchPanel never imports the real
 // "use server" module itself (design/notes/IngredientSearchPanel.md), same

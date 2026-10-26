@@ -3,6 +3,9 @@ import { useState } from "react";
 import { Button } from "../atoms/Button";
 import { PageHeader } from "./PageHeader";
 import en from "../../messages/en.json";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Panelen / Page header" } satisfies StoryDefault;
 
 const t = en.components.pageHeader;
 

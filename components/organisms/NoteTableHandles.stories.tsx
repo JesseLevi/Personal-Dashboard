@@ -5,6 +5,9 @@ import { noteExtensions } from "@/lib/notes/extensions";
 import { EditingBar } from "./EditingBar";
 import { NoteTableHandles } from "./NoteTableHandles";
 import { TableMenu } from "./TableMenu";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Blokken / Note table handles" } satisfies StoryDefault;
 
 const table = `
 <table><tbody>

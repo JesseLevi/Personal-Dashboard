@@ -1,6 +1,9 @@
 import type { AgendaLinkCandidate } from "@/lib/agenda/links";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import { AgendaLinkSearchPanel, linkKey } from "./AgendaLinkSearchPanel";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Agenda / Agenda link search panel" } satisfies StoryDefault;
 
 // Dev-only mock search: the panel never imports the real "use server" module.
 const candidates: AgendaLinkCandidate[] = [

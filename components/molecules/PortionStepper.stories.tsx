@@ -1,9 +1,11 @@
 // figma: node-id=3953:9750 (mobile) / 3778:5596 (desktop)
-import type { Story } from "@ladle/react";
+import type { Story, StoryDefault } from "@ladle/react";
 import { useState } from "react";
 import { NextIntlClientProvider, useTranslations } from "next-intl";
 import { PortionStepper } from "./PortionStepper";
 import en from "../../messages/en.json";
+
+export default { title: "Basis / Invoer / Portion stepper" } satisfies StoryDefault;
 
 // Resolves the real ICU catalog entries via next-intl's own engine (Ladle's
 // global Provider in .ladle/components.tsx already supplies locale "nl") so

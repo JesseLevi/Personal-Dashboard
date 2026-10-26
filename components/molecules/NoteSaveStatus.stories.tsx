@@ -1,6 +1,9 @@
 // design: Claude-designed on request (#334). Record: design/notes/NoteEditor.md
 import { NoteSaveStatus } from "./NoteSaveStatus";
 import { NoteWordCount } from "./NoteWordCount";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Rondom / Note save status" } satisfies StoryDefault;
 
 export const States = () => (
   <div className="flex flex-col items-start gap-stack-md">

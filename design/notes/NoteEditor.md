@@ -29,7 +29,7 @@ One client component for the whole page body (like `RecipeDetailPage`). Header: 
 ## Token gaps and flags
 - `spacing-flag`: header `gap-4` (Figma 16 unbound, `SPACE_BETWEEN`); delete-confirm `gap-4` / `gap-2` (copied from `RecipeDetailPage`); `pb-[calc(4rem+env(safe-area-inset-bottom))] md:py-2` on the content wrapper (4rem is a code-only reservation clearing the 48px mobile bar; `md:py-2` is the desktop Content's unbound 8px, kept raw rather than guessing between `stack-sm` and `component-sm`).
 - No font-size or weight tokens. Raw CSS not gated by `check:raw-spacing`: 2px blockquote rule and focus/selection outlines, the 1.25rem checkbox, `70ch`.
-- Generic icon reuse where glyphs are missing (table menu, link Open = `Link` / Remove = `Trash`, slash and block menus, broken image = `Image`); each new glyph moves the `icon--all-icons` baseline.
+- Generic icon reuse where glyphs are missing (table menu, link Open = `Link` / Remove = `Trash`, slash and block menus, broken image = `Image`); each new glyph moves the `basis--fundament--icon--all-icons` baseline.
 
 ## Gotchas
 - Not verified on a device or hosted data: phone keyboard with the menus, camera roll, R2, note-to-note navigation, a long note with the TOC.

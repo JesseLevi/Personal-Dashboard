@@ -24,7 +24,7 @@ Figma: "Header" frame (plain `FRAME`, not a Component/ComponentSet; duplicated p
 - Reduced motion: no width change, no outgoing text; the new name fades in (120ms).
 - The header remounts on a board switch (the route's Suspense fallback is the skeleton), so React state cannot carry the old name. `TeDoenBoardSwitchProvider` calls `armTitleMorph()` (`lib/ui/title-morph.ts`, module scope, 8s cap) just before `router.push`; the skeleton header (`titlePending`) keeps showing that name; the real header then animates from it. Only a board switch arms it, so sidebar navigation between pages never morphs.
 - Long names: unchanged; the title still has no truncation of its own. During a morph the text is `whitespace-nowrap` inside an `overflow-hidden` h1.
-- Story: `page-header--title-change` (the chevron toggles the name).
+- Story: `basis--panelen--page-header--title-change` (the chevron toggles the name).
 
 ## Token gaps and flags
 - The root frame's own `itemSpacing` and `paddingRight` (128px) are unbound in the node; the page-padding tokens supersede them (#205).
@@ -32,5 +32,5 @@ Figma: "Header" frame (plain `FRAME`, not a Component/ComponentSet; duplicated p
 ## Gotchas
 - Adornment and action buttons are inert apart from what each page wires: the chevron and star have only an aria-label, no board-switch or favourite persistence in this component. Category creation is wired by the page (#28).
 - A page-level dropdown inside the header must rely on this component's `z-10` stacking context; do not add a lower z-index to the header or move dropdowns out expecting them to beat siblings.
-- Both stories (`page-header--te-doen`, `page-header--recepten`) are visual baselines; the header's background change regenerates them together.
+- Both stories (`basis--panelen--page-header--te-doen`, `basis--panelen--page-header--recepten`) are visual baselines; the header's background change regenerates them together.
 - Horizontal-scroll containment of the board half of the sticky work: `design/notes/TeDoenBoard.md` and `Carousel.md`.

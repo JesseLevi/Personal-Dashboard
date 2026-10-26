@@ -4,6 +4,9 @@ import { AnimatedAddToBasketButton } from "./AnimatedAddToBasketButton";
 import type { ActionResult } from "@/lib/shopping/types";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Invoer / Animated add to basket button" } satisfies StoryDefault;
 
 // #290: the "added" face plays only on `success: true`. `succeeds` resolves
 // like a real server action; `fails` resolves `success: false`, so clicking

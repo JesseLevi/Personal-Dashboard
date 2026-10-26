@@ -4,6 +4,9 @@ import type { AgendaMealItem } from "@/lib/agenda/types";
 import nl from "@/messages/nl.json";
 import { AgendaMealPanel } from "./AgendaMealPanel";
 import type { MealPlanDetail } from "./meal-actions";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Agenda / Agenda meal panel" } satisfies StoryDefault;
 
 // Dev-only mock actions: the panel never imports the real "use server" module.
 const detail = (sentToBasket: boolean) => async (): Promise<AgendaActionResult<MealPlanDetail>> => ({

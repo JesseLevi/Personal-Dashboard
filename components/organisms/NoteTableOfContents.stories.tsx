@@ -1,5 +1,8 @@
 // design: Claude-designed on request (#342)
 import { NoteTableOfContents } from "./NoteTableOfContents";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Rondom / Note table of contents" } satisfies StoryDefault;
 
 // Fixture headings, not app data.
 const items = [

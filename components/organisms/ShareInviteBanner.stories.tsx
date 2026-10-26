@@ -1,5 +1,8 @@
 // figma: node-id=4233:17679
 import { ShareInviteBanner } from "./ShareInviteBanner";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Winkelmand / Share invite banner" } satisfies StoryDefault;
 
 const noop = () => {};
 

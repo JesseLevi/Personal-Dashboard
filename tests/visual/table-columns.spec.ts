@@ -12,7 +12,7 @@ async function columnWidths(page: Page) {
   );
 }
 
-for (const story of ["note-table--without-stored-widths", "note-table--with-column-widths"]) {
+for (const story of ["notities--blokken--note-table--without-stored-widths", "notities--blokken--note-table--with-column-widths"]) {
   test.describe(story, () => {
     test("typing in a cell leaves every column width unchanged", async ({ page }) => {
       await page.goto(`/?story=${story}&mode=preview`);
@@ -29,7 +29,7 @@ for (const story of ["note-table--without-stored-widths", "note-table--with-colu
 }
 
 test("a column edge can be dragged to resize", async ({ page }) => {
-  await page.goto("/?story=note-table--with-column-widths&mode=preview");
+  await page.goto("/?story=notities--blokken--note-table--with-column-widths&mode=preview");
   const header = page.locator(".tiptap th").first();
   await header.waitFor();
   const box = await header.boundingBox();

@@ -118,7 +118,7 @@ The `/notities` search clear button (`InputField` `onTrailingIconClick`, #231) h
 
 ### notes-slash-menu-icon-glyphs-missing
 
-Slash menu (#332) wants `Pilcrow`, `Heading1-3`, `ListOrdered`, `ListTodo`; `Icon` lacks them and new glyphs change the `icon--all-icons` baseline, so it reuses `TextAlignStart`, `Heading`, `List`. Register glyphs in `components/atoms/Icon.tsx`, regenerate the baseline, switch `lib/notes/slash-items.ts`. -> `design/notes/NoteEditor.md` (#332).
+Slash menu (#332) wants `Pilcrow`, `Heading1-3`, `ListOrdered`, `ListTodo`; `Icon` lacks them and new glyphs change the `basis--fundament--icon--all-icons` baseline, so it reuses `TextAlignStart`, `Heading`, `List`. Register glyphs in `components/atoms/Icon.tsx`, regenerate the baseline, switch `lib/notes/slash-items.ts`. -> `design/notes/NoteEditor.md` (#332).
 
 ### code-syntax-colour-tokens
 

@@ -2,6 +2,9 @@
 import { ShoppingListPanel, type ShoppingListOption } from "./ShoppingListPanel";
 import type { ActionResult, ShoppingListRow } from "@/lib/shopping/types";
 import type { ActionResult as SharingActionResult, ListShare, MemberProfile, MemberSearchResult } from "@/lib/sharing/types";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Winkelmand / Shopping list panel" } satisfies StoryDefault;
 
 // Dev-only mock actions, same approach as BoardPanel.stories.tsx: the panel
 // takes its actions as props and never imports the "use server" module.

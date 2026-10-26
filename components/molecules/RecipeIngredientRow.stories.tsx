@@ -2,6 +2,9 @@ import { useState } from "react";
 import { RecipeIngredientRow } from "./RecipeIngredientRow";
 import nl from "../../messages/nl.json";
 import type { UnitCode } from "@/lib/recipes/units";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Recepten / Recipe ingredient row" } satisfies StoryDefault;
 
 // Dev-only demo copy — real labels/units come from next-intl at the call
 // site (app/(app)/recepten/RecipePanel.tsx).

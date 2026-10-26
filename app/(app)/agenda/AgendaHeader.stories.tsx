@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { AgendaHeader, type AgendaToggleView } from "./AgendaHeader";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Agenda / Agenda header" } satisfies StoryDefault;
 
 const noop = () => {};
 const weekToBasket = { onSend: async () => ({ success: true as const, data: undefined }), baskets: [{ id: "own", name: "Boodschappen", shared: false }] };

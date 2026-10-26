@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Button } from "../atoms/Button";
 import { blurFadeStagger } from "../../lib/ui/blur-fade";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Fundament / Blur fade" } satisfies StoryDefault;
 
 const ROWS = [0, 1, 2, 3, 4, 5];
 

@@ -2,6 +2,9 @@
 import { CardContentRecipeFailed } from "./CardContentRecipeFailed";
 import { Card } from "./Card";
 import nl from "../../messages/nl.json";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Kaarten / Card content recipe failed" } satisfies StoryDefault;
 
 const t = nl.components.recipeImport.failed;
 const reasons = nl.recipes.import.errors;

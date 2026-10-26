@@ -3,6 +3,9 @@ import { CardContentStep } from "./CardContentStep";
 import { Card } from "./Card";
 import { Step } from "../atoms/Step";
 import { Tag } from "../atoms/Tag";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Basis / Kaarten / Card content step" } satisfies StoryDefault;
 
 // Dev-only demo copy (the fetched node's own sample text).
 const STEP_TEXT =

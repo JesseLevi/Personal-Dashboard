@@ -20,4 +20,4 @@ A new molecule, by exception to ADR-0034: Atlas had no colour picker, and nothin
 ## Gotchas
 - The nine swatches wrap inside the 22 rem settings panel (seven on the first line); a wider container keeps one line.
 - Disabled dims with `opacity-60` (no disabled token exists).
-- Dark values come from the tokens; check `color-swatches--default` in the dark suite.
+- Dark values come from the tokens; check `agenda--color-swatches--default` in the dark suite.

@@ -1,6 +1,9 @@
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { AgendaDeadlineItem, AgendaPlannedCardItem } from "@/lib/agenda/types";
 import { AgendaCardPanel } from "./AgendaCardPanel";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Agenda / Agenda card panel" } satisfies StoryDefault;
 
 async function mockMutate(): Promise<AgendaActionResult> {
   return { success: true, data: undefined };

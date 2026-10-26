@@ -4,6 +4,9 @@ import type { ShoppingListOption } from "./ShoppingListPanel";
 import { AvatarGroup } from "@/components/molecules/AvatarGroup";
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Winkelmand / Winkelmand header" } satisfies StoryDefault;
 
 const lists: ShoppingListOption[] = [
   { id: "list-1", name: "Mijn mand", isDefault: true, isOwner: true, shared: false },

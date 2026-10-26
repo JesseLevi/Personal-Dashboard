@@ -3,6 +3,9 @@ import { useState } from "react";
 import { CategoryPanel, type CategoryPanelTarget } from "@/app/(app)/_components/CategoryPanel";
 import { CATEGORY_ICONS } from "./category-icons";
 import type { ActionResult, RecipeCategoryRow } from "@/lib/recipes/types";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Recepten / Category panel" } satisfies StoryDefault;
 
 // Dev-only mock actions — the shared CategoryPanel never imports the real "use server"
 // module itself (design/notes/CategoryPanel.md), so these stand in for

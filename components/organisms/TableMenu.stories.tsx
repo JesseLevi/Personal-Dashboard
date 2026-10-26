@@ -3,6 +3,9 @@ import { useEffect, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
 import { TableMenu } from "./TableMenu";
+import type { StoryDefault } from "@ladle/react";
+
+export default { title: "Notities / Blokken / Table menu" } satisfies StoryDefault;
 
 const content = `
 <p>Boodschappen deze week.</p>
