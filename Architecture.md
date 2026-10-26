@@ -125,7 +125,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - no queue: `embedding_backlog()` finds stale sources; a lazy `after()` drain (at most every 10 min) and the daily `/api/cron/embeddings` embed them, reusing vectors for identical text;
   - search across modules merges `search_text()` and `search_semantic()` (`security invoker`) with RRF.
 - **History** (ADR-0044): triggers log basket adds and checks into `activity_events`; `settle_cooked_meals()` logs past plans. All members, no AI.
-- **Phase 9**: SQL detectors over `activity_events`, `embeddings` and cards; one LLM call per signal (consenting members) into `agent_signals`; no tools, no other writes, plain text.
+- **Phase 9** (ADR-0046, planned): `agent_signals` from SQL rhythms (all members) and LLM patterns (opt-in; no tools, plain text).
 - **Scheduled work** (ADR-0039, Vercel Hobby): a lazy "when stale" run in `after()` where a user is present, plus daily Vercel Cron routes behind `CRON_SECRET` as a backstop. Cron routes may use `service_role` (no user request). Anything more frequent needs a new ADR.
 
 ## 7. Agenda (ADR-0037)
@@ -161,6 +161,6 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 | 0 Foundation, 1 Account, 2 Design system | ✅ (Resend hookup on hosted is open, #10) |
 | 3 Te doen, 4 Recepten (incl. import, nutrition), 5 Winkelmand, 6 Notities | ✅ in production use |
 | Delen fase 1 (#420) and 2 (#464), 7 Agenda (#33) | ✅ built |
-| 8 Connections layer and activity history (#31, ADR-0043/0044) | 🔜 next |
-| 9 Assistent: agent signals | backlog (#32) |
+| 8 Connections layer and activity history (#31, ADR-0043/0044) | built (rollout #574) |
+| 9 Assistent: rhythm and pattern signals (#32, ADR-0046) | 🔜 next |
 | Later | sharing boards (ADR-0035), live recipe sharing, mail integration (`Vision.md`) |

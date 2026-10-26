@@ -1,6 +1,6 @@
 # ADR-0043: Connections layer: bge-m3 embeddings on Cloudflare Workers AI, opt-in per member
 
-**Status**: Accepted (user decision, 2026-10-23, #575). **Supersedes** ADR-0006. Settles ADR-0018 §4–5 for embeddings.
+**Status**: Accepted (user decision, 2026-10-23, #575). **Supersedes** ADR-0006. Settles ADR-0018 §4–5 for embeddings. §2 amended by ADR-0046 §6 (the opt-in also covers Anthropic for the Assistent).
 
 ## Context
 
