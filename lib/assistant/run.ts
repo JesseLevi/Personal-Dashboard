@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { runPatterns } from "@/lib/assistant/patterns";
 import type { Database } from "@/lib/database.types";
 
 // Assistent runtime (ADR-0046 §7). Lazy path: the member's own RLS client from
@@ -10,10 +11,9 @@ type Client = SupabaseClient<Database>;
 
 export type AssistantPath = "lazy" | "cron";
 
-/** Hook for the pattern step (#628). Deliberately a no-op until then. */
+/** Pattern step (ADR-0046 §3): a no-op without opt-in, key or embeddings. */
 export async function runPatternStep(args: { client: Client; userId: string; path: AssistantPath }): Promise<number> {
-  void args;
-  return 0;
+  return runPatterns(args);
 }
 
 /** Returns the number of new signals, or null when the run was skipped or failed. */
@@ -47,9 +47,10 @@ export async function runAssistant(args: { client: Client; userId: string; path:
 export type AssistantAllResult = { members: number; failed: number; remaining: number; created: number };
 
 /**
- * Cron path (ADR-0039 §6): every member within a time budget. The start index
- * rotates daily so a budget cut-off does not starve the same members:
- * private.assistant_runs (oldest first) is not reachable over PostgREST.
+ * Cron path (ADR-0039 §6): every member within a time budget, members whose
+ * last Assistent run is oldest first (service_role-only function; private.
+ * assistant_runs is not reachable over PostgREST). If that call fails, the
+ * start index rotates daily so a budget cut-off does not starve the same members.
  */
 export async function runAssistantForAllMembers(
   client: Client,
@@ -57,14 +58,20 @@ export async function runAssistantForAllMembers(
 ): Promise<AssistantAllResult> {
   const deadline = Date.now() + options.budgetMs;
   const result: AssistantAllResult = { members: 0, failed: 0, remaining: 0, created: 0 };
-  const { data: profiles, error } = await client.from("profiles").select("id").order("id");
-  if (error) {
-    console.error("[assistant] members failed", error.code);
-    result.failed++;
-    return result;
+  let ordered: { id: string }[];
+  const byRun = await client.rpc("assistant_members_by_last_run");
+  if (!byRun.error && byRun.data) {
+    ordered = byRun.data.map((row) => ({ id: row.user_id }));
+  } else {
+    const { data: profiles, error } = await client.from("profiles").select("id").order("id");
+    if (error) {
+      console.error("[assistant] members failed", error.code);
+      result.failed++;
+      return result;
+    }
+    const offset = profiles.length ? Math.floor((options.now ?? Date.now()) / 86_400_000) % profiles.length : 0;
+    ordered = [...profiles.slice(offset), ...profiles.slice(0, offset)];
   }
-  const offset = profiles.length ? Math.floor((options.now ?? Date.now()) / 86_400_000) % profiles.length : 0;
-  const ordered = [...profiles.slice(offset), ...profiles.slice(0, offset)];
   for (const [index, profile] of ordered.entries()) {
     if (Date.now() >= deadline) {
       result.remaining = ordered.length - index;
