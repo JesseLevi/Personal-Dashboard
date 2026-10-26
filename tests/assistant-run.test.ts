@@ -12,10 +12,14 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function fakeClient(options: { claimed?: boolean; failOn?: string; ids?: string[]; created?: number } = {}) {
+function fakeClient(options: { claimed?: boolean; failOn?: string; ids?: string[]; created?: number; noOrderRpc?: boolean } = {}) {
   const calls: string[] = [];
   const users: string[] = [];
   const rpc = vi.fn(async (name: string, args?: { p_user: string }) => {
+    if (name === "assistant_members_by_last_run") {
+      if (options.noOrderRpc) return { data: null, error: { code: "42883" } };
+      return { data: (options.ids ?? []).map((id) => ({ user_id: id })), error: null };
+    }
     if (args) users.push(args.p_user);
     calls.push(name);
     if (options.failOn === name) return { data: null, error: { code: "XX" } };
@@ -88,7 +92,7 @@ describe("runAssistantForAllMembers", () => {
   it("stops at the budget and reports what is left", async () => {
     const { client, rpc } = fakeClient({ ids: ["a", "b", "c"] });
     expect(await runAssistantForAllMembers(client, { budgetMs: 0 })).toMatchObject({ members: 0, remaining: 3 });
-    expect(rpc).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalledWith("detect_rhythm_signals_for", expect.anything());
   });
 
   it("counts failures and keeps going", async () => {
@@ -97,9 +101,16 @@ describe("runAssistantForAllMembers", () => {
     expect(await runAssistantForAllMembers(client, { budgetMs: 1000 })).toMatchObject({ members: 0, failed: 2 });
   });
 
-  it("rotates the start member per day", async () => {
+  it("follows the order of assistant_members_by_last_run", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
-    const { client, users } = fakeClient({ ids: ["a", "b", "c"] });
+    const { client, users } = fakeClient({ ids: ["c", "a", "b"] });
+    await runAssistantForAllMembers(client, { budgetMs: 1000, now: 86_400_000 });
+    expect(users).toEqual(["c", "a", "b"]);
+  });
+
+  it("falls back to a daily rotation when the ordering function fails", async () => {
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    const { client, users } = fakeClient({ ids: ["a", "b", "c"], noOrderRpc: true });
     await runAssistantForAllMembers(client, { budgetMs: 1000, now: 86_400_000 });
     expect(users).toEqual(["b", "c", "a"]);
   });
