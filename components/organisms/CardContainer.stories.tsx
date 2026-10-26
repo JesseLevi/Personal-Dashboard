@@ -1,12 +1,14 @@
 // figma: node-id=3650:1297
 import type { ReactNode } from "react";
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import { CardContainer } from "./CardContainer";
 import { Card } from "../molecules/Card";
 import { CardContentRecipe } from "../molecules/CardContentRecipe";
 import { Button } from "../atoms/Button";
+import { ALL_ICON_NAMES, type IconName } from "../atoms/Icon";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
-import type { StoryDefault } from "@ladle/react";
+import type { Story, StoryDefault } from "@ladle/react";
 
 export default { title: "Basis / Kaarten / Card container" } satisfies StoryDefault;
 
@@ -33,63 +35,55 @@ const addLabelEn = en.components.cardContainer.addLabel;
 const editLabelEn = en.components.cardContainer.editLabel;
 const addItemLabelEn = en.components.cardContainer.addItemLabel;
 
-// Matches the fetched node's "Ontbijt" sample (Name="Ontbijt", Hoeveelheid="4").
-export const Default = () => (
+const Recipe = ({ name, duration }: { name: string; duration: string }) => (
+  <Card>
+    <ThumbnailBackdrop>
+      <CardContentRecipe imageUrl={PLACEHOLDER_IMAGE} name={name} duration={duration} />
+    </ThumbnailBackdrop>
+  </Card>
+);
+
+export const Overview = () => (
+  <>
+    <StoryIntro what="A named, counted group of cards with add and edit buttons." note="CardContainer" />
+    <Specimens>
+      <Specimen label="default" hint="matches the Figma Ontbijt sample">
+        <div className="w-96">
+          <CardContainer name="Ontbijt" count="4" addLabel={addLabelEn} editLabel={editLabelEn}>
+            <Recipe name="Amandel Pasta" duration="20 min" />
+            <Recipe name="Havermout" duration="10 min" />
+          </CardContainer>
+        </div>
+      </Specimen>
+      <Specimen label="icon" hint="page-instance override, Te-Doen Ideeën uses Lightbulb">
+        <div className="w-96">
+          <CardContainer name="Ideeën" count="2" icon="Lightbulb" addLabel={addLabelEn} editLabel={editLabelEn}>
+            <Recipe name="Amandel Pasta" duration="20 min" />
+          </CardContainer>
+        </div>
+      </Specimen>
+    </Specimens>
+  </>
+);
+
+type PlaygroundProps = { name: string; count: string; icon?: IconName };
+
+export const Playground: Story<PlaygroundProps> = ({ name, count, icon }) => (
   <div className="w-96">
-    <CardContainer
-      name="Ontbijt"
-      count="4"
-      addLabel={addLabelEn}
-      editLabel={editLabelEn}
-    >
-      <Card>
-        <ThumbnailBackdrop>
-          <CardContentRecipe
-            imageUrl={PLACEHOLDER_IMAGE}
-            name="Amandel Pasta"
-            duration="20 min"
-          />
-        </ThumbnailBackdrop>
-      </Card>
-      <Card>
-        <ThumbnailBackdrop>
-          <CardContentRecipe
-            imageUrl={PLACEHOLDER_IMAGE}
-            name="Havermout"
-            duration="10 min"
-          />
-        </ThumbnailBackdrop>
-      </Card>
+    <CardContainer name={name} count={count} icon={icon} addLabel={addLabelEn} editLabel={editLabelEn}>
+      <Recipe name="Amandel Pasta" duration="20 min" />
     </CardContainer>
   </div>
 );
+Playground.args = { name: "Ontbijt", count: "1" };
+Playground.argTypes = {
+  name: { control: { type: "text" } },
+  count: { control: { type: "text" } },
+  icon: { control: { type: "select" }, options: ALL_ICON_NAMES },
+};
 
-// #87: `icon` prop, page-instance override (Te-Doen "Ideeën" uses
-// Lightbulb — see design/notes/CardContainer.md's icon-inconsistency note).
-export const CustomIcon = () => (
-  <div className="w-96">
-    <CardContainer
-      name="Ideeën"
-      count="2"
-      icon="Lightbulb"
-      addLabel={addLabelEn}
-      editLabel={editLabelEn}
-    >
-      <Card>
-        <ThumbnailBackdrop>
-          <CardContentRecipe
-            imageUrl={PLACEHOLDER_IMAGE}
-            name="Amandel Pasta"
-            duration="20 min"
-          />
-        </ThumbnailBackdrop>
-      </Card>
-    </CardContainer>
-  </div>
-);
-
-// #87: `emptyState` slot, Figma "EmptyState" frame (node 3878:10175) —
-// centered `Button` (variant="white", icon="Plus") replaces `children`.
+// #87: `emptyState` slot (Figma "EmptyState" frame, node 3878:10175): a centred
+// white `Button` with a Plus replaces `children`.
 export const Empty = () => (
   <div className="w-96">
     <CardContainer
@@ -107,8 +101,7 @@ export const Empty = () => (
   </div>
 );
 
-// NL catalog check for the add/edit labels.
-export const LabelsNl = () => (
+export const Dutch = () => (
   <div className="w-96">
     <CardContainer
       name="Ontbijt"
@@ -116,15 +109,7 @@ export const LabelsNl = () => (
       addLabel={nl.components.cardContainer.addLabel}
       editLabel={nl.components.cardContainer.editLabel}
     >
-      <Card>
-        <ThumbnailBackdrop>
-          <CardContentRecipe
-            imageUrl={PLACEHOLDER_IMAGE}
-            name="Amandel Pasta"
-            duration="20 min"
-          />
-        </ThumbnailBackdrop>
-      </Card>
+      <Recipe name="Amandel Pasta" duration="20 min" />
     </CardContainer>
   </div>
 );

@@ -1,9 +1,10 @@
 // figma: node-id=3674:5664
 import { useState } from "react";
-import { Sidebar } from "./Sidebar";
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
+import { Sidebar, type SidebarItemId } from "./Sidebar";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
-import type { StoryDefault } from "@ladle/react";
+import type { Story, StoryDefault } from "@ladle/react";
 
 export default { title: "Basis / Panelen / Sidebar" } satisfies StoryDefault;
 
@@ -11,42 +12,77 @@ export default { title: "Basis / Panelen / Sidebar" } satisfies StoryDefault;
 const enLabels = en.components.sidebar;
 const nlLabels = nl.components.sidebar;
 
-// The two fetched Collapsed variants side by side, "Recepten" active in both.
-export const Variants = () => (
-  <div className="flex h-[600px] gap-8">
+export const Overview = () => (
+  <>
+    <StoryIntro what="The app's left navigation: modules, search and the account menu; expanded or collapsed." note="Sidebar" />
+    <Specimens>
+      <Specimen label="expanded" hint="Recepten active">
+        <div className="flex h-[600px]">
+          <Sidebar
+            navLabel={enLabels.navLabel}
+            toggleLabel={enLabels.collapseLabel}
+            activeItem="recipes"
+            labels={enLabels.items}
+            searchLabel={enLabels.searchLabel}
+            accountName="Youri Tukker"
+            accountMenuOpen={false}
+            accountMenuId="sidebar-story-account-menu-expanded"
+            settingsLabel={enLabels.settingsLabel}
+            logoutLabel={enLabels.logoutLabel}
+          />
+        </div>
+      </Specimen>
+      <Specimen label="collapsed" hint="icons only">
+        <div className="flex h-[600px]">
+          <Sidebar
+            collapsed
+            navLabel={enLabels.navLabel}
+            toggleLabel={enLabels.expandLabel}
+            activeItem="recipes"
+            labels={enLabels.items}
+            searchLabel={enLabels.searchLabel}
+            accountName="Youri Tukker"
+            accountMenuOpen={false}
+            accountMenuId="sidebar-story-account-menu-collapsed"
+            settingsLabel={enLabels.settingsLabel}
+            logoutLabel={enLabels.logoutLabel}
+          />
+        </div>
+      </Specimen>
+    </Specimens>
+  </>
+);
+
+type PlaygroundProps = { collapsed: boolean; activeItem: SidebarItemId; accountName: string; accountMenuOpen: boolean };
+
+export const Playground: Story<PlaygroundProps> = ({ collapsed, activeItem, accountName, accountMenuOpen }) => (
+  <div className="flex h-[600px]">
     <Sidebar
+      collapsed={collapsed}
       navLabel={enLabels.navLabel}
-      toggleLabel={enLabels.collapseLabel}
-      activeItem="recipes"
+      toggleLabel={collapsed ? enLabels.expandLabel : enLabels.collapseLabel}
+      activeItem={activeItem}
       labels={enLabels.items}
       searchLabel={enLabels.searchLabel}
-      accountName="Youri Tukker"
-      accountMenuOpen={false}
-      accountMenuId="sidebar-story-account-menu-expanded"
-      settingsLabel={enLabels.settingsLabel}
-      logoutLabel={enLabels.logoutLabel}
-    />
-    <Sidebar
-      collapsed
-      navLabel={enLabels.navLabel}
-      toggleLabel={enLabels.expandLabel}
-      activeItem="recipes"
-      labels={enLabels.items}
-      searchLabel={enLabels.searchLabel}
-      accountName="Youri Tukker"
-      accountMenuOpen={false}
-      accountMenuId="sidebar-story-account-menu-collapsed"
+      accountName={accountName}
+      accountMenuOpen={accountMenuOpen}
+      accountMenuId="sidebar-story-account-menu-playground"
       settingsLabel={enLabels.settingsLabel}
       logoutLabel={enLabels.logoutLabel}
     />
   </div>
 );
+Playground.args = { collapsed: false, activeItem: "recipes", accountName: "Youri Tukker", accountMenuOpen: false };
+Playground.argTypes = {
+  collapsed: { control: { type: "boolean" } },
+  activeItem: { control: { type: "select" }, options: ["todo", "agenda", "notes", "recipes", "shopping", "assistant"] },
+  accountName: { control: { type: "text" } },
+  accountMenuOpen: { control: { type: "boolean" } },
+};
 
-// Exercises the collapse toggle live; `collapsed` here is the story's own
-// state, standing in for whatever a real caller persists it in. Reduced
-// motion is OS/browser-driven, not something a static story can toggle —
-// see design/notes/Sidebar.md.
-export const Animated = () => {
+// Click the toggle to collapse and expand; `collapsed` is the story's own state, standing in
+// for whatever a real caller persists. Reduced motion is OS-driven (design/notes/Sidebar.md).
+export const Interactive = () => {
   const [collapsed, setCollapsed] = useState(false);
   return (
     <div className="flex h-[600px]">

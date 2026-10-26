@@ -1,4 +1,5 @@
 // figma: node-id=3695:3941
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import { CardContentStep } from "./CardContentStep";
 import { Card } from "./Card";
 import { Step } from "../atoms/Step";
@@ -19,25 +20,29 @@ const IngredientTags = () => (
   </>
 );
 
-export const WithoutIngredientTags = () => (
-  <div className="w-96">
-    <CardContentStep text={STEP_TEXT} withIngredientTags={false} />
-  </div>
-);
-
-export const WithIngredientTags = () => (
-  <div className="w-96">
-    <CardContentStep text={STEP_TEXT} withIngredientTags>
-      <IngredientTags />
-    </CardContentStep>
-  </div>
-);
-
-// Composed inside Card, paired with a Step badge via Card's own `step` prop.
-export const InCard = () => (
-  <Card step={<Step>1</Step>}>
-    <CardContentStep text={STEP_TEXT} withIngredientTags>
-      <IngredientTags />
-    </CardContentStep>
-  </Card>
+export const Overview = () => (
+  <>
+    <StoryIntro what="One recipe step: the text, with the ingredient tags it uses." note="CardContentStep" />
+    <Specimens>
+      <Specimen label="without ingredient tags" hint="withIngredientTags={false}">
+        <div className="w-96">
+          <CardContentStep text={STEP_TEXT} withIngredientTags={false} />
+        </div>
+      </Specimen>
+      <Specimen label="with ingredient tags">
+        <div className="w-96">
+          <CardContentStep text={STEP_TEXT} withIngredientTags>
+            <IngredientTags />
+          </CardContentStep>
+        </div>
+      </Specimen>
+      <Specimen label="in Card" hint="paired with a Step badge via Card's step prop">
+        <Card step={<Step>1</Step>}>
+          <CardContentStep text={STEP_TEXT} withIngredientTags>
+            <IngredientTags />
+          </CardContentStep>
+        </Card>
+      </Specimen>
+    </Specimens>
+  </>
 );

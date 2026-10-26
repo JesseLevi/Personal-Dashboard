@@ -36,3 +36,12 @@ export const Specimen = ({
     {children}
   </figure>
 );
+
+/**
+ * Frame for `position: fixed` panels (SidePanel and everything built on it): it is the
+ * containing block, so the panel and its scrim stay inside the canvas instead of covering
+ * Ladle's controls panel and sidebar. `min-h-screen` gives the baseline crop a height.
+ */
+export const PanelFrame = ({ children }: { children: ReactNode }) => (
+  <div className="min-h-screen [contain:layout]">{children}</div>
+);

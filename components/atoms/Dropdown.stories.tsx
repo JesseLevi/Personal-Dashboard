@@ -1,81 +1,93 @@
 // figma: node-id=3705:4446
+import { useState } from "react";
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import { Button } from "./Button";
 import { Dropdown } from "./Dropdown";
 import { Tag } from "./Tag";
-import type { StoryDefault } from "@ladle/react";
+import type { Story, StoryDefault } from "@ladle/react";
 
 export default { title: "Basis / Invoer / Dropdown" } satisfies StoryDefault;
 
 // Dev-only demo copy — not user-facing (real labels/option text come from
 // next-intl catalogs at the call site).
 
-// The fetched Figma example: a label plus three stacked options, the first
-// shown "selected" via Button's own filled variant (a choice made by the
-// composing content, not by Dropdown itself). The first/selected Button is
-// presentational: Dropdown's own single button spans the whole row (label,
-// selection and chevron) and is the disclosure trigger.
+// The first child is the current selection and stays visible; the others
+// collapse. It is presentational: the single trigger button spans the row.
+// Children must be a flat list, not a wrapping component: Dropdown splits off the first child.
+const options = () => [
+  <Button key="a" presentational variant="filled" icon="Plus" align="left">
+    Categorie
+  </Button>,
+  <Button key="b" variant="white" icon="Plus" align="left">
+    Categorie
+  </Button>,
+  <Button key="c" variant="white" icon="Plus" align="left">
+    Categorie
+  </Button>,
+];
 
-// Closed: the `Field` label (a native label of the one trigger button) plus the bordered container
-// showing the first/selected option hugging its own content, with the
-// chevron pinned to the panel's far right edge. The other two are collapsed,
-// not removed: click the selected option (or focus + Enter/Space) to open
-// them.
-export const Closed = () => (
-  <Dropdown id="demo-closed" label="Field" defaultOpen={false}>
-    <Button presentational variant="filled" icon="Plus" align="left">
-      Categorie
-    </Button>
-    <Button variant="white" icon="Plus" align="left">
-      Categorie
-    </Button>
-    <Button variant="white" icon="Plus" align="left">
-      Categorie
-    </Button>
-  </Dropdown>
+export const Overview = () => (
+  <>
+    <StoryIntro what="A labelled disclosure: the selected option stays visible, the rest fold away." note="Dropdown" />
+    <Specimens>
+      <Specimen label="closed" hint="only the selection and chevron">
+        <div className="w-72">
+          <Dropdown id="overview-closed" label="Field" defaultOpen={false}>
+            {options()}
+          </Dropdown>
+        </div>
+      </Specimen>
+      <Specimen label="open" hint="all options, each full width">
+        <div className="w-72">
+          <Dropdown id="overview-open" label="Field" defaultOpen>
+            {options()}
+          </Dropdown>
+        </div>
+      </Specimen>
+      <Specimen label="Tag as selection" hint="Prioriteit / Grootte: inert content in the trigger">
+        <div className="w-72">
+          <Dropdown id="overview-tag" label="Prioriteit" defaultOpen={false}>
+            <Tag variant="urgent">Urgent</Tag>
+            <Tag variant="medium">Gemiddeld</Tag>
+            <Tag variant="low">Laag</Tag>
+          </Dropdown>
+        </div>
+      </Specimen>
+    </Specimens>
+  </>
 );
 
-// Open: the expanded list — all three options visible, each filling the
-// panel's width. Click the selected option, or focus it and press
-// Enter/Space, to collapse back to the Closed look; then Escape re-closes
-// and returns focus to it.
-export const Open = () => (
-  <Dropdown id="demo-open" label="Field" defaultOpen>
-    <Button presentational variant="filled" icon="Plus" align="left">
-      Categorie
-    </Button>
-    <Button variant="white" icon="Plus" align="left">
-      Categorie
-    </Button>
-    <Button variant="white" icon="Plus" align="left">
-      Categorie
-    </Button>
-  </Dropdown>
-);
+type PlaygroundProps = { label: string; defaultOpen: boolean };
 
-// Animated: starts open so the first interaction is watching the panel
-// collapse down to the single selected option (the CSS-grid `0fr`/`1fr`
-// transition, disabled under `prefers-reduced-motion`, plus the chevron's own
-// rotation) — click again to watch it expand back out.
-export const Animated = () => (
-  <Dropdown id="demo-animated" label="Field" defaultOpen>
-    <Button presentational variant="filled" icon="Plus" align="left">
-      Categorie
-    </Button>
-    <Button variant="white" icon="Plus" align="left">
-      Categorie
-    </Button>
-    <Button variant="white" icon="Plus" align="left">
-      Categorie
-    </Button>
-  </Dropdown>
+export const Playground: Story<PlaygroundProps> = ({ label, defaultOpen }) => (
+  <div className="w-72">
+    <Dropdown key={String(defaultOpen)} id="playground" label={label} defaultOpen={defaultOpen}>
+      {options()}
+    </Dropdown>
+  </div>
 );
+Playground.args = { label: "Field", defaultOpen: true };
+Playground.argTypes = {
+  label: { control: { type: "text" } },
+  defaultOpen: { control: { type: "boolean" } },
+};
 
-// Tag as the selection (CardDetailPanel's Prioriteit / Grootte): the Tag is
-// inert content inside the same single trigger button.
-export const WithTagSelection = () => (
-  <Dropdown id="demo-tag" label="Prioriteit" defaultOpen={false}>
-    <Tag variant="urgent">Urgent</Tag>
-    <Tag variant="medium">Gemiddeld</Tag>
-    <Tag variant="low">Laag</Tag>
-  </Dropdown>
-);
+const CHOICES = ["Urgent", "Gemiddeld", "Laag"] as const;
+const VARIANT = { Urgent: "urgent", Gemiddeld: "medium", Laag: "low" } as const;
+
+// Click the selection to open, pick another option (the list closes with it), Escape re-closes.
+export const Interactive = () => {
+  const [selected, setSelected] = useState<(typeof CHOICES)[number]>("Urgent");
+  return (
+    <div className="w-72">
+      <Dropdown key={selected} id="interactive" label="Prioriteit" defaultOpen={false}>
+        <Tag variant={VARIANT[selected]}>{selected}</Tag>
+        {CHOICES.filter((c) => c !== selected).map((choice) => (
+          <Button key={choice} variant="white" align="left" onClick={() => setSelected(choice)}>
+            {choice}
+          </Button>
+        ))}
+      </Dropdown>
+    </div>
+  );
+};

@@ -1,4 +1,5 @@
 // figma: node-id=3968:11192 (desktop) / 3953:9875 (mobile)
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import type { Story, StoryDefault } from "@ladle/react";
 import { ImageUploadField } from "./ImageUploadField";
 import en from "../../messages/en.json";
@@ -9,72 +10,50 @@ export default { title: "Basis / Invoer / Image upload field" } satisfies StoryD
 const selectImageEn = en.components.imageUploadField.selectImage;
 const selectImageNl = nl.components.imageUploadField.selectImage;
 
+const Field = (props: Partial<React.ComponentProps<typeof ImageUploadField>>) => (
+  <div className="w-96">
+    <ImageUploadField id="thumbnail" name="thumbnail" placeholder={selectImageEn} ariaLabel={selectImageEn} {...props} />
+  </div>
+);
+
+export const Overview = () => (
+  <>
+    <StoryIntro what="A file picker that looks like an input field, for a recipe thumbnail." note="ImageUploadField" />
+    <Specimens>
+      <Specimen label="empty" hint="the only state Figma models">
+        <Field id="ov-empty" />
+      </Specimen>
+      <Specimen label="file selected" hint="own interpretation, not in Figma">
+        <Field id="ov-filled" selectedFileName="pasta-carbonara.jpg" />
+      </Specimen>
+      <Specimen label="disabled">
+        <Field id="ov-disabled" disabled />
+      </Specimen>
+    </Specimens>
+  </>
+);
+
 type PlaygroundProps = {
   selectedFileName: string;
+  disabled: boolean;
 };
 
-export const Playground: Story<PlaygroundProps> = ({ selectedFileName }) => (
-  <div className="w-96">
-    <ImageUploadField
-      id="playground-thumbnail"
-      name="thumbnail"
-      placeholder={selectImageEn}
-      ariaLabel={selectImageEn}
-      selectedFileName={selectedFileName || null}
-    />
-  </div>
+export const Playground: Story<PlaygroundProps> = ({ selectedFileName, disabled }) => (
+  <Field key={selectedFileName} id="playground-thumbnail" selectedFileName={selectedFileName || null} disabled={disabled} />
 );
 
 Playground.args = {
   selectedFileName: "",
+  disabled: false,
+};
+Playground.argTypes = {
+  selectedFileName: { control: { type: "text" } },
+  disabled: { control: { type: "boolean" } },
 };
 
-// No file selected -- the only state the fetched node models.
-export const Empty = () => (
-  <div className="w-96">
-    <ImageUploadField
-      id="empty-thumbnail"
-      name="thumbnail"
-      placeholder={selectImageEn}
-      ariaLabel={selectImageEn}
-    />
-  </div>
-);
+// Pick a real file from disk; the field keeps the name and the X clears it again.
+export const Interactive = () => <Field id="interactive-thumbnail" onClear={() => {}} clearLabel="Clear" />;
 
-// File already selected -- this component's own interpretation, not modeled
-// by Figma (see design/notes/ImageUploadField.md).
-export const FileSelected = () => (
-  <div className="w-96">
-    <ImageUploadField
-      id="filled-thumbnail"
-      name="thumbnail"
-      placeholder={selectImageEn}
-      ariaLabel={selectImageEn}
-      selectedFileName="pasta-carbonara.jpg"
-    />
-  </div>
-);
-
-export const Disabled = () => (
-  <div className="w-96">
-    <ImageUploadField
-      id="disabled-thumbnail"
-      name="thumbnail"
-      placeholder={selectImageEn}
-      ariaLabel={selectImageEn}
-      disabled
-    />
-  </div>
-);
-
-// NL catalog check.
-export const SelectImageNl = () => (
-  <div className="w-96">
-    <ImageUploadField
-      id="nl-thumbnail"
-      name="thumbnail"
-      placeholder={selectImageNl}
-      ariaLabel={selectImageNl}
-    />
-  </div>
+export const Dutch = () => (
+  <Field id="nl-thumbnail" placeholder={selectImageNl} ariaLabel={selectImageNl} />
 );
