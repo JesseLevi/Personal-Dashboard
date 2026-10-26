@@ -83,6 +83,48 @@ export type Database = {
           },
         ]
       }
+      agent_signals: {
+        Row: {
+          created_at: string
+          dedupe_key: string
+          id: string
+          kind: string
+          locale: string | null
+          message: string | null
+          payload: Json
+          status: string
+          status_changed_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dedupe_key: string
+          id?: string
+          kind: string
+          locale?: string | null
+          message?: string | null
+          payload: Json
+          status?: string
+          status_changed_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dedupe_key?: string
+          id?: string
+          kind?: string
+          locale?: string | null
+          message?: string | null
+          payload?: Json
+          status?: string
+          status_changed_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       board_columns: {
         Row: {
           board_id: string
@@ -1536,6 +1578,7 @@ export type Database = {
         Returns: boolean
       }
       avatar_path_for: { Args: { p_user_id: string }; Returns: string }
+      claim_assistant_run: { Args: never; Returns: boolean }
       claim_embedding_drain: { Args: never; Returns: boolean }
       consume_recipe_import_attempt: { Args: never; Returns: boolean }
       create_event_series: {
@@ -1567,6 +1610,8 @@ export type Database = {
         Args: { p_event_id: string; p_scope: string }
         Returns: undefined
       }
+      detect_rhythm_signals: { Args: never; Returns: number }
+      detect_rhythm_signals_for: { Args: { p_user: string }; Returns: number }
       embedding_backlog: {
         Args: { p_limit: number; p_model: string }
         Returns: {
@@ -1724,6 +1769,10 @@ export type Database = {
       }
       seed_shopping_lists_for: {
         Args: { p_user_id: string }
+        Returns: undefined
+      }
+      set_agent_signal_status: {
+        Args: { p_id: string; p_status: string }
         Returns: undefined
       }
       set_ai_enabled: { Args: { p_enabled: boolean }; Returns: undefined }

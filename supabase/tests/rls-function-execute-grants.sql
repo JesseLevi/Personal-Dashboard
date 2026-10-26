@@ -5,7 +5,7 @@
 -- rls-move-note-rpc.sql and rls-recipe_step_ingredients.sql.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(7);
+select plan(9);
 
 -- Every non-extension function postgres owns in public.
 create temporary view own_public_functions as
@@ -65,6 +65,20 @@ select ok(
   and not has_function_privilege('authenticated', 'public.embedding_backlog_for(uuid, text, int)', 'EXECUTE')
   and not has_function_privilege('anon', 'public.embedding_backlog_for(uuid, text, int)', 'EXECUTE'),
   'embedding_backlog_for is executable by service_role only (#577)'
+);
+
+select ok(
+  has_function_privilege('authenticated', 'public.set_agent_signal_status(uuid, text)', 'EXECUTE')
+  and has_function_privilege('authenticated', 'public.claim_assistant_run()', 'EXECUTE')
+  and has_function_privilege('authenticated', 'public.detect_rhythm_signals()', 'EXECUTE'),
+  'authenticated keeps EXECUTE on the Assistent RPCs (#624)'
+);
+
+select ok(
+  has_function_privilege('service_role', 'public.detect_rhythm_signals_for(uuid)', 'EXECUTE')
+  and not has_function_privilege('authenticated', 'public.detect_rhythm_signals_for(uuid)', 'EXECUTE')
+  and not has_function_privilege('anon', 'public.detect_rhythm_signals_for(uuid)', 'EXECUTE'),
+  'detect_rhythm_signals_for is executable by service_role only (#624)'
 );
 
 -- A function created after the migration (as a later migration would) gets
