@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { AgendaColor } from "../../lib/agenda/colors";
 import nl from "../../messages/nl.json";
 import { ColorSwatches } from "./ColorSwatches";
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Agenda / Color swatches" } satisfies StoryDefault;
@@ -19,6 +20,25 @@ const Controlled = ({ initial }: { initial: AgendaColor }) => {
     </Panel>
   );
 };
+
+export const Overview = () => (
+  <div>
+    <StoryIntro what="The colour picker for categories and calendars: one swatch per agenda colour." note="ColorSwatches" />
+    <Specimens>
+      <Specimen label="Default" hint="click a swatch to change it">
+        <Controlled initial="blue" />
+      </Specimen>
+      <Specimen label="Other selection">
+        <Controlled initial="orange" />
+      </Specimen>
+      <Specimen label="Disabled">
+        <Panel>
+          <ColorSwatches value="violet" onChange={() => {}} label={label} disabled />
+        </Panel>
+      </Specimen>
+    </Specimens>
+  </div>
+);
 
 export const Default = () => <Controlled initial="blue" />;
 

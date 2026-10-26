@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AgendaHeader, type AgendaToggleView } from "./AgendaHeader";
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Agenda / Agenda header" } satisfies StoryDefault;
@@ -11,6 +12,46 @@ const handlers = {
   date: "2026-01-01",
   today: "2026-01-01",
   onGoToDate: noop, onViewChange: noop, onPrevious: noop, onNext: noop, onToday: noop, onTrayToggle: noop, onNew: noop, onOpenCalendars: noop };
+
+export const Overview = () => (
+  <div>
+    <StoryIntro
+      what="The agenda page header: period title with date picker, view toggle, navigation, the plan tray toggle and the + Nieuw button."
+      note="AgendaPage"
+    />
+    <Specimens>
+      <Specimen label="Week" hint="Plannen off">
+        <div className="w-[60rem]">
+          <AgendaHeader title="29 dec – 4 jan" view="week" weekNumber={1} trayOpen={false} weekToBasket={weekToBasket} {...handlers} />
+        </div>
+      </Specimen>
+      <Specimen label="Tray open" hint="Plannen pressed">
+        <div className="w-[60rem]">
+          <AgendaHeader title="29 dec – 4 jan" view="week" weekNumber={1} trayOpen weekToBasket={weekToBasket} {...handlers} />
+        </div>
+      </Specimen>
+      <Specimen label="Month" hint="no week number">
+        <div className="w-[60rem]">
+          <AgendaHeader title="januari 2026" view="month" trayOpen={false} {...handlers} />
+        </div>
+      </Specimen>
+    </Specimens>
+  </div>
+);
+
+// Not screenshot-stable by design: the toggle animates.
+export const Interactive = () => {
+  const [view, setView] = useState<AgendaToggleView>("month");
+  return (
+    <AgendaHeader
+      title={`januari 2026 (${view})`}
+      view="month"
+      trayOpen={false}
+      {...handlers}
+      onViewChange={setView}
+    />
+  );
+};
 
 // The mobile shape (toggle on its own row) follows the viewport, not the
 // container, so it is only checkable in a narrow window (design/notes/AgendaPage.md).
@@ -49,17 +90,3 @@ export const DatePickerOpen = () => (
     <AgendaHeader title="29 dec – 4 jan" view="week" weekNumber={1} trayOpen={false} weekToBasket={weekToBasket} defaultPickerOpen {...handlers} />
   </div>
 );
-
-// Not screenshot-stable by design: the toggle animates.
-export const Interactive = () => {
-  const [view, setView] = useState<AgendaToggleView>("month");
-  return (
-    <AgendaHeader
-      title={`januari 2026 (${view})`}
-      view="month"
-      trayOpen={false}
-      {...handlers}
-      onViewChange={setView}
-    />
-  );
-};

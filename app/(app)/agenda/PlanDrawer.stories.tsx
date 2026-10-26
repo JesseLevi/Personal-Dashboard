@@ -1,10 +1,11 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { PlanDrawer } from "@/components/organisms/PlanDrawer";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import nl from "@/messages/nl.json";
 import type { PlanCardGroup } from "@/lib/agenda/plan-cards";
 import { PlanCardList } from "./PlanCardList";
 import { PlanRecipeList } from "./PlanRecipeList";
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Agenda / Plan drawer" } satisfies StoryDefault;
@@ -66,16 +67,70 @@ const Cards = ({ groups = cardGroups }: { groups?: PlanCardGroup[] }) => (
   <PlanCardList groups={groups} today="2026-01-01" onPlan={noPlan} onPlanned={() => {}} />
 );
 
+const baskets = [{ id: "own", name: "Boodschappen", shared: false }];
+
 // Same footprint as the page's drawer column.
 const Column = ({ children }: { children: ReactNode }) => <div className="h-[40rem] w-80">{children}</div>;
+
+export const Overview = () => (
+  <div>
+    <StoryIntro
+      what="The plan tray beside the calendar: recipes and cards to plan onto a day, in two tabs."
+      note="PlanDrawer"
+    />
+    <Specimens>
+      <Specimen label="Recipes" hint="plan menu per recipe, week to basket in the footer">
+        <Column>
+          <PlanDrawer
+            className="h-full"
+            recipes={
+              <PlanRecipeList
+                recipes={recipes}
+                categories={categories}
+                today="2026-01-01"
+                onPlan={noPlan}
+                onPlanned={() => {}}
+                weekToBasket={{ onSend: noPlan, baskets }}
+              />
+            }
+          />
+        </Column>
+      </Specimen>
+      <Specimen label="Cards" hint="grouped per board">
+        <Column>
+          <PlanDrawer className="h-full" recipes={<List />} cards={<Cards />} defaultTab="cards" />
+        </Column>
+      </Specimen>
+    </Specimens>
+  </div>
+);
+
+// Switch tabs and plan something: the last choice shows above the tray.
+export const Interactive = () => {
+  const [log, setLog] = useState("");
+  const plan = async (id: string, plannedOn: string) => {
+    setLog(`${id} on ${plannedOn}`);
+    return { success: true as const, data: undefined };
+  };
+  return (
+    <div className="flex flex-col gap-stack-md">
+      <p className="min-h-5 text-sm text-text-secondary">{log}</p>
+      <Column>
+        <PlanDrawer
+          className="h-full"
+          recipes={<PlanRecipeList recipes={recipes} categories={categories} today="2026-01-01" onPlan={plan} onPlanned={() => {}} />}
+          cards={<PlanCardList groups={cardGroups} today="2026-01-01" onPlan={plan} onPlanned={() => {}} />}
+        />
+      </Column>
+    </div>
+  );
+};
 
 export const Recipes = () => (
   <Column>
     <PlanDrawer className="h-full" recipes={<List />} />
   </Column>
 );
-
-const baskets = [{ id: "own", name: "Boodschappen", shared: false }];
 
 // The footer stays put while the list scrolls.
 export const RecipesWithWeekToBasket = () => (

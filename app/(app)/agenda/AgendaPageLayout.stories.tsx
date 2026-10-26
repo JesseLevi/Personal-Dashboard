@@ -10,6 +10,7 @@ import { AgendaHeader } from "./AgendaHeader";
 import { AgendaPageSkeleton } from "./AgendaPageSkeleton";
 import { PlanRecipeList } from "./PlanRecipeList";
 import { useAgendaShortcuts } from "./useAgendaShortcuts";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Agenda / Agenda page layout" } satisfies StoryDefault;
@@ -70,8 +71,8 @@ const Surface = ({ children }: { children: React.ReactNode }) => (
   <div className="-m-8 flex flex-col gap-page-stack bg-surface-primary p-8">{children}</div>
 );
 
-const Page = ({ view, title, trayOpen = false }: { view: AgendaView; title: string; trayOpen?: boolean }) => (
-  <Surface>
+const PageContent = ({ view, title, trayOpen = false }: { view: AgendaView; title: string; trayOpen?: boolean }) => (
+  <>
     <AgendaHeader
       title={title}
       view={view === "threeDay" ? "week" : view}
@@ -108,21 +109,27 @@ const Page = ({ view, title, trayOpen = false }: { view: AgendaView; title: stri
     >
       <AgendaCalendar items={items} view={view} date={DATE} scrollToNow={false} />
     </AgendaBody>
+  </>
+);
+
+const Page = (props: { view: AgendaView; title: string; trayOpen?: boolean }) => (
+  <Surface>
+    <PageContent {...props} />
   </Surface>
 );
 
-export const Week = () => <Page view="week" title="29 dec – 4 jan" />;
-export const WeekTrayOpen = () => <Page view="week" title="29 dec – 4 jan" trayOpen />;
-export const Month = () => <Page view="month" title="januari 2026" />;
-export const List = () => <Page view="list" title="29 dec – 4 jan" />;
-export const Loading = () => (
+export const Overview = () => (
   <Surface>
-    <AgendaPageSkeleton />
+    <StoryIntro
+      what="The agenda page as composed in AgendaPage: header, calendar and the plan tray. Open the tray here; Interactive wires navigation and keys."
+      note="AgendaPage"
+    />
+    <PageContent view="week" title="29 dec – 4 jan" trayOpen />
   </Surface>
 );
 
 // Header and calendar wired like AgendaPage for navigation: keys, date picker and "Vandaag". Try T, D, W, M, L, P (the tray animates) and the arrows.
-export const Navigation = () => {
+export const Interactive = () => {
   const [view, setView] = useState<"day" | "week" | "month" | "list">("week");
   const [date, setDate] = useState(DATE);
   const [overlay, setOverlay] = useState(false);
@@ -178,3 +185,13 @@ export const Navigation = () => {
     </Surface>
   );
 };
+
+export const Week = () => <Page view="week" title="29 dec – 4 jan" />;
+export const WeekTrayOpen = () => <Page view="week" title="29 dec – 4 jan" trayOpen />;
+export const Month = () => <Page view="month" title="januari 2026" />;
+export const List = () => <Page view="list" title="29 dec – 4 jan" />;
+export const Loading = () => (
+  <Surface>
+    <AgendaPageSkeleton />
+  </Surface>
+);
