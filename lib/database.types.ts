@@ -1577,9 +1577,23 @@ export type Database = {
         Args: { p_key: string; p_user_id: string }
         Returns: boolean
       }
+      assistant_members_by_last_run: {
+        Args: never
+        Returns: {
+          user_id: string
+        }[]
+      }
       avatar_path_for: { Args: { p_user_id: string }; Returns: string }
       claim_assistant_run: { Args: never; Returns: boolean }
       claim_embedding_drain: { Args: never; Returns: boolean }
+      complete_pattern_signal: {
+        Args: { p_dedupe_key: string; p_message: string }
+        Returns: boolean
+      }
+      complete_pattern_signal_for: {
+        Args: { p_dedupe_key: string; p_message: string; p_user: string }
+        Returns: boolean
+      }
       consume_recipe_import_attempt: { Args: never; Returns: boolean }
       create_event_series: {
         Args: {
@@ -1687,6 +1701,26 @@ export type Database = {
         }
         Returns: number
       }
+      pattern_edges: {
+        Args: never
+        Returns: {
+          a_id: string
+          a_type: string
+          b_id: string
+          b_type: string
+          similarity: number
+        }[]
+      }
+      pattern_edges_for: {
+        Args: { p_user: string }
+        Returns: {
+          a_id: string
+          a_type: string
+          b_id: string
+          b_type: string
+          similarity: number
+        }[]
+      }
       pending_recipe_shares: {
         Args: never
         Returns: {
@@ -1718,6 +1752,19 @@ export type Database = {
       replace_recipe_contents: {
         Args: { p_ingredients: Json; p_recipe_id: string; p_steps: Json }
         Returns: undefined
+      }
+      reserve_pattern_signal: {
+        Args: { p_dedupe_key: string; p_locale: string; p_sources: Json }
+        Returns: string
+      }
+      reserve_pattern_signal_for: {
+        Args: {
+          p_dedupe_key: string
+          p_locale: string
+          p_sources: Json
+          p_user: string
+        }
+        Returns: string
       }
       save_note_content: {
         Args: {
