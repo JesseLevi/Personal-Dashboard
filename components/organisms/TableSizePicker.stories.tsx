@@ -1,6 +1,7 @@
 // design: Claude-designed on request (#330)
 import { useEffect, useRef } from "react";
 import { TableSizePicker } from "./TableSizePicker";
+import { Specimen, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Blokken / Table size picker" } satisfies StoryDefault;
@@ -31,3 +32,15 @@ export const Closed = () => (
   <TableSizePicker onInsert={() => {}} onDismiss={() => {}} tabIndex={0} onTriggerFocus={() => {}} />
 );
 export const Open = () => <OpenPicker />;
+
+export const Overview = () => (
+  <div className="flex flex-col gap-stack-lg">
+    <StoryIntro what="Grid to pick the size of a new table: move over it or use the arrow keys, then insert." note="NoteEditor" />
+    <Specimen label="Closed">
+      <Closed />
+    </Specimen>
+    <Specimen label="Open" hint="Highlight moved one column right (3 by 4)">
+      <Open />
+    </Specimen>
+  </div>
+);

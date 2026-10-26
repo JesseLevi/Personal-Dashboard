@@ -3,6 +3,7 @@ import type { CalendarActionResult, CalendarOverview } from "@/lib/agenda/calend
 import { NOTHING_HIDDEN, type AgendaHidden } from "@/lib/agenda/hidden";
 import nl from "@/messages/nl.json";
 import { AgendaCalendarsPanel, type AgendaCalendarsPanelProps } from "./AgendaCalendarsPanel";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Agenda / Agenda calendars panel" } satisfies StoryDefault;
@@ -84,6 +85,16 @@ const byText = (text: string) => (root: HTMLElement) =>
 const openSport = [byText("Sport")];
 const openWork = [byText("Werk (Outlook)")];
 const askDelete = [byText("Sport"), byText(strings.deleteCategoryLabel)];
+
+export const Overview = () => (
+  <div className="min-h-screen">
+    <StoryIntro
+      what="Side panel for categories and synced calendars: colours, visibility per calendar and kind, add, edit and remove."
+      note="AgendaCalendarsPanel"
+    />
+    <Panel />
+  </div>
+);
 
 export const WithCalendars = () => (
   <div className="min-h-screen">

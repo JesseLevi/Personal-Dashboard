@@ -4,6 +4,7 @@ import type { AgendaMealItem } from "@/lib/agenda/types";
 import nl from "@/messages/nl.json";
 import { AgendaMealPanel } from "./AgendaMealPanel";
 import type { MealPlanDetail } from "./meal-actions";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Agenda / Agenda meal panel" } satisfies StoryDefault;
@@ -45,6 +46,16 @@ const panelProps = {
   onSendMeal: mockMutate,
   onOpenRecipe: () => {},
 };
+
+export const Overview = () => (
+  <div className="min-h-screen">
+    <StoryIntro
+      what="Side panel for a planned meal: moment, servings, send to the basket, open the recipe or remove it."
+      note="AgendaPage"
+    />
+    <AgendaMealPanel {...panelProps} />
+  </div>
+);
 
 // The panel is `position: fixed`; the min-h wrapper gives the screenshot root a height (SidePanel.stories.tsx).
 export const PlannedMeal = () => (

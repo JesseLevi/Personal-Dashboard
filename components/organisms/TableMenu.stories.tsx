@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
 import { TableMenu } from "./TableMenu";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Blokken / Table menu" } satisfies StoryDefault;
@@ -53,3 +54,14 @@ function TableMenuDemo({ open }: { open: boolean }) {
 
 export const TriggerVisible = () => <TableMenuDemo open={false} />;
 export const MenuOpen = () => <TableMenuDemo open />;
+
+// One editor only: the floating trigger and menu are positioned against the focused editor.
+export const Overview = () => (
+  <div className="flex max-w-prose flex-col gap-stack-md">
+    <StoryIntro
+      what="Menu for the table the cursor is in. The trigger floats above the table and opens the table actions."
+      note="NoteEditor"
+    />
+    <TriggerVisible />
+  </div>
+);

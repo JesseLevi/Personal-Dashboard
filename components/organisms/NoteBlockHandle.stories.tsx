@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
 import { NoteBlockHandle } from "./NoteBlockHandle";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Editor / Note block handle" } satisfies StoryDefault;
@@ -73,3 +74,14 @@ function HandleDemo({ openMenu = false, rich = false }: { openMenu?: boolean; ri
 export const HandleVisible = () => <HandleDemo />;
 export const MenuOpen = () => <HandleDemo openMenu />;
 export const CodeAndDetails = () => <HandleDemo rich />;
+
+// The handle shown next to the hovered block.
+export const Overview = () => (
+  <div className="flex max-w-prose flex-col gap-stack-md">
+    <StoryIntro
+      what="Handle left of a block, shown on hover: drag to move the block, click for its menu."
+      note="NoteEditor"
+    />
+    <HandleVisible />
+  </div>
+);

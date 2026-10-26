@@ -3,6 +3,9 @@
 // 3991:13224 (Step-03/Error) — see design/notes/LoginForm.md.
 import { LoginForm } from "./LoginForm";
 import type { LoginCodeSendState, PasswordLoginState } from "./actions";
+import { useState } from "react";
+import { Button } from "@/components/atoms/Button";
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Account / Login form" } satisfies StoryDefault;
@@ -158,3 +161,71 @@ export const ExitAfterSignIn = () => (
     onPrefetch={(href) => console.log("prefetch", href)}
   />
 );
+
+// The three steps and the credentials error side by side. The other stories are edge cases
+// (greeting timing, long name, rate limit, exit animations).
+export const Overview = () => (
+  <div>
+    <StoryIntro
+      what="Login in three steps: e-mail, then a greeting by first name, then password or a login code by mail. Unknown address and wrong password give the same error."
+      note="LoginForm"
+    />
+    <Specimens>
+      <Specimen label="Step 1" hint="E-mail only, plain heading">
+        <Step1Email />
+      </Specimen>
+      <Specimen label="Step 2" hint="Heading greets the resolved first name">
+        <Step2GreetingName />
+      </Specimen>
+      <Specimen label="Step 3" hint="Password, or send a login code instead">
+        <Step3Password />
+      </Specimen>
+      <Specimen label="Step 3 error" hint="Generic credentials error">
+        <Step3Error />
+      </Specimen>
+    </Specimens>
+  </div>
+);
+
+// Walk the real form from step 1 to 3. Type any valid e-mail and submit (the greeting arrives
+// after about half a second), then use the password "wrong" for the error or anything else to
+// sign in; the login-code button sends a code. Navigation is logged instead of followed.
+export const Interactive = () => {
+  const [run, setRun] = useState(0);
+  const [navigated, setNavigated] = useState<string | null>(null);
+  return (
+    <div className="flex flex-col gap-stack-lg">
+      <StoryIntro
+        what="Type a valid e-mail and submit, then a password: 'wrong' shows the error, anything else signs in. The login-code button sends a code. Navigation is logged below instead of followed."
+        note="LoginForm"
+      />
+      <LoginForm
+        key={run}
+        signInWithPasswordAction={async (_prev, formData) => {
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          return formData.get("password") === "wrong"
+            ? { status: "error", errorKey: "invalid-credentials" }
+            : { status: "success" };
+        }}
+        sendLoginCodeAction={async () => {
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          return { status: "sent" };
+        }}
+        lookupGreetingNameAction={mockLookupGreetingName("Carlotta", 500)}
+        onNavigate={(href) => setNavigated(href)}
+      />
+      <div className="flex flex-col items-start gap-stack-sm">
+        <p className="text-xs text-text-secondary">{navigated ? `Navigated to ${navigated}` : "Not navigated yet"}</p>
+        <Button
+          variant="filled"
+          onClick={() => {
+            setNavigated(null);
+            setRun((current) => current + 1);
+          }}
+        >
+          Start over
+        </Button>
+      </div>
+    </div>
+  );
+};

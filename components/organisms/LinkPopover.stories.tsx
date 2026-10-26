@@ -4,6 +4,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
 import { requestLinkPopover } from "@/lib/notes/link-popover";
 import { LinkPopover } from "./LinkPopover";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Editor / Link popover" } satisfies StoryDefault;
@@ -60,3 +61,14 @@ export const SelectedText = () => <LinkPopoverDemo select={[3, 8]} />;
 export const ExistingLink = () => <LinkPopoverDemo select={[22, 22]} />;
 // Same link after "Edit": field prefilled, apply and remove.
 export const EditingLink = () => <LinkPopoverDemo select={[22, 22]} edit />;
+
+// The popover with the cursor inside an existing link.
+export const Overview = () => (
+  <div className="flex max-w-prose flex-col gap-stack-md">
+    <StoryIntro
+      what="Popover to add, open, edit or remove a link in a note. It follows the cursor, or opens on the link shortcut."
+      note="NoteEditor"
+    />
+    <ExistingLink />
+  </div>
+);

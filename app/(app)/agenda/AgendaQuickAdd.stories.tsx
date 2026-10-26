@@ -1,4 +1,4 @@
-import { useRef, type ReactNode, type RefObject } from "react";
+import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { Button } from "@/components/atoms/Button";
 import type { CalendarCategoryView } from "@/lib/agenda/calendars";
 import type { PlanCardGroup } from "@/lib/agenda/plan-cards";
@@ -6,6 +6,7 @@ import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { AgendaSpan } from "@/lib/ui/agenda-calendar";
 import { AgendaQuickAdd } from "./AgendaQuickAdd";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Agenda / Agenda quick add" } satisfies StoryDefault;
@@ -92,6 +93,34 @@ const Window = ({ text, slot, forceSheet }: { text?: string; slot?: AgendaSpan; 
     {(anchorRef) => <AgendaQuickAdd {...props} anchorRef={anchorRef} initialText={text} slot={slot ?? null} forceSheet={forceSheet} />}
   </Stage>
 );
+
+export const Overview = () => (
+  <div>
+    <StoryIntro
+      what="One window for a new event, meal or to-do: type a sentence and the day, time, people and kind are recognised and filled in."
+      note="AgendaPage"
+    />
+    <Window text="Etentje bij mama za 18u met Youri en Sanne" />
+  </div>
+);
+
+// Type here: the recognised parts, the kind and the rows follow the text.
+export const Interactive = () => {
+  const [open, setOpen] = useState(true);
+  const anchorRef = useRef<HTMLSpanElement>(null);
+  return (
+    <div className="min-h-screen">
+      <div className="flex justify-end">
+        <span ref={anchorRef} className="inline-flex">
+          <Button variant="white" icon="Plus" onClick={() => setOpen(true)}>
+            Nieuw
+          </Button>
+        </span>
+      </div>
+      <AgendaQuickAdd {...props} open={open} onClose={() => setOpen(false)} onAdded={() => setOpen(false)} anchorRef={anchorRef} />
+    </div>
+  );
+};
 
 // Event: the recognised parts are marked under the text and filled into the rows.
 export const Event = () => <Window text="Etentje bij mama za 18u met Youri en Sanne" />;

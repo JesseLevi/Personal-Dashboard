@@ -5,6 +5,7 @@ import { noteExtensions } from "@/lib/notes/extensions";
 import { EditingBar } from "./EditingBar";
 import { NoteTableHandles } from "./NoteTableHandles";
 import { TableMenu } from "./TableMenu";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Blokken / Note table handles" } satisfies StoryDefault;
@@ -55,3 +56,13 @@ function HandlesDemo({ content, withBar }: { content: string; withBar?: boolean 
 
 export const HandlesVisible = () => <HandlesDemo content={`<p>Boodschappen deze week.</p>${table}`} />;
 export const FirstBlockUnderBar = () => <HandlesDemo content={table} withBar />;
+
+export const Overview = () => (
+  <div className="flex max-w-prose flex-col gap-stack-md">
+    <StoryIntro
+      what="Handles around a table, shown on hover: add or reorder rows and columns."
+      note="NoteTableHandles"
+    />
+    <HandlesVisible />
+  </div>
+);

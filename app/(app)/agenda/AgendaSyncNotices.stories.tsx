@@ -1,5 +1,6 @@
 import type { CalendarActionResult, SyncNoticeView } from "@/lib/agenda/calendars";
 import { AgendaSyncNotices } from "./AgendaSyncNotices";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Agenda / Agenda sync notices" } satisfies StoryDefault;
@@ -24,6 +25,16 @@ const notices: SyncNoticeView[] = [
 // The real page sits on `surface-primary`, not the story canvas.
 const Surface = ({ children }: { children: React.ReactNode }) => (
   <div className="-m-8 bg-surface-primary p-8">{children}</div>
+);
+
+export const Overview = () => (
+  <Surface>
+    <StoryIntro
+      what="Notices on the agenda page when a synced event that carried basket items was removed: keep or drop each item."
+      note="AgendaPage"
+    />
+    <AgendaSyncNotices initialNotices={notices} onResolve={mockResolve} />
+  </Surface>
 );
 
 export const Default = () => (

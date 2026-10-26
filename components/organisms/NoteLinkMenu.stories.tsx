@@ -4,6 +4,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensionsWith } from "@/lib/notes/extensions";
 import { NoteLinkSuggestion, type NoteLinkSuggestionItem } from "@/lib/notes/note-link-suggestion";
 import { NoteLinkMenu } from "./NoteLinkMenu";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Editor / Note link menu" } satisfies StoryDefault;
@@ -52,3 +53,14 @@ export const Open = () => <NoteLinkDemo query="" />;
 export const Filtered = () => <NoteLinkDemo query="bo" />;
 export const NoResults = () => <NoteLinkDemo query="zzz" />;
 export const Searching = () => <NoteLinkDemo query="bo" slow />;
+
+// The menu after typing two brackets and a few letters.
+export const Overview = () => (
+  <div className="flex max-w-prose flex-col gap-stack-md">
+    <StoryIntro
+      what="Menu that opens on two square brackets to link to another note, filtered by what you type."
+      note="NoteEditor"
+    />
+    <Filtered />
+  </div>
+);

@@ -5,6 +5,7 @@ import { Placeholder } from "@tiptap/extensions";
 import { EditingBar } from "./EditingBar";
 import { noteExtensions } from "@/lib/notes/extensions";
 import nl from "../../messages/nl.json";
+import { Specimen, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Editor / Editing bar" } satisfies StoryDefault;
@@ -128,3 +129,21 @@ function MobileDemo({ content }: { content: string }) {
 
 export const Mobile = () => <MobileDemo content="<p>Voorbeeldtekst in de notitie-editor.</p>" />;
 export const MobileInTable = () => <MobileDemo content={TABLE_CONTENT} />;
+
+export const Overview = () => (
+  <div className="flex flex-col gap-stack-lg">
+    <StoryIntro
+      what="Toolbar above a note: block type, lists, marks, alignment and the rest behind an overflow menu. On mobile it is a slim bar at the bottom of the screen."
+      note="EditingBar"
+    />
+    <Specimen label="Desktop" hint="In flow under the note header">
+      <EditingBarDemo />
+    </Specimen>
+    <Specimen label="With active button" hint="Bold is on at the cursor">
+      <EditingBarDemo activateBold />
+    </Specimen>
+    <Specimen label="Mobile" hint="Slim bar, the rest in the overflow">
+      <MobileDemo content="<p>Voorbeeldtekst in de notitie-editor.</p>" />
+    </Specimen>
+  </div>
+);

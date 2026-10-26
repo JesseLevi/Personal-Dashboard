@@ -7,6 +7,7 @@ import { Icon } from "../atoms/Icon";
 import { AgendaCalendar, type AgendaView } from "./AgendaCalendar";
 import { AgendaCalendarSkeleton } from "./AgendaCalendarSkeleton";
 import { useAgendaDraggable, type AgendaDragPayload } from "./useAgendaDraggable";
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Agenda / Agenda calendar" } satisfies StoryDefault;
@@ -152,6 +153,54 @@ const Calendar = ({ view, items }: { view: AgendaView; items: AgendaItem[] }) =>
   </Frame>
 );
 
+export const Overview = () => (
+  <div>
+    <StoryIntro
+      what="The agenda grid: events, meals, planned cards and deadlines in a week, day, month or list view. The parent owns navigation and the data."
+      note="AgendaCalendar"
+    />
+    <Specimens>
+      {(["week", "day", "month", "list"] as const).map((view) => (
+        <Specimen key={view} label={view[0].toUpperCase() + view.slice(1)}>
+          <div className="h-[28rem] w-[36rem]">
+            <AgendaCalendar items={view === "day" ? overlapping : allKinds} view={view} date={DATE} scrollToNow={false} />
+          </div>
+        </Specimen>
+      ))}
+    </Specimens>
+  </div>
+);
+
+export const Interactive = () => {
+  const [items, setItems] = useState<AgendaItem[]>(allKinds);
+  const [log, setLog] = useState("");
+  return (
+    <div className="flex flex-col gap-stack-md">
+      <p data-testid="event-log" className="min-h-5 text-sm text-text-secondary">
+        {log}
+      </p>
+      <Frame>
+        <AgendaCalendar
+          items={items}
+          view="week"
+          date={DATE}
+          scrollToNow={false}
+          onSelectSlot={(span) => setLog(`select ${span.start} - ${span.end}`)}
+          onItemClick={(item) => setLog(`click ${item.id}`)}
+          onItemMove={(change) => {
+            setLog(`move ${change.item.id} ${change.start} - ${change.end}`);
+            setItems((current) => current.map((i) => (i.id === change.item.id ? { ...i, start: change.start, end: change.end, allDay: change.allDay } : i)));
+          }}
+          onItemResize={(change) => {
+            setLog(`resize ${change.item.id} ${change.start} - ${change.end}`);
+            setItems((current) => current.map((i) => (i.id === change.item.id ? { ...i, start: change.start, end: change.end } : i)));
+          }}
+        />
+      </Frame>
+    </div>
+  );
+};
+
 export const Week = () => <Calendar view="week" items={allKinds} />;
 export const Day = () => <Calendar view="day" items={overlapping} />;
 export const Month = () => <Calendar view="month" items={allKinds} />;
@@ -172,7 +221,7 @@ export const NowDay = () => (
 );
 
 // A week without today opens on 07:00 and has no now line.
-export const OtherWeek = () => (
+export const NowOtherWeek = () => (
   <Frame className="h-[28rem]">
     <AgendaCalendar items={[]} view="week" date="2026-01-12" />
   </Frame>
@@ -275,36 +324,6 @@ export const ExternalDrag = () => {
                 allDay: drop.allDay,
               } as AgendaItem,
             ]);
-          }}
-        />
-      </Frame>
-    </div>
-  );
-};
-
-export const Interactive = () => {
-  const [items, setItems] = useState<AgendaItem[]>(allKinds);
-  const [log, setLog] = useState("");
-  return (
-    <div className="flex flex-col gap-stack-md">
-      <p data-testid="event-log" className="min-h-5 text-sm text-text-secondary">
-        {log}
-      </p>
-      <Frame>
-        <AgendaCalendar
-          items={items}
-          view="week"
-          date={DATE}
-          scrollToNow={false}
-          onSelectSlot={(span) => setLog(`select ${span.start} - ${span.end}`)}
-          onItemClick={(item) => setLog(`click ${item.id}`)}
-          onItemMove={(change) => {
-            setLog(`move ${change.item.id} ${change.start} - ${change.end}`);
-            setItems((current) => current.map((i) => (i.id === change.item.id ? { ...i, start: change.start, end: change.end, allDay: change.allDay } : i)));
-          }}
-          onItemResize={(change) => {
-            setLog(`resize ${change.item.id} ${change.start} - ${change.end}`);
-            setItems((current) => current.map((i) => (i.id === change.item.id ? { ...i, start: change.start, end: change.end } : i)));
           }}
         />
       </Frame>
