@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
 import { ensureUserDefaults } from "@/lib/defaults/ensure";
+import { runAssistant } from "@/lib/assistant/run";
 import { runLazyEmbeddingDrain } from "@/lib/embeddings/lazy";
 import { isEmbeddingConfigured } from "@/lib/ai";
 import { getAiEnabled, getAvatarSrc, getLastName, getProfileForNav } from "@/lib/profile/queries";
@@ -47,6 +48,8 @@ export default async function AppLayout({
   // ADR-0043 §5: the member's own backlog drains after the response, RLS client, never awaited.
   const supabase = await createSupabaseServerClient();
   after(() => runLazyEmbeddingDrain(supabase, userId));
+  // ADR-0046 §7: rhythm signals in their own after(); claim_assistant_run() allows one run per 6 hours.
+  after(() => runAssistant({ client: supabase, userId, path: "lazy" }));
 
   return (
     <AppShellNav

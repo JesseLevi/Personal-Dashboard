@@ -7,6 +7,7 @@
   "ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]",
   "crons": [
     { "path": "/api/cron/calendar-sync", "schedule": "0 4 * * *" },
-    { "path": "/api/cron/embeddings", "schedule": "0 5 * * *" }
+    { "path": "/api/cron/embeddings", "schedule": "0 5 * * *" },
+    { "path": "/api/cron/assistant", "schedule": "30 5 * * *" }
   ]
 }
