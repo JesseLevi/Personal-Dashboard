@@ -92,10 +92,15 @@ When you change a component, rewrite the bullets that changed. Don't append tick
 
 ## Ladle
 
-- **Title** of every story file: `export default { title: "<Group> / <Subgroup> / <Component name>" } satisfies StoryDefault`. The last segment is the component name with spaces; group names follow the app's modules. The story ID is the slug (`basis--invoer--button--state-matrix`) and names the baseline PNGs.
-- **Group rule**: used in two or more modules means `Basis`, in one module means that module. Atoms are always `Basis`. The `CardContent*` family stays together in `Basis / Kaarten`. `SearchPanel` (app-shell search over all modules) sits in `Basis / Panelen`.
-- **Order** (`storyOrder` in `.ladle/config.mjs`, self-contained because Ladle serialises it; test: `tests/ladle-story-order.test.ts`): `Basis`, the modules in `Sidebar` order, `Account` last. Per component `Overview`, `Playground`, `Interactive` lead, then alphabetical. A new group or sub-group needs an entry there.
-- **Chrome** (sidebar left, toolbar above the canvas, width presets 390/768/1024) lives only in `.ladle/ladle-theme.css` and `.ladle/config.mjs`; `mode=preview`, which the visual suite uses, renders none of it.
+- **Title**: `{ title: "<Group> / <Subgroup> / <Component name>" } satisfies StoryDefault`; the story ID is the slug (`basis--invoer--button--state-matrix`) and names the baseline PNGs.
+- **Group rule**: two or more modules means `Basis`, one means that module; atoms are always `Basis`. `CardContent*` stays in `Basis / Kaarten`, `SearchPanel` in `Basis / Panelen`.
+- **Order** (`storyOrder` in `.ladle/config.mjs`, self-contained as Ladle serialises it): `Basis`, the modules in `Sidebar` order, `Account` last; per component `Overview`, `Playground`, `Interactive` lead, then alphabetical. New groups need an entry.
+- **Per component**:
+  - `Overview` first: `StoryIntro {what, note}` plus every variant and state in labelled `Specimens`/`Specimen {label, hint?}` (`@/.ladle/story-kit`; dev-only English copy). Fixed panels (wrap in `PanelFrame`) cannot sit side by side: show one state.
+  - `Playground`: `args` + `argTypes` for each variant axis (`select`), boolean and text prop. Required in `Fundament`/`Invoer`; in `Kaarten`/`Panelen` only where a prop drives appearance.
+  - `Interactive`: local `useState`, no server; required where behaviour is the point (Dropdown, Checkbox, panels, Toast, drag, Carousel…).
+  - Separate stories only for what it cannot show: `Empty`, `Loading`, `Error`, `DeleteConfirm`, `LongText`, `Mobile`, `Dutch`. Merge stories that coincide.
+- **Chrome** (sidebar, toolbar, width presets) lives in `.ladle/ladle-theme.css` and `.ladle/config.mjs`; `mode=preview`, used by the visual suite, renders none of it.
 
 | Group | Components |
 | --- | --- |

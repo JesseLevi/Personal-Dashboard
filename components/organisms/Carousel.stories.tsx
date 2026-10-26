@@ -1,5 +1,6 @@
 // figma: node-id=3670:1976
 import type { ReactNode } from "react";
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import { Carousel } from "./Carousel";
 import { CardContainer } from "./CardContainer";
 import { Card } from "../molecules/Card";
@@ -30,128 +31,55 @@ const ThumbnailBackdrop = ({ children }: { children: ReactNode }) => (
 const addLabel = en.components.cardContainer.addLabel;
 const editLabel = en.components.cardContainer.editLabel;
 
+const Recipe = ({ name, duration }: { name: string; duration: string }) => (
+  <Card>
+    <ThumbnailBackdrop>
+      <CardContentRecipe imageUrl={PLACEHOLDER_IMAGE} name={name} duration={duration} />
+    </ThumbnailBackdrop>
+  </Card>
+);
+
 // Must return an array of real `CardContainer` siblings, not one wrapping
-// component — Carousel's `Children.map` wraps each of its own immediate
-// children in a fixed-width column, so a single `<Helper/>` would collapse
-// all three columns into one. Card counts (4/3/2) deliberately differ per
-// column to exercise the hug-height behaviour — see design/notes/Carousel.md.
+// component: Carousel's `Children.map` wraps each immediate child in a fixed-width
+// column. Counts (4/3/2) differ on purpose to exercise hug-height (design/notes/Carousel.md).
 function exampleColumns() {
   return [
-    <CardContainer
-      key="ontbijt"
-      name="Ontbijt"
-      count="4"
-      addLabel={addLabel}
-      editLabel={editLabel}
-    >
-      <Card>
-        <ThumbnailBackdrop>
-          <CardContentRecipe
-            imageUrl={PLACEHOLDER_IMAGE}
-            name="Amandel Pasta"
-            duration="20 min"
-          />
-        </ThumbnailBackdrop>
-      </Card>
-      <Card>
-        <ThumbnailBackdrop>
-          <CardContentRecipe
-            imageUrl={PLACEHOLDER_IMAGE}
-            name="Havermout"
-            duration="10 min"
-          />
-        </ThumbnailBackdrop>
-      </Card>
-      <Card>
-        <ThumbnailBackdrop>
-          <CardContentRecipe
-            imageUrl={PLACEHOLDER_IMAGE}
-            name="Yoghurt met Granola"
-            duration="5 min"
-          />
-        </ThumbnailBackdrop>
-      </Card>
-      <Card>
-        <ThumbnailBackdrop>
-          <CardContentRecipe
-            imageUrl={PLACEHOLDER_IMAGE}
-            name="Eieren met Spek"
-            duration="15 min"
-          />
-        </ThumbnailBackdrop>
-      </Card>
+    <CardContainer key="ontbijt" name="Ontbijt" count="4" addLabel={addLabel} editLabel={editLabel}>
+      <Recipe name="Amandel Pasta" duration="20 min" />
+      <Recipe name="Havermout" duration="10 min" />
+      <Recipe name="Yoghurt met Granola" duration="5 min" />
+      <Recipe name="Eieren met Spek" duration="15 min" />
     </CardContainer>,
-    <CardContainer
-      key="lunch"
-      name="Lunch"
-      count="3"
-      addLabel={addLabel}
-      editLabel={editLabel}
-    >
-      <Card>
-        <ThumbnailBackdrop>
-          <CardContentRecipe
-            imageUrl={PLACEHOLDER_IMAGE}
-            name="Linzensoep"
-            duration="30 min"
-          />
-        </ThumbnailBackdrop>
-      </Card>
-      <Card>
-        <ThumbnailBackdrop>
-          <CardContentRecipe
-            imageUrl={PLACEHOLDER_IMAGE}
-            name="Caesar Salade"
-            duration="15 min"
-          />
-        </ThumbnailBackdrop>
-      </Card>
-      <Card>
-        <ThumbnailBackdrop>
-          <CardContentRecipe
-            imageUrl={PLACEHOLDER_IMAGE}
-            name="Tosti"
-            duration="8 min"
-          />
-        </ThumbnailBackdrop>
-      </Card>
+    <CardContainer key="lunch" name="Lunch" count="3" addLabel={addLabel} editLabel={editLabel}>
+      <Recipe name="Linzensoep" duration="30 min" />
+      <Recipe name="Caesar Salade" duration="15 min" />
+      <Recipe name="Tosti" duration="8 min" />
     </CardContainer>,
-    <CardContainer
-      key="diner"
-      name="Diner"
-      count="2"
-      addLabel={addLabel}
-      editLabel={editLabel}
-    >
-      <Card>
-        <ThumbnailBackdrop>
-          <CardContentRecipe
-            imageUrl={PLACEHOLDER_IMAGE}
-            name="Kip Curry"
-            duration="35 min"
-          />
-        </ThumbnailBackdrop>
-      </Card>
-      <Card>
-        <ThumbnailBackdrop>
-          <CardContentRecipe
-            imageUrl={PLACEHOLDER_IMAGE}
-            name="Zalm met Groenten"
-            duration="25 min"
-          />
-        </ThumbnailBackdrop>
-      </Card>
+    <CardContainer key="diner" name="Diner" count="2" addLabel={addLabel} editLabel={editLabel}>
+      <Recipe name="Kip Curry" duration="35 min" />
+      <Recipe name="Zalm met Groenten" duration="25 min" />
     </CardContainer>,
   ];
 }
 
-// Fits without scrolling on a wide viewport — the row only overflows
-// relative to whatever width its own parent gives it.
-export const Default = () => <Carousel>{exampleColumns()}</Carousel>;
+export const Overview = () => (
+  <>
+    <StoryIntro what="A horizontal row of fixed-width columns that scrolls when its parent is narrower." note="Carousel" />
+    <Specimens>
+      <Specimen label="fits" hint="wide parent: no scrolling">
+        <Carousel>{exampleColumns()}</Carousel>
+      </Specimen>
+      <Specimen label="overflows" hint="constrained to Figma's 644 px designed width (w-161)">
+        <div className="w-161">
+          <Carousel>{exampleColumns()}</Carousel>
+        </div>
+      </Specimen>
+    </Specimens>
+  </>
+);
 
-// Constrained to the fetched node's own 644px designedWidth (w-161) to
-// reproduce Figma's deliberate overflow. See design/notes/Carousel.md.
-export const ConstrainedToDesignedWidth = () => (
+// Constrained to 644 px: scroll the row sideways to reach the last column.
+export const Interactive = () => (
   <div className="w-161">
     <Carousel>{exampleColumns()}</Carousel>
   </div>
