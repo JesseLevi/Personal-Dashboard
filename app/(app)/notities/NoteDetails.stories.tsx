@@ -2,6 +2,7 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
 import { setDetailsToggleLabels } from "@/lib/notes/details-labels";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Blokken / Note details" } satisfies StoryDefault;
@@ -30,3 +31,10 @@ function DetailsDemo() {
 }
 
 export const CollapsedAndOpen = () => <DetailsDemo />;
+
+export const Overview = () => (
+  <div className="flex max-w-prose flex-col gap-stack-md">
+    <StoryIntro what="Collapsible section in a note: one collapsed, one open (the stored open attribute)." note="NoteEditor" />
+    <CollapsedAndOpen />
+  </div>
+);

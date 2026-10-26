@@ -4,6 +4,9 @@ import Image from "next/image";
 import { LoginExitProvider, LoginVisual } from "../LoginExit";
 import type { LoginCodeSendState, VerifyLoginCodeState } from "../actions";
 import { LoginCodeForm, type LoginCodeFormProps } from "./LoginCodeForm";
+import { useState } from "react";
+import { Button } from "@/components/atoms/Button";
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Account / Login code form" } satisfies StoryDefault;
@@ -90,3 +93,65 @@ export const InPageFrameWrongCode = () => (
     <Form initialState={{ code: "123456", verify: { status: "error", errorKey: "invalid-code" } }} />
   </PageFrame>
 );
+
+// The main states side by side. The other stories are edge cases (rate limit, exit animation,
+// the full page frame).
+export const Overview = () => (
+  <div>
+    <StoryIntro
+      what="Second login step: type the six-digit code from the mail. Resend is locked behind a cooldown."
+      note="LoginForm"
+    />
+    <Specimens>
+      <Specimen label="Fresh" hint="Empty field, resend counting down">
+        <Default />
+      </Specimen>
+      <Specimen label="Partially typed" hint="Submit stays disabled until six digits">
+        <PartiallyTyped />
+      </Specimen>
+      <Specimen label="Wrong code" hint="Error under the field">
+        <WrongCode />
+      </Specimen>
+      <Specimen label="Code resent" hint="Confirmation after resend">
+        <CodeResent />
+      </Specimen>
+    </Specimens>
+  </div>
+);
+
+// Type a code in the real form: 123456 signs in, any other six digits is a wrong code. Resend
+// works once the cooldown has run out. Navigation is logged instead of followed.
+export const Interactive = () => {
+  const [run, setRun] = useState(0);
+  const [navigated, setNavigated] = useState<string | null>(null);
+  return (
+    <div className="flex flex-col gap-stack-lg">
+      <StoryIntro
+        what="Type a code: 123456 signs in, any other six digits shows the error. Resend unlocks after the cooldown. Navigation is logged below instead of followed."
+        note="LoginForm"
+      />
+      <Form
+        key={run}
+        verifyLoginCodeAction={async (_prev, formData) => {
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          return formData.get("code") === "123456"
+            ? { status: "success" }
+            : { status: "error", errorKey: "invalid-code" };
+        }}
+        onNavigate={(href) => setNavigated(href)}
+      />
+      <div className="flex flex-col items-start gap-stack-sm">
+        <p className="text-xs text-text-secondary">{navigated ? `Navigated to ${navigated}` : "Not navigated yet"}</p>
+        <Button
+          variant="filled"
+          onClick={() => {
+            setNavigated(null);
+            setRun((current) => current + 1);
+          }}
+        >
+          Start over
+        </Button>
+      </div>
+    </div>
+  );
+};

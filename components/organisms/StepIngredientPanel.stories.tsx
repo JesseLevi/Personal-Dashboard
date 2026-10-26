@@ -1,6 +1,7 @@
 // figma: node-id=3749:3091 (panel 3749:3241)
 import { useState } from "react";
 import { StepIngredientPanel } from "./StepIngredientPanel";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Recepten / Step ingredient panel" } satisfies StoryDefault;
@@ -62,3 +63,20 @@ export const Interactive = () => {
     </div>
   );
 };
+
+// The panel is `position: fixed`, so the intro sits in the dimmed area beside it.
+export const Overview = () => (
+  <div className="min-h-screen">
+    <StoryIntro
+      what="Side panel to pick which ingredients belong to a recipe step. Rows without a name are never listed."
+      note="StepIngredientPanel"
+    />
+    <StepIngredientPanel
+      open
+      onClose={() => {}}
+      ingredients={sampleIngredients}
+      selectedIds={["ingredient-1", "ingredient-3"]}
+      onSave={() => {}}
+    />
+  </div>
+);

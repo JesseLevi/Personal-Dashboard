@@ -1,6 +1,7 @@
 // design: Claude-designed on request (#336) -- editable code blocks with the language selector and copy button; grammars load lazily, the baseline settles once they have.
 import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
+import { Specimen, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Blokken / Note code block" } satisfies StoryDefault;
@@ -38,3 +39,15 @@ function CodeDemo({ content }: { content: string }) {
 
 export const Highlighted = () => <CodeDemo content={highlighted} />;
 export const PlainOldBlock = () => <CodeDemo content={plain} />;
+
+export const Overview = () => (
+  <div className="flex max-w-prose flex-col gap-stack-lg">
+    <StoryIntro what="Code block in a note with a language selector, a copy button and highlighting." note="NoteEditor" />
+    <Specimen label="Highlighted" hint="JavaScript, JSON and Python">
+      <Highlighted />
+    </Specimen>
+    <Specimen label="Plain old block" hint="Stored before languages existed">
+      <PlainOldBlock />
+    </Specimen>
+  </div>
+);

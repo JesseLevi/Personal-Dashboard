@@ -5,6 +5,7 @@ import { OwnIngredientPanel } from "./OwnIngredientPanel";
 import { PendingPanel } from "./PendingPanel";
 import type { AdminAlias, AdminEigenIngredient, IngredientCategory, PendingGroup } from "@/lib/recipes/ingredient-admin";
 import type { ActionResult, IngredientSearchResult, ReferenceIngredientRow } from "@/lib/recipes/types";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Recepten / Ingredient admin" } satisfies StoryDefault;
@@ -98,38 +99,50 @@ const handlers = {
   onLinkPending: ok,
 };
 
+// Most representative state: the aliases tab. The tabs and the edge cases (empty, filtered, no
+// results, panels) are the stories below.
+export const Overview = () => (
+  <div className="min-h-screen bg-surface-primary">
+    <StoryIntro
+      what="Admin page for ingredient links: aliases that map typed names onto a catalog ingredient, own ingredients, and names still waiting to be linked."
+      note="IngredientAdminPage"
+    />
+    <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} pending={pending} {...handlers} />
+  </div>
+);
+
 // min-h-screen: the panels are `position: fixed`, so without it the baseline crop collapses.
-export const Koppelingen = () => (
+export const Aliases = () => (
   <div className="min-h-screen bg-surface-primary">
     <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} pending={pending} {...handlers} />
   </div>
 );
 
-export const EigenIngredienten = () => (
+export const OwnIngredients = () => (
   <div className="min-h-screen bg-surface-primary">
     <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialTab="own" pending={pending} {...handlers} />
   </div>
 );
 
-export const LeegKoppelingen = () => (
+export const EmptyAliases = () => (
   <div className="min-h-screen bg-surface-primary">
     <IngredientAdmin title="Ingrediënten" aliases={[]} eigen={[]} pending={pending} {...handlers} />
   </div>
 );
 
-export const LeegEigenIngredienten = () => (
+export const EmptyOwnIngredients = () => (
   <div className="min-h-screen bg-surface-primary">
     <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={[]} initialTab="own" pending={pending} {...handlers} />
   </div>
 );
 
-export const GeenResultaten = () => (
+export const NoResults = () => (
   <div className="min-h-screen bg-surface-primary">
     <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialQuery="zzz" pending={pending} {...handlers} />
   </div>
 );
 
-export const Gefilterd = () => (
+export const Filtered = () => (
   <div className="min-h-screen bg-surface-primary">
     <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialQuery="tom" pending={pending} {...handlers} />
   </div>
@@ -161,13 +174,13 @@ export const OwnIngredientPanelCreate = () => (
   </div>
 );
 
-export const NogTeKoppelen = () => (
+export const Pending = () => (
   <div className="min-h-screen bg-surface-primary">
     <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialTab="pending" pending={pending} {...handlers} />
   </div>
 );
 
-export const LeegNogTeKoppelen = () => (
+export const EmptyPending = () => (
   <div className="min-h-screen bg-surface-primary">
     <IngredientAdmin title="Ingrediënten" aliases={aliases} eigen={eigen} initialTab="pending" pending={[]} {...handlers} />
   </div>

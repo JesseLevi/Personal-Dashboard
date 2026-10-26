@@ -1,6 +1,7 @@
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { AgendaDeadlineItem, AgendaPlannedCardItem } from "@/lib/agenda/types";
 import { AgendaCardPanel } from "./AgendaCardPanel";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Agenda / Agenda card panel" } satisfies StoryDefault;
@@ -32,6 +33,16 @@ const deadline: AgendaDeadlineItem = {
 };
 
 const panelProps = { open: true, onClose: () => {}, onSaveDay: mockMutate, onRemove: mockMutate, onOpenCard: () => {} };
+
+export const Overview = () => (
+  <div className="min-h-screen">
+    <StoryIntro
+      what="Side panel for a card on the agenda: change its day, take it off the agenda or open the card. A deadline is read-only."
+      note="AgendaPage"
+    />
+    <AgendaCardPanel {...panelProps} item={planned} />
+  </div>
+);
 
 // The panel is `position: fixed`; the min-h wrapper gives the screenshot root a height (SidePanel.stories.tsx).
 export const PlannedCard = () => (

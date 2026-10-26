@@ -3,6 +3,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensionsWith } from "@/lib/notes/extensions";
 import { buildNoteLinkResolution } from "@/lib/notes/note-link";
 import type { TipTapDocument } from "@/lib/notes/document";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Blokken / Note link view" } satisfies StoryDefault;
@@ -50,4 +51,14 @@ export const DeletedLink = () => (
     content={{ type: "doc", content: [{ type: "paragraph", content: [text("Verwezen: "), link(GONE, "Weg")] }] } as TipTapDocument}
     titles={{}}
   />
+);
+
+export const Overview = () => (
+  <div className="flex max-w-prose flex-col gap-stack-md">
+    <StoryIntro
+      what="Link to another note inside a note: shows the current title of its target, muted when the target is gone."
+      note="NoteEditor"
+    />
+    <Links />
+  </div>
 );

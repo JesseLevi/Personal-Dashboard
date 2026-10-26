@@ -5,6 +5,7 @@ import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { AgendaEventDetail, AgendaEventItem } from "@/lib/agenda/types";
 import nl from "@/messages/nl.json";
 import { AgendaEventPanel } from "./AgendaEventPanel";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Agenda / Agenda event panel" } satisfies StoryDefault;
@@ -84,6 +85,16 @@ const panelProps = {
   onUnlink: mockMutate,
 };
 
+export const Overview = () => (
+  <div className="min-h-screen">
+    <StoryIntro
+      what="Side panel to create or edit an event: title, day and time, category, repeat, people and linked recipes, cards and notes. Imported events are read-only."
+      note="AgendaPage"
+    />
+    <AgendaEventPanel {...panelProps} target={{ mode: "edit", item: event }} />
+  </div>
+);
+
 // The panel is `position: fixed`; the min-h wrapper gives the screenshot root a height (SidePanel.stories.tsx).
 export const CreateEvent = () => (
   <div className="min-h-screen">
@@ -134,7 +145,7 @@ const deleteLabel = nl.components.agendaPanel.deleteLabel;
 const saveLabel = nl.components.agendaPanel.saveLabel;
 
 // Clicks "Verwijderen" once on mount to show the confirm footer, as CardDetailPanel's story does.
-export const EditEventDeleteConfirm = () => {
+export const DeleteConfirm = () => {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const button = Array.from(ref.current?.querySelectorAll("button") ?? []).find(

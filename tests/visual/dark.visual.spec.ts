@@ -97,7 +97,7 @@ const DARK_STORIES = [
   "notities--editor--note-bubble-menu--selection-menu",
   "notities--blokken--table-size-picker--open",
   "basis--invoer--image-upload-field--overview",
-  "recepten--ingredient-admin--koppelingen",
+  "recepten--ingredient-admin--aliases",
   "recepten--ingredient-admin--own-ingredient-panel-edit",
   "basis--invoer--input-field--overview",
   "account--login-code-form--in-page-frame",

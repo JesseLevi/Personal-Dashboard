@@ -1,6 +1,14 @@
 // Prose sample, every block type: .tiptap CSS is Claude-designed on request (#329, design/notes/NoteEditor.md); table styling since #330 (design/notes/NoteEditor.md).
 import { useEditor, EditorContent } from "@tiptap/react";
+import { Placeholder } from "@tiptap/extensions";
 import { noteExtensions } from "@/lib/notes/extensions";
+import { SlashCommand } from "@/lib/notes/slash-command";
+import { SLASH_ITEMS } from "@/lib/notes/slash-items";
+import { EditingBar } from "@/components/organisms/EditingBar";
+import { NoteBubbleMenu } from "@/components/organisms/NoteBubbleMenu";
+import { SlashMenu } from "@/components/organisms/SlashMenu";
+import nl from "@/messages/nl.json";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Editor / Note editor content" } satisfies StoryDefault;
@@ -40,6 +48,47 @@ export const Prose = () => {
   return (
     <div className="w-full">
       <EditorContent editor={editor} />
+    </div>
+  );
+};
+
+export const Overview = () => (
+  <div>
+    <StoryIntro
+      what="The note text as the reader sees it: headings, lists, task lists, quote, code and table. This is the only visual coverage of the shared prose styles."
+      note="NoteEditor"
+    />
+    <Prose />
+  </div>
+);
+
+// One editable note with the toolbar, the bubble menu on a selection and the slash menu on "/":
+// select text to format it, type "/" on an empty line to insert a block.
+export const Interactive = () => {
+  const editor = useEditor({
+    extensions: [
+      ...noteExtensions,
+      Placeholder.configure({ placeholder: nl.components.noteEditor.placeholder }),
+      SlashCommand.configure({ items: SLASH_ITEMS }),
+    ],
+    content: "<h2>Weekplanning</h2><p>Select a few words to open the bubble menu, or type / on a new line.</p><p></p>",
+    immediatelyRender: false,
+    editorProps: {
+      attributes: { class: "text-base font-medium text-text-primary focus:outline-none" },
+    },
+  });
+  return (
+    <div className="flex max-w-prose flex-col gap-stack-md">
+      <StoryIntro
+        what="One editable note with the editing bar, the bubble menu on a selection and the slash menu on a slash."
+        note="EditingBar"
+      />
+      <EditingBar editor={editor} />
+      <div className="relative min-h-96">
+        <EditorContent editor={editor} />
+        <SlashMenu editor={editor} />
+        <NoteBubbleMenu editor={editor} />
+      </div>
     </div>
   );
 };

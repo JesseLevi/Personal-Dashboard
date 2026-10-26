@@ -1,6 +1,7 @@
 import type { AgendaLinkCandidate } from "@/lib/agenda/links";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import { AgendaLinkSearchPanel, linkKey } from "./AgendaLinkSearchPanel";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Agenda / Agenda link search panel" } satisfies StoryDefault;
@@ -40,6 +41,16 @@ const Harness = (props: Partial<Parameters<typeof AgendaLinkSearchPanel>[0]>) =>
   </div>
 );
 
+export const Overview = () => (
+  <div>
+    <StoryIntro
+      what="Search panel to link a recipe, card or note to an event; already linked results are marked."
+      note="AgendaEventLinks"
+    />
+    <Harness initialQuery="soep" />
+  </div>
+);
+
 export const Empty = () => <Harness />;
 
 export const Results = () => <Harness initialQuery="soep" />;
@@ -50,4 +61,4 @@ export const WithAlreadyLinked = () => (
 
 export const NoResults = () => <Harness initialQuery="zzz" onSearch={mockSearchEmpty} />;
 
-export const SearchFailed = () => <Harness initialQuery="soep" onSearch={mockSearchFailing} />;
+export const Error = () => <Harness initialQuery="soep" onSearch={mockSearchFailing} />;

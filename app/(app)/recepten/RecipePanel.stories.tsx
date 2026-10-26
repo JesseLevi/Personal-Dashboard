@@ -1,5 +1,7 @@
 // figma: node-id=3777:3918 (+3717:2844 fields, 3777:3984 read-only reference)
-import { RecipePanel } from "./RecipePanel";
+import { useState } from "react";
+import { RecipePanel, type RecipePanelTarget } from "./RecipePanel";
+import { Button } from "@/components/atoms/Button";
 import { EMPTY_KITCHEN_UNIT_MASSES } from "@/lib/recipes/kitchen-units";
 import { EMPTY_NUTRIENTS } from "@/lib/recipes/nutrition";
 import type {
@@ -10,6 +12,7 @@ import type {
   RecipeRow,
   RecipeWithIngredientsAndSteps,
 } from "@/lib/recipes/types";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Recepten / Recipe panel" } satisfies StoryDefault;
@@ -195,6 +198,29 @@ const sampleRecipe: RecipeWithIngredientsAndSteps = {
 // 0 to ancestor flow height, so the screenshot harness needs a non-zero
 // crop area.
 
+// Most representative state: edit mode with ingredients and steps. The panel is `position: fixed`,
+// so the intro sits in the dimmed area beside it.
+export const Overview = () => (
+  <div className="min-h-screen">
+    <StoryIntro
+      what="Side panel to add or edit a recipe: title, category, servings, time, photo, ingredient rows and steps, with delete behind a confirm."
+      note="RecipePanel"
+    />
+    <RecipePanel
+      open
+      onClose={() => {}}
+      target={{ mode: "edit", recipe: sampleRecipe }}
+      categories={sampleCategories}
+      onCreateRecipe={mockCreateRecipe}
+      onUpdateRecipe={mockUpdateRecipe}
+      onDeleteRecipe={mockDeleteRecipe}
+      onSearchIngredients={mockSearchIngredients}
+      onCreateOwnIngredient={mockCreateOwnIngredient}
+      onUploadThumbnail={mockUploadThumbnail}
+    />
+  </div>
+);
+
 // Create mode: one empty ingredient row, one empty step, Verwijderen hidden
 // (decision (i): nothing to delete yet — design/notes/RecipePanel.md).
 export const Empty = () => (
@@ -232,3 +258,50 @@ export const Filled = () => (
     />
   </div>
 );
+
+// Real panel, local state: open it for a new or the sample recipe, fill the fields, add ingredient
+// rows and steps, save, or press delete to see the confirm. The line below shows what was sent.
+export const Interactive = () => {
+  const [target, setTarget] = useState<RecipePanelTarget | null>(null);
+  const [lastAction, setLastAction] = useState("Nothing sent yet");
+  const report = (name: string, input: unknown) => setLastAction(`${name}: ${JSON.stringify(input)}`);
+
+  return (
+    <div className="flex max-w-prose flex-col gap-stack-md">
+      <StoryIntro
+        what="Open the panel for a new or an existing recipe, fill in the fields, save or delete. The line below shows what each action would send."
+        note="RecipePanel"
+      />
+      <div className="flex gap-inline-sm">
+        <Button variant="filled" onClick={() => setTarget({ mode: "create", categoryId: "category-ontbijt" })}>
+          New recipe
+        </Button>
+        <Button variant="filled" onClick={() => setTarget({ mode: "edit", recipe: sampleRecipe })}>
+          Edit sample recipe
+        </Button>
+      </div>
+      <p className="break-words text-xs text-text-secondary">{lastAction}</p>
+      <RecipePanel
+        open={target !== null}
+        onClose={() => setTarget(null)}
+        target={target ?? { mode: "create", categoryId: "category-ontbijt" }}
+        categories={sampleCategories}
+        onCreateRecipe={async (input) => {
+          report("createRecipe", input);
+          return mockCreateRecipe(input);
+        }}
+        onUpdateRecipe={async (input) => {
+          report("updateRecipe", input);
+          return mockUpdateRecipe(input);
+        }}
+        onDeleteRecipe={async (input) => {
+          report("deleteRecipe", input);
+          return mockDeleteRecipe(input);
+        }}
+        onSearchIngredients={mockSearchIngredients}
+        onCreateOwnIngredient={mockCreateOwnIngredient}
+        onUploadThumbnail={mockUploadThumbnail}
+      />
+    </div>
+  );
+};

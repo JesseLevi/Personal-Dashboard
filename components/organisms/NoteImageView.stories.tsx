@@ -4,6 +4,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
 import { NoteImageUpload, requestImageUpload } from "@/lib/notes/image-upload";
 import nl from "../../messages/nl.json";
+import { Specimen, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Blokken / Note image view" } satisfies StoryDefault;
@@ -64,3 +65,22 @@ export const Uploading = () => <ImageDemo uploading />;
 export const WithImage = () => <ImageDemo src={PICTURE} alt="Een blauwe lucht boven groene heuvels" />;
 export const Broken = () => <ImageDemo src={MISSING} alt="Een foto die niet meer bestaat" />;
 export const Selected = () => <ImageDemo src={PICTURE} alt="Een blauwe lucht boven groene heuvels" selected />;
+
+ 
+export const Overview = () => (
+  <div className="flex max-w-prose flex-col gap-stack-lg">
+    <StoryIntro what="Image block in a note with its four states: uploading, shown, failed to load and selected." note="NoteEditor" />
+    <Specimen label="With image">
+      <WithImage />
+    </Specimen>
+    <Specimen label="Uploading" hint="Placeholder while the upload runs">
+      <Uploading />
+    </Specimen>
+    <Specimen label="Broken" hint="The file is gone: the browser fires an error">
+      <Broken />
+    </Specimen>
+    <Specimen label="Selected" hint="Outline around the block">
+      <Selected />
+    </Specimen>
+  </div>
+);

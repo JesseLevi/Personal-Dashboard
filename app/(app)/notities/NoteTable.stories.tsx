@@ -1,6 +1,7 @@
 // design: Claude-designed on request (#330) -- editable table with stored column widths, and a pre-#330 table without any.
 import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
+import { Specimen, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Blokken / Note table" } satisfies StoryDefault;
@@ -38,3 +39,15 @@ function TableDemo({ content }: { content: string }) {
 
 export const WithColumnWidths = () => <TableDemo content={sized} />;
 export const WithoutStoredWidths = () => <TableDemo content={legacy} />;
+
+export const Overview = () => (
+  <div className="flex max-w-prose flex-col gap-stack-lg">
+    <StoryIntro what="Editable table in a note, with draggable column widths." note="NoteEditor" />
+    <Specimen label="With column widths" hint="Widths stored on the cells">
+      <WithColumnWidths />
+    </Specimen>
+    <Specimen label="Without stored widths" hint="A table from before column widths existed">
+      <WithoutStoredWidths />
+    </Specimen>
+  </div>
+);

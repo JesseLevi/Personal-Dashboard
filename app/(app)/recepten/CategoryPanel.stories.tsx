@@ -3,6 +3,8 @@ import { useState } from "react";
 import { CategoryPanel, type CategoryPanelTarget } from "@/app/(app)/_components/CategoryPanel";
 import { CATEGORY_ICONS } from "./category-icons";
 import type { ActionResult, RecipeCategoryRow } from "@/lib/recipes/types";
+import { Button } from "@/components/atoms/Button";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Recepten / Category panel" } satisfies StoryDefault;
@@ -41,6 +43,28 @@ const sampleCategory: RecipeCategoryRow = {
 // their ancestors' flow height. Without this wrapper, the Provider div that
 // tests/visual/screenshot-override.css crops the baseline to collapses to
 // near-zero, and the screenshot misses almost the entire panel.
+
+// Most representative state: rename with the current icon pressed. The panel is `position: fixed`,
+// so the intro sits in the dimmed area beside it.
+export const Overview = () => (
+  <div className="min-h-screen">
+    <StoryIntro
+      what="Side panel to create or rename a recipe category and pick its icon. Shared with the notes module through its translation namespace."
+      note="CategoryPanel"
+    />
+    <CategoryPanel
+      open
+      onClose={() => {}}
+      target={{ mode: "edit", category: sampleCategory }}
+      onCreateCategory={mockCreateCategory}
+      icons={CATEGORY_ICONS}
+      translationNamespace="components.categoryPanel"
+      errorsNamespace="recipes.errors"
+      onUpdateCategory={mockUpdateCategory}
+      onDeleteCategory={mockDeleteCategory}
+    />
+  </div>
+);
 
 // Create mode: empty name, first curated icon (Sandwich) pre-selected as the
 // default. Delete button absent (nothing to delete yet) — "leeg" variant.
@@ -91,21 +115,19 @@ export const Interactive = () => {
   });
 
   return (
-    <div className="flex gap-2">
-      <button
-        type="button"
-        className="rounded-lg bg-surface-secondary px-3 py-2 text-sm font-semibold"
-        onClick={() => setState({ open: true, target: { mode: "create" } })}
-      >
-        Nieuwe categorie
-      </button>
-      <button
-        type="button"
-        className="rounded-lg bg-surface-secondary px-3 py-2 text-sm font-semibold"
-        onClick={() => setState({ open: true, target: { mode: "edit", category: sampleCategory } })}
-      >
-        Bewerk Ontbijt
-      </button>
+    <div className="flex max-w-prose flex-col gap-stack-md">
+      <StoryIntro what="Open the panel for a new or an existing category, rename it, pick an icon, delete it." note="CategoryPanel" />
+      <div className="flex gap-inline-sm">
+        <Button variant="filled" onClick={() => setState({ open: true, target: { mode: "create" } })}>
+          New category
+        </Button>
+        <Button
+          variant="filled"
+          onClick={() => setState({ open: true, target: { mode: "edit", category: sampleCategory } })}
+        >
+          Edit Ontbijt
+        </Button>
+      </div>
       <CategoryPanel
         open={state.open}
         onClose={() => setState((current) => ({ ...current, open: false }))}
