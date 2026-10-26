@@ -1390,5 +1390,17 @@
         "snack": "a snack"
       }
     }
+  },
+  "assistant": {
+    "signals": {
+      "buyRhythm": "You usually buy {item} about every {median, plural, one {# day} other {# days}}. The last time was {days, plural, one {# day} other {# days}} ago.",
+      "cookRhythm": "You cook {recipe} about every {median, plural, one {# day} other {# days}}. The last time was {days, plural, one {# day} other {# days}} ago. Fancy making it again?",
+      "actions": {
+        "addToBasket": "Add to list",
+        "openRecipe": "Open recipe",
+        "open": "Open",
+        "dismiss": "Dismiss"
+      }
+    }
   }
 }
