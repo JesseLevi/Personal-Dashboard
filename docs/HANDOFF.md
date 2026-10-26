@@ -11,6 +11,7 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
 - **Panels (#569, 2026-10-20)**: every `SidePanel` slides in and out again (broken since #477). The quick-add sheet's handle drags to close through the shared `lib/dom/use-sheet-drag.ts`. Bottom sheets open with a 10px bounce. Checked in Ladle only; still to check on a real iPhone and in the signed-in app: Settings, + Nieuw drag and bounce, and that #477's login glitch stays gone.
 - `pnpm audit` is clean, dev dependencies included (#512, #554, #572). Dev-chain pins live in `pnpm-workspace.yaml` `overrides`.
 - The visual gate now runs for `app/**/*.tsx` and `app/globals.css`. Scrollbars are hidden app-wide in `app/globals.css` (no gutter).
+- Ladle (#613–#615): groups per module, sidebar left, toolbar on top; every component leads with `Overview`, then `Playground`/`Interactive` (rule and table: `docs/guides/ui-components.md`, "Ladle").
 
 ## Next
 
