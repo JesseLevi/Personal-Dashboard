@@ -1390,5 +1390,17 @@
         "snack": "snack"
       }
     }
+  },
+  "assistant": {
+    "signals": {
+      "buyRhythm": "Je koopt ongeveer elke {median, plural, one {# dag} other {# dagen}} {item}. De laatste keer was {days, plural, one {# dag} other {# dagen}} geleden.",
+      "cookRhythm": "Je kookt {recipe} ongeveer elke {median, plural, one {# dag} other {# dagen}}. De laatste keer was {days, plural, one {# dag} other {# dagen}} geleden. Zin om het weer te maken?",
+      "actions": {
+        "addToBasket": "Op de lijst",
+        "openRecipe": "Recept openen",
+        "open": "Openen",
+        "dismiss": "Wegklikken"
+      }
+    }
   }
 }
