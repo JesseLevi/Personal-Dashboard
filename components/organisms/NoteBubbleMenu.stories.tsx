@@ -2,6 +2,7 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import { noteExtensions } from "@/lib/notes/extensions";
 import { NoteBubbleMenu } from "./NoteBubbleMenu";
+import { Specimen, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Editor / Note bubble menu" } satisfies StoryDefault;
@@ -43,3 +44,18 @@ function BubbleDemo({ bold = false, openTurnInto = false }: { bold?: boolean; op
 export const SelectionMenu = () => <BubbleDemo />;
 export const WithActiveMark = () => <BubbleDemo bold />;
 export const TurnIntoOpen = () => <BubbleDemo openTurnInto />;
+
+export const Overview = () => (
+  <div className="flex max-w-prose flex-col gap-stack-lg">
+    <StoryIntro
+      what="Small menu that floats over selected text: marks, link and turn the block into another type."
+      note="NoteEditor"
+    />
+    <Specimen label="Selection" hint="Menu over the selected words">
+      <BubbleDemo />
+    </Specimen>
+    <Specimen label="Active mark" hint="Bold applied, its button pressed">
+      <BubbleDemo bold />
+    </Specimen>
+  </div>
+);

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { RecipeIngredientRow } from "./RecipeIngredientRow";
 import nl from "../../messages/nl.json";
 import type { UnitCode } from "@/lib/recipes/units";
+import { Specimen, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Recepten / Recipe ingredient row" } satisfies StoryDefault;
@@ -190,5 +191,28 @@ export const LinkInfo = () => (
       reviewLabel={nl.components.recipePanel.fields.needsReviewLabel}
       linkInfo={nl.components.recipePanel.link.none}
     />
+  </div>
+);
+
+export const Overview = () => (
+  <div>
+    <StoryIntro
+      what="One ingredient line in the recipe panel: name, quantity and unit, with delete. Imported lines the importer was unsure about get a marker."
+      note="RecipeIngredientRow"
+    />
+    <div className="flex max-w-3xl flex-col gap-stack-lg">
+      <Specimen label="Labelled" hint="First row, with field labels">
+        <Labelled />
+      </Specimen>
+      <Specimen label="Unlabelled" hint="Following rows, no label row">
+        <Unlabelled />
+      </Specimen>
+      <Specimen label="Needs review" hint="Marker above an uncertain imported line">
+        <NeedsReview />
+      </Specimen>
+      <Specimen label="Link info" hint="Names what the nutrition calculator uses">
+        <LinkInfo />
+      </Specimen>
+    </div>
   </div>
 );

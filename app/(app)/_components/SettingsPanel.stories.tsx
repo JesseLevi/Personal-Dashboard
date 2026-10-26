@@ -1,4 +1,5 @@
 import { SettingsPanel } from "./SettingsPanel";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Account / Settings panel" } satisfies StoryDefault;
@@ -31,5 +32,16 @@ export const AiOn = () => (
 export const AiUnavailable = () => (
   <div className="min-h-screen">
     <SettingsPanel {...base} aiEnabled={false} aiAvailable={false} />
+  </div>
+);
+
+// The panel is `position: fixed`, so the intro sits in the dimmed area beside it.
+export const Overview = () => (
+  <div className="min-h-screen">
+    <StoryIntro
+      what="Side panel with the account settings: language, name, avatar and the opt-in for connections and smart search."
+      note="SettingsPanel"
+    />
+    <SettingsPanel {...base} aiEnabled aiAvailable />
   </div>
 );

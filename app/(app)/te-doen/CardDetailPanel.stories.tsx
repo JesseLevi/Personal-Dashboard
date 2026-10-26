@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { CardDetailPanel, type CardDetailPanelColumn } from "./CardDetailPanel";
 import type { ActionResult, CardRow, CardWithLabels } from "@/lib/boards/types";
 import nl from "@/messages/nl.json";
+import { Button } from "@/components/atoms/Button";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Te doen / Card detail panel" } satisfies StoryDefault;
@@ -60,6 +62,27 @@ const sampleCard: CardWithLabels = {
 // near-zero and the screenshot misses almost the entire panel. Not needed by
 // real app usage (the real page around CardDetailPanel already has its own
 // height), only by this harness.
+
+// Most representative state: edit mode with every field filled. The panel is `position: fixed`,
+// so the intro sits in the dimmed area beside it.
+export const Overview = () => (
+  <div className="min-h-screen">
+    <StoryIntro
+      what="Side panel to create or edit a ticket: title, description, status, priority, size, deadline and planned day. Delete asks for a second click."
+      note="CardDetailPanel"
+    />
+    <CardDetailPanel
+      open
+      onClose={() => {}}
+      columns={columns}
+      target={{ mode: "edit", card: sampleCard }}
+      onCreateCard={mockCreateCard}
+      onUpdateCard={mockUpdateCard}
+      onMoveCard={mockMoveCard}
+      onDeleteCard={mockDeleteCard}
+    />
+  </div>
+);
 
 // Create mode: empty fields, prefilled Status = the column whose Plus button
 // was clicked. Delete button is absent (nothing to delete yet).
@@ -131,40 +154,61 @@ export const EditItemDeleteConfirm = () => {
   );
 };
 
-// Exercises the real open/close cycle plus create->edit target switching, the
-// same way SidePanel.stories.tsx's own Interactive story does for the bare
-// panel. Not screenshot-stable by design (starts closed).
+// Real panel, local state, mock actions that report what the panel would have sent. Open it
+// from either button, fill the fields, save, or press the delete button to see the confirm step.
 export const Interactive = () => {
   const [state, setState] = useState<{
     open: boolean;
     target: { mode: "create"; columnId: string } | { mode: "edit"; card: CardWithLabels };
   }>({ open: false, target: { mode: "create", columnId: "ideeen" } });
+  const [lastAction, setLastAction] = useState("Nothing sent yet");
+
+  const report = (name: string, input: unknown) => {
+    setLastAction(`${name}: ${JSON.stringify(input)}`);
+  };
 
   return (
-    <div className="flex gap-2">
-      <button
-        type="button"
-        className="rounded-lg bg-surface-secondary px-3 py-2 text-sm font-semibold"
-        onClick={() => setState({ open: true, target: { mode: "create", columnId: "ideeen" } })}
-      >
-        Nieuw item in Ideeën
-      </button>
-      <button
-        type="button"
-        className="rounded-lg bg-surface-secondary px-3 py-2 text-sm font-semibold"
-        onClick={() => setState({ open: true, target: { mode: "edit", card: sampleCard } })}
-      >
-        Bewerk voorbeeldkaart
-      </button>
+    <div className="flex max-w-prose flex-col gap-stack-md">
+      <StoryIntro
+        what="Open the panel, fill in the fields, save or delete. The line below shows what each action would send to the server."
+        note="CardDetailPanel"
+      />
+      <div className="flex gap-inline-sm">
+        <Button
+          variant="filled"
+          onClick={() => setState({ open: true, target: { mode: "create", columnId: "ideeen" } })}
+        >
+          New item in Ideeën
+        </Button>
+        <Button
+          variant="filled"
+          onClick={() => setState({ open: true, target: { mode: "edit", card: sampleCard } })}
+        >
+          Edit sample card
+        </Button>
+      </div>
+      <p className="break-words text-xs text-text-secondary">{lastAction}</p>
       <CardDetailPanel
         open={state.open}
         onClose={() => setState((current) => ({ ...current, open: false }))}
         columns={columns}
         target={state.target}
-        onCreateCard={mockCreateCard}
-        onUpdateCard={mockUpdateCard}
-        onMoveCard={mockMoveCard}
-        onDeleteCard={mockDeleteCard}
+        onCreateCard={async (input) => {
+          report("createCard", input);
+          return mockCreateCard(input);
+        }}
+        onUpdateCard={async (input) => {
+          report("updateCard", input);
+          return mockUpdateCard(input);
+        }}
+        onMoveCard={async (input) => {
+          report("moveCard", input);
+          return mockMoveCard(input);
+        }}
+        onDeleteCard={async (input) => {
+          report("deleteCard", input);
+          return mockDeleteCard(input);
+        }}
       />
     </div>
   );

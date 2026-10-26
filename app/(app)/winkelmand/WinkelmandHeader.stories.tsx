@@ -1,9 +1,12 @@
 // figma: node-id=4231:15596 (+4231:15721 switcher open)
-import { WinkelmandHeader } from "./WinkelmandHeader";
+import { useState } from "react";
+import { WinkelmandHeader, type SortBy } from "./WinkelmandHeader";
 import type { ShoppingListOption } from "./ShoppingListPanel";
 import { AvatarGroup } from "@/components/molecules/AvatarGroup";
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
+import { Button } from "@/components/atoms/Button";
+import { Specimen, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Winkelmand / Winkelmand header" } satisfies StoryDefault;
@@ -33,6 +36,29 @@ const Header = ({ open = false, ownerLists = lists, compact = false, confirmClea
       defaultListMenuOpen={open}
       defaultClearConfirming={confirmClear}
     />
+  </div>
+);
+
+// Closed, "Leeg mand" confirm and the open switcher side by side.
+export const Overview = () => (
+  <div>
+    <StoryIntro
+      what="Header of the shopping basket page: basket name with a switcher, add item, sort and clear all. Clearing asks for a second click."
+      note="WinkelmandPage"
+    />
+    <div className="flex max-w-xl flex-col gap-stack-lg">
+      <Specimen label="Closed" hint="Title with chevron, add item, sort, clear all">
+        <Header compact />
+      </Specimen>
+      <Specimen label="Clear all asked" hint="The buttons give way to a two-step confirm">
+        <Header confirmClear compact />
+      </Specimen>
+      <Specimen label="Switcher open" hint="One option per basket, current one filled">
+        <div className="min-h-72">
+          <Header open compact />
+        </div>
+      </Specimen>
+    </div>
   </div>
 );
 
@@ -68,3 +94,49 @@ export const SharedBasket = () => (
     </Card>
   </div>
 );
+
+// Real header with local state: open the switcher and pick a basket, change the sort, toggle empty.
+export const Interactive = () => {
+  const [currentListId, setCurrentListId] = useState("list-1");
+  const [sortBy, setSortBy] = useState<SortBy>("recipe");
+  const [isEmpty, setIsEmpty] = useState(false);
+  const [lastAction, setLastAction] = useState("Nothing pressed yet");
+  const current = memberLists.find((list) => list.id === currentListId) ?? memberLists[0]!;
+
+  return (
+    <div className="flex max-w-md flex-col gap-stack-md">
+      <StoryIntro
+        what="Open the switcher and pick another basket, change the sort, or press the other buttons. The line below shows what the header reported."
+        note="WinkelmandPage"
+      />
+      <WinkelmandHeader
+        title={current.name}
+        lists={memberLists}
+        currentListId={currentListId}
+        sortBy={sortBy}
+        onSortChange={(next) => {
+          setSortBy(next);
+          setLastAction(`Sort by ${next}`);
+        }}
+        isEmpty={isEmpty}
+        onSwitchList={(listId) => {
+          setCurrentListId(listId);
+          setLastAction(`Switched to ${listId}`);
+        }}
+        onAddList={() => setLastAction("Add basket")}
+        onEditList={(listId) => setLastAction(`Edit settings of ${listId}`)}
+        onAddItem={() => setLastAction("Add item")}
+        onClearAll={() => {
+          setIsEmpty(true);
+          setLastAction("Cleared all, sort is now hidden");
+        }}
+      />
+      <p className="text-xs text-text-secondary">{lastAction}</p>
+      <div>
+        <Button variant="filled" onClick={() => setIsEmpty(false)}>
+          Refill basket
+        </Button>
+      </div>
+    </div>
+  );
+};

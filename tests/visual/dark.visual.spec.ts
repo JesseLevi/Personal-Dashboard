@@ -99,7 +99,7 @@ const DARK_STORIES = [
   "notities--blokken--table-size-picker--open",
   "basis--invoer--image-upload-field--empty",
   "basis--invoer--image-upload-field--file-selected",
-  "recepten--ingredient-admin--koppelingen",
+  "recepten--ingredient-admin--aliases",
   "recepten--ingredient-admin--own-ingredient-panel-edit",
   "basis--invoer--input-field--states",
   "basis--invoer--input-field--icon-combinations",

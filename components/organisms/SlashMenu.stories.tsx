@@ -5,6 +5,7 @@ import { noteExtensions } from "@/lib/notes/extensions";
 import { SlashCommand } from "@/lib/notes/slash-command";
 import { SLASH_ITEMS } from "@/lib/notes/slash-items";
 import { SlashMenu } from "./SlashMenu";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Editor / Slash menu" } satisfies StoryDefault;
@@ -36,3 +37,14 @@ function SlashDemo({ query }: { query: string }) {
 export const Open = () => <SlashDemo query="" />;
 export const Filtered = () => <SlashDemo query="kop" />;
 export const NoResults = () => <SlashDemo query="zzz" />;
+
+// The menu shown right after typing "/" on an empty line.
+export const Overview = () => (
+  <div className="flex max-w-prose flex-col gap-stack-md">
+    <StoryIntro
+      what="Menu that opens when you type a slash on an empty line: pick a block to insert, filtered as you keep typing."
+      note="NoteEditor"
+    />
+    <Open />
+  </div>
+);

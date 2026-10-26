@@ -1,6 +1,7 @@
 // figma: node-id=3878:9060 (+3878:9047 mobile)
 import { BoardPanel } from "./BoardPanel";
 import type { ActionResult, BoardRow } from "@/lib/boards/types";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Te doen / Board panel" } satisfies StoryDefault;
@@ -31,6 +32,23 @@ const sampleBoard: BoardRow = {
 // `min-h-screen` wrapper: SidePanel's overlay/panel are `position: fixed`, so
 // without it the Provider div the baseline is cropped to collapses to a
 // sliver (see CardDetailPanel.stories.tsx, commit 6e10fb5). Harness-only.
+
+// Most representative state: rename an existing board. The panel is `position: fixed`, so the
+// intro sits in the dimmed area beside it.
+export const Overview = () => (
+  <div className="min-h-screen">
+    <StoryIntro what="Side panel to name a new board or rename an existing one." note="BoardPanel" />
+    <BoardPanel
+      open
+      onClose={() => {}}
+      target={{ mode: "edit", board: sampleBoard }}
+      onCreateBoard={mockCreateBoard}
+      onRenameBoard={mockRenameBoard}
+      onCreated={() => {}}
+      onRenamed={() => {}}
+    />
+  </div>
+);
 
 // Create mode: empty Name field, Save disabled until something is typed.
 export const CreateBoard = () => (

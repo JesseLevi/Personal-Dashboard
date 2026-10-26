@@ -1,4 +1,5 @@
 import { SharedRecipeOffer } from "./SharedRecipeOffer";
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Recepten / Shared recipe offer" } satisfies StoryDefault;
@@ -45,5 +46,25 @@ export const NoThumbnail = () => (
       onAccept={noop}
       onDecline={noop}
     />
+  </div>
+);
+
+export const Overview = () => (
+  <div>
+    <StoryIntro
+      what="Card in a recipe column when someone shares a recipe with you: photo, duration, accept and decline."
+      note="SharedRecipeOffer"
+    />
+    <Specimens>
+      <Specimen label="Default" hint="Photo, duration, both buttons">
+        <Default />
+      </Specimen>
+      <Specimen label="Pending" hint="A request is running, buttons disabled">
+        <Pending />
+      </Specimen>
+      <Specimen label="No thumbnail" hint="Placeholder square, long title wraps">
+        <NoThumbnail />
+      </Specimen>
+    </Specimens>
   </div>
 );

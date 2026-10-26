@@ -1,5 +1,6 @@
 // design: Claude-designed on request (#341)
 import { NoteBacklinks } from "./NoteBacklinks";
+import { Specimen, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Notities / Rondom / Note backlinks" } satisfies StoryDefault;
@@ -24,3 +25,15 @@ export const Single = () => (
 );
 
 // Empty renders nothing (the section is hidden), so there is no story for it.
+
+export const Overview = () => (
+  <div className="flex max-w-prose flex-col gap-stack-lg">
+    <StoryIntro what="List under a note of the other notes that link to it. Hidden when there are none." note="NoteEditor" />
+    <Specimen label="Several" hint="Long title truncates, an empty title falls back">
+      <Default />
+    </Specimen>
+    <Specimen label="Single">
+      <Single />
+    </Specimen>
+  </div>
+);

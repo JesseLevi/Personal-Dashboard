@@ -6,6 +6,7 @@ import { Card } from "@/components/molecules/Card";
 import { CardContentRecipe } from "@/components/molecules/CardContentRecipe";
 import { AddRecipeMenu } from "./AddRecipeMenu";
 import nl from "../../../messages/nl.json";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Recepten / Add recipe menu" } satisfies StoryDefault;
@@ -56,5 +57,16 @@ export const OpenInEmptyColumn = () => (
         }
       />
     </Carousel>
+  </div>
+);
+
+// The menu open under a column's Plus button, with the intro above.
+export const Overview = () => (
+  <div className="flex flex-col gap-stack-md">
+    <StoryIntro
+      what="Menu under the Plus button of a recipe column: add a recipe from a link or write one by hand."
+      note="AddRecipeMenu"
+    />
+    <Open />
   </div>
 );

@@ -1,6 +1,7 @@
 // figma: node-id=4164:23722 (+4164:23777 mobile)
 import { LinkImportPanel } from "./LinkImportPanel";
 import type { ActionResult } from "@/lib/recipes/types";
+import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Recepten / Link import panel" } satisfies StoryDefault;
@@ -19,6 +20,17 @@ async function mockStartImport(categoryId: string, url: string): Promise<ActionR
 // (design/notes/LinkImportPanel.md).
 export const Empty = () => (
   <div className="min-h-screen">
+    <LinkImportPanel open onClose={() => {}} categoryId="category-1" onStartImport={mockStartImport} />
+  </div>
+);
+
+// The panel is `position: fixed`, so the intro sits in the dimmed area beside it.
+export const Overview = () => (
+  <div className="min-h-screen">
+    <StoryIntro
+      what="Side panel on desktop, pull-up on mobile, to import a recipe by pasting a link. Resize to see both shapes."
+      note="LinkImportPanel"
+    />
     <LinkImportPanel open onClose={() => {}} categoryId="category-1" onStartImport={mockStartImport} />
   </div>
 );

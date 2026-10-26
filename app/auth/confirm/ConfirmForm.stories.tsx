@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import { LoginExitProvider, LoginVisual } from "../../login/LoginExit";
 import { ConfirmForm, type ConfirmFormProps } from "./ConfirmForm";
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
 export default { title: "Account / Confirm form" } satisfies StoryDefault;
@@ -49,4 +50,21 @@ export const InPageFrameUnknownAddress = () => (
   <PageFrame>
     <Form maskedEmail={null} />
   </PageFrame>
+);
+
+export const Overview = () => (
+  <div>
+    <StoryIntro
+      what="Screen behind the link in the login mail: one button that confirms the sign-in."
+      note="LoginForm"
+    />
+    <Specimens>
+      <Specimen label="Known address" hint="Opened in the browser that asked for the mail">
+        <KnownAddress />
+      </Specimen>
+      <Specimen label="Unknown address" hint="Opened elsewhere: generic title and a warning line">
+        <UnknownAddress />
+      </Specimen>
+    </Specimens>
+  </div>
 );
