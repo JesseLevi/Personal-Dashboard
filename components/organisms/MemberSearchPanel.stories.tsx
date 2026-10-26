@@ -1,4 +1,6 @@
 // figma: node-id=4231:16811 (+4231:17096 result, 4233:17340 selected)
+import type { ReactNode } from "react";
+import { PanelFrame, StoryIntro } from "@/.ladle/story-kit";
 import { MemberSearchPanel } from "./MemberSearchPanel";
 import type { ActionResult, MemberSearchResult } from "@/lib/sharing/types";
 import type { StoryDefault } from "@ladle/react";
@@ -42,17 +44,24 @@ async function mockSearchEmpty(): Promise<ActionResult<typeof members>> {
 }
 
 // `min-h-screen` wrapper: SidePanel is `position: fixed` (see BoardPanel.stories.tsx). Harness-only.
-const Harness = (props: Partial<Parameters<typeof MemberSearchPanel>[0]>) => (
-  <div className="min-h-screen">
+const Harness = ({ intro, ...props }: Partial<Parameters<typeof MemberSearchPanel>[0]> & { intro?: ReactNode }) => (
+  <PanelFrame>
+    {intro}
     <MemberSearchPanel open onClose={() => {}} onSearch={mockSearch} onSelect={() => {}} {...props} />
-  </div>
+  </PanelFrame>
 );
 
 // Figma 04: empty search field and the prompt.
 export const Empty = () => <Harness />;
 
-// Figma 05: results (one with the e-mail the RPC returns on an exact match).
-export const Results = () => <Harness initialQuery="jes" />;
+// Figma 05: results (one with the e-mail the RPC returns on an exact match). The panel is
+// `position: fixed`, so states cannot sit side by side: the other states are separate stories.
+export const Overview = () => (
+  <Harness
+    initialQuery="jes"
+    intro={<StoryIntro what="Search for a member to share with: pick one result, then confirm." note="MemberSearchPanel" />}
+  />
+);
 
 // Figma 06: one result selected (border), "Voeg toe" enabled.
 export const Selected = () => <Harness initialQuery="jes" selectedId="member-2" />;

@@ -1,11 +1,12 @@
 // figma: node-id=3779:4846
 import { useState } from "react";
+import { PanelFrame, StoryIntro } from "@/.ladle/story-kit";
 import { SidePanel } from "./SidePanel";
 import { Button } from "../atoms/Button";
 import { InputField } from "../atoms/InputField";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
-import type { StoryDefault } from "@ladle/react";
+import type { Story, StoryDefault } from "@ladle/react";
 
 export default { title: "Basis / Panelen / Side panel" } satisfies StoryDefault;
 
@@ -13,35 +14,21 @@ export default { title: "Basis / Panelen / Side panel" } satisfies StoryDefault;
 const closeLabelEn = en.components.sidePanel.closeLabel;
 const closeLabelNl = nl.components.sidePanel.closeLabel;
 
-// Both shapes come from the SAME markup via `md:` classes — there is no
-// separate "Mobile"/"Desktop" story, resize the actual browser to see the
-// bottom-sheet below `md` vs. the side-drawer at/above it. This workbench's
-// screenshot gate (a single fixed-viewport chromium project) only ever
-// baselines the wide (desktop) shape — see design/notes/SidePanel.md.
-
-// `min-h-screen` wrapper: SidePanel's overlay/panel are `position: fixed`,
-// so they contribute 0 to their ancestors' flow height — without this, the
-// Provider div (which tests/visual/screenshot-override.css crops the
-// baseline to) would collapse to near-zero and the screenshot would miss
-// almost the entire panel. Not needed by real app usage (the real page
-// around SidePanel already has its own height), only by this harness.
-
-// Figma's fetched "AddItem" sample: Naam/Omschrijving/Status/Prioriteit
-// fields + Verwijderen(destructive)/Opslaan(filled) footer. #103: footer
-// buttons share a row (`flex gap-2`) with `grow basis-0` each, the same
-// full-width convention CardDetailPanel.tsx/BoardPanel.tsx use — SidePanel's
-// own footer container only stretches whatever row(s) the caller nests
-// inside it, so every multi-button footer (including this demo) must supply
-// its own row wrapper or its buttons stack one-per-line instead of sharing one.
-export const AddItem = () => (
-  <div className="min-h-screen">
+// One markup, two shapes via `md:` classes: a bottom sheet below `md`, a side drawer from `md` up.
+// The panel is `position: fixed`, so variants cannot sit side by side: Overview shows the
+// Figma "AddItem" sample open, the other shapes are separate stories. The `min-h-screen`
+// wrapper keeps the baseline crop tall enough (the fixed panel adds no flow height).
+// Footer buttons share a row with `grow basis-0` each, the CardDetailPanel/BoardPanel convention.
+export const Overview = () => (
+  <PanelFrame>
+    <StoryIntro what="A pull-up panel for forms: a side drawer on desktop, a bottom sheet on mobile." note="SidePanel" />
     <SidePanel
       open
       onClose={() => {}}
       title="Item toevoegen"
       closeLabel={closeLabelEn}
       footer={
-        <div className="flex gap-2">
+        <div className="flex gap-inline-sm">
           <Button variant="destructive" icon="Trash" className="grow basis-0">
             Verwijderen
           </Button>
@@ -54,38 +41,46 @@ export const AddItem = () => (
       <InputField label="Naam" id="side-panel-demo-name" defaultValue="HBO Wachtwoord updaten" />
       <InputField label="Omschrijving" id="side-panel-demo-description" />
     </SidePanel>
-  </div>
+  </PanelFrame>
 );
 
-// Figma's fetched "AddBoard" sample: a single name field, one Opslaan
-// action — no destructive footer button. NL catalog check for closeLabel.
-export const AddBoard = () => (
-  <div className="min-h-screen">
+type PlaygroundProps = { title: string; withFooter: boolean; level: 1 | 2 };
+
+export const Playground: Story<PlaygroundProps> = ({ title, withFooter, level }) => (
+  <PanelFrame>
     <SidePanel
       open
       onClose={() => {}}
-      title="Bord toevoegen"
-      closeLabel={closeLabelNl}
+      title={title}
+      closeLabel={closeLabelEn}
+      level={level}
       footer={
-        <div className="flex gap-2">
-          <Button variant="filled" icon="Plus" className="grow basis-0">
-            Opslaan
-          </Button>
-        </div>
+        withFooter ? (
+          <div className="flex gap-inline-sm">
+            <Button variant="filled" icon="Plus" className="grow basis-0">
+              Opslaan
+            </Button>
+          </div>
+        ) : undefined
       }
     >
-      <InputField label="Naam" id="side-panel-demo-board-name" />
+      <InputField label="Naam" id="side-panel-playground-name" />
     </SidePanel>
-  </div>
+  </PanelFrame>
 );
+Playground.args = { title: "Item toevoegen", withFooter: true, level: 1 };
+Playground.argTypes = {
+  title: { control: { type: "text" } },
+  withFooter: { control: { type: "boolean" } },
+  level: { control: { type: "inline-radio" }, options: [1, 2] },
+};
 
-// Exercises the real open/close cycle — trigger click, overlay click,
-// Escape, and focus returning to this same trigger. Not screenshot-stable
-// by design (starts closed); use `pnpm ladle` to drive it by hand.
+// Real open/close cycle: trigger click, overlay click, Escape, and focus returning to
+// the trigger. Starts closed, so it is not screenshot-stable by design.
 export const Interactive = () => {
   const [open, setOpen] = useState(false);
   return (
-    <div className="min-h-screen p-4">
+    <div className="min-h-screen p-component-md [contain:layout]">
       <Button variant="filled" onClick={() => setOpen(true)}>
         Open panel
       </Button>
@@ -95,7 +90,7 @@ export const Interactive = () => {
         title="Item toevoegen"
         closeLabel={closeLabelEn}
         footer={
-          <div className="flex gap-2">
+          <div className="flex gap-inline-sm">
             <Button variant="filled" icon="Plus" className="grow basis-0">
               Opslaan
             </Button>
@@ -107,3 +102,24 @@ export const Interactive = () => {
     </div>
   );
 };
+
+// Figma "AddBoard": one name field, one Opslaan action, no destructive button; NL close label.
+export const Dutch = () => (
+  <PanelFrame>
+    <SidePanel
+      open
+      onClose={() => {}}
+      title="Bord toevoegen"
+      closeLabel={closeLabelNl}
+      footer={
+        <div className="flex gap-inline-sm">
+          <Button variant="filled" icon="Plus" className="grow basis-0">
+            Opslaan
+          </Button>
+        </div>
+      }
+    >
+      <InputField label="Naam" id="side-panel-demo-board-name" />
+    </SidePanel>
+  </PanelFrame>
+);

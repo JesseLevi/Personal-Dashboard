@@ -1,9 +1,11 @@
 // figma: node-id=4160:33335
+import { useState } from "react";
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import { Button } from "../atoms/Button";
 import { ButtonToggle, type ButtonToggleItem } from "./ButtonToggle";
 import en from "../../messages/en.json";
 import nl from "../../messages/nl.json";
-import type { StoryDefault } from "@ladle/react";
+import type { Story, StoryDefault } from "@ladle/react";
 
 export default { title: "Basis / Invoer / Button toggle" } satisfies StoryDefault;
 
@@ -21,76 +23,91 @@ const themeItemsEn: readonly ButtonToggleItem[] = [
   { value: "dark", icon: "Moon", label: en.components.settingsPanel.themeOptions.dark },
 ];
 
-// This molecule is FILL-designed (Figma `layoutGrow: 1`/`hSize: FILL` on the
-// component root and its track, see design/notes/ButtonToggle.md) — it
-// stretches to whatever width its parent gives it, matching the real caller
-// (SettingsPanel.tsx's 368px-wide panel content column). A bare flex-col
-// wrapper with no width constraint would let it stretch to the whole story
-// canvas, which doesn't demonstrate anything; `w-[368px]` on each wrapper
-// reproduces the real container width instead.
-export const WithTitle = () => (
-  <div className="flex flex-col gap-8">
-    <div className="w-[368px]">
-      <ButtonToggle
-        title={nl.components.settingsPanel.themeLabel}
-        items={themeItems}
-        defaultValue="system"
-      />
-    </div>
-    <div className="w-[368px]">
-      <ButtonToggle
-        title={en.components.settingsPanel.themeLabel}
-        items={themeItemsEn}
-        defaultValue="dark"
-      />
-    </div>
-  </div>
-);
-
-// No visible title — `aria-label` alone (TeDoenHeader-style toolbar usage).
-export const WithoutTitle = () => (
-  <div className="w-[368px]">
-    <ButtonToggle items={themeItems} defaultValue="light" aria-label={nl.components.settingsPanel.themeLabel} />
-  </div>
-);
-
-// Unequal label widths, the actual reason this molecule measures the
-// indicator at runtime instead of reusing the old atom's fixed step table —
-// still equal-width segments (`grow basis-0`), so the longer label proves
-// the indicator scales, not the segment itself.
+// FILL-designed (design/notes/ButtonToggle.md): it stretches to its parent, so each
+// specimen gets the real caller's 368 px column.
 const mixedWidthItems: readonly ButtonToggleItem[] = [
   { value: "a", icon: "Sun", label: "A" },
   { value: "b", icon: "Moon", label: "A much longer label" },
   { value: "c", icon: "SunMoon", label: "Mid" },
 ];
 
-export const VariableWidthSegments = () => (
-  <div className="w-[368px]">
-    <ButtonToggle items={mixedWidthItems} defaultValue="b" aria-label="Variable width demo" />
-  </div>
+const viewItems: readonly ButtonToggleItem[] = [
+  { value: "day", label: "Dag" },
+  { value: "week", label: "Week" },
+  { value: "month", label: "Maand" },
+  { value: "list", label: "Lijst" },
+];
+
+export const Overview = () => (
+  <>
+    <StoryIntro what="A segmented toggle: one option is active, the indicator slides to it." note="ButtonToggle" />
+    <Specimens>
+      <Specimen label="with title" hint="Kleurenthema, as in SettingsPanel">
+        <div className="w-[368px]">
+          <ButtonToggle title={nl.components.settingsPanel.themeLabel} items={themeItems} defaultValue="system" />
+        </div>
+      </Specimen>
+      <Specimen label="without title" hint="aria-label only (toolbar usage)">
+        <div className="w-[368px]">
+          <ButtonToggle items={themeItems} defaultValue="light" aria-label={nl.components.settingsPanel.themeLabel} />
+        </div>
+      </Specimen>
+      <Specimen label="variable width" hint="indicator is measured, segments stay equal">
+        <div className="w-[368px]">
+          <ButtonToggle items={mixedWidthItems} defaultValue="b" aria-label="Variable width demo" />
+        </div>
+      </Specimen>
+      <Specimen label="size small" hint="as high as a default Button (40 px)">
+        <div className="flex w-[560px] items-center gap-inline-md">
+          <ButtonToggle items={themeItems} defaultValue="light" size="small" aria-label={nl.components.settingsPanel.themeLabel} className="w-80" />
+          <Button>Vandaag</Button>
+        </div>
+      </Specimen>
+      <Specimen label="size small, text only" hint="icon is optional (Agenda view toggle)">
+        <div className="w-[368px]">
+          <ButtonToggle items={viewItems} defaultValue="week" size="small" aria-label="Weergave" />
+        </div>
+      </Specimen>
+    </Specimens>
+  </>
 );
 
-// `size="small"`: the track is as high as the default Button next to it (40 px).
-export const SmallBesideButton = () => (
-  <div className="flex w-[560px] items-center gap-4">
-    <ButtonToggle items={themeItems} defaultValue="light" size="small" aria-label={nl.components.settingsPanel.themeLabel} className="w-80" />
-    <Button>Vandaag</Button>
-  </div>
-);
+type PlaygroundProps = { size: "default" | "small"; tone: "default" | "button"; withIcons: boolean; title: string };
 
-// Text only: `icon` is optional (Agenda's view toggle).
-export const SmallTextOnly = () => (
+export const Playground: Story<PlaygroundProps> = ({ size, tone, withIcons, title }) => (
   <div className="w-[368px]">
     <ButtonToggle
-      items={[
-        { value: "day", label: "Dag" },
-        { value: "week", label: "Week" },
-        { value: "month", label: "Maand" },
-        { value: "list", label: "Lijst" },
-      ]}
-      defaultValue="week"
-      size="small"
-      aria-label="Weergave"
+      key={String(withIcons)}
+      title={title}
+      size={size}
+      tone={tone}
+      items={withIcons ? themeItems : viewItems}
+      defaultValue={withIcons ? "light" : "week"}
     />
+  </div>
+);
+Playground.args = { size: "default", tone: "default", withIcons: true, title: "Kleurenthema" };
+Playground.argTypes = {
+  size: { control: { type: "inline-radio" }, options: ["default", "small"] },
+  tone: { control: { type: "inline-radio" }, options: ["default", "button"] },
+  withIcons: { control: { type: "boolean" } },
+  title: { control: { type: "text" } },
+};
+
+// Controlled: the chosen value is read back from the parent's state.
+export const Interactive = () => {
+  const [value, setValue] = useState("light");
+  return (
+    <div className="flex w-[368px] flex-col gap-stack-sm">
+      <ButtonToggle items={themeItems} value={value} defaultValue={value} onValueChange={setValue} aria-label="Interactive toggle" />
+      <p className="text-sm text-text-secondary">Selected: {value}</p>
+    </div>
+  );
+};
+
+// English catalog check.
+export const English = () => (
+  <div className="w-[368px]">
+    <ButtonToggle title={en.components.settingsPanel.themeLabel} items={themeItemsEn} defaultValue="dark" />
   </div>
 );

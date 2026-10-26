@@ -1,28 +1,41 @@
 // figma: node-id=3727:4084
 import { useState } from "react";
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import { Checkbox } from "./Checkbox";
-import type { StoryDefault } from "@ladle/react";
+import type { Story, StoryDefault } from "@ladle/react";
 
 export default { title: "Basis / Invoer / Checkbox" } satisfies StoryDefault;
 
-// Checked=No/Yes side by side — the full variant axis from the Figma
-// component set, both rendered statically.
-export const States = () => (
-  <div className="flex gap-4">
-    <Checkbox checked={false} />
-    <Checkbox checked />
-  </div>
+export const Overview = () => (
+  <>
+    <StoryIntro what="A square checkbox button; the parent owns the checked state." note="Checkbox" />
+    <Specimens>
+      <Specimen label="checked={false}">
+        <Checkbox checked={false} aria-label="Unchecked" />
+      </Specimen>
+      <Specimen label="checked">
+        <Checkbox checked aria-label="Checked" />
+      </Specimen>
+    </Specimens>
+  </>
 );
 
-// Exercises the #45 fix: clicking (or focusing + pressing Space, for free
-// from the native <button> host) toggles the box, and aria-checked always
-// reflects the composer-owned `checked` state passed back in.
-export const Toggleable = () => {
+export const Playground: Story<{ checked: boolean; disabled: boolean }> = (props) => (
+  <Checkbox {...props} aria-label="Playground checkbox" />
+);
+Playground.args = { checked: false, disabled: false };
+Playground.argTypes = {
+  checked: { control: { type: "boolean" } },
+  disabled: { control: { type: "boolean" } },
+};
+
+// Click, or focus and press Space: aria-checked follows the state passed back in.
+export const Interactive = () => {
   const [checked, setChecked] = useState(false);
   return (
     <Checkbox
       checked={checked}
-      aria-label="Toggleable checkbox"
+      aria-label="Interactive checkbox"
       onClick={() => setChecked((prev) => !prev)}
     />
   );

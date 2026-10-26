@@ -1,4 +1,5 @@
 // figma: node-id=3624:4448
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import { Card } from "./Card";
 import { CardContentRecipe } from "./CardContentRecipe";
 import { CardContentIngredient } from "./CardContentIngredient";
@@ -7,7 +8,7 @@ import { CardContentStep } from "./CardContentStep";
 import { Button } from "../atoms/Button";
 import { Tag } from "../atoms/Tag";
 import en from "../../messages/en.json";
-import type { StoryDefault } from "@ladle/react";
+import type { Story, StoryDefault } from "@ladle/react";
 
 export default { title: "Basis / Kaarten / Card" } satisfies StoryDefault;
 
@@ -15,42 +16,85 @@ const placeholderContent = (
   <p className="text-base font-semibold text-text-secondary">Card content</p>
 );
 
-export const Default = () => <Card>{placeholderContent}</Card>;
-
-export const WithTitle = () => (
-  <Card title="Titel">{placeholderContent}</Card>
-);
+const settingsButton = <Button variant="filled" icon="Settings2" aria-label="Pas aan" />;
 
 // `contentClassName` swaps the Type slot's surface (the loading skeletons bind
-// surface-primary / surface-secondary) — design/notes/Card.md.
-export const SurfaceOverride = () => (
-  <div className="flex w-full flex-col gap-4">
-    <Card contentClassName="bg-surface-primary">{placeholderContent}</Card>
-    <Card contentClassName="bg-surface-secondary">{placeholderContent}</Card>
+// surface-primary / surface-secondary); `settings` renders even without a title.
+export const Overview = () => (
+  <>
+    <StoryIntro what="The frame around one piece of content: optional title, step number and settings button." note="Card" />
+    <Specimens>
+      <Specimen label="default" hint="content only">
+        <div className="w-72">
+          <Card>{placeholderContent}</Card>
+        </div>
+      </Specimen>
+      <Specimen label="title">
+        <div className="w-72">
+          <Card title="Titel">{placeholderContent}</Card>
+        </div>
+      </Specimen>
+      <Specimen label="step">
+        <div className="w-72">
+          <Card step={1}>{placeholderContent}</Card>
+        </div>
+      </Specimen>
+      <Specimen label="title + step">
+        <div className="w-72">
+          <Card title="Titel" step={1}>
+            {placeholderContent}
+          </Card>
+        </div>
+      </Specimen>
+      <Specimen label="settings" hint="Pas-aan trigger next to the title">
+        <div className="w-72">
+          <Card title="Ingrediënten" settings={settingsButton}>
+            {placeholderContent}
+          </Card>
+        </div>
+      </Specimen>
+      <Specimen label="settings, no title" hint="the no-group-label case">
+        <div className="w-72">
+          <Card settings={settingsButton}>{placeholderContent}</Card>
+        </div>
+      </Specimen>
+      <Specimen label="contentClassName" hint="surface-primary">
+        <div className="w-72">
+          <Card contentClassName="bg-surface-primary">{placeholderContent}</Card>
+        </div>
+      </Specimen>
+      <Specimen label="contentClassName" hint="surface-secondary">
+        <div className="w-72">
+          <Card contentClassName="bg-surface-secondary">{placeholderContent}</Card>
+        </div>
+      </Specimen>
+    </Specimens>
+  </>
+);
+
+type PlaygroundProps = { title: string; step: string; withSettings: boolean; surface: "default" | "primary" | "secondary" };
+
+const SURFACE = { default: undefined, primary: "bg-surface-primary", secondary: "bg-surface-secondary" } as const;
+
+export const Playground: Story<PlaygroundProps> = ({ title, step, withSettings, surface }) => (
+  <div className="w-72">
+    <Card
+      title={title || undefined}
+      step={step || undefined}
+      settings={withSettings ? settingsButton : undefined}
+      contentClassName={SURFACE[surface]}
+    >
+      {placeholderContent}
+    </Card>
   </div>
 );
-
-export const WithStep = () => <Card step={1}>{placeholderContent}</Card>;
-
-// #160: `settings` slot (the ingredients Card's Pas-aan trigger). Rendered
-// even without a `title` (the "no group label" case) — see design/notes/Card.md.
-export const WithSettings = () => (
-  <Card title="Ingrediënten" settings={<Button variant="filled" icon="Settings2" aria-label="Pas aan" />}>
-    {placeholderContent}
-  </Card>
-);
-
-export const WithSettingsNoTitle = () => (
-  <Card settings={<Button variant="filled" icon="Settings2" aria-label="Pas aan" />}>
-    {placeholderContent}
-  </Card>
-);
-
-export const WithTitleAndStep = () => (
-  <Card title="Titel" step={1}>
-    {placeholderContent}
-  </Card>
-);
+Playground.args = { title: "Titel", step: "", withSettings: false, surface: "default" };
+Playground.argTypes = {
+  title: { control: { type: "text" } },
+  step: { control: { type: "text" } },
+  withSettings: { control: { type: "boolean" } },
+  surface: { control: { type: "inline-radio" }, options: ["default", "primary", "secondary"] },
+};
 
 // Dev-only placeholder photo, same convention as CardContentRecipe.stories.tsx's ThumbnailBackdrop.
 const PLACEHOLDER_IMAGE =

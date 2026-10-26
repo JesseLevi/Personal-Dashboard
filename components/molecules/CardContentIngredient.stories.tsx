@@ -1,4 +1,5 @@
 // figma: node-id=3727:4021
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import type { Story, StoryDefault } from "@ladle/react";
 import { CardContentIngredient } from "./CardContentIngredient";
 import en from "../../messages/en.json";
@@ -63,78 +64,87 @@ Playground.argTypes = {
   deletable: { control: { type: "boolean" } },
 };
 
-// Base variant axis side by side (Checkbox None/Unchecked/Checked). Delete
-// moved to its own SwipeToDelete story below (#160: it's a gesture, not an
-// always-visible row). No pointer-state fill exists (see
-// design/notes/CardContentIngredient.md).
-export const AllVariants = () => (
-  <div className="flex w-96 flex-col gap-2">
-    <CardContentIngredient name="Banana" quantity="300 gr" />
-    <CardContentIngredient name="Banana" quantity="300 gr" checked={false} />
-    <CardContentIngredient name="Banana" quantity="300 gr" checked />
-  </div>
+// Swipe rows render at rest (closed); the revealed pill needs a live drag, so drag them to try.
+export const Overview = () => (
+  <>
+    <StoryIntro what="One ingredient row: name, optional quantity and checkbox, optionally swipeable." note="CardContentIngredient" />
+    <Specimens>
+      <Specimen label="no checkbox">
+        <div className="w-96">
+          <CardContentIngredient name="Banana" quantity="300 gr" />
+        </div>
+      </Specimen>
+      <Specimen label="unchecked" hint="checked={false}">
+        <div className="w-96">
+          <CardContentIngredient name="Banana" quantity="300 gr" checked={false} />
+        </div>
+      </Specimen>
+      <Specimen label="checked">
+        <div className="w-96">
+          <CardContentIngredient name="Banana" quantity="300 gr" checked />
+        </div>
+      </Specimen>
+      <Specimen label="no quantity, divider between rows" hint="ingredient-search pick list">
+        <div className="w-96 rounded-xl border border-stroke-primary bg-surface-highlight-white p-component-xs">
+          {[
+            { name: "Appel", checked: false },
+            { name: "Blauwe bes", checked: false },
+            { name: "Havermout", checked: true },
+          ].map((row, index, rows) => (
+            <CardContentIngredient key={row.name} name={row.name} checked={row.checked} divider={index < rows.length - 1} />
+          ))}
+        </div>
+      </Specimen>
+      <Specimen label='swipeAction="delete"' hint="swipe reveals the destructive button (shopping basket)">
+        <div className="w-96">
+          <CardContentIngredient
+            name="Banana"
+            quantity="300 gr"
+            checked={false}
+            onDelete={() => {}}
+            deleteLabel={deleteLabelEn}
+            swipeAction="delete"
+          />
+        </div>
+      </Specimen>
+      <Specimen label='swipeAction="cart"' hint="swipe reveals add-to-basket (recipe detail)">
+        <div className="w-96">
+          <CardContentIngredient
+            name="Banana"
+            quantity="300 gr"
+            checked={false}
+            onAddToCart={async () => ({ success: true, data: undefined })}
+            addToCartLabel={en.components.cardContentIngredient.addToCartLabel}
+            swipeAction="cart"
+          />
+        </div>
+      </Specimen>
+      <Specimen label="needs review" hint="importer was unsure; the Tag is the caller's hook">
+        <div className="w-96">
+          <CardContentIngredient
+            name="Knoflook (teentje)"
+            quantity="1 stuk"
+            reviewLabel={nl.components.recipeDetailPage.needsReviewLabel}
+            onReviewClick={() => {}}
+          />
+        </div>
+      </Specimen>
+      <Specimen label="not counted" hint="left out of the nutrition totals">
+        <div className="w-96">
+          <CardContentIngredient
+            name="Garnalen"
+            quantity="200 g"
+            reviewLabel={nl.components.recipeDetailPage.notCountedLabel}
+            onReviewClick={() => {}}
+          />
+        </div>
+      </Specimen>
+    </Specimens>
+  </>
 );
 
-// #131/#160: `Tag=false` (no `quantity`) + `divider` computed per-row as
-// "not the last one" — the ingredient-search-panel usage, a name-only pick
-// list whose rule sits only BETWEEN rows (none above the first, none below
-// the last).
-export const NoQuantityWithDivider = () => {
-  const rows = [
-    { name: "Appel", checked: false },
-    { name: "Blauwe bes", checked: false },
-    { name: "Havermout", checked: true },
-  ];
-  return (
-    <div className="w-96 rounded-xl border border-stroke-primary bg-surface-highlight-white p-2">
-      {rows.map((row, index) => (
-        <CardContentIngredient
-          key={row.name}
-          name={row.name}
-          checked={row.checked}
-          divider={index < rows.length - 1}
-        />
-      ))}
-    </div>
-  );
-};
-
-// #160: State=Delete (node 3727:4378, annotation "When sliding") is a swipe
-// reveal, opt-in via `swipeAction="delete"` — the shopping basket (#29,
-// Phase 5) is its first live consumer (#177). Renders at rest (closed); the
-// open/revealed pill state needs a live drag and isn't captured by the
-// static screenshot baseline.
-export const SwipeToDelete = () => (
-  <div className="w-96">
-    <CardContentIngredient
-      name="Banana"
-      quantity="300 gr"
-      checked={false}
-      onDelete={() => {}}
-      deleteLabel={deleteLabelEn}
-      swipeAction="delete"
-    />
-  </div>
-);
-
-// NL catalog check for the delete label.
-export const DeleteLabelNl = () => (
-  <div className="w-96">
-    <CardContentIngredient
-      name="Banaan"
-      quantity="300 gr"
-      checked={false}
-      onDelete={() => {}}
-      deleteLabel={nl.components.cardContentIngredient.deleteLabel}
-      swipeAction="delete"
-    />
-  </div>
-);
-
-// #222: an extremely long name must wrap onto multiple lines while the Tag
-// stays on its own single line at its natural width — see
-// design/notes/CardContentIngredient.md for the flex-shrink root cause.
-export const LongNameWrap = () => (
+// #222: a very long name wraps while the Tag keeps its natural width (design/notes/CardContentIngredient.md).
+export const LongText = () => (
   <div className="w-96">
     <CardContentIngredient
       name="Extra fijngesneden biologische roodlof met een vleugje truffelolie"
@@ -143,46 +153,15 @@ export const LongNameWrap = () => (
   </div>
 );
 
-// #179: State=Cart (node 4050:11613, annotation "When sliding" on
-// 4050:11614) is the same swipe gesture, revealing a `filled`/basket
-// AnimatedAddToBasketButton instead of the destructive Trash Button —
-// ReceptDetailPage's ingredient rows are its first live consumer. Renders at
-// rest (closed), same reasoning as SwipeToDelete above.
-export const SwipeToCart = () => (
+export const Dutch = () => (
   <div className="w-96">
     <CardContentIngredient
-      name="Banana"
+      name="Banaan"
       quantity="300 gr"
       checked={false}
-      onAddToCart={async () => ({ success: true, data: undefined })}
-      addToCartLabel={en.components.cardContentIngredient.addToCartLabel}
-      swipeAction="cart"
-    />
-  </div>
-);
-
-// #318 (Claude-designed on request): imported line the importer was unsure about,
-// "controleren" Tag under the name. Pressing it is the caller's hook (edit panel).
-export const NeedsReview = () => (
-  <div className="w-96">
-    <CardContentIngredient
-      name="Knoflook (teentje)"
-      quantity="1 stuk"
-      reviewLabel={nl.components.recipeDetailPage.needsReviewLabel}
-      onReviewClick={() => {}}
-    />
-  </div>
-);
-
-// Claude-designed on request (2026-10-07): the same marker for a line the
-// nutrition totals leave out; pressing it opens the edit panel.
-export const NotCounted = () => (
-  <div className="w-96">
-    <CardContentIngredient
-      name="Garnalen"
-      quantity="200 g"
-      reviewLabel={nl.components.recipeDetailPage.notCountedLabel}
-      onReviewClick={() => {}}
+      onDelete={() => {}}
+      deleteLabel={nl.components.cardContentIngredient.deleteLabel}
+      swipeAction="delete"
     />
   </div>
 );

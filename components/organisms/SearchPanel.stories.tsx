@@ -1,4 +1,6 @@
 // design: Claude-designed (#581)
+import type { ReactNode } from "react";
+import { PanelFrame, StoryIntro } from "@/.ladle/story-kit";
 import { SearchPanel } from "./SearchPanel";
 import type { SearchPanelAction } from "@/lib/search/panel";
 import type { SearchResult } from "@/lib/search/query";
@@ -45,8 +47,9 @@ const none: SearchPanelAction = async () => ({ success: true, data: { mode: "hyb
 const pending: SearchPanelAction = () => new Promise(() => {});
 
 // `min-h-screen` wrapper: SidePanel is `position: fixed`. Harness-only.
-const Harness = (props: Partial<Parameters<typeof SearchPanel>[0]>) => (
-  <div className="min-h-screen">
+const Harness = ({ intro, ...props }: Partial<Parameters<typeof SearchPanel>[0]> & { intro?: ReactNode }) => (
+  <PanelFrame>
+    {intro}
     <SearchPanel
       open
       onClose={() => {}}
@@ -57,14 +60,21 @@ const Harness = (props: Partial<Parameters<typeof SearchPanel>[0]>) => (
       autoFocusField={false}
       {...props}
     />
-  </div>
+  </PanelFrame>
 );
 
 export const Empty = () => <Harness />;
 
 export const Loading = () => <Harness initialQuery="pomp" onSearch={pending} />;
 
-export const Results = () => <Harness initialQuery="pomp" />;
+// The panel is `position: fixed`, so states cannot sit side by side: Overview shows the
+// results, the other states are separate stories.
+export const Overview = () => (
+  <Harness
+    initialQuery="pomp"
+    intro={<StoryIntro what="Search over every module from the app shell, in a pull-up panel." note="SearchPanel" />}
+  />
+);
 
 export const NoResults = () => <Harness initialQuery="zzz" onSearch={none} />;
 

@@ -1,5 +1,6 @@
 // figma: node-id=3957:10337 (+3957:10595 desktop, panel 3957:11006)
 import { NextIntlClientProvider } from "next-intl";
+import { PanelFrame, StoryIntro } from "@/.ladle/story-kit";
 import { IngredientSearchPanel, ingredientSearchResultKey } from "./IngredientSearchPanel";
 import type {
   ActionResult,
@@ -121,7 +122,7 @@ function logSave(ingredients: IngredientRow[], plainNames: string[]) {
 
 // Not yet searched -- only the prompt copy is visible, no Card.
 export const Empty = () => (
-  <div className="min-h-screen">
+  <PanelFrame>
     <IngredientSearchPanel
       open
       onClose={() => {}}
@@ -129,14 +130,15 @@ export const Empty = () => (
       onCreateOwnIngredient={mockOnCreateOwnIngredient}
       onSave={logSave}
     />
-  </div>
+  </PanelFrame>
 );
 
-// Matches one own ingredient (Kipfilet) and two reference ingredients
-// (Appel, Havermout) via the shared substring "e" -- exercises both sources
-// in the same list, all rows unchecked (matches the fetched Figma mock).
-export const FilledResults = () => (
-  <div className="min-h-screen">
+// Matches one own ingredient (Kipfilet) and two reference ingredients (Appel, Havermout) via
+// the shared substring "e": both sources in one list, all rows unchecked (the Figma mock).
+// The panel is `position: fixed`, so states cannot sit side by side: the others are separate stories.
+export const Overview = () => (
+  <PanelFrame>
+    <StoryIntro what="Pick ingredients from your own list and the reference list, or add a new one." note="IngredientSearchPanel" />
     <IngredientSearchPanel
       open
       onClose={() => {}}
@@ -145,14 +147,14 @@ export const FilledResults = () => (
       onSave={logSave}
       initialQuery="e"
     />
-  </div>
+  </PanelFrame>
 );
 
 // Zero results -- exercises the "add as new ingredient" affordance, the
 // deliberate deviation from Figma (see the component's own header comment
 // and design/notes/IngredientSearchPanel.md).
 export const ZeroResultsWithPlainName = () => (
-  <div className="min-h-screen">
+  <PanelFrame>
     <IngredientSearchPanel
       open
       onClose={() => {}}
@@ -161,15 +163,15 @@ export const ZeroResultsWithPlainName = () => (
       onSave={logSave}
       initialQuery="Kaneel"
     />
-  </div>
+  </PanelFrame>
 );
 
-// Same "e" result set as FilledResults, with Appel (reference) and Kipfilet
+// Same "e" result set as Overview, with Appel (reference) and Kipfilet
 // (own) pre-checked via `initialSelectedIds` -- the fetched node draws no
 // checked example at all (design/notes/CardContentIngredient.md), so this
 // reuses the Checked styling already built for the recipe detail screen.
 export const SomeRowsChecked = () => (
-  <div className="min-h-screen">
+  <PanelFrame>
     <IngredientSearchPanel
       open
       onClose={() => {}}
@@ -182,20 +184,20 @@ export const SomeRowsChecked = () => (
         ingredientSearchResultKey({ source: "own", ingredient: mockOwnIngredients[0] }),
       ]}
     />
-  </div>
+  </PanelFrame>
 );
 
 // English catalog check (#161, ADR-0013 §6): reference rows render name_en
 // over name_nl once the active locale is "en" -- Appel/Havermout become
-// Apple/Oats (same "e" query/result set as FilledResults, matched via
+// Apple/Oats (same "e" query/result set as Overview, matched via
 // mockOnSearch's own name_nl substring check). Kipfilet (own) stays
 // untranslated -- user-entered ingredient names are never localised. Nests
 // its own NextIntlClientProvider since Ladle's global one
 // (.ladle/components.tsx) is fixed to locale "nl" -- same precedent as
-// PortionStepper.stories.tsx's EnglishCatalog story.
-export const EnglishCatalog = () => (
+// PortionStepper.stories.tsx's English story.
+export const English = () => (
   <NextIntlClientProvider locale="en" messages={en}>
-    <div className="min-h-screen">
+    <PanelFrame>
       <IngredientSearchPanel
         open
         onClose={() => {}}
@@ -204,6 +206,6 @@ export const EnglishCatalog = () => (
         onSave={logSave}
         initialQuery="e"
       />
-    </div>
+    </PanelFrame>
   </NextIntlClientProvider>
 );

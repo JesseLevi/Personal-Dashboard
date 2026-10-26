@@ -1,5 +1,6 @@
 // figma: node-id=3680:1442
 import { useState } from "react";
+import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import { BoardView, type BoardColumn } from "./BoardView";
 import { CardContentTicket } from "../molecules/CardContentTicket";
 import { CardContentRecipe } from "../molecules/CardContentRecipe";
@@ -8,7 +9,7 @@ import { Tag } from "../atoms/Tag";
 import { Button } from "../atoms/Button";
 import { blurInTotalMs, blurOutTotalMs, usePrefersReducedMotion } from "../../lib/ui/blur-fade";
 import en from "../../messages/en.json";
-import type { StoryDefault } from "@ladle/react";
+import type { Story, StoryDefault } from "@ladle/react";
 
 export default { title: "Basis / Kaarten / Board view" } satisfies StoryDefault;
 
@@ -64,13 +65,141 @@ const initialTicketColumns: BoardColumn<TicketItem>[] = [
   },
 ];
 
-// Drag between/within columns — verified with mouse and keyboard against a
+interface RecipeItem {
+  id: string;
+  name: string;
+  duration: string;
+}
+
+const PLACEHOLDER_IMAGE =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'/%3E";
+
+// Proof this organism is genuinely generic (#90 acceptance): same BoardView,
+// same drag mechanics, a completely different Card-content molecule — no
+// Te-Doen-specific field (priority, tag) leaks in here.
+const recipeColumns: BoardColumn<RecipeItem>[] = [
+  {
+    id: "ontbijt",
+    name: "Ontbijt",
+    icon: "Croissant",
+    items: [
+      { id: "r1", name: "Amandel Pasta", duration: "20 min" },
+      { id: "r2", name: "Havermout", duration: "10 min" },
+    ],
+  },
+  {
+    id: "lunch",
+    name: "Lunch",
+    icon: "Sandwich",
+    items: [{ id: "r3", name: "Tosti", duration: "8 min" }],
+  },
+  {
+    id: "diner",
+    name: "Diner",
+    icon: "CakeSlice",
+    items: [
+      { id: "r4", name: "Kip Curry", duration: "35 min" },
+      { id: "r5", name: "Zalm met Groenten", duration: "25 min" },
+      { id: "r6", name: "Linzensoep", duration: "30 min" },
+    ],
+  },
+  { id: "toetjes", name: "Toetjes", icon: "Scroll", items: [] },
+];
+
+// Done styling: cards in the last column render muted (opacity-30 + line-through).
+const lastColumnId = initialTicketColumns[initialTicketColumns.length - 1].id;
+const mutedColumns: BoardColumn<TicketItem>[] = initialTicketColumns.map((column) =>
+  column.id === lastColumnId
+    ? { ...column, items: [{ id: "t7", title: "Ramen lappen", tag: { variant: "low", label: "Low" } }] }
+    : column,
+);
+
+
+const renderTicket = (item: TicketItem) => (
+  <CardContentTicket title={item.title}>
+    <Tag variant={item.tag.variant}>{item.tag.label}</Tag>
+  </CardContentTicket>
+);
+const renderRecipe = (item: RecipeItem) => (
+  <CardContentRecipe imageUrl={PLACEHOLDER_IMAGE} name={item.name} duration={item.duration} />
+);
+const chrome = { addLabel, editLabel, emptyLabel };
+
+export const Overview = () => (
+  <>
+    <StoryIntro what="A column board whose cards can be dragged between columns; the card content is the caller's." note="BoardView" />
+    <Specimens>
+      <Specimen label="tickets" hint="uneven counts, one empty column (Te doen)">
+        <BoardView columns={initialTicketColumns} {...chrome} renderItem={renderTicket} />
+      </Specimen>
+      <Specimen label="recipes" hint="same organism, other card content: it is generic">
+        <BoardView columns={recipeColumns} {...chrome} renderItem={renderRecipe} />
+      </Specimen>
+      <Specimen label="isItemMuted" hint="cards in the last column render muted (done)">
+        <BoardView
+          columns={mutedColumns}
+          {...chrome}
+          isItemMuted={(_item, columnId) => columnId === lastColumnId}
+          renderItem={renderTicket}
+        />
+      </Specimen>
+      <Specimen label="renderColumnTop" hint="non-draggable content above cards, also above an empty column's add button (#467)">
+        <BoardView
+          columns={recipeColumns}
+          {...chrome}
+          renderColumnTop={(columnId) =>
+            columnId === recipeColumns[0].id || columnId === recipeColumns[recipeColumns.length - 1].id ? (
+              <SharedRecipeOffer
+                name="Amandel Pasta"
+                imageUrl={PLACEHOLDER_IMAGE}
+                duration="20 min"
+                inviterName="Youri"
+                onAccept={() => {}}
+                onDecline={() => {}}
+              />
+            ) : null
+          }
+          renderItem={renderRecipe}
+        />
+      </Specimen>
+    </Specimens>
+  </>
+);
+
+type PlaygroundProps = { content: "tickets" | "recipes"; dragDisabled: boolean; lastColumnMuted: boolean };
+
+export const Playground: Story<PlaygroundProps> = ({ content, dragDisabled, lastColumnMuted }) =>
+  content === "tickets" ? (
+    <BoardView
+      columns={initialTicketColumns}
+      {...chrome}
+      dragDisabled={dragDisabled}
+      isItemMuted={(_item, columnId) => lastColumnMuted && columnId === lastColumnId}
+      renderItem={renderTicket}
+    />
+  ) : (
+    <BoardView
+      columns={recipeColumns}
+      {...chrome}
+      dragDisabled={dragDisabled}
+      isItemMuted={(_item, columnId) => lastColumnMuted && columnId === recipeColumns[recipeColumns.length - 1].id}
+      renderItem={renderRecipe}
+    />
+  );
+Playground.args = { content: "tickets", dragDisabled: false, lastColumnMuted: false };
+Playground.argTypes = {
+  content: { control: { type: "inline-radio" }, options: ["tickets", "recipes"] },
+  dragDisabled: { control: { type: "boolean" } },
+  lastColumnMuted: { control: { type: "boolean" } },
+};
+
+// Drag cards between and within columns (mouse and keyboard) — verified with mouse and keyboard against a
 // real `pnpm ladle` render (see design/notes/BoardView.md). `onMove` only
 // logs here: this component persists nothing, a later ticket writes it.
 // `onItemClick` (#94) increments a visible counter + last-clicked title, the
 // harness this ticket's own click-vs-drag Playwright check drives — a real
 // drag must NOT also bump it, a plain click must.
-export const Default = () => {
+export const Interactive = () => {
   const [columns, setColumns] = useState(initialTicketColumns);
   const [clickLog, setClickLog] = useState<{ count: number; lastTitle: string | null }>({
     count: 0,
@@ -118,110 +247,6 @@ export const Default = () => {
   );
 };
 
-interface RecipeItem {
-  id: string;
-  name: string;
-  duration: string;
-}
-
-const PLACEHOLDER_IMAGE =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'/%3E";
-
-// Proof this organism is genuinely generic (#90 acceptance): same BoardView,
-// same drag mechanics, a completely different Card-content molecule — no
-// Te-Doen-specific field (priority, tag) leaks in here.
-const recipeColumns: BoardColumn<RecipeItem>[] = [
-  {
-    id: "ontbijt",
-    name: "Ontbijt",
-    icon: "Croissant",
-    items: [
-      { id: "r1", name: "Amandel Pasta", duration: "20 min" },
-      { id: "r2", name: "Havermout", duration: "10 min" },
-    ],
-  },
-  {
-    id: "lunch",
-    name: "Lunch",
-    icon: "Sandwich",
-    items: [{ id: "r3", name: "Tosti", duration: "8 min" }],
-  },
-  {
-    id: "diner",
-    name: "Diner",
-    icon: "CakeSlice",
-    items: [
-      { id: "r4", name: "Kip Curry", duration: "35 min" },
-      { id: "r5", name: "Zalm met Groenten", duration: "25 min" },
-      { id: "r6", name: "Linzensoep", duration: "30 min" },
-    ],
-  },
-  { id: "toetjes", name: "Toetjes", icon: "Scroll", items: [] },
-];
-
-export const RecipeGeneric = () => (
-  <BoardView
-    columns={recipeColumns}
-    addLabel={addLabel}
-    editLabel={editLabel}
-    emptyLabel={emptyLabel}
-    renderItem={(item: RecipeItem) => (
-      <CardContentRecipe
-        imageUrl={PLACEHOLDER_IMAGE}
-        name={item.name}
-        duration={item.duration}
-      />
-    )}
-  />
-);
-
-// #467: non-draggable content above a column's cards, also above an empty column's add button.
-export const ColumnTop = () => (
-  <BoardView
-    columns={recipeColumns}
-    addLabel={addLabel}
-    editLabel={editLabel}
-    emptyLabel={emptyLabel}
-    renderColumnTop={(columnId) =>
-      columnId === recipeColumns[0].id || columnId === recipeColumns[recipeColumns.length - 1].id ? (
-        <SharedRecipeOffer
-          name="Amandel Pasta"
-          imageUrl={PLACEHOLDER_IMAGE}
-          duration="20 min"
-          inviterName="Youri"
-          onAccept={() => {}}
-          onDecline={() => {}}
-        />
-      ) : null
-    }
-    renderItem={(item: RecipeItem) => (
-      <CardContentRecipe imageUrl={PLACEHOLDER_IMAGE} name={item.name} duration={item.duration} />
-    )}
-  />
-);
-
-// Done styling: cards in the last column render muted (opacity-30 + line-through).
-const lastColumnId = initialTicketColumns[initialTicketColumns.length - 1].id;
-const mutedColumns: BoardColumn<TicketItem>[] = initialTicketColumns.map((column) =>
-  column.id === lastColumnId
-    ? { ...column, items: [{ id: "t7", title: "Ramen lappen", tag: { variant: "low", label: "Low" } }] }
-    : column,
-);
-
-export const LastColumnMuted = () => (
-  <BoardView
-    columns={mutedColumns}
-    addLabel={addLabel}
-    editLabel={editLabel}
-    emptyLabel={emptyLabel}
-    isItemMuted={(_item, columnId) => columnId === lastColumnId}
-    renderItem={(item: TicketItem) => (
-      <CardContentTicket title={item.title}>
-        <Tag variant={item.tag.variant}>{item.tag.label}</Tag>
-      </CardContentTicket>
-    )}
-  />
-);
 
 // Board switch. Exit fade on the current board, then the other board
 // mounts with the enter fade; the motion is dropped once it has played.
