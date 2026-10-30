@@ -535,6 +535,7 @@
       },
       "ai": {
         "title": "Connections, smart search and the Assistant",
+        "navLabel": "Connections and smart search",
         "checkboxLabel": "Use connections, smart search and the Assistant",
         "unavailable": "Not available yet",
         "sendsLabel": "What is sent: the text of your notes, recipes, cards and events (imported ones too) and your search queries. For the Assistant, titles and short excerpts of related notes and cards are sent too, so it can describe a pattern in plain language.",

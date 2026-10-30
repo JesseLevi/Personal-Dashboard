@@ -11,8 +11,8 @@ import { SCRIPTABLE_APP_STORE_URL, WIDGET_SCRIPT_PATH, WIDGET_SHORTCUT_URL } fro
 import { WIDGET_LABEL_MAX_LENGTH, WIDGET_TOKEN_LIMIT } from "@/lib/widget/limits";
 import type { WidgetTokenItem } from "@/lib/widget/types";
 
-// design: Claude-designed (#657) — section of SettingsPanel, composed from
-// Button, InputField and Step; contract in design/notes/SettingsPanel.md.
+// design: Claude-designed (#657) — body of WidgetSettingsPanel, composed from
+// Button, InputField and Step; contract in design/notes/WidgetSettingsPanel.md.
 
 export interface WidgetSettingsProps {
   tokens: readonly WidgetTokenItem[];

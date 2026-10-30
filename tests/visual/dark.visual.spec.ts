@@ -110,9 +110,11 @@ const DARK_STORIES = [
   "basis--fundament--step--overview",
   "recepten--step-ingredient-panel--with-selection",
   "basis--fundament--tag--overview",
-  "account--settings-panel--ai-off",
-  "account--settings-panel--ai-on",
-  "account--settings-panel--ai-unavailable",
+  "account--settings-panel--overview",
+  "account--ai-settings-panel--overview",
+  "account--ai-settings-panel--off",
+  "account--ai-settings-panel--unavailable",
+  "account--widget-settings-panel--overview",
 ];
 
 const storyIds = new Set(loadStoryIds());

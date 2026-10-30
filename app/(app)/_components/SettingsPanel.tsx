@@ -7,13 +7,11 @@ import { SidePanel } from "@/components/organisms/SidePanel";
 import { ButtonToggle, type ButtonToggleItem } from "@/components/molecules/ButtonToggle";
 import { InputField } from "@/components/atoms/InputField";
 import { Button } from "@/components/atoms/Button";
-import { Checkbox } from "@/components/atoms/Checkbox";
 import type { IconName } from "@/components/atoms/Icon";
 import { ImageUploadField } from "@/components/molecules/ImageUploadField";
-import { removeAvatar, setAiEnabled, updateLocale, updateName, uploadAvatar } from "@/lib/profile/actions";
-import { DeleteConfirm, useDeleteConfirm } from "./DeleteConfirm";
-import { WidgetSettings } from "./WidgetSettings";
-import { deleteWidgetTokenAction } from "@/lib/widget/actions";
+import { removeAvatar, updateLocale, updateName, uploadAvatar } from "@/lib/profile/actions";
+import { AiSettingsPanel } from "./AiSettingsPanel";
+import { WidgetSettingsPanel } from "./WidgetSettingsPanel";
 import type { WidgetTokenItem } from "@/lib/widget/types";
 import { DISPLAY_NAME_MAX_LENGTH } from "@/lib/profile/schemas";
 import type { Locale } from "@/lib/profile/types";
@@ -79,10 +77,10 @@ export function SettingsPanel({
   const t = useTranslations("components.settingsPanel");
   const tSidePanel = useTranslations("components.sidePanel");
   const tErrors = useTranslations("profile.errors");
+  const tWidget = useTranslations("settings.widget");
   const languageFieldId = useId();
   const firstNameFieldId = useId();
   const lastNameFieldId = useId();
-  const aiHeadingId = useId();
 
   const { theme, setTheme } = useTheme();
   const themeItems: readonly ButtonToggleItem[] = (
@@ -162,54 +160,15 @@ export function SettingsPanel({
     });
   }
 
-  // #579: the opt-in saves on its own like the photo (it is a consent, not a
-  // form field). Turning on is immediate; turning off asks first because it
-  // wipes the index (DeleteConfirm idiom, replaces the footer).
-  const [pendingAi, setPendingAi] = useState(aiEnabled);
+  // The two sub-panels (level 2) own their state; closing this panel closes them.
+  const [aiOpen, setAiOpen] = useState(false);
+  const [widgetOpen, setWidgetOpen] = useState(false);
   useEffect(() => {
-    setPendingAi(aiEnabled);
-  }, [aiEnabled]);
-  const [aiError, setAiError] = useState<string | null>(null);
-  const [isAiPending, startAiTransition] = useTransition();
-  const { confirming, ask, cancel } = useDeleteConfirm();
-  useEffect(() => {
-    if (!open) cancel();
-  }, [open, cancel]);
-
-  function applyAi(enabled: boolean) {
-    setAiError(null);
-    startAiTransition(async () => {
-      const result = await setAiEnabled({ enabled });
-      if (result.success) setPendingAi(enabled);
-      else setAiError(tErrors(result.error));
-      cancel();
-    });
-  }
-
-  function handleAiToggle() {
-    if (!aiAvailable || isAiPending) return;
-    if (pendingAi) ask();
-    else applyAi(true);
-  }
-
-  // Deleting a widget token asks first, in the same footer slot.
-  const tWidget = useTranslations("settings.widget");
-  const [tokenToDelete, setTokenToDelete] = useState<WidgetTokenItem | null>(null);
-  const [isDeletePending, startDeleteTransition] = useTransition();
-  const [widgetError, setWidgetError] = useState<string | null>(null);
-  useEffect(() => {
-    if (!open) setTokenToDelete(null);
+    if (!open) {
+      setAiOpen(false);
+      setWidgetOpen(false);
+    }
   }, [open]);
-
-  function confirmDeleteToken() {
-    if (!tokenToDelete) return;
-    setWidgetError(null);
-    startDeleteTransition(async () => {
-      const result = await deleteWidgetTokenAction({ id: tokenToDelete.id });
-      if (!result.success) setWidgetError(tWidget(`errors.${result.error}`));
-      setTokenToDelete(null);
-    });
-  }
 
   function handleSave() {
     setError(null);
@@ -247,143 +206,106 @@ export function SettingsPanel({
   }
 
   return (
-    <SidePanel
-      open={open}
-      onClose={onClose}
-      title={t("title")}
-      closeLabel={tSidePanel("closeLabel")}
-      footer={
-        // Single full-width Opslaan on both breakpoints (#265 decision —
-        // the mobile node's second "Verwijderen" button is unbuilt residue,
-        // see design/notes/SettingsPanel.md and
-        // docs/open-questions.md#settings-mobile-delete-button-not-built).
-        // No `grow basis-0` here: unlike BoardPanel.tsx/CardDetailPanel.tsx,
-        // this Button is a direct child of SidePanel's column footer, not
-        // nested in its own `flex gap-inline-sm` row — `grow`/`basis-0` on a
-        // flex-col's direct child act on the vertical axis (SidePanel.tsx's
-        // own footer comment says it plainly: "a lone button already fills
-        // 100% for free"), which collapsed this button to 24px tall instead
-        // of Figma's 40px. See design/notes/SettingsPanel.md.
-        tokenToDelete ? (
-          <DeleteConfirm
-            layout="stacked"
-            isPending={isDeletePending}
-            onCancel={() => setTokenToDelete(null)}
-            onConfirm={confirmDeleteToken}
-            labels={{
-              prompt: tWidget("tokens.deleteConfirm.prompt"),
-              cancel: tWidget("tokens.deleteConfirm.cancel"),
-              confirm: tWidget("tokens.deleteConfirm.confirm"),
-              deleting: tWidget("tokens.deleteConfirm.deleting"),
-            }}
-          />
-        ) : confirming ? (
-          <DeleteConfirm
-            layout="stacked"
-            isPending={isAiPending}
-            onCancel={cancel}
-            onConfirm={() => applyAi(false)}
-            labels={{
-              prompt: t("ai.confirmPrompt"),
-              cancel: t("ai.cancelLabel"),
-              confirm: t("ai.confirmLabel"),
-              deleting: t("ai.confirmingLabel"),
-            }}
-          />
-        ) : (
-          <Button
-            variant="filled"
-            icon="Save"
-            onClick={handleSave}
-            disabled={isPending}
-          >
+    <>
+      <SidePanel
+        open={open}
+        onClose={onClose}
+        title={t("title")}
+        closeLabel={tSidePanel("closeLabel")}
+        footer={
+          // Single full-width Opslaan on both breakpoints (#265 decision —
+          // the mobile node's second "Verwijderen" button is unbuilt residue,
+          // see design/notes/SettingsPanel.md and
+          // docs/open-questions.md#settings-mobile-delete-button-not-built).
+          // No `grow basis-0` here: unlike BoardPanel.tsx/CardDetailPanel.tsx,
+          // this Button is a direct child of SidePanel's column footer, not
+          // nested in its own `flex gap-inline-sm` row — `grow`/`basis-0` on a
+          // flex-col's direct child act on the vertical axis (SidePanel.tsx's
+          // own footer comment says it plainly: "a lone button already fills
+          // 100% for free"), which collapsed this button to 24px tall instead
+          // of Figma's 40px. See design/notes/SettingsPanel.md.
+          <Button variant="filled" icon="Save" onClick={handleSave} disabled={isPending}>
             {isPending ? t("savingLabel") : t("saveLabel")}
           </Button>
-        )
-      }
-    >
-      <ButtonToggle
-        key={themeReady ? "theme-ready" : "theme-loading"}
-        title={t("themeLabel")}
-        items={themeItems}
-        defaultValue={pendingTheme}
-        onValueChange={(value) => setPendingTheme(value as "system" | "light" | "dark")}
-      />
-      <InputField
-        label={t("languageLabel")}
-        id={languageFieldId}
-        leadingIcon={LOCALE_FLAGS[pendingLocale]}
-        trailingIcon="ChevronDown"
-        options={[
-          { value: "nl", label: t("languageOptions.nl") },
-          { value: "en", label: t("languageOptions.en") },
-        ]}
-        value={pendingLocale}
-        onChange={(event: ChangeEvent<HTMLSelectElement>) =>
-          setPendingLocale(event.target.value as Locale)
         }
+      >
+        <ButtonToggle
+          key={themeReady ? "theme-ready" : "theme-loading"}
+          title={t("themeLabel")}
+          items={themeItems}
+          defaultValue={pendingTheme}
+          onValueChange={(value) => setPendingTheme(value as "system" | "light" | "dark")}
+        />
+        <InputField
+          label={t("languageLabel")}
+          id={languageFieldId}
+          leadingIcon={LOCALE_FLAGS[pendingLocale]}
+          trailingIcon="ChevronDown"
+          options={[
+            { value: "nl", label: t("languageOptions.nl") },
+            { value: "en", label: t("languageOptions.en") },
+          ]}
+          value={pendingLocale}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+            setPendingLocale(event.target.value as Locale)
+          }
+        />
+        <ImageUploadField
+          id="settings-avatar"
+          name="avatar"
+          placeholder={t("avatar.placeholder")}
+          ariaLabel={t("avatar.inputLabel")}
+          label={t("avatar.inputLabel")}
+          disabled={isAvatarPending}
+          selectedFileName={hasAvatar ? t("avatar.inputLabel") : null}
+          onFileSelect={handleAvatarFile}
+          onClear={handleAvatarClear}
+          clearLabel={t("avatar.remove")}
+        />
+        {avatarError ? (
+          <p className="text-base font-semibold text-priority-urgent">{avatarError}</p>
+        ) : null}
+        <InputField
+          label={t("firstNameLabel")}
+          id={firstNameFieldId}
+          type="text"
+          autoComplete="given-name"
+          maxLength={DISPLAY_NAME_MAX_LENGTH}
+          value={pendingFirstName}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => setPendingFirstName(event.target.value)}
+        />
+        <InputField
+          label={t("lastNameLabel")}
+          id={lastNameFieldId}
+          type="text"
+          autoComplete="family-name"
+          maxLength={DISPLAY_NAME_MAX_LENGTH}
+          value={pendingLastName}
+          onChange={(event: ChangeEvent<HTMLInputElement>) => setPendingLastName(event.target.value)}
+        />
+        <Button variant="white" align="left" trailingIcon="ArrowRight" onClick={() => setAiOpen(true)}>
+          {t("ai.navLabel")}
+        </Button>
+        <Button variant="white" align="left" trailingIcon="ArrowRight" onClick={() => setWidgetOpen(true)}>
+          {tWidget("title")}
+        </Button>
+        {error ? (
+          <p className="text-base font-semibold text-priority-urgent">{error}</p>
+        ) : null}
+      </SidePanel>
+
+      <AiSettingsPanel
+        open={open && aiOpen}
+        onClose={() => setAiOpen(false)}
+        aiEnabled={aiEnabled}
+        aiAvailable={aiAvailable}
       />
-      <ImageUploadField
-        id="settings-avatar"
-        name="avatar"
-        placeholder={t("avatar.placeholder")}
-        ariaLabel={t("avatar.inputLabel")}
-        label={t("avatar.inputLabel")}
-        disabled={isAvatarPending}
-        selectedFileName={hasAvatar ? t("avatar.inputLabel") : null}
-        onFileSelect={handleAvatarFile}
-        onClear={handleAvatarClear}
-        clearLabel={t("avatar.remove")}
-      />
-      {avatarError ? (
-        <p className="text-base font-semibold text-priority-urgent">{avatarError}</p>
-      ) : null}
-      <InputField
-        label={t("firstNameLabel")}
-        id={firstNameFieldId}
-        type="text"
-        autoComplete="given-name"
-        maxLength={DISPLAY_NAME_MAX_LENGTH}
-        value={pendingFirstName}
-        onChange={(event: ChangeEvent<HTMLInputElement>) => setPendingFirstName(event.target.value)}
-      />
-      <InputField
-        label={t("lastNameLabel")}
-        id={lastNameFieldId}
-        type="text"
-        autoComplete="family-name"
-        maxLength={DISPLAY_NAME_MAX_LENGTH}
-        value={pendingLastName}
-        onChange={(event: ChangeEvent<HTMLInputElement>) => setPendingLastName(event.target.value)}
-      />
-      <section className="flex flex-col gap-stack-sm" aria-labelledby={aiHeadingId}>
-        <h3 id={aiHeadingId} className="text-base font-semibold text-text-primary">
-          {t("ai.title")}
-        </h3>
-        {aiAvailable ? null : <p className="text-base text-text-secondary">{t("ai.unavailable")}</p>}
-        <label className="flex items-center gap-inline-sm text-base text-text-primary">
-          <Checkbox
-            checked={aiAvailable && pendingAi}
-            disabled={!aiAvailable || isAiPending}
-            onClick={handleAiToggle}
-            className="disabled:cursor-not-allowed disabled:opacity-50"
-          />
-          {t("ai.checkboxLabel")}
-        </label>
-        <p className="text-base text-text-secondary">{t("ai.sendsLabel")}</p>
-        <p className="text-base text-text-secondary">{t("ai.recipientLabel")}</p>
-        <p className="text-base text-text-secondary">{t("ai.offLabel")}</p>
-        {aiError ? <p className="text-base font-semibold text-priority-urgent">{aiError}</p> : null}
-      </section>
-      <WidgetSettings
+      <WidgetSettingsPanel
+        open={open && widgetOpen}
+        onClose={() => setWidgetOpen(false)}
         tokens={widgetTokens}
         initialCreatedToken={widgetCreatedToken}
-        onAskDelete={setTokenToDelete}
       />
-      {widgetError ? <p className="text-base font-semibold text-priority-urgent">{widgetError}</p> : null}
-      {error ? (
-        <p className="text-base font-semibold text-priority-urgent">{error}</p>
-      ) : null}
-    </SidePanel>
+    </>
   );
 }
