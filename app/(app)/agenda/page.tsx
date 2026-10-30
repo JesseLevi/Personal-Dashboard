@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { after } from "next/server";
 import { Suspense } from "react";
 import { settleCookedMeals } from "@/lib/activity/settle";
+import { parseDateParam } from "@/lib/agenda/date-param";
 import { getCalendarOverview } from "@/lib/agenda/calendar-list";
 import { AGENDA_HIDDEN_COOKIE, parseHidden } from "@/lib/agenda/hidden";
 import { getSyncNotices } from "@/lib/agenda/notices";
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
   manifest: "/agenda/manifest.webmanifest",
 };
 
-async function AgendaPageBody() {
+async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?: string | string[] }> }) {
   const jar = await cookies();
   const stored = jar.get(AGENDA_VIEW_COOKIE)?.value;
   const view = isAgendaView(stored) ? stored : DEFAULT_AGENDA_VIEW;
@@ -34,7 +35,9 @@ async function AgendaPageBody() {
   const trayOpen = (isAgendaTray(storedTray) ? storedTray : DEFAULT_AGENDA_TRAY) === "open";
   const hidden = parseHidden(jar.get(AGENDA_HIDDEN_COOKIE)?.value);
   const today = todayInAgendaZone();
-  const window = loadWindow(today);
+  // `?date=` opens the Agenda on that day; anything invalid falls back to today.
+  const initialDate = parseDateParam((await searchParams).date) ?? today;
+  const window = loadWindow(initialDate);
   const supabase = await createSupabaseServerClient();
   // ADR-0039: stale feeds sync after the response, with the user's own client; the page shows what is stored.
   after(() => syncStaleAccounts(supabase).catch(() => console.error("[agenda] lazy sync failed")));
@@ -78,6 +81,7 @@ async function AgendaPageBody() {
       initialView={view}
       initialTrayOpen={trayOpen}
       today={today}
+      initialDate={initialDate}
       initialItems={items}
       initialNotices={notices}
       initialHidden={hidden}
@@ -91,10 +95,10 @@ async function AgendaPageBody() {
   );
 }
 
-export default function AgendaRoute() {
+export default function AgendaRoute({ searchParams }: { searchParams: Promise<{ date?: string | string[] }> }) {
   return (
     <Suspense fallback={<AgendaPageSkeleton />}>
-      <AgendaPageBody />
+      <AgendaPageBody searchParams={searchParams} />
     </Suspense>
   );
 }

@@ -59,7 +59,9 @@ export interface AgendaPageProps {
   initialTrayOpen: boolean;
   /** Today in the Agenda zone, `YYYY-MM-DD`. */
   today: string;
-  /** The items of `loadWindow(today)`. */
+  /** The day the calendar opens on (`?date=`); today when absent or invalid. */
+  initialDate: string;
+  /** The items of `loadWindow(initialDate)`. */
   initialItems: AgendaItem[];
   /** Open basket notices after a sync deleted an event with a meal. */
   initialNotices: SyncNoticeView[];
@@ -100,6 +102,7 @@ export function AgendaPage({
   initialView,
   initialTrayOpen,
   today,
+  initialDate,
   initialItems,
   initialNotices,
   recipes,
@@ -118,9 +121,9 @@ export function AgendaPage({
   const narrow = useIsNarrow();
 
   const [view, setView] = useState(initialView);
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(initialDate);
   const [items, setItems] = useState(initialItems);
-  const [loadedFrom, setLoadedFrom] = useState(() => loadWindow(today).from);
+  const [loadedFrom, setLoadedFrom] = useState(() => loadWindow(initialDate).from);
   const [error, setError] = useState<string | null>(null);
   const [panel, setPanel] = useState<{ open: boolean; target: AgendaPanelTarget }>({
     open: false,

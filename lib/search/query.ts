@@ -106,13 +106,14 @@ async function hydrate(client: Client, hits: RankedHit[], q: string): Promise<Ma
   }
 
   for (const e of events) {
+    const day = localDate(e.starts_at, AGENDA_TIME_ZONE);
     put({
       type: "calendar_event",
       id: e.id,
       title: e.title,
       snippet: makeSnippet([e.location, e.description].filter(Boolean).join(" · "), q),
-      href: "/agenda",
-      date: localDate(e.starts_at, AGENDA_TIME_ZONE),
+      href: `/agenda?date=${day}`,
+      date: day,
       contentHash: e.content_hash,
       startsAt: e.starts_at,
     });
