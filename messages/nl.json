@@ -535,6 +535,7 @@
       },
       "ai": {
         "title": "Verbanden, slim zoeken en de Assistent",
+        "navLabel": "Verbanden en slim zoeken",
         "checkboxLabel": "Verbanden, slim zoeken en de Assistent gebruiken",
         "unavailable": "Nog niet beschikbaar",
         "sendsLabel": "Wat er naartoe gaat: de tekst van je notities, recepten, kaarten en afspraken (ook geïmporteerde) en je zoekvragen. Voor de Assistent gaan ook titels en korte fragmenten van verwante notities en kaarten mee, zodat hij een patroon in gewone taal kan formuleren.",
