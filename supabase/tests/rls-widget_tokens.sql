@@ -105,13 +105,12 @@ insert into public.widget_tokens (label, token_hash)
 values ('B toestel', encode(sha256(convert_to('atlas_wgt_tokenB', 'UTF8')), 'hex'));
 
 select is((select count(*)::int from public.widget_tokens), 1, 'B sees only their own token');
-select is(
-  (with u as (update public.widget_tokens set label = 'x'
-              where label = 'Telefoon' returning 1) select count(*)::int from u),
-  0, 'B cannot update A''s token');
-select is(
-  (with d as (delete from public.widget_tokens where label = 'Telefoon' returning 1) select count(*)::int from d),
-  0, 'B cannot delete A''s token');
+select is_empty(
+  $$ update public.widget_tokens set label = 'x' where label = 'Telefoon' returning 1 $$,
+  'B cannot update A''s token');
+select is_empty(
+  $$ delete from public.widget_tokens where label = 'Telefoon' returning 1 $$,
+  'B cannot delete A''s token');
 set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-654000000001", "role": "authenticated"}';
 select is((select count(*)::int from public.widget_tokens), 5, 'A sees only their own five tokens');
 
