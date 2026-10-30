@@ -1411,7 +1411,8 @@
     "sectionMeals": "Maaltijden",
     "sectionCards": "Kaarten",
     "allDay": "Hele dag",
-    "update": "Bijgewerkt {time}",
+    "updatedAt": "Bijgewerkt {time}",
+    "updateAvailable": "Nieuwe widgetversie in Atlas",
     "slots": {
       "breakfast": "Ontbijt",
       "lunch": "Lunch",

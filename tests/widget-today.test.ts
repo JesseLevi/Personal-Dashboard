@@ -151,7 +151,7 @@ describe("contract", () => {
 
   it("fills the labels in the member's locale, with an ICU plural", () => {
     const nl = build(rows).labels;
-    expect(nl).toMatchObject({ tomorrow: "Morgen", allDay: "Hele dag", remaining: "2 items te gaan", update: "Bijgewerkt 11:00" });
+    expect(nl).toMatchObject({ tomorrow: "Morgen", allDay: "Hele dag", remaining: "2 items te gaan", updatedAt: "Bijgewerkt 11:00", updateAvailable: "Nieuwe widgetversie in Atlas" });
     expect(nl.dateLong).toBe("vrijdag 30 oktober");
     const en = build(rows.slice(0, 1), NOW, "en").labels;
     expect(en).toMatchObject({ tomorrow: "Tomorrow", remaining: "1 item to go" });

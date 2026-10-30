@@ -1411,7 +1411,8 @@
     "sectionMeals": "Meals",
     "sectionCards": "Cards",
     "allDay": "All day",
-    "update": "Updated {time}",
+    "updatedAt": "Updated {time}",
+    "updateAvailable": "New widget version in Atlas",
     "slots": {
       "breakfast": "Breakfast",
       "lunch": "Lunch",
