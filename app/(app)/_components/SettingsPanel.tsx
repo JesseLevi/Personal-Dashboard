@@ -12,6 +12,9 @@ import type { IconName } from "@/components/atoms/Icon";
 import { ImageUploadField } from "@/components/molecules/ImageUploadField";
 import { removeAvatar, setAiEnabled, updateLocale, updateName, uploadAvatar } from "@/lib/profile/actions";
 import { DeleteConfirm, useDeleteConfirm } from "./DeleteConfirm";
+import { WidgetSettings } from "./WidgetSettings";
+import { deleteWidgetTokenAction } from "@/lib/widget/actions";
+import type { WidgetTokenItem } from "@/lib/widget/types";
 import { DISPLAY_NAME_MAX_LENGTH } from "@/lib/profile/schemas";
 import type { Locale } from "@/lib/profile/types";
 
@@ -55,6 +58,10 @@ export interface SettingsPanelProps {
   aiEnabled: boolean;
   /** #579: server-resolved `isEmbeddingConfigured()`; false shows "Nog niet beschikbaar" and disables the checkbox. */
   aiAvailable: boolean;
+  /** #657: the member's widget tokens (`listWidgetTokens`), newest first. */
+  widgetTokens: readonly WidgetTokenItem[];
+  /** Seeds the "shown once" token state (stories only). */
+  widgetCreatedToken?: string | null;
 }
 
 export function SettingsPanel({
@@ -66,6 +73,8 @@ export function SettingsPanel({
   hasAvatar,
   aiEnabled,
   aiAvailable,
+  widgetTokens,
+  widgetCreatedToken = null,
 }: SettingsPanelProps) {
   const t = useTranslations("components.settingsPanel");
   const tSidePanel = useTranslations("components.sidePanel");
@@ -183,6 +192,25 @@ export function SettingsPanel({
     else applyAi(true);
   }
 
+  // Deleting a widget token asks first, in the same footer slot.
+  const tWidget = useTranslations("settings.widget");
+  const [tokenToDelete, setTokenToDelete] = useState<WidgetTokenItem | null>(null);
+  const [isDeletePending, startDeleteTransition] = useTransition();
+  const [widgetError, setWidgetError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!open) setTokenToDelete(null);
+  }, [open]);
+
+  function confirmDeleteToken() {
+    if (!tokenToDelete) return;
+    setWidgetError(null);
+    startDeleteTransition(async () => {
+      const result = await deleteWidgetTokenAction({ id: tokenToDelete.id });
+      if (!result.success) setWidgetError(tWidget(`errors.${result.error}`));
+      setTokenToDelete(null);
+    });
+  }
+
   function handleSave() {
     setError(null);
     startTransition(async () => {
@@ -236,7 +264,20 @@ export function SettingsPanel({
         // own footer comment says it plainly: "a lone button already fills
         // 100% for free"), which collapsed this button to 24px tall instead
         // of Figma's 40px. See design/notes/SettingsPanel.md.
-        confirming ? (
+        tokenToDelete ? (
+          <DeleteConfirm
+            layout="stacked"
+            isPending={isDeletePending}
+            onCancel={() => setTokenToDelete(null)}
+            onConfirm={confirmDeleteToken}
+            labels={{
+              prompt: tWidget("tokens.deleteConfirm.prompt"),
+              cancel: tWidget("tokens.deleteConfirm.cancel"),
+              confirm: tWidget("tokens.deleteConfirm.confirm"),
+              deleting: tWidget("tokens.deleteConfirm.deleting"),
+            }}
+          />
+        ) : confirming ? (
           <DeleteConfirm
             layout="stacked"
             isPending={isAiPending}
@@ -334,6 +375,12 @@ export function SettingsPanel({
         <p className="text-base text-text-secondary">{t("ai.offLabel")}</p>
         {aiError ? <p className="text-base font-semibold text-priority-urgent">{aiError}</p> : null}
       </section>
+      <WidgetSettings
+        tokens={widgetTokens}
+        initialCreatedToken={widgetCreatedToken}
+        onAskDelete={setTokenToDelete}
+      />
+      {widgetError ? <p className="text-base font-semibold text-priority-urgent">{widgetError}</p> : null}
       {error ? (
         <p className="text-base font-semibold text-priority-urgent">{error}</p>
       ) : null}

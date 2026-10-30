@@ -332,6 +332,72 @@
       "upload-failed": "Upload failed. Please try again."
     }
   },
+  "settings": {
+    "widget": {
+      "title": "iPhone widget",
+      "intro": "Show the rest of your day on your iPhone home or lock screen. The widget runs in Scriptable and reads your agenda with a token of its own.",
+      "tokens": {
+        "title": "Tokens",
+        "empty": "You have no token yet.",
+        "createdOn": "Created {date}",
+        "lastUsed": "Last used: {date}",
+        "never": "never",
+        "deleteLabel": "Delete token {label}",
+        "labelField": "Token name",
+        "labelPlaceholder": "For example: Jesse's iPhone",
+        "create": "New token",
+        "creating": "Creating...",
+        "limitReached": "You have 5 tokens, the maximum. Delete one to make a new one.",
+        "deleteConfirm": {
+          "prompt": "Delete this token? The widget using it will stop showing anything.",
+          "cancel": "Cancel",
+          "confirm": "Delete",
+          "deleting": "Deleting..."
+        }
+      },
+      "created": {
+        "title": "Your new token",
+        "warning": "Copy it now. It will not be shown again.",
+        "copy": "Copy token",
+        "copied": "Copied",
+        "done": "Done",
+        "copyFailed": "Copying failed. Select the token and copy it yourself."
+      },
+      "install": {
+        "title": "Install in three steps",
+        "step1": {
+          "title": "Install Scriptable",
+          "body": "Scriptable is free in the App Store.",
+          "link": "Open in the App Store"
+        },
+        "step2": {
+          "title": "Add the \"Open Atlas\" shortcut",
+          "body": "With this shortcut, tapping the widget opens Atlas instead of Safari.",
+          "link": "Add the shortcut",
+          "manual": "In Shortcuts, make a shortcut named \"Open Atlas\" yourself:",
+          "manualIf": "Action \"If\": input begins with \"webapp://heyatlas.nl/\".",
+          "manualThen": "Inside it, \"Open URLs\" with the input.",
+          "manualElse": "Under \"Otherwise\": \"Open URLs\" with \"webapp://heyatlas.nl/agenda\"."
+        },
+        "step3": {
+          "title": "Copy the script",
+          "body": "Paste it into a new script in Scriptable and run it once. Then paste your token.",
+          "copy": "Copy script",
+          "copying": "Copying...",
+          "copied": "Script copied"
+        },
+        "safari": "No shortcut? Set the widget parameter to \"safari\" and a tap opens Atlas in Safari."
+      },
+      "errors": {
+        "invalid-input": "Give the token a name of 1 to 60 characters.",
+        "unauthenticated": "Sign in again to continue.",
+        "limit": "You already have 5 tokens. Delete one to make a new one.",
+        "unavailable": "Widget tokens are not available yet.",
+        "generic": "Something went wrong. Please try again.",
+        "scriptUnavailable": "The script is not available yet. Try again later."
+      }
+    }
+  },
   "components": {
     "cardContentIngredient": {
       "deleteLabel": "Delete ingredient",
