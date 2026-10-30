@@ -1402,5 +1402,22 @@
         "dismiss": "Wegklikken"
       }
     }
+  },
+  "widget": {
+    "empty": "Niets meer gepland vandaag",
+    "tomorrow": "Morgen",
+    "remaining": "{count, plural, =0 {Niets meer} one {# item te gaan} other {# items te gaan}}",
+    "sectionEvents": "Afspraken",
+    "sectionMeals": "Maaltijden",
+    "sectionCards": "Kaarten",
+    "allDay": "Hele dag",
+    "updatedAt": "Bijgewerkt {time}",
+    "updateAvailable": "Nieuwe widgetversie in Atlas",
+    "slots": {
+      "breakfast": "Ontbijt",
+      "lunch": "Lunch",
+      "dinner": "Diner",
+      "snack": "Tussendoor"
+    }
   }
 }

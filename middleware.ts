@@ -68,9 +68,10 @@ export async function middleware(request: NextRequest) {
 // auth-cookie-refreshing middleware pass since it authenticates itself
 // per-request the same way every other server module does and is called
 // from a plain <img>/next/image src, not a context that benefits from a
-// refreshed cookie being written back.
+// refreshed cookie being written back; and app/api/widget (ADR-0047), which
+// authenticates by bearer token and must never touch a session.
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|api/recipe-thumbnail|favicon.ico|icon.png|apple-icon.png|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|api/recipe-thumbnail|api/widget|favicon.ico|icon.png|apple-icon.png|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

@@ -4,19 +4,12 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
 import { isAgendaColor, type AgendaColor } from "@/lib/agenda/colors";
 import { mapAgendaRows } from "@/lib/agenda/map";
+import { timeZoneSchema } from "@/lib/agenda/time-zone";
 import { groupOpenCards, type PlanBoardInput, type PlanCardGroup, type QuickAddBoard } from "@/lib/agenda/plan-cards";
 import type { AgendaItem } from "@/lib/agenda/types";
 
 // There is no stored user time zone yet, so the caller passes an IANA name
 // (e.g. from the request or a future profile setting).
-const timeZoneSchema = z.string().refine((tz) => {
-  try {
-    new Intl.DateTimeFormat("en-US", { timeZone: tz });
-    return true;
-  } catch {
-    return false;
-  }
-}, "invalid time zone");
 
 const rangeSchema = z.object({
   from: z.coerce.date(),
