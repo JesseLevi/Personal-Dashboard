@@ -60,6 +60,7 @@ De plek waar de modules samenkomen: één tijdlijn waarop je Atlas-dingen plant 
 - Kaarten uit Te doen op een dag plannen, naast hun deadline.
 - Recepten, kaarten en notities koppelen aan elke afspraak, ook een geïmporteerde. Vervalt die afspraak, dan gaat wat eraan hing uit de planning; de mand laat Atlas aan jou.
 - Snel toevoegen in gewone taal ("film vrijdag met Youri"), categorieën met een eigen kleur, en eigen afspraken die herhalen (ADR-0040–0042).
+- Een widget op je iPhone met de rest van je dag; een tik opent de Agenda. Zonder eigen app, via Scriptable (ADR-0047).
 
 *Buiten scope voor nu*: tweerichtingssync, uitnodigingen versturen.
 

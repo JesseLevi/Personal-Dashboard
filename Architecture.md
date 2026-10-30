@@ -1,6 +1,6 @@
 # Architecture: Atlas
 
-This document describes the **current** system. Why each piece is the way it is lives in the ADRs (`docs/decisions/README.md` is the index). An ADR that changes the system updates this file in the same PR. History stays in the ADRs and git, not here.
+The **current** system. The why lives in the ADRs (index: `docs/decisions/README.md`); an ADR that changes the system updates this file in the same PR. History stays in ADRs and git.
 
 ## 1. System context
 
@@ -19,7 +19,7 @@ Browser (PWA) ──HTTPS──► Next.js on Vercel (fra1)
 
 ```
 app/                  App Router. (app)/ = signed-in routes: te-doen, recepten, winkelmand, notities
-  api/                image delivery routes (recipe-thumbnail, note-image)
+  api/                image delivery, cron and widget routes
 components/           design system: atoms/ molecules/ organisms/ (Atomic Design)
 lib/                  server and shared logic, one folder per domain or seam:
   supabase/           server client (RLS-bound)   ai/       inference seam (ADR-0018)
@@ -43,7 +43,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 - **Design source** (ADR-0034): Claude designs UI in code from existing components and tokens. A Figma design the user names is implemented exactly.
 - **Every component** gets a Ladle story, a visual baseline and a `design/notes/<Component>.md` contract.
 - **Libraries**: dnd-kit (drag and drop), TipTap 3 with official MIT extensions only (ADR-0021), Floating UI (menus), next-intl (i18n), FullCalendar standard/MIT for the Agenda (ADR-0037).
-- **PWA**: per-section web manifests, so Te doen, Recepten, Winkelmand and Notities can each be a home-screen icon.
+- **PWA**: one manifest (`start_url` `/te-doen`). The iPhone widget is a Scriptable script; a tap opens the web app via a Shortcut (ADR-0047).
 
 ## 4. Data model
 
@@ -112,6 +112,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - per-user rate limit;
   - provider spend cap;
   - degraded mode without a key.
+- **Widget token** (ADR-0047): hashed, read-only; `widget_today()` acts as its owner via role `atlas_widget` under RLS.
 - **Known accepted trade-off**: the login greeting shows a known address's first name, throttled (ADR-0031).
 - **Backups**: Supabase Cloud backups cover Postgres. R2 has no second copy (ADR-0024).
 
@@ -158,9 +159,9 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 
 | Phase | Status |
 | --- | --- |
-| 0 Foundation, 1 Account, 2 Design system | ✅ (Resend hookup on hosted is open, #10) |
-| 3 Te doen, 4 Recepten (incl. import, nutrition), 5 Winkelmand, 6 Notities | ✅ in production use |
+| 0 Foundation, 1 Account, 2 Design system | ✅ (Resend on hosted open, #10) |
+| 3 Te doen, 4 Recepten, 5 Winkelmand, 6 Notities | ✅ in production use |
 | Delen fase 1 (#420) and 2 (#464), 7 Agenda (#33) | ✅ built |
 | 8 Connections layer and activity history (#31, ADR-0043/0044) | built (rollout #574) |
-| 9 Assistent: rhythm and pattern signals (#32, ADR-0046) | 🔜 next |
-| Later | sharing boards (ADR-0035), live recipe sharing, mail integration (`Vision.md`) |
+| 9 Assistent signals (#32, ADR-0046) | built (inert until promotion) |
+| Later | sharing boards (ADR-0035), live recipe sharing, mail (`Vision.md`) |
