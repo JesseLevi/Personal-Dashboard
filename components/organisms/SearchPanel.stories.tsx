@@ -33,7 +33,7 @@ const results: SearchResult[] = [
     id: "e1",
     title: "Pompoenen snijden bij Sanne",
     snippet: "Bij Sanne thuis",
-    href: "/agenda",
+    href: "/agenda?date=2026-10-31",
     score: 0.016,
     date: "2026-10-31",
   },

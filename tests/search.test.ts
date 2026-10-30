@@ -158,7 +158,7 @@ describe("searchAllWith", () => {
       ["note", "n1", "/notities/n1"],
       ["recipe", "r1", "/recepten/r1"],
       ["card", "c1", "/te-doen/b1?card=c1"],
-      ["calendar_event", "e2", "/agenda"],
+      ["calendar_event", "e2", "/agenda?date=2026-10-25"],
       ["shopping_list_item", "s1", "/winkelmand/l1"],
     ]);
     expect(res.results.find((r) => r.id === "e2")?.date).toBe("2026-10-25");
