@@ -1529,6 +1529,33 @@ export type Database = {
         }
         Relationships: []
       }
+      widget_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          last_used_at: string | null
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          last_used_at?: string | null
+          token_hash: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          last_used_at?: string | null
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1841,6 +1868,15 @@ export type Database = {
           p_until?: string
         }
         Returns: undefined
+      }
+      widget_today: {
+        Args: {
+          p_from: string
+          p_time_zone: string
+          p_to: string
+          p_token: string
+        }
+        Returns: Json
       }
     }
     Enums: {
