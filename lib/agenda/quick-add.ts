@@ -84,6 +84,8 @@ interface LocaleRules {
   stop: string[];
   with: string;
   at: string | null;
+  /** Introduces a place only before a capitalised name ("in Groningen", not "in de ochtend"). */
+  in: string;
   and: string;
   nextWeek: string;
   allDay: RegExp;
@@ -126,6 +128,7 @@ const RULES: Record<QuickAddLocale, LocaleRules> = {
     ],
     with: "met",
     at: "bij",
+    in: "in",
     and: "en",
     nextWeek: "volgende\\s+week",
     allDay: /\b(?:de\s+)?hele\s+dag\b/i,
@@ -152,6 +155,7 @@ const RULES: Record<QuickAddLocale, LocaleRules> = {
     ],
     with: "with",
     at: "at",
+    in: "in",
     and: "and",
     nextWeek: "next\\s+week",
     allDay: /\ball[\s-]day\b/i,
@@ -281,6 +285,14 @@ function parsePeopleAndPlace(draft: Draft, rules: LocaleRules): { people: string
     if (match) {
       const grab = grabWords(draft.masked, match.index + match[0].length, placeStop, rules.and, { join: false, chain: true, max: 3 });
       if (grab.words.length > 0 && claim(draft, match.index, grab.end, "place")) place = capitalise(grab.words.join(" "));
+    }
+  }
+  if (place === null) {
+    const inRe = new RegExp(`(?<![\\p{L}])${rules.in}\\s+(?=\\p{Lu})`, "gu");
+    for (let match = inRe.exec(draft.masked); match && place === null; match = inRe.exec(draft.masked)) {
+      const grab = grabWords(draft.masked, match.index + match[0].length, placeStop, rules.and, { join: false, chain: true, max: 3 });
+      if (grab.words.length === 0 || rules.months.includes(fold(grab.words[0]))) continue;
+      if (claim(draft, match.index, grab.end, "place")) place = grab.words.join(" ");
     }
   }
   return { people, place };
