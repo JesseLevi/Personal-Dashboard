@@ -60,6 +60,10 @@ const ladleViteConfig = {
         find: /^@\/lib\/profile\/actions$/,
         replacement: path.resolve(process.cwd(), ".ladle/mocks/profile-actions.ts"),
       },
+      {
+        find: /^@\/lib\/widget\/actions$/,
+        replacement: path.resolve(process.cwd(), ".ladle/mocks/widget-actions.ts"),
+      },
     ],
   },
   plugins: [

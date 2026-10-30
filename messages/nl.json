@@ -332,6 +332,72 @@
       "upload-failed": "Uploaden is mislukt. Probeer het opnieuw."
     }
   },
+  "settings": {
+    "widget": {
+      "title": "iPhone-widget",
+      "intro": "Toon de rest van je dag op het beginscherm of toegangsscherm van je iPhone. De widget draait in Scriptable en leest je agenda met een eigen token.",
+      "tokens": {
+        "title": "Tokens",
+        "empty": "Je hebt nog geen token.",
+        "createdOn": "Aangemaakt op {date}",
+        "lastUsed": "Laatst gebruikt: {date}",
+        "never": "nooit",
+        "deleteLabel": "Verwijder token {label}",
+        "labelField": "Naam van de token",
+        "labelPlaceholder": "Bijvoorbeeld: iPhone van Jesse",
+        "create": "Nieuwe token",
+        "creating": "Aanmaken...",
+        "limitReached": "Je hebt 5 tokens, het maximum. Verwijder er een om een nieuwe te maken.",
+        "deleteConfirm": {
+          "prompt": "Token verwijderen? De widget die hem gebruikt toont daarna niets meer.",
+          "cancel": "Annuleren",
+          "confirm": "Verwijderen",
+          "deleting": "Verwijderen..."
+        }
+      },
+      "created": {
+        "title": "Je nieuwe token",
+        "warning": "Kopieer hem nu. Hij wordt niet nog eens getoond.",
+        "copy": "Kopieer token",
+        "copied": "Gekopieerd",
+        "done": "Klaar",
+        "copyFailed": "Kopiëren is niet gelukt. Selecteer de token en kopieer hem zelf."
+      },
+      "install": {
+        "title": "Installeren in drie stappen",
+        "step1": {
+          "title": "Installeer Scriptable",
+          "body": "Scriptable is gratis in de App Store.",
+          "link": "Open in de App Store"
+        },
+        "step2": {
+          "title": "Voeg de opdracht \"Open Atlas\" toe",
+          "body": "Met deze opdracht opent een tik op de widget Atlas in plaats van Safari.",
+          "link": "Voeg de opdracht toe",
+          "manual": "Maak in Opdrachten zelf een opdracht met de naam \"Open Atlas\":",
+          "manualIf": "Actie \"Als\": invoer begint met \"webapp://heyatlas.nl/\".",
+          "manualThen": "Daarbinnen \"Open URL's\" met de invoer.",
+          "manualElse": "Bij \"Anders\": \"Open URL's\" met \"webapp://heyatlas.nl/agenda\"."
+        },
+        "step3": {
+          "title": "Kopieer het script",
+          "body": "Plak het in een nieuw script in Scriptable en start het één keer. Plak daarna je token.",
+          "copy": "Kopieer script",
+          "copying": "Kopiëren...",
+          "copied": "Script gekopieerd"
+        },
+        "safari": "Geen opdracht? Zet de widget-parameter op \"safari\", dan opent een tik Atlas in Safari."
+      },
+      "errors": {
+        "invalid-input": "Geef de token een naam van 1 tot 60 tekens.",
+        "unauthenticated": "Log opnieuw in om door te gaan.",
+        "limit": "Je hebt al 5 tokens. Verwijder er een om een nieuwe te maken.",
+        "unavailable": "Widget-tokens zijn nog niet beschikbaar.",
+        "generic": "Er ging iets mis. Probeer het opnieuw.",
+        "scriptUnavailable": "Het script is nog niet beschikbaar. Probeer het later opnieuw."
+      }
+    }
+  },
   "components": {
     "cardContentIngredient": {
       "deleteLabel": "Ingrediënt verwijderen",

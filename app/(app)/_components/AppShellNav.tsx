@@ -19,6 +19,7 @@ import { isOutsideAllContainers } from "@/lib/dom/outside-pointer";
 import { blurInTotalMs, blurOutTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 import { hasEnterFromLogin } from "@/lib/ui/login-enter";
 import type { Locale } from "@/lib/profile/types";
+import type { WidgetTokenItem } from "@/lib/widget/types";
 import { SettingsPanel } from "./SettingsPanel";
 import { useSearchShortcut } from "./useSearchShortcut";
 
@@ -152,6 +153,8 @@ export interface AppShellNavProps {
   aiEnabled: boolean;
   /** #579: `isEmbeddingConfigured()` resolved on the server; false disables the opt-in. */
   aiAvailable: boolean;
+  /** #657: the member's widget tokens (`listWidgetTokens`), for SettingsPanel's iPhone-widget section. */
+  widgetTokens: readonly WidgetTokenItem[];
 }
 
 // Client wrapper: owns the collapse toggle (client-side, expanded by default
@@ -162,7 +165,7 @@ export interface AppShellNavProps {
 // own, so importing it here pulls it into the client bundle — the boundary
 // stops at this file, which is why the layout above stays a Server
 // Component and does the Supabase call.
-export function AppShellNav({ children, displayName, lastName, avatarSrc, locale, aiEnabled, aiAvailable }: AppShellNavProps) {
+export function AppShellNav({ children, displayName, lastName, avatarSrc, locale, aiEnabled, aiAvailable, widgetTokens }: AppShellNavProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
@@ -433,6 +436,7 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
         hasAvatar={avatarSrc !== null}
         aiEnabled={aiEnabled}
         aiAvailable={aiAvailable}
+        widgetTokens={widgetTokens}
       />
     </div>
   );

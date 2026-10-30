@@ -18,14 +18,16 @@ Page-level composition, not a leaf component, so not in `design/figma-map.json` 
 - `lastName` comes from the separate, error-swallowing `getLastName` query, not `getProfileForNav`, so a hosted DB without the #404 migration only loses this field (#404).
 - The photo saves immediately through `uploadAvatar` / `removeAvatar`, not with Opslaan (an upload is too heavy to hold back, and a failed theme/name save must not drop it). Its own `avatarError` and pending state; errors from `profile.errors.*`. The actions revalidate the layout, so the Sidebar follows. The stored file is one 120×120 WebP (server re-encode, EXIF stripped); URL `?v=<updated_at>` busts the immutable cache (#434).
 - "Verbanden en slim zoeken" (ADR-0043 §2, #579) is a Claude-designed section from the `Checkbox` atom and text, last before the error line. It saves immediately through `setAiEnabled` (a consent, not a form field). Turning off swaps the footer for `DeleteConfirm` (it wipes the index). `aiAvailable` (`isEmbeddingConfigured()`) and `aiEnabled` (`getAiEnabled`, error-swallowing) come from the layout; unavailable shows "Nog niet beschikbaar" and a disabled checkbox.
-- Ladle aliases `@/lib/profile/actions` to `.ladle/mocks/profile-actions.ts`; keep its exports in step with the real module.
+- "iPhone-widget" (ADR-0047, `WidgetSettings.tsx`) is a Claude-designed section from `InputField`, `Button` and `Step`, no new component or token. It lists the member's tokens (label, created, last used or "nooit"), makes a token (label, then the plaintext once with a copy button and a warning), and explains the three install steps. The new-token form is disabled at 5 tokens, with an explanation. Dates use a fixed `Europe/Amsterdam` zone so server and browser render the same.
+- Deleting a token uses the `DeleteConfirm` footer swap, like the AI opt-in; the panel owns that state, `WidgetSettings` only asks. Tokens come from `listWidgetTokens` in the layout (empty before the hosted migration).
+- Copying the script fetches `/widget/atlas-widget.js` inside a `ClipboardItem` promise (keeps Safari's user gesture); a 404 shows `settings.widget.errors.scriptUnavailable`. Step 2 shows the manual Shortcut steps while `WIDGET_SHORTCUT_URL` (`lib/widget/install.ts`) is `null`.
+- Ladle aliases `@/lib/profile/actions` and `@/lib/widget/actions` to `.ladle/mocks/*-actions.ts`; keep their exports in step with the real modules. The `Widget` story shows the four states (empty, with tokens, just created, limit reached) outside the panel, because the panel scrolls and the section sits below the fold.
 - No email/password fields: undesigned (#265).
 - `Eenheid` annotations on the Taal container are leftovers from the Add-recipe frame; ignored per the ticket (#265).
 
 ## Gotchas
 - `ButtonToggle` is uncontrolled (`defaultValue` only) and `next-themes`' `theme` is `undefined` until mount, while `SidePanel` keeps its children mounted (inert) when closed. A one-time `themeReady` flip keys a single `ButtonToggle` remount so it picks up the real theme; never key it on every click or the indicator animation breaks.
 - `pendingLocale`, `pendingFirstName` and `pendingLastName` each re-sync via `useEffect` when their server prop changes. The panel never unmounts on same-layout navigation, and `updateLocale`'s revalidation re-renders `AppLayout` with the new values into the same mounted instance; without the effect a reopened panel shows stale values. Safe on the save path (same-value no-op).
-- No Ladle story or visual baseline for the panel itself: it imports server actions and `next-themes`.
 
 ## Open
 - `docs/open-questions.md#settings-mobile-delete-button-not-built`

@@ -7,6 +7,7 @@ import { runLazyEmbeddingDrain } from "@/lib/embeddings/lazy";
 import { isEmbeddingConfigured } from "@/lib/ai";
 import { getAiEnabled, getAvatarSrc, getLastName, getProfileForNav } from "@/lib/profile/queries";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { listWidgetTokens } from "@/lib/widget/tokens";
 import { AppShellNav } from "./_components/AppShellNav";
 
 // Auth guard for the whole (app) route group. #168 added middleware.ts,
@@ -38,11 +39,12 @@ export default async function AppLayout({
 
   // #404: separate, error-swallowing query so a not-yet-migrated last_name
   // column (and #434's avatar_path) cannot break the nav profile; all run in parallel.
-  const [profile, lastName, avatarSrc, aiEnabled] = await Promise.all([
+  const [profile, lastName, avatarSrc, aiEnabled, widgetTokens] = await Promise.all([
     getProfileForNav(),
     getLastName(),
     getAvatarSrc(),
     getAiEnabled(),
+    listWidgetTokens(),
   ]);
 
   // ADR-0043 §5: the member's own backlog drains after the response, RLS client, never awaited.
@@ -59,6 +61,7 @@ export default async function AppLayout({
       locale={profile.locale}
       aiEnabled={aiEnabled}
       aiAvailable={isEmbeddingConfigured()}
+      widgetTokens={widgetTokens}
     >
       {children}
     </AppShellNav>
