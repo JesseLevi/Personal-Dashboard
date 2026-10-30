@@ -210,7 +210,11 @@ begin
 end;
 $$;
 
+-- Changing the owner needs CREATE on the schema for the new owner; give it for
+-- this statement only.
+grant create on schema public to atlas_widget;
 alter function public.widget_today(text, timestamptz, timestamptz, text) owner to atlas_widget;
+revoke create on schema public from atlas_widget;
 
 revoke execute on function public.widget_today(text, timestamptz, timestamptz, text)
   from public, authenticated, service_role;
