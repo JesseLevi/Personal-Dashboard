@@ -52,6 +52,7 @@ import { createMealPlan, deleteMealPlan, getMealPlan, sendMealToBasket, sendWeek
 import { PlanCardList } from "./PlanCardList";
 import { PlanRecipeList } from "./PlanRecipeList";
 import { useAgendaShortcuts } from "./useAgendaShortcuts";
+import { useAgendaSwipe } from "./useAgendaSwipe";
 
 export interface AgendaPageProps {
   initialView: AgendaView;
@@ -206,6 +207,10 @@ export function AgendaPage({
     }
   };
   useAgendaShortcuts(runShortcut, shortcutsBlocked);
+
+  // Below `lg` the calendar shows one day; a horizontal swipe on it steps like the arrows (#666).
+  const swipeRef = useRef<HTMLDivElement>(null);
+  useAgendaSwipe(swipeRef, narrow, (step) => goTo(stepDate(effectiveView, date, step)));
 
   // "+ Nieuw", the floating button, N and a click or drag on an empty slot all open quick add (ADR-0041).
   function openQuickAdd(slot: AgendaSpan | null) {
@@ -491,18 +496,20 @@ export function AgendaPage({
           />
         }
       >
-        <AgendaCalendar
-          items={visibleItems}
-          view={view}
-          date={date}
-          scrollNowKey={scrollNowKey}
-          onSelectSlot={openQuickAdd}
-          onItemClick={handleItemClick}
-          onItemMove={handleChange}
-          onItemResize={handleChange}
-          onExternalDrop={handleExternalDrop}
-          onItemDropOut={handleItemDropOut}
-        />
+        <div ref={swipeRef} className="h-full">
+          <AgendaCalendar
+            items={visibleItems}
+            view={view}
+            date={date}
+            scrollNowKey={scrollNowKey}
+            onSelectSlot={openQuickAdd}
+            onItemClick={handleItemClick}
+            onItemMove={handleChange}
+            onItemResize={handleChange}
+            onExternalDrop={handleExternalDrop}
+            onItemDropOut={handleItemDropOut}
+          />
+        </div>
       </AgendaBody>
       <Toast message={notice} onDismiss={() => setNotice(null)} />
       {mealPanel.item && (

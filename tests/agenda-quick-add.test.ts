@@ -199,6 +199,17 @@ describe("parseQuickAdd, Dutch", () => {
     expect(parse("Boodschappen bij de bakker").place).toBe("De bakker");
   });
 
+  it("in before a capitalised name is a place", () => {
+    expect(parse("Markt in Groningen")).toMatchObject({ title: "Markt", place: "Groningen" });
+    expect(parse("Festival in Den Haag zaterdag")).toMatchObject({ title: "Festival", place: "Den Haag", date: "2026-10-24" });
+    expect(parse("Etentje bij mama in Groningen").place).toBe("Mama");
+  });
+
+  it("in before a lowercase word or a month is not a place", () => {
+    expect(parse("Hardlopen in de ochtend").place).toBeNull();
+    expect(parse("Vakantie in Maart").place).toBeNull();
+  });
+
   it("meal: a moment word without people or place", () => {
     expect(parse("Diner vandaag")).toMatchObject({ kind: "meal", slot: "dinner", date: "2026-10-18", recipeId: null });
     expect(parse("Ontbijt morgen")).toMatchObject({ kind: "meal", slot: "breakfast" });
@@ -295,6 +306,11 @@ describe("parseQuickAdd, English", () => {
       start: "12:00",
       people: ["Sanne"],
     });
+  });
+
+  it("in before a capitalised name is a place", () => {
+    expect(parse("Market in Groningen", "en")).toMatchObject({ title: "Market", place: "Groningen" });
+    expect(parse("Run in the morning", "en").place).toBeNull();
   });
 
   it("Dinner at mom's Sat 6pm with Youri and Sanne", () => {
