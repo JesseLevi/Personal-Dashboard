@@ -19,7 +19,7 @@
 2. **It reads one endpoint**: `GET /api/widget/today?tz=<IANA>` with `Authorization: Bearer <widget token>`.
    - The response is versioned JSON validated with zod before sending.
    - It holds the rest of today and a preview of tomorrow.
-   - It carries display-ready strings in the member's `profiles.locale` and calendar colours as light and dark hex values. The script holds no copy and no palette.
+   - It carries display-ready strings in the member's `profiles.locale` and calendar colours as light and dark hex values, derived from `design/tokens.json`. The script holds no palette, and copy only for the states where the endpoint cannot answer (no token, offline, token refused), in nl and en.
    - It answers `Cache-Control: no-store`, 401 for a missing, malformed or unknown token, and 429 over the limit.
 3. **A widget token is a personal, read-only credential.**
    - `public.widget_tokens`: `id`, `user_id`, `label`, `token_hash`, `created_at`, `last_used_at`. RLS, grants and a pgTAP test ship with it (ADR-0009). Members can list, create and delete their own rows. `token_hash` is not readable or updatable by `authenticated`.
