@@ -3,8 +3,7 @@ import { PlanDrawer } from "@/components/organisms/PlanDrawer";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaItem } from "@/lib/agenda/types";
 import type { AgendaView } from "@/lib/agenda/view";
-import { useRef, useState } from "react";
-import { useAgendaSwipe } from "./useAgendaSwipe";
+import { useState } from "react";
 import { isoWeek, stepDate, visibleRange } from "@/lib/agenda/time";
 import { AgendaBody } from "./AgendaBody";
 import { AgendaHeader } from "./AgendaHeader";
@@ -133,8 +132,6 @@ export const Overview = () => (
 export const Interactive = () => {
   const [view, setView] = useState<"day" | "week" | "month" | "list">("week");
   const [date, setDate] = useState(DATE);
-  const swipeRef = useRef<HTMLDivElement>(null);
-  useAgendaSwipe(swipeRef, true, (step) => setDate((d) => stepDate("day", d, step)));
   const [overlay, setOverlay] = useState(false);
   const [trayOpen, setTrayOpen] = useState(false);
   const [scrollNowKey, setScrollNowKey] = useState(0);
@@ -183,7 +180,7 @@ export const Interactive = () => {
           />
         }
       >
-        <div ref={swipeRef} className="h-full" data-swipe><AgendaCalendar items={items} view={view} date={date} scrollNowKey={scrollNowKey} /></div>
+        <AgendaCalendar items={items} view={view} date={date} scrollNowKey={scrollNowKey} />
       </AgendaBody>
     </Surface>
   );
