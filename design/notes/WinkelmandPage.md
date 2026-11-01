@@ -35,6 +35,7 @@ No new components. `PageHeader` (actions in one flex wrapper), one `Card` per gr
 - `WinkelmandHeader` is extracted from `WinkelmandList` so the open switcher has a Ladle story (`defaultListMenuOpen` is story-only).
 
 - Suggestions (ADR-0051): `BasketSuggestions` renders open `buy_rhythm` signals as a titled `Card` ("Misschien weer nodig") above the basket, one row per signal: catalog sentence, `Button` "Op de lijst" (Plus icon, `addShoppingListItem` on this basket; the server settles the signal) and an outline `Button` "Nee" (dismiss). Rows hide optimistically and come back on failure. No new token; same `pr-page-right-equal` inset as the other blocks.
+- Offline (ADR-0054): `OfflineNotice` shows "Offline: dit is je mand van <tijd>" in the urgent text colour while `navigator.onLine` is false, with the server render time of the cached page. No other offline state: actions fail with their normal error.
 
 ## Token gaps and flags
 - Items-list wrapper `gap-6` (24px): "Ingredients" wrapper (`4051:13534` mobile / `4051:13056` desktop) has `itemSpacing: 24` with no `boundVariables`; 24 matches both `spacing/page/stack` and `spacing/stack/stack-xl`, so it stays raw (#219).

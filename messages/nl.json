@@ -237,6 +237,9 @@
     }
   },
   "shopping": {
+    "offline": {
+      "notice": "Offline: dit is je mand van {time}. Afvinken en toevoegen kan weer zodra je verbinding hebt."
+    },
     "errors": {
       "invalid-input": "Controleer de ingevoerde gegevens.",
       "unauthenticated": "Log opnieuw in om door te gaan.",
@@ -1552,6 +1555,10 @@
       "dinner": "Diner",
       "snack": "Tussendoor"
     }
+  },
+  "offline": {
+    "title": "Je bent offline",
+    "body": "Deze pagina is niet beschikbaar zonder verbinding. Een mand die je eerder op dit apparaat hebt geopend, kun je offline wel bekijken."
   },
   "vandaag": {
     "title": "Vandaag",

@@ -5,6 +5,7 @@ import { getAuthenticatedUserId } from "@/lib/boards/session";
 import { LoginFormClient } from "./LoginFormClient";
 import { lookupGreetingName } from "./greeting-action";
 import { sendLoginCode, signInWithPassword } from "./actions";
+import { ClearOfflineCache } from "@/app/(app)/_components/OfflineSupport";
 import { HOME_PATH } from "@/lib/today/home";
 
 // figma: node-id=3929:25181 (Pages/Login — LogIn/Desktop 3929:25202,
@@ -28,11 +29,14 @@ export default async function LoginPage() {
   const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY || null;
 
   return (
-    <LoginFormClient
+    <>
+      <ClearOfflineCache />
+      <LoginFormClient
       signInWithPasswordAction={signInWithPassword}
       sendLoginCodeAction={sendLoginCode}
       lookupGreetingNameAction={lookupGreetingName}
       turnstileSiteKey={turnstileSiteKey}
-    />
+      />
+    </>
   );
 }

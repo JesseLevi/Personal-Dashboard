@@ -237,6 +237,9 @@
     }
   },
   "shopping": {
+    "offline": {
+      "notice": "Offline: this is your basket as of {time}. Checking off and adding work again once you are connected."
+    },
     "errors": {
       "invalid-input": "Check the information you entered.",
       "unauthenticated": "Sign in again to continue.",
@@ -1552,6 +1555,10 @@
       "dinner": "Dinner",
       "snack": "Snack"
     }
+  },
+  "offline": {
+    "title": "You are offline",
+    "body": "This page is not available without a connection. A basket you opened on this device before can still be viewed offline."
   },
   "vandaag": {
     "title": "Today",
