@@ -30,6 +30,7 @@ function makeColumn(id: string, boardId: string, cardIds: string[]): BoardColumn
     board_id: boardId,
     name: id,
     icon: "Croissant",
+    is_done: false,
     position: 1000,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",

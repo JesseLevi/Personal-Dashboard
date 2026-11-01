@@ -140,8 +140,8 @@ export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProp
     icon: isIconName(column.icon) ? column.icon : "Croissant",
     items: column.cards,
   }));
-  // Done styling: cards in the rightmost column (by position, not name).
-  const lastColumnId = columns[columns.length - 1]?.id;
+  // Done styling: cards in a done column (ADR-0050).
+  const doneColumnIds = new Set(localBoard.columns.filter((column) => column.is_done).map((column) => column.id));
   const panelColumns = columns.map(({ id, name, icon }) => ({ id, name, icon }));
 
   // `open`/`target` are independent: closing (X, overlay, Escape) only
@@ -184,9 +184,9 @@ export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProp
         onAddItem={(columnId) => setPanel({ open: true, target: { mode: "create", columnId } })}
         onEditColumn={(columnId) => {
           const column = columns.find((c) => c.id === columnId);
-          if (column) columnPanel.openEdit({ id: column.id, name: column.name, icon: column.icon });
+          if (column) columnPanel.openEdit({ id: column.id, name: column.name, icon: column.icon, isDone: doneColumnIds.has(column.id) });
         }}
-        isItemMuted={(_card, columnId) => columnId === lastColumnId}
+        isItemMuted={(_card, columnId) => doneColumnIds.has(columnId)}
         onItemClick={(card) => setPanel({ open: true, target: { mode: "edit", card } })}
         renderItem={(card) => {
           const priority = isPriority(card.priority) ? card.priority : "medium";

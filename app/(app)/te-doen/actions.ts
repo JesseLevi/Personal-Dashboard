@@ -143,6 +143,7 @@ export async function createBoard(input: unknown): Promise<ActionResult<BoardRow
       board_id: data.id,
       name: column.name,
       icon: column.icon,
+      is_done: column.isDone,
       position: (index + 1) * 1000,
     })),
   );
@@ -239,6 +240,7 @@ export async function createColumn(
       board_id: parsed.data.boardId,
       name: parsed.data.name,
       icon: parsed.data.icon,
+      is_done: parsed.data.isDone ?? false,
       position,
     })
     .select()
@@ -263,11 +265,11 @@ export async function renameColumn(input: unknown): Promise<ActionResult> {
 
   const { data, error } = await supabase
     .from("board_columns")
-    .update(
-      parsed.data.icon === undefined
-        ? { name: parsed.data.name }
-        : { name: parsed.data.name, icon: parsed.data.icon },
-    )
+    .update({
+      name: parsed.data.name,
+      ...(parsed.data.icon !== undefined && { icon: parsed.data.icon }),
+      ...(parsed.data.isDone !== undefined && { is_done: parsed.data.isDone }),
+    })
     .eq("id", parsed.data.columnId)
     .select("id")
     .maybeSingle();

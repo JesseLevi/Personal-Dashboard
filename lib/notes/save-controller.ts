@@ -3,9 +3,14 @@
 // Status only ever reaches "saved" from a resolved `{ success: true }`;
 // rationale: design/notes/NoteEditor.md.
 
-export type SaveStatus = "saved" | "saving" | "error";
+export type SaveStatus = "saved" | "saving" | "error" | "conflict";
 
-export type SaveFn = (content: unknown) => Promise<{ success: boolean }>;
+/** `version` is the note's content_version (ADR-0048); null when unknown. */
+export type SaveResult =
+  | { success: true; version?: number | null }
+  | { success: false; conflict?: boolean };
+
+export type SaveFn = (content: unknown, version: number | null) => Promise<SaveResult>;
 
 export class SaveController {
   private status: SaveStatus = "saved";
@@ -13,15 +18,30 @@ export class SaveController {
   private failed: unknown = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private inFlight = false;
+  private current: Promise<void> = Promise.resolve();
+  private savedAny = false;
   private disposed = false;
   private listeners = new Set<() => void>();
 
   constructor(
     private readonly save: SaveFn,
     private readonly debounceMs: number,
+    private version: number | null = null,
   ) {}
 
   getStatus = (): SaveStatus => this.status;
+
+  /** True once any write succeeded, i.e. the server copy changed. */
+  hasSaved = (): boolean => this.savedAny;
+
+  /** Resolves when no write is in flight any more. */
+  settled = async (): Promise<void> => {
+    let seen: Promise<void> | null = null;
+    while (seen !== this.current) {
+      seen = this.current;
+      await seen;
+    }
+  };
 
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
@@ -31,6 +51,7 @@ export class SaveController {
   /** A new full-document snapshot: schedule a debounced write. */
   change(content: unknown) {
     this.latest = content;
+    if (this.status === "conflict") return;
     this.set("saving");
     if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(() => this.flush(), this.debounceMs);
@@ -42,36 +63,46 @@ export class SaveController {
       clearTimeout(this.timer);
       this.timer = null;
     }
-    if (this.latest === null || this.inFlight) return;
+    if (this.latest === null || this.inFlight || this.status === "conflict") return;
     const content = this.latest;
     this.latest = null;
     this.inFlight = true;
     this.set("saving");
-    this.save(content)
+    this.current = this.save(content, this.version)
       .then(
-        (result) => result.success,
-        () => false,
+        (result): SaveResult => result,
+        (): SaveResult => ({ success: false }),
       )
-      .then((ok) => {
+      .then((result) => {
         this.inFlight = false;
-        this.failed = ok ? null : content;
+        if (!result.success && result.conflict) {
+          // Stop writing: the server holds a newer copy. Local text stays put.
+          if (this.latest === null) this.latest = content;
+          this.failed = null;
+          this.set("conflict");
+          return;
+        }
+        if (result.success) this.savedAny = true;
+        if (result.success && typeof result.version === "number") this.version = result.version;
+        this.failed = result.success ? null : content;
         if (this.latest !== null) {
           // A newer snapshot arrived meanwhile and supersedes this one.
           if (!this.timer) this.flush();
           return;
         }
-        this.set(ok ? "saved" : "error");
+        this.set(result.success ? "saved" : "error");
       });
   }
 
   /** Re-sends the snapshot that failed. */
   retry() {
+    if (this.status === "conflict") return;
     if (this.latest === null) this.latest = this.failed;
     this.failed = null;
     this.flush();
   }
 
-  /** Drops everything pending, e.g. right before the note is deleted. */
+  /** Drops everything pending, e.g. right before the note is deleted or reloaded. */
   discard() {
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
