@@ -11,6 +11,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | [0018](0018-shelve-self-hosting-and-local-inference.md) | Vercel + Supabase Cloud is the target; hosted AI behind `lib/ai/` with cost guardrails; no always-on worker | Accepted |
 | [0032](0032-deploy-and-release.md) | Builds on `main` only, manual promotion, migration routes, CI scope | Accepted |
 | [0033](0033-server-only-data-access.md) | Browser talks only to Atlas; all data through server code | Accepted |
+| [0049](0049-production-error-log.md) | Server errors via `instrumentation.ts` into `private.app_errors` through an anon definer function guarded by a Vault secret; no user data | Accepted |
 | [0038](0038-login-by-email-code.md) | Login by 6-digit e-mail code plus fallback link; Resend SMTP; hosted config scripted | Accepted |
 | [0039](0039-scheduled-work-runtime.md) | Scheduled work: lazy "sync when stale" in `after()` plus one daily Vercel Cron (Hobby); rules in one definer function | Accepted |
 | [0007](0007-i18n-next-intl.md) | next-intl, NL default, EN in the same PR | Accepted |
@@ -65,6 +66,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | [0021](0021-notes-editor-capabilities.md) | Editor capabilities, extension whitelist, stored-content rules | Accepted |
 | [0022](0022-note-images-storage.md) | Images in notes (storage per 0024) | Accepted, amended by 0024 |
 | [0023](0023-note-links-and-backlinks.md) | `[[` note links, `note_links`, backlinks | Accepted |
+| [0048](0048-note-save-conflicts.md) | Note saves carry `notes.content_version`; an outdated copy is refused (`NL409`) and the editor asks to reload | Accepted |
 
 ## Agenda, AI and history
 
