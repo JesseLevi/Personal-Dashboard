@@ -7,6 +7,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 const session = vi.hoisted(() => ({ userId: null as string | null }));
 const db = vi.hoisted(() => ({
   notes: [] as { id: string; user_id: string; category_id?: string }[],
+  rpcError: null as { code: string; message: string } | null,
 }));
 
 vi.mock("@/lib/boards/session", () => ({
@@ -16,7 +17,7 @@ vi.mock("@/lib/boards/session", () => ({
 }));
 vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: async () => ({
-    rpc: async () => ({ error: null }),
+    rpc: async () => (db.rpcError ? { data: null, error: db.rpcError } : { data: 1, error: null }),
     from: () => {
       const filters: Record<string, string> = {};
       let deleting = false;
@@ -43,6 +44,7 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
+import { revalidatePath } from "next/cache";
 import { GET } from "@/app/api/note-image/[noteId]/[imageId]/route";
 import { deleteNote, updateNoteContent, uploadNoteImage } from "@/app/(app)/notities/actions";
 import { hasImageMagicBytes, resetSweepThrottleForTesting, sweepNoteImages } from "@/lib/notes/images";
@@ -189,9 +191,25 @@ describe("sweep on updateNoteContent", () => {
     const drop = await upload();
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(Date.now() + LATER);
-    expect((await updateNoteContent({ noteId: NOTE, content: docWith(keep.src) })).success).toBe(true);
+    expect((await updateNoteContent({ noteId: NOTE, content: docWith(keep.src), expectedVersion: 0 })).success).toBe(true);
     expect(store.objects.has(keep.key)).toBe(true);
     expect(store.objects.has(drop.key)).toBe(false);
+  });
+
+  it("refuses an outdated copy as a conflict and never sweeps after it", async () => {
+    const only = await upload();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() + LATER);
+    db.rpcError = { code: "NL409", message: "changed" };
+    try {
+      expect(await updateNoteContent({ noteId: NOTE, content: docWith("x"), expectedVersion: 0 })).toEqual({
+        success: false,
+        error: "conflict",
+      });
+    } finally {
+      db.rpcError = null;
+    }
+    expect(store.objects.has(only.key)).toBe(true);
   });
 
   it("spares uploads younger than the grace period", async () => {
@@ -212,9 +230,15 @@ describe("sweep on updateNoteContent", () => {
     expect(store.objects.has(b.key)).toBe(false);
   });
 
+  it("does not revalidate on an autosave", async () => {
+    vi.mocked(revalidatePath).mockClear();
+    expect((await updateNoteContent({ noteId: NOTE, content: docWith("x"), expectedVersion: 0 })).success).toBe(true);
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
   it("does not fail the save when the sweep errors", async () => {
     vi.spyOn(store, "list").mockRejectedValue(new Error("r2 down"));
     vi.spyOn(console, "error").mockImplementation(() => {});
-    expect((await updateNoteContent({ noteId: NOTE, content: docWith("x") })).success).toBe(true);
+    expect((await updateNoteContent({ noteId: NOTE, content: docWith("x"), expectedVersion: null })).success).toBe(true);
   });
 });

@@ -6,10 +6,21 @@ import type { SaveStatus } from "@/lib/notes/save-controller";
 export interface NoteSaveStatusProps {
   status: SaveStatus;
   onRetry: () => void;
+  onReload: () => void;
 }
 
-export function NoteSaveStatus({ status, onRetry }: NoteSaveStatusProps) {
+export function NoteSaveStatus({ status, onRetry, onReload }: NoteSaveStatusProps) {
   const t = useTranslations("components.noteSaveStatus");
+  if (status === "conflict") {
+    return (
+      <div role="status" className="flex items-center gap-inline-sm">
+        <p className="text-sm font-semibold text-text-secondary">{t("conflict")}</p>
+        <Button variant="destructive" onClick={onReload}>
+          {t("reload")}
+        </Button>
+      </div>
+    );
+  }
   if (status === "error") {
     return (
       <div role="status">

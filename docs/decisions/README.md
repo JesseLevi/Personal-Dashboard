@@ -66,6 +66,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | [0021](0021-notes-editor-capabilities.md) | Editor capabilities, extension whitelist, stored-content rules | Accepted |
 | [0022](0022-note-images-storage.md) | Images in notes (storage per 0024) | Accepted, amended by 0024 |
 | [0023](0023-note-links-and-backlinks.md) | `[[` note links, `note_links`, backlinks | Accepted |
+| [0048](0048-note-save-conflicts.md) | Note saves carry `notes.content_version`; an outdated copy is refused (`NL409`) and the editor asks to reload | Accepted |
 
 ## Agenda, AI and history
 
