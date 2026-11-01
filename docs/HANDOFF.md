@@ -6,7 +6,7 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
 
 - Atlas is in production use by real accounts. Built: account, Vandaag (landing page), Te doen, Recepten, Winkelmand (incl. shared baskets), Notities, Agenda, ⌘K palette, Assistent rhythms (phase 9), iPhone widget.
 - **Production**: the "Deploy (migrate + production)" workflow ran on `5474b0e` (2026-11-01, user's go). Everything merged after that is not in production.
-- **Merged 2026-11-01, not in production**: ⌘K palette replacing `SearchPanel` (ADR-0048, #691/#699/#705); card subtasks schema and actions (ADR-0053, #702); and the improvement brief with the user's choices: note save conflicts (ADR-0056, #676), autosave without page re-render (#678), server error log (ADR-0049, #680), done columns (ADR-0050, #682; palette progress reads `is_done`), signals in Winkelmand and the plan drawer, nav item "Assistent" removed (ADR-0051, #684), card labels (ADR-0052, #690), Vandaag as landing page and `start_url` (ADR-0057, #698), read-only offline basket via `public/sw.js` (ADR-0054, #701), mobile tab bar (ADR-0055, #704).
+- **Merged 2026-11-01, not in production**: ⌘K palette replacing `SearchPanel` (ADR-0048, #691/#699/#705); card subtasks schema and actions, Projecten in ⌘K (ADR-0053, #702, #707); and the improvement brief with the user's choices: note save conflicts (ADR-0056, #676), autosave without page re-render (#678), server error log (ADR-0049, #680), done columns (ADR-0050, #682; palette progress reads `is_done`), signals in Winkelmand and the plan drawer, nav item "Assistent" removed (ADR-0051, #684), card labels (ADR-0052, #690), Vandaag as landing page and `start_url` (ADR-0057, #698), read-only offline basket via `public/sw.js` (ADR-0054, #701), mobile tab bar (ADR-0055, #704).
 - `pnpm audit` is clean. Visual gate covers `app/**/*.tsx` and `app/globals.css`. Ladle groups per module (`vandaag` after `basis`), `Overview` first.
 
 ## Next
@@ -24,7 +24,7 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
    - two tabs on one note give "Elders gewijzigd"; a done column hides its cards from Agenda and widget;
    - labels add, chip, filter, and disappear when unused; rhythm suggestions settle when acted on.
 3. **iPhone widget** (epic #653, ADR-0047): the "Open Atlas" iCloud link from #659 into `WIDGET_SHORTCUT_URL` (`lib/widget/install.ts`), then a device test of every family. `/agenda?date=` sets the date only on first mount.
-4. **Subtasks UI** (epic #692, ADR-0053): panel and the palette's Projecten group (#695). Finishing a project offers the done column (ADR-0050).
+4. **Subtasks UI** (epic #692, ADR-0053): the palette's Projecten group is merged (#707); the card panel follows. Finishing a project offers the done column (ADR-0050).
 5. **Phase 8 rollout #574** (ADR-0043): `CLOUDFLARE_*` in Vercel, user's go per step. LLM pattern signals stay inert until then and `ANTHROPIC_API_KEY` is set; they show on Vandaag.
 
 ## Small open items
