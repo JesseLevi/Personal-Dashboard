@@ -119,7 +119,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 
 ## 6. AI and async work
 
-- **Today**: `lib/ai/` exposes one provider-neutral function (prompt + zod schema in, validated object out). It runs Claude Haiku via Anthropic. Consumers: the recipe import pipeline, in `after()` with a lazy sweep for stuck rows (ADR-0019), and a recipe save that estimates a re-linked line's missing weight per unit (`lib/recipes/unit-weights.ts`).
+- **Today**: `lib/ai/` exposes one provider-neutral function (prompt + zod schema in, validated object out), running Claude Haiku. Consumers: recipe import, in `after()` with a lazy sweep for stuck rows (ADR-0019), and missing unit weights on recipe save (`lib/recipes/unit-weights.ts`).
 - **Phase 8** (ADR-0043, epic #31), the connections layer:
   - `embed()` in `lib/ai/` runs `@cf/baai/bge-m3` (1024d) on Cloudflare Workers AI; the free daily quota is the spend cap;
   - opt-in per member (`profiles.ai_enabled`); without it nothing leaves Atlas (keyword search only);
@@ -142,7 +142,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - `calendar_event_series`: rule and template of a recurring own event; occurrences are `calendar_events` rows (`series_id`), 400 days ahead, extended on Agenda load (ADR-0042).
 - **Sync** (ADR-0037 §5): `ics` → `caldav` → Graph/Google on need, via `safe-fetch`, parsed by `ical.js`; recurring instances expanded −30 d / +400 d, upserted by UID + instance start; a failed, empty or halved fetch deletes nothing; two-miss deletion with a basket notice; writes only on a changed hash.
 - **Colour, creation**: items use their calendar's `event-<colour>-*` tokens (ADR-0040); quick add parses with `chrono-node`, no AI (ADR-0041).
-- **Sync trigger** (ADR-0039): opening the Agenda syncs the user's accounts older than an hour in `after()`; the daily cron syncs accounts older than 20 hours. `apply_calendar_sync` (`security definer`, advisory lock) applies a parsed feed per account: upsert, hash, two-miss deletion, and a `calendar_sync_notices` row (item ids kept, as `meal_plan_id` is nulled). The URL sits in Vault; `lib/agenda/sync.ts` and `app/api/cron/` call it.
+- **Sync trigger** (ADR-0039): opening the Agenda syncs the user's accounts older than an hour in `after()`; the daily cron syncs accounts older than 20 hours. `apply_calendar_sync` (definer, advisory lock) applies a parsed feed per account: upsert, hash, two-miss deletion, a `calendar_sync_notices` row (item ids kept). The URL sits in Vault; `lib/agenda/sync.ts` and `app/api/cron/` call it.
 
 ## 8. Testing and CI gates
 
