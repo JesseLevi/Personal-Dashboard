@@ -43,6 +43,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | --- | --- | --- |
 | [0025](0025-cards-size.md) | `cards.size` s/m/l/xl | Accepted |
 | [0026](0026-boards-is-favorite.md) | One favourite board per user | Accepted |
+| [0052](0052-card-labels.md) | Labels: plain names per board, set from the card panel, chips on cards, header filter; links only within one board (policy) | Accepted |
 
 ## Recepten and Winkelmand
 

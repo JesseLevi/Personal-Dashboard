@@ -1,5 +1,6 @@
 "use server";
 
+import { replaceCardLabels } from "@/lib/boards/labels";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -350,6 +351,10 @@ export async function createCard(input: unknown): Promise<ActionResult<CardRow>>
     if (error) logDbError("createCard", error);
     return { success: false, error: "generic" };
   }
+  if (parsed.data.labels && !(await replaceCardLabels(supabase, auth.userId, data.id, parsed.data.labels))) {
+    revalidatePath("/te-doen", "layout");
+    return { success: false, error: "generic" };
+  }
 
   revalidatePath("/te-doen", "layout");
   return { success: true, data };
@@ -359,7 +364,7 @@ export async function updateCard(input: unknown): Promise<ActionResult> {
   const parsed = updateCardSchema.safeParse(input);
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
-  const { cardId, ...fields } = parsed.data;
+  const { cardId, labels, ...fields } = parsed.data;
   // Only fields the caller actually sent get written — a schema `.optional()`
   // key that's absent must not overwrite existing data with `undefined`
   // (Supabase would just omit it, but being explicit keeps this correct even
@@ -392,6 +397,10 @@ export async function updateCard(input: unknown): Promise<ActionResult> {
     return { success: false, error: readOnlyOrGeneric(error) };
   }
   if (!data) return { success: false, error: "not-found" };
+  if (labels && !(await replaceCardLabels(supabase, auth.userId, cardId, labels))) {
+    revalidatePath("/te-doen", "layout");
+    return { success: false, error: "generic" };
+  }
 
   revalidatePath("/te-doen", "layout");
   return { success: true, data: undefined };
