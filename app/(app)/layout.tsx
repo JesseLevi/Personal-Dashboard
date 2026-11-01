@@ -9,6 +9,7 @@ import { getAiEnabled, getAvatarSrc, getLastName, getProfileForNav } from "@/lib
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { listWidgetTokens } from "@/lib/widget/tokens";
 import { AppShellNav } from "./_components/AppShellNav";
+import { RegisterServiceWorker } from "./_components/OfflineSupport";
 
 // Auth guard for the whole (app) route group. #168 added middleware.ts,
 // which refreshes the session cookie ahead of this render, but the redirect
@@ -63,6 +64,7 @@ export default async function AppLayout({
       aiAvailable={isEmbeddingConfigured()}
       widgetTokens={widgetTokens}
     >
+      <RegisterServiceWorker />
       {children}
     </AppShellNav>
   );

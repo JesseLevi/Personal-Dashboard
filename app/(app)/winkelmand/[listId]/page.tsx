@@ -79,6 +79,7 @@ export default async function WinkelmandListPage({
       owner={owner}
       people={toAvatarGroupMembers(people, unnamed)}
       invites={invites}
+      renderedAt={new Date().toISOString()}
     />
   );
 }

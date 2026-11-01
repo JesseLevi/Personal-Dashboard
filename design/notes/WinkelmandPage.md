@@ -34,6 +34,8 @@ No new components. `PageHeader` (actions in one flex wrapper), one `Card` per gr
 - Shared refresh (#428): `useServerRefresh` (`lib/ui/server-refresh.ts`, generic) calls `router.refresh()` on `visibilitychange` to visible, on window `focus` and every 15 s while the tab is visible; no interval when hidden. Active only when the basket has an accepted member (`people.length > 0`); a personal basket never polls. A tick is skipped while `pendingActions > 0`. `toggleShoppingListItem`/`deleteShoppingListItem` returning `not-found` (someone else removed the row) is silent: no error, the optimistic state stays and `router.refresh()` drops the row. Add-item and clear-all keep showing `not-found`.
 - `WinkelmandHeader` is extracted from `WinkelmandList` so the open switcher has a Ladle story (`defaultListMenuOpen` is story-only).
 
+- Offline (ADR-0054): `OfflineNotice` shows "Offline: dit is je mand van <tijd>" in the urgent text colour while `navigator.onLine` is false, with the server render time of the cached page. No other offline state: actions fail with their normal error.
+
 ## Token gaps and flags
 - Items-list wrapper `gap-6` (24px): "Ingredients" wrapper (`4051:13534` mobile / `4051:13056` desktop) has `itemSpacing: 24` with no `boundVariables`; 24 matches both `spacing/page/stack` and `spacing/stack/stack-xl`, so it stays raw (#219).
 
