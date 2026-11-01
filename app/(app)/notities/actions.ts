@@ -350,10 +350,10 @@ export async function createNote(input: unknown): Promise<ActionResult<NoteRow>>
 // action that writes either column at all.
 export async function updateNoteContent(
   input: unknown,
-): Promise<ActionResult<{ title: string }>> {
+): Promise<ActionResult<{ title: string; version: number | null }>> {
   const parsed = updateNoteContentSchema.safeParse(input);
   if (!parsed.success) return { success: false, error: "invalid-input" };
-  const { noteId, content } = parsed.data;
+  const { noteId, content, expectedVersion } = parsed.data;
 
   const supabase = await createSupabaseServerClient();
   const auth = await requireUserId();
@@ -368,17 +368,24 @@ export async function updateNoteContent(
   // -- a nominal interface, not structurally an indexable
   // `{ [key: string]: Json }`, so it needs an explicit cast at this write
   // boundary. Foreign/unknown target ids are dropped by the RPC.
-  const { error } = await supabase.rpc("save_note_content", {
+  // ADR-0048: the versioned RPC refuses a save based on an outdated copy.
+  const args = {
     p_note_id: noteId,
     p_content: content as unknown as Json,
     p_title: title,
     p_content_text: contentText,
     p_target_ids: extractNoteLinkIds(content),
-  });
+  };
+  const { data, error } =
+    expectedVersion === null
+      ? await supabase.rpc("save_note_content", args)
+      : await supabase.rpc("save_note_content_versioned", { ...args, p_expected_version: expectedVersion });
+  const version = typeof data === "number" ? data : null;
 
   if (error) {
-    // NL404 = note not found / not owned by this user (see the migration).
+    // NL404 = not found / not owned; NL409 = changed elsewhere (see the migrations).
     if (error.code === "NL404") return { success: false, error: "not-found" };
+    if (error.code === "NL409") return { success: false, error: "conflict" };
     logDbError("updateNoteContent", error);
     return { success: false, error: "generic" };
   }
@@ -387,7 +394,7 @@ export async function updateNoteContent(
   await sweepNoteImages(auth.userId, noteId, content);
 
   revalidatePath("/notities", "layout");
-  return { success: true, data: { title } };
+  return { success: true, data: { title, version } };
 }
 
 export async function deleteNote(input: unknown): Promise<ActionResult> {
