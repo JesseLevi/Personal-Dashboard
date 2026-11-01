@@ -706,7 +706,8 @@
       "editTitle": "Rename category",
       "fields": {
         "nameLabel": "Name",
-        "iconLabel": "Icon"
+        "iconLabel": "Icon",
+        "doneLabel": "Cards here are done"
       },
       "saveLabel": "Save",
       "savingLabel": "Saving...",
