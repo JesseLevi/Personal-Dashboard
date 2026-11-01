@@ -6,7 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { groupToday } from "@/lib/today/day";
 import { VandaagPage } from "./VandaagPage";
 
-// "Vandaag" (ADR-0053): the landing page. Reads only through the RLS client.
+// "Vandaag" (ADR-0057): the landing page. Reads only through the RLS client.
 
 async function openBasketItems(): Promise<number> {
   const supabase = await createSupabaseServerClient();

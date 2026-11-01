@@ -43,21 +43,21 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 - **Design source** (ADR-0034): Claude designs UI in code from existing components and tokens. A Figma design the user names is implemented exactly.
 - **Every component** gets a Ladle story, a visual baseline and a `design/notes/<Component>.md` contract.
 - **Libraries**: dnd-kit (drag and drop), TipTap 3 with official MIT extensions only (ADR-0021), Floating UI (menus), next-intl (i18n), FullCalendar standard/MIT for the Agenda (ADR-0037).
-- **PWA**: one manifest (`start_url` `/vandaag`, ADR-0053); `public/sw.js` keeps the last basket readable offline (ADR-0054). The iPhone widget is a Scriptable script; a tap opens the web app via a Shortcut (ADR-0047).
+- **PWA**: one manifest (`start_url` `/vandaag`, ADR-0057); `public/sw.js` keeps the last basket readable offline (ADR-0054). The iPhone widget is a Scriptable script; a tap opens the web app via a Shortcut (ADR-0047).
 
 ## 4. Data model
 
 ### 4.1 Conventions
 
 - snake_case, plural tables, `uuid` primary keys, `created_at`/`updated_at` (trigger-maintained).
-- **Every `public` table** has `user_id uuid not null references auth.users on delete cascade`, RLS with the four standard policies, explicit grants, and a pgTAP test in `supabase/tests` (ADR-0009/0035). `user_id` is the owner, not the only reader. `pnpm check:rls-coverage` fails on any gap.
+- **Every `public` table** has `user_id uuid not null references auth.users on delete cascade`, RLS with the four standard policies, explicit grants and a pgTAP test (ADR-0009/0035). `user_id` is the owner, not the only reader. `check:rls-coverage` fails on any gap.
 - **`reference` schema**: shared, non-user data with no `user_id`. Select for everyone. Writes only through migrations, except admin-written `eigen` rows and shared aliases (ADR-0011/0020).
 - **`private` schema**: not exposed by PostgREST; written only by definer functions (ADR-0031). Also holds the sharing role functions (ADR-0035).
 - **Sharing** (ADR-0035): a container (now `shopping_lists`) is shared through `shares` (one nullable FK per shareable type, `pending|accepted`, role `editor`). Rows inside a container carry the owner's `user_id`; their policies call `private.<type>_role(id)`. Other members' names come only from `member_profiles()` / `search_members()`; an invitee's reaches the inviter once accepted. A trigger caps invites.
 - **Recipe share = copy** (ADR-0036): a recipe offer is a pending `shares` row (`recipe_id`, never `accepted`). The invitee reads it via `pending_recipe_shares()`; `accept_recipe_share()` (definer) copies it into their first category, `lib/sharing/recipes.ts` the thumbnail in R2.
 - **Small closed sets** are text with a check constraint (`priority`, `size`, `source`). Units are the shared enum `public.recipe_unit` (ADR-0028).
 - **Ordering**: fractional `position` (numeric midpoint), in TS and SQL (ADR-0015).
-- **Multi-statement writes** are `security invoker` RPCs with `search_path = ''`, an explicit ownership guard, and execute granted only to `authenticated`: `replace_recipe_contents`, `move_card`/`_recipe`/`_note`, `toggle_board_favorite`, `save_note_content(_versioned)` (ADR-0015/0030/0048).
+- **Multi-statement writes** are `security invoker` RPCs with `search_path = ''`, an explicit ownership guard, and execute granted only to `authenticated`: `replace_recipe_contents`, `move_card`/`_recipe`/`_note`, `toggle_board_favorite`, `save_note_content(_versioned)`, `promote_card_subtask` (ADR-0015/0030/0056).
 - **Per-user defaults** are seeded by triggers at signup and lazily by `ensure_user_defaults()` (ADR-0017).
 - `lib/database.types.ts` is generated in CI. Never hand-edit it.
 
@@ -66,7 +66,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 | Area | Tables |
 | --- | --- |
 | Account | `profiles` (`display_name` = first name, `last_name`, `locale`), `user_seeds` |
-| Te doen | `boards` (`is_favorite`, one per user), `board_columns` (`icon`, `is_done`, ADR-0050), `cards` (`priority`, `size`, `due_at`, `source`), `labels`, `card_labels` (ADR-0052) |
+| Te doen | `boards` (`is_favorite`, one per user), `board_columns` (`icon`, `is_done`, ADR-0050), `cards` (`priority`, `size`, `due_at`, `source`), `labels`, `card_labels` (ADR-0052), `card_subtasks` (ADR-0053) |
 | Recepten | `recipe_categories` (`icon`), `recipes` (`thumbnail_path`, `source_url`, `import_status`, `import_error`), `recipe_ingredients` (`ingredient_id`, `unit`, `group_label`, `needs_review`), `recipe_steps`, `recipe_step_ingredients`, `tags`, `recipe_tags` |
 | Ingredient library | `ingredients` (user layer, nullable `reference_id`), `ingredient_unit_masses` (user overrides), `ingredient_aliases` (user) |
 | Reference | `reference.ingredients` (NEVO + `eigen`, nutrients per 100 g, bilingual names/categories), `reference.ingredient_unit_masses` (NEVO portions, USDA), `reference.ingredient_aliases` (admin) |
@@ -79,7 +79,7 @@ Agenda tables: §7.
 
 ### 4.3 Search
 
-Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredient matching runs own alias, then shared alias, then `pg_trgm` (`match_ingredient_candidates`), then the LLM (ADR-0020). Phase 8 adds semantic search across modules (§6).
+Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredient matching: own alias, shared alias, `pg_trgm` (`match_ingredient_candidates`), then the LLM (ADR-0020). Cross-module semantic search: §6; ⌘K palette: ADR-0048.
 
 ### 4.4 Object storage
 
@@ -128,7 +128,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - search across modules merges `search_text()` and `search_semantic()` (`security invoker`) with RRF.
 - **History** (ADR-0044): triggers log basket adds and checks into `activity_events`; `settle_cooked_meals()` logs past plans. All members, no AI.
 - **Phase 9** (ADR-0046/0051): `agent_signals` from SQL rhythms (all members) and LLM patterns (opt-in; no tools, plain text). Rhythms show in Winkelmand and the plan drawer.
-- **Scheduled work** (ADR-0039, Vercel Hobby): a lazy "when stale" run in `after()` where a user is present, plus daily Vercel Cron routes behind `CRON_SECRET` as a backstop. Cron routes may use `service_role` (no user request). Anything more frequent needs a new ADR.
+- **Scheduled work** (ADR-0039, Vercel Hobby): a lazy "when stale" run in `after()` while a user is present, plus daily Cron routes behind `CRON_SECRET` as backstop (may use `service_role`). Anything more frequent needs a new ADR.
 
 ## 7. Agenda (ADR-0037)
 

@@ -5,8 +5,15 @@ export type BoardRow = Database["public"]["Tables"]["boards"]["Row"];
 export type BoardColumnRow = Database["public"]["Tables"]["board_columns"]["Row"];
 export type CardRow = Database["public"]["Tables"]["cards"]["Row"];
 export type LabelRow = Database["public"]["Tables"]["labels"]["Row"];
+export type SubtaskRow = Database["public"]["Tables"]["card_subtasks"]["Row"];
 
-export type CardWithLabels = CardRow & { labels: LabelRow[] };
+// subtaskTotal/subtaskDone come from one embedded count per card (ADR-0053);
+// a card with subtaskTotal > 0 is a project.
+export type CardWithLabels = CardRow & {
+  labels: LabelRow[];
+  subtaskTotal: number;
+  subtaskDone: number;
+};
 export type BoardColumnWithCards = BoardColumnRow & { cards: CardWithLabels[] };
 export type BoardWithColumns = BoardRow & { columns: BoardColumnWithCards[] };
 

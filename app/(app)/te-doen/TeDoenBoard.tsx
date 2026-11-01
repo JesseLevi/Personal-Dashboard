@@ -13,6 +13,7 @@ import { todayInAgendaZone } from "@/lib/agenda/time";
 import { applyCardMove, type CardMove } from "@/lib/boards/optimistic";
 import { hasLabel } from "@/lib/boards/labels";
 import type { BoardWithColumns, CardWithLabels } from "@/lib/boards/types";
+import { useNewParam } from "@/lib/dom/use-new-param";
 import { blurInTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 import { useTeDoenColumnPanel } from "./TeDoenColumnPanel";
 import { clearBoardEnter, useTeDoenBoardSwitch, wantsBoardEnter } from "./TeDoenBoardSwitch";
@@ -159,6 +160,12 @@ export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProp
       : undefined;
     if (linked) return { open: true, target: { mode: "edit", card: linked } };
     return { open: false, target: { mode: "create", columnId: panelColumns[0]?.id ?? "" } };
+  });
+
+  // `?nieuw=1`: the add-card panel, on the first column.
+  useNewParam(() => {
+    const columnId = panelColumns[0]?.id;
+    if (columnId) setPanel({ open: true, target: { mode: "create", columnId } });
   });
 
   // Closing a panel opened from a link also drops `?card=`, so a reload does not reopen it.
