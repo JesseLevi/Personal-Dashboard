@@ -1425,6 +1425,77 @@
         "calendar_event": "Afspraken",
         "shopping_list_item": "Winkelmand"
       }
+    },
+    "commandPalette": {
+      "title": "Opdrachtenpalet",
+      "searchLabel": "Zoek of typ een opdracht",
+      "placeholder": "Zoek of typ een opdracht",
+      "closeLabel": "Sluiten",
+      "resultsLabel": "Resultaten",
+      "promptLabel": "Zoek in je notities, recepten, kaarten, afspraken en winkelmand.",
+      "searchingLabel": "Zoeken...",
+      "unavailableLabel": "Zoeken lukt nu even niet.",
+      "noResultsLabel": "Niets gevonden voor \"{query}\".",
+      "untitled": "Zonder titel",
+      "smartOffLabel": "Slim zoeken staat uit. Aanzetten?",
+      "hintMove": "bewegen",
+      "hintOpen": "openen",
+      "hintClose": "sluiten",
+      "boardMeta": "{total, plural, one {# kaart} other {# kaarten}} · {done} afgerond",
+      "boardMetaFavorite": "Favoriet · {total, plural, one {# kaart} other {# kaarten}} · {done} afgerond",
+      "progressLabel": "{percent}% afgerond",
+      "groups": {
+        "boards": "Borden",
+        "quickActions": "Snelle acties",
+        "actions": "Acties",
+        "note": "Notities",
+        "recipe": "Recepten",
+        "card": "Kaarten",
+        "calendar_event": "Afspraken",
+        "shopping_list_item": "Winkelmand"
+      },
+      "actions": {
+        "new-card": {
+          "label": "Nieuwe kaart",
+          "meta": "Voeg een kaart toe in Te doen"
+        },
+        "new-note": {
+          "label": "Nieuwe notitie",
+          "meta": "Begin een lege notitie"
+        },
+        "new-recipe": {
+          "label": "Nieuw recept",
+          "meta": "Voeg een recept toe"
+        },
+        "new-event": {
+          "label": "Nieuwe afspraak",
+          "meta": "Opent het snelinvoerveld in de Agenda"
+        },
+        "open-settings": {
+          "label": "Instellingen",
+          "meta": "Account, taal en verbanden"
+        },
+        "go-todo": {
+          "label": "Naar Te doen",
+          "meta": "Ga naar Te doen"
+        },
+        "go-agenda": {
+          "label": "Naar Agenda",
+          "meta": "Ga naar Agenda"
+        },
+        "go-notes": {
+          "label": "Naar Notities",
+          "meta": "Ga naar Notities"
+        },
+        "go-recipes": {
+          "label": "Naar Recepten",
+          "meta": "Ga naar Recepten"
+        },
+        "go-shopping": {
+          "label": "Naar Winkelmand",
+          "meta": "Ga naar Winkelmand"
+        }
+      }
     }
   },
   "agenda": {

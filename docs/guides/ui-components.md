@@ -92,7 +92,7 @@ When you change a component, rewrite the bullets that changed. Don't append tick
 
 ## Ladle
 
-- **Title**: `{ title: "<Group> / <Subgroup> / <Component name>" } satisfies StoryDefault`; the story ID is the slug (`basis--invoer--button--state-matrix`) and names the baseline PNGs.
+- **Title**: `{ title: "<Group> / <Subgroup> / <Component name>" } satisfies StoryDefault`; the slug is the story ID and names the baseline PNGs.
 - **Group rule**: two or more modules means `Basis`, one means that module; atoms are always `Basis`. `CardContent*` stays in `Basis / Kaarten`, `SearchPanel` in `Basis / Panelen`.
 - **Order** (`storyOrder` in `.ladle/config.mjs`, self-contained as Ladle serialises it): `Basis`, the modules in `Sidebar` order, `Account` last; per component `Overview`, `Playground`, `Interactive` lead, then alphabetical. New groups need an entry.
 - **Per component**:
@@ -104,10 +104,10 @@ When you change a component, rewrite the bullets that changed. Don't append tick
 
 | Group | Components |
 | --- | --- |
-| Basis / Fundament | Icon, Avatar, AvatarGroup, Tag, Step, BlurFade |
+| Basis / Fundament | Icon, Avatar, AvatarGroup, Tag, Step, BlurFade, Kbd, ProgressRing |
 | Basis / Invoer | Button, ButtonToggle, Checkbox, Dropdown, InputField, OtpInput, ImageUploadField, PortionStepper, AnimatedAddToBasketButton |
 | Basis / Kaarten | Card, CardContainer, CardContent* (Ingredient, Note, Recipe, RecipeFailed, RecipeSkeleton, Step, Ticket), BoardView, Carousel, BoardSkeleton |
-| Basis / Panelen | SidePanel, Sidebar, PageHeader, Toast, SearchPanel, IngredientSearchPanel, MemberSearchPanel |
+| Basis / Panelen | SidePanel, Sidebar, PageHeader, Toast, SearchPanel, CommandPalette, IngredientSearchPanel, MemberSearchPanel |
 | Agenda | AgendaPageLayout, AgendaCalendar, AgendaHeader, AgendaDayStrip, AgendaQuickAdd, AgendaEventPanel, AgendaMealPanel, AgendaCardPanel, AgendaCalendarsPanel, AgendaLinkSearchPanel, AgendaSyncNotices, PlanDrawer, PlanChoices, EventLinkLine, ColorSwatches |
 | Te doen | CardDetailPanel, BoardPanel |
 | Recepten | RecipePanel, CategoryPanel, AddRecipeMenu, LinkImportPanel, SourceLink, RecipeIngredientRow, StepIngredientPanel, IngredientAdmin, SharedRecipeOffer, RecipeDetailSkeleton |
