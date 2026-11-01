@@ -11,13 +11,16 @@ import {
   type SidebarItemId,
 } from "@/components/organisms/Sidebar";
 import { Button } from "@/components/atoms/Button";
-import { SearchPanel } from "@/components/organisms/SearchPanel";
+import { CommandPalette } from "@/components/organisms/CommandPalette";
 import { useIsNarrow } from "@/components/organisms/AgendaCalendar";
+import { getCommandBoardsAction } from "@/app/(app)/command-actions";
 import { searchAllAction } from "@/app/(app)/search-actions";
 import { signOut } from "@/app/login/actions";
+import { COMMAND_ACTIONS } from "@/lib/command/actions";
 import { isOutsideAllContainers } from "@/lib/dom/outside-pointer";
 import { blurInTotalMs, blurOutTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 import { hasEnterFromLogin } from "@/lib/ui/login-enter";
+import type { CommandAction } from "@/lib/command/types";
 import type { Locale } from "@/lib/profile/types";
 import type { WidgetTokenItem } from "@/lib/widget/types";
 import { SettingsPanel } from "./SettingsPanel";
@@ -284,6 +287,15 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
     page.go(href);
   }
 
+  // The palette has already closed itself; create and navigate actions are links, Settings is a panel.
+  function runCommandAction(action: CommandAction) {
+    if (action.kind === "settings") {
+      setSettingsOpen(true);
+      return;
+    }
+    if (action.href) openSearchResult(action.href);
+  }
+
   function handleLogout() {
     setAccountMenuOpen(false);
     // signOut() (app/login/actions.ts) redirects internally — no local
@@ -417,14 +429,17 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
         </div>
       </main>
 
-      <SearchPanel
+      <CommandPalette
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
         onSearch={searchAllAction}
         onOpen={openSearchResult}
+        onRunAction={runCommandAction}
         onOpenSettings={() => setSettingsOpen(true)}
         canEnableSmartSearch={aiAvailable && !aiEnabled}
         autoFocusField={!narrow}
+        actions={COMMAND_ACTIONS}
+        loadBoards={getCommandBoardsAction}
       />
 
       <SettingsPanel
