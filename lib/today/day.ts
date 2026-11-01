@@ -1,4 +1,4 @@
-// The "Vandaag" page's day (ADR-0053): today's Agenda items, grouped for one
+// The "Vandaag" page's day (ADR-0057): today's Agenda items, grouped for one
 // glance. Pure; the page loads the items with the Agenda's own query.
 import { mealSlotRank } from "@/lib/agenda/meals";
 import type { AgendaDeadlineItem, AgendaEventItem, AgendaItem, AgendaMealItem, AgendaPlannedCardItem } from "@/lib/agenda/types";

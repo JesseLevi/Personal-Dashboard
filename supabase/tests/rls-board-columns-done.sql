@@ -1,4 +1,4 @@
--- Done columns (ADR-0050, 20261101000003_board_columns_is_done.sql): the seed
+-- Done columns (ADR-0050, 20261102000004_board_columns_is_done.sql): the seed
 -- marks "Afgerond", agenda_items leaves finished cards out, and is_done stays
 -- under board_columns' RLS.
 begin;

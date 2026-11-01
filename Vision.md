@@ -31,10 +31,10 @@ Inloggen met e-mail + wachtwoord of een magic link. Op het inlogscherm een begro
 *Buiten scope*: social login, 2FA.
 
 ### Vandaag ✅
-De startpagina: wat er vandaag speelt in één blik. Afspraken, eten (met "dag naar mand"), geplande kaarten en deadlines, wat er nog in de mand staat, en signalen van de Assistent (ADR-0053).
+De startpagina: wat er vandaag speelt in één blik. Afspraken, eten (met "dag naar mand"), geplande kaarten en deadlines, wat er nog in de mand staat, en signalen van de Assistent (ADR-0057).
 
 ### Te doen (Kanban) ✅
-Borden, kolommen en kaarten met prioriteit, grootte, deadline en labels. Kaarten versleep je tussen kolommen, en één bord is je favoriet.
+Borden, kolommen en kaarten met prioriteit, grootte, deadline en labels. Kaarten versleep je tussen kolommen, en één bord is je favoriet. Een kaart met subtaken (titel en vinkje) is een project, met voortgang, ook in het ⌘K-palet (ADR-0053).
 *Buiten scope*: Gantt/tijdlijn, koppelingen met externe taakbeheerders, terugkerende taken.
 
 ### Notities ✅

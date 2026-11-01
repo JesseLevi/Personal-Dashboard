@@ -19,6 +19,8 @@ function card(overrides: Partial<CardWithLabels>): CardWithLabels {
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
     labels: [],
+    subtaskTotal: 0,
+    subtaskDone: 0,
     ...overrides,
   };
 }

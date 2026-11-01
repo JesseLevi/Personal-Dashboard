@@ -1,4 +1,4 @@
-# ADR-0053: "Vandaag" is the landing page
+# ADR-0057: "Vandaag" is the landing page
 
 **Status**: Accepted (2026-11-01, user decision on the improvement brief, package 4). Amends ADR-0047's assumption that Atlas opens on Te doen.
 

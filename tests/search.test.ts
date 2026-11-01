@@ -164,6 +164,23 @@ describe("searchAllWith", () => {
     expect(res.results.find((r) => r.id === "e2")?.date).toBe("2026-10-25");
   });
 
+  it("lists a card once when its title and a subtask both match, at the best score", async () => {
+    const { client } = fakeClient({
+      keyword: [
+        { source_type: "card", source_id: "c1", score: 0.7 },
+        { source_type: "note", source_id: "n1", score: 0.6 },
+        { source_type: "card", source_id: "c1", score: 0.5 },
+      ],
+      tables: TABLES,
+    });
+    const res = await searchAllWith(client, "u", "soep", { now: NOW });
+    expect(res.results.map((r) => [r.type, r.id, r.href])).toEqual([
+      ["card", "c1", "/te-doen/b1?card=c1"],
+      ["note", "n1", "/notities/n1"],
+    ]);
+    expect(res.results[0]!.score).toBeCloseTo(1 / (RRF_K + 1));
+  });
+
   it("honours the limit", async () => {
     const { client } = fakeClient({ keyword: KEYWORD, tables: TABLES });
     expect((await searchAllWith(client, "u", "soep", { limit: 2, now: NOW })).results).toHaveLength(2);

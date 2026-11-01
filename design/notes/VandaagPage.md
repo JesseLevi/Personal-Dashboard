@@ -1,5 +1,5 @@
 # VandaagPage (`/vandaag`)
-No Figma node: Claude-designed in code (ADR-0034, ADR-0053) · Code: `app/(app)/vandaag/{page,VandaagPage,VandaagView,loading}.tsx`, `lib/today/{day,home}.ts` · Story: `vandaag--vandaag-page--overview`, `--empty`
+No Figma node: Claude-designed in code (ADR-0034, ADR-0057) · Code: `app/(app)/vandaag/{page,VandaagPage,VandaagView,loading}.tsx`, `lib/today/{day,home}.ts` · Story: `vandaag--vandaag-page--overview`, `--empty`
 
 ## Anatomy
 `PageHeader` "Vandaag" with the date line under it, then a grid of titled `Card`s (one column, two from `md`): Afspraken, Eten, Kaarten, Mand, and "Misschien handig" (signals, full width, only when there are any). A "Naar de Agenda" button closes the page.

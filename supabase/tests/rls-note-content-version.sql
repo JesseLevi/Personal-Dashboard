@@ -1,4 +1,4 @@
--- Version check on note saves (ADR-0048, 20261101000001_note_content_version.sql).
+-- Version check on note saves (ADR-0056, 20261102000002_note_content_version.sql).
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(11);

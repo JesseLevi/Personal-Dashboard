@@ -50,7 +50,8 @@ select ok(
   and has_function_privilege('authenticated', 'public.replace_recipe_contents(uuid, jsonb, jsonb)', 'EXECUTE')
   and has_function_privilege('authenticated', 'public.match_ingredient_candidates(text[], int)', 'EXECUTE')
   and has_function_privilege('authenticated', 'public.pending_recipe_shares()', 'EXECUTE')
-  and has_function_privilege('authenticated', 'public.accept_recipe_share(uuid)', 'EXECUTE'),
+  and has_function_privilege('authenticated', 'public.accept_recipe_share(uuid)', 'EXECUTE')
+  and has_function_privilege('authenticated', 'public.promote_card_subtask(uuid)', 'EXECUTE'),
   'authenticated keeps EXECUTE on the RPCs'
 );
 
