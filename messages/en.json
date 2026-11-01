@@ -1437,6 +1437,77 @@
         "calendar_event": "Events",
         "shopping_list_item": "Basket"
       }
+    },
+    "commandPalette": {
+      "title": "Command palette",
+      "searchLabel": "Search or type a command",
+      "placeholder": "Search or type a command",
+      "closeLabel": "Close",
+      "resultsLabel": "Results",
+      "promptLabel": "Search your notes, recipes, cards, events and basket.",
+      "searchingLabel": "Searching...",
+      "unavailableLabel": "Search is not available right now.",
+      "noResultsLabel": "Nothing found for \"{query}\".",
+      "untitled": "Untitled",
+      "smartOffLabel": "Smart search is off. Turn it on?",
+      "hintMove": "move",
+      "hintOpen": "open",
+      "hintClose": "close",
+      "boardMeta": "{total, plural, one {# card} other {# cards}} · {done} done",
+      "boardMetaFavorite": "Favorite · {total, plural, one {# card} other {# cards}} · {done} done",
+      "progressLabel": "{percent}% done",
+      "groups": {
+        "boards": "Boards",
+        "quickActions": "Quick actions",
+        "actions": "Actions",
+        "note": "Notes",
+        "recipe": "Recipes",
+        "card": "Cards",
+        "calendar_event": "Events",
+        "shopping_list_item": "Basket"
+      },
+      "actions": {
+        "new-card": {
+          "label": "New card",
+          "meta": "Add a card in To do"
+        },
+        "new-note": {
+          "label": "New note",
+          "meta": "Start an empty note"
+        },
+        "new-recipe": {
+          "label": "New recipe",
+          "meta": "Add a recipe"
+        },
+        "new-event": {
+          "label": "New event",
+          "meta": "Opens the quick-add field in the Agenda"
+        },
+        "open-settings": {
+          "label": "Settings",
+          "meta": "Account, language and connections"
+        },
+        "go-todo": {
+          "label": "Go to To do",
+          "meta": "Go to To do"
+        },
+        "go-agenda": {
+          "label": "Go to Agenda",
+          "meta": "Go to Agenda"
+        },
+        "go-notes": {
+          "label": "Go to Notes",
+          "meta": "Go to Notes"
+        },
+        "go-recipes": {
+          "label": "Go to Recipes",
+          "meta": "Go to Recipes"
+        },
+        "go-shopping": {
+          "label": "Go to Basket",
+          "meta": "Go to Basket"
+        }
+      }
     }
   },
   "agenda": {
