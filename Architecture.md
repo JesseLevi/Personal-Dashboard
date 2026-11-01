@@ -41,9 +41,10 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 - **Styling**: Tailwind v4, semantic tokens only. `design/figma-variables/` feeds `design/tokens.json`; `pnpm sync:tokens` generates `app/theme.css`; CI checks for drift (ADR-0010). Dark mode follows the OS (`next-themes`).
 - **Components**: CVA; variant axes are props, Hover/Active/Focus are CSS states. Composition: atoms ← molecules ← organisms ← `app/`. Icons go only through the `Icon` atom (lucide).
 - **Design source** (ADR-0034): Claude designs UI in code from existing components and tokens. A Figma design the user names is implemented exactly.
+- **Navigation**: Sidebar; below `md` tab bar + drawer (ADR-0055).
 - **Every component** gets a Ladle story, a visual baseline and a `design/notes/<Component>.md` contract.
 - **Libraries**: dnd-kit (drag and drop), TipTap 3 with official MIT extensions only (ADR-0021), Floating UI (menus), next-intl (i18n), FullCalendar standard/MIT for the Agenda (ADR-0037).
-- **PWA**: one manifest (`start_url` `/vandaag`, ADR-0057); `public/sw.js` keeps the last basket readable offline (ADR-0054). The iPhone widget is a Scriptable script; a tap opens the web app via a Shortcut (ADR-0047).
+- **PWA**: one manifest (`start_url` `/vandaag`, ADR-0057); `public/sw.js` keeps the last basket readable offline (ADR-0054). iPhone widget: a Scriptable script; a tap opens the app via a Shortcut (ADR-0047).
 
 ## 4. Data model
 
@@ -53,7 +54,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 - **Every `public` table** has `user_id uuid not null references auth.users on delete cascade`, RLS with the four standard policies, explicit grants and a pgTAP test (ADR-0009/0035). `user_id` is the owner, not the only reader. `check:rls-coverage` fails on any gap.
 - **`reference` schema**: shared, non-user data with no `user_id`. Select for everyone. Writes only through migrations, except admin-written `eigen` rows and shared aliases (ADR-0011/0020).
 - **`private` schema**: not exposed by PostgREST; written only by definer functions (ADR-0031). Also holds the sharing role functions (ADR-0035).
-- **Sharing** (ADR-0035): a container (now `shopping_lists`) is shared through `shares` (one nullable FK per shareable type, `pending|accepted`, role `editor`). Rows inside a container carry the owner's `user_id`; their policies call `private.<type>_role(id)`. Other members' names come only from `member_profiles()` / `search_members()`; an invitee's reaches the inviter once accepted. A trigger caps invites.
+- **Sharing** (ADR-0035): a container (now `shopping_lists`) is shared through `shares` (one nullable FK per shareable type, `pending|accepted`, role `editor`). Rows inside a container carry the owner's `user_id`; their policies call `private.<type>_role(id)`. Other members' names come only via `member_profiles()` / `search_members()` (invitees once accepted). A trigger caps invites.
 - **Recipe share = copy** (ADR-0036): a recipe offer is a pending `shares` row (`recipe_id`, never `accepted`). The invitee reads it via `pending_recipe_shares()`; `accept_recipe_share()` (definer) copies it into their first category, `lib/sharing/recipes.ts` the thumbnail in R2.
 - **Small closed sets** are text with a check constraint (`priority`, `size`, `source`). Units are the shared enum `public.recipe_unit` (ADR-0028).
 - **Ordering**: fractional `position` (numeric midpoint), in TS and SQL (ADR-0015).

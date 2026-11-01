@@ -31,7 +31,7 @@ export type SidebarItemId =
   | "recipes"
   | "shopping";
 
-const NAV_ITEMS: ReadonlyArray<{ id: SidebarItemId; icon: IconName }> = [
+export const NAV_ITEMS: ReadonlyArray<{ id: SidebarItemId; icon: IconName }> = [
   { id: "today", icon: "Sun" },
   { id: "todo", icon: "Columns3" },
   { id: "agenda", icon: "Calendar" },

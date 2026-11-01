@@ -426,6 +426,10 @@
     },
     "sidebar": {
       "navLabel": "Hoofdnavigatie",
+      "tabBarLabel": "Modules",
+      "tabItems": {
+        "shopping": "Mand"
+      },
       "expandLabel": "Zijbalk uitklappen",
       "collapseLabel": "Zijbalk inklappen",
       "items": {

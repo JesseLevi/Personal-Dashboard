@@ -16,6 +16,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | [0039](0039-scheduled-work-runtime.md) | Scheduled work: lazy "sync when stale" in `after()` plus one daily Vercel Cron (Hobby); rules in one definer function | Accepted |
 | [0007](0007-i18n-next-intl.md) | next-intl, NL default, EN in the same PR | Accepted |
 | [0009](0009-rls-testing-and-migration-discipline.md) | Migrations only; RLS test per table; CI coverage gate | Accepted (storage part amended by 0024) |
+| [0055](0055-mobile-tab-bar.md) | Bottom tab bar below `md` with the routed nav items; drawer keeps account, settings and search | Accepted |
 | [0034](0034-ui-design-source.md) | Claude designs UI in code by default; a named Figma design is binding | Accepted |
 | [0010](0010-design-token-sync-and-component-traceability.md) | Token pipeline Figma → `tokens.json` → `theme.css`; component traceability | Accepted, amended by 0034 |
 | [0004](0004-build-order.md) | Original phase order (current order: `Architecture.md` §9) | History |
