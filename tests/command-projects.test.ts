@@ -32,13 +32,13 @@ function projectsBuilder(result: Result) {
   return { builder: b, orders, selects };
 }
 
-// A card on board b1 in a column at `position`; the board has columns 0..2.
-const card = (id: string, position: number, subtasks: boolean[]) => ({
+// A card on board b1 in a column at `position` (`isDone` is the column's flag); the board has columns 0..2.
+const card = (id: string, position: number, subtasks: boolean[], isDone = false) => ({
   id,
   title: `Titel ${id}`,
   updated_at: "2026-10-01T00:00:00Z",
   card_subtasks: subtasks.map((done) => ({ done })),
-  column: { position, board: { id: "b1", name: "Bord b1", board_columns: [{ position: 0 }, { position: 1 }, { position: 2 }] } },
+  column: { position, is_done: isDone, board: { id: "b1", name: "Bord b1", board_columns: [{ position: 0 }, { position: 1 }, { position: 2 }] } },
 });
 
 beforeEach(() => {
@@ -63,13 +63,14 @@ describe("getCommandProjects", () => {
     ]);
   });
 
-  it("keeps the database order and excludes cards in the done column (last by position)", async () => {
-    const { builder } = projectsBuilder({
-      data: [card("c1", 2, [true]), card("c2", 1, [false]), card("c3", 0, [false])],
+  it("keeps the database order and excludes cards in a done column (is_done), wherever it sits", async () => {
+    const { builder, selects } = projectsBuilder({
+      data: [card("c1", 1, [true], true), card("c2", 2, [false]), card("c3", 0, [false])],
       error: null,
     });
     fromMock.mockReturnValue(builder);
     expect((await getCommandProjects()).map((p) => p.id)).toEqual(["c2", "c3"]);
+    expect(selects[0]).toContain("board_columns!inner(position, is_done");
   });
 
   it("caps the list at 50", async () => {

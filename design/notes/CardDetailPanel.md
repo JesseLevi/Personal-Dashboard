@@ -13,6 +13,7 @@ Page-level composition of `SidePanel` + `InputField` / `Dropdown` / `Tag` / `But
 | Grootte | `Dropdown` of neutral `Tag`s |
 | Datum | `InputField leadingIcon="Calendar" trailingIcon="Pencil"`, plain text |
 | Gepland op | Same `InputField` as Datum (`cards.planned_for`), directly under it; no Figma node |
+| Subtaken | `CardSubtasks.tsx` (ADR-0053), under Omschrijving: `Checkbox` rows, an `InputField` add row, `Button` and `Dropdown` menu; no Figma node |
 
 ## Deliberate decisions
 - Mutations (`onCreateCard` / `onUpdateCard` / `onMoveCard` / `onDeleteCard`) and `onMutated` are props. Only `TeDoenBoard.tsx` imports the `"use server"` actions and `useRouter()` (`onMutated={() => router.refresh()}`); this file imports neither `next/navigation` nor the actions module. A direct `useRouter()` threw "expected app router to be mounted" under Ladle's plain Vite runtime, and this is what lets the stories mock every action. (#94)
@@ -27,6 +28,14 @@ Page-level composition of `SidePanel` + `InputField` / `Dropdown` / `Tag` / `But
 - Footer: normal state is a `flex gap-inline-sm` row whose buttons carry `grow basis-0` (never `flex-1`, see `SidePanel.md`); `BoardPanel` follows the same convention. (#103)
 
 - **Gepland op** (#488) is the day the user intends to do the card (`cards.planned_for`, a date), distinct from the deadline `due_at` (a moment). It has the deadline's input style and text format (dd-mm-yyyy), is sent as `plannedFor` (empty text is `null`, which clears it) and shows in the Agenda as a planned item. It is displayed in UTC because a date has no zone. Invalid text is refused by `plannedFor` in `lib/boards/schemas.ts`.
+
+- **Subtaken** (ADR-0053, #694) live in `CardSubtasks.tsx`, a section of this panel; the six subtask actions are props like the card ones.
+  - Writes are immediate and not tied to Save. They are optimistic and revert with the panel's error line on failure; every write calls `onMutated`, so the board's "3/7" chip follows.
+  - Create mode buffers titles in `draftSubtasks`. `handleSave` writes them with one `addSubtasks` call after `createCard`. `createdCardId` makes a retry after a failed subtask write skip the second `createCard`. Buffered rows cannot be checked or promoted.
+  - Row: `Checkbox` labelled by the title (an `::after` widens its 32 px to a 40 px target), a title button that turns into an `InputField` (Enter or blur saves, Escape cancels without closing the panel, empty or unchanged = no write), and a `variant="transparent"` icon `Button` opening a menu built like `AgendaMoreMenu` (`Dropdown role="menu"`, `usePopoverPosition` in the panel's scroll area): "Maak er een kaart van" (`promoteSubtask`, then `onMutated`; the panel stays on the parent) and "Verwijderen".
+  - Order: open rows by position, then done rows behind the "{n} afgerond" toggle (`aria-expanded`, collapsed while any row is open). There is no manual reorder in v1.
+  - Add row: Enter adds and keeps focus; pasting several lines adds one subtask per line, in one call (`lib/boards/subtasks.ts`). Titles are cut at 200 characters and the list at 50, where the field is disabled with a hint.
+  - "Alles af. Naar {kolom}?" shows while the card has subtasks, none is open, the board has a done column (`CardDetailPanelColumn.isDone`, the first by position) and the card's saved column is not one. Its button calls `onMoveCard` (append at end). Nothing moves on its own, and a card moved into a done column checks nothing.
 
 ## Token gaps and flags
 - Footer row `gap-2` -> `gap-inline-sm`: the "Bottom" node (`3779:4858` mobile / `3779:4950` desktop) is HORIZONTAL with `itemSpacing` 8 bound to `spacing/inline/gap-sm`, identical on both breakpoints. (#219)

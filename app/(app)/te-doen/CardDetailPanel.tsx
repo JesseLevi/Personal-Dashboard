@@ -14,7 +14,9 @@ import { EventLinkLine } from "@/components/molecules/EventLinkLine";
 import type { AgendaEventRef } from "@/lib/agenda/links";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import { PRIORITIES, SIZES, isPriority, isSize, type Size } from "@/lib/boards/enums";
+import { doneColumnOffer } from "@/lib/boards/subtasks";
 import type { ActionResult, CardRow, CardWithLabels } from "@/lib/boards/types";
+import { CardSubtasks, type SubtaskActions } from "./CardSubtasks";
 
 // Tag rows get a Button row's metrics: a 40 px tap target, selection aligned with the options.
 const TAG_ROW = "flex h-10 items-center px-component-sm";
@@ -36,13 +38,15 @@ export interface CardDetailPanelColumn {
   id: string;
   name: string;
   icon: IconName;
+  /** A done column (ADR-0050): "Alles af" offers the first one. */
+  isDone?: boolean;
 }
 
 export type CardDetailPanelTarget =
   | { mode: "create"; columnId: string }
   | { mode: "edit"; card: CardWithLabels };
 
-export interface CardDetailPanelProps {
+export interface CardDetailPanelProps extends SubtaskActions {
   open: boolean;
   onClose: () => void;
   columns: CardDetailPanelColumn[];
@@ -73,6 +77,12 @@ export function CardDetailPanel({
   onDeleteCard,
   onMutated,
   onLoadAgendaEvents,
+  onListSubtasks,
+  onAddSubtasks,
+  onRenameSubtask,
+  onSetSubtaskDone,
+  onDeleteSubtask,
+  onPromoteSubtask,
 }: CardDetailPanelProps) {
   const t = useTranslations("components.cardDetailPanel");
   const tSidePanel = useTranslations("components.sidePanel");
@@ -113,6 +123,12 @@ export function CardDetailPanel({
   const [plannedForText, setPlannedForText] = useState(() => plannedText(card?.planned_for));
   const { confirming: deleteConfirming, ask: askDelete, cancel: cancelDelete } = useDeleteConfirm();
   const [error, setError] = useState<string | null>(null);
+  // Subtasks typed in create mode, written right after the card exists.
+  const [draftSubtasks, setDraftSubtasks] = useState<string[]>([]);
+  // Set once createCard succeeded, so a failed subtask write is retried without a second card.
+  const [createdCardId, setCreatedCardId] = useState<string | null>(null);
+  // The card's saved column; the Status field below is the unsaved choice.
+  const [cardColumnId, setCardColumnId] = useState(card?.column_id ?? "");
   const [isPending, startTransition] = useTransition();
 
   // Reset-on-open, not remount-on-target-change (#105, and the #103 first-
@@ -169,6 +185,9 @@ export function CardDetailPanel({
           : "",
       );
       setPlannedForText(plannedText(card?.planned_for));
+      setDraftSubtasks([]);
+      setCreatedCardId(null);
+      setCardColumnId(card?.column_id ?? "");
       cancelDelete();
       setError(null);
     }
@@ -207,10 +226,23 @@ export function CardDetailPanel({
     startTransition(async () => {
       const fields = buildFieldPayload();
       if (target.mode === "create") {
-        const result = await onCreateCard({ columnId, ...fields });
-        if (!result.success) {
-          setError(tErrors(result.error));
-          return;
+        let newCardId = createdCardId;
+        if (!newCardId) {
+          const result = await onCreateCard({ columnId, ...fields });
+          if (!result.success) {
+            setError(tErrors(result.error));
+            return;
+          }
+          newCardId = result.data.id;
+          setCreatedCardId(newCardId);
+        }
+        if (draftSubtasks.length > 0) {
+          const subtasks = await onAddSubtasks({ cardId: newCardId, titles: draftSubtasks });
+          if (!subtasks.success) {
+            setError(tErrors(subtasks.error));
+            onMutated?.();
+            return;
+          }
         }
       } else {
         const result = await onUpdateCard({ cardId: target.card.id, ...fields });
@@ -222,7 +254,7 @@ export function CardDetailPanel({
         // recomputing, not just overwriting) — a real Status change is a
         // move, so it goes through moveCard, the action already built for
         // that. See design/notes/CardDetailPanel.md.
-        if (columnId !== target.card.column_id) {
+        if (columnId !== cardColumnId) {
           const moveResult = await onMoveCard({
             cardId: target.card.id,
             columnId,
@@ -254,6 +286,20 @@ export function CardDetailPanel({
     });
   }
 
+  async function handleMoveToDone(doneColumn: CardDetailPanelColumn) {
+    if (!card) return;
+    setError(null);
+    const result = await onMoveCard({ cardId: card.id, columnId: doneColumn.id, targetIndex: APPEND_AT_END_INDEX });
+    if (!result.success) {
+      setError(tErrors(result.error));
+      return;
+    }
+    setCardColumnId(doneColumn.id);
+    setColumnId(doneColumn.id);
+    onMutated?.();
+  }
+
+  const doneColumn = card ? doneColumnOffer(columns, cardColumnId) : null;
   const selectedColumn = columns.find((column) => column.id === columnId) ?? columns[0];
   const otherColumns = columns.filter((column) => column.id !== selectedColumn?.id);
   const otherPriorities = PRIORITIES.filter((value) => value !== priority);
@@ -325,6 +371,21 @@ export function CardDetailPanel({
         multiline
         value={description}
         onChange={(event) => setDescription(event.target.value)}
+      />
+      <CardSubtasks
+        cardId={card?.id ?? null}
+        open={open}
+        draft={draftSubtasks}
+        onDraftChange={setDraftSubtasks}
+        moveOffer={doneColumn ? { columnName: doneColumn.name, onMove: () => handleMoveToDone(doneColumn) } : null}
+        onMutated={onMutated}
+        onError={setError}
+        onListSubtasks={onListSubtasks}
+        onAddSubtasks={onAddSubtasks}
+        onRenameSubtask={onRenameSubtask}
+        onSetSubtaskDone={onSetSubtaskDone}
+        onDeleteSubtask={onDeleteSubtask}
+        onPromoteSubtask={onPromoteSubtask}
       />
       {selectedColumn && (
         <Dropdown

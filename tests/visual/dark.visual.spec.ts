@@ -58,6 +58,8 @@ const DARK_STORIES = [
   "agenda--plan-choices--default",
   "basis--kaarten--card-content-ticket--overview",
   "te-doen--card-detail-panel--edit-item-planned",
+  "te-doen--card-detail-panel--with-subtasks",
+  "te-doen--subtask-progress-tag--overview",
   "basis--kaarten--card-content-recipe--overview",
   "agenda--agenda-page-layout--week",
   "agenda--agenda-page-layout--week-tray-open",
