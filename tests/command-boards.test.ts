@@ -92,7 +92,7 @@ describe("getCommandBoardsAction", () => {
   it("returns the boards for a signed-in member", async () => {
     requireUserIdMock.mockResolvedValue({ userId: "u1" });
     const { builder } = boardsBuilder({
-      data: [{ id: "b1", name: "Werk", is_favorite: true, board_columns: [column(0, 1)] }],
+      data: [{ id: "b1", name: "Werk", is_favorite: true, board_columns: [column(0, 1, true)] }],
       error: null,
     });
     fromMock.mockReturnValue(builder);
