@@ -31,7 +31,7 @@ Inloggen met e-mail + wachtwoord of een magic link. Op het inlogscherm een begro
 *Buiten scope*: social login, 2FA.
 
 ### Te doen (Kanban) ✅
-Borden, kolommen en kaarten met prioriteit, grootte, deadline en labels. Kaarten versleep je tussen kolommen, en één bord is je favoriet.
+Borden, kolommen en kaarten met prioriteit, grootte, deadline en labels. Kaarten versleep je tussen kolommen, en één bord is je favoriet. Een kaart met subtaken (titel en vinkje) is een project, met voortgang, ook in het ⌘K-palet (ADR-0053).
 *Buiten scope*: Gantt/tijdlijn, koppelingen met externe taakbeheerders, terugkerende taken.
 
 ### Notities ✅

@@ -16,6 +16,7 @@ import { hasImportingRecipe } from "@/lib/recipes/import/polling";
 import { hostOf } from "@/lib/recipes/import/url";
 import { recipeThumbnailRouteUrl } from "@/lib/recipes/thumbnail-url";
 import { applyItemMove, type CardMove } from "@/lib/boards/optimistic";
+import { useNewParam } from "@/lib/dom/use-new-param";
 import type { CategoryWithRecipes, RecipeRow } from "@/lib/recipes/types";
 import type { PendingRecipeShare } from "@/lib/sharing/types";
 import { CategoryPanel, type CategoryPanelTarget } from "@/app/(app)/_components/CategoryPanel";
@@ -188,6 +189,12 @@ export function ReceptenBoard({
   const [linkPanel, setLinkPanel] = useState<{ open: boolean; categoryId: string }>({
     open: false,
     categoryId: localCategories[0]?.id ?? "",
+  });
+
+  // `?nieuw=1`: the manual recipe panel, on the first category.
+  useNewParam(() => {
+    const categoryId = localCategories[0]?.id;
+    if (categoryId) setRecipePanel({ open: true, target: { mode: "create", categoryId } });
   });
 
   // Polls (router.refresh) only while a card is importing and the tab is
