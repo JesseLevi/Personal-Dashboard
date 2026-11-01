@@ -1,6 +1,6 @@
 # ADR-0051: Assistant signals appear in the module where the decision is made
 
-**Status**: Accepted (2026-11-01, user decision on the improvement brief, package 3: option a, nav item hidden). Amends ADR-0046 §9.
+**Status**: Accepted (2026-11-01, user decision on the improvement brief, package 3: option a, nav item hidden). Amends ADR-0046 §9. §4 amended by ADR-0058: pattern signals show on the Agenda's day cards.
 
 ## Context
 
