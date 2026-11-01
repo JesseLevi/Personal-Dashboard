@@ -57,19 +57,19 @@ values
 insert into public.cards (id, user_id, column_id, title, position, planned_for, due_at)
 values
   ('00000000-0000-0000-0000-484000000e01', '00000000-0000-0000-0000-484000000001',
-   (select id from public.board_columns where user_id = '00000000-0000-0000-0000-484000000001' limit 1),
+   (select id from public.board_columns where user_id = '00000000-0000-0000-0000-484000000001' and not is_done order by position limit 1),
    'A planned and due', 1000, '2030-06-14', '2030-06-15 10:00Z'),
   ('00000000-0000-0000-0000-484000000e02', '00000000-0000-0000-0000-484000000001',
-   (select id from public.board_columns where user_id = '00000000-0000-0000-0000-484000000001' limit 1),
+   (select id from public.board_columns where user_id = '00000000-0000-0000-0000-484000000001' and not is_done order by position limit 1),
    'A far away', 2000, '2030-08-01', '2030-08-02 10:00Z'),
   ('00000000-0000-0000-0000-484000000e03', '00000000-0000-0000-0000-484000000001',
-   (select id from public.board_columns where user_id = '00000000-0000-0000-0000-484000000001' limit 1),
+   (select id from public.board_columns where user_id = '00000000-0000-0000-0000-484000000001' and not is_done order by position limit 1),
    'A just after midnight UTC', 3000, null, '2030-06-17 00:30Z'),
   ('00000000-0000-0000-0000-484000000e04', '00000000-0000-0000-0000-484000000001',
-   (select id from public.board_columns where user_id = '00000000-0000-0000-0000-484000000001' limit 1),
+   (select id from public.board_columns where user_id = '00000000-0000-0000-0000-484000000001' and not is_done order by position limit 1),
    'A no dates', 4000, null, null),
   ('00000000-0000-0000-0000-484000000e05', '00000000-0000-0000-0000-484000000002',
-   (select id from public.board_columns where user_id = '00000000-0000-0000-0000-484000000002' limit 1),
+   (select id from public.board_columns where user_id = '00000000-0000-0000-0000-484000000002' and not is_done order by position limit 1),
    'B card', 1000, '2030-06-14', '2030-06-15 10:00Z');
 
 insert into public.calendar_event_links (calendar_event_id, card_id)

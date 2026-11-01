@@ -12,7 +12,7 @@ Browser (PWA) ──HTTPS──► Next.js on Vercel (fra1)
                           └── public web pages                       (lib/net/safe-fetch, recipe import)
 ```
 
-- The browser only talks to Atlas (ADR-0033). There is one hosted environment, production. Builds, promotion and migrations follow ADR-0032. Hosted settings that live outside the repo are listed in `docs/operations.md`.
+- The browser only talks to Atlas (ADR-0033). There is one hosted environment, production. Builds, promotion and migrations: ADR-0032. Hosted settings outside the repo: `docs/operations.md`.
 - Async work runs after the response via Next.js `after()`, plus daily cron routes. There is no always-on worker (ADR-0018 §4).
 
 ## 2. Repository layout
@@ -39,7 +39,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 
 - **Rendering**: Server Components by default; mutations via Server Actions with zod; no client data library.
 - **Styling**: Tailwind v4 with semantic tokens only. `design/figma-variables/` (Figma export) feeds `design/tokens.json`, `pnpm sync:tokens` generates `app/theme.css`, and CI checks the chain for drift (ADR-0010). Dark mode follows the OS via `next-themes` (`data-theme`).
-- **Components**: built with CVA. Variant axes are props; Hover/Active/Focus are CSS states, never props. Composition mirrors the design hierarchy: atoms ← molecules ← organisms ← `app/`. Icons go only through the `Icon` atom (lucide).
+- **Components**: CVA; variant axes are props, Hover/Active/Focus are CSS states. Composition: atoms ← molecules ← organisms ← `app/`. Icons go only through the `Icon` atom (lucide).
 - **Design source** (ADR-0034): Claude designs UI in code from existing components and tokens. A Figma design the user names is implemented exactly.
 - **Every component** gets a Ladle story, a visual baseline and a `design/notes/<Component>.md` contract.
 - **Libraries**: dnd-kit (drag and drop), TipTap 3 with official MIT extensions only (ADR-0021), Floating UI (menus), next-intl (i18n), FullCalendar standard/MIT for the Agenda (ADR-0037).
@@ -57,7 +57,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 - **Recipe share = copy** (ADR-0036): a recipe offer is a pending `shares` row (`recipe_id`, never `accepted`). The invitee reads it only through `pending_recipe_shares()`; `accept_recipe_share()` (definer) copies the recipe into their own first category, then `lib/sharing/recipes.ts` copies the thumbnail in R2.
 - **Small closed sets** are text with a check constraint (`priority`, `size`, `source`). Units are the shared enum `public.recipe_unit` (ADR-0028).
 - **Ordering**: fractional `position` (numeric midpoint), in TS and SQL (ADR-0015).
-- **Multi-statement writes** are `security invoker` RPCs with `search_path = ''`, an explicit ownership guard, and execute granted only to `authenticated`: `replace_recipe_contents`, `move_card`, `move_recipe`, `move_note`, `toggle_board_favorite`, `save_note_content` (ADR-0015/0030).
+- **Multi-statement writes** are `security invoker` RPCs with `search_path = ''`, an explicit ownership guard, and execute granted only to `authenticated`: `replace_recipe_contents`, `move_card`/`_recipe`/`_note`, `toggle_board_favorite`, `save_note_content(_versioned)` (ADR-0015/0030/0048).
 - **Per-user defaults** are seeded by triggers at signup and lazily by `ensure_user_defaults()` (ADR-0017).
 - `lib/database.types.ts` is generated in CI. Never hand-edit it.
 
@@ -66,7 +66,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 | Area | Tables |
 | --- | --- |
 | Account | `profiles` (`display_name` = first name, `last_name`, `locale`), `user_seeds` |
-| Te doen | `boards` (`is_favorite`, one per user), `board_columns` (`icon`), `cards` (`priority`, `size`, `due_at`, `source`), `labels`, `card_labels` (ADR-0052) |
+| Te doen | `boards` (`is_favorite`, one per user), `board_columns` (`icon`, `is_done`, ADR-0050), `cards` (`priority`, `size`, `due_at`, `source`), `labels`, `card_labels` (ADR-0052) |
 | Recepten | `recipe_categories` (`icon`), `recipes` (`thumbnail_path`, `source_url`, `import_status`, `import_error`), `recipe_ingredients` (`ingredient_id`, `unit`, `group_label`, `needs_review`), `recipe_steps`, `recipe_step_ingredients`, `tags`, `recipe_tags` |
 | Ingredient library | `ingredients` (user layer, nullable `reference_id`), `ingredient_unit_masses` (user overrides), `ingredient_aliases` (user) |
 | Reference | `reference.ingredients` (NEVO + `eigen`, nutrients per 100 g, bilingual names/categories), `reference.ingredient_unit_masses` (NEVO portions, USDA), `reference.ingredient_aliases` (admin) |
@@ -112,13 +112,14 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - per-user rate limit;
   - provider spend cap;
   - degraded mode without a key.
+- **Error log** (ADR-0049): `onRequestError` → anon `report_app_error()` (Vault secret) → `private.app_errors`.
 - **Widget token** (ADR-0047): hashed, read-only; `widget_today()` acts as its owner via role `atlas_widget` under RLS.
 - **Known accepted trade-off**: the login greeting shows a known address's first name, throttled (ADR-0031).
 - **Backups**: Supabase Cloud backups cover Postgres. R2 has no second copy (ADR-0024).
 
 ## 6. AI and async work
 
-- **Today**: `lib/ai/` exposes one provider-neutral function (prompt + zod schema in, validated object out). It runs Claude Haiku via Anthropic. Consumers: the recipe import pipeline, in `after()` with a lazy sweep for stuck rows (ADR-0019), and a recipe save that estimates a re-linked line's missing weight per unit (`lib/recipes/unit-weights.ts`).
+- **Today**: `lib/ai/` exposes one provider-neutral function (prompt + zod schema in, validated object out), running Claude Haiku. Consumers: recipe import, in `after()` with a lazy sweep for stuck rows (ADR-0019), and missing unit weights on recipe save (`lib/recipes/unit-weights.ts`).
 - **Phase 8** (ADR-0043, epic #31), the connections layer:
   - `embed()` in `lib/ai/` runs `@cf/baai/bge-m3` (1024d) on Cloudflare Workers AI; the free daily quota is the spend cap;
   - opt-in per member (`profiles.ai_enabled`); without it nothing leaves Atlas (keyword search only);
@@ -126,12 +127,12 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - no queue: `embedding_backlog()` finds stale sources; a lazy `after()` drain (at most every 10 min) and the daily `/api/cron/embeddings` embed them, reusing vectors for identical text;
   - search across modules merges `search_text()` and `search_semantic()` (`security invoker`) with RRF.
 - **History** (ADR-0044): triggers log basket adds and checks into `activity_events`; `settle_cooked_meals()` logs past plans. All members, no AI.
-- **Phase 9** (ADR-0046, planned): `agent_signals` from SQL rhythms (all members) and LLM patterns (opt-in; no tools, plain text).
+- **Phase 9** (ADR-0046/0051): `agent_signals` from SQL rhythms (all members) and LLM patterns (opt-in; no tools, plain text). Rhythms show in Winkelmand and the plan drawer.
 - **Scheduled work** (ADR-0039, Vercel Hobby): a lazy "when stale" run in `after()` where a user is present, plus daily Vercel Cron routes behind `CRON_SECRET` as a backstop. Cron routes may use `service_role` (no user request). Anything more frequent needs a new ADR.
 
 ## 7. Agenda (ADR-0037)
 
-- **One timeline, nothing copied**: manual events (editable), synced events (source fields read-only, never written back), `meal_plans`, `cards.planned_for` and the `cards.due_at` overlay, unioned by one `security invoker` function.
+- **One timeline, nothing copied**: manual events (editable), synced events (source fields read-only, never written back), `meal_plans`, `cards.planned_for` and the `cards.due_at` overlay (open cards only), unioned by one `security invoker` function.
 - **Schema**:
   - `calendars`: the container (ADR-0035); a default per user (ADR-0017); an imported feed is its own calendar. Manual calendars are the UI's categories; each calendar has a palette `color` (ADR-0040).
   - `calendar_accounts`: provider, credentials in Vault (ADR-0002), `sync_state`, `last_synced_at`.
@@ -141,7 +142,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - `calendar_event_series`: rule and template of a recurring own event; occurrences are `calendar_events` rows (`series_id`), 400 days ahead, extended on Agenda load (ADR-0042).
 - **Sync** (ADR-0037 §5): `ics` → `caldav` → Graph/Google on need, via `safe-fetch`, parsed by `ical.js`; recurring instances expanded −30 d / +400 d, upserted by UID + instance start; a failed, empty or halved fetch deletes nothing; two-miss deletion with a basket notice; writes only on a changed hash.
 - **Colour, creation**: items use their calendar's `event-<colour>-*` tokens (ADR-0040); quick add parses with `chrono-node`, no AI (ADR-0041).
-- **Sync trigger** (ADR-0039): opening the Agenda syncs the user's accounts older than an hour in `after()`; the daily cron syncs accounts older than 20 hours. `apply_calendar_sync` (`security definer`, advisory lock) applies a parsed feed per account: upsert, hash, two-miss deletion, and a `calendar_sync_notices` row (item ids kept, as `meal_plan_id` is nulled). The URL sits in Vault; `lib/agenda/sync.ts` and `app/api/cron/` call it.
+- **Sync trigger** (ADR-0039): opening the Agenda syncs the user's accounts older than an hour in `after()`; the daily cron syncs accounts older than 20 hours. `apply_calendar_sync` (definer, advisory lock) applies a parsed feed per account: upsert, hash, two-miss deletion, a `calendar_sync_notices` row (item ids kept). The URL sits in Vault; `lib/agenda/sync.ts` and `app/api/cron/` call it.
 
 ## 8. Testing and CI gates
 

@@ -77,7 +77,7 @@ export async function getBoardWithColumns(
       `
       id, user_id, name, position, is_favorite, created_at, updated_at,
       board_columns (
-        id, user_id, board_id, name, icon, position, created_at, updated_at,
+        id, user_id, board_id, name, icon, position, is_done, created_at, updated_at,
         cards (
           id, user_id, column_id, title, description, priority, size,
           due_at, planned_for, position, source, created_at, updated_at,

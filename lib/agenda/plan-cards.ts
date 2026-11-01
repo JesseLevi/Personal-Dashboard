@@ -33,6 +33,7 @@ export interface PlanBoardInput {
   board_columns: {
     name: string;
     position: number;
+    is_done: boolean;
     cards: { id: string; title: string; planned_for: string | null; position: number }[];
   }[];
 }
@@ -42,16 +43,15 @@ function fold(text: string): string {
 }
 
 /**
- * Open cards per board: the favourite board first, then by position. The
- * rightmost column of a board is its done column (like the board view), so its
- * cards are left out, and so are boards without an open card. Cards keep column
- * order, then their own position.
+ * Open cards per board: the favourite board first, then by position. Cards in
+ * a done column (`is_done`, ADR-0050) are left out, and so are boards without
+ * an open card. Cards keep column order, then their own position.
  */
 export function groupOpenCards(boards: readonly PlanBoardInput[]): PlanCardGroup[] {
   return [...boards]
     .sort((a, b) => Number(b.is_favorite) - Number(a.is_favorite) || a.position - b.position)
     .map((board) => {
-      const columns = [...board.board_columns].sort((a, b) => a.position - b.position).slice(0, -1);
+      const columns = [...board.board_columns].filter((c) => !c.is_done).sort((a, b) => a.position - b.position);
       const cards = columns.flatMap((column) =>
         [...column.cards]
           .sort((a, b) => a.position - b.position)

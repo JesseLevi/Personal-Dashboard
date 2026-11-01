@@ -308,6 +308,7 @@
       "invalid-input": "Check the information you entered.",
       "unauthenticated": "Sign in again to continue.",
       "not-found": "This item no longer exists or isn't yours.",
+      "conflict": "This note was changed elsewhere in the meantime.",
       "generic": "Something went wrong. Please try again.",
       "invalid-file-type": "This file type is not supported. Use JPEG, PNG, WebP or GIF.",
       "file-too-large": "This image is too large (maximum 10 MB).",
@@ -710,7 +711,8 @@
       "editTitle": "Rename category",
       "fields": {
         "nameLabel": "Name",
-        "iconLabel": "Icon"
+        "iconLabel": "Icon",
+        "doneLabel": "Cards here are done"
       },
       "saveLabel": "Save",
       "savingLabel": "Saving...",
@@ -1041,7 +1043,9 @@
     "noteSaveStatus": {
       "saved": "Saved",
       "saving": "Saving…",
-      "error": "Not saved — try again"
+      "error": "Not saved — try again",
+      "conflict": "Changed elsewhere",
+      "reload": "Reload"
     },
     "noteWordCount": {
       "words": "{count, plural, one {# word} other {# words}}",
@@ -1464,9 +1468,12 @@
   },
   "assistant": {
     "signals": {
+      "basketTitle": "Maybe needed again",
+      "planTitle": "Not cooked in a while",
       "buyRhythm": "You usually buy {item} about every {median, plural, one {# day} other {# days}}. The last time was {days, plural, one {# day} other {# days}} ago.",
       "cookRhythm": "You cook {recipe} about every {median, plural, one {# day} other {# days}}. The last time was {days, plural, one {# day} other {# days}} ago. Fancy making it again?",
       "actions": {
+        "no": "No",
         "addToBasket": "Add to list",
         "openRecipe": "Open recipe",
         "open": "Open",
