@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
+import { Kbd } from "@/components/atoms/Kbd";
 import { AGENDA_SHORTCUT_KEYS } from "@/lib/agenda/shortcuts";
 import { useOutsidePress } from "@/lib/dom/use-outside-press";
 import { usePopoverPosition } from "@/lib/dom/use-popover-position";
@@ -177,9 +178,7 @@ export function AgendaMoreMenu({
                     {AGENDA_SHORTCUT_KEYS.map(({ shortcut, keys }) => (
                       <Fragment key={shortcut}>
                         <dt>
-                          <kbd className="inline-flex min-w-6 justify-center rounded-control-inner border border-stroke-primary px-component-xs font-sans text-sm font-semibold text-text-primary">
-                            {keys}
-                          </kbd>
+                          <Kbd>{keys}</Kbd>
                         </dt>
                         <dd className="text-sm font-semibold text-text-secondary">
                           {t(`shortcuts.${shortcut}`)}
