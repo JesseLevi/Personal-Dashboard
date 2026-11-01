@@ -24,6 +24,7 @@ import { addDays, isoWeek, loadWindow, spanToUtc, stepDate, visibleRange } from 
 import type { AgendaItem, AgendaMealItem, AgendaPlannedCardItem, MealSlot } from "@/lib/agenda/types";
 import { persistAgendaTray } from "@/lib/agenda/tray";
 import { persistAgendaView, type AgendaView } from "@/lib/agenda/view";
+import { useNewParam } from "@/lib/dom/use-new-param";
 import type { BasketOption } from "@/lib/shopping/baskets";
 import type { ActionResult } from "@/lib/shopping/types";
 import { AGENDA_TRAY_ATTRIBUTE, type AgendaSpan } from "@/lib/ui/agenda-calendar";
@@ -216,6 +217,8 @@ export function AgendaPage({
   function openQuickAdd(slot: AgendaSpan | null) {
     setQuickAdd({ open: true, slot });
   }
+
+  useNewParam(() => openQuickAdd(null));
 
   function openDetails(span: AgendaSpan, prefill: AgendaEventPrefill) {
     setPanel({ open: true, target: { mode: "create", span, prefill } });
