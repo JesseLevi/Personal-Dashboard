@@ -13,6 +13,8 @@ export class SaveController {
   private failed: unknown = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private inFlight = false;
+  private current: Promise<void> = Promise.resolve();
+  private savedAny = false;
   private disposed = false;
   private listeners = new Set<() => void>();
 
@@ -22,6 +24,18 @@ export class SaveController {
   ) {}
 
   getStatus = (): SaveStatus => this.status;
+
+  /** True once any write succeeded, i.e. the server copy changed. */
+  hasSaved = (): boolean => this.savedAny;
+
+  /** Resolves when no write is in flight any more. */
+  settled = async (): Promise<void> => {
+    let seen: Promise<void> | null = null;
+    while (seen !== this.current) {
+      seen = this.current;
+      await seen;
+    }
+  };
 
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
@@ -47,13 +61,14 @@ export class SaveController {
     this.latest = null;
     this.inFlight = true;
     this.set("saving");
-    this.save(content)
+    this.current = this.save(content)
       .then(
         (result) => result.success,
         () => false,
       )
       .then((ok) => {
         this.inFlight = false;
+        if (ok) this.savedAny = true;
         this.failed = ok ? null : content;
         if (this.latest !== null) {
           // A newer snapshot arrived meanwhile and supersedes this one.

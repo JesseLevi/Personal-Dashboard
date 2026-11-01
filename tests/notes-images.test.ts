@@ -43,6 +43,7 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
+import { revalidatePath } from "next/cache";
 import { GET } from "@/app/api/note-image/[noteId]/[imageId]/route";
 import { deleteNote, updateNoteContent, uploadNoteImage } from "@/app/(app)/notities/actions";
 import { hasImageMagicBytes, resetSweepThrottleForTesting, sweepNoteImages } from "@/lib/notes/images";
@@ -210,6 +211,12 @@ describe("sweep on updateNoteContent", () => {
     expect(store.objects.has(b.key)).toBe(true);
     expect(await sweepNoteImages(A, NOTE, docWith("x"), t + 61_000)).toBe(1);
     expect(store.objects.has(b.key)).toBe(false);
+  });
+
+  it("does not revalidate on an autosave", async () => {
+    vi.mocked(revalidatePath).mockClear();
+    expect((await updateNoteContent({ noteId: NOTE, content: docWith("x") })).success).toBe(true);
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 
   it("does not fail the save when the sweep errors", async () => {
