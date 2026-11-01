@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SWIPE_MAX_MS, swipeStep, type SwipePoint } from "@/lib/agenda/swipe";
+import { isTap, SWIPE_MAX_MS, swipeStep, type SwipePoint } from "@/lib/agenda/swipe";
 
 const WIDTH = 390;
 const at = (x: number, y: number, time = 0): SwipePoint => ({ x, y, time });
@@ -28,5 +28,23 @@ describe("swipeStep", () => {
   it("leaves the screen edges to the browser's back and forward gesture", () => {
     expect(swipeStep(at(10, 400), at(200, 400, 200), WIDTH)).toBeNull();
     expect(swipeStep(at(WIDTH - 10, 400), at(200, 400, 200), WIDTH)).toBeNull();
+  });
+});
+
+describe("isTap", () => {
+  it("counts a still press as a tap", () => {
+    expect(isTap(at(200, 400), at(200, 400))).toBe(true);
+  });
+
+  it("allows a little finger jitter", () => {
+    expect(isTap(at(200, 400), at(203, 404))).toBe(true);
+  });
+
+  it("rejects a horizontal swipe", () => {
+    expect(isTap(at(200, 400), at(260, 400))).toBe(false);
+  });
+
+  it("rejects a vertical scroll", () => {
+    expect(isTap(at(200, 400), at(200, 460))).toBe(false);
   });
 });
