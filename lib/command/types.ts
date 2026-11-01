@@ -35,3 +35,13 @@ export type CommandBoard = {
   done: number;
   isFavorite: boolean;
 };
+
+/** A card with subtasks outside a done column (ADR-0053): `done` = checked subtasks. */
+export type CommandProject = {
+  id: string;
+  title: string;
+  href: string;
+  boardName: string;
+  total: number;
+  done: number;
+};

@@ -1427,8 +1427,10 @@
       "hintClose": "sluiten",
       "boardMeta": "{total, plural, one {# kaart} other {# kaarten}} · {done} afgerond",
       "boardMetaFavorite": "Favoriet · {total, plural, one {# kaart} other {# kaarten}} · {done} afgerond",
+      "projectMeta": "{done}/{total} {total, plural, one {subtaak} other {subtaken}} · {boardName}",
       "progressLabel": "{percent}% afgerond",
       "groups": {
+        "projects": "Projecten",
         "boards": "Borden",
         "quickActions": "Snelle acties",
         "actions": "Acties",

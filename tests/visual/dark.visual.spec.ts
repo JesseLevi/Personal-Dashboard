@@ -45,6 +45,7 @@ const DARK_STORIES = [
   "agenda--agenda-link-search-panel--results",
   "basis--panelen--command-palette--overview",
   "basis--panelen--command-palette--results",
+  "basis--panelen--command-palette--project-match",
   "basis--panelen--command-palette--smart-search-off",
   "basis--fundament--progress-ring--overview",
   "agenda--event-link-line--several",
