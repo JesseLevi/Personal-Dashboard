@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { BoardView, type BoardColumn } from "@/components/organisms/BoardView";
 import { CardContentTicket } from "@/components/molecules/CardContentTicket";
@@ -11,6 +11,7 @@ import { isPriority } from "@/lib/boards/enums";
 import { plannedLabelStyle } from "@/lib/agenda/plan-cards";
 import { todayInAgendaZone } from "@/lib/agenda/time";
 import { applyCardMove, type CardMove } from "@/lib/boards/optimistic";
+import { hasLabel } from "@/lib/boards/labels";
 import type { BoardWithColumns, CardWithLabels } from "@/lib/boards/types";
 import { blurInTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 import { useTeDoenColumnPanel } from "./TeDoenColumnPanel";
@@ -134,14 +135,16 @@ export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProp
       : format.dateTime(day, { day: "numeric", month: "short", timeZone: "UTC" });
   }
 
+  // `?label=` is a view filter like `?sort=`: hidden cards would make a drop's position wrong, so drag is off.
+  const labelFilter = useSearchParams().get("label");
   const columns: BoardColumn<CardWithLabels>[] = localBoard.columns.map((column) => ({
     id: column.id,
     name: column.name,
     icon: isIconName(column.icon) ? column.icon : "Croissant",
-    items: column.cards,
+    items: column.cards.filter((card) => hasLabel(card, labelFilter)),
   }));
-  // Done styling: cards in the rightmost column (by position, not name).
-  const lastColumnId = columns[columns.length - 1]?.id;
+  // Done styling: cards in a done column (ADR-0050).
+  const doneColumnIds = new Set(localBoard.columns.filter((column) => column.is_done).map((column) => column.id));
   const panelColumns = columns.map(({ id, name, icon }) => ({ id, name, icon }));
 
   // `open`/`target` are independent: closing (X, overlay, Escape) only
@@ -175,7 +178,7 @@ export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProp
       {moveError && <p className="text-base font-semibold text-priority-urgent">{moveError}</p>}
       <BoardView
         columns={columns}
-        dragDisabled={dragDisabled}
+        dragDisabled={dragDisabled || labelFilter !== null}
         columnMotion={exiting ? "out" : entering ? "in" : undefined}
         onMove={handleMove}
         addLabel={t("addLabel")}
@@ -184,9 +187,9 @@ export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProp
         onAddItem={(columnId) => setPanel({ open: true, target: { mode: "create", columnId } })}
         onEditColumn={(columnId) => {
           const column = columns.find((c) => c.id === columnId);
-          if (column) columnPanel.openEdit({ id: column.id, name: column.name, icon: column.icon });
+          if (column) columnPanel.openEdit({ id: column.id, name: column.name, icon: column.icon, isDone: doneColumnIds.has(column.id) });
         }}
-        isItemMuted={(_card, columnId) => columnId === lastColumnId}
+        isItemMuted={(_card, columnId) => doneColumnIds.has(columnId)}
         onItemClick={(card) => setPanel({ open: true, target: { mode: "edit", card } })}
         renderItem={(card) => {
           const priority = isPriority(card.priority) ? card.priority : "medium";
@@ -207,6 +210,11 @@ export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProp
                   })}
                 </Tag>
               )}
+              {card.labels.map((label) => (
+                <Tag key={label.id} variant="neutral" icon="Tag">
+                  {label.name}
+                </Tag>
+              ))}
             </CardContentTicket>
           );
         }}

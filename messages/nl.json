@@ -311,6 +311,7 @@
       "invalid-input": "Controleer de ingevoerde gegevens.",
       "unauthenticated": "Log opnieuw in om door te gaan.",
       "not-found": "Dit onderdeel bestaat niet (meer) of is niet van jou.",
+      "conflict": "Deze notitie is intussen elders gewijzigd.",
       "generic": "Er ging iets mis. Probeer het opnieuw.",
       "invalid-file-type": "Dit bestandstype wordt niet ondersteund. Gebruik JPEG, PNG, WebP of GIF.",
       "file-too-large": "Deze afbeelding is te groot (maximaal 10 MB).",
@@ -428,6 +429,7 @@
       "expandLabel": "Zijbalk uitklappen",
       "collapseLabel": "Zijbalk inklappen",
       "items": {
+        "today": "Vandaag",
         "todo": "Te doen",
         "notes": "Notities",
         "recipes": "Recepten",
@@ -448,6 +450,8 @@
         "favoriteActiveLabel": "Favoriete bord",
         "addBoardOptionLabel": "Toevoegen",
         "sortLabel": "Sorteer",
+        "labelFilterLabel": "Labels",
+        "labelFilterAll": "Alle kaarten",
         "addCategoryLabel": "Categorie",
         "emptyBoardTitle": "Geen bord",
         "emptyBoardBody": "Er is nog geen bord om te tonen.",
@@ -572,7 +576,9 @@
         "dateLabel": "Datum",
         "datePlaceholder": "Voeg datum toe",
         "plannedLabel": "Gepland op",
-        "plannedPlaceholder": "Voeg dag toe"
+        "plannedPlaceholder": "Voeg dag toe",
+        "labelsLabel": "Labels",
+        "labelsPlaceholder": "Bijv. werk, thuis"
       },
       "saveLabel": "Opslaan",
       "savingLabel": "Opslaan...",
@@ -709,7 +715,8 @@
       "editTitle": "Categorie hernoemen",
       "fields": {
         "nameLabel": "Naam",
-        "iconLabel": "Icoon"
+        "iconLabel": "Icoon",
+        "doneLabel": "Kaarten hier zijn klaar"
       },
       "saveLabel": "Opslaan",
       "savingLabel": "Opslaan...",
@@ -1040,7 +1047,9 @@
     "noteSaveStatus": {
       "saved": "Opgeslagen",
       "saving": "Opslaan…",
-      "error": "Niet opgeslagen — opnieuw proberen"
+      "error": "Niet opgeslagen — opnieuw proberen",
+      "conflict": "Elders gewijzigd",
+      "reload": "Herladen"
     },
     "noteWordCount": {
       "words": "{count, plural, one {# woord} other {# woorden}}",
@@ -1463,9 +1472,12 @@
   },
   "assistant": {
     "signals": {
+      "basketTitle": "Misschien weer nodig",
+      "planTitle": "Lang niet gekookt",
       "buyRhythm": "Je koopt ongeveer elke {median, plural, one {# dag} other {# dagen}} {item}. De laatste keer was {days, plural, one {# dag} other {# dagen}} geleden.",
       "cookRhythm": "Je kookt {recipe} ongeveer elke {median, plural, one {# dag} other {# dagen}}. De laatste keer was {days, plural, one {# dag} other {# dagen}} geleden. Zin om het weer te maken?",
       "actions": {
+        "no": "Nee",
         "addToBasket": "Op de lijst",
         "openRecipe": "Recept openen",
         "open": "Openen",
@@ -1493,5 +1505,25 @@
   "offline": {
     "title": "Je bent offline",
     "body": "Deze pagina is niet beschikbaar zonder verbinding. Een mand die je eerder op dit apparaat hebt geopend, kun je offline wel bekijken."
+  },
+  "vandaag": {
+    "title": "Vandaag",
+    "events": "Afspraken",
+    "noEvents": "Geen afspraken vandaag.",
+    "allDay": "Hele dag",
+    "meals": "Eten",
+    "noMeals": "Nog niets gepland.",
+    "dayToBasket": "Dag naar mand",
+    "dayToBasketAdded": "In de mand",
+    "chooseBasket": "Kies een mand",
+    "cards": "Kaarten",
+    "noCards": "Geen geplande kaarten of deadlines.",
+    "planned": "Gepland",
+    "deadline": "Deadline",
+    "basket": "Mand",
+    "basketCount": "{count, plural, =0 {Niets open in je mand} one {# item open} other {# items open}}",
+    "openBasket": "Naar de mand",
+    "signals": "Misschien handig",
+    "openAgenda": "Naar de Agenda"
   }
 }

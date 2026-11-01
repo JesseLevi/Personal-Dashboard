@@ -30,6 +30,9 @@ Status: ✅ in gebruik · 🔜 volgende fase · 💭 later.
 Inloggen met e-mail + wachtwoord of een magic link. Op het inlogscherm een begroeting met de voornaam (ADR-0031). Instellingen: voornaam, achternaam, taal.
 *Buiten scope*: social login, 2FA.
 
+### Vandaag ✅
+De startpagina: wat er vandaag speelt in één blik. Afspraken, eten (met "dag naar mand"), geplande kaarten en deadlines, wat er nog in de mand staat, en signalen van de Assistent (ADR-0053).
+
 ### Te doen (Kanban) ✅
 Borden, kolommen en kaarten met prioriteit, grootte, deadline en labels. Kaarten versleep je tussen kolommen, en één bord is je favoriet.
 *Buiten scope*: Gantt/tijdlijn, koppelingen met externe taakbeheerders, terugkerende taken.
@@ -73,7 +76,7 @@ Het AI-gedeelte. Signalen uit je eigen data worden kort en in gewone taal gemeld
 - **Ritmes**, zoals "je koopt elke vier weken pindakaas" of een recept dat je lang niet hebt gekookt. Ze komen uit de gebruiksgeschiedenis, met gewone code, voor iedereen (ADR-0044).
 - **Patronen**, zoals terugkerende thema's of kaarten over één onderwerp die blijven liggen. Die zoekt een taalmodel, alleen als je dat aanzet, en het meldt alleen iets als het helpt.
 
-Atlas meldt nooit alleen dat een kaart vastloopt. Waar de signalen in de app verschijnen, is nog open. Later komt daar een gesprek bij over je eigen informatie, gebaseerd op semantisch zoeken over al je data. De agent heeft geen tools en geen schrijfrechten buiten zijn eigen meldingen.
+Atlas meldt nooit alleen dat een kaart vastloopt. Ritmes verschijnen waar je de beslissing neemt: "misschien weer nodig" boven de mand, "lang niet gekookt" in de plan-lade van de Agenda (ADR-0051). Later komt daar een gesprek bij over je eigen informatie, gebaseerd op semantisch zoeken over al je data. De agent heeft geen tools en geen schrijfrechten buiten zijn eigen meldingen.
 
 ### Later 💭
 - **Delen** van borden, receptenverzamelingen en losse recepten, op hetzelfde model als de mand (ADR-0035).

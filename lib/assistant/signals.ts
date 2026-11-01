@@ -157,11 +157,13 @@ export async function viewModelsFor(client: Client, rows: readonly SignalRow[]):
 const COLUMNS = "id, kind, created_at, payload, message, status";
 
 /** New signals, newest first. Signals whose target is gone are left out. */
-export async function listAssistantSignals(client: Client, { limit }: { limit: number }): Promise<AssistantSignal[]> {
-  const { data, error } = await client
-    .from("agent_signals")
-    .select(COLUMNS)
-    .eq("status", "new")
+export async function listAssistantSignals(
+  client: Client,
+  { limit, kinds }: { limit: number; kinds?: readonly AssistantSignal["kind"][] },
+): Promise<AssistantSignal[]> {
+  let query = client.from("agent_signals").select(COLUMNS).eq("status", "new");
+  if (kinds) query = query.in("kind", [...kinds]);
+  const { data, error } = await query
     .order("created_at", { ascending: false })
     .limit(Math.max(1, Math.min(limit, 50)));
   if (error) throw error;

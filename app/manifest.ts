@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { HOME_PATH } from "@/lib/today/home";
 
 // #172: powers iOS/Android "Add to Home Screen" (App Router auto-routes this
 // to /manifest.webmanifest and injects the <link rel="manifest">). `name`/
@@ -19,7 +20,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: "/",
     name: "Atlas",
     short_name: "Atlas",
-    start_url: "/te-doen",
+    start_url: HOME_PATH,
     scope: "/",
     display: "standalone",
     background_color: "#F5F5F4",

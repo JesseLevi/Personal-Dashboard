@@ -9,6 +9,8 @@ import { AvatarGroup, type AvatarGroupMember } from "@/components/molecules/Avat
 import { Card } from "@/components/molecules/Card";
 import { CardContentIngredient } from "@/components/molecules/CardContentIngredient";
 import { OfflineNotice } from "./OfflineNotice";
+import { BasketSuggestions, type BasketSuggestion } from "./BasketSuggestions";
+import { dismissAssistantSignal } from "@/lib/assistant/actions";
 import { IngredientSearchPanel } from "@/components/organisms/IngredientSearchPanel";
 import { ShareInviteBanner } from "@/components/organisms/ShareInviteBanner";
 import { blurInTotalMs, blurFadeStagger, blurOutTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
@@ -88,6 +90,8 @@ export interface WinkelmandListProps {
   invites: WinkelmandInvite[];
   /** Server render time: the "laatst bijgewerkt" of a page served offline (ADR-0054). */
   renderedAt?: string;
+  /** Buy-rhythm signals shown above the basket (ADR-0046 §6). */
+  suggestions?: readonly BasketSuggestion[];
 }
 
 export interface WinkelmandInvite {
@@ -149,7 +153,7 @@ function buildGroups(
   return ordered.map((key) => byKey.get(key)!);
 }
 
-export function WinkelmandList({ listId, lists, items, share, owner, people, invites, renderedAt }: WinkelmandListProps) {
+export function WinkelmandList({ listId, lists, items, share, owner, people, invites, renderedAt, suggestions = [] }: WinkelmandListProps) {
   const router = useRouter();
   const locale = useLocale();
   // Long-form recipes.units labels are the ingredient-CARD Tag's usual
@@ -387,6 +391,15 @@ export function WinkelmandList({ listId, lists, items, share, owner, people, inv
       {people.length > 0 && <AvatarGroup members={people} />}
       {renderedAt && <OfflineNotice renderedAt={renderedAt} />}
       {actionError && <p className="text-base font-semibold text-priority-urgent">{actionError}</p>}
+      <BasketSuggestions
+        suggestions={suggestions}
+        onAdd={async (name) => {
+          const result = await addShoppingListItem({ listId, name });
+          if (result.success) router.refresh();
+          return result;
+        }}
+        onDismiss={dismissAssistantSignal}
+      />
       {isEmpty ? (
         // #179: the fetched empty-state nodes (4049:11175 desktop /
         // 4049:11167 mobile) replace the old text-only placeholder -- see

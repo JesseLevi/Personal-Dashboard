@@ -30,3 +30,14 @@ export function filterPlanRecipes(
       (needle === "" || fold(recipe.title).includes(needle)),
   );
 }
+
+/** Pulls `ids` (in that order) out of `recipes`: the highlighted group first, the rest keeps its order. */
+export function splitHighlighted(
+  recipes: readonly PlanRecipe[],
+  ids: readonly string[],
+): { highlighted: PlanRecipe[]; visible: PlanRecipe[] } {
+  const byId = new Map(recipes.map((recipe) => [recipe.id, recipe]));
+  const highlighted = ids.flatMap((id) => byId.get(id) ?? []);
+  const taken = new Set(highlighted.map((recipe) => recipe.id));
+  return { highlighted, visible: recipes.filter((recipe) => !taken.has(recipe.id)) };
+}

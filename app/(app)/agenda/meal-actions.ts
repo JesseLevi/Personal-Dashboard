@@ -1,5 +1,6 @@
 "use server";
 
+import { settleAssistantSignals } from "@/lib/assistant/settle";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/boards/session";
@@ -101,6 +102,7 @@ export async function createMealPlan(input: unknown): Promise<AgendaActionResult
     .select("id")
     .single();
   if (error || !data) return error ? failure("createMealPlan", error) : { success: false, error: "generic" };
+  await settleAssistantSignals(supabase, { kind: "cook_rhythm", recipeId: recipe.id });
   return { success: true, data: { id: data.id } };
 }
 

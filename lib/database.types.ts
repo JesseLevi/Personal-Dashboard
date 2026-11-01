@@ -131,6 +131,7 @@ export type Database = {
           created_at: string
           icon: string
           id: string
+          is_done: boolean
           name: string
           position: number
           updated_at: string
@@ -141,6 +142,7 @@ export type Database = {
           created_at?: string
           icon: string
           id?: string
+          is_done?: boolean
           name: string
           position: number
           updated_at?: string
@@ -151,6 +153,7 @@ export type Database = {
           created_at?: string
           icon?: string
           id?: string
+          is_done?: boolean
           name?: string
           position?: number
           updated_at?: string
@@ -987,6 +990,7 @@ export type Database = {
           category_id: string
           content: Json
           content_text: string
+          content_version: number
           created_at: string
           id: string
           position: number
@@ -998,6 +1002,7 @@ export type Database = {
           category_id: string
           content?: Json
           content_text?: string
+          content_version?: number
           created_at?: string
           id?: string
           position: number
@@ -1009,6 +1014,7 @@ export type Database = {
           category_id?: string
           content?: Json
           content_text?: string
+          content_version?: number
           created_at?: string
           id?: string
           position?: number
@@ -1780,6 +1786,18 @@ export type Database = {
         Args: { p_ingredients: Json; p_recipe_id: string; p_steps: Json }
         Returns: undefined
       }
+      report_app_error: {
+        Args: {
+          p_digest: string
+          p_error_name: string
+          p_kind: string
+          p_message: string
+          p_method: string
+          p_route: string
+          p_secret: string
+        }
+        Returns: undefined
+      }
       reserve_pattern_signal: {
         Args: { p_dedupe_key: string; p_locale: string; p_sources: Json }
         Returns: string
@@ -1802,6 +1820,17 @@ export type Database = {
           p_title: string
         }
         Returns: undefined
+      }
+      save_note_content_versioned: {
+        Args: {
+          p_content: Json
+          p_content_text: string
+          p_expected_version: number
+          p_note_id: string
+          p_target_ids: string[]
+          p_title: string
+        }
+        Returns: number
       }
       search_members: {
         Args: { p_query: string }

@@ -311,6 +311,7 @@
       "invalid-input": "Check the information you entered.",
       "unauthenticated": "Sign in again to continue.",
       "not-found": "This item no longer exists or isn't yours.",
+      "conflict": "This note was changed elsewhere in the meantime.",
       "generic": "Something went wrong. Please try again.",
       "invalid-file-type": "This file type is not supported. Use JPEG, PNG, WebP or GIF.",
       "file-too-large": "This image is too large (maximum 10 MB).",
@@ -428,6 +429,7 @@
       "expandLabel": "Expand sidebar",
       "collapseLabel": "Collapse sidebar",
       "items": {
+        "today": "Today",
         "todo": "To do",
         "notes": "Notes",
         "recipes": "Recipes",
@@ -448,6 +450,8 @@
         "favoriteActiveLabel": "Favorite board",
         "addBoardOptionLabel": "Add",
         "sortLabel": "Sort",
+        "labelFilterLabel": "Labels",
+        "labelFilterAll": "All cards",
         "addCategoryLabel": "Category",
         "emptyBoardTitle": "No board",
         "emptyBoardBody": "There is no board to show yet.",
@@ -572,7 +576,9 @@
         "dateLabel": "Date",
         "datePlaceholder": "Add date",
         "plannedLabel": "Planned for",
-        "plannedPlaceholder": "Add day"
+        "plannedPlaceholder": "Add day",
+        "labelsLabel": "Labels",
+        "labelsPlaceholder": "E.g. work, home"
       },
       "saveLabel": "Save",
       "savingLabel": "Saving...",
@@ -709,7 +715,8 @@
       "editTitle": "Rename category",
       "fields": {
         "nameLabel": "Name",
-        "iconLabel": "Icon"
+        "iconLabel": "Icon",
+        "doneLabel": "Cards here are done"
       },
       "saveLabel": "Save",
       "savingLabel": "Saving...",
@@ -1040,7 +1047,9 @@
     "noteSaveStatus": {
       "saved": "Saved",
       "saving": "Saving…",
-      "error": "Not saved — try again"
+      "error": "Not saved — try again",
+      "conflict": "Changed elsewhere",
+      "reload": "Reload"
     },
     "noteWordCount": {
       "words": "{count, plural, one {# word} other {# words}}",
@@ -1463,9 +1472,12 @@
   },
   "assistant": {
     "signals": {
+      "basketTitle": "Maybe needed again",
+      "planTitle": "Not cooked in a while",
       "buyRhythm": "You usually buy {item} about every {median, plural, one {# day} other {# days}}. The last time was {days, plural, one {# day} other {# days}} ago.",
       "cookRhythm": "You cook {recipe} about every {median, plural, one {# day} other {# days}}. The last time was {days, plural, one {# day} other {# days}} ago. Fancy making it again?",
       "actions": {
+        "no": "No",
         "addToBasket": "Add to list",
         "openRecipe": "Open recipe",
         "open": "Open",
@@ -1493,5 +1505,25 @@
   "offline": {
     "title": "You are offline",
     "body": "This page is not available without a connection. A basket you opened on this device before can still be viewed offline."
+  },
+  "vandaag": {
+    "title": "Today",
+    "events": "Events",
+    "noEvents": "No events today.",
+    "allDay": "All day",
+    "meals": "Meals",
+    "noMeals": "Nothing planned yet.",
+    "dayToBasket": "Day to basket",
+    "dayToBasketAdded": "In the basket",
+    "chooseBasket": "Choose a basket",
+    "cards": "Cards",
+    "noCards": "No planned cards or deadlines.",
+    "planned": "Planned",
+    "deadline": "Deadline",
+    "basket": "Basket",
+    "basketCount": "{count, plural, =0 {Nothing open in your basket} one {# item open} other {# items open}}",
+    "openBasket": "Open basket",
+    "signals": "Maybe useful",
+    "openAgenda": "Open Agenda"
   }
 }

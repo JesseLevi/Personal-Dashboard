@@ -35,11 +35,11 @@ beforeEach(() => {
 });
 
 describe("confirmMagicLink (the POST)", () => {
-  it("verifies the token and sends the user to /te-doen", async () => {
+  it("verifies the token and sends the user to the home page", async () => {
     verifyOtpMock.mockResolvedValue({ error: null });
     const target = await redirectedTo(() => confirmMagicLink(form({ token_hash: "abc", type: "email" })));
     expect(verifyOtpMock).toHaveBeenCalledWith({ type: "email", token_hash: "abc" });
-    expect(target).toBe("/te-doen");
+    expect(target).toBe("/vandaag");
     expect(cookieSet).toHaveBeenCalledWith("atlas_login_email", "", expect.objectContaining({ maxAge: 0 }));
   });
 
