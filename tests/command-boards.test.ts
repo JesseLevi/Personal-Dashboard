@@ -37,8 +37,9 @@ function boardsBuilder(result: Result) {
   return { builder: b, orders, selects, limits };
 }
 
-const column = (position: number, count: number, latest?: string) => ({
+const column = (position: number, count: number, latest?: string, isDone = false) => ({
   position,
+  is_done: isDone,
   cards: [{ count }],
   latest: latest ? [{ updated_at: latest }] : [],
 });
@@ -63,7 +64,7 @@ describe("getCommandBoards", () => {
   it("reads boards, columns, card counts and the newest card per column in one query", async () => {
     const { builder, orders, selects, limits } = boardsBuilder({
       data: [
-        board("b1", "2026-10-01T10:00:00+00:00", [column(0, 2), column(3, 3), column(1, 1)], true),
+        board("b1", "2026-10-01T10:00:00+00:00", [column(0, 2), column(3, 3, undefined, true), column(1, 1)], true),
         board("b2", "2026-10-01T09:00:00+00:00"),
       ],
       error: null,
@@ -74,7 +75,7 @@ describe("getCommandBoards", () => {
 
     expect(fromMock).toHaveBeenCalledTimes(1);
     expect(fromMock).toHaveBeenCalledWith("boards");
-    expect(selects[0]).toContain("board_columns(position, cards(count), latest:cards(updated_at))");
+    expect(selects[0]).toContain("board_columns(position, is_done, cards(count), latest:cards(updated_at))");
     expect(orders).toEqual([
       ["position", { ascending: true }],
       ["updated_at", { ascending: false, referencedTable: "board_columns.latest" }],
@@ -146,7 +147,7 @@ describe("getCommandBoardsAction", () => {
   it("returns the boards for a signed-in member", async () => {
     requireUserIdMock.mockResolvedValue({ userId: "u1" });
     const { builder } = boardsBuilder({
-      data: [board("b1", "2026-10-01T00:00:00Z", [column(0, 1)], true)],
+      data: [board("b1", "2026-10-01T00:00:00Z", [column(0, 1, undefined, true)], true)],
       error: null,
     });
     fromMock.mockReturnValue(builder);

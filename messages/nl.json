@@ -707,7 +707,8 @@
       "editTitle": "Categorie hernoemen",
       "fields": {
         "nameLabel": "Naam",
-        "iconLabel": "Icoon"
+        "iconLabel": "Icoon",
+        "doneLabel": "Kaarten hier zijn klaar"
       },
       "saveLabel": "Opslaan",
       "savingLabel": "Opslaan...",

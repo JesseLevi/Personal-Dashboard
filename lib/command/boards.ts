@@ -10,6 +10,7 @@ type RawBoard = {
   updated_at: string;
   board_columns: Array<{
     position: number;
+    is_done: boolean;
     cards: Array<{ count: number }>;
     latest: Array<{ updated_at: string }>;
   }>;
@@ -32,7 +33,7 @@ export async function getCommandBoards(): Promise<CommandBoard[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("boards")
-    .select("id, name, is_favorite, updated_at, board_columns(position, cards(count), latest:cards(updated_at))")
+    .select("id, name, is_favorite, updated_at, board_columns(position, is_done, cards(count), latest:cards(updated_at))")
     .order("position", { ascending: true })
     .order("updated_at", { ascending: false, referencedTable: "board_columns.latest" })
     .limit(1, { referencedTable: "board_columns.latest" })
@@ -55,6 +56,7 @@ export async function getCommandBoards(): Promise<CommandBoard[]> {
         board.board_columns.map((column) => ({
           position: column.position,
           cardCount: column.cards[0]?.count ?? 0,
+          isDone: column.is_done,
         })),
       ),
     }));

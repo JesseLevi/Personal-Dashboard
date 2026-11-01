@@ -131,6 +131,7 @@ export type Database = {
           created_at: string
           icon: string
           id: string
+          is_done: boolean
           name: string
           position: number
           updated_at: string
@@ -141,6 +142,7 @@ export type Database = {
           created_at?: string
           icon: string
           id?: string
+          is_done?: boolean
           name: string
           position: number
           updated_at?: string
@@ -151,6 +153,7 @@ export type Database = {
           created_at?: string
           icon?: string
           id?: string
+          is_done?: boolean
           name?: string
           position?: number
           updated_at?: string

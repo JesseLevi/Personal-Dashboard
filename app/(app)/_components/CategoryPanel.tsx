@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { SidePanel } from "@/components/organisms/SidePanel";
 import { InputField } from "@/components/atoms/InputField";
+import { Checkbox } from "@/components/atoms/Checkbox";
 import { Button } from "@/components/atoms/Button";
 import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import type { IconName } from "@/components/atoms/Icon";
@@ -27,6 +28,8 @@ export interface CategoryPanelCategory {
   id: string;
   name: string;
   icon: string;
+  /** Only read when the panel shows the done toggle. */
+  isDone?: boolean;
 }
 
 // Structural subset of both domains' ActionResult.
@@ -53,6 +56,8 @@ export interface CategoryPanelProps {
   onDeleteCategory: (input: unknown) => Promise<CategoryPanelActionResult>;
   /** Fired after a successful create/rename/delete, before `onClose`. */
   onMutated?: () => void;
+  /** Shows a "done column" checkbox (`fields.doneLabel`) and sends `isDone` with create/update. */
+  withDoneToggle?: boolean;
 }
 
 export function CategoryPanel({
@@ -66,6 +71,7 @@ export function CategoryPanel({
   onUpdateCategory,
   onDeleteCategory,
   onMutated,
+  withDoneToggle = false,
 }: CategoryPanelProps) {
   const t = useTranslations(translationNamespace);
   const tIconLabel = useTranslations(`${translationNamespace}.iconLabels`);
@@ -84,6 +90,7 @@ export function CategoryPanel({
 
   const [name, setName] = useState(category?.name ?? "");
   const [icon, setIcon] = useState<IconName>(defaultIcon);
+  const [isDone, setIsDone] = useState(category?.isDone ?? false);
   const { confirming: deleteConfirming, ask: askDelete, cancel: cancelDelete } = useDeleteConfirm();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -108,6 +115,7 @@ export function CategoryPanel({
     if (shouldReset) {
       setName(category?.name ?? "");
       setIcon(defaultIcon);
+      setIsDone(category?.isDone ?? false);
       cancelDelete();
       setError(null);
     }
@@ -118,7 +126,7 @@ export function CategoryPanel({
     startTransition(async () => {
       const trimmed = name.trim();
       if (target.mode === "create") {
-        const result = await onCreateCategory({ name: trimmed, icon });
+        const result = await onCreateCategory({ name: trimmed, icon, ...(withDoneToggle && { isDone }) });
         if (!result.success) {
           setError(tErrors(result.error));
           return;
@@ -128,6 +136,7 @@ export function CategoryPanel({
           categoryId: target.category.id,
           name: trimmed,
           icon,
+          ...(withDoneToggle && { isDone }),
         });
         if (!result.success) {
           setError(tErrors(result.error));
@@ -243,6 +252,19 @@ export function CategoryPanel({
           ))}
         </div>
       </div>
+      {withDoneToggle && (
+        <div className="flex items-center gap-inline-sm">
+          <Checkbox
+            id="category-panel-done"
+            checked={isDone}
+            aria-labelledby="category-panel-done-label"
+            onClick={() => setIsDone((value) => !value)}
+          />
+          <span id="category-panel-done-label" className="text-base font-semibold text-text-primary">
+            {t("fields.doneLabel")}
+          </span>
+        </div>
+      )}
       {error && <p className="text-base font-semibold text-priority-urgent">{error}</p>}
     </SidePanel>
   );

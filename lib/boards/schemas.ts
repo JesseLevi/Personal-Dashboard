@@ -72,6 +72,7 @@ export const createColumnSchema = z.object({
   boardId: z.uuid(),
   name,
   icon,
+  isDone: z.boolean().optional(),
 });
 
 // `icon` is optional so a name-only rename stays valid; when sent it is
@@ -80,6 +81,7 @@ export const renameColumnSchema = z.object({
   columnId: z.uuid(),
   name,
   icon: icon.optional(),
+  isDone: z.boolean().optional(),
 });
 
 export const deleteColumnSchema = z.object({

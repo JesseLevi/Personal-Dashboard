@@ -13,7 +13,7 @@ import { createColumn, deleteColumn, renameColumn } from "./actions";
 // Decisions: design/notes/TeDoenBoard.md.
 interface TeDoenColumnPanelApi {
   openCreate: () => void;
-  openEdit: (column: { id: string; name: string; icon: string }) => void;
+  openEdit: (column: { id: string; name: string; icon: string; isDone: boolean }) => void;
 }
 
 const TeDoenColumnPanelContext = createContext<TeDoenColumnPanelApi | null>(null);
@@ -62,6 +62,7 @@ export function TeDoenColumnPanelProvider({
           deleteColumn({ columnId: (input as { categoryId: string }).categoryId })
         }
         onMutated={() => router.refresh()}
+        withDoneToggle
       />
     </TeDoenColumnPanelContext.Provider>
   );

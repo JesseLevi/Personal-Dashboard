@@ -26,7 +26,7 @@ export type CommandAction = {
   pinned: boolean;
 };
 
-/** A Te doen board with its progress: `done` = cards in the last column by position. */
+/** A Te doen board with its progress: `done` = cards in its done columns (ADR-0050). */
 export type CommandBoard = {
   id: string;
   name: string;

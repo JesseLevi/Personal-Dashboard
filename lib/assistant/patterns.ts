@@ -99,7 +99,12 @@ async function loadContent(client: Client, userId: string, refs: readonly Source
       ? client.from("notes").select("id, title, content_text, updated_at").eq("user_id", userId).in("id", noteIds)
       : null,
     cardIds.length
-      ? client.from("cards").select("id, title, description, updated_at").eq("user_id", userId).in("id", cardIds)
+      ? client
+          .from("cards")
+          .select("id, title, description, updated_at, board_columns!inner(is_done)")
+          .eq("user_id", userId)
+          .eq("board_columns.is_done", false)
+          .in("id", cardIds)
       : null,
   ]);
   if (notes?.error) throw notes.error;
