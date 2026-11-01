@@ -86,6 +86,6 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | [0057](0057-vandaag-landing-page.md) | `/vandaag` day overview (events, meals, cards, basket count, signals) is the landing page and PWA start URL | Accepted |
 | [0054](0054-offline-basket.md) | Hand-written service worker: network first, last opened basket readable offline, offline page otherwise; cache wiped at logout | Accepted |
 | [0047](0047-iphone-day-widget.md) | iPhone day widget: Scriptable script, read-only widget token, `widget_today()` acting through the `atlas_widget` role under RLS, tap via the "Open Atlas" Shortcut | Accepted |
-| [0048](0048-command-palette.md) | ⌘K opens a command palette modal (replaces `SearchPanel`): boards with deterministic progress, quick actions via `?nieuw=1`, search results; `Kbd` and `ProgressRing` atoms | Accepted |
+| [0048](0048-command-palette.md) | ⌘K opens a command palette modal (replaces `SearchPanel`): boards with deterministic progress, quick actions via `?nieuw=1`, search results; `Kbd` and `ProgressRing` atoms | Accepted, amended by 0053 |
 | [0008](0008-calendar-sync-and-ui-library.md) | Read-only sync, Schedule-X, SSRF guard | Superseded by 0037 |
 | [0006](0006-embedding-pipeline.md) | Jobs + worker + `bge-m3` via Ollama | Superseded by 0043 |
