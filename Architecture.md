@@ -44,7 +44,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 - **Navigation**: Sidebar; below `md` a tab bar plus drawer (ADR-0055).
 - **Every component** gets a Ladle story, a visual baseline and a `design/notes/<Component>.md` contract.
 - **Libraries**: dnd-kit (drag and drop), TipTap 3 with official MIT extensions only (ADR-0021), Floating UI (menus), next-intl (i18n), FullCalendar standard/MIT for the Agenda (ADR-0037).
-- **PWA**: one manifest (`start_url` `/vandaag`, ADR-0057); `public/sw.js` keeps the last basket readable offline (ADR-0054). The iPhone widget is a Scriptable script; a tap opens the web app via a Shortcut (ADR-0047).
+- **PWA**: one manifest (`start_url` `/vandaag`, ADR-0057); `public/sw.js` keeps the last basket readable offline (ADR-0054). iPhone widget: a Scriptable script; a tap opens the app via a Shortcut (ADR-0047).
 
 ## 4. Data model
 
