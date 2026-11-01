@@ -34,7 +34,14 @@ describe("canonical text", () => {
   });
 
   it("puts sorted label names after the card's description", () => {
-    expect(cardText({ title: "Bel", description: null, labels: ["b", "a"] })).toBe("Bel\n\na, b");
+    expect(cardText({ title: "Bel", description: null, labels: ["b", "a"], subtasks: [] })).toBe("Bel\n\na, b");
+  });
+
+  it("lists subtask titles after the labels, in the order given, one per line", () => {
+    expect(
+      cardText({ title: "Verjaardag", description: "Lisa", labels: ["fam"], subtasks: ["Taart", " Cadeau ", "", "Slingers"] }),
+    ).toBe("Verjaardag\n\nLisa\n\nfam\n\nTaart\nCadeau\nSlingers");
+    expect(cardText({ title: "Solo", description: null, labels: [], subtasks: [] })).toBe("Solo");
   });
 
   it("leaves dates out of an event, so repeats hash alike", () => {

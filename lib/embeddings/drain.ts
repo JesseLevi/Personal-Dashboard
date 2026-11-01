@@ -76,13 +76,14 @@ async function loadSource(client: Client, type: SourceType, id: string): Promise
     case "card": {
       const { data, error } = await client
         .from("cards")
-        .select("user_id, title, description, updated_at, card_labels(labels(name))")
+        .select("user_id, title, description, updated_at, card_labels(labels(name)), card_subtasks(title, position)")
         .eq("id", id)
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
       const labels = data.card_labels.flatMap((row) => (row.labels ? [row.labels.name] : []));
-      return { userId: data.user_id, updatedAt: data.updated_at, text: cardText({ ...data, labels }) };
+      const subtasks = [...data.card_subtasks].sort((a, b) => a.position - b.position).map((row) => row.title);
+      return { userId: data.user_id, updatedAt: data.updated_at, text: cardText({ ...data, labels, subtasks }) };
     }
     case "calendar_event": {
       const { data, error } = await client

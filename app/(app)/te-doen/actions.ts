@@ -8,19 +8,31 @@ import { requireUserId } from "@/lib/boards/session";
 import { nextPosition } from "@/lib/boards/positioning";
 import { DEFAULT_BOARD_COLUMNS } from "@/lib/boards/defaults";
 import {
+  MAX_SUBTASKS_PER_CARD,
+  addSubtasksSchema,
   boardIdSchema,
   createBoardSchema,
   createCardSchema,
   createColumnSchema,
   deleteCardSchema,
   deleteColumnSchema,
+  listSubtasksSchema,
   moveCardSchema,
   planCardSchema,
   renameBoardSchema,
   renameColumnSchema,
+  renameSubtaskSchema,
+  setSubtaskDoneSchema,
+  subtaskIdSchema,
   updateCardSchema,
 } from "@/lib/boards/schemas";
-import type { ActionResult, BoardColumnRow, BoardRow, CardRow } from "@/lib/boards/types";
+import type {
+  ActionResult,
+  BoardColumnRow,
+  BoardRow,
+  CardRow,
+  SubtaskRow,
+} from "@/lib/boards/types";
 import type { Database } from "@/lib/database.types";
 
 // Write side of #92 — board/column/card CRUD + card move, called from the
@@ -102,6 +114,17 @@ async function lastCardPosition(supabase: Client, columnId: string): Promise<num
     .from("cards")
     .select("position")
     .eq("column_id", columnId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.position ?? null;
+}
+
+async function lastSubtaskPosition(supabase: Client, cardId: string): Promise<number | null> {
+  const { data } = await supabase
+    .from("card_subtasks")
+    .select("position")
+    .eq("card_id", cardId)
     .order("position", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -506,4 +529,184 @@ export async function moveCard(
   if (position === null) return { success: false, error: "generic" };
 
   return { success: true, data: { position } };
+}
+
+// Subtasks (ADR-0053). Access is the card_subtasks policies alone; they also
+// refuse a subtask on a card that is not the caller's. Writes are immediate
+// (the panel does not batch them behind Save) and refresh the layout because
+// the board shows the "3/7" progress on the card.
+
+export async function listSubtasks(input: unknown): Promise<ActionResult<SubtaskRow[]>> {
+  const parsed = listSubtasksSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const supabase = await createSupabaseServerClient();
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  const { data, error } = await supabase
+    .from("card_subtasks")
+    .select("*")
+    .eq("card_id", parsed.data.cardId)
+    .order("position", { ascending: true });
+
+  if (error) {
+    logDbError("listSubtasks", error);
+    return { success: false, error: "generic" };
+  }
+  return { success: true, data };
+}
+
+// One insert statement for any number of titles (single add row, multi-line
+// paste, create mode), appended after the last position. The 50 cap counts the
+// stored rows, so a paste that would cross it is refused whole as
+// `invalid-input`, never half-inserted.
+export async function addSubtasks(input: unknown): Promise<ActionResult<SubtaskRow[]>> {
+  const parsed = addSubtasksSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+  const { cardId, titles } = parsed.data;
+
+  const supabase = await createSupabaseServerClient();
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  const { data: card, error: cardError } = await supabase
+    .from("cards")
+    .select("id")
+    .eq("id", cardId)
+    .maybeSingle();
+  if (cardError) {
+    logDbError("addSubtasks/card-lookup", cardError);
+    return { success: false, error: readOnlyOrGeneric(cardError) };
+  }
+  if (!card) return { success: false, error: "not-found" };
+
+  const { count, error: countError } = await supabase
+    .from("card_subtasks")
+    .select("id", { count: "exact", head: true })
+    .eq("card_id", cardId);
+  if (countError) {
+    logDbError("addSubtasks/count", countError);
+    return { success: false, error: "generic" };
+  }
+  if ((count ?? 0) + titles.length > MAX_SUBTASKS_PER_CARD) {
+    return { success: false, error: "invalid-input" };
+  }
+
+  let position = await lastSubtaskPosition(supabase, cardId);
+  const rows = titles.map((title) => {
+    position = nextPosition(position, null);
+    return { user_id: auth.userId, card_id: cardId, title, position };
+  });
+
+  const { data, error } = await supabase.from("card_subtasks").insert(rows).select();
+  if (error || !data) {
+    if (error) logDbError("addSubtasks", error);
+    return { success: false, error: error ? readOnlyOrGeneric(error) : "generic" };
+  }
+
+  revalidatePath("/te-doen", "layout");
+  return { success: true, data: [...data].sort((a, b) => a.position - b.position) };
+}
+
+export async function renameSubtask(input: unknown): Promise<ActionResult> {
+  const parsed = renameSubtaskSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const supabase = await createSupabaseServerClient();
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  const { data, error } = await supabase
+    .from("card_subtasks")
+    .update({ title: parsed.data.title })
+    .eq("id", parsed.data.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    logDbError("renameSubtask", error);
+    return { success: false, error: readOnlyOrGeneric(error) };
+  }
+  if (!data) return { success: false, error: "not-found" };
+
+  revalidatePath("/te-doen", "layout");
+  return { success: true, data: undefined };
+}
+
+export async function setSubtaskDone(input: unknown): Promise<ActionResult> {
+  const parsed = setSubtaskDoneSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const supabase = await createSupabaseServerClient();
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  const { data, error } = await supabase
+    .from("card_subtasks")
+    .update({ done: parsed.data.done })
+    .eq("id", parsed.data.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    logDbError("setSubtaskDone", error);
+    return { success: false, error: readOnlyOrGeneric(error) };
+  }
+  if (!data) return { success: false, error: "not-found" };
+
+  revalidatePath("/te-doen", "layout");
+  return { success: true, data: undefined };
+}
+
+export async function deleteSubtask(input: unknown): Promise<ActionResult> {
+  const parsed = subtaskIdSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const supabase = await createSupabaseServerClient();
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  const { data, error } = await supabase
+    .from("card_subtasks")
+    .delete()
+    .eq("id", parsed.data.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    logDbError("deleteSubtask", error);
+    return { success: false, error: readOnlyOrGeneric(error) };
+  }
+  if (!data) return { success: false, error: "not-found" };
+
+  revalidatePath("/te-doen", "layout");
+  return { success: true, data: undefined };
+}
+
+// "Make it a card" (ADR-0053 §3): one public.promote_card_subtask RPC call
+// (security invoker); MV404 = subtask not found or not the caller's.
+export async function promoteSubtask(
+  input: unknown,
+): Promise<ActionResult<{ cardId: string }>> {
+  const parsed = subtaskIdSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const supabase = await createSupabaseServerClient();
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  const { data: cardId, error } = await supabase.rpc("promote_card_subtask", {
+    p_subtask_id: parsed.data.id,
+  });
+
+  if (error) {
+    logDbError("promoteSubtask", error);
+    if (error.code === "MV404") return { success: false, error: "not-found" };
+    return { success: false, error: readOnlyOrGeneric(error) };
+  }
+  if (!cardId) return { success: false, error: "generic" };
+
+  revalidatePath("/te-doen", "layout");
+  return { success: true, data: { cardId } };
 }
