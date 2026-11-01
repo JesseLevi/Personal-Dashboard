@@ -19,4 +19,4 @@
 ## Consequences
 
 - A board whose rightmost column is not called `Afgerond` loses its muted styling until the member marks that column.
-- Migration order matters: `20261101000003_board_columns_is_done` after `20261030000001_widget_tokens`, and before promoting code that selects `is_done`.
+- Migration order matters: `20261102000004_board_columns_is_done` after `20261030000001_widget_tokens` and `20261102000001_card_subtasks`, and before promoting code that selects `is_done`.
