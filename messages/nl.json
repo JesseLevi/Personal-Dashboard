@@ -1460,9 +1460,12 @@
   },
   "assistant": {
     "signals": {
+      "basketTitle": "Misschien weer nodig",
+      "planTitle": "Lang niet gekookt",
       "buyRhythm": "Je koopt ongeveer elke {median, plural, one {# dag} other {# dagen}} {item}. De laatste keer was {days, plural, one {# dag} other {# dagen}} geleden.",
       "cookRhythm": "Je kookt {recipe} ongeveer elke {median, plural, one {# dag} other {# dagen}}. De laatste keer was {days, plural, one {# dag} other {# dagen}} geleden. Zin om het weer te maken?",
       "actions": {
+        "no": "Nee",
         "addToBasket": "Op de lijst",
         "openRecipe": "Recept openen",
         "open": "Openen",

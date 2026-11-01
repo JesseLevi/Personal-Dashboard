@@ -28,8 +28,7 @@ export type SidebarItemId =
   | "agenda"
   | "notes"
   | "recipes"
-  | "shopping"
-  | "assistant";
+  | "shopping";
 
 const NAV_ITEMS: ReadonlyArray<{ id: SidebarItemId; icon: IconName }> = [
   { id: "todo", icon: "Columns3" },
@@ -37,7 +36,6 @@ const NAV_ITEMS: ReadonlyArray<{ id: SidebarItemId; icon: IconName }> = [
   { id: "notes", icon: "Notebook" },
   { id: "recipes", icon: "FolderClosed" },
   { id: "shopping", icon: "ShoppingBasket" },
-  { id: "assistant", icon: "Astroid" },
 ];
 
 // Explicit-px, not `w-fit` — CSS can't transition to/from an intrinsic
