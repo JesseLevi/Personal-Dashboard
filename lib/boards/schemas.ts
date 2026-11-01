@@ -136,3 +136,36 @@ export const moveCardSchema = z.object({
   columnId: z.uuid(),
   targetIndex: z.int().nonnegative(),
 });
+
+// ADR-0053: a subtask is a title and a check. The 50-per-card cap is enforced
+// in addSubtasks against the stored count, not here. Titles are trimmed and
+// empties dropped before the length rules apply, so a pasted blank line is
+// not an error; 1-50 refers to the titles that remain.
+export const MAX_SUBTASKS_PER_CARD = 50;
+const subtaskTitle = z.string().trim().min(1).max(200);
+
+export const listSubtasksSchema = z.object({
+  cardId: z.uuid(),
+});
+
+export const addSubtasksSchema = z.object({
+  cardId: z.uuid(),
+  titles: z
+    .array(z.string().trim())
+    .transform((titles) => titles.filter((title) => title !== ""))
+    .pipe(z.array(subtaskTitle).min(1).max(MAX_SUBTASKS_PER_CARD)),
+});
+
+export const renameSubtaskSchema = z.object({
+  id: z.uuid(),
+  title: subtaskTitle,
+});
+
+export const setSubtaskDoneSchema = z.object({
+  id: z.uuid(),
+  done: z.boolean(),
+});
+
+export const subtaskIdSchema = z.object({
+  id: z.uuid(),
+});

@@ -1,4 +1,4 @@
--- Label links (ADR-0052, 20261101000004_card_labels_same_board.sql): the owner
+-- Label links (ADR-0052, 20261102000005_card_labels_same_board.sql): the owner
 -- links and unlinks their own card and label on one board; never across
 -- boards or users. Isolation itself: rls-card_labels.sql / rls-labels.sql.
 begin;

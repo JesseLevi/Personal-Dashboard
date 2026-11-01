@@ -76,7 +76,7 @@ export function NoteEditor({ note, linkTitles, backlinks, agendaEvents = [] }: N
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  // content_version is absent until the ADR-0048 migration is applied.
+  // content_version is absent until the ADR-0056 migration is applied.
   const { status, change, retry, discard, reload } = useNoteSave(note.id, note.content_version ?? null);
 
   // #339: a failed or rejected image upload shows its error here; nothing is inserted.

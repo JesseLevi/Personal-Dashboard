@@ -5,7 +5,7 @@
 
 export type SaveStatus = "saved" | "saving" | "error" | "conflict";
 
-/** `version` is the note's content_version (ADR-0048); null when unknown. */
+/** `version` is the note's content_version (ADR-0056); null when unknown. */
 export type SaveResult =
   | { success: true; version?: number | null }
   | { success: false; conflict?: boolean };
