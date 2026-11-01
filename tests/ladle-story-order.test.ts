@@ -8,6 +8,7 @@ const order = storyOrder as (stories: string[]) => string[];
 const IDS = [
   "account--login-form--default",
   "winkelmand--winkelmand-header--default",
+  "vandaag--vandaag-page--overview",
   "recepten--recipe-panel--filled",
   "notities--rondom--note-backlinks--default",
   "notities--blokken--note-table--default",
@@ -36,7 +37,7 @@ describe("ladle storyOrder", () => {
 
   it("orders groups Basis, app Sidebar modules, Account; unknown groups last", () => {
     const groups = [...new Set(order(IDS).map((id) => id.split("--")[0]))];
-    expect(groups).toEqual(["basis", "te-doen", "agenda", "notities", "recepten", "winkelmand", "account", "zzz-unknown"]);
+    expect(groups).toEqual(["basis", "vandaag", "te-doen", "agenda", "notities", "recepten", "winkelmand", "account", "zzz-unknown"]);
   });
 
   it("orders sub-groups by the table, not the alphabet", () => {
