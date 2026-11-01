@@ -8,9 +8,10 @@ export default { title: "Notities / Rondom / Note save status" } satisfies Story
 
 export const States = () => (
   <div className="flex flex-col items-start gap-stack-md">
-    <NoteSaveStatus status="saved" onRetry={() => {}} />
-    <NoteSaveStatus status="saving" onRetry={() => {}} />
-    <NoteSaveStatus status="error" onRetry={() => {}} />
+    <NoteSaveStatus status="saved" onRetry={() => {}} onReload={() => {}} />
+    <NoteSaveStatus status="saving" onRetry={() => {}} onReload={() => {}} />
+    <NoteSaveStatus status="error" onRetry={() => {}} onReload={() => {}} />
+    <NoteSaveStatus status="conflict" onRetry={() => {}} onReload={() => {}} />
   </div>
 );
 
@@ -24,9 +25,9 @@ export const WordCount = () => (
 
 export const Overview = () => (
   <div className="flex flex-col gap-stack-lg">
-    <StoryIntro what="Small status under a note: saved, saving or failed with retry, plus the word count and reading time." note="NoteEditor" />
+    <StoryIntro what="Small status under a note: saved, saving, failed with retry, or changed elsewhere with reload, plus the word count and reading time." note="NoteEditor" />
     <Specimens>
-      <Specimen label="Save status" hint="Saved, saving, error">
+      <Specimen label="Save status" hint="Saved, saving, error, conflict">
         <States />
       </Specimen>
       <Specimen label="Word count" hint="Empty, one word, longer">

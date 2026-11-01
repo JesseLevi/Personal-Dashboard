@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { LABEL_MAX_LENGTH, LABELS_PER_CARD } from "@/lib/boards/labels";
 import { parseDueAtText } from "@/lib/boards/dates";
 
 // Validates every server-action input in this module (#92), same pattern as
@@ -72,6 +73,7 @@ export const createColumnSchema = z.object({
   boardId: z.uuid(),
   name,
   icon,
+  isDone: z.boolean().optional(),
 });
 
 // `icon` is optional so a name-only rename stays valid; when sent it is
@@ -80,14 +82,19 @@ export const renameColumnSchema = z.object({
   columnId: z.uuid(),
   name,
   icon: icon.optional(),
+  isDone: z.boolean().optional(),
 });
 
 export const deleteColumnSchema = z.object({
   columnId: z.uuid(),
 });
 
+// The full label set of a card (ADR-0052); absent = leave the labels alone.
+const labels = z.array(z.string().trim().min(1).max(LABEL_MAX_LENGTH)).max(LABELS_PER_CARD);
+
 export const createCardSchema = z.object({
   columnId: z.uuid(),
+  labels: labels.optional(),
   title: name,
   description: description.optional(),
   priority: priority.optional(),
@@ -98,6 +105,7 @@ export const createCardSchema = z.object({
 
 export const updateCardSchema = z.object({
   cardId: z.uuid(),
+  labels: labels.optional(),
   title: name.optional(),
   description: description.optional(),
   priority: priority.optional(),

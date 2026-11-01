@@ -24,11 +24,13 @@ import type { Locale } from "@/lib/profile/types";
 import type { WidgetTokenItem } from "@/lib/widget/types";
 import { SettingsPanel } from "./SettingsPanel";
 import { useSearchShortcut } from "./useSearchShortcut";
+import { clearOfflineCache } from "@/lib/pwa/offline-cache";
 
 // Only the routes a ticket has actually built (#88, #177, #230); ids without
 // an entry (assistant) have no page yet, so clicking them is a deliberate
 // no-op rather than a link to a 404.
 const ROUTES: Partial<Record<SidebarItemId, string>> = {
+  today: "/vandaag",
   todo: "/te-doen",
   agenda: "/agenda",
   notes: "/notities",
@@ -184,12 +186,12 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
   const page = usePageTransition(pathname, (href) => router.push(href));
 
   const labels: Record<SidebarItemId, string> = {
+    today: t("items.today"),
     todo: t("items.todo"),
     agenda: t("items.agenda"),
     notes: t("items.notes"),
     recipes: t("items.recipes"),
     shopping: t("items.shopping"),
-    assistant: t("items.assistant"),
   };
   useSearchShortcut(() => setSearchOpen(true), searchOpen || settingsOpen);
   const toggleLabel = collapsed ? t("expandLabel") : t("collapseLabel");
@@ -293,7 +295,8 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
     setAccountMenuOpen(false);
     // signOut() (app/login/actions.ts) redirects internally — no local
     // pending state needed, the navigation itself is the feedback.
-    void signOut();
+    // The offline cache holds this member's basket (ADR-0054): wipe it first.
+    void clearOfflineCache().finally(() => signOut());
   }
 
   return (

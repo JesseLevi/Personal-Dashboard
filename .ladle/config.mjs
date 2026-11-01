@@ -10,7 +10,7 @@
  * client bundle, so it cannot reference anything outside its own body.
  */
 export const storyOrder = (stories) => {
-  const groups = ["basis", "te-doen", "agenda", "notities", "recepten", "winkelmand", "account"];
+  const groups = ["basis", "vandaag", "te-doen", "agenda", "notities", "recepten", "winkelmand", "account"];
   const subgroups = {
     basis: ["fundament", "invoer", "kaarten", "panelen"],
     notities: ["editor", "blokken", "rondom"],

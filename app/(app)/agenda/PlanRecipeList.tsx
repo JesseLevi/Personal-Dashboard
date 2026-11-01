@@ -11,7 +11,7 @@ import { AnimatedAddToBasketButton } from "@/components/molecules/AnimatedAddToB
 import { PlanChoices } from "@/components/molecules/PlanChoices";
 import { useAgendaDraggable } from "@/components/organisms/useAgendaDraggable";
 import { defaultSlotForCategory } from "@/lib/agenda/meals";
-import { filterPlanRecipes, type PlanRecipe } from "@/lib/agenda/plan-recipes";
+import { filterPlanRecipes, splitHighlighted, type PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { MealSlot } from "@/lib/agenda/types";
 import { useOutsidePress } from "@/lib/dom/use-outside-press";
@@ -22,6 +22,8 @@ import type { ActionResult } from "@/lib/shopping/types";
 
 export interface PlanRecipeListProps {
   recipes: readonly PlanRecipe[];
+  /** Shown first under "Lang niet gekookt" while no search or category filter is set. */
+  highlightedIds?: readonly string[];
   categories: readonly { id: string; name: string }[];
   /** Today in the Agenda zone, `YYYY-MM-DD`. */
   today: string;
@@ -165,12 +167,17 @@ export function PopoverBody({
   );
 }
 
-export function PlanRecipeList({ recipes, categories, today, onPlan, onPlanned, weekToBasket }: PlanRecipeListProps) {
+export function PlanRecipeList({ recipes, highlightedIds = [], categories, today, onPlan, onPlanned, weekToBasket }: PlanRecipeListProps) {
   const t = useTranslations("components.planDrawer");
+  const tSignals = useTranslations("assistant.signals");
   const [query, setQuery] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const categoryOptions = [{ value: "", label: t("allCategories") }, ...categories.map((c) => ({ value: c.id, label: c.name }))];
-  const visible = useMemo(() => filterPlanRecipes(recipes, { query, categoryId }), [recipes, query, categoryId]);
+  const filtered = useMemo(() => filterPlanRecipes(recipes, { query, categoryId }), [recipes, query, categoryId]);
+  const { highlighted, visible } = useMemo(
+    () => (query || categoryId ? { highlighted: [], visible: filtered } : splitHighlighted(filtered, highlightedIds)),
+    [filtered, highlightedIds, query, categoryId],
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-stack-sm">
@@ -206,7 +213,21 @@ export function PlanRecipeList({ recipes, categories, today, onPlan, onPlanned, 
       />
       <p className="text-sm font-semibold text-text-secondary">{t("dragHint")}</p>
       <div className="flex min-h-0 flex-1 flex-col gap-stack-sm overflow-y-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-        {visible.length === 0 ? (
+        {highlighted.length > 0 && (
+          <section aria-labelledby="plan-recipes-highlighted" className="flex flex-col gap-stack-sm">
+            <h3 id="plan-recipes-highlighted" className="text-sm font-semibold text-text-secondary">
+              {tSignals("planTitle")}
+            </h3>
+            <ul className="flex flex-col gap-stack-md">
+              {highlighted.map((recipe) => (
+                <li key={recipe.id}>
+                  <PlanRecipeRow recipe={recipe} today={today} onPlan={onPlan} onPlanned={onPlanned} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+        {visible.length === 0 && highlighted.length === 0 ? (
           <p className="text-base font-semibold text-text-secondary">{t("noRecipes")}</p>
         ) : (
           <ul className="flex flex-col gap-stack-md">

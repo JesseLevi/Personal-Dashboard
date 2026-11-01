@@ -9,8 +9,9 @@ import { blurFadeStagger, blurOutTotalMs, usePrefersReducedMotion } from "@/lib/
 import { cn } from "@/lib/ui/cn";
 import { markEnterFromLogin } from "@/lib/ui/login-enter";
 import type { LoginCodeSendState, VerifyLoginCodeState } from "../actions";
+import { HOME_PATH } from "@/lib/today/home";
 
-const SIGNED_IN_TARGET = "/te-doen";
+const SIGNED_IN_TARGET = HOME_PATH;
 // Heading, description, code field, buttons, then the layout's visual (told via `onExitStart`).
 const EXIT_ELEMENT_COUNT = 5;
 export const RESEND_COOLDOWN_SECONDS = 60;

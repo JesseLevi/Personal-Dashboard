@@ -1,5 +1,6 @@
 "use server";
 
+import { replaceCardLabels } from "@/lib/boards/labels";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -143,6 +144,7 @@ export async function createBoard(input: unknown): Promise<ActionResult<BoardRow
       board_id: data.id,
       name: column.name,
       icon: column.icon,
+      is_done: column.isDone,
       position: (index + 1) * 1000,
     })),
   );
@@ -239,6 +241,7 @@ export async function createColumn(
       board_id: parsed.data.boardId,
       name: parsed.data.name,
       icon: parsed.data.icon,
+      is_done: parsed.data.isDone ?? false,
       position,
     })
     .select()
@@ -263,11 +266,11 @@ export async function renameColumn(input: unknown): Promise<ActionResult> {
 
   const { data, error } = await supabase
     .from("board_columns")
-    .update(
-      parsed.data.icon === undefined
-        ? { name: parsed.data.name }
-        : { name: parsed.data.name, icon: parsed.data.icon },
-    )
+    .update({
+      name: parsed.data.name,
+      ...(parsed.data.icon !== undefined && { icon: parsed.data.icon }),
+      ...(parsed.data.isDone !== undefined && { is_done: parsed.data.isDone }),
+    })
     .eq("id", parsed.data.columnId)
     .select("id")
     .maybeSingle();
@@ -350,6 +353,10 @@ export async function createCard(input: unknown): Promise<ActionResult<CardRow>>
     if (error) logDbError("createCard", error);
     return { success: false, error: "generic" };
   }
+  if (parsed.data.labels && !(await replaceCardLabels(supabase, auth.userId, data.id, parsed.data.labels))) {
+    revalidatePath("/te-doen", "layout");
+    return { success: false, error: "generic" };
+  }
 
   revalidatePath("/te-doen", "layout");
   return { success: true, data };
@@ -359,7 +366,7 @@ export async function updateCard(input: unknown): Promise<ActionResult> {
   const parsed = updateCardSchema.safeParse(input);
   if (!parsed.success) return { success: false, error: "invalid-input" };
 
-  const { cardId, ...fields } = parsed.data;
+  const { cardId, labels, ...fields } = parsed.data;
   // Only fields the caller actually sent get written — a schema `.optional()`
   // key that's absent must not overwrite existing data with `undefined`
   // (Supabase would just omit it, but being explicit keeps this correct even
@@ -392,6 +399,10 @@ export async function updateCard(input: unknown): Promise<ActionResult> {
     return { success: false, error: readOnlyOrGeneric(error) };
   }
   if (!data) return { success: false, error: "not-found" };
+  if (labels && !(await replaceCardLabels(supabase, auth.userId, cardId, labels))) {
+    revalidatePath("/te-doen", "layout");
+    return { success: false, error: "generic" };
+  }
 
   revalidatePath("/te-doen", "layout");
   return { success: true, data: undefined };

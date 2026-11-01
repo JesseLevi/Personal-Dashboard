@@ -16,7 +16,7 @@ describe("SaveController", () => {
     c.change(doc("a"));
     expect(c.getStatus()).toBe("saving");
     await vi.advanceTimersByTimeAsync(1000);
-    expect(save).toHaveBeenCalledWith(doc("a"));
+    expect(save).toHaveBeenCalledWith(doc("a"), null);
     expect(c.getStatus()).toBe("saved");
   });
 
@@ -34,7 +34,7 @@ describe("SaveController", () => {
     expect(c.getStatus()).toBe("saving");
     await vi.advanceTimersByTimeAsync(0);
     expect(save).toHaveBeenCalledTimes(2);
-    expect(save).toHaveBeenLastCalledWith(doc("a"));
+    expect(save).toHaveBeenLastCalledWith(doc("a"), null);
     expect(c.getStatus()).toBe("saved");
   });
 
@@ -59,7 +59,7 @@ describe("SaveController", () => {
     await vi.advanceTimersByTimeAsync(0);
     expect(c.getStatus()).toBe("saving");
     await vi.advanceTimersByTimeAsync(1000);
-    expect(save).toHaveBeenLastCalledWith(doc("ab"));
+    expect(save).toHaveBeenLastCalledWith(doc("ab"), null);
     expect(c.getStatus()).toBe("saved");
   });
 
@@ -70,5 +70,82 @@ describe("SaveController", () => {
     c.discard();
     await vi.advanceTimersByTimeAsync(2000);
     expect(save).not.toHaveBeenCalled();
+  });
+
+  it("reports whether any write succeeded and when the last one settled", async () => {
+    let resolveFirst: (v: { success: boolean }) => void = () => {};
+    const save = vi
+      .fn()
+      .mockImplementationOnce(() => new Promise((r) => (resolveFirst = r)))
+      .mockResolvedValue({ success: true });
+    const c = new SaveController(save, 1000);
+    expect(c.hasSaved()).toBe(false);
+    c.change(doc("a"));
+    await vi.advanceTimersByTimeAsync(1000);
+    c.change(doc("ab"));
+    c.flush();
+    let settled = false;
+    void c.settled().then(() => (settled = true));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(settled).toBe(false);
+    resolveFirst({ success: true });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(settled).toBe(true);
+    expect(c.hasSaved()).toBe(true);
+  });
+
+  it("hasSaved stays false when every write failed", async () => {
+    const c = new SaveController(vi.fn().mockResolvedValue({ success: false }), 1000);
+    c.change(doc("a"));
+    c.flush();
+    await c.settled();
+    expect(c.hasSaved()).toBe(false);
+  });
+
+  it("sends the last known version and advances it after each save", async () => {
+    const save = vi
+      .fn()
+      .mockResolvedValueOnce({ success: true, version: 4 })
+      .mockResolvedValueOnce({ success: true, version: 5 });
+    const c = new SaveController(save, 1000, 3);
+    c.change(doc("a"));
+    await vi.advanceTimersByTimeAsync(1000);
+    c.change(doc("ab"));
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(save).toHaveBeenNthCalledWith(1, doc("a"), 3);
+    expect(save).toHaveBeenNthCalledWith(2, doc("ab"), 4);
+    expect(c.getStatus()).toBe("saved");
+  });
+
+  it("stops writing on a conflict and keeps the local text out of the database", async () => {
+    const save = vi.fn().mockResolvedValue({ success: false, conflict: true });
+    const c = new SaveController(save, 1000, 1);
+    c.change(doc("stale"));
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(c.getStatus()).toBe("conflict");
+
+    c.change(doc("stale typing"));
+    c.retry();
+    c.flush();
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(c.getStatus()).toBe("conflict");
+  });
+
+  it("leaves the conflict only through discard (reload)", async () => {
+    const save = vi
+      .fn()
+      .mockResolvedValueOnce({ success: false, conflict: true })
+      .mockResolvedValue({ success: true, version: 9 });
+    const c = new SaveController(save, 1000, 1);
+    c.change(doc("stale"));
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(c.getStatus()).toBe("conflict");
+    c.discard();
+    expect(c.getStatus()).toBe("saved");
+    c.flush();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(save).toHaveBeenCalledTimes(1);
   });
 });

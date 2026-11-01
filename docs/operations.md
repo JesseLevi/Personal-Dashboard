@@ -20,6 +20,7 @@ Hosted settings that code review cannot see. Every change here is a hosted write
 | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_AI_API_TOKEN` | `lib/ai/cloudflare.ts` | Token with Workers AI scope only. Either unset = keyword search only. Check that Workers Paid stays off: the free allocation is the spend cap (ADR-0043) |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` | `lib/storage/` | Production bucket + its bucket-scoped token |
 | `CRON_SECRET` | `app/api/cron/calendar-sync`, `app/api/cron/embeddings`, `app/api/cron/assistant` | At least 16 random characters (`openssl rand -hex 32`). Vercel Cron sends it as `Authorization: Bearer`. Unset = all three routes answer 401 and the daily backstops do nothing (the lazy paths still work) |
+| `APP_ERROR_REPORT_SECRET` | `lib/monitoring/report-error.ts` (ADR-0049) | Same value as the Vault secret `app_error_report_secret`, at least 16 characters (`openssl rand -hex 32`). Unset = errors are not logged |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `LOGIN_GREETING_SALT` | login greeting (ADR-0031) and login submits | Set before deploying the login rate-limit change: without the secret, password and code-send submits fail closed in production. Missing salt = greeting fails closed; the login limits fall back to an unsalted hash |
 | `TURNSTILE_ALLOWED_HOSTNAMES` | `lib/auth/turnstile.ts` | Comma-separated; the production domain. Unset = the token's hostname must match the request host |
 
@@ -35,6 +36,7 @@ Hosted settings that code review cannot see. Every change here is a hosted write
   - login by e-mail code needs Resend SMTP (ADR-0038, steps: "Resend / auth e-mail" below);
   - admins have `app_metadata.role = 'admin'` (ADR-0020). The first grant was made 2026-10-10.
 - **Migrations**: before debugging a data-shaped bug, check `supabase_migrations.schema_migrations`. A migration applied outside `db push` needs its ledger version corrected to the filename (ADR-0032).
+- **Error log** (ADR-0049): after the migration, `select vault.create_secret('<same value as APP_ERROR_REPORT_SECRET>', 'app_error_report_secret');` in the SQL editor (user's go). Read: `select created_at, route, method, kind, digest, error_name, message from private.app_errors order by id desc limit 50;`.
 - **Backups**: Supabase Cloud's own backups, plan-dependent.
 
 ## Resend / auth e-mail (ADR-0038, #10, #493)

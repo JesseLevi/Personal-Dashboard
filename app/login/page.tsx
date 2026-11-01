@@ -5,6 +5,8 @@ import { getAuthenticatedUserId } from "@/lib/boards/session";
 import { LoginFormClient } from "./LoginFormClient";
 import { lookupGreetingName } from "./greeting-action";
 import { sendLoginCode, signInWithPassword } from "./actions";
+import { ClearOfflineCache } from "@/app/(app)/_components/OfflineSupport";
+import { HOME_PATH } from "@/lib/today/home";
 
 // figma: node-id=3929:25181 (Pages/Login — LogIn/Desktop 3929:25202,
 // LogIn/Mobile 3929:25182). Server Component: auth-check + translations +
@@ -21,17 +23,20 @@ export default async function LoginPage() {
   // A login action re-renders this route with the fresh session; LoginForm must stay
   // mounted to play its exit animation and navigate itself (lib/auth/login-redirect.ts).
   const isServerAction = (await headers()).has("next-action");
-  if (shouldRedirectAuthenticated({ userId, isServerAction })) redirect("/te-doen");
+  if (shouldRedirectAuthenticated({ userId, isServerAction })) redirect(HOME_PATH);
 
   // Server-side env, never NEXT_PUBLIC_ (ADR-0031).
   const turnstileSiteKey = process.env.TURNSTILE_SITE_KEY || null;
 
   return (
-    <LoginFormClient
+    <>
+      <ClearOfflineCache />
+      <LoginFormClient
       signInWithPasswordAction={signInWithPassword}
       sendLoginCodeAction={sendLoginCode}
       lookupGreetingNameAction={lookupGreetingName}
       turnstileSiteKey={turnstileSiteKey}
-    />
+      />
+    </>
   );
 }
