@@ -81,6 +81,8 @@ Agenda tables: §7.
 
 Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredient matching runs own alias, then shared alias, then `pg_trgm` (`match_ingredient_candidates`), then the LLM (ADR-0020). Phase 8 adds semantic search across modules (§6).
 
+The search surface is the ⌘K command palette (ADR-0048): Te doen boards with deterministic progress (cards in the last column / all cards), quick actions from `lib/command/` (a create action opens the module with `?nieuw=1`), and the cross-module results.
+
 ### 4.4 Object storage
 
 - R2 holds image bytes under keys `<user_id>/<module>/…`. The owning row in Postgres decides ownership (ADR-0024).
