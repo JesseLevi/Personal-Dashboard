@@ -574,6 +574,47 @@ export type Database = {
           },
         ]
       }
+      card_subtasks: {
+        Row: {
+          card_id: string
+          created_at: string
+          done: boolean
+          id: string
+          position: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          done?: boolean
+          id?: string
+          position: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          done?: boolean
+          id?: string
+          position?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_subtasks_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cards: {
         Row: {
           column_id: string
@@ -1776,6 +1817,7 @@ export type Database = {
           share_id: string
         }[]
       }
+      promote_card_subtask: { Args: { p_subtask_id: string }; Returns: string }
       replace_recipe_contents: {
         Args: { p_ingredients: Json; p_recipe_id: string; p_steps: Json }
         Returns: undefined
