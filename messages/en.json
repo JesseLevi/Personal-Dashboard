@@ -422,6 +422,10 @@
     },
     "sidebar": {
       "navLabel": "Main navigation",
+      "tabBarLabel": "Modules",
+      "tabItems": {
+        "shopping": "Basket"
+      },
       "expandLabel": "Expand sidebar",
       "collapseLabel": "Collapse sidebar",
       "items": {

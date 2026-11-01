@@ -6,10 +6,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   Sidebar,
+  NAV_ITEMS,
   SIDEBAR_COLLAPSED_WIDTH,
   SIDEBAR_EXPANDED_WIDTH,
   type SidebarItemId,
 } from "@/components/organisms/Sidebar";
+import { MobileTabBar } from "@/components/organisms/MobileTabBar";
 import { Button } from "@/components/atoms/Button";
 import { SearchPanel } from "@/components/organisms/SearchPanel";
 import { useIsNarrow } from "@/components/organisms/AgendaCalendar";
@@ -33,6 +35,9 @@ const ROUTES: Partial<Record<SidebarItemId, string>> = {
   recipes: "/recepten",
   shopping: "/winkelmand",
 };
+
+// The note editor has its own fixed bottom bar (EditingBar) and the keyboard; the tab bar steps aside there.
+const NOTE_EDITOR_PATH = /^\/notities\/[^/]+/;
 
 function activeItemForPath(pathname: string): SidebarItemId | undefined {
   const match = Object.entries(ROUTES).find(([, href]) => pathname.startsWith(href));
@@ -415,7 +420,19 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
         >
           {children}
         </div>
+        {/* spacing-flag: h-[env(safe-area-inset-bottom)] -- clears the tab bar's own
+            safe-area padding on top of pb-page-bottom (80px vs the 56px bar) --
+            design/notes/MobileTabBar.md */}
+        <div aria-hidden="true" className="h-[env(safe-area-inset-bottom)] shrink-0 md:hidden" />
       </main>
+
+      <MobileTabBar
+        navLabel={t("tabBarLabel")}
+        items={NAV_ITEMS.filter((item) => ROUTES[item.id]).map((item) => ({ ...item, label: t.has(`tabItems.${item.id}`) ? t(`tabItems.${item.id}`) : labels[item.id] }))}
+        activeItem={activeItemForPath(pathname)}
+        onNavigate={handleNavigate}
+        className={cn(NOTE_EDITOR_PATH.test(pathname) && "hidden", chromeEntering && "animate-blur-in")}
+      />
 
       <SearchPanel
         open={searchOpen}
