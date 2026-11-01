@@ -50,6 +50,7 @@ export type NotesErrorCode =
   | "invalid-input"
   | "unauthenticated"
   | "not-found"
+  | "conflict"
   | "generic"
   | "invalid-file-type"
   | "file-too-large"

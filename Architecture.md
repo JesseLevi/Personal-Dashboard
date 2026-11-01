@@ -56,8 +56,8 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 - **Sharing** (ADR-0035): a container (now `shopping_lists`) is shared through `shares` (one nullable FK per shareable type, `pending|accepted`, role `editor`). Rows inside a container carry the owner's `user_id`; their policies call `private.<type>_role(id)`. Other members' names come only from `member_profiles()` / `search_members()`; an invitee's reaches the inviter once accepted. A trigger caps invites.
 - **Recipe share = copy** (ADR-0036): a recipe offer is a pending `shares` row (`recipe_id`, never `accepted`). The invitee reads it only through `pending_recipe_shares()`; `accept_recipe_share()` (definer) copies the recipe into their own first category, then `lib/sharing/recipes.ts` copies the thumbnail in R2.
 - **Small closed sets** are text with a check constraint (`priority`, `size`, `source`). Units are the shared enum `public.recipe_unit` (ADR-0028).
-- **Ordering** uses fractional `position` (numeric midpoint), mirrored in TypeScript and SQL (ADR-0015).
-- **Multi-statement writes** are `security invoker` RPCs with `search_path = ''`, an explicit ownership guard, and execute granted only to `authenticated`: `replace_recipe_contents`, `move_card`, `move_recipe`, `move_note`, `toggle_board_favorite`, `save_note_content` (ADR-0015/0030).
+- **Ordering** uses fractional `position` (numeric midpoint), mirrored in TS and SQL (ADR-0015).
+- **Multi-statement writes** are `security invoker` RPCs with `search_path = ''`, an explicit ownership guard, and execute granted only to `authenticated`: `replace_recipe_contents`, `move_card`/`_recipe`/`_note`, `toggle_board_favorite`, `save_note_content(_versioned)` (ADR-0015/0030/0048).
 - **Per-user defaults** are seeded by triggers at signup and lazily by `ensure_user_defaults()` (ADR-0017).
 - `lib/database.types.ts` is generated in CI. Never hand-edit it.
 

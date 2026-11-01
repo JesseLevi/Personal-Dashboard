@@ -987,6 +987,7 @@ export type Database = {
           category_id: string
           content: Json
           content_text: string
+          content_version: number
           created_at: string
           id: string
           position: number
@@ -998,6 +999,7 @@ export type Database = {
           category_id: string
           content?: Json
           content_text?: string
+          content_version?: number
           created_at?: string
           id?: string
           position: number
@@ -1009,6 +1011,7 @@ export type Database = {
           category_id?: string
           content?: Json
           content_text?: string
+          content_version?: number
           created_at?: string
           id?: string
           position?: number
@@ -1802,6 +1805,17 @@ export type Database = {
           p_title: string
         }
         Returns: undefined
+      }
+      save_note_content_versioned: {
+        Args: {
+          p_content: Json
+          p_content_text: string
+          p_expected_version: number
+          p_note_id: string
+          p_target_ids: string[]
+          p_title: string
+        }
+        Returns: number
       }
       search_members: {
         Args: { p_query: string }

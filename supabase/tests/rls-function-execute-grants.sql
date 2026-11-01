@@ -44,6 +44,7 @@ select ok(
   and has_function_privilege('authenticated', 'public.move_recipe(uuid, uuid, int)', 'EXECUTE')
   and has_function_privilege('authenticated', 'public.move_note(uuid, uuid, int)', 'EXECUTE')
   and has_function_privilege('authenticated', 'public.save_note_content(uuid, jsonb, text, text, uuid[])', 'EXECUTE')
+  and has_function_privilege('authenticated', 'public.save_note_content_versioned(uuid, jsonb, text, text, uuid[], int)', 'EXECUTE')
   and has_function_privilege('authenticated', 'public.replace_recipe_contents(uuid, jsonb, jsonb)', 'EXECUTE')
   and has_function_privilege('authenticated', 'public.match_ingredient_candidates(text[], int)', 'EXECUTE')
   and has_function_privilege('authenticated', 'public.pending_recipe_shares()', 'EXECUTE')
