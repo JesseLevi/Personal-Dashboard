@@ -368,7 +368,7 @@ export async function updateNoteContent(
   // -- a nominal interface, not structurally an indexable
   // `{ [key: string]: Json }`, so it needs an explicit cast at this write
   // boundary. Foreign/unknown target ids are dropped by the RPC.
-  // ADR-0048: the versioned RPC refuses a save based on an outdated copy.
+  // ADR-0056: the versioned RPC refuses a save based on an outdated copy.
   const args = {
     p_note_id: noteId,
     p_content: content as unknown as Json,

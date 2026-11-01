@@ -33,8 +33,14 @@ export function recipeText(recipe: {
   ]);
 }
 
-export function cardText(card: { title: string; description: string | null; labels: string[] }): string {
-  return join([card.title, card.description, join([...card.labels].sort(), ", ")]);
+/** `subtasks` are the titles in position order (ADR-0053); they are not re-sorted here. */
+export function cardText(card: {
+  title: string;
+  description: string | null;
+  labels: string[];
+  subtasks: string[];
+}): string {
+  return join([card.title, card.description, join([...card.labels].sort(), ", "), join(card.subtasks, "\n")]);
 }
 
 export function eventText(event: { title: string; location: string | null; description: string | null }): string {
