@@ -44,6 +44,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | --- | --- | --- |
 | [0025](0025-cards-size.md) | `cards.size` s/m/l/xl | Accepted |
 | [0026](0026-boards-is-favorite.md) | One favourite board per user | Accepted |
+| [0053](0053-card-subtasks.md) | A card with subtasks (title + check) is a project; no switch; promote a subtask to a card; projects and boards in the ⌘K palette, 3 each, most recent first | Accepted |
 
 ## Recepten and Winkelmand
 
@@ -66,7 +67,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | [0021](0021-notes-editor-capabilities.md) | Editor capabilities, extension whitelist, stored-content rules | Accepted |
 | [0022](0022-note-images-storage.md) | Images in notes (storage per 0024) | Accepted, amended by 0024 |
 | [0023](0023-note-links-and-backlinks.md) | `[[` note links, `note_links`, backlinks | Accepted |
-| [0048](0048-note-save-conflicts.md) | Note saves carry `notes.content_version`; an outdated copy is refused (`NL409`) and the editor asks to reload | Accepted |
+| [0056](0056-note-save-conflicts.md) | Note saves carry `notes.content_version`; an outdated copy is refused (`NL409`) and the editor asks to reload | Accepted |
 
 ## Agenda, AI and history
 
@@ -76,10 +77,11 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | [0040](0040-agenda-categories-are-calendars.md) | Categories are manual calendars with `calendars.color` (9-colour palette, code-only tokens); delete moves contents; visibility per device | Accepted |
 | [0041](0041-agenda-quick-add.md) | One quick-add surface (+ Nieuw, slot, `N`); deterministic parsing with `chrono-node` + own rules, no AI | Accepted |
 | [0042](0042-recurring-own-events.md) | Recurring own events: rule in `calendar_event_series`, occurrences materialised 400 days ahead, edit/delete scope | Accepted |
-| [0043](0043-connections-layer-embeddings.md) | Embeddings: `bge-m3` on Cloudflare Workers AI, opt-in per member, backlog scan instead of a queue, exclusive-arc `embeddings`, hybrid search across modules | Accepted, amended by 0046 |
+| [0043](0043-connections-layer-embeddings.md) | Embeddings: `bge-m3` on Cloudflare Workers AI, opt-in per member, backlog scan instead of a queue, exclusive-arc `embeddings`, hybrid search across modules | Accepted, amended by 0046 and 0048 |
 | [0044](0044-activity-history.md) | Append-only `activity_events`: basket items added/checked and meals cooked, recorded by triggers for every member | Accepted |
 | [0050](0050-done-columns.md) | `board_columns.is_done`: finished cards leave the Agenda, widget, plan drawer and pattern context; no archiving | Accepted |
 | [0046](0046-assistant-signals.md) | Assistent: deterministic rhythm signals for every member, LLM pattern signals on opt-in (no tools, plain text); never a stuck-card reminder; no surface yet | Accepted, amended by 0050 |
 | [0047](0047-iphone-day-widget.md) | iPhone day widget: Scriptable script, read-only widget token, `widget_today()` acting through the `atlas_widget` role under RLS, tap via the "Open Atlas" Shortcut | Accepted |
+| [0048](0048-command-palette.md) | ⌘K opens a command palette modal (replaces `SearchPanel`): boards with deterministic progress, quick actions via `?nieuw=1`, search results; `Kbd` and `ProgressRing` atoms | Accepted |
 | [0008](0008-calendar-sync-and-ui-library.md) | Read-only sync, Schedule-X, SSRF guard | Superseded by 0037 |
 | [0006](0006-embedding-pipeline.md) | Jobs + worker + `bge-m3` via Ollama | Superseded by 0043 |

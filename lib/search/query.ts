@@ -36,10 +36,16 @@ type Hydrated = Omit<SearchResult, "score"> & { contentHash?: string | null; sta
 
 const CANDIDATES = 100;
 
-const toHits = (rows: Array<{ source_type: string; source_id: string; score: number }> | null): RankedHit[] =>
-  (rows ?? []).flatMap((row) =>
-    isSearchType(row.source_type) ? [{ sourceType: row.source_type, sourceId: row.source_id, score: row.score }] : [],
-  );
+// A source appears once, at its first (best) row: rows come ordered best first.
+const toHits = (rows: Array<{ source_type: string; source_id: string; score: number }> | null): RankedHit[] => {
+  const seen = new Set<string>();
+  return (rows ?? []).flatMap((row) => {
+    const key = `${row.source_type}:${row.source_id}`;
+    if (!isSearchType(row.source_type) || seen.has(key)) return [];
+    seen.add(key);
+    return [{ sourceType: row.source_type, sourceId: row.source_id, score: row.score }];
+  });
+};
 
 async function semanticHits(client: Client, q: string, types: SearchType[] | null): Promise<RankedHit[]> {
   const [vector] = await embed({ texts: [q], purpose: "search_query" });
