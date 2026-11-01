@@ -69,6 +69,8 @@ export interface AgendaPageProps {
   initialNotices: SyncNoticeView[];
   /** Recipes the plan drawer offers. */
   recipes: PlanRecipe[];
+  /** Recipes with an open cook-rhythm signal, shown first in the plan drawer (ADR-0046 §6). */
+  longNotCookedIds?: readonly string[];
   recipeCategories: { id: string; name: string }[];
   /** Open cards the plan drawer offers, per board. */
   cardGroups: PlanCardGroup[];
@@ -108,6 +110,7 @@ export function AgendaPage({
   initialItems,
   initialNotices,
   recipes,
+  longNotCookedIds,
   recipeCategories,
   cardGroups,
   todoBoard,
@@ -481,6 +484,7 @@ export function AgendaPage({
             recipes={
               <PlanRecipeList
                 recipes={recipes}
+                highlightedIds={longNotCookedIds}
                 categories={recipeCategories}
                 today={today}
                 onPlan={(recipeId, plannedOn, slot) => planRecipe(recipeId, { plannedOn, slot })}

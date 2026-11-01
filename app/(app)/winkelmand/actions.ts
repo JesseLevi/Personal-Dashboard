@@ -1,5 +1,6 @@
 "use server";
 
+import { settleAssistantSignals } from "@/lib/assistant/settle";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -118,6 +119,7 @@ export async function addShoppingListItem(
     return { success: false, error: "generic" };
   }
 
+  await settleAssistantSignals(supabase, { kind: "buy_rhythm", itemName: parsed.data.name });
   revalidatePath("/winkelmand", "layout");
   return { success: true, data };
 }
