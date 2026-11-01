@@ -17,3 +17,15 @@ export function boardProgress(columns: readonly ProgressColumn[]): { total: numb
   }
   return { total, done: doneColumns.reduce((sum, column) => sum + column.cardCount, 0) };
 }
+
+/**
+ * Whether a card's column counts as done: the `isDone` flag when the board's columns carry it, otherwise the
+ * last column by position (same rule as `boardProgress`). Switching to the flag is passing `isDone`.
+ */
+export function isDoneColumn(
+  column: { position: number; isDone?: boolean },
+  boardPositions: readonly number[],
+): boolean {
+  if (column.isDone !== undefined) return column.isDone;
+  return boardPositions.length > 0 && column.position === Math.max(...boardPositions);
+}
