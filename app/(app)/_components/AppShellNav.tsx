@@ -27,6 +27,7 @@ import { useSearchShortcut } from "./useSearchShortcut";
 // an entry (assistant) have no page yet, so clicking them is a deliberate
 // no-op rather than a link to a 404.
 const ROUTES: Partial<Record<SidebarItemId, string>> = {
+  today: "/vandaag",
   todo: "/te-doen",
   agenda: "/agenda",
   notes: "/notities",
@@ -179,6 +180,7 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
   const page = usePageTransition(pathname, (href) => router.push(href));
 
   const labels: Record<SidebarItemId, string> = {
+    today: t("items.today"),
     todo: t("items.todo"),
     agenda: t("items.agenda"),
     notes: t("items.notes"),

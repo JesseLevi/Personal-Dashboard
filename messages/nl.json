@@ -425,6 +425,7 @@
       "expandLabel": "Zijbalk uitklappen",
       "collapseLabel": "Zijbalk inklappen",
       "items": {
+        "today": "Vandaag",
         "todo": "Te doen",
         "notes": "Notities",
         "recipes": "Recepten",
@@ -1486,5 +1487,25 @@
       "dinner": "Diner",
       "snack": "Tussendoor"
     }
+  },
+  "vandaag": {
+    "title": "Vandaag",
+    "events": "Afspraken",
+    "noEvents": "Geen afspraken vandaag.",
+    "allDay": "Hele dag",
+    "meals": "Eten",
+    "noMeals": "Nog niets gepland.",
+    "dayToBasket": "Dag naar mand",
+    "dayToBasketAdded": "In de mand",
+    "chooseBasket": "Kies een mand",
+    "cards": "Kaarten",
+    "noCards": "Geen geplande kaarten of deadlines.",
+    "planned": "Gepland",
+    "deadline": "Deadline",
+    "basket": "Mand",
+    "basketCount": "{count, plural, =0 {Niets open in je mand} one {# item open} other {# items open}}",
+    "openBasket": "Naar de mand",
+    "signals": "Misschien handig",
+    "openAgenda": "Naar de Agenda"
   }
 }
