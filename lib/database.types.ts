@@ -1817,10 +1817,7 @@ export type Database = {
           share_id: string
         }[]
       }
-      promote_card_subtask: {
-        Args: { p_subtask_id: string }
-        Returns: string
-      }
+      promote_card_subtask: { Args: { p_subtask_id: string }; Returns: string }
       replace_recipe_contents: {
         Args: { p_ingredients: Json; p_recipe_id: string; p_steps: Json }
         Returns: undefined
