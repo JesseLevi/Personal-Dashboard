@@ -12,7 +12,7 @@ Browser (PWA) ──HTTPS──► Next.js on Vercel (fra1)
                           └── public web pages                       (lib/net/safe-fetch, recipe import)
 ```
 
-- The browser only talks to Atlas (ADR-0033). There is one hosted environment, production. Builds, promotion and migrations follow ADR-0032. Hosted settings that live outside the repo are listed in `docs/operations.md`.
+- The browser only talks to Atlas (ADR-0033). One hosted environment, production; builds, promotion and migrations follow ADR-0032. Hosted settings outside the repo: `docs/operations.md`.
 - Async work runs after the response via Next.js `after()`, plus daily cron routes. There is no always-on worker (ADR-0018 §4).
 
 ## 2. Repository layout
@@ -57,7 +57,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 - **Recipe share = copy** (ADR-0036): a recipe offer is a pending `shares` row (`recipe_id`, never `accepted`). The invitee reads it only through `pending_recipe_shares()`; `accept_recipe_share()` (definer) copies the recipe into their own first category, then `lib/sharing/recipes.ts` copies the thumbnail in R2.
 - **Small closed sets** are text with a check constraint (`priority`, `size`, `source`). Units are the shared enum `public.recipe_unit` (ADR-0028).
 - **Ordering**: fractional `position` (numeric midpoint), in TS and SQL (ADR-0015).
-- **Multi-statement writes** are `security invoker` RPCs with `search_path = ''`, an explicit ownership guard, and execute granted only to `authenticated`: `replace_recipe_contents`, `move_card`, `move_recipe`, `move_note`, `toggle_board_favorite`, `save_note_content` (ADR-0015/0030).
+- **Multi-statement writes** are `security invoker` RPCs with `search_path = ''`, an explicit ownership guard, and execute granted only to `authenticated`: `replace_recipe_contents`, `move_card`, `move_recipe`, `move_note`, `toggle_board_favorite`, `save_note_content`, `promote_card_subtask` (ADR-0015/0030).
 - **Per-user defaults** are seeded by triggers at signup and lazily by `ensure_user_defaults()` (ADR-0017).
 - `lib/database.types.ts` is generated in CI. Never hand-edit it.
 
@@ -66,7 +66,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 | Area | Tables |
 | --- | --- |
 | Account | `profiles` (`display_name` = first name, `last_name`, `locale`), `user_seeds` |
-| Te doen | `boards` (`is_favorite`, one per user), `board_columns` (`icon`, `is_done`, ADR-0050), `cards` (`priority`, `size`, `due_at`, `source`), `labels`, `card_labels` |
+| Te doen | `boards` (`is_favorite`, one per user), `board_columns` (`icon`, `is_done`, ADR-0050), `cards` (`priority`, `size`, `due_at`, `source`), `labels`, `card_labels`, `card_subtasks` (ADR-0053) |
 | Recepten | `recipe_categories` (`icon`), `recipes` (`thumbnail_path`, `source_url`, `import_status`, `import_error`), `recipe_ingredients` (`ingredient_id`, `unit`, `group_label`, `needs_review`), `recipe_steps`, `recipe_step_ingredients`, `tags`, `recipe_tags` |
 | Ingredient library | `ingredients` (user layer, nullable `reference_id`), `ingredient_unit_masses` (user overrides), `ingredient_aliases` (user) |
 | Reference | `reference.ingredients` (NEVO + `eigen`, nutrients per 100 g, bilingual names/categories), `reference.ingredient_unit_masses` (NEVO portions, USDA), `reference.ingredient_aliases` (admin) |
@@ -79,7 +79,7 @@ Agenda tables: §7.
 
 ### 4.3 Search
 
-Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredient matching runs own alias, then shared alias, then `pg_trgm` (`match_ingredient_candidates`), then the LLM (ADR-0020). Phase 8 adds semantic search across modules (§6).
+Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredient matching: own alias, shared alias, `pg_trgm` (`match_ingredient_candidates`), then the LLM (ADR-0020). Cross-module semantic search: §6; ⌘K palette: ADR-0048.
 
 ### 4.4 Object storage
 

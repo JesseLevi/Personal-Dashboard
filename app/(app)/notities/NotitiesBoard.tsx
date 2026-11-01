@@ -13,6 +13,7 @@ import { Card } from "@/components/molecules/Card";
 import { CardContentNote } from "@/components/molecules/CardContentNote";
 import { isIconName, type IconName } from "@/components/atoms/Icon";
 import { applyItemMove, type CardMove } from "@/lib/boards/optimistic";
+import { useNewParam } from "@/lib/dom/use-new-param";
 import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import { formatNoteTimestamp } from "@/lib/notes/timestamp";
 import { NOTE_SORT_OPTIONS, type NoteSortOption } from "@/lib/notes/sort";
@@ -236,6 +237,12 @@ export function NotitiesBoard({
     icon: isIconName(category.icon) ? category.icon : FALLBACK_CATEGORY_ICON,
     items: category.notes,
   }));
+
+  // `?nieuw=1`: a new note in the first category, like that column's "+".
+  useNewParam(() => {
+    const categoryId = columns[0]?.id;
+    if (categoryId) void handleAddNote(categoryId);
+  });
 
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const sortMenuRef = useRef<HTMLDivElement>(null);
