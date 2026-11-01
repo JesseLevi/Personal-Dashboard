@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/atoms/Button";
 import { CommandPalette } from "@/components/organisms/CommandPalette";
 import { useIsNarrow } from "@/components/organisms/AgendaCalendar";
-import { getCommandBoardsAction } from "@/app/(app)/command-actions";
+import { getCommandBoardsAction, getCommandProjectsAction } from "@/app/(app)/command-actions";
 import { searchAllAction } from "@/app/(app)/search-actions";
 import { signOut } from "@/app/login/actions";
 import { COMMAND_ACTIONS } from "@/lib/command/actions";
@@ -439,6 +439,7 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
         autoFocusField={!narrow}
         actions={COMMAND_ACTIONS}
         loadBoards={getCommandBoardsAction}
+        loadProjects={getCommandProjectsAction}
       />
 
       <SettingsPanel

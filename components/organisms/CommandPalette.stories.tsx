@@ -1,7 +1,7 @@
 // design: Claude-designed (#686)
 import { useState, type ReactNode } from "react";
 import { PanelFrame, StoryIntro } from "@/.ladle/story-kit";
-import { COMMAND_ACTION_IDS, type CommandAction, type CommandBoard } from "@/lib/command/types";
+import { COMMAND_ACTION_IDS, type CommandAction, type CommandBoard, type CommandProject } from "@/lib/command/types";
 import type { SearchPanelAction } from "@/lib/search/panel";
 import type { SearchResult } from "@/lib/search/query";
 import { Button } from "../atoms/Button";
@@ -32,6 +32,14 @@ const boards: CommandBoard[] = [
   { id: "b4", name: "November cadeaus", href: "/te-doen/b4", total: 7, done: 1, isFavorite: false },
 ];
 const loadBoards: CommandPaletteProps["loadBoards"] = async () => ({ success: true, data: boards });
+
+const projects: CommandProject[] = [
+  { id: "c10", title: "Verhuisdoos-planning", href: "/te-doen/b1?card=c10", boardName: "Verhuizing", total: 8, done: 3 },
+  { id: "c11", title: "Kerstdiner voorbereiden", href: "/te-doen/b2?card=c11", boardName: "Weekmenu najaar", total: 5, done: 5 },
+  { id: "c12", title: "Moestuin winterklaar", href: "/te-doen/b3?card=c12", boardName: "Moestuin", total: 1, done: 0 },
+  { id: "c13", title: "Cadeaus Sinterklaas", href: "/te-doen/b4?card=c13", boardName: "November cadeaus", total: 6, done: 2 },
+];
+const loadProjects: CommandPaletteProps["loadProjects"] = async () => ({ success: true, data: projects });
 
 const results: SearchResult[] = [
   {
@@ -76,6 +84,7 @@ const Harness = ({ intro, ...props }: Partial<CommandPaletteProps> & { intro?: R
       autoFocusField={false}
       actions={actions}
       loadBoards={loadBoards}
+      loadProjects={loadProjects}
       {...props}
     />
   </PanelFrame>
@@ -83,7 +92,7 @@ const Harness = ({ intro, ...props }: Partial<CommandPaletteProps> & { intro?: R
 
 // The palette is fixed, so states cannot sit side by side: Overview shows the empty field, the rest are stories.
 export const Overview = () => (
-  <Harness intro={<StoryIntro what="The ⌘K palette: boards with progress and quick actions, search results once you type." note="CommandPalette" />} />
+  <Harness intro={<StoryIntro what="The ⌘K palette: projects and boards with progress, quick actions, search results once you type." note="CommandPalette" />} />
 );
 
 // Opens from a button; try typing "no", the arrow keys, Enter and Escape.
@@ -109,6 +118,7 @@ export const Interactive = () => {
         autoFocusField
         actions={actions}
         loadBoards={loadBoards}
+        loadProjects={loadProjects}
       />
     </PanelFrame>
   );
@@ -116,6 +126,20 @@ export const Interactive = () => {
 
 // Matches an action, a board and every search group at once.
 export const Results = () => <Harness initialQuery="no" />;
+
+// A project title match sits between Acties and Borden; the card hit for the same project is dropped.
+export const ProjectMatch = () => (
+  <Harness
+    initialQuery="cadeaus"
+    onSearch={async () => ({
+      success: true,
+      data: {
+        mode: "hybrid",
+        results: [{ type: "card", id: "c13", title: "Cadeaus Sinterklaas", snippet: null, href: "/te-doen/b4?card=c13", score: 0.02 }],
+      },
+    })}
+  />
+);
 
 export const Loading = () => <Harness initialQuery="zzz" onSearch={pending} />;
 
