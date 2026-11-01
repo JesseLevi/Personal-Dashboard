@@ -7,7 +7,7 @@ type RawBoard = {
   id: string;
   name: string;
   is_favorite: boolean;
-  board_columns: Array<{ position: number; cards: Array<{ count: number }> }>;
+  board_columns: Array<{ position: number; is_done: boolean; cards: Array<{ count: number }> }>;
 };
 
 /** Te doen boards with deterministic progress, favourites first then by position. One RLS-bound round trip. */
@@ -15,7 +15,7 @@ export async function getCommandBoards(): Promise<CommandBoard[]> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("boards")
-    .select("id, name, is_favorite, board_columns(position, cards(count))")
+    .select("id, name, is_favorite, board_columns(position, is_done, cards(count))")
     .order("is_favorite", { ascending: false })
     .order("position", { ascending: true })
     .overrideTypes<RawBoard[], { merge: false }>();
@@ -34,6 +34,7 @@ export async function getCommandBoards(): Promise<CommandBoard[]> {
       board.board_columns.map((column) => ({
         position: column.position,
         cardCount: column.cards[0]?.count ?? 0,
+        isDone: column.is_done,
       })),
     ),
   }));

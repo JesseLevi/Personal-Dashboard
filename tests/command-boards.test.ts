@@ -32,7 +32,7 @@ function boardsBuilder(result: Result) {
   return { builder: b, orders, selects };
 }
 
-const column = (position: number, count: number) => ({ position, cards: [{ count }] });
+const column = (position: number, count: number, isDone = false) => ({ position, is_done: isDone, cards: [{ count }] });
 
 beforeEach(() => {
   fromMock.mockReset();
@@ -44,7 +44,7 @@ describe("getCommandBoards", () => {
   it("reads boards, columns and card counts in one query, favourites first", async () => {
     const { builder, orders, selects } = boardsBuilder({
       data: [
-        { id: "b1", name: "Werk", is_favorite: true, board_columns: [column(0, 2), column(3, 3), column(1, 1)] },
+        { id: "b1", name: "Werk", is_favorite: true, board_columns: [column(0, 2), column(3, 3, true), column(1, 1)] },
         { id: "b2", name: "Thuis", is_favorite: false, board_columns: [] },
       ],
       error: null,
@@ -55,7 +55,7 @@ describe("getCommandBoards", () => {
 
     expect(fromMock).toHaveBeenCalledTimes(1);
     expect(fromMock).toHaveBeenCalledWith("boards");
-    expect(selects[0]).toContain("board_columns(position, cards(count))");
+    expect(selects[0]).toContain("board_columns(position, is_done, cards(count))");
     expect(orders).toEqual([
       ["is_favorite", { ascending: false }],
       ["position", { ascending: true }],
@@ -68,7 +68,7 @@ describe("getCommandBoards", () => {
 
   it("treats a column without a count row as empty", async () => {
     const { builder } = boardsBuilder({
-      data: [{ id: "b1", name: "Werk", is_favorite: false, board_columns: [{ position: 0, cards: [] }] }],
+      data: [{ id: "b1", name: "Werk", is_favorite: false, board_columns: [{ position: 0, is_done: false, cards: [] }] }],
       error: null,
     });
     fromMock.mockReturnValue(builder);
