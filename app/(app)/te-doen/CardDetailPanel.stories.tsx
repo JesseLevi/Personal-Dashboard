@@ -1,7 +1,7 @@
 // figma: node-id=3779:4846 (+3779:4938 desktop)
 import { useEffect, useRef, useState } from "react";
 import { CardDetailPanel, type CardDetailPanelColumn } from "./CardDetailPanel";
-import type { ActionResult, CardRow, CardWithLabels } from "@/lib/boards/types";
+import type { ActionResult, CardRow, CardWithLabels, SubtaskRow } from "@/lib/boards/types";
 import nl from "@/messages/nl.json";
 import { Button } from "@/components/atoms/Button";
 import { StoryIntro } from "@/.ladle/story-kit";
@@ -15,7 +15,7 @@ export default { title: "Te doen / Card detail panel" } satisfies StoryDefault;
 // request context, which Ladle's plain Vite runtime doesn't have.
 async function mockCreateCard(input: unknown): Promise<ActionResult<CardRow>> {
   console.log("createCard", input);
-  return { success: true, data: input as unknown as CardRow };
+  return { success: true, data: { ...(input as object), id: "card-new" } as unknown as CardRow };
 }
 async function mockUpdateCard(input: unknown): Promise<ActionResult> {
   console.log("updateCard", input);
@@ -30,12 +30,57 @@ async function mockDeleteCard(input: unknown): Promise<ActionResult> {
   return { success: true, data: undefined };
 }
 
+const subtask = (id: string, title: string, position: number, done = false): SubtaskRow => ({
+  id,
+  card_id: "card-1",
+  user_id: "user-1",
+  title,
+  done,
+  position,
+  created_at: "2026-07-01T00:00:00.000Z",
+  updated_at: "2026-07-01T00:00:00.000Z",
+});
+
+// Subtask actions with an in-memory list, so the story reacts to adds, checks and deletes.
+function subtaskMocks(initial: SubtaskRow[] = []) {
+  let rows = initial;
+  return {
+    onListSubtasks: async (): Promise<ActionResult<SubtaskRow[]>> => ({ success: true, data: rows }),
+    onAddSubtasks: async (input: unknown): Promise<ActionResult<SubtaskRow[]>> => {
+      const { titles } = input as { titles: string[] };
+      const added = titles.map((title, index) => subtask(`new-${rows.length + index}`, title, rows.length + index + 1));
+      rows = [...rows, ...added];
+      return { success: true, data: added };
+    },
+    onRenameSubtask: async (input: unknown): Promise<ActionResult> => {
+      const { id, title } = input as { id: string; title: string };
+      rows = rows.map((row) => (row.id === id ? { ...row, title } : row));
+      return { success: true, data: undefined };
+    },
+    onSetSubtaskDone: async (input: unknown): Promise<ActionResult> => {
+      const { id, done } = input as { id: string; done: boolean };
+      rows = rows.map((row) => (row.id === id ? { ...row, done } : row));
+      return { success: true, data: undefined };
+    },
+    onDeleteSubtask: async (input: unknown): Promise<ActionResult> => {
+      const { id } = input as { id: string };
+      rows = rows.filter((row) => row.id !== id);
+      return { success: true, data: undefined };
+    },
+    onPromoteSubtask: async (input: unknown): Promise<ActionResult<{ cardId: string }>> => {
+      const { id } = input as { id: string };
+      rows = rows.filter((row) => row.id !== id);
+      return { success: true, data: { cardId: "card-promoted" } };
+    },
+  };
+}
+
 // Same 4-column shape BoardView.stories.tsx samples (Ideeën/Klaar/Bezig/Afgerond).
 const columns: CardDetailPanelColumn[] = [
   { id: "ideeen", name: "Ideeën", icon: "Lightbulb" },
   { id: "klaar", name: "Klaar", icon: "AlarmClockCheck" },
   { id: "bezig", name: "Bezig", icon: "Loader" },
-  { id: "afgerond", name: "Afgerond", icon: "CircleCheck" },
+  { id: "afgerond", name: "Afgerond", icon: "CircleCheck", isDone: true },
 ];
 
 const sampleCard: CardWithLabels = {
@@ -82,6 +127,7 @@ export const Overview = () => (
       onUpdateCard={mockUpdateCard}
       onMoveCard={mockMoveCard}
       onDeleteCard={mockDeleteCard}
+      {...subtaskMocks()}
     />
   </div>
 );
@@ -99,6 +145,7 @@ export const CreateItem = () => (
       onUpdateCard={mockUpdateCard}
       onMoveCard={mockMoveCard}
       onDeleteCard={mockDeleteCard}
+      {...subtaskMocks()}
     />
   </div>
 );
@@ -117,6 +164,7 @@ export const EditItem = () => (
       onUpdateCard={mockUpdateCard}
       onMoveCard={mockMoveCard}
       onDeleteCard={mockDeleteCard}
+      {...subtaskMocks()}
     />
   </div>
 );
@@ -151,6 +199,7 @@ export const EditItemDeleteConfirm = () => {
         onUpdateCard={mockUpdateCard}
         onMoveCard={mockMoveCard}
         onDeleteCard={mockDeleteCard}
+        {...subtaskMocks()}
       />
     </div>
   );
@@ -164,6 +213,9 @@ export const Interactive = () => {
     target: { mode: "create"; columnId: string } | { mode: "edit"; card: CardWithLabels };
   }>({ open: false, target: { mode: "create", columnId: "ideeen" } });
   const [lastAction, setLastAction] = useState("Nothing sent yet");
+  const [interactiveSubtasks] = useState(() =>
+    subtaskMocks([subtask("s1", "Taart bestellen", 1), subtask("s2", "Slingers ophangen", 2), subtask("s3", "Gasten uitnodigen", 3, true)]),
+  );
 
   const report = (name: string, input: unknown) => {
     setLastAction(`${name}: ${JSON.stringify(input)}`);
@@ -211,6 +263,7 @@ export const Interactive = () => {
           report("deleteCard", input);
           return mockDeleteCard(input);
         }}
+        {...interactiveSubtasks}
       />
     </div>
   );
@@ -228,6 +281,111 @@ export const EditItemPlanned = () => (
       onUpdateCard={mockUpdateCard}
       onMoveCard={mockMoveCard}
       onDeleteCard={mockDeleteCard}
+      {...subtaskMocks()}
     />
   </div>
 );
+
+const openAndDone = [
+  subtask("s1", "Taart bestellen bij de bakker op de hoek", 1),
+  subtask("s2", "Slingers ophangen", 2),
+  subtask("s3", "Cadeau inpakken", 3),
+  subtask("s4", "Gasten uitnodigen", 4, true),
+  subtask("s5", "Locatie reserveren", 5, true),
+];
+
+// Edit mode of a project: open subtasks first, the done ones behind the "afgerond" toggle.
+export const WithSubtasks = () => (
+  <div className="min-h-screen">
+    <CardDetailPanel
+      open
+      onClose={() => {}}
+      columns={columns}
+      target={{ mode: "edit", card: { ...sampleCard, subtaskTotal: 5, subtaskDone: 2 } }}
+      onCreateCard={mockCreateCard}
+      onUpdateCard={mockUpdateCard}
+      onMoveCard={mockMoveCard}
+      onDeleteCard={mockDeleteCard}
+      {...subtaskMocks(openAndDone)}
+    />
+  </div>
+);
+
+// Every subtask checked and the card outside a done column: the panel offers to move it, never does it itself.
+export const SubtasksAllDone = () => (
+  <div className="min-h-screen">
+    <CardDetailPanel
+      open
+      onClose={() => {}}
+      columns={columns}
+      target={{ mode: "edit", card: { ...sampleCard, subtaskTotal: 3, subtaskDone: 3 } }}
+      onCreateCard={mockCreateCard}
+      onUpdateCard={mockUpdateCard}
+      onMoveCard={mockMoveCard}
+      onDeleteCard={mockDeleteCard}
+      {...subtaskMocks([subtask("s1", "Taart bestellen", 1, true), subtask("s2", "Slingers ophangen", 2, true), subtask("s3", "Gasten uitnodigen", 3, true)])}
+    />
+  </div>
+);
+
+// At 50 subtasks the add field is disabled and a hint says why.
+export const SubtasksLimit = () => (
+  <div className="min-h-screen">
+    <CardDetailPanel
+      open
+      onClose={() => {}}
+      columns={columns}
+      target={{ mode: "edit", card: { ...sampleCard, subtaskTotal: 50, subtaskDone: 0 } }}
+      onCreateCard={mockCreateCard}
+      onUpdateCard={mockUpdateCard}
+      onMoveCard={mockMoveCard}
+      onDeleteCard={mockDeleteCard}
+      {...subtaskMocks(Array.from({ length: 50 }, (_, index) => subtask(`s${index}`, `Subtaak ${index + 1}`, index + 1)))}
+    />
+  </div>
+);
+
+// Types titles into the add field the way a user would (Enter after each), for the story below.
+function typeSubtasks(container: HTMLElement, titles: string[]) {
+  const input = container.querySelector<HTMLInputElement>(`input[aria-label="${nl.components.cardDetailPanel.subtasks.addLabel}"]`);
+  if (!input) return;
+  const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+  titles.reduce(
+    (previous, title) =>
+      previous.then(
+        () =>
+          new Promise<void>((resolve) => {
+            setValue?.call(input, title);
+            input.dispatchEvent(new Event("input", { bubbles: true }));
+            setTimeout(() => {
+              input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+              setTimeout(resolve, 0);
+            }, 0);
+          }),
+      ),
+    Promise.resolve(),
+  );
+}
+
+// Create mode: the rows are buffered in the panel and written right after the card is created.
+export const CreateItemWithSubtasks = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (containerRef.current) typeSubtasks(containerRef.current, ["Taart bestellen", "Slingers ophangen", "Gasten uitnodigen"]);
+  }, []);
+  return (
+    <div ref={containerRef} className="min-h-screen">
+      <CardDetailPanel
+        open
+        onClose={() => {}}
+        columns={columns}
+        target={{ mode: "create", columnId: "ideeen" }}
+        onCreateCard={mockCreateCard}
+        onUpdateCard={mockUpdateCard}
+        onMoveCard={mockMoveCard}
+        onDeleteCard={mockDeleteCard}
+        {...subtaskMocks()}
+      />
+    </div>
+  );
+};

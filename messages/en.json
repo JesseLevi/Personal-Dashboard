@@ -304,7 +304,8 @@
       "low": "Low",
       "medium": "Medium",
       "urgent": "Urgent"
-    }
+    },
+    "subtaskProgress": "{done} of {total} subtasks done"
   },
   "notes": {
     "errors": {
@@ -590,7 +591,19 @@
       "deleteConfirmLabel": "Are you sure?",
       "deleteConfirmButtonLabel": "Yes, delete",
       "deletingLabel": "Deleting...",
-      "cancelLabel": "Cancel"
+      "cancelLabel": "Cancel",
+      "subtasks": {
+        "title": "Subtasks",
+        "addLabel": "Add subtask",
+        "editLabel": "Edit subtask",
+        "moreLabel": "More actions for {title}",
+        "promoteLabel": "Make it a card",
+        "deleteLabel": "Delete",
+        "doneToggle": "{count, plural, one {# done} other {# done}}",
+        "limitHint": "A card can have at most {max} subtasks.",
+        "allDone": "All done. Move to {column}?",
+        "moveLabel": "Move"
+      }
     },
     "categoryPanel": {
       "addTitle": "Add category",

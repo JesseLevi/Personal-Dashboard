@@ -19,7 +19,19 @@ import { useTeDoenColumnPanel } from "./TeDoenColumnPanel";
 import { clearBoardEnter, useTeDoenBoardSwitch, wantsBoardEnter } from "./TeDoenBoardSwitch";
 import { CardDetailPanel, type CardDetailPanelTarget } from "./CardDetailPanel";
 import { getAgendaEventRefs } from "../agenda/link-actions";
-import { createCard, deleteCard, moveCard, updateCard } from "./actions";
+import { SubtaskProgressTag } from "./SubtaskProgressTag";
+import {
+  addSubtasks,
+  createCard,
+  deleteCard,
+  deleteSubtask,
+  listSubtasks,
+  moveCard,
+  promoteSubtask,
+  renameSubtask,
+  setSubtaskDone,
+  updateCard,
+} from "./actions";
 
 // Client wrapper around BoardView (#93) — also owns the card-detail
 // SidePanel's open/target state and the server-action calls (#94), per the
@@ -146,7 +158,7 @@ export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProp
   }));
   // Done styling: cards in a done column (ADR-0050).
   const doneColumnIds = new Set(localBoard.columns.filter((column) => column.is_done).map((column) => column.id));
-  const panelColumns = columns.map(({ id, name, icon }) => ({ id, name, icon }));
+  const panelColumns = columns.map(({ id, name, icon }) => ({ id, name, icon, isDone: doneColumnIds.has(id) }));
 
   // `open`/`target` are independent: closing (X, overlay, Escape) only
   // flips `open` and leaves `target` pointing at whatever was last shown, so
@@ -222,6 +234,7 @@ export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProp
                   {label.name}
                 </Tag>
               ))}
+              {card.subtaskTotal > 0 && <SubtaskProgressTag done={card.subtaskDone} total={card.subtaskTotal} />}
             </CardContentTicket>
           );
         }}
@@ -237,6 +250,12 @@ export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProp
         onDeleteCard={deleteCard}
         onMutated={() => router.refresh()}
         onLoadAgendaEvents={getAgendaEventRefs}
+        onListSubtasks={listSubtasks}
+        onAddSubtasks={addSubtasks}
+        onRenameSubtask={renameSubtask}
+        onSetSubtaskDone={setSubtaskDone}
+        onDeleteSubtask={deleteSubtask}
+        onPromoteSubtask={promoteSubtask}
       />
     </>
   );

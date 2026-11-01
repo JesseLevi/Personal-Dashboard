@@ -304,7 +304,8 @@
       "low": "Laag",
       "medium": "Gemiddeld",
       "urgent": "Urgent"
-    }
+    },
+    "subtaskProgress": "{done} van {total} subtaken af"
   },
   "notes": {
     "errors": {
@@ -590,7 +591,19 @@
       "deleteConfirmLabel": "Weet je het zeker?",
       "deleteConfirmButtonLabel": "Ja, verwijderen",
       "deletingLabel": "Verwijderen...",
-      "cancelLabel": "Annuleren"
+      "cancelLabel": "Annuleren",
+      "subtasks": {
+        "title": "Subtaken",
+        "addLabel": "Subtaak toevoegen",
+        "editLabel": "Subtaak bewerken",
+        "moreLabel": "Meer acties voor {title}",
+        "promoteLabel": "Maak er een kaart van",
+        "deleteLabel": "Verwijderen",
+        "doneToggle": "{count, plural, one {# afgerond} other {# afgerond}}",
+        "limitHint": "Een kaart kan maximaal {max} subtaken hebben.",
+        "allDone": "Alles af. Naar {column}?",
+        "moveLabel": "Verplaatsen"
+      }
     },
     "categoryPanel": {
       "addTitle": "Categorie toevoegen",
