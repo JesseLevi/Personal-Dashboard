@@ -79,7 +79,7 @@ Agenda tables: §7.
 
 ### 4.3 Search
 
-Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredient matching runs own alias, then shared alias, then `pg_trgm` (`match_ingredient_candidates`), then the LLM (ADR-0020). Phase 8 adds semantic search across modules (§6).
+Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredient matching: own alias, shared alias, `pg_trgm` (`match_ingredient_candidates`), then the LLM (ADR-0020). Cross-module semantic search: §6; ⌘K palette: ADR-0048.
 
 ### 4.4 Object storage
 
