@@ -3,8 +3,17 @@
 // design: Claude-designed (#686)
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useFormatter, useTranslations } from "next-intl";
-import { matchingActions, matchingBoards, boardPercent, pinnedBoards, type PaletteGroup, type PaletteRow } from "@/lib/command/palette";
-import type { CommandAction, CommandBoard } from "@/lib/command/types";
+import {
+  matchingActions,
+  matchingBoards,
+  matchingProjects,
+  boardPercent,
+  pinnedBoards,
+  pinnedProjects,
+  type PaletteGroup,
+  type PaletteRow,
+} from "@/lib/command/palette";
+import type { CommandAction, CommandBoard, CommandProject } from "@/lib/command/types";
 import { NOTES_SEARCH_MIN_QUERY_LENGTH } from "@/lib/notes/search";
 import { groupResults, moveActive, SEARCH_PANEL_DEBOUNCE_MS, showSmartSearchHint, type SearchPanelAction } from "@/lib/search/panel";
 import type { SearchType } from "@/lib/search/merge";
@@ -38,6 +47,7 @@ type View =
   | { status: "done"; response: SearchResponse };
 
 type BoardsResult = { success: true; data: CommandBoard[] } | { success: false; error: string };
+type ProjectsResult = { success: true; data: CommandProject[] } | { success: false; error: string };
 
 export interface CommandPaletteProps {
   open: boolean;
@@ -57,6 +67,8 @@ export interface CommandPaletteProps {
   actions: readonly CommandAction[];
   /** Called on every open; pass a stable reference. The last loaded list is kept so it does not flash. */
   loadBoards: () => Promise<BoardsResult>;
+  /** Like `loadBoards`, for the Projecten group (cards with subtasks, ADR-0053). */
+  loadProjects: () => Promise<ProjectsResult>;
   /** Pre-fills the field and searches at once (keeps the Ladle baselines deterministic). */
   initialQuery?: string;
 }
@@ -136,6 +148,7 @@ export function CommandPalette({
   autoFocusField,
   actions,
   loadBoards,
+  loadProjects,
   initialQuery,
 }: CommandPaletteProps) {
   const t = useTranslations("components.commandPalette");
@@ -147,6 +160,7 @@ export function CommandPalette({
   const [query, setQuery] = useState(initialQuery ?? "");
   const [view, setView] = useState<View>({ status: "idle" });
   const [boards, setBoards] = useState<CommandBoard[] | null>(null);
+  const [projects, setProjects] = useState<CommandProject[] | null>(null);
   const [active, setActive] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -201,6 +215,22 @@ export function CommandPalette({
     };
   }, [open, loadBoards]);
 
+  // Projects load on every open, like boards.
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    loadProjects()
+      .then((result) => {
+        if (!cancelled) setProjects(result.success ? result.data : null);
+      })
+      .catch(() => {
+        if (!cancelled) setProjects(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, loadProjects]);
+
   // Focus returns to the trigger on close.
   useEffect(() => {
     if (open) {
@@ -229,28 +259,35 @@ export function CommandPalette({
   const groups = useMemo<PaletteGroup[]>(() => {
     const actionRow = (action: CommandAction): PaletteRow => ({ kind: "action", key: `action:${action.id}`, action });
     const boardRow = (board: CommandBoard): PaletteRow => ({ kind: "board", key: `board:${board.id}`, board });
+    const projectRow = (project: CommandProject): PaletteRow => ({ kind: "project", key: `project:${project.id}`, project });
     const result: PaletteGroup[] = [];
     const add = (key: string, rows: PaletteRow[]) => {
       if (rows.length > 0) result.push({ key, label: t(`groups.${key}`), rows });
     };
 
-    // Empty field: one `add` per group, in display order (a Projecten group goes above Borden).
+    // Empty field: one `add` per group, in display order.
     if (trimmedQuery === "") {
+      add("projects", pinnedProjects(projects ?? []).map(projectRow));
       add("boards", pinnedBoards(boards ?? []).map(boardRow));
       add("quickActions", actions.filter((action) => action.pinned).map(actionRow));
       return result;
     }
     const labelOf = (action: CommandAction) => t(`actions.${action.id}.label`);
     add("actions", matchingActions(actions, labelOf, trimmedQuery).map(actionRow));
+    const matchedProjects = matchingProjects(projects ?? [], trimmedQuery);
+    add("projects", matchedProjects.map(projectRow));
     add("boards", matchingBoards(boards ?? [], trimmedQuery).map(boardRow));
-    for (const group of groupResults(response?.results ?? [])) {
+    // A card hit that is already a project row is shown once.
+    const projectIds = new Set(matchedProjects.map((project) => project.id));
+    const hits = (response?.results ?? []).filter((item) => !(item.type === "card" && projectIds.has(item.id)));
+    for (const group of groupResults(hits)) {
       add(
         group.type,
         group.items.map((item) => ({ kind: "result", key: `result:${item.type}:${item.id}`, result: item })),
       );
     }
     return result;
-  }, [trimmedQuery, boards, actions, response, t]);
+  }, [trimmedQuery, boards, projects, actions, response, t]);
 
   const rows = useMemo(() => groups.flatMap((group) => group.rows), [groups]);
   const rowsKey = rows.map((row) => row.key).join("|");
@@ -280,6 +317,7 @@ export function CommandPalette({
     handleClose();
     if (row.kind === "action") onRunAction(row.action);
     else if (row.kind === "board") onOpen(row.board.href);
+    else if (row.kind === "project") onOpen(row.project.href);
     else onOpen(row.result.href);
   }
 
@@ -328,13 +366,16 @@ export function CommandPalette({
       const { action } = row;
       return { icon: action.icon, title: t(`actions.${action.id}.label`), meta: t(`actions.${action.id}.meta`) };
     }
-    if (row.kind === "board") {
-      const { board } = row;
-      const percent = boardPercent(board);
-      const meta = t(board.isFavorite ? "boardMetaFavorite" : "boardMeta", { total: board.total, done: board.done });
+    if (row.kind === "board" || row.kind === "project") {
+      const item = row.kind === "board" ? row.board : row.project;
+      const percent = boardPercent(item);
+      const meta =
+        row.kind === "board"
+          ? t(row.board.isFavorite ? "boardMetaFavorite" : "boardMeta", { total: item.total, done: item.done })
+          : t("projectMeta", { total: item.total, done: item.done, boardName: row.project.boardName });
       return {
-        icon: "Columns3",
-        title: board.name,
+        icon: row.kind === "board" ? "Columns3" : "ListTodo",
+        title: row.kind === "board" ? row.board.name : row.project.title,
         meta,
         trailing: percent !== null && (
           <span className="flex shrink-0 items-center gap-inline-sm">
