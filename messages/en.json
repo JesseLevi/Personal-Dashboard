@@ -1436,8 +1436,10 @@
       "hintClose": "close",
       "boardMeta": "{total, plural, one {# card} other {# cards}} · {done} done",
       "boardMetaFavorite": "Favorite · {total, plural, one {# card} other {# cards}} · {done} done",
+      "projectMeta": "{done}/{total} {total, plural, one {subtask} other {subtasks}} · {boardName}",
       "progressLabel": "{percent}% done",
       "groups": {
+        "projects": "Projects",
         "boards": "Boards",
         "quickActions": "Quick actions",
         "actions": "Actions",
