@@ -76,7 +76,8 @@ export function NoteEditor({ note, linkTitles, backlinks, agendaEvents = [] }: N
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const { status, change, retry, discard } = useNoteSave(note.id);
+  // content_version is absent until the ADR-0056 migration is applied.
+  const { status, change, retry, discard, reload } = useNoteSave(note.id, note.content_version ?? null);
 
   // #339: a failed or rejected image upload shows its error here; nothing is inserted.
   const [imageError, setImageError] = useState<string | null>(null);
@@ -218,7 +219,7 @@ export function NoteEditor({ note, linkTitles, backlinks, agendaEvents = [] }: N
       <div className="flex w-full items-center justify-between gap-4">
         <Button icon="ArrowLeft" aria-label={t("backLabel")} onClick={() => router.push("/notities")} />
 
-        {!deleteConfirming && <NoteSaveStatus status={status} onRetry={retry} />}
+        {!deleteConfirming && <NoteSaveStatus status={status} onRetry={retry} onReload={reload} />}
 
         {deleteConfirming ? (
           <DeleteConfirm

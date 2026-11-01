@@ -105,6 +105,8 @@ export const createNoteSchema = z.object({
 export const updateNoteContentSchema = z.object({
   noteId: z.uuid(),
   content: tiptapDocumentSchema,
+  // null = the page was loaded before notes.content_version existed (ADR-0056).
+  expectedVersion: z.number().int().nonnegative().nullable(),
 });
 
 export const deleteNoteSchema = z.object({

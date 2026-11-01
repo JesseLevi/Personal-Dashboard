@@ -10,12 +10,18 @@ const AUTOSAVE_DEBOUNCE_MS = 1000;
 
 // Wires SaveController to the real `updateNoteContent` result (#334): status
 // is never optimistic, and the tab warns while a save is pending or failed.
-export function useNoteSave(noteId: string) {
+export function useNoteSave(noteId: string, initialVersion: number | null) {
   const ref = useRef<SaveController | null>(null);
   if (!ref.current) {
     ref.current = new SaveController(
-      (content) => updateNoteContent({ noteId, content }),
+      async (content, expectedVersion) => {
+        const result = await updateNoteContent({ noteId, content, expectedVersion });
+        return result.success
+          ? { success: true, version: result.data.version }
+          : { success: false, conflict: result.error === "conflict" };
+      },
       AUTOSAVE_DEBOUNCE_MS,
+      initialVersion,
     );
   }
   const controller = ref.current;
@@ -45,5 +51,10 @@ export function useNoteSave(noteId: string) {
     change: (content: unknown) => controller.change(content),
     retry: () => controller.retry(),
     discard: () => controller.discard(),
+    /** Conflict exit: drop the local copy and load the server version. */
+    reload: () => {
+      controller.discard();
+      window.location.reload();
+    },
   };
 }
