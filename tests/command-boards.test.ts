@@ -37,7 +37,22 @@ function boardsBuilder(result: Result) {
   return { builder: b, orders, selects, limits };
 }
 
-const column = (position: number, count: number, isDone = false) => ({ position, is_done: isDone, cards: [{ count }] });
+const column = (position: number, count: number, latest?: string, isDone = false) => ({
+  position,
+  is_done: isDone,
+  cards: [{ count }],
+  latest: latest ? [{ updated_at: latest }] : [],
+});
+
+const board = (id: string, updatedAt: string, columns: unknown[] = [], isFavorite = false) => ({
+  id,
+  name: id,
+  is_favorite: isFavorite,
+  updated_at: updatedAt,
+  board_columns: columns,
+});
+
+const ids = (boards: Array<{ id: string }>) => boards.map((b) => b.id);
 
 beforeEach(() => {
   fromMock.mockReset();
@@ -49,8 +64,8 @@ describe("getCommandBoards", () => {
   it("reads boards, columns, card counts and the newest card per column in one query", async () => {
     const { builder, orders, selects, limits } = boardsBuilder({
       data: [
-        { id: "b1", name: "Werk", is_favorite: true, board_columns: [column(0, 2), column(3, 3, true), column(1, 1)] },
-        { id: "b2", name: "Thuis", is_favorite: false, board_columns: [] },
+        board("b1", "2026-10-01T10:00:00+00:00", [column(0, 2), column(3, 3, undefined, true), column(1, 1)], true),
+        board("b2", "2026-10-01T09:00:00+00:00"),
       ],
       error: null,
     });
@@ -60,7 +75,7 @@ describe("getCommandBoards", () => {
 
     expect(fromMock).toHaveBeenCalledTimes(1);
     expect(fromMock).toHaveBeenCalledWith("boards");
-    expect(selects[0]).toContain("board_columns(position, is_done, cards(count))");
+    expect(selects[0]).toContain("board_columns(position, is_done, cards(count), latest:cards(updated_at))");
     expect(orders).toEqual([
       ["position", { ascending: true }],
       ["updated_at", { ascending: false, referencedTable: "board_columns.latest" }],
@@ -108,7 +123,7 @@ describe("getCommandBoards", () => {
 
   it("treats a column without a count row as empty", async () => {
     const { builder } = boardsBuilder({
-      data: [{ id: "b1", name: "Werk", is_favorite: false, board_columns: [{ position: 0, is_done: false, cards: [] }] }],
+      data: [board("b1", "2026-10-01T00:00:00Z", [{ position: 0, cards: [], latest: [] }])],
       error: null,
     });
     fromMock.mockReturnValue(builder);
@@ -132,7 +147,7 @@ describe("getCommandBoardsAction", () => {
   it("returns the boards for a signed-in member", async () => {
     requireUserIdMock.mockResolvedValue({ userId: "u1" });
     const { builder } = boardsBuilder({
-      data: [{ id: "b1", name: "Werk", is_favorite: true, board_columns: [column(0, 1, true)] }],
+      data: [board("b1", "2026-10-01T00:00:00Z", [column(0, 1, undefined, true)], true)],
       error: null,
     });
     fromMock.mockReturnValue(builder);
