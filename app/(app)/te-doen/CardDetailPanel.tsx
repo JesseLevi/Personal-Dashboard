@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { SidePanel } from "@/components/organisms/SidePanel";
 import { InputField } from "@/components/atoms/InputField";
+import { formatLabelInput, parseLabelInput } from "@/lib/boards/labels";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { Tag } from "@/components/atoms/Tag";
 import { Button } from "@/components/atoms/Button";
@@ -121,6 +122,7 @@ export function CardDetailPanel({
         })
       : "";
   const [plannedForText, setPlannedForText] = useState(() => plannedText(card?.planned_for));
+  const [labelsText, setLabelsText] = useState(() => formatLabelInput(card?.labels ?? []));
   const { confirming: deleteConfirming, ask: askDelete, cancel: cancelDelete } = useDeleteConfirm();
   const [error, setError] = useState<string | null>(null);
   // Subtasks typed in create mode, written right after the card exists.
@@ -188,6 +190,7 @@ export function CardDetailPanel({
       setDraftSubtasks([]);
       setCreatedCardId(null);
       setCardColumnId(card?.column_id ?? "");
+      setLabelsText(formatLabelInput(card?.labels ?? []));
       cancelDelete();
       setError(null);
     }
@@ -218,6 +221,7 @@ export function CardDetailPanel({
       size,
       dueAt: trimmedDueAt === "" ? null : trimmedDueAt,
       plannedFor: trimmedPlannedFor === "" ? null : trimmedPlannedFor,
+      labels: parseLabelInput(labelsText),
     };
   }
 
@@ -472,6 +476,13 @@ export function CardDetailPanel({
         placeholder={t("fields.plannedPlaceholder")}
         value={plannedForText}
         onChange={(event) => setPlannedForText(event.target.value)}
+      />
+      <InputField
+        label={t("fields.labelsLabel")}
+        id="card-detail-labels"
+        placeholder={t("fields.labelsPlaceholder")}
+        value={labelsText}
+        onChange={(event) => setLabelsText(event.target.value)}
       />
       {card && agendaEvents?.cardId === card.id && <EventLinkLine events={agendaEvents.events} />}
       {error && <p className="text-base font-semibold text-priority-urgent">{error}</p>}

@@ -44,6 +44,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | --- | --- | --- |
 | [0025](0025-cards-size.md) | `cards.size` s/m/l/xl | Accepted |
 | [0026](0026-boards-is-favorite.md) | One favourite board per user | Accepted |
+| [0052](0052-card-labels.md) | Labels: plain names per board, set from the card panel, chips on cards, header filter; links only within one board (policy) | Accepted |
 | [0053](0053-card-subtasks.md) | A card with subtasks (title + check) is a project; no switch; promote a subtask to a card; projects and boards in the ⌘K palette, 3 each, most recent first | Accepted |
 
 ## Recepten and Winkelmand
@@ -80,7 +81,8 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | [0043](0043-connections-layer-embeddings.md) | Embeddings: `bge-m3` on Cloudflare Workers AI, opt-in per member, backlog scan instead of a queue, exclusive-arc `embeddings`, hybrid search across modules | Accepted, amended by 0046 and 0048 |
 | [0044](0044-activity-history.md) | Append-only `activity_events`: basket items added/checked and meals cooked, recorded by triggers for every member | Accepted |
 | [0050](0050-done-columns.md) | `board_columns.is_done`: finished cards leave the Agenda, widget, plan drawer and pattern context; no archiving | Accepted |
-| [0046](0046-assistant-signals.md) | Assistent: deterministic rhythm signals for every member, LLM pattern signals on opt-in (no tools, plain text); never a stuck-card reminder; no surface yet | Accepted, amended by 0050 |
+| [0051](0051-assistant-signals-in-modules.md) | Rhythm signals show in Winkelmand and the plan drawer; the act itself settles them; Sidebar item "Assistent" removed | Accepted |
+| [0046](0046-assistant-signals.md) | Assistent: deterministic rhythm signals for every member, LLM pattern signals on opt-in (no tools, plain text); never a stuck-card reminder; no surface yet | Accepted, amended by 0050 and 0051 |
 | [0047](0047-iphone-day-widget.md) | iPhone day widget: Scriptable script, read-only widget token, `widget_today()` acting through the `atlas_widget` role under RLS, tap via the "Open Atlas" Shortcut | Accepted |
 | [0048](0048-command-palette.md) | ⌘K opens a command palette modal (replaces `SearchPanel`): boards with deterministic progress, quick actions via `?nieuw=1`, search results; `Kbd` and `ProgressRing` atoms | Accepted, amended by 0053 |
 | [0008](0008-calendar-sync-and-ui-library.md) | Read-only sync, Schedule-X, SSRF guard | Superseded by 0037 |

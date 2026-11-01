@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition, type RefObject } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { PageHeader } from "@/components/organisms/PageHeader";
 import { Button } from "@/components/atoms/Button";
@@ -9,6 +9,7 @@ import { Dropdown } from "@/components/atoms/Dropdown";
 import type { IconName } from "@/components/atoms/Icon";
 import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import { SORT_OPTIONS, type SortOption } from "@/lib/boards/sort";
+import { boardLabels } from "@/lib/boards/labels";
 import type { ActionResult, BoardRow, BoardWithColumns } from "@/lib/boards/types";
 import { BoardPanel, type BoardPanelTarget } from "./BoardPanel";
 import { useTeDoenColumnPanel } from "./TeDoenColumnPanel";
@@ -77,6 +78,9 @@ export function TeDoenHeader({
 
   const [boardMenuOpen, setBoardMenuOpen] = useState(false);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const [labelMenuOpen, setLabelMenuOpen] = useState(false);
+  const labelFilter = useSearchParams().get("label");
+  const labels = boardLabels(board.columns);
   const [panel, setPanel] = useState<{ open: boolean; target: BoardPanelTarget }>({
     open: false,
     target: { mode: "create" },
@@ -86,8 +90,11 @@ export function TeDoenHeader({
   const boardPopoverRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const sortPopoverRef = useRef<HTMLDivElement>(null);
+  const labelMenuRef = useRef<HTMLDivElement>(null);
+  const labelPopoverRef = useRef<HTMLDivElement>(null);
   useCloseOnOutsidePointerDown(boardMenuRef, boardMenuOpen, () => setBoardMenuOpen(false));
   useCloseOnOutsidePointerDown(sortMenuRef, sortMenuOpen, () => setSortMenuOpen(false));
+  useCloseOnOutsidePointerDown(labelMenuRef, labelMenuOpen, () => setLabelMenuOpen(false));
 
   // Left/right-anchored below by design — docs/incidents.md, 2026-08-18.
   const boardPopover = usePopoverPosition(boardMenuRef, boardPopoverRef, {
@@ -100,6 +107,11 @@ export function TeDoenHeader({
     anchor: "right",
     prefer: "below",
   });
+  const labelPopover = usePopoverPosition(labelMenuRef, labelPopoverRef, {
+    open: labelMenuOpen,
+    anchor: "right",
+    prefer: "below",
+  });
 
   // Board is in the URL (ticket's own "shareable/bookmarkable" requirement),
   // never client state — both navigations below preserve the current sort so
@@ -109,8 +121,18 @@ export function TeDoenHeader({
     boardSwitch.switchTo(id, sort ? `/te-doen/${id}?sort=${sort}` : `/te-doen/${id}`);
   }
 
+  function goWith(next: { sort?: SortOption | null; label?: string | null }) {
+    const params = new URLSearchParams();
+    const nextSort = next.sort === undefined ? sort : next.sort;
+    const nextLabel = next.label === undefined ? labelFilter : next.label;
+    if (nextSort) params.set("sort", nextSort);
+    if (nextLabel) params.set("label", nextLabel);
+    const query = params.toString();
+    router.push(query ? `/te-doen/${board.id}?${query}` : `/te-doen/${board.id}`);
+  }
+
   function goWithSort(nextSort: SortOption) {
-    router.push(`/te-doen/${board.id}?sort=${nextSort}`);
+    goWith({ sort: nextSort });
   }
 
   function handleFavoriteClick() {
@@ -188,6 +210,52 @@ export function TeDoenHeader({
         }
         actions={
           <div className="flex items-center gap-inline-sm md:gap-inline-xl">
+          {(labels.length > 0 || labelFilter) && (
+            <div ref={labelMenuRef} className="relative">
+              <Button
+                icon="Tag"
+                align="left"
+                aria-label={t("labelFilterLabel")}
+                aria-expanded={labelMenuOpen}
+                aria-pressed={labelFilter !== null}
+                onClick={() => setLabelMenuOpen((open) => !open)}
+              >
+                <span className="hidden md:inline">{t("labelFilterLabel")}</span>
+              </Button>
+              {labelMenuOpen && (
+                <div ref={labelPopoverRef} className="absolute z-[999] w-[209px]" style={labelPopover.style}>
+                  <Dropdown className="shadow-sm">
+                    <Button
+                      variant={labelFilter === null ? "filled" : "white"}
+                      align="left"
+                      aria-pressed={labelFilter === null}
+                      onClick={() => {
+                        setLabelMenuOpen(false);
+                        goWith({ label: null });
+                      }}
+                    >
+                      {t("labelFilterAll")}
+                    </Button>
+                    {labels.map((label) => (
+                      <Button
+                        key={label.id}
+                        icon="Tag"
+                        variant={label.id === labelFilter ? "filled" : "white"}
+                        align="left"
+                        aria-pressed={label.id === labelFilter}
+                        onClick={() => {
+                          setLabelMenuOpen(false);
+                          goWith({ label: label.id });
+                        }}
+                      >
+                        {label.name}
+                      </Button>
+                    ))}
+                  </Dropdown>
+                </div>
+              )}
+            </div>
+          )}
           <div ref={sortMenuRef} className="relative">
             <Button
               icon="ArrowUpDown"

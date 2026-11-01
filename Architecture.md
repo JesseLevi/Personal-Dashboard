@@ -66,7 +66,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 | Area | Tables |
 | --- | --- |
 | Account | `profiles` (`display_name` = first name, `last_name`, `locale`), `user_seeds` |
-| Te doen | `boards` (`is_favorite`, one per user), `board_columns` (`icon`, `is_done`, ADR-0050), `cards` (`priority`, `size`, `due_at`, `source`), `labels`, `card_labels`, `card_subtasks` (ADR-0053) |
+| Te doen | `boards` (`is_favorite`, one per user), `board_columns` (`icon`, `is_done`, ADR-0050), `cards` (`priority`, `size`, `due_at`, `source`), `labels`, `card_labels` (ADR-0052), `card_subtasks` (ADR-0053) |
 | Recepten | `recipe_categories` (`icon`), `recipes` (`thumbnail_path`, `source_url`, `import_status`, `import_error`), `recipe_ingredients` (`ingredient_id`, `unit`, `group_label`, `needs_review`), `recipe_steps`, `recipe_step_ingredients`, `tags`, `recipe_tags` |
 | Ingredient library | `ingredients` (user layer, nullable `reference_id`), `ingredient_unit_masses` (user overrides), `ingredient_aliases` (user) |
 | Reference | `reference.ingredients` (NEVO + `eigen`, nutrients per 100 g, bilingual names/categories), `reference.ingredient_unit_masses` (NEVO portions, USDA), `reference.ingredient_aliases` (admin) |
@@ -127,7 +127,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - no queue: `embedding_backlog()` finds stale sources; a lazy `after()` drain (at most every 10 min) and the daily `/api/cron/embeddings` embed them, reusing vectors for identical text;
   - search across modules merges `search_text()` and `search_semantic()` (`security invoker`) with RRF.
 - **History** (ADR-0044): triggers log basket adds and checks into `activity_events`; `settle_cooked_meals()` logs past plans. All members, no AI.
-- **Phase 9** (ADR-0046, planned): `agent_signals` from SQL rhythms (all members) and LLM patterns (opt-in; no tools, plain text).
+- **Phase 9** (ADR-0046/0051): `agent_signals` from SQL rhythms (all members) and LLM patterns (opt-in; no tools, plain text). Rhythms show in Winkelmand and the plan drawer.
 - **Scheduled work** (ADR-0039, Vercel Hobby): a lazy "when stale" run in `after()` while a user is present, plus daily Cron routes behind `CRON_SECRET` as backstop (may use `service_role`). Anything more frequent needs a new ADR.
 
 ## 7. Agenda (ADR-0037)

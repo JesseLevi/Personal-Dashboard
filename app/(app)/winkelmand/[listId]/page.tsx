@@ -8,6 +8,7 @@ import { getShoppingListPeople, getShoppingListShare } from "@/lib/sharing/queri
 import { pendingInvites } from "@/lib/sharing/actions";
 import { memberFullName, toAvatarGroupMembers } from "@/lib/sharing/member";
 import { WinkelmandList, type WinkelmandListOption } from "../WinkelmandList";
+import { basketSuggestions } from "@/lib/assistant/surfaces";
 
 // #177: Winkelmand page UI, on top of #175/#176's schema + data layer. Same
 // Server/Client split as app/(app)/recepten/page.tsx -> ReceptenBoard.tsx:
@@ -42,11 +43,12 @@ export default async function WinkelmandListPage({
   const userId = await getAuthenticatedUserId();
   const current = lists.find((row) => row.id === listId);
   const isOwnerOfCurrent = current?.user_id === userId;
-  const [items, share, sharedListIds, invitesResult] = await Promise.all([
+  const [items, share, sharedListIds, invitesResult, suggestions] = await Promise.all([
     getShoppingListItems(listId),
     isOwnerOfCurrent ? getShoppingListShare(listId) : Promise.resolve(null),
     getAcceptedShareListIds(),
     pendingInvites(),
+    basketSuggestions(),
   ]);
   const options: WinkelmandListOption[] = lists.map((row) => ({
     id: row.id,
@@ -79,6 +81,7 @@ export default async function WinkelmandListPage({
       owner={owner}
       people={toAvatarGroupMembers(people, unnamed)}
       invites={invites}
+      suggestions={suggestions}
     />
   );
 }

@@ -97,7 +97,7 @@ const sampleCard: CardWithLabels = {
   source: "manual",
   created_at: "2026-07-01T00:00:00.000Z",
   updated_at: "2026-07-01T00:00:00.000Z",
-  labels: [],
+  labels: [{ id: "l1", user_id: "u", board_id: "b", name: "werk", created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" }, { id: "l2", user_id: "u", board_id: "b", name: "thuis", created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" }],
   subtaskTotal: 0,
   subtaskDone: 0,
 };
