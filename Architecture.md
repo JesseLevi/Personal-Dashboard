@@ -66,7 +66,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 | Area | Tables |
 | --- | --- |
 | Account | `profiles` (`display_name` = first name, `last_name`, `locale`), `user_seeds` |
-| Te doen | `boards` (`is_favorite`, one per user), `board_columns` (`icon`, `is_done`, ADR-0050), `cards` (`priority`, `size`, `due_at`, `source`), `labels`, `card_labels`, `card_subtasks` (ADR-0053) |
+| Te doen | `boards` (`is_favorite`, one per user), `board_columns` (`icon`, `is_done`, ADR-0050), `cards` (`priority`, `size`, `due_at`, `source`), `labels`, `card_labels` (ADR-0052), `card_subtasks` (ADR-0053) |
 | Recepten | `recipe_categories` (`icon`), `recipes` (`thumbnail_path`, `source_url`, `import_status`, `import_error`), `recipe_ingredients` (`ingredient_id`, `unit`, `group_label`, `needs_review`), `recipe_steps`, `recipe_step_ingredients`, `tags`, `recipe_tags` |
 | Ingredient library | `ingredients` (user layer, nullable `reference_id`), `ingredient_unit_masses` (user overrides), `ingredient_aliases` (user) |
 | Reference | `reference.ingredients` (NEVO + `eigen`, nutrients per 100 g, bilingual names/categories), `reference.ingredient_unit_masses` (NEVO portions, USDA), `reference.ingredient_aliases` (admin) |

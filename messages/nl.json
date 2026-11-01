@@ -446,6 +446,8 @@
         "favoriteActiveLabel": "Favoriete bord",
         "addBoardOptionLabel": "Toevoegen",
         "sortLabel": "Sorteer",
+        "labelFilterLabel": "Labels",
+        "labelFilterAll": "Alle kaarten",
         "addCategoryLabel": "Categorie",
         "emptyBoardTitle": "Geen bord",
         "emptyBoardBody": "Er is nog geen bord om te tonen.",
@@ -570,7 +572,9 @@
         "dateLabel": "Datum",
         "datePlaceholder": "Voeg datum toe",
         "plannedLabel": "Gepland op",
-        "plannedPlaceholder": "Voeg dag toe"
+        "plannedPlaceholder": "Voeg dag toe",
+        "labelsLabel": "Labels",
+        "labelsPlaceholder": "Bijv. werk, thuis"
       },
       "saveLabel": "Opslaan",
       "savingLabel": "Opslaan...",

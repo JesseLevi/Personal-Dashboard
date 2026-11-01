@@ -44,6 +44,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | --- | --- | --- |
 | [0025](0025-cards-size.md) | `cards.size` s/m/l/xl | Accepted |
 | [0026](0026-boards-is-favorite.md) | One favourite board per user | Accepted |
+| [0052](0052-card-labels.md) | Labels: plain names per board, set from the card panel, chips on cards, header filter; links only within one board (policy) | Accepted |
 | [0053](0053-card-subtasks.md) | A card with subtasks (title + check) is a project; no switch; promote a subtask to a card; projects and boards in the ⌘K palette, 3 each, most recent first | Accepted |
 
 ## Recepten and Winkelmand

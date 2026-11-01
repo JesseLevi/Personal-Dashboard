@@ -446,6 +446,8 @@
         "favoriteActiveLabel": "Favorite board",
         "addBoardOptionLabel": "Add",
         "sortLabel": "Sort",
+        "labelFilterLabel": "Labels",
+        "labelFilterAll": "All cards",
         "addCategoryLabel": "Category",
         "emptyBoardTitle": "No board",
         "emptyBoardBody": "There is no board to show yet.",
@@ -570,7 +572,9 @@
         "dateLabel": "Date",
         "datePlaceholder": "Add date",
         "plannedLabel": "Planned for",
-        "plannedPlaceholder": "Add day"
+        "plannedPlaceholder": "Add day",
+        "labelsLabel": "Labels",
+        "labelsPlaceholder": "E.g. work, home"
       },
       "saveLabel": "Save",
       "savingLabel": "Saving...",
