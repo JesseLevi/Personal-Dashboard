@@ -41,7 +41,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 - **Styling**: Tailwind v4, semantic tokens only. `design/figma-variables/` feeds `design/tokens.json`; `pnpm sync:tokens` generates `app/theme.css`; CI checks for drift (ADR-0010). Dark mode follows the OS (`next-themes`).
 - **Components**: CVA; variant axes are props, Hover/Active/Focus are CSS states. Composition: atoms ← molecules ← organisms ← `app/`. Icons go only through the `Icon` atom (lucide).
 - **Design source** (ADR-0034): Claude designs UI in code from existing components and tokens. A Figma design the user names is implemented exactly.
-- **Navigation**: Sidebar on desktop; below `md` a bottom tab bar plus the drawer (ADR-0055).
+- **Navigation**: Sidebar; below `md` a tab bar plus drawer (ADR-0055).
 - **Every component** gets a Ladle story, a visual baseline and a `design/notes/<Component>.md` contract.
 - **Libraries**: dnd-kit (drag and drop), TipTap 3 with official MIT extensions only (ADR-0021), Floating UI (menus), next-intl (i18n), FullCalendar standard/MIT for the Agenda (ADR-0037).
 - **PWA**: one manifest (`start_url` `/vandaag`, ADR-0053); `public/sw.js` keeps the last basket readable offline (ADR-0054). The iPhone widget is a Scriptable script; a tap opens the web app via a Shortcut (ADR-0047).
