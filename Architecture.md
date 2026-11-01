@@ -12,7 +12,7 @@ Browser (PWA) ──HTTPS──► Next.js on Vercel (fra1)
                           └── public web pages                       (lib/net/safe-fetch, recipe import)
 ```
 
-- The browser only talks to Atlas (ADR-0033). There is one hosted environment, production. Builds, promotion and migrations follow ADR-0032. Hosted settings that live outside the repo are listed in `docs/operations.md`.
+- The browser only talks to Atlas (ADR-0033). There is one hosted environment, production. Builds, promotion and migrations: ADR-0032. Hosted settings outside the repo: `docs/operations.md`.
 - Async work runs after the response via Next.js `after()`, plus daily cron routes. There is no always-on worker (ADR-0018 §4).
 
 ## 2. Repository layout
@@ -37,9 +37,9 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 
 ## 3. Frontend and design system
 
-- **Rendering**: React Server Components by default. Mutations go through Server Actions with zod validation. There is no client data library.
+- **Rendering**: Server Components by default; mutations via Server Actions with zod; no client data library.
 - **Styling**: Tailwind v4 with semantic tokens only. `design/figma-variables/` (Figma export) feeds `design/tokens.json`, `pnpm sync:tokens` generates `app/theme.css`, and CI checks the chain for drift (ADR-0010). Dark mode follows the OS via `next-themes` (`data-theme`).
-- **Components**: built with CVA. Variant axes are props; Hover/Active/Focus are CSS states, never props. Composition mirrors the design hierarchy: atoms ← molecules ← organisms ← `app/`. Icons go only through the `Icon` atom (lucide).
+- **Components**: CVA; variant axes are props, Hover/Active/Focus are CSS states. Composition: atoms ← molecules ← organisms ← `app/`. Icons go only through the `Icon` atom (lucide).
 - **Design source** (ADR-0034): Claude designs UI in code from existing components and tokens. A Figma design the user names is implemented exactly.
 - **Every component** gets a Ladle story, a visual baseline and a `design/notes/<Component>.md` contract.
 - **Libraries**: dnd-kit (drag and drop), TipTap 3 with official MIT extensions only (ADR-0021), Floating UI (menus), next-intl (i18n), FullCalendar standard/MIT for the Agenda (ADR-0037).
@@ -56,7 +56,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 - **Sharing** (ADR-0035): a container (now `shopping_lists`) is shared through `shares` (one nullable FK per shareable type, `pending|accepted`, role `editor`). Rows inside a container carry the owner's `user_id`; their policies call `private.<type>_role(id)`. Other members' names come only from `member_profiles()` / `search_members()`; an invitee's reaches the inviter once accepted. A trigger caps invites.
 - **Recipe share = copy** (ADR-0036): a recipe offer is a pending `shares` row (`recipe_id`, never `accepted`). The invitee reads it only through `pending_recipe_shares()`; `accept_recipe_share()` (definer) copies the recipe into their own first category, then `lib/sharing/recipes.ts` copies the thumbnail in R2.
 - **Small closed sets** are text with a check constraint (`priority`, `size`, `source`). Units are the shared enum `public.recipe_unit` (ADR-0028).
-- **Ordering** uses fractional `position` (numeric midpoint), mirrored in TypeScript and SQL (ADR-0015).
+- **Ordering** uses fractional `position` (numeric midpoint), mirrored in TS and SQL (ADR-0015).
 - **Multi-statement writes** are `security invoker` RPCs with `search_path = ''`, an explicit ownership guard, and execute granted only to `authenticated`: `replace_recipe_contents`, `move_card`, `move_recipe`, `move_note`, `toggle_board_favorite`, `save_note_content` (ADR-0015/0030).
 - **Per-user defaults** are seeded by triggers at signup and lazily by `ensure_user_defaults()` (ADR-0017).
 - `lib/database.types.ts` is generated in CI. Never hand-edit it.
@@ -112,6 +112,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - per-user rate limit;
   - provider spend cap;
   - degraded mode without a key.
+- **Error log** (ADR-0049): `onRequestError` → anon `report_app_error()` (Vault secret) → `private.app_errors`.
 - **Widget token** (ADR-0047): hashed, read-only; `widget_today()` acts as its owner via role `atlas_widget` under RLS.
 - **Known accepted trade-off**: the login greeting shows a known address's first name, throttled (ADR-0031).
 - **Backups**: Supabase Cloud backups cover Postgres. R2 has no second copy (ADR-0024).
