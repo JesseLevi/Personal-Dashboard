@@ -1,4 +1,4 @@
-# ADR-0048: Note saves refuse an outdated copy
+# ADR-0056: Note saves refuse an outdated copy
 
 **Status**: Accepted (2026-11-01, user's improvement brief, package 1). Extends ADR-0023.
 
