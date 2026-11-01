@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { longNotCookedRecipeIds } from "@/lib/assistant/surfaces";
 import { cookies } from "next/headers";
 import { after } from "next/server";
 import { Suspense } from "react";
@@ -45,7 +46,7 @@ async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?:
   after(() => extendEventSeries(supabase).catch(() => console.error("[agenda] series extension failed")));
   // ADR-0044: meals whose day has passed become history, after the response.
   after(() => settleCookedMeals(supabase));
-  const [items, notices, categories, baskets, userId, cardGroups, calendars, todoBoard] = await Promise.all([
+  const [items, notices, categories, baskets, userId, cardGroups, calendars, todoBoard, longNotCooked] = await Promise.all([
     getAgendaItems({
       from: wallClockToUtc(`${window.from}T00:00:00`),
       to: wallClockToUtc(`${window.to}T00:00:00`),
@@ -59,6 +60,7 @@ async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?:
     getCalendarOverview(supabase),
     // A failed read only hides the "new card" target; the rest of the page still works.
     getQuickAddBoard().catch(() => null),
+    longNotCookedRecipeIds(),
   ]);
 
   // Imports still running or failed cannot be planned.
@@ -87,6 +89,7 @@ async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?:
       initialHidden={hidden}
       initialCalendars={calendars}
       recipes={recipes}
+      longNotCookedIds={longNotCooked}
       recipeCategories={categories.map(({ id, name }) => ({ id, name }))}
       cardGroups={cardGroups}
       todoBoard={todoBoard}

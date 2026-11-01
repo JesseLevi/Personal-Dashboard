@@ -8,8 +8,8 @@
 // place rather than two independently-maintained literals.
 
 export const DEFAULT_BOARD_COLUMNS = [
-  { name: "Ideeën", icon: "Lightbulb" },
-  { name: "Klaar", icon: "AlarmClockCheck" },
-  { name: "Bezig", icon: "Loader" },
-  { name: "Afgerond", icon: "CircleCheck" },
+  { name: "Ideeën", icon: "Lightbulb", isDone: false },
+  { name: "Klaar", icon: "AlarmClockCheck", isDone: false },
+  { name: "Bezig", icon: "Loader", isDone: false },
+  { name: "Afgerond", icon: "CircleCheck", isDone: true },
 ] as const;

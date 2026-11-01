@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { CategoryPanel, type CategoryPanelTarget } from "@/app/(app)/_components/CategoryPanel";
 import { CATEGORY_ICONS } from "./category-icons";
+import { TODO_COLUMN_ICONS } from "@/app/(app)/te-doen/column-icons";
 import type { ActionResult, RecipeCategoryRow } from "@/lib/recipes/types";
 import { Button } from "@/components/atoms/Button";
 import { StoryIntro } from "@/.ladle/story-kit";
@@ -142,3 +143,21 @@ export const Interactive = () => {
     </div>
   );
 };
+
+// Te doen's column variant: the same panel with the done-column checkbox (ADR-0050), checked.
+export const TodoColumnDone = () => (
+  <div className="min-h-screen">
+    <CategoryPanel
+      open
+      onClose={() => {}}
+      target={{ mode: "edit", category: { id: "column-4", name: "Afgerond", icon: "CircleCheck", isDone: true } }}
+      onCreateCategory={mockCreateCategory}
+      icons={TODO_COLUMN_ICONS}
+      translationNamespace="components.todoColumnPanel"
+      errorsNamespace="boards.errors"
+      onUpdateCategory={mockUpdateCategory}
+      onDeleteCategory={mockDeleteCategory}
+      withDoneToggle
+    />
+  </div>
+);

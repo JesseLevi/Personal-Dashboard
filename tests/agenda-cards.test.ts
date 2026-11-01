@@ -67,25 +67,35 @@ const card = (id: string, title: string, position: number, plannedFor: string | 
 describe("groupOpenCards", () => {
   const boards = [
     board("b2", "Werk", false, 2000, [
-      { name: "Bezig", position: 1000, cards: [card("c3", "Rapport", 1000)] },
-      { name: "Afgerond", position: 2000, cards: [card("c4", "Oud", 1000)] },
+      { name: "Bezig", position: 1000, is_done: false, cards: [card("c3", "Rapport", 1000)] },
+      { name: "Afgerond", position: 2000, is_done: true, cards: [card("c4", "Oud", 1000)] },
     ]),
     board("b1", "Thuis", true, 1000, [
-      { name: "Bezig", position: 2000, cards: [card("c2", "Tuin", 2000, "2026-10-17"), card("c1", "Boodschappen", 1000)] },
-      { name: "Ideeën", position: 1000, cards: [card("c0", "Verven", 1000)] },
-      { name: "Afgerond", position: 3000, cards: [card("c9", "Klaar", 1000)] },
+      { name: "Bezig", position: 2000, is_done: false, cards: [card("c2", "Tuin", 2000, "2026-10-17"), card("c1", "Boodschappen", 1000)] },
+      { name: "Ideeën", position: 1000, is_done: false, cards: [card("c0", "Verven", 1000)] },
+      { name: "Afgerond", position: 3000, is_done: true, cards: [card("c9", "Klaar", 1000)] },
     ]),
-    board("b3", "Leeg", false, 3000, [{ name: "Afgerond", position: 1000, cards: [card("c5", "Klaar", 1000)] }]),
+    board("b3", "Leeg", false, 3000, [{ name: "Afgerond", position: 1000, is_done: true, cards: [card("c5", "Klaar", 1000)] }]),
   ];
 
   it("puts the favourite board first and then goes by position", () => {
     expect(groupOpenCards(boards).map((group) => group.boardId)).toEqual(["b1", "b2"]);
   });
 
-  it("leaves out the rightmost (done) column and boards without an open card", () => {
+  it("leaves out done columns and boards without an open card", () => {
     const titles = groupOpenCards(boards).flatMap((group) => group.cards.map((c) => c.title));
     expect(titles).not.toContain("Klaar");
     expect(titles).not.toContain("Oud");
+  });
+
+  it("follows the flag, not the column's place", () => {
+    const flagged = [
+      board("b4", "Eigen", false, 1000, [
+        { name: "Klaar", position: 1000, is_done: true, cards: [card("c6", "Gedaan", 1000)] },
+        { name: "Later", position: 2000, is_done: false, cards: [card("c7", "Ooit", 1000)] },
+      ]),
+    ];
+    expect(groupOpenCards(flagged)[0].cards.map((c) => c.title)).toEqual(["Ooit"]);
   });
 
   it("keeps column order, then card position, and carries the column and day", () => {

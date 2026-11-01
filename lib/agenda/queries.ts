@@ -111,7 +111,7 @@ export async function getPlannableCards(): Promise<PlanCardGroup[]> {
 
   const { data, error } = await supabase
     .from("boards")
-    .select("id, name, is_favorite, position, board_columns ( name, position, cards ( id, title, planned_for, position ) )")
+    .select("id, name, is_favorite, position, board_columns ( name, position, is_done, cards ( id, title, planned_for, position ) )")
     .overrideTypes<PlanBoardInput[], { merge: false }>();
 
   if (error) {

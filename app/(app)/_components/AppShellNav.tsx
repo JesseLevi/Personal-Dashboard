@@ -186,7 +186,6 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
     notes: t("items.notes"),
     recipes: t("items.recipes"),
     shopping: t("items.shopping"),
-    assistant: t("items.assistant"),
   };
   useSearchShortcut(() => setSearchOpen(true), searchOpen || settingsOpen);
   const toggleLabel = collapsed ? t("expandLabel") : t("collapseLabel");
