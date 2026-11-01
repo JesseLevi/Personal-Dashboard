@@ -1,13 +1,15 @@
 import type { SearchResult } from "@/lib/search/query";
 import { matchesQuery } from "./match";
-import type { CommandAction, CommandBoard } from "./types";
+import type { CommandAction, CommandBoard, CommandProject } from "./types";
 
-/** Boards shown with an empty field. */
+/** Boards and projects shown with an empty field. */
 export const PALETTE_BOARD_LIMIT = 3;
+export const PALETTE_PROJECT_LIMIT = 3;
 
 export type PaletteRow =
   | { kind: "action"; key: string; action: CommandAction }
   | { kind: "board"; key: string; board: CommandBoard }
+  | { kind: "project"; key: string; project: CommandProject }
   | { kind: "result"; key: string; result: SearchResult };
 
 export type PaletteGroup = { key: string; label: string; rows: PaletteRow[] };
@@ -21,6 +23,13 @@ export function boardPercent(board: Pick<CommandBoard, "total" | "done">): numbe
 /** The first boards in the order `loadBoards` gives them (most recently active first). */
 export const pinnedBoards = (boards: readonly CommandBoard[]): CommandBoard[] =>
   boards.slice(0, PALETTE_BOARD_LIMIT);
+
+/** The first projects in the order `loadProjects` gives them (most recently updated first). */
+export const pinnedProjects = (projects: readonly CommandProject[]): CommandProject[] =>
+  projects.slice(0, PALETTE_PROJECT_LIMIT);
+
+export const matchingProjects = (projects: readonly CommandProject[], query: string): CommandProject[] =>
+  projects.filter((project) => matchesQuery(project.title, query));
 
 export const matchingBoards = (boards: readonly CommandBoard[], query: string): CommandBoard[] =>
   boards.filter((board) => matchesQuery(board.name, query));

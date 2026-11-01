@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { boardProgress } from "@/lib/command/progress";
+import { boardProgress, isDoneColumn } from "@/lib/command/progress";
 
 describe("boardProgress", () => {
   it("is empty for a board without columns", () => {
@@ -61,5 +61,18 @@ describe("boardProgress", () => {
         { position: 1, cardCount: 3, isDone: false },
       ]),
     ).toEqual({ total: 5, done: 0 });
+  });
+});
+
+describe("isDoneColumn", () => {
+  it("falls back to the last column by position without the flag", () => {
+    expect(isDoneColumn({ position: 2 }, [0, 1, 2])).toBe(true);
+    expect(isDoneColumn({ position: 1 }, [0, 1, 2])).toBe(false);
+    expect(isDoneColumn({ position: 0 }, [])).toBe(false);
+  });
+
+  it("follows the is_done flag when present, whatever the position", () => {
+    expect(isDoneColumn({ position: 0, isDone: true }, [0, 1, 2])).toBe(true);
+    expect(isDoneColumn({ position: 2, isDone: false }, [0, 1, 2])).toBe(false);
   });
 });
