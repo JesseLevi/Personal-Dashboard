@@ -83,7 +83,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | [0050](0050-done-columns.md) | `board_columns.is_done`: finished cards leave the Agenda, widget, plan drawer and pattern context; no archiving | Accepted |
 | [0051](0051-assistant-signals-in-modules.md) | Rhythm signals show in Winkelmand and the plan drawer; the act itself settles them; Sidebar item "Assistent" removed | Accepted |
 | [0046](0046-assistant-signals.md) | Assistent: deterministic rhythm signals for every member, LLM pattern signals on opt-in (no tools, plain text); never a stuck-card reminder; no surface yet | Accepted, amended by 0050 and 0051 |
-| [0053](0053-vandaag-landing-page.md) | `/vandaag` day overview (events, meals, cards, basket count, signals) is the landing page and PWA start URL | Accepted |
+| [0057](0057-vandaag-landing-page.md) | `/vandaag` day overview (events, meals, cards, basket count, signals) is the landing page and PWA start URL | Accepted |
 | [0047](0047-iphone-day-widget.md) | iPhone day widget: Scriptable script, read-only widget token, `widget_today()` acting through the `atlas_widget` role under RLS, tap via the "Open Atlas" Shortcut | Accepted |
 | [0048](0048-command-palette.md) | ⌘K opens a command palette modal (replaces `SearchPanel`): boards with deterministic progress, quick actions via `?nieuw=1`, search results; `Kbd` and `ProgressRing` atoms | Accepted |
 | [0008](0008-calendar-sync-and-ui-library.md) | Read-only sync, Schedule-X, SSRF guard | Superseded by 0037 |

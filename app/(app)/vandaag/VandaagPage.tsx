@@ -6,7 +6,7 @@ import { actOnAssistantSignal, dismissAssistantSignal } from "@/lib/assistant/ac
 import { sendWeekToBasket } from "../agenda/meal-actions";
 import { VandaagView, type VandaagViewProps } from "./VandaagView";
 
-// Wires the Vandaag view to the router and the server actions (ADR-0053).
+// Wires the Vandaag view to the router and the server actions (ADR-0057).
 export function VandaagPage(props: Omit<VandaagViewProps, "onNavigate" | "onSignal" | "onDayToBasket">) {
   const router = useRouter();
   return (

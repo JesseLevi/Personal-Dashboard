@@ -13,7 +13,7 @@ import { clockOf, type TodayGroups } from "@/lib/today/day";
 import type { ActionResult } from "@/lib/shopping/types";
 import { EnterFromLogin } from "../te-doen/EnterFromLogin";
 
-// Day overview view (ADR-0053): today's events, meals, planned cards and deadlines,
+// Day overview view (ADR-0057): today's events, meals, planned cards and deadlines,
 // the open basket count and new signals. Record: design/notes/VandaagPage.md.
 
 export interface VandaagViewProps {
