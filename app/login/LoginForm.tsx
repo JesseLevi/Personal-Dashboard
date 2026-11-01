@@ -21,6 +21,7 @@ import { blurFadeStagger, blurOutTotalMs, usePrefersReducedMotion } from "@/lib/
 import { markEnterFromLogin } from "@/lib/ui/login-enter";
 import { useTurnstile } from "./useTurnstile";
 import type { LoginCodeSendState, PasswordLoginState } from "./actions";
+import { HOME_PATH } from "@/lib/today/home";
 
 // figma: Login/Mobile+Desktop (3929:25181); StepAnimation (3934:32745);
 // heading Step-01 4221:14845 "Hey, welkom bij Atlas" / Step-02 4221:14940
@@ -33,7 +34,7 @@ const PANE_CLASS =
 
 // Matches --duration-base (200ms) plus a frame of slack.
 const GREETING_COLLAPSE_MS = 250;
-const SIGNED_IN_TARGET = "/te-doen";
+const SIGNED_IN_TARGET = HOME_PATH;
 const CODE_TARGET = "/login/code";
 // Heading, password field, button row, login-code form, then the page's visual (LoginVisual,
 // told via `onExitStart`): the top-to-bottom exit order. Going to the code page keeps the

@@ -18,7 +18,7 @@ Browser (PWA) ──HTTPS──► Next.js on Vercel (fra1)
 ## 2. Repository layout
 
 ```
-app/                  App Router. (app)/ = signed-in routes: te-doen, recepten, winkelmand, notities
+app/                  App Router. (app)/ = signed-in routes: vandaag (home), te-doen, recepten, winkelmand, notities
   api/                image delivery, cron and widget routes
 components/           design system: atoms/ molecules/ organisms/ (Atomic Design)
 lib/                  server and shared logic, one folder per domain or seam:
@@ -43,7 +43,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 - **Design source** (ADR-0034): Claude designs UI in code from existing components and tokens. A Figma design the user names is implemented exactly.
 - **Every component** gets a Ladle story, a visual baseline and a `design/notes/<Component>.md` contract.
 - **Libraries**: dnd-kit (drag and drop), TipTap 3 with official MIT extensions only (ADR-0021), Floating UI (menus), next-intl (i18n), FullCalendar standard/MIT for the Agenda (ADR-0037).
-- **PWA**: one manifest (`start_url` `/te-doen`). The iPhone widget is a Scriptable script; a tap opens the web app via a Shortcut (ADR-0047).
+- **PWA**: one manifest (`start_url` `/vandaag`, ADR-0057). The iPhone widget is a Scriptable script; a tap opens the web app via a Shortcut (ADR-0047).
 
 ## 4. Data model
 

@@ -75,7 +75,7 @@ export const Playground: Story<PlaygroundProps> = ({ collapsed, activeItem, acco
 Playground.args = { collapsed: false, activeItem: "recipes", accountName: "Youri Tukker", accountMenuOpen: false };
 Playground.argTypes = {
   collapsed: { control: { type: "boolean" } },
-  activeItem: { control: { type: "select" }, options: ["todo", "agenda", "notes", "recipes", "shopping"] },
+  activeItem: { control: { type: "select" }, options: ["today", "todo", "agenda", "notes", "recipes", "shopping"] },
   accountName: { control: { type: "text" } },
   accountMenuOpen: { control: { type: "boolean" } },
 };

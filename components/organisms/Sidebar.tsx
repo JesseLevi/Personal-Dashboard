@@ -24,6 +24,7 @@ import { usePopoverPosition } from "../../lib/dom/use-popover-position";
  * docs/incidents.md. Full rationale + measurements: design/notes/Sidebar.md.
  */
 export type SidebarItemId =
+  | "today"
   | "todo"
   | "agenda"
   | "notes"
@@ -31,6 +32,7 @@ export type SidebarItemId =
   | "shopping";
 
 const NAV_ITEMS: ReadonlyArray<{ id: SidebarItemId; icon: IconName }> = [
+  { id: "today", icon: "Sun" },
   { id: "todo", icon: "Columns3" },
   { id: "agenda", icon: "Calendar" },
   { id: "notes", icon: "Notebook" },
