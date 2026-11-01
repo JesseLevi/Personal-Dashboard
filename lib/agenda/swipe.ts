@@ -6,6 +6,14 @@ export const SWIPE_RATIO = 2;
 export const SWIPE_MAX_MS = 600;
 export const SWIPE_EDGE_PX = 24;
 
+// A day-view slot spans the full width, so a swipe ends in the slot it started in and FullCalendar still
+// fires `dateClick`; a press only counts as a tap when the pointer stayed within this many pixels.
+export const TAP_SLOP_PX = 10;
+
+export function isTap(start: { x: number; y: number }, end: { x: number; y: number }): boolean {
+  return Math.hypot(end.x - start.x, end.y - start.y) <= TAP_SLOP_PX;
+}
+
 export interface SwipePoint {
   x: number;
   y: number;

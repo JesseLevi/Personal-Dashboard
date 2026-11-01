@@ -10,6 +10,7 @@ import nlLocale from "@fullcalendar/react/locales/nl";
 import timeGridPlugin from "@fullcalendar/react/timegrid";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isTap } from "@/lib/agenda/swipe";
 import { AGENDA_DEFAULT_SCROLL_HOUR, initialScrollHour, visibleRange } from "@/lib/agenda/time";
 import type { AgendaItem } from "@/lib/agenda/types";
 import type { AgendaView } from "@/lib/agenda/view";
@@ -244,6 +245,7 @@ export function AgendaCalendar({
   const rootRef = useRef<HTMLDivElement>(null);
   const hoverRef = useRef<HTMLDivElement>(null);
   const lastSelectRef = useRef(0);
+  const pressRef = useRef<{ x: number; y: number } | null>(null);
   const effectiveView = effectiveAgendaView(view, narrow);
   const viewName = VIEW_NAMES[effectiveView];
   const scrollHour = useCallback(
@@ -251,6 +253,17 @@ export function AgendaCalendar({
     [scrollToNow, effectiveView, date],
   );
   useCellHover(rootRef, hoverRef, viewName);
+
+  // Where the press started, so `dateClick` can tell a tap from the end of a swipe.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const onDown = (event: PointerEvent) => {
+      pressRef.current = { x: event.clientX, y: event.clientY };
+    };
+    root.addEventListener("pointerdown", onDown, { passive: true });
+    return () => root.removeEventListener("pointerdown", onDown);
+  }, []);
 
   const labels = useMemo<AgendaItemLabels>(
     () => ({
@@ -381,8 +394,14 @@ export function AgendaCalendar({
       if (slot) calendarRef.current?.getApi().select(slot.start, slot.end);
       else onSelectSlot?.(span);
     },
-    // A tap selects the cell like a click does on desktop; FullCalendar skips it for scrolls and event taps.
+    // A tap selects the cell like a click does on desktop; FullCalendar skips it for scrolls and event taps,
+    // but not for a day swipe (the slot spans the width), so a press that travelled is dropped here.
     dateClick: (info) => {
+      const pressed = pressRef.current;
+      // FullCalendar types `jsEvent` as a MouseEvent, but a touch tap hands over the TouchEvent.
+      const jsEvent = info.jsEvent as MouseEvent | TouchEvent;
+      const released = "changedTouches" in jsEvent ? (jsEvent as TouchEvent).changedTouches[0] : (jsEvent as MouseEvent);
+      if (pressed && released && !isTap(pressed, { x: released.clientX, y: released.clientY })) return;
       const tappedAt = Date.now();
       const api = calendarRef.current?.getApi();
       window.setTimeout(() => {
