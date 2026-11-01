@@ -1,6 +1,6 @@
 # ADR-0048: ⌘K is a command palette modal, not a side panel
 
-**Status**: Accepted (user decision, 2026-11-01). Amends ADR-0043 §10 (the search surface) and ADR-0034 (a modal next to `SidePanel`).
+**Status**: Accepted (user decision, 2026-11-01), amended by ADR-0053 §6. Amends ADR-0043 §10 (the search surface) and ADR-0034 (a modal next to `SidePanel`).
 
 ## Context
 
@@ -14,7 +14,7 @@
 1. **`CommandPalette` replaces `SearchPanel`** in `AppShellNav`, opened by the same ⌘K guard (`isSearchShortcut`) and the Sidebar search item. `SearchPanel` and its stories are removed. The search backend (`searchAllAction`, hybrid or keyword) is unchanged.
 2. **Shape**: a modal dialog (`role="dialog"`, `aria-modal`), centred on desktop at a fixed offset from the top, top-anchored with the page gutter on phones (the keyboard covers the bottom). It is built from semantic tokens and existing atoms only, and it is the one modal that is not a `SidePanel`. It keeps `SidePanel`'s conventions: stays mounted while closed (`inert`), own focus trap, focus returns on close, Escape and scrim click close, `motion-reduce` fallback.
 3. **Content, in order**:
-   - **Empty field**: `Borden` (Te doen boards with progress, favourites first, then board order, at most 4) and `Snelle acties` (the create actions and Settings).
+   - **Empty field**: `Borden` and `Snelle acties` (the create actions and Settings); which boards, and the `Projecten` group above them, is ADR-0053 §6 (Borden at most 3, most recent activity first).
    - **Typing**: actions (the go-to actions too) and boards whose label matches (client-side, deterministic), then the search results grouped per module as today (2-character minimum, 300 ms debounce).
    - Keyboard model unchanged: focus stays in the field, ↑/↓/Home/End move one highlight across all groups (wrapping), Enter runs or opens it.
 4. **Board progress is deterministic**: `done / total` cards. `done` counts cards in the board's done columns: `board_columns.is_done` once #681 ships it, until then the last column by `position` (the seeded `Afgerond`). One pure function decides this, so the switch is one line. A board without cards shows no ring. Read through the member's RLS client; no migration, no new table.
