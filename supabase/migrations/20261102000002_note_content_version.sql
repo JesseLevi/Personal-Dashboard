@@ -1,4 +1,4 @@
--- Optimistic concurrency for note saves (ADR-0048).
+-- Optimistic concurrency for note saves (ADR-0056).
 --   notes.content_version                  bumped by every content save, never by move/rename
 --   public.save_note_content_versioned     saves only when the caller's version is current
 --   public.save_note_content (unchanged signature) also bumps the version, so a
@@ -12,7 +12,7 @@ alter table public.notes
   add column content_version integer not null default 0;
 
 comment on column public.notes.content_version is
-  'Incremented by every save of content (ADR-0048). Not updated_at: moving a note also bumps that.';
+  'Incremented by every save of content (ADR-0056). Not updated_at: moving a note also bumps that.';
 
 create or replace function public.save_note_content(
   p_note_id uuid,
@@ -101,7 +101,7 @@ end;
 $$;
 
 comment on function public.save_note_content_versioned is
-  'Note save with a version check (ADR-0048): as save_note_content, but only '
+  'Note save with a version check (ADR-0056): as save_note_content, but only '
   'when content_version equals p_expected_version; returns the new version. '
   'NL409 = changed elsewhere, NL404 = not found or not owned. security invoker.';
 

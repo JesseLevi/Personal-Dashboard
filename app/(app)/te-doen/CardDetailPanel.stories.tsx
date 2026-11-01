@@ -53,6 +53,8 @@ const sampleCard: CardWithLabels = {
   created_at: "2026-07-01T00:00:00.000Z",
   updated_at: "2026-07-01T00:00:00.000Z",
   labels: [],
+  subtaskTotal: 0,
+  subtaskDone: 0,
 };
 
 // `min-h-screen` wrapper (#106, same precedent as SidePanel.stories.tsx):

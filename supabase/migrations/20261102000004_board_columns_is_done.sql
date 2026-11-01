@@ -4,7 +4,7 @@
 --                           same signature, so widget_today() follows
 --   seed_board_for()        the default "Afgerond" column is a done column
 --
--- Apply after 20261030000001_widget_tokens. Not applied to hosted by merging:
+-- Apply after 20261030000001_widget_tokens and 20261102000001_card_subtasks. Not applied to hosted by merging:
 -- needs the user's explicit go.
 
 alter table public.board_columns

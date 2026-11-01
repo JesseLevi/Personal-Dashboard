@@ -46,8 +46,9 @@ interface RawBoardQueryRow extends BoardRow {
   board_columns: Array<
     Omit<BoardColumnWithCards, "cards"> & {
       cards: Array<
-        Omit<CardWithLabels, "labels"> & {
+        Omit<CardWithLabels, "labels" | "subtaskTotal" | "subtaskDone"> & {
           card_labels: Array<{ label: LabelRow | null }>;
+          card_subtasks: Array<{ done: boolean }>;
         }
       >;
     }
@@ -56,7 +57,8 @@ interface RawBoardQueryRow extends BoardRow {
 
 /**
  * One full board — columns ordered by `position`, each column's cards
- * ordered by `position`, each card's labels resolved — fetched in a single
+ * ordered by `position`, each card's labels resolved and subtasks counted
+ * (only their `done` flag is read) — fetched in a single
  * PostgREST round trip via nested embeds (no per-column/per-card follow-up
  * query). Returns `null` if the board doesn't exist, isn't owned by the
  * signed-in user, or the caller is signed out.
@@ -81,7 +83,8 @@ export async function getBoardWithColumns(
         cards (
           id, user_id, column_id, title, description, priority, size,
           due_at, planned_for, position, source, created_at, updated_at,
-          card_labels ( label:labels ( id, user_id, board_id, name, created_at, updated_at ) )
+          card_labels ( label:labels ( id, user_id, board_id, name, created_at, updated_at ) ),
+          card_subtasks ( done )
         )
       )
     `,
@@ -106,11 +109,13 @@ export async function getBoardWithColumns(
       ...column,
       cards: [...cards]
         .sort((a, b) => a.position - b.position)
-        .map(({ card_labels, ...card }): CardWithLabels => ({
+        .map(({ card_labels, card_subtasks, ...card }): CardWithLabels => ({
           ...card,
           labels: card_labels
             .map((cardLabel) => cardLabel.label)
             .filter((label): label is LabelRow => label !== null),
+          subtaskTotal: card_subtasks.length,
+          subtaskDone: card_subtasks.filter((subtask) => subtask.done).length,
         })),
     }));
 
