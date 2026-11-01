@@ -12,7 +12,7 @@ Scrim, then a dialog. Dialog = decorative "stack" layer (`bg-surface-secondary`,
 
 ## Contract
 - Props: `open`, `onClose`, `onSearch`, `onOpen(href)`, `onRunAction(action)`, `onOpenSettings`, `canEnableSmartSearch`, `autoFocusField`, `actions`, `loadBoards`, `initialQuery`. Types from `lib/command/types.ts`.
-- Empty field: `Borden` (favourites first, max 4; omitted until loaded and on failure; the last list is kept across opens) and `Snelle acties` (`pinned` actions). Typing: `Acties` (translated label matches), `Borden` (name matches), then search results per module. State lines (idle, searching, failed, no results) only when nothing matched at all.
+- Empty field: `Borden` (at most 3, in the order `loadBoards` returns them, most recently active first; favourites are not moved up; omitted until loaded and on failure; the last list is kept across opens) and `Snelle acties` (`pinned` actions). Typing: `Acties` (translated label matches), `Borden` (name matches), then search results per module. State lines (idle, searching, failed, no results) only when nothing matched at all.
 - Matching (`lib/command/match.ts`): case- and diacritics-insensitive, every query word is a prefix of some label word.
 - Search: 2-character minimum, 300 ms debounce, stale responses dropped; a pre-filled query searches at once.
 - Choosing a row closes the palette first, then calls `onOpen` or `onRunAction`. `loadBoards` runs on every open.

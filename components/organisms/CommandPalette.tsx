@@ -234,6 +234,7 @@ export function CommandPalette({
       if (rows.length > 0) result.push({ key, label: t(`groups.${key}`), rows });
     };
 
+    // Empty field: one `add` per group, in display order (a Projecten group goes above Borden).
     if (trimmedQuery === "") {
       add("boards", pinnedBoards(boards ?? []).map(boardRow));
       add("quickActions", actions.filter((action) => action.pinned).map(actionRow));

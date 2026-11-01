@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { matchesQuery, normalizeForMatch } from "@/lib/command/match";
-import { boardPercent, matchingActions, matchingBoards, orderBoards, pinnedBoards } from "@/lib/command/palette";
+import { boardPercent, matchingActions, matchingBoards, pinnedBoards } from "@/lib/command/palette";
 import type { CommandAction, CommandBoard } from "@/lib/command/types";
 
 describe("normalizeForMatch", () => {
@@ -45,14 +45,9 @@ const board = (id: string, overrides: Partial<CommandBoard> = {}): CommandBoard 
 });
 
 describe("boards", () => {
-  it("orders favourites first, then the given order", () => {
-    const ordered = orderBoards([board("a"), board("b", { isFavorite: true }), board("c"), board("d", { isFavorite: true })]);
-    expect(ordered.map((b) => b.id)).toEqual(["b", "d", "a", "c"]);
-  });
-
-  it("pins at most four", () => {
-    const many = ["a", "b", "c", "d", "e", "f"].map((id) => board(id, { isFavorite: id === "f" }));
-    expect(pinnedBoards(many).map((b) => b.id)).toEqual(["f", "a", "b", "c"]);
+  it("pins the first three in the given order, favourites not moved up", () => {
+    const many = ["a", "b", "c", "d", "e"].map((id) => board(id, { isFavorite: id === "e" }));
+    expect(pinnedBoards(many).map((b) => b.id)).toEqual(["a", "b", "c"]);
   });
 
   it("matches by name", () => {
