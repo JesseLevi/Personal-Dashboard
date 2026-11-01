@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { SaveController } from "@/lib/notes/save-controller";
 import { updateNoteContent } from "../actions";
 
@@ -11,6 +12,7 @@ const AUTOSAVE_DEBOUNCE_MS = 1000;
 // Wires SaveController to the real `updateNoteContent` result (#334): status
 // is never optimistic, and the tab warns while a save is pending or failed.
 export function useNoteSave(noteId: string, initialVersion: number | null) {
+  const router = useRouter();
   const ref = useRef<SaveController | null>(null);
   if (!ref.current) {
     ref.current = new SaveController(
@@ -43,8 +45,14 @@ export function useNoteSave(noteId: string, initialVersion: number | null) {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       window.removeEventListener("beforeunload", handleBeforeUnload);
       controller.flush();
+      // Autosaves do not revalidate (see updateNoteContent). Once the editor
+      // closes, one refresh drops the router cache so /notities, also when
+      // reached with the browser's back button, shows the new title.
+      void controller.settled().then(() => {
+        if (controller.hasSaved()) router.refresh();
+      });
     };
-  }, [controller]);
+  }, [controller, router]);
 
   return {
     status,

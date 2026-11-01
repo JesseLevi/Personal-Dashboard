@@ -72,6 +72,37 @@ describe("SaveController", () => {
     expect(save).not.toHaveBeenCalled();
   });
 
+  it("reports whether any write succeeded and when the last one settled", async () => {
+    let resolveFirst: (v: { success: boolean }) => void = () => {};
+    const save = vi
+      .fn()
+      .mockImplementationOnce(() => new Promise((r) => (resolveFirst = r)))
+      .mockResolvedValue({ success: true });
+    const c = new SaveController(save, 1000);
+    expect(c.hasSaved()).toBe(false);
+    c.change(doc("a"));
+    await vi.advanceTimersByTimeAsync(1000);
+    c.change(doc("ab"));
+    c.flush();
+    let settled = false;
+    void c.settled().then(() => (settled = true));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(settled).toBe(false);
+    resolveFirst({ success: true });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(save).toHaveBeenCalledTimes(2);
+    expect(settled).toBe(true);
+    expect(c.hasSaved()).toBe(true);
+  });
+
+  it("hasSaved stays false when every write failed", async () => {
+    const c = new SaveController(vi.fn().mockResolvedValue({ success: false }), 1000);
+    c.change(doc("a"));
+    c.flush();
+    await c.settled();
+    expect(c.hasSaved()).toBe(false);
+  });
+
   it("sends the last known version and advances it after each save", async () => {
     const save = vi
       .fn()

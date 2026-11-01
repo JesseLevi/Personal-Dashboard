@@ -32,7 +32,7 @@ import type { Database, Json } from "@/lib/database.types";
 //   3. returns a typed ActionResult instead of throwing, so the UI can look
 //      up `notes.errors.${error}` in the message catalog.
 // revalidatePath("/notities", "layout") runs on every successful write
-// except moveNote -- same "the client already applies the move
+// except updateNoteContent (see there) and moveNote -- same "the client already applies the move
 // optimistically, don't bundle an RSC re-render onto the drag response"
 // reasoning as te-doen/actions.ts's moveCard / recepten/actions.ts's
 // moveRecipe (#169), and the "layout" type argument for the same reason
@@ -393,7 +393,9 @@ export async function updateNoteContent(
   // Orphan sweep (ADR-0022 §6); never fails the save.
   await sweepNoteImages(auth.userId, noteId, content);
 
-  revalidatePath("/notities", "layout");
+  // No revalidatePath: in an action response it re-renders the whole tree,
+  // root and (app) layouts included, on every autosave. The editor refreshes
+  // the router once when it closes (useNoteSave).
   return { success: true, data: { title, version } };
 }
 

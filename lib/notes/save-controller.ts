@@ -18,6 +18,8 @@ export class SaveController {
   private failed: unknown = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private inFlight = false;
+  private current: Promise<void> = Promise.resolve();
+  private savedAny = false;
   private disposed = false;
   private listeners = new Set<() => void>();
 
@@ -28,6 +30,18 @@ export class SaveController {
   ) {}
 
   getStatus = (): SaveStatus => this.status;
+
+  /** True once any write succeeded, i.e. the server copy changed. */
+  hasSaved = (): boolean => this.savedAny;
+
+  /** Resolves when no write is in flight any more. */
+  settled = async (): Promise<void> => {
+    let seen: Promise<void> | null = null;
+    while (seen !== this.current) {
+      seen = this.current;
+      await seen;
+    }
+  };
 
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
@@ -54,7 +68,7 @@ export class SaveController {
     this.latest = null;
     this.inFlight = true;
     this.set("saving");
-    this.save(content, this.version)
+    this.current = this.save(content, this.version)
       .then(
         (result): SaveResult => result,
         (): SaveResult => ({ success: false }),
@@ -68,6 +82,7 @@ export class SaveController {
           this.set("conflict");
           return;
         }
+        if (result.success) this.savedAny = true;
         if (result.success && typeof result.version === "number") this.version = result.version;
         this.failed = result.success ? null : content;
         if (this.latest !== null) {
