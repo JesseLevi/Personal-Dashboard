@@ -10,7 +10,7 @@
 ## Decision
 
 1. **A label is a name on one board**, 1 to 40 characters, no colour (a colour would need a new column and a token decision).
-2. **The card panel holds the full set** as one comma-separated field. On save the server reuses a board label with the same name (case ignored), creates the missing ones, replaces the card's links, and deletes board labels no card carries any more. There is no separate label manager. At most 10 labels per card.
+2. **The card panel holds the full set**, chosen from the board's labels or created in a picker (#716). On save the server reuses a board label with the same name (case ignored), creates the missing ones, replaces the card's links, and deletes board labels no card carries any more. There is no separate label manager. At most 10 labels per card.
 3. **Cards show their labels** as neutral `Tag` chips with the `Tag` icon.
 4. **The board header filters** on one label (`?label=<id>`, next to `?sort=`), like sorting a view-only choice; dragging is off while a filter is set.
 5. **The write policies decide what may be linked.** `card_labels` insert and update require the caller's own card and own label on the same board (`private.card_label_link_ok`), not only the caller's `user_id`.
