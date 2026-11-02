@@ -79,11 +79,17 @@ export interface InputFieldSelectOption {
   label: string;
 }
 
+/** A named set of options, rendered as a native `<optgroup>`. */
+export interface InputFieldSelectGroup {
+  label: string;
+  options: InputFieldSelectOption[];
+}
+
 type InputFieldSelectProps = InputFieldSharedProps &
   Omit<SelectHTMLAttributes<HTMLSelectElement>, "className"> & {
     multiline?: false;
     /** Renders a native `<select>` instead of `<input>` — pair with `trailingIcon="ChevronDown"` for the Figma chevron. */
-    options: InputFieldSelectOption[];
+    options: (InputFieldSelectOption | InputFieldSelectGroup)[];
     /** Rendered as a disabled, unselectable first `<option value="">` for "nothing chosen yet" — `<select>` has no native `placeholder` attribute. */
     placeholderOption?: string;
   };
@@ -197,11 +203,21 @@ export function InputField({
                     {placeholderOption}
                   </option>
                 ) : null}
-                {options.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+                {options.map((entry) =>
+                  "options" in entry ? (
+                    <optgroup key={entry.label} label={entry.label}>
+                      {entry.options.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ) : (
+                    <option key={entry.value} value={entry.value}>
+                      {entry.label}
+                    </option>
+                  ),
+                )}
               </select>
             ) : (
               <SingleLineInput

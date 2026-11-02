@@ -37,6 +37,7 @@ import { choiceToRule } from "@/lib/agenda/repeat";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import { addDays, spanToUtc } from "@/lib/agenda/time";
 import type { MealSlot } from "@/lib/agenda/types";
+import { useAnimatedHeight } from "@/lib/dom/use-animated-height";
 import { useOutsidePress } from "@/lib/dom/use-outside-press";
 import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import { useSheetDrag } from "@/lib/dom/use-sheet-drag";
@@ -324,6 +325,8 @@ function QuickAddForm({
 function Sheet({ onClose, leaving, onLeft, children }: { onClose: () => void; leaving: boolean; onLeft: () => void; children: ReactNode }) {
   const t = useTranslations("components.agendaQuickAdd");
   const sheetRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  useAnimatedHeight(sheetRef, contentRef);
   const drag = useSheetDrag({ getPanel: () => sheetRef.current, canStart: () => !leaving, onClose });
 
   // Unmount once the exit animation is over (or the fallback fires).
@@ -375,21 +378,23 @@ function Sheet({ onClose, leaving, onLeft, children }: { onClose: () => void; le
         }}
         // layout-size: the sheet never covers the whole screen — design/notes/AgendaPage.md
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 flex max-h-[90dvh] flex-col rounded-t-container bg-surface-primary [--sheet-fill:var(--color-surface-primary)] outline-none transition-transform duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+          "fixed inset-x-0 bottom-0 z-50 overflow-hidden rounded-t-container bg-surface-primary [--sheet-fill:var(--color-surface-primary)] outline-none transition-[transform,height] duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
           leaving ? "animate-sheet-out" : "animate-sheet-in",
         )}
       >
-        <div
-          className="relative flex h-14 shrink-0 touch-none items-center justify-end px-component-lg"
-          onPointerDown={drag.onPointerDown}
-          onPointerMove={drag.onPointerMove}
-          onPointerUp={drag.onPointerUp}
-          onPointerCancel={drag.onPointerCancel}
-        >
-          <span aria-hidden="true" className="absolute top-3 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-stroke-primary" />
-          <Button variant="filled" icon="X" aria-label={t("closeLabel")} onClick={onClose} />
+        <div ref={contentRef} className="flex max-h-[90dvh] flex-col">
+          <div
+            className="relative flex h-14 shrink-0 touch-none items-center justify-end px-component-lg"
+            onPointerDown={drag.onPointerDown}
+            onPointerMove={drag.onPointerMove}
+            onPointerUp={drag.onPointerUp}
+            onPointerCancel={drag.onPointerCancel}
+          >
+            <span aria-hidden="true" className="absolute top-3 left-1/2 h-1 w-12 -translate-x-1/2 rounded-full bg-stroke-primary" />
+            <Button variant="filled" icon="X" aria-label={t("closeLabel")} onClick={onClose} />
+          </div>
+          {children}
         </div>
-        {children}
       </div>
     </>
   );

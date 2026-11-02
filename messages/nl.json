@@ -1229,6 +1229,7 @@
       "recipesEmpty": "Geen recepten gevonden.",
       "newCard": "Nieuwe kaart",
       "todoTarget": "Komt in {board}, kolom {column}.",
+      "cardLocation": "In {board}, kolom {column}.",
       "noBoard": "Je hebt nog geen bord. Kies een open kaart, of maak eerst een bord in Te doen.",
       "withNames": "Met {names}",
       "moreDetails": "Meer details",
