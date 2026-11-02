@@ -1,4 +1,4 @@
-import { AgendaCalendar } from "@/components/organisms/AgendaCalendar";
+import { AgendaCalendar, useIsNarrow } from "@/components/organisms/AgendaCalendar";
 import type { AgendaItem } from "@/lib/agenda/types";
 import type { AgendaView } from "@/lib/agenda/view";
 import { useState } from "react";
@@ -120,6 +120,46 @@ export const Interactive = () => {
       />
       <AgendaBody>
         <AgendaCalendar items={items} view={view} date={date} scrollNowKey={scrollNowKey} />
+      </AgendaBody>
+    </Surface>
+  );
+};
+
+// Below `lg` the day follows the finger and the neighbour day waits beside it (#713). Swipe the grid with touch
+// emulation at 390px; on a wide viewport the page shows the desktop calendar and there is nothing to drag.
+export const Swipe = () => {
+  const narrow = useIsNarrow();
+  const [date, setDate] = useState(DATE);
+  return (
+    <Surface>
+      <AgendaHeader
+        title={date}
+        view="day"
+        date={date}
+        today={DATE}
+        onGoToDate={setDate}
+        onViewChange={noop}
+        onPrevious={() => setDate(stepDate("day", date, -1))}
+        onNext={() => setDate(stepDate("day", date, 1))}
+        onToday={() => setDate(DATE)}
+        onNew={noop}
+        onOpenCalendars={noop}
+        weekToBasket={{ onSend: noPlan, baskets }}
+      />
+      <AgendaBody
+        swipe={
+          narrow
+            ? {
+                date,
+                onStep: (step) => setDate(stepDate("day", date, step)),
+                renderNeighbour: (step) => (
+                  <AgendaCalendar items={items} view="day" date={stepDate("day", date, step)} scrollToNow={false} entrance={false} />
+                ),
+              }
+            : undefined
+        }
+      >
+        <AgendaCalendar items={items} view="day" date={date} scrollToNow={false} />
       </AgendaBody>
     </Surface>
   );

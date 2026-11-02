@@ -48,7 +48,6 @@ import { AgendaMealPanel } from "./AgendaMealPanel";
 import { createPlannedCard } from "./card-actions";
 import { createMealPlan, deleteMealPlan, getMealPlan, sendMealToBasket, sendWeekToBasket, updateMealPlan } from "./meal-actions";
 import { useAgendaShortcuts } from "./useAgendaShortcuts";
-import { useAgendaSwipe } from "./useAgendaSwipe";
 
 export interface AgendaPageProps {
   initialView: AgendaView;
@@ -196,9 +195,27 @@ export function AgendaPage({
   };
   useAgendaShortcuts(runShortcut, shortcutsBlocked);
 
-  // Below `lg` the calendar shows one day; a horizontal swipe on it steps like the arrows (#666).
-  const swipeRef = useRef<HTMLDivElement>(null);
-  useAgendaSwipe(swipeRef, narrow, (step) => goTo(stepDate(effectiveView, date, step)));
+  // Below `lg` the calendar shows one day and follows a horizontal swipe (#666, #713); the neighbour day
+  // is a second, read-only calendar beside it while the finger is down. Its data is the loaded window.
+  const swipe = narrow
+    ? {
+        date,
+        onStep: (step: 1 | -1) => goTo(stepDate(effectiveView, date, step)),
+        onPeek: (step: 1 | -1) => {
+          const neighbour = stepDate(effectiveView, date, step);
+          if (loadWindow(neighbour).from !== loadedFrom) void loadAround(neighbour);
+        },
+        renderNeighbour: (step: 1 | -1) => (
+          <AgendaCalendar
+            items={visibleItems}
+            view={view}
+            date={stepDate(effectiveView, date, step)}
+            scrollToNow={false}
+            entrance={false}
+          />
+        ),
+      }
+    : undefined;
 
   // "+ Nieuw", the floating button, N and a click or drag on an empty slot all open quick add (ADR-0041).
   function openQuickAdd(slot: AgendaSpan | null) {
@@ -401,19 +418,17 @@ export function AgendaPage({
       />
       <AgendaSyncNotices initialNotices={initialNotices} onResolve={resolveSyncNotice} />
       {error && <p className="pr-page-right-equal text-base font-semibold text-priority-urgent">{error}</p>}
-      <AgendaBody>
-        <div ref={swipeRef} className="h-full">
-          <AgendaCalendar
-            items={visibleItems}
-            view={view}
-            date={date}
-            scrollNowKey={scrollNowKey}
-            onSelectSlot={openQuickAdd}
-            onItemClick={handleItemClick}
-            onItemMove={handleChange}
-            onItemResize={handleChange}
-          />
-        </div>
+      <AgendaBody swipe={swipe}>
+        <AgendaCalendar
+          items={visibleItems}
+          view={view}
+          date={date}
+          scrollNowKey={scrollNowKey}
+          onSelectSlot={openQuickAdd}
+          onItemClick={handleItemClick}
+          onItemMove={handleChange}
+          onItemResize={handleChange}
+        />
       </AgendaBody>
       <Toast message={notice} onDismiss={() => setNotice(null)} />
       {mealPanel.item && (
