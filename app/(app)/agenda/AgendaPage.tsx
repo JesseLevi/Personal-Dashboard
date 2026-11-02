@@ -20,6 +20,7 @@ import { weekRange } from "@/lib/agenda/meals";
 import { toAgendaResult, withPlannedFor, type PlanCardGroup, type QuickAddBoard } from "@/lib/agenda/plan-cards";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
+import type { AgendaSheetStop } from "@/lib/agenda/sheet";
 import type { AgendaShortcut } from "@/lib/agenda/shortcuts";
 import { addDays, agendaNow, isoWeek, loadWindow, spanToUtc, stepDate, visibleRange } from "@/lib/agenda/time";
 import type { AgendaItem, AgendaMealItem, AgendaPlannedCardItem, MealSlot } from "@/lib/agenda/types";
@@ -33,6 +34,7 @@ import { createEvent, deleteEvent, getAgendaEvent, loadAgendaRange, moveEvent, u
 import { EnterFromLogin } from "../te-doen/EnterFromLogin";
 import { AgendaBody } from "./AgendaBody";
 import { AgendaDayCards } from "./AgendaDayCards";
+import { AgendaDayStrip } from "./AgendaDayStrip";
 import { loadMealCardData } from "./day-cards-actions";
 import { AgendaCalendarsPanel } from "./AgendaCalendarsPanel";
 import { AgendaCardPanel, agendaCardId, type AgendaCardPanelItem } from "./AgendaCardPanel";
@@ -151,6 +153,8 @@ export function AgendaPage({
   const [notice, setNotice] = useState<string | null>(null);
   const [headerOverlayOpen, setHeaderOverlayOpen] = useState(false);
   const [scrollNowKey, setScrollNowKey] = useState(0);
+  // Below `lg` the planner is a sheet; every landing starts in peek and nothing is remembered (#733).
+  const [sheetStop, setSheetStop] = useState<AgendaSheetStop>("peek");
   const latestRequest = useRef(0);
   const newButtonRef = useRef<HTMLElement>(null);
 
@@ -477,15 +481,19 @@ export function AgendaPage({
     title = format.dateTimeRange(utc(range.start), last, { day: "numeric", month: "short", timeZone: "UTC" });
   }
 
+  // Below `lg` the header is the date opener: the weekday is the title, the date sits under it.
+  const dayTitle = narrow ? capitalizeWords(format.dateTime(utc(date), { weekday: "long", timeZone: "UTC" }), locale) : null;
+
   return (
     <>
-      <EnterFromLogin index={0}>
+      <EnterFromLogin index={0} className="max-lg:sticky max-lg:top-[env(safe-area-inset-top)] max-lg:z-10">
       <AgendaHeader
-        title={capitalizeWords(title, locale)}
+        title={dayTitle ?? capitalizeWords(title, locale)}
+        subtitle={format.dateTime(utc(date), { day: "numeric", month: "long", timeZone: "UTC" })}
+        isToday={date === today}
         view={toToggleView(view)}
         weekNumber={effectiveView === "week" || effectiveView === "threeDay" || effectiveView === "list" ? isoWeek(range.start) : undefined}
         date={date}
-        today={today}
         onGoToDate={goTo}
         onOverlayChange={setHeaderOverlayOpen}
         onViewChange={handleViewChange}
@@ -503,6 +511,11 @@ export function AgendaPage({
       <EnterFromLogin index={1}>
       <AgendaBody
         swipe={swipe}
+        sheet={{
+          stop: sheetStop,
+          onStopChange: setSheetStop,
+          strip: <AgendaDayStrip date={date} today={today} onSelect={goTo} />,
+        }}
         onPlannerWidth={setPlannerWidth}
         cards={
           <AgendaDayCards
@@ -519,6 +532,11 @@ export function AgendaPage({
             onOpenItem={handleItemClick}
             onSignal={handleSignal}
             onDayToBasket={handleDayToBasket}
+            onShowMoreEvents={() => {
+              if (!narrow) return false;
+              setSheetStop("full");
+              return true;
+            }}
           />
         }
       >

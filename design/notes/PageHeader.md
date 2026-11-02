@@ -15,6 +15,9 @@ Figma: "Header" frame (plain `FRAME`, not a Component/ComponentSet; duplicated p
 - `chrome-touch` class: header chrome is not reading content, so on coarse pointers it gets no text selection or callout (see `app/globals.css`) (#172).
 - Radius/spacing tokens: `gap-inline-lg` read via `boundVariables` on `3878:7959` ("Onderwerp" child `itemSpacing` = `spacing/inline/gap-lg`). Right padding uses the page-padding token `pr-page-right-equal` (16 mobile / 128 desktop) per the ticket's page-padding rule (#205).
 
+## Subtitle
+`subtitle` (optional `ReactNode`) puts a second line under the title row: `text-base text-text-secondary`, in a `flex-col justify-center` left block. Agenda uses it below `lg` for the date under the weekday (the content is `lg:hidden`, so the empty `<p>` has no height from `lg`). Story: `basis--panelen--page-header--subtitle`.
+
 ## Title as a button
 `titleTrigger` (`PageHeaderTitleTrigger`: `onClick`, `expanded`, `buttonRef`) wraps the title text in a `<button>` inside the `<h1>` (`aria-haspopup="dialog"`, `aria-expanded`) and adds a `ChevronDown` after the text. The chevron sits inside the morphing text span, so it is part of the measured width and fades with the title instead of being clipped by the h1's `overflow-hidden`. Only Agenda uses it (date picker). The button has a hover fill (`hover:bg-surface-secondary-hover`, `active:bg-surface-secondary-active`, `rounded-control`) and `px-component-sm py-component-xs` padding; the h1 carries a matching negative start margin (`-ms-component-sm`) so the text stays where a plain title would sit. The morph measures the button (padding included), and the outgoing name gets the same padding. The size comes from the caller (Agenda passes `[&_h1]:text-2xl`; the default stays `text-xl`). The visible text is the accessible name.
 

@@ -79,3 +79,13 @@ export const Interactive = () => {
     />
   );
 };
+
+export const Subtitle = () => (
+  <Specimens>
+    <Specimen label="Subtitle" hint="a second line under the title (Agenda's date below the weekday)">
+      <div className="w-[390px] max-w-full">
+        <PageHeader title="Thursday" subtitle="1 January" actions={<Button icon="Plus">New</Button>} className="items-start [&_h1]:text-2xl" />
+      </div>
+    </Specimen>
+  </Specimens>
+);
