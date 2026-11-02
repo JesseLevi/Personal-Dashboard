@@ -1,5 +1,5 @@
 /** What a key does on the Agenda page; `N` opens quick add (ADR-0041). */
-export type AgendaShortcut = "new" | "today" | "day" | "week" | "month" | "list" | "previous" | "next" | "tray";
+export type AgendaShortcut = "new" | "today" | "day" | "week" | "month" | "list" | "previous" | "next";
 
 const SHORTCUT_KEYS: Readonly<Record<string, AgendaShortcut>> = {
   n: "new",
@@ -8,7 +8,6 @@ const SHORTCUT_KEYS: Readonly<Record<string, AgendaShortcut>> = {
   w: "week",
   m: "month",
   l: "list",
-  p: "tray",
   arrowleft: "previous",
   arrowright: "next",
 };
@@ -23,7 +22,6 @@ export const AGENDA_SHORTCUT_KEYS: ReadonlyArray<{ shortcut: AgendaShortcut; key
   { shortcut: "list", keys: "L" },
   { shortcut: "previous", keys: "←" },
   { shortcut: "next", keys: "→" },
-  { shortcut: "tray", keys: "P" },
 ];
 
 interface TargetLike {

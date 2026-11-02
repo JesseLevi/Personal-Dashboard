@@ -269,7 +269,7 @@ export const Interactive = () => {
   );
 };
 
-// Edit mode with a planned day next to the deadline (cards.planned_for).
+// Edit mode with a planned day above the deadline (cards.planned_for).
 export const EditItemPlanned = () => (
   <div className="min-h-screen">
     <CardDetailPanel
@@ -277,6 +277,23 @@ export const EditItemPlanned = () => (
       onClose={() => {}}
       columns={columns}
       target={{ mode: "edit", card: { ...sampleCard, planned_for: "2026-10-17" } }}
+      onCreateCard={mockCreateCard}
+      onUpdateCard={mockUpdateCard}
+      onMoveCard={mockMoveCard}
+      onDeleteCard={mockDeleteCard}
+      {...subtaskMocks()}
+    />
+  </div>
+);
+
+// Edit mode of a card without a deadline: the field is replaced by the "Deadline toevoegen" button.
+export const EditItemNoDeadline = () => (
+  <div className="min-h-screen">
+    <CardDetailPanel
+      open
+      onClose={() => {}}
+      columns={columns}
+      target={{ mode: "edit", card: { ...sampleCard, due_at: null, planned_for: "2026-10-17" } }}
       onCreateCard={mockCreateCard}
       onUpdateCard={mockUpdateCard}
       onMoveCard={mockMoveCard}
@@ -307,6 +324,40 @@ export const WithSubtasks = () => (
       onMoveCard={mockMoveCard}
       onDeleteCard={mockDeleteCard}
       {...subtaskMocks(openAndDone)}
+    />
+  </div>
+);
+
+// Edit mode with no subtasks: the hint says each line becomes a checkbox row.
+export const SubtasksEmpty = () => (
+  <div className="min-h-screen">
+    <CardDetailPanel
+      open
+      onClose={() => {}}
+      columns={columns}
+      target={{ mode: "edit", card: sampleCard }}
+      onCreateCard={mockCreateCard}
+      onUpdateCard={mockUpdateCard}
+      onMoveCard={mockMoveCard}
+      onDeleteCard={mockDeleteCard}
+      {...subtaskMocks()}
+    />
+  </div>
+);
+
+// One subtask: the hint is gone and the add row sits under the checkbox row.
+export const SubtasksOne = () => (
+  <div className="min-h-screen">
+    <CardDetailPanel
+      open
+      onClose={() => {}}
+      columns={columns}
+      target={{ mode: "edit", card: { ...sampleCard, subtaskTotal: 1, subtaskDone: 0 } }}
+      onCreateCard={mockCreateCard}
+      onUpdateCard={mockUpdateCard}
+      onMoveCard={mockMoveCard}
+      onDeleteCard={mockDeleteCard}
+      {...subtaskMocks([subtask("s1", "Taart bestellen", 1)])}
     />
   </div>
 );
@@ -380,6 +431,109 @@ export const CreateItemWithSubtasks = () => {
         onClose={() => {}}
         columns={columns}
         target={{ mode: "create", columnId: "ideeen" }}
+        onCreateCard={mockCreateCard}
+        onUpdateCard={mockUpdateCard}
+        onMoveCard={mockMoveCard}
+        onDeleteCard={mockDeleteCard}
+        {...subtaskMocks()}
+      />
+    </div>
+  );
+};
+
+// Labels field (ADR-0052): chips with a remove control, and a list picker with a filter and "Nieuw label".
+const boardLabelChoices = ["boodschappen", "school", "thuis", "werk", "werkgever"].map((name, index) => ({ id: `bl${index}`, name }));
+const labelsTrigger = "card-detail-labels-trigger";
+const labelsFilter = "card-detail-labels-filter";
+
+const labelledCard = (names: string[]): CardWithLabels => ({
+  ...sampleCard,
+  labels: names.map((name, index) => ({ ...sampleCard.labels[0], id: `own${index}`, name })),
+});
+
+// Opens the Labels list the way a click would and types `filter` into its filter field.
+function openLabels(container: HTMLElement, filter: string) {
+  container.querySelector<HTMLButtonElement>(`#${labelsTrigger}`)?.click();
+  const input = container.querySelector<HTMLInputElement>(`#${labelsFilter}`);
+  if (!input || filter === "") return;
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, filter);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+// A card without labels: only the closed picker shows.
+export const LabelsNone = () => (
+  <div className="min-h-screen">
+    <CardDetailPanel
+      open
+      onClose={() => {}}
+      columns={columns}
+      target={{ mode: "edit", card: labelledCard([]) }}
+      boardLabels={boardLabelChoices}
+      onCreateCard={mockCreateCard}
+      onUpdateCard={mockUpdateCard}
+      onMoveCard={mockMoveCard}
+      onDeleteCard={mockDeleteCard}
+      {...subtaskMocks()}
+    />
+  </div>
+);
+
+// A few labels selected: chips under the closed picker.
+export const LabelsSelected = () => (
+  <div className="min-h-screen">
+    <CardDetailPanel
+      open
+      onClose={() => {}}
+      columns={columns}
+      target={{ mode: "edit", card: labelledCard(["school", "thuis", "werk"]) }}
+      boardLabels={boardLabelChoices}
+      onCreateCard={mockCreateCard}
+      onUpdateCard={mockUpdateCard}
+      onMoveCard={mockMoveCard}
+      onDeleteCard={mockDeleteCard}
+      {...subtaskMocks()}
+    />
+  </div>
+);
+
+// The list open with "wer" typed: matching labels (one selected) and the "Nieuw label "wer"" row.
+export const LabelsOpenFiltered = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (containerRef.current) openLabels(containerRef.current, "wer");
+  }, []);
+  return (
+    <div ref={containerRef} className="min-h-screen">
+      <CardDetailPanel
+        open
+        onClose={() => {}}
+        columns={columns}
+        target={{ mode: "edit", card: labelledCard(["werk"]) }}
+        boardLabels={boardLabelChoices}
+        onCreateCard={mockCreateCard}
+        onUpdateCard={mockUpdateCard}
+        onMoveCard={mockMoveCard}
+        onDeleteCard={mockDeleteCard}
+        {...subtaskMocks()}
+      />
+    </div>
+  );
+};
+
+// The list open without filter text: every board label alphabetically, selected ones marked.
+export const LabelsOpen = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (containerRef.current) openLabels(containerRef.current, "");
+  }, []);
+  return (
+    <div ref={containerRef} className="min-h-screen">
+      <CardDetailPanel
+        open
+        onClose={() => {}}
+        columns={columns}
+        target={{ mode: "edit", card: labelledCard(["thuis", "werk"]) }}
+        boardLabels={boardLabelChoices}
         onCreateCard={mockCreateCard}
         onUpdateCard={mockUpdateCard}
         onMoveCard={mockMoveCard}

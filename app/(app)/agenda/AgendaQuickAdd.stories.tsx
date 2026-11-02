@@ -88,9 +88,37 @@ function Stage({ children }: { children: (anchorRef: RefObject<HTMLElement | nul
   );
 }
 
-const Window = ({ text, slot, forceSheet }: { text?: string; slot?: AgendaSpan; forceSheet?: boolean }) => (
+const severalBoards: PlanCardGroup[] = [
+  ...cardGroups,
+  {
+    boardId: "b2",
+    boardName: "Werk",
+    cards: [{ id: "c3", title: "Offerte versturen", columnName: "Review", plannedFor: null }],
+  },
+];
+
+const Window = ({
+  text,
+  slot,
+  forceSheet,
+  groups,
+}: {
+  text?: string;
+  slot?: AgendaSpan;
+  forceSheet?: boolean;
+  groups?: PlanCardGroup[];
+}) => (
   <Stage>
-    {(anchorRef) => <AgendaQuickAdd {...props} anchorRef={anchorRef} initialText={text} slot={slot ?? null} forceSheet={forceSheet} />}
+    {(anchorRef) => (
+      <AgendaQuickAdd
+        {...props}
+        cardGroups={groups ?? cardGroups}
+        anchorRef={anchorRef}
+        initialText={text}
+        slot={slot ?? null}
+        forceSheet={forceSheet}
+      />
+    )}
   </Stage>
 );
 
@@ -129,6 +157,8 @@ export const EventRepeating = () => <Window text="yoga elke dinsdag 19u" />;
 export const Meal = () => <Window text="Warme dal donderdag" />;
 export const MealNoRecipe = () => <Window text="Lunch morgen" />;
 export const Todo = () => <Window text="KPN bellen dinsdag" />;
+// Several boards: the card select groups its cards per board (open the select, or pick "Offerte versturen" for the "In Werk, kolom Review." line).
+export const TodoSeveralBoards = () => <Window text="KPN bellen dinsdag" groups={severalBoards} />;
 export const Empty = () => <Window />;
 export const NoDayRecognised = () => <Window text="Tandarts" />;
 

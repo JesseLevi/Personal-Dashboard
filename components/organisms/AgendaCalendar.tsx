@@ -14,9 +14,9 @@ import { AGENDA_DEFAULT_SCROLL_HOUR, initialScrollHour, visibleRange } from "@/l
 import type { AgendaItem } from "@/lib/agenda/types";
 import type { AgendaView } from "@/lib/agenda/view";
 import {
+  AGENDA_LONG_PRESS_MS,
   AGENDA_SLOT_MINUTES,
   AGENDA_SNAP_MINUTES,
-  AGENDA_TRAY_ATTRIBUTE,
   clipBox,
   compareEventOrder,
   formatClock,
@@ -31,7 +31,6 @@ import {
 import { cn } from "@/lib/ui/cn";
 import { AgendaItemContent, type AgendaItemLabels } from "./AgendaCalendarItem";
 import { buildAgendaCalendarOptions, TODAY_CHIP } from "./AgendaCalendarTheme";
-import { AGENDA_LONG_PRESS_MS, getAgendaDragPayload, type AgendaDragPayload } from "./useAgendaDraggable";
 
 export type { AgendaView };
 
@@ -39,15 +38,6 @@ export interface AgendaChange extends AgendaSpan {
   item: AgendaItem;
 }
 
-export interface AgendaExternalDrop {
-  payload: AgendaDragPayload;
-  start: string;
-  allDay: boolean;
-  /** Set when the drop landed on an event (`calendar_events.id`), not on an empty slot. */
-  eventId?: string;
-}
-
-const EVENT_ID_ATTRIBUTE = "data-agenda-event-id";
 const ITEM_ATTRIBUTE = "data-agenda-item";
 const HOVER_QUERY = "(hover: hover) and (pointer: fine)";
 /** A tap that follows a `select` within this time is the same gesture: do not select twice. */
@@ -127,21 +117,6 @@ function useCellHover(
   }, [rootRef, overlayRef, viewName]);
 }
 
-// A drop is reported per date; the event under the pointer is found in the DOM.
-function elementsAtPoint(event: Event): Element[] {
-  const pointer = "changedTouches" in event ? (event as TouchEvent).changedTouches[0] : (event as MouseEvent);
-  return pointer ? document.elementsFromPoint(pointer.clientX, pointer.clientY) : [];
-}
-
-function eventIdAtPoint(event: Event): string | undefined {
-  const hit = elementsAtPoint(event).find((el) => el.hasAttribute(EVENT_ID_ATTRIBUTE));
-  return hit?.getAttribute(EVENT_ID_ATTRIBUTE) ?? undefined;
-}
-
-function isOverTray(event: Event): boolean {
-  return elementsAtPoint(event).some((el) => el.hasAttribute(AGENDA_TRAY_ATTRIBUTE));
-}
-
 export interface AgendaCalendarProps {
   items: AgendaItem[];
   view: AgendaView;
@@ -152,13 +127,12 @@ export interface AgendaCalendarProps {
   /** Call `revert` when the move is refused; otherwise update `items`. */
   onItemMove?: (change: AgendaChange, revert: () => void) => void;
   onItemResize?: (change: AgendaChange, revert: () => void) => void;
-  onExternalDrop?: (drop: AgendaExternalDrop) => void;
-  /** An item from the grid was dropped on the plan drawer (an element with `AGENDA_TRAY_ATTRIBUTE`). */
-  onItemDropOut?: (item: AgendaItem) => void;
   /** Bump to scroll a time grid that holds today to just before now again (the page's "Vandaag"). */
   scrollNowKey?: number;
   /** Open one hour before now when the range holds today (default); false keeps 07:00, for stories. */
   scrollToNow?: boolean;
+  /** Fade the items in on mount (default); false for a calendar that slides in beside another one. */
+  entrance?: boolean;
   className?: string;
 }
 
@@ -191,8 +165,8 @@ const MINUTE_MS = 60_000;
 const ENTER_MS = 600;
 
 /** True for the first moments after mount: the items fade in once, not on every later re-render. */
-function useEntering(): boolean {
-  const [entering, setEntering] = useState(true);
+function useEntering(initial: boolean): boolean {
+  const [entering, setEntering] = useState(initial);
   useEffect(() => {
     const timer = window.setTimeout(() => setEntering(false), ENTER_MS);
     return () => window.clearTimeout(timer);
@@ -231,10 +205,9 @@ export function AgendaCalendar({
   onItemClick,
   onItemMove,
   onItemResize,
-  onExternalDrop,
-  onItemDropOut,
   scrollNowKey = 0,
   scrollToNow = true,
+  entrance = true,
   className,
 }: AgendaCalendarProps) {
   const t = useTranslations("components.agendaCalendar");
@@ -278,7 +251,7 @@ export function AgendaCalendar({
   const events = useMemo(() => toEventInputs(items), [items]);
   // The class settings read the clock (hour labels under the now label): new functions each minute make FullCalendar re-run them.
   const minute = useMinute();
-  const entering = useEntering();
+  const entering = useEntering(entrance);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `minute` only forces new class functions.
   const theme = useMemo(() => buildAgendaCalendarOptions(entering), [minute, entering]);
 
@@ -330,6 +303,8 @@ export function AgendaCalendar({
     slotDuration: { minutes: AGENDA_SLOT_MINUTES },
     snapDuration: { minutes: AGENDA_SNAP_MINUTES },
     scrollTime: { hours: scrollHour() },
+    // Below `lg` a swipe keeps the time of day it is scrolled to, like the neighbour day beside it.
+    scrollTimeReset: !(narrow && effectiveView === "day"),
     nowIndicator: true,
     nowIndicatorHeaderContent: (info) => formatClock(info.date),
     allDayText: t("allDay"),
@@ -341,15 +316,11 @@ export function AgendaCalendar({
     events,
     eventOrder: (a: unknown, b: unknown) => compareEventOrder(a as EventOrderSubject, b as EventOrderSubject),
     eventDidMount: (info) => {
-      // Drag mirrors of external items carry no agenda item.
-      const item = itemOf(info.event) as AgendaItem | undefined;
-      if (item) info.el.setAttribute(ITEM_ATTRIBUTE, "");
-      if (item?.kind === "event") info.el.setAttribute(EVENT_ID_ATTRIBUTE, item.id);
+      info.el.setAttribute(ITEM_ATTRIBUTE, "");
     },
     editable: true,
     selectable: true,
     selectMirror: true,
-    droppable: true,
     longPressDelay: AGENDA_LONG_PRESS_MS,
     eventLongPressDelay: AGENDA_LONG_PRESS_MS,
     selectLongPressDelay: AGENDA_LONG_PRESS_MS,
@@ -393,19 +364,8 @@ export function AgendaCalendar({
       }, TAP_DEDUPE_MS / 4);
     },
     eventClick: (info) => onItemClick?.(itemOf(info.event), info.el),
-    eventDragStop: (info) => {
-      const item = itemOf(info.event) as AgendaItem | undefined;
-      if (item && isOverTray(info.jsEvent)) onItemDropOut?.(item);
-    },
     eventDrop: handleMove,
     eventResize: handleResize,
-    drop: (info) => {
-      const payload = getAgendaDragPayload(info.draggedEl);
-      if (payload) {
-        const eventId = eventIdAtPoint(info.jsEvent);
-        onExternalDrop?.({ payload, start: info.dateStr, allDay: info.allDay, ...(eventId ? { eventId } : {}) });
-      }
-    },
   };
 
   return (

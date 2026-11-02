@@ -4,7 +4,6 @@ import { useEffect, useState, useTransition } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { SidePanel } from "@/components/organisms/SidePanel";
 import { InputField } from "@/components/atoms/InputField";
-import { formatLabelInput, parseLabelInput } from "@/lib/boards/labels";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { Tag } from "@/components/atoms/Tag";
 import { Button } from "@/components/atoms/Button";
@@ -18,6 +17,7 @@ import { PRIORITIES, SIZES, isPriority, isSize, type Size } from "@/lib/boards/e
 import { doneColumnOffer } from "@/lib/boards/subtasks";
 import type { ActionResult, CardRow, CardWithLabels } from "@/lib/boards/types";
 import { CardSubtasks, type SubtaskActions } from "./CardSubtasks";
+import { CardLabels } from "./CardLabels";
 
 // Tag rows get a Button row's metrics: a 40 px tap target, selection aligned with the options.
 const TAG_ROW = "flex h-10 items-center px-component-sm";
@@ -60,6 +60,8 @@ export interface CardDetailPanelProps extends SubtaskActions {
   onMutated?: () => void;
   /** Loads the events linked to the card for the "In agenda" line, called with `{ kind: "card", targetId }`. Omit to hide the line. */
   onLoadAgendaEvents?: (input: unknown) => Promise<AgendaActionResult<AgendaEventRef[]>>;
+  /** The labels the board already uses, offered by the Labels field (`boardLabels(board.columns)`). */
+  boardLabels?: readonly { id: string; name: string }[];
 }
 
 // moveCard clamps any out-of-range targetIndex down to "after the last
@@ -78,6 +80,7 @@ export function CardDetailPanel({
   onDeleteCard,
   onMutated,
   onLoadAgendaEvents,
+  boardLabels = [],
   onListSubtasks,
   onAddSubtasks,
   onRenameSubtask,
@@ -122,7 +125,11 @@ export function CardDetailPanel({
         })
       : "";
   const [plannedForText, setPlannedForText] = useState(() => plannedText(card?.planned_for));
-  const [labelsText, setLabelsText] = useState(() => formatLabelInput(card?.labels ?? []));
+  // The deadline field shows when the card has one or the user asked for it; clearing the text never hides it mid-edit.
+  const [deadlineShown, setDeadlineShown] = useState(Boolean(card?.due_at));
+  const [labels, setLabels] = useState(() => card?.labels.map((label) => label.name) ?? []);
+  // Bumped on every reset so the Labels field closes its list and clears its filter text.
+  const [labelsEpoch, setLabelsEpoch] = useState(0);
   const { confirming: deleteConfirming, ask: askDelete, cancel: cancelDelete } = useDeleteConfirm();
   const [error, setError] = useState<string | null>(null);
   // Subtasks typed in create mode, written right after the card exists.
@@ -187,10 +194,12 @@ export function CardDetailPanel({
           : "",
       );
       setPlannedForText(plannedText(card?.planned_for));
+      setDeadlineShown(Boolean(card?.due_at));
       setDraftSubtasks([]);
       setCreatedCardId(null);
       setCardColumnId(card?.column_id ?? "");
-      setLabelsText(formatLabelInput(card?.labels ?? []));
+      setLabels(card?.labels.map((label) => label.name) ?? []);
+      setLabelsEpoch((epoch) => epoch + 1);
       cancelDelete();
       setError(null);
     }
@@ -221,7 +230,7 @@ export function CardDetailPanel({
       size,
       dueAt: trimmedDueAt === "" ? null : trimmedDueAt,
       plannedFor: trimmedPlannedFor === "" ? null : trimmedPlannedFor,
-      labels: parseLabelInput(labelsText),
+      labels,
     };
   }
 
@@ -460,15 +469,6 @@ export function CardDetailPanel({
         ))}
       </Dropdown>
       <InputField
-        label={t("fields.dateLabel")}
-        id="card-detail-due-at"
-        leadingIcon="Calendar"
-        trailingIcon="Pencil"
-        placeholder={t("fields.datePlaceholder")}
-        value={dueAtText}
-        onChange={(event) => setDueAtText(event.target.value)}
-      />
-      <InputField
         label={t("fields.plannedLabel")}
         id="card-detail-planned-for"
         leadingIcon="Calendar"
@@ -477,12 +477,28 @@ export function CardDetailPanel({
         value={plannedForText}
         onChange={(event) => setPlannedForText(event.target.value)}
       />
-      <InputField
-        label={t("fields.labelsLabel")}
-        id="card-detail-labels"
-        placeholder={t("fields.labelsPlaceholder")}
-        value={labelsText}
-        onChange={(event) => setLabelsText(event.target.value)}
+      {deadlineShown ? (
+        <InputField
+          label={t("fields.dateLabel")}
+          id="card-detail-due-at"
+          leadingIcon="Calendar"
+          trailingIcon="Pencil"
+          placeholder={t("fields.datePlaceholder")}
+          value={dueAtText}
+          onChange={(event) => setDueAtText(event.target.value)}
+          // Only a field the user just asked for takes focus; one that shows because the card has a deadline must not steal it from the title.
+          autoFocus={dueAtText === ""}
+        />
+      ) : (
+        <Button variant="outline" icon="Plus" align="left" onClick={() => setDeadlineShown(true)}>
+          {t("fields.addDeadlineLabel")}
+        </Button>
+      )}
+      <CardLabels
+        key={labelsEpoch}
+        labels={labels}
+        onChange={setLabels}
+        boardLabels={boardLabels.map((label) => label.name)}
       />
       {card && agendaEvents?.cardId === card.id && <EventLinkLine events={agendaEvents.events} />}
       {error && <p className="text-base font-semibold text-priority-urgent">{error}</p>}

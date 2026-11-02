@@ -1,7 +1,7 @@
 "use client";
 
 // design: Claude-designed (#694)
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { Checkbox } from "@/components/atoms/Checkbox";
@@ -94,6 +94,8 @@ export function CardSubtasks({
   const expanded = expandedChoice ?? openItems.length === 0;
   const [newTitle, setNewTitle] = useState("");
   const [movePending, setMovePending] = useState(false);
+  const addId = useId();
+  const hintId = `${addId}-hint`;
   const writes = useRef<Promise<unknown>>(Promise.resolve());
 
   function updateRows(update: (current: SubtaskRow[]) => SubtaskRow[]) {
@@ -193,7 +195,14 @@ export function CardSubtasks({
   const total = items.length;
   const doneCount = doneItems.length;
   const atLimit = total >= MAX_SUBTASKS_PER_CARD;
+  const showEmptyHint = total === 0 && (!cardId || rows !== null);
   const showOffer = Boolean(cardId) && moveOffer !== null && total > 0 && openItems.length === 0;
+
+  // With the on-screen keyboard open the new row pushes the add row down; keep it in view.
+  useEffect(() => {
+    const field = document.getElementById(addId);
+    if (field && field === document.activeElement) field.scrollIntoView?.({ block: "nearest" });
+  }, [addId, total]);
 
   function renderRow(item: Item) {
     return (
@@ -219,6 +228,11 @@ export function CardSubtasks({
           </span>
         )}
       </div>
+      {showEmptyHint && (
+        <p id={hintId} className="text-sm text-text-secondary">
+          {t("emptyHint")}
+        </p>
+      )}
       {openItems.length > 0 && <ul className="flex flex-col">{openItems.map(renderRow)}</ul>}
       {doneItems.length > 0 && (
         <>
@@ -242,8 +256,15 @@ export function CardSubtasks({
           </Button>
         </div>
       )}
+      {/* Reads as the next checklist row: -ml-component-xs puts the Plus under the checkboxes, and the box is transparent until hover or focus. */}
       <InputField
+        id={addId}
+        className="-ml-component-xs w-auto"
+        // spacing-flag: p-0 drops the box inset so the row is as tall as the checkbox rows, no token for zero — design/notes/CardDetailPanel.md
+        boxClassName="border-transparent bg-transparent p-0"
+        leadingIcon="Plus"
         aria-label={t("addLabel")}
+        aria-describedby={showEmptyHint ? hintId : undefined}
         placeholder={t("addLabel")}
         value={newTitle}
         maxLength={SUBTASK_TITLE_MAX}

@@ -44,7 +44,7 @@ tests/                Vitest; tests/visual = Playwright screenshot suite over La
 - **Navigation**: Sidebar; below `md` tab bar + drawer (ADR-0055).
 - **Every component** gets a Ladle story, a visual baseline and a `design/notes/<Component>.md` contract.
 - **Libraries**: dnd-kit, TipTap 3 (MIT extensions only, ADR-0021), Floating UI, next-intl, FullCalendar standard/MIT (ADR-0037).
-- **PWA**: one manifest (`start_url` `/agenda`, ADR-0058); `public/sw.js` keeps the last basket readable offline (ADR-0054). iPhone widget: a Scriptable script; a tap opens the app via a Shortcut (ADR-0047).
+- **PWA**: one manifest (`start_url` `/agenda`, ADR-0059); `public/sw.js` keeps the last basket readable offline (ADR-0054). iPhone widget: a Scriptable script; a tap opens the app via a Shortcut (ADR-0047).
 
 ## 4. Data model
 
@@ -128,8 +128,8 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - no queue: `embedding_backlog()` finds stale sources; a lazy `after()` drain (at most every 10 min) and the daily `/api/cron/embeddings` embed them, reusing vectors for identical text;
   - search across modules merges `search_text()` and `search_semantic()` (`security invoker`) with RRF.
 - **History** (ADR-0044): triggers log basket adds and checks into `activity_events`; `settle_cooked_meals()` logs past plans. All members, no AI.
-- **Phase 9** (ADR-0046/0051): `agent_signals` from SQL rhythms (all members) and LLM patterns (opt-in; no tools, plain text). Rhythms show in Winkelmand and the plan drawer; all kinds on the Agenda day cards (ADR-0058).
-- **Scheduled work** (ADR-0039, Vercel Hobby): a lazy "when stale" run in `after()` while a user is present, plus daily Cron routes behind `CRON_SECRET` (may use `service_role`). More frequent work needs a new ADR.
+- **Phase 9** (ADR-0046/0051/0058/0059): `agent_signals` from SQL rhythms (all members) and LLM patterns (opt-in; no tools, plain text). Rhythms show in Winkelmand; all kinds on the Agenda day cards (ADR-0059).
+- **Scheduled work** (ADR-0039, Vercel Hobby): a lazy "when stale" run in `after()` while a user is present, plus daily Cron routes behind `CRON_SECRET` as backstop (may use `service_role`). Anything more frequent needs a new ADR.
 
 ## 7. Agenda (ADR-0037)
 
@@ -142,8 +142,8 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - `calendar_event_links`: an event plus exactly one card, recipe or note, cascading on both sides.
   - `calendar_event_series`: rule and template of a recurring own event; occurrences are `calendar_events` rows (`series_id`), 400 days ahead, extended on Agenda load (ADR-0042).
 - **Sync** (ADR-0037 §5): `ics` → `caldav` → Graph/Google on need, via `safe-fetch`, parsed by `ical.js`; recurring instances expanded −30 d / +400 d, upserted by UID + instance start; a failed, empty or halved fetch deletes nothing; two-miss deletion with a basket notice; writes only on a changed hash.
-- **Colour, creation**: items use their calendar's `event-<colour>-*` tokens (ADR-0040); quick add parses with `chrono-node`, no AI (ADR-0041).
-- **Landing** (ADR-0058): `/agenda` is home; day cards sit above a pull-up day sheet (mobile) or beside the planner (desktop).
+- **Colour, creation**: items use their calendar's `event-<colour>-*` tokens (ADR-0040); quick add plans, with `chrono-node`, no AI (ADR-0041/0058).
+- **Landing** (ADR-0059): `/agenda` is home; day cards sit above a pull-up day sheet (mobile) or beside the calendar (desktop).
 - **Sync trigger** (ADR-0039): opening the Agenda syncs the user's accounts older than an hour in `after()`; the daily cron syncs accounts older than 20 hours. `apply_calendar_sync` (definer, advisory lock) applies a parsed feed per account: upsert, hash, two-miss deletion, a `calendar_sync_notices` row (item ids kept). The URL sits in Vault; `lib/agenda/sync.ts` and `app/api/cron/` call it.
 
 ## 8. Testing and CI gates

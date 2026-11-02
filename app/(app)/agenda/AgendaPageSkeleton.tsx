@@ -20,8 +20,6 @@ export function AgendaPageSkeleton({ view = DEFAULT_AGENDA_VIEW }: { view?: Agen
         onPrevious={noop}
         onNext={noop}
         onToday={noop}
-        trayOpen={false}
-        onTrayToggle={noop}
         onNew={noop}
       />
       <AgendaBody>

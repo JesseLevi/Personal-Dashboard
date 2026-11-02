@@ -1,6 +1,6 @@
 # ADR-0057: "Vandaag" is the landing page
 
-**Status**: Superseded by ADR-0058 (2026-11-01): the Agenda is the landing page and carries the day cards. Originally accepted the same day (improvement brief, package 4); it never reached production.
+**Status**: Superseded by ADR-0059 (2026-11-01): the Agenda is the landing page and carries the day cards. Originally accepted the same day (improvement brief, package 4); it never reached production.
 
 ## Context
 

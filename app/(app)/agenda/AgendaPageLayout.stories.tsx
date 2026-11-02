@@ -1,6 +1,4 @@
-import { AgendaCalendar } from "@/components/organisms/AgendaCalendar";
-import { PlanDrawer } from "@/components/organisms/PlanDrawer";
-import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
+import { AgendaCalendar, useIsNarrow } from "@/components/organisms/AgendaCalendar";
 import type { AgendaItem } from "@/lib/agenda/types";
 import type { AgendaView } from "@/lib/agenda/view";
 import { useState } from "react";
@@ -8,7 +6,6 @@ import { isoWeek, stepDate, visibleRange } from "@/lib/agenda/time";
 import { AgendaBody } from "./AgendaBody";
 import { AgendaHeader } from "./AgendaHeader";
 import { AgendaPageSkeleton } from "./AgendaPageSkeleton";
-import { PlanRecipeList } from "./PlanRecipeList";
 import { useAgendaShortcuts } from "./useAgendaShortcuts";
 import { StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
@@ -45,24 +42,6 @@ const items: AgendaItem[] = [
   { ...base, kind: "deadline", id: "d1", title: "Belastingaangifte", start: "2026-01-01", end: null, allDay: true },
 ];
 
-const recipe = (id: string, title: string, timeMinutes: number | null): PlanRecipe => ({
-  id,
-  title,
-  servings: 4,
-  categoryId: "main",
-  categoryName: "Hoofdgerecht",
-  timeMinutes,
-  thumbnailUrl: null,
-  thumbnailPath: null,
-});
-const recipes = [
-  recipe("r1", "Lasagne met spinazie", 60),
-  recipe("r2", "Pasta pesto", 20),
-  recipe("r3", "Risotto met paddenstoelen", 45),
-  recipe("r4", "Appeltaart", 90),
-  recipe("r5", "Tosti ham kaas", null),
-  recipe("r6", "Havermout met appel", 10),
-];
 const noPlan = async () => ({ success: true as const, data: undefined });
 const baskets = [{ id: "own", name: "Boodschappen", shared: false }];
 
@@ -71,7 +50,7 @@ const Surface = ({ children }: { children: React.ReactNode }) => (
   <div className="-m-8 flex flex-col gap-page-stack bg-surface-primary p-8">{children}</div>
 );
 
-const PageContent = ({ view, title, trayOpen = false }: { view: AgendaView; title: string; trayOpen?: boolean }) => (
+const PageContent = ({ view, title }: { view: AgendaView; title: string }) => (
   <>
     <AgendaHeader
       title={title}
@@ -79,40 +58,21 @@ const PageContent = ({ view, title, trayOpen = false }: { view: AgendaView; titl
       weekNumber={view === "week" || view === "list" ? 1 : undefined}
       date={DATE}
       onGoToDate={noop}
-      trayOpen={trayOpen}
       onViewChange={noop}
       onPrevious={noop}
       onNext={noop}
       onToday={noop}
-      onTrayToggle={noop}
       onNew={noop}
       onOpenCalendars={noop}
       weekToBasket={{ onSend: noPlan, baskets }}
     />
-    <AgendaBody
-      drawerOpen={trayOpen}
-      drawer={
-        <PlanDrawer
-          className="h-full"
-          recipes={
-            <PlanRecipeList
-              recipes={recipes}
-              categories={[{ id: "main", name: "Hoofdgerecht" }]}
-              today={DATE}
-              onPlan={noPlan}
-              onPlanned={noop}
-              weekToBasket={{ onSend: noPlan, baskets }}
-            />
-          }
-        />
-      }
-    >
+    <AgendaBody>
       <AgendaCalendar items={items} view={view} date={DATE} scrollToNow={false} />
     </AgendaBody>
   </>
 );
 
-const Page = (props: { view: AgendaView; title: string; trayOpen?: boolean }) => (
+const Page = (props: { view: AgendaView; title: string }) => (
   <Surface>
     <PageContent {...props} />
   </Surface>
@@ -121,19 +81,18 @@ const Page = (props: { view: AgendaView; title: string; trayOpen?: boolean }) =>
 export const Overview = () => (
   <Surface>
     <StoryIntro
-      what="The agenda page as composed in AgendaPage: header, calendar and the plan tray. Open the tray here; Interactive wires navigation and keys."
+      what="The agenda page as composed in AgendaPage: header and the calendar, full width. Interactive wires navigation and keys."
       note="AgendaPage"
     />
-    <PageContent view="week" title="29 dec – 4 jan" trayOpen />
+    <PageContent view="week" title="29 dec – 4 jan" />
   </Surface>
 );
 
-// Header and calendar wired like AgendaPage for navigation: keys, date picker and "Vandaag". Try T, D, W, M, L, P (the tray animates) and the arrows.
+// Header and calendar wired like AgendaPage for navigation: keys, date picker and "Vandaag". Try T, D, W, M, L and the arrows.
 export const Interactive = () => {
   const [view, setView] = useState<"day" | "week" | "month" | "list">("week");
   const [date, setDate] = useState(DATE);
   const [overlay, setOverlay] = useState(false);
-  const [trayOpen, setTrayOpen] = useState(false);
   const [scrollNowKey, setScrollNowKey] = useState(0);
   const range = visibleRange(view, date);
   useAgendaShortcuts((shortcut) => {
@@ -142,7 +101,6 @@ export const Interactive = () => {
       setScrollNowKey((key) => key + 1);
     } else if (shortcut === "previous") setDate(stepDate(view, date, -1));
     else if (shortcut === "next") setDate(stepDate(view, date, 1));
-    else if (shortcut === "tray") setTrayOpen((open) => !open);
     else if (shortcut !== "new") setView(shortcut);
   }, overlay);
   return (
@@ -154,40 +112,60 @@ export const Interactive = () => {
         date={date}
         onGoToDate={setDate}
         onOverlayChange={setOverlay}
-        trayOpen={trayOpen}
         onViewChange={setView}
         onPrevious={() => setDate(stepDate(view, date, -1))}
         onNext={() => setDate(stepDate(view, date, 1))}
         onToday={() => setDate(DATE)}
-        onTrayToggle={() => setTrayOpen((open) => !open)}
         onNew={noop}
       />
-      <AgendaBody
-        drawerOpen={trayOpen}
-        drawer={
-          <PlanDrawer
-            className="h-full"
-            recipes={
-              <PlanRecipeList
-                recipes={recipes}
-                categories={[{ id: "main", name: "Hoofdgerecht" }]}
-                today={DATE}
-                onPlan={noPlan}
-                onPlanned={noop}
-                weekToBasket={{ onSend: noPlan, baskets }}
-              />
-            }
-          />
-        }
-      >
+      <AgendaBody>
         <AgendaCalendar items={items} view={view} date={date} scrollNowKey={scrollNowKey} />
       </AgendaBody>
     </Surface>
   );
 };
 
+// Below `lg` the day follows the finger and the neighbour day waits beside it (#713). Swipe the grid with touch
+// emulation at 390px; on a wide viewport the page shows the desktop calendar and there is nothing to drag.
+export const Swipe = () => {
+  const narrow = useIsNarrow();
+  const [date, setDate] = useState(DATE);
+  return (
+    <Surface>
+      <AgendaHeader
+        title={date}
+        view="day"
+        date={date}
+        today={DATE}
+        onGoToDate={setDate}
+        onViewChange={noop}
+        onPrevious={() => setDate(stepDate("day", date, -1))}
+        onNext={() => setDate(stepDate("day", date, 1))}
+        onToday={() => setDate(DATE)}
+        onNew={noop}
+        onOpenCalendars={noop}
+        weekToBasket={{ onSend: noPlan, baskets }}
+      />
+      <AgendaBody
+        swipe={
+          narrow
+            ? {
+                date,
+                onStep: (step) => setDate(stepDate("day", date, step)),
+                renderNeighbour: (step) => (
+                  <AgendaCalendar items={items} view="day" date={stepDate("day", date, step)} scrollToNow={false} entrance={false} />
+                ),
+              }
+            : undefined
+        }
+      >
+        <AgendaCalendar items={items} view="day" date={date} scrollToNow={false} />
+      </AgendaBody>
+    </Surface>
+  );
+};
+
 export const Week = () => <Page view="week" title="29 dec – 4 jan" />;
-export const WeekTrayOpen = () => <Page view="week" title="29 dec – 4 jan" trayOpen />;
 export const Month = () => <Page view="month" title="januari 2026" />;
 export const List = () => <Page view="list" title="29 dec – 4 jan" />;
 export const Loading = () => (
