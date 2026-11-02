@@ -22,8 +22,6 @@ const STEP_LABELS = { menu: null, baskets: "chooseBasketLabel", shortcuts: "shor
 
 export interface AgendaMoreMenuProps {
   onToday: () => void;
-  trayOpen: boolean;
-  onTrayToggle: () => void;
   /** Omitted: no "Agenda's en categorieën" item. */
   onOpenCalendars?: () => void;
   /** Omitted: no "Week naar mand" item. */
@@ -41,11 +39,9 @@ export interface AgendaMoreMenuProps {
   defaultStep?: "menu" | "shortcuts";
 }
 
-// The menu of the header's "⋯" button. Below `lg` it also holds what the header drops: Vandaag and the tray toggle.
+// The menu of the header's "⋯" button. Below `lg` it also holds what the header drops: Vandaag.
 export function AgendaMoreMenu({
   onToday,
-  trayOpen,
-  onTrayToggle,
   onOpenCalendars,
   weekToBasket,
   onWeekSent,
@@ -145,9 +141,6 @@ export function AgendaMoreMenu({
                 <>
                   <Button role="menuitem" variant="white" align="left" icon="Calendar" className="lg:hidden" onClick={() => choose(onToday)}>
                     {t("todayLabel")}
-                  </Button>
-                  <Button role="menuitem" variant="white" align="left" icon="PanelRight" className="lg:hidden" onClick={() => choose(onTrayToggle)}>
-                    {trayOpen ? t("trayHideLabel") : t("trayShowLabel")}
                   </Button>
                   {weekToBasket && (
                     <Button

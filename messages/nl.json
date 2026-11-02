@@ -496,12 +496,9 @@
         "calendarsLabel": "Agenda's en categorieën",
         "weekToBasketLabel": "Week naar mand",
         "chooseBasketLabel": "Kies een mand",
-        "planLabel": "Plannen",
         "newLabel": "Nieuw",
         "moreLabel": "Meer",
         "backLabel": "Terug",
-        "trayShowLabel": "Planlade tonen",
-        "trayHideLabel": "Planlade verbergen",
         "weekToBasketToast": "De maaltijden van deze week staan in je mand",
         "weekNumber": "Week {number}",
         "goToDateLabel": "Naar datum",
@@ -515,8 +512,7 @@
           "month": "Maandweergave",
           "list": "Lijstweergave",
           "previous": "Vorige periode",
-          "next": "Volgende periode",
-          "tray": "Planlade tonen of verbergen"
+          "next": "Volgende periode"
         }
       }
     },
@@ -1357,34 +1353,6 @@
         "stone": "Grijs"
       }
     },
-    "planDrawer": {
-      "label": "Plannen",
-      "tabsLabel": "Wat wil je plannen",
-      "tabs": {
-        "recipes": "Recepten",
-        "cards": "Kaarten"
-      },
-      "cardsEmpty": "Je hebt geen open kaarten om te plannen.",
-      "cardsSearchLabel": "Kaarten zoeken",
-      "cardsSearchPlaceholder": "Kaarten zoeken",
-      "cardsDragHint": "Sleep een kaart naar een dag in de agenda. Een gepland item terugslepen naar hier haalt de dag weer weg.",
-      "noCards": "Geen kaarten gevonden.",
-      "planCardLabel": "{name} plannen",
-      "cardPlannedOn": "{column} · gepland op {date}",
-      "searchLabel": "Recepten zoeken",
-      "searchPlaceholder": "Recepten zoeken",
-      "searchClearLabel": "Zoekopdracht wissen",
-      "categoryLabel": "Categorie",
-      "allCategories": "Alle categorieën",
-      "noRecipes": "Geen recepten gevonden.",
-      "dragHint": "Sleep een recept naar een dag of een afspraak in de agenda.",
-      "planRecipeLabel": "{name} plannen",
-      "planMenuLabel": "Kies een dag",
-      "weekToBasketLabel": "Week naar mand",
-      "weekToBasketAddedLabel": "Toegevoegd",
-      "weekToBasketHint": "Stuur de maaltijden van deze week naar je mand",
-      "chooseBasketLabel": "Kies een mand"
-    },
     "planChoices": {
       "momentLabel": "Moment",
       "slots": {
@@ -1544,7 +1512,6 @@
   "assistant": {
     "signals": {
       "basketTitle": "Misschien weer nodig",
-      "planTitle": "Lang niet gekookt",
       "buyRhythm": "Je koopt ongeveer elke {median, plural, one {# dag} other {# dagen}} {item}. De laatste keer was {days, plural, one {# dag} other {# dagen}} geleden.",
       "cookRhythm": "Je kookt {recipe} ongeveer elke {median, plural, one {# dag} other {# dagen}}. De laatste keer was {days, plural, one {# dag} other {# dagen}} geleden. Zin om het weer te maken?",
       "actions": {

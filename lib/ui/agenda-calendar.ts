@@ -91,8 +91,8 @@ export function normalizeSpan(span: AgendaSpan): AgendaSpan {
   return { allDay: true, start: day(span.start), end: span.end ? day(span.end) : null };
 }
 
-/** Marks the plan drawer: an item dragged from the grid and dropped on it is taken off the calendar. */
-export const AGENDA_TRAY_ATTRIBUTE = "data-agenda-tray";
+/** Hold time before a touch press becomes a drag or a selection; longer than a tap, so a quick swipe still scrolls. */
+export const AGENDA_LONG_PRESS_MS = 350;
 
 /** The time grid is one lane of `AGENDA_SLOTS_PER_DAY` slots per day (no min/max time). */
 export const AGENDA_SLOT_MINUTES = 30;

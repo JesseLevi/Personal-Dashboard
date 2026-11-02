@@ -9,25 +9,22 @@ import {
   effectiveAgendaView,
   useIsNarrow,
   type AgendaChange,
-  type AgendaExternalDrop,
 } from "@/components/organisms/AgendaCalendar";
 import type { CalendarOverview, SyncNoticeView } from "@/lib/agenda/calendars";
 import { isItemHidden, persistHidden, type AgendaHidden } from "@/lib/agenda/hidden";
-import { PlanDrawer } from "@/components/organisms/PlanDrawer";
 import { Toast } from "@/components/organisms/Toast";
-import { defaultSlotForCategory, weekRange } from "@/lib/agenda/meals";
+import { weekRange } from "@/lib/agenda/meals";
 import { toAgendaResult, withPlannedFor, type PlanCardGroup, type QuickAddBoard } from "@/lib/agenda/plan-cards";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { AgendaShortcut } from "@/lib/agenda/shortcuts";
 import { addDays, isoWeek, loadWindow, spanToUtc, stepDate, visibleRange } from "@/lib/agenda/time";
 import type { AgendaItem, AgendaMealItem, AgendaPlannedCardItem, MealSlot } from "@/lib/agenda/types";
-import { persistAgendaTray } from "@/lib/agenda/tray";
 import { persistAgendaView, type AgendaView } from "@/lib/agenda/view";
 import { useNewParam } from "@/lib/dom/use-new-param";
 import type { BasketOption } from "@/lib/shopping/baskets";
 import type { ActionResult } from "@/lib/shopping/types";
-import { AGENDA_TRAY_ATTRIBUTE, type AgendaSpan } from "@/lib/ui/agenda-calendar";
+import type { AgendaSpan } from "@/lib/ui/agenda-calendar";
 import { planCard, updateCard } from "../te-doen/actions";
 import { createEvent, deleteEvent, getAgendaEvent, loadAgendaRange, moveEvent, updateEvent } from "./actions";
 import { AgendaBody } from "./AgendaBody";
@@ -50,15 +47,11 @@ import {
 import { AgendaMealPanel } from "./AgendaMealPanel";
 import { createPlannedCard } from "./card-actions";
 import { createMealPlan, deleteMealPlan, getMealPlan, sendMealToBasket, sendWeekToBasket, updateMealPlan } from "./meal-actions";
-import { PlanCardList } from "./PlanCardList";
-import { PlanRecipeList } from "./PlanRecipeList";
 import { useAgendaShortcuts } from "./useAgendaShortcuts";
 import { useAgendaSwipe } from "./useAgendaSwipe";
 
 export interface AgendaPageProps {
   initialView: AgendaView;
-  /** Whether the plan tray starts open (cookie `agenda-tray`). */
-  initialTrayOpen: boolean;
   /** Today in the Agenda zone, `YYYY-MM-DD`. */
   today: string;
   /** The day the calendar opens on (`?date=`); today when absent or invalid. */
@@ -67,12 +60,9 @@ export interface AgendaPageProps {
   initialItems: AgendaItem[];
   /** Open basket notices after a sync deleted an event with a meal. */
   initialNotices: SyncNoticeView[];
-  /** Recipes the plan drawer offers. */
+  /** Recipes quick add searches. */
   recipes: PlanRecipe[];
-  /** Recipes with an open cook-rhythm signal, shown first in the plan drawer (ADR-0046 §6). */
-  longNotCookedIds?: readonly string[];
-  recipeCategories: { id: string; name: string }[];
-  /** Open cards the plan drawer offers, per board. */
+  /** Open cards quick add offers, per board. */
   cardGroups: PlanCardGroup[];
   /** Where quick add puts a new card; null without a board. */
   todoBoard: QuickAddBoard | null;
@@ -104,14 +94,11 @@ function liveMeal(items: AgendaItem[], fallback: AgendaMealItem): AgendaMealItem
 
 export function AgendaPage({
   initialView,
-  initialTrayOpen,
   today,
   initialDate,
   initialItems,
   initialNotices,
   recipes,
-  longNotCookedIds,
-  recipeCategories,
   cardGroups,
   todoBoard,
   baskets,
@@ -138,7 +125,6 @@ export function AgendaPage({
   const [calendarsOpen, setCalendarsOpen] = useState(false);
   const [calendars, setCalendars] = useState(initialCalendars);
   const [hidden, setHidden] = useState(initialHidden);
-  const [trayOpen, setTrayOpen] = useState(initialTrayOpen);
   const [mealPanel, setMealPanel] = useState<{ open: boolean; item: AgendaMealItem | null }>({ open: false, item: null });
   const [cardPanel, setCardPanel] = useState<{ open: boolean; item: AgendaCardPanelItem | null }>({ open: false, item: null });
   const [groups, setGroups] = useState(cardGroups);
@@ -206,8 +192,6 @@ export function AgendaPage({
         return goTo(stepDate(effectiveView, date, -1));
       case "next":
         return goTo(stepDate(effectiveView, date, 1));
-      case "tray":
-        return handleTrayToggle();
     }
   };
   useAgendaShortcuts(runShortcut, shortcutsBlocked);
@@ -234,14 +218,6 @@ export function AgendaPage({
     if (added.kind === "event") setNotice(tPlan("eventAddedNotice", { title: added.title, date: dayLabel(added.date) }));
     else if (added.kind === "meal") announcePlanned(added.date, added.slot);
     else announceCardPlanned(added.title, added.date);
-  }
-
-  function handleTrayToggle() {
-    const next = !trayOpen;
-    setTrayOpen(next);
-    persistAgendaTray(next ? "open" : "closed");
-    // Under the calendar the tray is off screen; bring it into view.
-    if (next) requestAnimationFrame(() => document.querySelector(`[${AGENDA_TRAY_ATTRIBUTE}]`)?.scrollIntoView({ block: "nearest" }));
   }
 
   function handleItemClick(item: AgendaItem) {
@@ -280,18 +256,7 @@ export function AgendaPage({
     });
   }
 
-  async function planRecipe(recipeId: string, target: { plannedOn: string; slot?: MealSlot } | { calendarEventId: string }) {
-    const result = await createMealPlan({ recipeId, ...target });
-    if (result.success) {
-      setError(null);
-      void loadAround(date);
-    } else {
-      setError(tErrors(result.error));
-    }
-    return result;
-  }
-
-  // Saves the day of a card (or clears it with null) and keeps the drawer and the grid in step.
+  // Saves the day of a card (or clears it with null) and keeps quick add and the grid in step.
   async function savePlannedFor(cardId: string, plannedFor: string | null) {
     const result = toAgendaResult(await planCard({ cardId, plannedFor }));
     if (result.success) {
@@ -327,13 +292,6 @@ export function AgendaPage({
     setNotice(tPlan("cardPlannedNotice", { title, date: dayLabel(plannedOn) }));
   }
 
-  function handleCardDrop(cardId: string, title: string, plannedOn: string) {
-    void savePlannedFor(cardId, plannedOn).then((result) => {
-      if (result.success) announceCardPlanned(title, plannedOn);
-      else setError(tErrors(result.error));
-    });
-  }
-
   // A planned card moves to a day, whatever slot it was dropped on; it stays an all-day item.
   function handleCardMove(item: AgendaPlannedCardItem, change: AgendaChange, revert: () => void) {
     const plannedFor = change.start.slice(0, 10);
@@ -353,37 +311,6 @@ export function AgendaPage({
       setItems(previous);
       setError(tErrors(result.error));
     });
-  }
-
-  // Dropping a planned card on the drawer takes it off the agenda: its day is cleared.
-  function handleItemDropOut(item: AgendaItem) {
-    if (item.kind !== "planned_card") return;
-    const previous = items;
-    setItems((current) => current.filter((candidate) => candidate.id !== item.id));
-    void savePlannedFor(item.id, null).then((result) => {
-      if (result.success) {
-        setNotice(tPlan("cardClearedNotice", { title: item.title }));
-        return;
-      }
-      setItems(previous);
-      setError(tErrors(result.error));
-    });
-  }
-
-  function handleExternalDrop(drop: AgendaExternalDrop) {
-    if (drop.payload.type === "card") {
-      handleCardDrop(drop.payload.id, drop.payload.title, drop.start.slice(0, 10));
-      return;
-    }
-    if (drop.payload.type !== "recipe") return;
-    const recipeId = drop.payload.id;
-    const categoryName = recipes.find((recipe) => recipe.id === recipeId)?.categoryName ?? null;
-    void planRecipe(
-      recipeId,
-      drop.eventId
-        ? { calendarEventId: drop.eventId }
-        : { plannedOn: drop.start.slice(0, 10), slot: defaultSlotForCategory(categoryName) },
-    );
   }
 
   function dayLabel(plannedOn: string) {
@@ -467,8 +394,6 @@ export function AgendaPage({
         onPrevious={() => goTo(stepDate(effectiveView, date, -1))}
         onNext={() => goTo(stepDate(effectiveView, date, 1))}
         onToday={goToday}
-        trayOpen={trayOpen}
-        onTrayToggle={handleTrayToggle}
         onNew={() => (quickAdd.open ? setQuickAdd((current) => ({ ...current, open: false })) : openQuickAdd(null))}
         newButtonRef={newButtonRef}
         onOpenCalendars={() => setCalendarsOpen(true)}
@@ -476,33 +401,7 @@ export function AgendaPage({
       />
       <AgendaSyncNotices initialNotices={initialNotices} onResolve={resolveSyncNotice} />
       {error && <p className="pr-page-right-equal text-base font-semibold text-priority-urgent">{error}</p>}
-      <AgendaBody
-        drawerOpen={trayOpen}
-        drawer={
-          <PlanDrawer
-            className="h-full"
-            recipes={
-              <PlanRecipeList
-                recipes={recipes}
-                highlightedIds={longNotCookedIds}
-                categories={recipeCategories}
-                today={today}
-                onPlan={(recipeId, plannedOn, slot) => planRecipe(recipeId, { plannedOn, slot })}
-                onPlanned={announcePlanned}
-                weekToBasket={{ onSend: handleWeekToBasket, baskets }}
-              />
-            }
-            cards={
-              <PlanCardList
-                groups={groups}
-                today={today}
-                onPlan={(cardId, plannedOn) => savePlannedFor(cardId, plannedOn)}
-                onPlanned={announceCardPlanned}
-              />
-            }
-          />
-        }
-      >
+      <AgendaBody>
         <div ref={swipeRef} className="h-full">
           <AgendaCalendar
             items={visibleItems}
@@ -513,8 +412,6 @@ export function AgendaPage({
             onItemClick={handleItemClick}
             onItemMove={handleChange}
             onItemResize={handleChange}
-            onExternalDrop={handleExternalDrop}
-            onItemDropOut={handleItemDropOut}
           />
         </div>
       </AgendaBody>
