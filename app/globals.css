@@ -693,3 +693,9 @@ html {
     animation: none;
   }
 }
+
+/* A day swipe never selects (#734): hide FullCalendar's selection highlight and mirror once the swipe has locked. */
+[data-agenda-swiping] .fc-highlight,
+[data-agenda-swiping] .fc-event-mirror {
+  display: none;
+}

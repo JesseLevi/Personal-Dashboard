@@ -17,6 +17,12 @@ import { usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 // While FullCalendar drags or selects, it shows a mirror or a highlight; such a stroke is never a swipe.
 const CALENDAR_GESTURE = ".fc-event-mirror, .fc-event-dragging, .fc-highlight";
 
+/**
+ * Set on the viewport from the lock until the next touchstart: the finger is still over the slot it
+ * started on, so FullCalendar would read the swipe as a tap or a long-press selection (#734).
+ */
+export const SWIPING_ATTRIBUTE = "data-agenda-swiping";
+
 const SNAP_TRANSITION = "transform var(--duration-base) var(--ease-base)";
 /** `--duration-base` plus slack: the settle ends here when `transitionend` never comes. */
 const SNAP_FALLBACK_MS = 280;
@@ -38,6 +44,10 @@ export interface AgendaSwipeHost {
   calendarBusy(): boolean;
   /** `prefers-reduced-motion`: nothing follows the finger, the day steps on release. */
   reduced(): boolean;
+  /** Space between the shown day and the neighbour, in px. */
+  gap(): number;
+  /** A swipe has locked (`true`) or the next touch has begun (`false`); the calendar must not select meanwhile. */
+  swiping(on: boolean): void;
   /** Draws the neighbour day beside the pane (`null` drops it at once). */
   peek(step: Step | null): void;
   /** The gesture is over: the neighbour may stay a while, since the next swipe usually follows. */
@@ -72,6 +82,8 @@ export function createAgendaSwipe(host: AgendaSwipeHost): AgendaSwipe {
   let originTime = 0;
   let pull = 0;
   let width = 0;
+  /** Pane width plus the gap: how far the pane travels to the neighbour. */
+  let travel = 0;
   let peeked: Step | null = null;
   let samples: SwipeSample[] = [];
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -110,7 +122,7 @@ export function createAgendaSwipe(host: AgendaSwipeHost): AgendaSwipe {
     if (!pane) return reset();
     mode = "settling";
     pane.style.transition = SNAP_TRANSITION;
-    pane.style.transform = `translate3d(${-step * width}px, 0, 0)`;
+    pane.style.transform = `translate3d(${-step * travel}px, 0, 0)`;
     let done = false;
     const finish = () => {
       if (done) return;
@@ -135,13 +147,15 @@ export function createAgendaSwipe(host: AgendaSwipeHost): AgendaSwipe {
     pull = x - originX;
     samples.push({ x, time });
     if (samples.length > SAMPLES_KEPT) samples.shift();
-    pane.style.transform = `translate3d(${swipeOffset(pull, width)}px, 0, 0)`;
+    pane.style.transform = `translate3d(${swipeOffset(pull, travel)}px, 0, 0)`;
     if (pull !== 0) setPeek(swipeDirection(pull));
   }
 
   function lock(x: number, time: number, pane: HTMLElement) {
     mode = "dragging";
     width = pane.offsetWidth;
+    travel = width + host.gap();
+    host.swiping(true);
     samples = [{ x: originX, time: originTime }];
     pane.style.transition = "none";
     pane.style.willChange = "transform";
@@ -153,6 +167,7 @@ export function createAgendaSwipe(host: AgendaSwipeHost): AgendaSwipe {
     start(touches, x, y, time) {
       if (mode === "settling" || mode === "committing") return;
       if (mode === "dragging") return settle(0);
+      host.swiping(false);
       originX = x;
       originY = y;
       originTime = time;
@@ -189,7 +204,10 @@ export function createAgendaSwipe(host: AgendaSwipeHost): AgendaSwipe {
       }
       if (mode === "pending" && host.reduced()) {
         const step = swipeStep({ x: originX, y: originY, time: originTime }, { x, y, time }, host.viewportWidth());
-        if (step) host.step(step);
+        if (step) {
+          host.swiping(true);
+          host.step(step);
+        }
       }
       if (mode === "pending" || mode === "ignored") mode = "idle";
     },
@@ -215,6 +233,7 @@ export function createAgendaSwipe(host: AgendaSwipeHost): AgendaSwipe {
     },
     destroy() {
       reset();
+      host.swiping(false);
       host.peek(null);
     },
   };
@@ -257,6 +276,18 @@ export function useAgendaSwipe(
       viewportWidth: () => window.innerWidth,
       calendarBusy: () => !!viewport.querySelector(CALENDAR_GESTURE),
       reduced: () => latest.current.reduced,
+      gap: () => {
+        const probe = document.createElement("div");
+        probe.className = "invisible absolute w-inline-lg";
+        viewport.appendChild(probe);
+        const gap = probe.offsetWidth;
+        probe.remove();
+        return gap;
+      },
+      swiping: (on) => {
+        if (on) viewport.setAttribute(SWIPING_ATTRIBUTE, "");
+        else viewport.removeAttribute(SWIPING_ATTRIBUTE);
+      },
       peek: (step) => {
         clearTimeout(keep.current);
         setPeek(step);

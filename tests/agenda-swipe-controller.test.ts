@@ -4,6 +4,7 @@ import { AGENDA_LONG_PRESS_MS } from "../lib/ui/agenda-calendar";
 
 const VIEWPORT = 390;
 const WIDTH = 310;
+const GAP = 16;
 
 // Fake pane: the controller writes `style` and listens for `transitionend` on it.
 function fakePane() {
@@ -43,6 +44,8 @@ function setup(overrides: Partial<AgendaSwipeHost> = {}) {
     viewportWidth: () => VIEWPORT,
     calendarBusy: () => false,
     reduced: () => false,
+    gap: () => GAP,
+    swiping: vi.fn(),
     peek: vi.fn(),
     release: vi.fn(),
     step: vi.fn(),
@@ -75,7 +78,7 @@ describe("createAgendaSwipe", () => {
     swipe.start(1, 300, 400, 0);
     swipe.move(1, 280, 400, 30);
     swipe.move(1, -200, 400, 90);
-    expect(pane.style.transform).toBe(`translate3d(${-WIDTH}px, 0, 0)`);
+    expect(pane.style.transform).toBe(`translate3d(${-(WIDTH + GAP)}px, 0, 0)`);
   });
 
   it("leaves a vertical stroke alone and does not switch axis mid-gesture", () => {
@@ -130,7 +133,7 @@ describe("createAgendaSwipe", () => {
     swipe.move(1, 285, 400, 100);
     swipe.move(1, 195, 400, 900);
     swipe.end(195, 400, 1500);
-    expect(pane.style.transform).toBe(`translate3d(${-WIDTH}px, 0, 0)`);
+    expect(pane.style.transform).toBe(`translate3d(${-(WIDTH + GAP)}px, 0, 0)`);
     expect(host.step).not.toHaveBeenCalled();
     pane.endTransition();
     expect(host.step).toHaveBeenCalledTimes(1);
@@ -169,7 +172,7 @@ describe("createAgendaSwipe", () => {
     swipe.move(1, 250, 400, 40);
     swipe.move(1, 220, 400, 60);
     swipe.end(220, 400, 62);
-    expect(pane.style.transform).toBe(`translate3d(${-WIDTH}px, 0, 0)`);
+    expect(pane.style.transform).toBe(`translate3d(${-(WIDTH + GAP)}px, 0, 0)`);
     pane.endTransition();
     expect(host.step).toHaveBeenCalledWith(1);
   });
@@ -213,6 +216,7 @@ describe("createAgendaSwipe", () => {
     expect(host.peek).not.toHaveBeenCalled();
     swipe.end(180, 400, 160);
     expect(host.step).toHaveBeenCalledWith(1);
+    expect(host.swiping).toHaveBeenLastCalledWith(true);
   });
 
   it("does not step on release with reduced motion for a vertical stroke", () => {
@@ -232,5 +236,46 @@ describe("createAgendaSwipe", () => {
     expect(pane.style.transform).toBe("translate3d(0px, 0, 0)");
     pane.endTransition();
     expect(host.step).not.toHaveBeenCalled();
+  });
+
+  it("settles a commit to the neighbour one pane width plus the gap away", () => {
+    const { pane, swipe } = setup();
+    swipe.start(1, 100, 400, 0);
+    swipe.move(1, 120, 400, 100);
+    swipe.move(1, 260, 400, 900);
+    swipe.end(260, 400, 1500);
+    expect(pane.style.transform).toBe(`translate3d(${WIDTH + GAP}px, 0, 0)`);
+  });
+
+  it("marks the gesture as a swipe from the lock until the next touchstart", () => {
+    const { pane, host, swipe } = setup();
+    swipe.start(1, 300, 400, 0);
+    expect(host.swiping).toHaveBeenLastCalledWith(false);
+    swipe.move(1, 296, 400, 10);
+    expect(host.swiping).not.toHaveBeenCalledWith(true);
+    swipe.move(1, 280, 400, 30);
+    expect(host.swiping).toHaveBeenLastCalledWith(true);
+    swipe.move(1, 200, 400, 100);
+    swipe.end(200, 400, 1500);
+    pane.endTransition();
+    vi.advanceTimersByTime(1000);
+    expect(host.swiping).toHaveBeenLastCalledWith(true);
+    swipe.start(1, 300, 400, 3000);
+    expect(host.swiping).toHaveBeenLastCalledWith(false);
+  });
+
+  it("does not mark a vertical stroke or a long rest as a swipe", () => {
+    const { host, swipe } = setup();
+    swipe.start(1, 300, 400, 0);
+    swipe.move(1, 298, 380, 30);
+    expect(host.swiping).not.toHaveBeenCalledWith(true);
+  });
+
+  it("clears the mark on destroy", () => {
+    const { host, swipe } = setup();
+    swipe.start(1, 300, 400, 0);
+    swipe.move(1, 280, 400, 30);
+    swipe.destroy();
+    expect(host.swiping).toHaveBeenLastCalledWith(false);
   });
 });

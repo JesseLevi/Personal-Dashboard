@@ -105,7 +105,7 @@ export function AgendaBody({
                   data-agenda-peek=""
                   aria-hidden="true"
                   inert
-                  className={cn("absolute top-0 h-full w-full", peek === 1 ? "left-full" : "right-full")}
+                  className={cn("absolute top-0 h-full w-full", peek === 1 ? "left-[calc(100%+var(--spacing-inline-lg))]" : "right-[calc(100%+var(--spacing-inline-lg))]")}
                 >
                   {swipe.renderNeighbour(peek)}
                 </div>
