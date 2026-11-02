@@ -131,6 +131,8 @@ export interface AgendaCalendarProps {
   scrollNowKey?: number;
   /** Open one hour before now when the range holds today (default); false keeps 07:00, for stories. */
   scrollToNow?: boolean;
+  /** Fade the items in on mount (default); false for a calendar that slides in beside another one. */
+  entrance?: boolean;
   className?: string;
 }
 
@@ -163,8 +165,8 @@ const MINUTE_MS = 60_000;
 const ENTER_MS = 600;
 
 /** True for the first moments after mount: the items fade in once, not on every later re-render. */
-function useEntering(): boolean {
-  const [entering, setEntering] = useState(true);
+function useEntering(initial: boolean): boolean {
+  const [entering, setEntering] = useState(initial);
   useEffect(() => {
     const timer = window.setTimeout(() => setEntering(false), ENTER_MS);
     return () => window.clearTimeout(timer);
@@ -205,6 +207,7 @@ export function AgendaCalendar({
   onItemResize,
   scrollNowKey = 0,
   scrollToNow = true,
+  entrance = true,
   className,
 }: AgendaCalendarProps) {
   const t = useTranslations("components.agendaCalendar");
@@ -248,7 +251,7 @@ export function AgendaCalendar({
   const events = useMemo(() => toEventInputs(items), [items]);
   // The class settings read the clock (hour labels under the now label): new functions each minute make FullCalendar re-run them.
   const minute = useMinute();
-  const entering = useEntering();
+  const entering = useEntering(entrance);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- `minute` only forces new class functions.
   const theme = useMemo(() => buildAgendaCalendarOptions(entering), [minute, entering]);
 
@@ -300,6 +303,8 @@ export function AgendaCalendar({
     slotDuration: { minutes: AGENDA_SLOT_MINUTES },
     snapDuration: { minutes: AGENDA_SNAP_MINUTES },
     scrollTime: { hours: scrollHour() },
+    // Below `lg` a swipe keeps the time of day it is scrolled to, like the neighbour day beside it.
+    scrollTimeReset: !(narrow && effectiveView === "day"),
     nowIndicator: true,
     nowIndicatorHeaderContent: (info) => formatClock(info.date),
     allDayText: t("allDay"),
