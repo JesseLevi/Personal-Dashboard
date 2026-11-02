@@ -1,6 +1,6 @@
 # ADR-0053: A project is a card with subtasks
 
-**Status**: Accepted (user decision, 2026-11-01, epic #692). Amends ADR-0048 §3 (the palette's empty field).
+**Status**: Accepted (user decision, 2026-11-01, epic #692). Amends ADR-0048 §3 (the palette's empty field). Amended 2026-11-02 (user decision, #731): subtasks are reordered by hand.
 
 ## Context
 
@@ -22,6 +22,7 @@
 5. **Surfaces**:
    - The card panel holds the subtasks. Their writes are immediate, not tied to the panel's Save.
    - A board card shows a neutral `Tag` "3/7"; checking happens only in the panel.
+   - The user orders subtasks by hand with a drag handle (amended, #731). Open and done subtasks are ordered separately and a drag never crosses between them; a reorder writes only `position`.
    - Search indexes subtask titles as part of the card (`cardText`, keyword match), and a hit opens the card.
 6. **Palette (amends ADR-0048 §3)**: the empty field shows `Projecten` (cards with subtasks outside a done column, most recently updated first, at most 3, with a progress ring), then `Borden` (at most 3, most recent activity first: the latest `updated_at` of the board and its cards), then `Snelle acties`. Typing also matches project titles.
 
@@ -30,4 +31,4 @@
 - No new component or token: `Checkbox`, `Tag`, `InputField`, `ProgressRing` (ADR-0048) cover it.
 - Projects are owner-only, like boards; board sharing would extend `card_subtasks` policies through role functions (ADR-0035).
 - Subtasks cannot be planned in the Agenda. Promoting one to a card is the way to do that.
-- `position` exists without a reorder UI in v1, so ordering by hand can come later without a migration.
+- Manual ordering (#731) needed no migration: `position` was fractional from the start.
