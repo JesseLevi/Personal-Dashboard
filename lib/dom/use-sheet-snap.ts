@@ -46,6 +46,8 @@ export interface SheetSnap {
   onPointerMove(event: SheetSnapEvent): void;
   onPointerUp(event: SheetSnapEvent): void;
   onPointerCancel(event: SheetSnapEvent): void;
+  /** True while a drag is under way: the sheet is not re-measured then. */
+  isDragging(): boolean;
   /** True once, right after a drag ended: the click that follows it is not a tap. */
   consumeClick(): boolean;
   /** Drops a drag that ended without pointerup/cancel and clears its inline residue. */
@@ -126,6 +128,7 @@ export function createSheetSnap(getOptions: () => SheetSnapOptions): SheetSnap {
     },
     onPointerUp: (event) => end(event, false),
     onPointerCancel: (event) => end(event, true),
+    isDragging: () => !!drag?.dragging,
     consumeClick() {
       const was = dragged;
       dragged = false;

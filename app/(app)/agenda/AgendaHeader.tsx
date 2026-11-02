@@ -12,6 +12,7 @@ import type { BasketOption } from "@/lib/shopping/baskets";
 import type { ActionResult } from "@/lib/shopping/types";
 import { AgendaDatePicker } from "./AgendaDatePicker";
 import { AgendaMoreMenu } from "./AgendaMoreMenu";
+import { AgendaTitleMenu } from "./AgendaTitleMenu";
 
 // The toggle offers four choices; `threeDay` is only what `week` becomes on a phone.
 export type AgendaToggleView = Exclude<AgendaView, "threeDay">;
@@ -59,6 +60,8 @@ export interface AgendaHeaderProps {
   defaultMenuStep?: "menu" | "shortcuts";
   /** Story-only: renders with the date picker already open. */
   defaultPickerOpen?: boolean;
+  /** Story-only: renders with the title menu already open. */
+  defaultTitleMenuOpen?: boolean;
 }
 
 export function AgendaHeader({
@@ -81,18 +84,30 @@ export function AgendaHeader({
   defaultMenuOpen,
   defaultMenuStep,
   defaultPickerOpen = false,
+  defaultTitleMenuOpen = false,
 }: AgendaHeaderProps) {
   const t = useTranslations("components.pageHeader.agenda");
   const [toast, setToast] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(defaultPickerOpen);
+  const [titleMenuOpen, setTitleMenuOpen] = useState(defaultTitleMenuOpen);
   const [menuOpen, setMenuOpen] = useState(false);
   const titleRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => onOverlayChange?.(pickerOpen || menuOpen), [pickerOpen, menuOpen, onOverlayChange]);
+  useEffect(() => onOverlayChange?.(pickerOpen || titleMenuOpen || menuOpen), [pickerOpen, titleMenuOpen, menuOpen, onOverlayChange]);
 
   function closePicker(restoreFocus: boolean) {
     setPickerOpen(false);
     if (restoreFocus) titleRef.current?.focus();
+  }
+
+  function closeTitleMenu(restoreFocus: boolean) {
+    setTitleMenuOpen(false);
+    if (restoreFocus) titleRef.current?.focus();
+  }
+
+  function toggleTitleMenu() {
+    setPickerOpen(false);
+    setTitleMenuOpen((open) => !open);
   }
 
   const items = VIEW_ITEMS.map((item) => ({ ...item, label: t(`views.${item.value}`) }));
@@ -102,7 +117,7 @@ export function AgendaHeader({
       <PageHeader
         title={title}
         titleTrigger={
-          onGoToDate && { onClick: () => setPickerOpen((open) => !open), expanded: pickerOpen, buttonRef: titleRef }
+          onGoToDate && { onClick: toggleTitleMenu, expanded: titleMenuOpen || pickerOpen, popup: "menu", buttonRef: titleRef }
         }
         subtitle={subtitle && <span className="lg:hidden">{subtitle}</span>}
         titleAdornments={
@@ -135,7 +150,6 @@ export function AgendaHeader({
               <Button className="max-lg:hidden" icon="ArrowRight" aria-label={t("nextLabel")} onClick={onNext} />
               <span className="inline-flex">
               <AgendaMoreMenu
-                onToday={onToday}
                 onOpenCalendars={onOpenCalendars}
                 weekToBasket={weekToBasket}
                 onWeekSent={() => setToast(t("weekToBasketToast"))}
@@ -153,6 +167,21 @@ export function AgendaHeader({
           </div>
         }
       />
+      {onGoToDate && date && (
+        <AgendaTitleMenu
+          open={titleMenuOpen}
+          anchorRef={titleRef}
+          onToday={() => {
+            closeTitleMenu(true);
+            onToday();
+          }}
+          onGoToDate={() => {
+            setTitleMenuOpen(false);
+            setPickerOpen(true);
+          }}
+          onClose={closeTitleMenu}
+        />
+      )}
       {onGoToDate && date && (
         <AgendaDatePicker open={pickerOpen} anchorRef={titleRef} date={date} onSelect={onGoToDate} onClose={closePicker} />
       )}

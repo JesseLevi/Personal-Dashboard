@@ -31,3 +31,24 @@ export function settleAgendaSheet({ from, offsetPx, travelPx, velocityPxMs }: Se
   const position = Math.min(travelPx, Math.max(0, start + offsetPx));
   return position > travelPx / 2 ? "peek" : "full";
 }
+
+/** Distance in px between the last card and the sheet's top edge in peek. */
+export const SHEET_PEEK_GAP_PX = 64;
+
+export interface PeekInput {
+  /** The sheet's constant height (its top edge in full to the tab bar). */
+  heightPx: number;
+  /** The bottom of the last card (or of the empty-day line), measured from the sheet's top edge in full. */
+  contentBottomPx: number;
+  /** The least the sheet shows: grabber, strip and a sliver of the grid. */
+  minPx: number;
+}
+
+/**
+ * The visible height of the sheet in peek: its top edge rests `SHEET_PEEK_GAP_PX` under the cards, but it never
+ * shows less than `minPx` (the cards then scroll) and never more than its own height.
+ */
+export function peekVisiblePx({ heightPx, contentBottomPx, minPx }: PeekInput): number {
+  const wanted = heightPx - (contentBottomPx + SHEET_PEEK_GAP_PX);
+  return Math.min(heightPx, Math.max(minPx, wanted));
+}

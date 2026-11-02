@@ -16,6 +16,8 @@ export interface AgendaBodySwipe {
   onPeek?: (step: 1 | -1) => void;
   /** The day beside the shown one, drawn while a drag is under way; the caller takes care of its data. */
   renderNeighbour: (step: 1 | -1) => ReactNode;
+  /** The same for the day cards: the cards of the day beside the shown one. Omitted: the cards do not swipe. */
+  renderCardsNeighbour?: (step: 1 | -1) => ReactNode;
 }
 
 export interface AgendaBodySheet {
@@ -60,6 +62,9 @@ export function AgendaBody({
   const viewportRef = useRef<HTMLDivElement>(null);
   const paneRef = useRef<HTMLDivElement>(null);
   const neighbourRef = useRef<HTMLDivElement>(null);
+  const scopeRef = useRef<HTMLDivElement>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
+  const cardsPaneRef = useRef<HTMLDivElement>(null);
   const plannerRef = useRef<HTMLDivElement>(null);
   const narrow = useIsNarrow();
 
@@ -106,19 +111,50 @@ export function AgendaBody({
   });
   useLayoutEffect(alignNeighbour, [peek, alignNeighbour]);
 
+  // The day cards swipe like the grid: same controller, their own pane and neighbour.
+  const cardsPeek = useAgendaSwipe(cardsRef, cardsPaneRef, {
+    enabled: !!swipe?.renderCardsNeighbour,
+    date: swipe?.date ?? "",
+    onStep: (step) => swipe?.onStep(step),
+    onLock: (step) => swipe?.onPeek?.(step),
+  });
+
   return (
-    // spacing-flag: --agenda-peek 11rem, the sheet's visible height in peek -- design/notes/AgendaPage.md
-    <div className="min-w-0 pr-page-right-equal [--agenda-peek:11rem]">
+    // spacing-flag: --agenda-peek-min 11rem, the least the sheet shows in peek -- design/notes/AgendaPage.md
+    <div ref={scopeRef} className="min-w-0 pr-page-right-equal [--agenda-peek-min:11rem] [--agenda-peek:var(--agenda-peek-min)]">
       <div className={cn("flex min-w-0 flex-col gap-stack-lg", cards && "lg:grid lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start")}>
         {cards && (
           <div
+            ref={cardsRef}
             inert={narrow && sheet.stop === "full"}
-            className="min-w-0 max-lg:pb-(--agenda-peek) lg:h-[calc(100dvh-14rem)] lg:min-h-[28rem] lg:overflow-y-auto"
+            className={cn(
+              "min-w-0 max-lg:pb-(--agenda-peek) lg:h-[calc(100dvh-14rem)] lg:min-h-[28rem] lg:overflow-y-auto",
+              swipe?.renderCardsNeighbour && "max-lg:touch-pan-y max-lg:touch-pinch-zoom max-lg:overflow-x-clip",
+            )}
           >
-            {cards}
+            <div ref={cardsPaneRef} className="relative">
+              <div data-date={swipe?.date}>{cards}</div>
+              {swipe?.renderCardsNeighbour && cardsPeek !== null && (
+                <div
+                  data-agenda-peek=""
+                  aria-hidden="true"
+                  inert
+                  className={cn("absolute top-0 w-full", cardsPeek === 1 ? "left-[calc(100%+var(--spacing-inline-lg))]" : "right-[calc(100%+var(--spacing-inline-lg))]")}
+                >
+                  {swipe.renderCardsNeighbour(cardsPeek)}
+                </div>
+              )}
+            </div>
           </div>
         )}
-        <AgendaDaySheet stop={sheet.stop} onStopChange={sheet.onStopChange} strip={sheet.strip} plannerRef={plannerRef}>
+        <AgendaDaySheet
+          stop={sheet.stop}
+          onStopChange={sheet.onStopChange}
+          strip={sheet.strip}
+          plannerRef={plannerRef}
+          cardsRef={cardsRef}
+          scopeRef={scopeRef}
+        >
           <div ref={viewportRef} className={cn("h-full", swipe && "touch-pan-y touch-pinch-zoom overflow-x-clip")}>
             <div ref={paneRef} className="relative h-full">
               {children}
