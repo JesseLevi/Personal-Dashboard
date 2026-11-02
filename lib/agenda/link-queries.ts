@@ -1,11 +1,14 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
+import { mealSlotRank } from "@/lib/agenda/meals";
+import type { MealSlot } from "@/lib/agenda/types";
 import {
   AGENDA_LINK_KINDS,
   LINK_COLUMN,
   LINK_SEARCH_LIMIT,
   sortEventRefs,
+  type AgendaEventMeal,
   type AgendaEventRef,
   type AgendaLink,
   type AgendaLinkCandidate,
@@ -41,6 +44,23 @@ export async function getEventLinks(eventId: string): Promise<AgendaLink[]> {
     if (row.note) return [{ id: row.id, kind: "note", targetId: row.note.id, title: row.note.title }];
     return [];
   });
+}
+
+/** The meals attached to one event, by moment, each with the recipe's current title. */
+export async function getEventMeals(eventId: string): Promise<AgendaEventMeal[]> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("meal_plans")
+    .select("id, slot, recipe:recipes(id, title)")
+    .eq("calendar_event_id", eventId)
+    .order("position", { ascending: true });
+  if (error) fail("load event meals", error);
+
+  return data
+    .flatMap((row): AgendaEventMeal[] =>
+      row.recipe ? [{ id: row.id, recipeId: row.recipe.id, title: row.recipe.title, slot: row.slot as MealSlot }] : [],
+    )
+    .sort((a, b) => mealSlotRank(a.slot) - mealSlotRank(b.slot));
 }
 
 /** The events linked to one recipe, card or note, upcoming first. */

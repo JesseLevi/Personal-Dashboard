@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { CalendarCategoryView } from "@/lib/agenda/calendars";
-import type { AgendaLink, AgendaLinkCandidate } from "@/lib/agenda/links";
+import type { AgendaEventAttachments, AgendaEventMeal, AgendaLink, AgendaLinkCandidate } from "@/lib/agenda/links";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { AgendaEventDetail, AgendaEventItem } from "@/lib/agenda/types";
 import nl from "@/messages/nl.json";
@@ -39,8 +39,10 @@ const links: AgendaLink[] = [
   { id: "l2", kind: "card", targetId: "c1", title: "Cadeau kopen voor opa" },
   { id: "l3", kind: "note", targetId: "n1", title: "Vragen voor de tandarts" },
 ];
-const mockLoadLinks = async (): Promise<AgendaActionResult<AgendaLink[]>> => ({ success: true, data: links });
-const mockLoadNoLinks = async (): Promise<AgendaActionResult<AgendaLink[]>> => ({ success: true, data: [] });
+const meals: AgendaEventMeal[] = [{ id: "m1", recipeId: "r2", title: "Dahl", slot: "dinner" }];
+const mockLoadLinks = async (): Promise<AgendaActionResult<AgendaEventAttachments>> => ({ success: true, data: { links, meals: [] } });
+const mockLoadNoLinks = async (): Promise<AgendaActionResult<AgendaEventAttachments>> => ({ success: true, data: { links: [], meals: [] } });
+const mockLoadWithMeal = async (): Promise<AgendaActionResult<AgendaEventAttachments>> => ({ success: true, data: { links, meals } });
 const mockSearchLinks = async (): Promise<AgendaActionResult<AgendaLinkCandidate[]>> => ({ success: true, data: [] });
 
 const event: AgendaEventItem = {
@@ -120,6 +122,13 @@ export const EditEvent = () => (
 export const EditEventOtherCategory = () => (
   <div className="min-h-screen">
     <AgendaEventPanel {...panelProps} target={{ mode: "edit", item: social }} />
+  </div>
+);
+
+// A recipe under Koppelen is a meal on the event: "Dahl · Diner" opens the meal panel, the X deletes the meal.
+export const EditEventWithMeal = () => (
+  <div className="min-h-screen">
+    <AgendaEventPanel {...panelProps} onLoadLinks={mockLoadWithMeal} target={{ mode: "edit", item: event }} />
   </div>
 );
 

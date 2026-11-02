@@ -10,7 +10,8 @@ import { ColorDot } from "@/components/molecules/ColorSwatches";
 import { SidePanel } from "@/components/organisms/SidePanel";
 import { DeleteConfirm, useDeleteConfirm } from "@/app/(app)/_components/DeleteConfirm";
 import type { CalendarCategoryView } from "@/lib/agenda/calendars";
-import type { AgendaLink, AgendaLinkCandidate } from "@/lib/agenda/links";
+import type { AgendaEventAttachments, AgendaEventMeal, AgendaLink, AgendaLinkCandidate } from "@/lib/agenda/links";
+import { slotForEventStart } from "@/lib/agenda/meals";
 import { REPEAT_CHOICES, choiceToRule, ruleChanged, ruleToChoice, type RepeatChoice } from "@/lib/agenda/repeat";
 import type { AgendaActionResult, AgendaErrorCode, SeriesScope } from "@/lib/agenda/schemas";
 import { addDays, spanToUtc } from "@/lib/agenda/time";
@@ -26,7 +27,7 @@ export interface AgendaEventPrefill {
   description: string;
   calendarId: string;
   repeat: RepeatChoice;
-  /** Recipes and cards picked in quick add: linked once the event is saved. */
+  /** Recipes and cards picked in quick add, made once the event is saved: a card is linked, a recipe becomes a meal on the event. */
   links?: AgendaLinkCandidate[];
 }
 
@@ -47,10 +48,16 @@ export interface AgendaEventPanelProps {
   /** After a successful create, update or delete, before `onClose`; also after a link change, with the panel left open. */
   onMutated?: () => void;
   /** The "Gekoppeld" section shows for a saved event when the link actions are given. */
-  onLoadLinks?: (input: unknown) => Promise<AgendaActionResult<AgendaLink[]>>;
+  onLoadLinks?: (input: unknown) => Promise<AgendaActionResult<AgendaEventAttachments>>;
   onSearchLinks?: (input: unknown) => Promise<AgendaActionResult<AgendaLinkCandidate[]>>;
   onLink?: (input: unknown) => Promise<AgendaActionResult<{ id: string }>>;
   onUnlink?: (input: unknown) => Promise<AgendaActionResult>;
+  /** A recipe under Koppelen becomes a meal attached to the event (`createMealPlan`, ADR-0058 §2). */
+  onPlanMeal?: (input: unknown) => Promise<AgendaActionResult<{ id: string }>>;
+  /** Removes an attached meal from "Gekoppeld" (`deleteMealPlan`). */
+  onDeleteMeal?: (input: unknown) => Promise<AgendaActionResult>;
+  /** Opens the meal panel for an attached meal. */
+  onOpenMeal?: (meal: AgendaEventMeal) => void;
   /** Client-side navigation for a link in "Gekoppeld". */
   onNavigate?: (href: string) => void;
 }
@@ -132,6 +139,9 @@ export function AgendaEventPanel({
   onSearchLinks,
   onLink,
   onUnlink,
+  onPlanMeal,
+  onDeleteMeal,
+  onOpenMeal,
   onNavigate,
 }: AgendaEventPanelProps) {
   const t = useTranslations("components.agendaPanel");
@@ -143,6 +153,7 @@ export function AgendaEventPanel({
   const [detailLoaded, setDetailLoaded] = useState(target.mode === "create");
   const [calendarName, setCalendarName] = useState<string | null>(null);
   const [links, setLinks] = useState<AgendaLink[] | null>(null);
+  const [meals, setMeals] = useState<AgendaEventMeal[]>([]);
   const [linksFailure, setLinksFailure] = useState<AgendaErrorCode | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [originalRule, setOriginalRule] = useState<AgendaRepeatRule | null>(null);
@@ -172,6 +183,7 @@ export function AgendaEventPanel({
       setDetailLoaded(target.mode === "create");
       setCalendarName(null);
       setLinks(null);
+      setMeals([]);
       setLinksFailure(null);
       setSearchOpen(false);
       setOriginalRule(null);
@@ -213,8 +225,10 @@ export function AgendaEventPanel({
   const loadLinks = useCallback(async () => {
     if (!editId || !onLoadLinks) return;
     const result = await onLoadLinks({ eventId: editId });
-    if (result.success) setLinks(result.data);
-    else setLinksFailure(result.error);
+    if (result.success) {
+      setLinks(result.data.links);
+      setMeals(result.data.meals);
+    } else setLinksFailure(result.error);
   }, [editId, onLoadLinks]);
 
   useEffect(() => {
@@ -235,9 +249,27 @@ export function AgendaEventPanel({
     });
   }
 
+  function handleRemoveMeal(meal: AgendaEventMeal) {
+    if (!onDeleteMeal) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await onDeleteMeal({ id: meal.id });
+      if (!result.success) {
+        setError(tErrors(result.error));
+        return;
+      }
+      setMeals((current) => current.filter((candidate) => candidate.id !== meal.id));
+      onMutated?.();
+    });
+  }
+
+  // A recipe becomes a meal on the event, at the moment its start points at; the rest is linked.
   // Resolves with the action result so the search panel can show a refusal and stay open.
   async function handleLink(candidate: AgendaLinkCandidate) {
-    const result = await onLink!({ eventId, kind: candidate.kind, targetId: candidate.id });
+    const result =
+      candidate.kind === "recipe" && onPlanMeal && item
+        ? await onPlanMeal({ calendarEventId: eventId, recipeId: candidate.id, slot: slotForEventStart(item.start, item.allDay) })
+        : await onLink!({ eventId, kind: candidate.kind, targetId: candidate.id });
     if (result.success) {
       await loadLinks();
       onMutated?.();
@@ -292,8 +324,14 @@ export function AgendaEventPanel({
       const links = target.mode === "create" ? target.prefill?.links : undefined;
       const createdId = (result.data as { id?: string } | undefined)?.id;
       if (links?.length && onLink && createdId) {
+        const slot = slotForEventStart(values.start, values.allDay);
         await Promise.all(
-          links.map((link) => onLink({ eventId: createdId, kind: link.kind, targetId: link.id }).catch(() => null)),
+          links.map((link) =>
+            (link.kind === "recipe" && onPlanMeal
+              ? onPlanMeal({ calendarEventId: createdId, recipeId: link.id, slot })
+              : onLink({ eventId: createdId, kind: link.kind, targetId: link.id })
+            ).catch(() => null),
+          ),
         );
       }
       onMutated?.();
@@ -399,7 +437,10 @@ export function AgendaEventPanel({
   ];
 
   const shownError = error ?? (linksFailure ? tErrors(linksFailure) : null);
-  const linkedKeys = new Set((links ?? []).map((link) => linkKey(link.kind, link.targetId)));
+  const linkedKeys = new Set([
+    ...(links ?? []).map((link) => linkKey(link.kind, link.targetId)),
+    ...meals.map((meal) => linkKey("recipe", meal.recipeId)),
+  ]);
 
   return (
     <>
@@ -526,8 +567,11 @@ export function AgendaEventPanel({
         {eventId && onLoadLinks && (
           <AgendaEventLinks
             links={links}
+            meals={meals}
             onLink={() => setSearchOpen(true)}
             onUnlink={handleUnlink}
+            onOpenMeal={onOpenMeal}
+            onRemoveMeal={handleRemoveMeal}
             onNavigate={onNavigate}
             disabled={isPending}
           />

@@ -61,17 +61,21 @@ async function getCalendarColors(supabase: Supabase): Promise<Map<string, Agenda
   return new Map(data.flatMap((row) => (isAgendaColor(row.color) ? [[row.id, row.color] as const] : [])));
 }
 
-// The timeline function carries no `position`, so meals get it in one extra read.
+// The timeline function carries neither `position` nor the event an attached meal hangs on, so meals get them in one extra read.
 async function withMealPositions(supabase: Supabase, items: AgendaItem[]): Promise<AgendaItem[]> {
   const ids = items.filter((item) => item.kind === "meal").map((item) => item.id);
   if (ids.length === 0) return items;
-  const { data, error } = await supabase.from("meal_plans").select("id, position").in("id", ids);
+  const { data, error } = await supabase.from("meal_plans").select("id, position, calendar_event_id").in("id", ids);
   if (error) {
     console.error("[agenda] meal positions failed:", error.code, error.message);
     return items;
   }
-  const positions = new Map(data.map((row) => [row.id, row.position]));
-  return items.map((item) => (item.kind === "meal" ? { ...item, position: positions.get(item.id) ?? item.position } : item));
+  const rows = new Map(data.map((row) => [row.id, row]));
+  return items.map((item) => {
+    const row = item.kind === "meal" ? rows.get(item.id) : undefined;
+    if (item.kind !== "meal" || !row) return item;
+    return { ...item, position: row.position, ...(row.calendar_event_id ? { eventId: row.calendar_event_id } : {}) };
+  });
 }
 
 /**

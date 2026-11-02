@@ -78,6 +78,18 @@ export function timelineState(event: AgendaEventItem, now: string): TimelineStat
   return start <= now ? "now" : "upcoming";
 }
 
+/** The event an attached meal hangs on, looked up in the loaded window; null for a day meal or an event that is not loaded (or hidden). */
+export function attachedEventTitle(meal: AgendaMealItem, items: readonly AgendaItem[]): string | null {
+  if (!meal.eventId) return null;
+  const event = items.find((item): item is AgendaEventItem => item.kind === "event" && item.id === meal.eventId);
+  return event ? event.title : null;
+}
+
+/** The ids of the events with at least one attached meal, for the timeline icon. */
+export function eventIdsWithMeals(items: readonly AgendaItem[]): Set<string> {
+  return new Set(items.flatMap((item) => (item.kind === "meal" && item.eventId ? [item.eventId] : [])));
+}
+
 export interface BasketSuggestion {
   /** The day's meals no basket item points at yet. */
   mealIds: string[];

@@ -66,7 +66,7 @@ const otherItems: AgendaItem[] = [
 ];
 
 const recipeIds = { m1: "r1", m2: "r2", m3: "r3" };
-const thumbnailUrls = { r1: photo("tan"), r2: photo("indianred"), r3: photo("darkseagreen") };
+const thumbnailUrls = { r1: photo("tan"), r2: photo("indianred"), r3: photo("darkseagreen"), r4: photo("goldenrod") };
 const baskets: BasketOption[] = [{ id: "own", name: "Boodschappen", shared: false }];
 const noop = () => {};
 const sent = async () => ({ success: true as const, data: undefined });
@@ -123,6 +123,22 @@ export const OtherDay = () => (
     <StoryIntro what="Another day: no past or 'Nu' marks and no assistant signals; the basket suggestion for that day's meal stays." note="AgendaPage" />
     <Column>
       <AgendaDayCards {...props({ day: TOMORROW, items: otherItems, signals, basket: { m3: false } })} />
+    </Column>
+  </Surface>
+);
+
+// A recipe under Koppelen is a meal attached to the event (ADR-0058 §2): the pot after the event's title, "bij <afspraak>" on the meal.
+const attachedItems: AgendaItem[] = [
+  event("e-bodil", "Eten met Bodil", `${TODAY}T19:00:00`, `${TODAY}T21:00:00`),
+  meal("m1", "Tosti ham kaas", "lunch", TODAY),
+  { ...meal("m4", "Dahl", "dinner", TODAY), attached: true, eventId: "e-bodil" },
+];
+
+export const WithAttachedMeal = () => (
+  <Surface>
+    <StoryIntro what="An event with a recipe on it: a small pot after its title, and the meal on the Eten card says which event it hangs on." note="AgendaPage" />
+    <Column>
+      <AgendaDayCards {...props({ items: attachedItems, recipeIds: { ...recipeIds, m4: "r4" }, basket: { m1: true, m4: false } })} />
     </Column>
   </Surface>
 );

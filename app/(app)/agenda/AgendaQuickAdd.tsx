@@ -33,7 +33,7 @@ import {
   type QuickAddResult,
 } from "@/lib/agenda/quick-add";
 import { findPlanCard } from "@/lib/agenda/card-select";
-import { defaultSlotForCategory } from "@/lib/agenda/meals";
+import { defaultSlotForCategory, slotForEventStart } from "@/lib/agenda/meals";
 import { quickAddSummary } from "@/lib/agenda/quick-add-summary";
 import { choiceToRule, type RepeatChoice } from "@/lib/agenda/repeat";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
@@ -287,11 +287,15 @@ function QuickAddForm({
       ...(rule ? { repeat: rule } : {}),
     });
     if (!result.success) return result;
-    // The event stays when a link fails: no rollback, the page says so.
+    // The event stays when a link or meal fails: no rollback, the page says so. A recipe becomes a meal on the event (ADR-0058 §2).
     const eventId = result.data.id;
+    const slot = slotForEventStart(`${values.date}T${values.start}`, values.allDay);
     const outcomes = await Promise.all(
       picked.map((item) =>
-        onLinkToEvent!({ eventId, kind: item.kind, targetId: item.id }).catch((): AgendaActionResult => ({ success: false, error: "generic" })),
+        (item.kind === "recipe"
+          ? onCreateMeal({ calendarEventId: eventId, recipeId: item.id, slot })
+          : onLinkToEvent!({ eventId, kind: item.kind, targetId: item.id })
+        ).catch((): AgendaActionResult => ({ success: false, error: "generic" })),
       ),
     );
     onAdded({ kind: "event", title: values.title.trim(), date, linkFailed: outcomes.some((outcome) => !outcome.success) });

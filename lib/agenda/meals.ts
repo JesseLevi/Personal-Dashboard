@@ -37,6 +37,14 @@ export function defaultSlotForCategory(name: string | null): MealSlot {
   return slotForCategoryName(name) ?? DEFAULT_MEAL_SLOT;
 }
 
+/** The moment a meal attached to an event gets (ADR-0058 §2): before 11:00 breakfast, 11:00-16:00 lunch, later or all day dinner. `start` is a local date-time (`2026-11-02T19:00`). */
+export function slotForEventStart(start: string, allDay: boolean): MealSlot {
+  if (allDay) return "dinner";
+  const clock = start.slice(11, 16);
+  if (clock < "11:00") return "breakfast";
+  return clock < "16:00" ? "lunch" : "dinner";
+}
+
 /** How many days, today included, the "Plannen" menu lists before "Other date". */
 export const PLAN_DAY_COUNT = 5;
 
