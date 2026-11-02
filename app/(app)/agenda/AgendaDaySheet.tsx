@@ -1,11 +1,11 @@
 "use client";
 
-// design: Claude-designed (#733)
+// design: Claude-designed (#733, #744)
 import { useId, useLayoutEffect, useRef, type KeyboardEvent, type ReactNode, type RefObject } from "react";
 import { flushSync } from "react-dom";
 import { useTranslations } from "next-intl";
 import { useIsNarrow } from "@/components/organisms/AgendaCalendar";
-import type { AgendaSheetStop } from "@/lib/agenda/sheet";
+import { peekVisiblePx, type AgendaSheetStop } from "@/lib/agenda/sheet";
 import { useSheetSnap } from "@/lib/dom/use-sheet-snap";
 import { cn } from "@/lib/ui/cn";
 
@@ -16,13 +16,19 @@ export interface AgendaDaySheetProps {
   strip: ReactNode;
   /** The pane that holds the planner; `AgendaBody` measures its width. */
   plannerRef: RefObject<HTMLDivElement | null>;
+  /** The day cards region: the sheet's top edge in full and its peek stop are measured from it. */
+  cardsRef: RefObject<HTMLElement | null>;
+  /** The element that carries `--agenda-peek`, shared with the cards region's bottom space. */
+  scopeRef: RefObject<HTMLElement | null>;
   children: ReactNode;
 }
 
-// The visible height of the sheet in peek is `--agenda-peek` (set by AgendaBody); the probe turns it into px.
-function peekPx(panel: HTMLElement): number {
+const NARROW = "(max-width: 1023.98px)";
+
+// A custom property that holds a length, read as px.
+function cssPx(panel: HTMLElement, property: string): number {
   const probe = document.createElement("div");
-  probe.style.height = "var(--agenda-peek)";
+  probe.style.height = `var(${property})`;
   panel.append(probe);
   const height = probe.offsetHeight;
   probe.remove();
@@ -32,51 +38,80 @@ function peekPx(panel: HTMLElement): number {
 /**
  * The planner. From `lg` it is the plain pane right of the cards. Below `lg` it is a fixed sheet above the
  * tab bar that rests on two stops, only ever moved by `transform`: its height stays constant, so FullCalendar
- * never re-measures on a stop change. Its top edge follows the bottom of the sticky page header.
+ * never re-measures on a stop change. In full its top edge is the top of the first card; in peek it sits
+ * 64px under the last card, and never shows less than `--agenda-peek-min`.
  */
-export function AgendaDaySheet({ stop, onStopChange, strip, plannerRef, children }: AgendaDaySheetProps) {
+export function AgendaDaySheet({ stop, onStopChange, strip, plannerRef, cardsRef, scopeRef, children }: AgendaDaySheetProps) {
   const t = useTranslations("agenda.sheet");
   const narrow = useIsNarrow();
   const gridId = useId();
   const panelRef = useRef<HTMLElement>(null);
   const grabberRef = useRef<HTMLButtonElement>(null);
+  const measureRef = useRef<() => void>(() => {});
   const full = stop === "full";
-
-  // The header is sticky and its bottom moves for the first pixels of scroll, so the top edge is measured, not assumed.
-  useLayoutEffect(() => {
-    const panel = panelRef.current;
-    const header = panel?.closest("main")?.querySelector("header");
-    if (!panel || !header) return;
-    let last = -1;
-    const update = () => {
-      const bottom = Math.round(header.getBoundingClientRect().bottom);
-      if (bottom === last) return;
-      last = bottom;
-      panel.style.setProperty("--agenda-sheet-top", `${bottom}px`);
-    };
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(header);
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, []);
 
   const snap = useSheetSnap({
     getPanel: () => panelRef.current,
-    canStart: () => !!panelRef.current && window.matchMedia("(max-width: 1023.98px)").matches,
+    canStart: () => !!panelRef.current && window.matchMedia(NARROW).matches,
     getStop: () => stop,
     getTravel: () => {
       const panel = panelRef.current;
-      return panel ? Math.max(0, panel.offsetHeight - peekPx(panel)) : 0;
+      return panel ? Math.max(0, panel.offsetHeight - cssPx(panel, "--agenda-peek")) : 0;
     },
     // Flushed, so the class change and the end of the inline drag position land in one style recalc.
-    onSettle: (next) => flushSync(() => onStopChange(next)),
+    onSettle: (next) => {
+      flushSync(() => onStopChange(next));
+      requestAnimationFrame(() => measureRef.current());
+    },
   });
+
+  // The top edge in full is where the cards region starts at scroll 0; the visible height in peek follows the
+  // bottom of its last card. Both come from layout, never from the transform, and not while dragging.
+  useLayoutEffect(() => {
+    const panel = panelRef.current;
+    const cards = cardsRef.current;
+    if (!panel || !cards) return;
+    const query = window.matchMedia(NARROW);
+    let first = true;
+    const measure = () => {
+      // The scope is an ancestor: its ref is set after this effect's first run, so it is read per measurement.
+      const scope = scopeRef.current;
+      if (!scope || snap.isDragging()) return;
+      if (!query.matches) {
+        panel.style.removeProperty("--agenda-sheet-top");
+        scope.style.removeProperty("--agenda-peek");
+        return;
+      }
+      const rect = cards.getBoundingClientRect();
+      const top = Math.round(rect.top + window.scrollY);
+      panel.style.setProperty("--agenda-sheet-top", `${top}px`);
+      const visible = peekVisiblePx({
+        heightPx: panel.offsetHeight,
+        contentBottomPx: rect.bottom + window.scrollY - parseFloat(getComputedStyle(cards).paddingBottom) - top,
+        minPx: cssPx(panel, "--agenda-peek-min"),
+      });
+      if (first) {
+        // The first measurement is the start position, not a move.
+        first = false;
+        panel.style.transitionDuration = "0s";
+        requestAnimationFrame(() => panel.style.removeProperty("transition-duration"));
+      }
+      scope.style.setProperty("--agenda-peek", `${Math.round(visible)}px`);
+    };
+    measureRef.current = measure;
+    // Observing delivers a first measurement before the first paint.
+    const observer = new ResizeObserver(measure);
+    observer.observe(cards);
+    const main = panel.closest("main");
+    if (main) observer.observe(main);
+    window.addEventListener("resize", measure);
+    query.addEventListener("change", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+      query.removeEventListener("change", measure);
+    };
+  }, [cardsRef, scopeRef, snap]);
 
   function handleKeyDown(event: KeyboardEvent) {
     if (event.key !== "Escape" || !full || !narrow || event.defaultPrevented) return;
@@ -92,7 +127,7 @@ export function AgendaDaySheet({ stop, onStopChange, strip, plannerRef, children
       onKeyDown={handleKeyDown}
       className={cn(
         "flex min-w-0 flex-col lg:h-[calc(100dvh-14rem)] lg:min-h-[28rem]",
-        // Below lg: fixed between the header and the tab bar (none from md, where the sidebar takes the left edge).
+        // Below lg: fixed between the first card and the tab bar (none from md, where the sidebar takes the left edge).
         // spacing-flag: top/bottom/left offsets and the 5.5rem fallback -- design/notes/AgendaPage.md
         "max-lg:fixed max-lg:top-[var(--agenda-sheet-top,calc(env(safe-area-inset-top)+5.5rem))] max-lg:right-0 max-lg:bottom-[calc(3.5rem+env(safe-area-inset-bottom))] max-lg:left-0 max-lg:z-20 md:max-lg:bottom-0 md:max-lg:left-[var(--shell-sidebar,198px)]",
         // Same look as SidePanel's mobile sheet. spacing-flag: `rounded-tl-2xl` (#205), design/notes/AgendaPage.md

@@ -101,15 +101,10 @@ function PaletteOption({ id, icon, title, meta, active, trailing, onActivate, on
       onClick={onChoose}
       className={cn(
         "flex w-full items-center gap-inline-lg rounded-control-outer border border-transparent p-component-sm text-left",
-        active && "border-stroke-primary bg-surface-secondary",
+        active && "border-stroke-primary bg-surface-highlight-white",
       )}
     >
-      <span
-        className={cn(
-          "flex size-10 shrink-0 items-center justify-center rounded-control border border-stroke-primary text-text-secondary",
-          active ? "bg-surface-highlight-white" : "bg-surface-primary",
-        )}
-      >
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-control border border-stroke-primary bg-surface-highlight-white text-text-secondary">
         <Icon name={icon} size={20} />
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
@@ -441,99 +436,94 @@ export function CommandPalette({
         <h2 id={titleId} className="sr-only">
           {t("title")}
         </h2>
-        <div className="pointer-events-auto relative isolate">
-          <div aria-hidden="true" className="absolute inset-x-component-lg -top-component-sm bottom-0 -z-10 rounded-container bg-surface-secondary" />
-          <div className="rounded-container border border-stroke-primary bg-surface-highlight-white-selected p-component-sm">
-            <div className="flex flex-col overflow-hidden rounded-card border border-stroke-primary bg-surface-highlight-white">
-              <div className="border-b border-stroke-lines p-component-sm">
-                <div className="flex items-center gap-inline-md rounded-control-outer bg-surface-primary px-component-md">
-                  <Icon name="Search" className="shrink-0 text-text-secondary" />
-                  <input
-                    ref={inputRef}
-                    role="combobox"
-                    aria-label={t("searchLabel")}
-                    aria-expanded={rows.length > 0}
-                    aria-controls={listboxId}
-                    aria-activedescendant={rows.length > 0 ? optionId(active) : undefined}
-                    aria-autocomplete="list"
-                    placeholder={t("placeholder")}
-                    value={query}
-                    maxLength={MAX_QUERY_LENGTH}
-                    autoComplete="off"
-                    enterKeyHint="search"
-                    onChange={(event) => setQuery(event.target.value)}
-                    onKeyDown={handleFieldKeyDown}
-                    className="h-12 min-w-0 flex-1 bg-transparent text-base font-semibold text-text-primary outline-none placeholder:font-normal placeholder:text-text-placeholder"
-                  />
-                  <Kbd className="shrink-0 max-md:hidden">esc</Kbd>
-                  <Button variant="transparent" size="compact" icon="X" aria-label={t("closeLabel")} onClick={handleClose} className="md:hidden" />
-                </div>
-              </div>
+        <div className="pointer-events-auto flex flex-col overflow-hidden rounded-container border border-stroke-primary bg-surface-primary">
+          <div className="border-b border-stroke-lines p-component-sm">
+            <div className="flex items-center gap-inline-md rounded-control-outer border border-stroke-primary bg-surface-highlight-white px-component-md">
+              <Icon name="Search" className="shrink-0 text-text-secondary" />
+              <input
+                ref={inputRef}
+                role="combobox"
+                aria-label={t("searchLabel")}
+                aria-expanded={rows.length > 0}
+                aria-controls={listboxId}
+                aria-activedescendant={rows.length > 0 ? optionId(active) : undefined}
+                aria-autocomplete="list"
+                placeholder={t("placeholder")}
+                value={query}
+                maxLength={MAX_QUERY_LENGTH}
+                autoComplete="off"
+                enterKeyHint="search"
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={handleFieldKeyDown}
+                className="h-12 min-w-0 flex-1 bg-transparent text-base font-semibold text-text-primary outline-none placeholder:font-normal placeholder:text-text-placeholder"
+              />
+              <Kbd className="shrink-0 max-md:hidden">esc</Kbd>
+              <Button variant="transparent" size="compact" icon="X" aria-label={t("closeLabel")} onClick={handleClose} className="md:hidden" />
+            </div>
+          </div>
 
-              {/* spacing-flag: list height cap min(60vh, 560px) has no sizing token — design/notes/CommandPalette.md */}
-              <div ref={listRef} className="max-h-[min(60vh,560px)] overflow-y-auto p-component-sm">
-                <div aria-live="polite" className="flex w-full flex-col gap-stack-lg">
-                  {stateLine && <p className="px-component-sm py-component-sm text-base font-semibold text-text-secondary">{stateLine}</p>}
-                  <div id={listboxId} role="listbox" aria-label={t("resultsLabel")} className="flex w-full flex-col gap-stack-lg">
-                    {groups.map((group) => {
-                      const start = offset;
-                      offset += group.rows.length;
-                      const headingId = `${listboxId}-${group.key}`;
-                      return (
-                        <section key={group.key} role="group" aria-labelledby={headingId} className="flex w-full flex-col gap-stack-xs">
-                          <div className="flex items-baseline justify-between px-component-sm">
-                            <h3 id={headingId} className="text-sm font-semibold text-text-secondary">
-                              {group.label}
-                            </h3>
-                            <span aria-hidden="true" className="text-sm text-text-placeholder">
-                              {group.rows.length}
-                            </span>
-                          </div>
-                          <ul role="presentation" className="flex w-full flex-col gap-stack-xs">
-                            {group.rows.map((row, index) => (
-                              <li key={row.key} role="presentation">
-                                <PaletteOption
-                                  id={optionId(start + index)}
-                                  {...describe(row)}
-                                  active={start + index === active}
-                                  onActivate={() => setActive(start + index)}
-                                  onChoose={() => choose(row)}
-                                />
-                              </li>
-                            ))}
-                          </ul>
-                        </section>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className={cn(
-                  "flex items-center gap-inline-lg border-t border-stroke-lines bg-surface-primary px-component-md py-component-sm",
-                  !showHint && "max-md:hidden",
-                )}
-              >
-                <div className="flex items-center gap-inline-lg max-md:hidden">
-                  <FooterHint keys={["↑", "↓"]} label={t("hintMove")} />
-                  <FooterHint keys={["↵"]} label={t("hintOpen")} />
-                  <FooterHint keys={["esc"]} label={t("hintClose")} />
-                </div>
-                {showHint && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleClose();
-                      onOpenSettings();
-                    }}
-                    className="min-w-0 truncate text-left text-sm text-text-secondary underline underline-offset-2 md:ml-auto"
-                  >
-                    {t("smartOffLabel")}
-                  </button>
-                )}
+          {/* spacing-flag: list height cap min(60vh, 560px) has no sizing token — design/notes/CommandPalette.md */}
+          <div ref={listRef} className="max-h-[min(60vh,560px)] overflow-y-auto p-component-sm">
+            <div aria-live="polite" className="flex w-full flex-col gap-stack-lg">
+              {stateLine && <p className="px-component-sm py-component-sm text-base font-semibold text-text-secondary">{stateLine}</p>}
+              <div id={listboxId} role="listbox" aria-label={t("resultsLabel")} className="flex w-full flex-col gap-stack-lg">
+                {groups.map((group) => {
+                  const start = offset;
+                  offset += group.rows.length;
+                  const headingId = `${listboxId}-${group.key}`;
+                  return (
+                    <section key={group.key} role="group" aria-labelledby={headingId} className="flex w-full flex-col gap-stack-xs">
+                      <div className="flex items-baseline justify-between px-component-sm">
+                        <h3 id={headingId} className="text-sm font-semibold text-text-secondary">
+                          {group.label}
+                        </h3>
+                        <span aria-hidden="true" className="text-sm text-text-placeholder">
+                          {group.rows.length}
+                        </span>
+                      </div>
+                      <ul role="presentation" className="flex w-full flex-col gap-stack-xs">
+                        {group.rows.map((row, index) => (
+                          <li key={row.key} role="presentation">
+                            <PaletteOption
+                              id={optionId(start + index)}
+                              {...describe(row)}
+                              active={start + index === active}
+                              onActivate={() => setActive(start + index)}
+                              onChoose={() => choose(row)}
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  );
+                })}
               </div>
             </div>
+          </div>
+
+          <div
+            className={cn(
+              "flex items-center gap-inline-lg border-t border-stroke-lines px-component-md py-component-sm",
+              !showHint && "max-md:hidden",
+            )}
+          >
+            <div className="flex items-center gap-inline-lg max-md:hidden">
+              <FooterHint keys={["↑", "↓"]} label={t("hintMove")} />
+              <FooterHint keys={["↵"]} label={t("hintOpen")} />
+              <FooterHint keys={["esc"]} label={t("hintClose")} />
+            </div>
+            {showHint && (
+              <button
+                type="button"
+                onClick={() => {
+                  handleClose();
+                  onOpenSettings();
+                }}
+                className="min-w-0 truncate text-left text-sm text-text-secondary underline underline-offset-2 md:ml-auto"
+              >
+                {t("smartOffLabel")}
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -501,7 +501,8 @@
         "weekToBasketToast": "This week's meals are in your basket",
         "weekNumber": "Week {number}",
         "goToDateLabel": "Go to date",
-        "goToDateConfirm": "Go to date",
+        "goToDateItem": "Go to date",
+        "titleMenuLabel": "Choose day",
         "shortcutsLabel": "Keyboard shortcuts",
         "shortcuts": {
           "new": "New item",

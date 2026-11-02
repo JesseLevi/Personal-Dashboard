@@ -73,14 +73,16 @@ export function AgendaDayStrip({ date, today, onSelect, className }: AgendaDaySt
                 aria-current={isToday ? "date" : undefined}
                 aria-label={format.dateTime(utc(day), { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" })}
                 className={cn(
-                  "mx-auto flex w-11 flex-col items-center gap-stack-xs rounded-control border border-transparent py-component-xs",
-                  selected && "border-stroke-primary bg-surface-highlight-white",
+                  // The bottom is 2px tighter: digits sit higher in their line box than capitals, so this evens the ink above the
+                  // weekday and under the number. spacing-flag: `pb-1.5` optical balance -- design/notes/AgendaPage.md
+                  "mx-auto flex w-11 flex-col items-center gap-stack-xs rounded-control pt-component-sm pb-1.5",
+                  selected && "bg-surface-secondary",
                 )}
               >
-                <span className={cn("text-xs font-semibold", isToday ? "text-event-red-text" : "text-text-secondary")}>
+                <span className={cn("text-xs leading-none font-semibold", isToday ? "text-event-red-text" : "text-text-secondary")}>
                   {format.dateTime(utc(day), { weekday: "narrow", timeZone: "UTC" })}
                 </span>
-                <span className={cn("text-lg font-semibold", isToday ? "text-event-red-text" : selected ? "text-text-primary" : "text-text-secondary")}>
+                <span className={cn("text-lg leading-none font-semibold", isToday ? "text-event-red-text" : selected ? "text-text-primary" : "text-text-secondary")}>
                   {format.dateTime(utc(day), { day: "numeric", timeZone: "UTC" })}
                 </span>
               </button>

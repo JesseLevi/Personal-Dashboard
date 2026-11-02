@@ -262,8 +262,31 @@ export function AgendaPage({
   };
   useAgendaShortcuts(runShortcut, shortcutsBlocked);
 
-  // Below `lg` the calendar shows one day and follows a horizontal swipe (#666, #713); the neighbour day
-  // is a second, read-only calendar beside it while the finger is down. Its data is the loaded window.
+  const renderCards = (day: string, dayItems: readonly AgendaItem[], loading: boolean) => (
+    <AgendaDayCards
+      day={day}
+      today={today}
+      now={now}
+      items={dayItems}
+      loading={loading}
+      signals={signals}
+      recipeIds={mealCards.recipeIds}
+      thumbnailUrls={mealThumbnails}
+      basket={mealCards.basket}
+      baskets={baskets}
+      onOpenItem={handleItemClick}
+      onSignal={handleSignal}
+      onDayToBasket={handleDayToBasket}
+      onShowMoreEvents={() => {
+        if (!narrow) return false;
+        setSheetStop("full");
+        return true;
+      }}
+    />
+  );
+
+  // Below `lg` the calendar and the day cards show one day and follow a horizontal swipe (#666, #713, #744); the
+  // neighbour day is a second, read-only copy beside it while the finger is down. Its data is the loaded window.
   const swipe = narrow
     ? {
         date,
@@ -271,6 +294,11 @@ export function AgendaPage({
         onPeek: (step: 1 | -1) => {
           const neighbour = stepDate(effectiveView, date, step);
           if (loadWindow(neighbour).from !== loaded.from) void loadAround(neighbour);
+        },
+        renderCardsNeighbour: (step: 1 | -1) => {
+          const day = stepDate(effectiveView, date, step);
+          const inWindow = day >= loaded.from && day < loaded.to;
+          return renderCards(day, inWindow ? visibleItems : [], !inWindow);
         },
         renderNeighbour: (step: 1 | -1) => (
           <AgendaCalendar
@@ -522,28 +550,7 @@ export function AgendaPage({
           strip: <AgendaDayStrip date={date} today={today} onSelect={goTo} />,
         }}
         onPlannerWidth={setPlannerWidth}
-        cards={
-          <AgendaDayCards
-            day={cardsDay}
-            today={today}
-            now={now}
-            items={cardItems ?? []}
-            loading={cardItems === null}
-            signals={signals}
-            recipeIds={mealCards.recipeIds}
-            thumbnailUrls={mealThumbnails}
-            basket={mealCards.basket}
-            baskets={baskets}
-            onOpenItem={handleItemClick}
-            onSignal={handleSignal}
-            onDayToBasket={handleDayToBasket}
-            onShowMoreEvents={() => {
-              if (!narrow) return false;
-              setSheetStop("full");
-              return true;
-            }}
-          />
-        }
+        cards={renderCards(cardsDay, cardItems ?? [], cardItems === null)}
       >
         <AgendaCalendar
           items={visibleItems}

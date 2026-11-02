@@ -21,7 +21,6 @@ function visibleItems(root: HTMLElement | null): HTMLElement[] {
 const STEP_LABELS = { menu: null, baskets: "chooseBasketLabel", shortcuts: "shortcutsLabel" } as const;
 
 export interface AgendaMoreMenuProps {
-  onToday: () => void;
   /** Omitted: no "Agenda's en categorieën" item. */
   onOpenCalendars?: () => void;
   /** Omitted: no "Week naar mand" item. */
@@ -39,9 +38,8 @@ export interface AgendaMoreMenuProps {
   defaultStep?: "menu" | "shortcuts";
 }
 
-// The menu of the header's "⋯" button. Below `lg` it also holds what the header drops: Vandaag.
+// The menu of the header's "⋯" button.
 export function AgendaMoreMenu({
-  onToday,
   onOpenCalendars,
   weekToBasket,
   onWeekSent,
@@ -139,9 +137,6 @@ export function AgendaMoreMenu({
             <Dropdown className="shadow-sm" role="menu" aria-label={STEP_LABELS[step] ? t(STEP_LABELS[step]) : t("moreLabel")}>
               {step === "menu" ? (
                 <>
-                  <Button role="menuitem" variant="white" align="left" icon="Calendar" className="lg:hidden" onClick={() => choose(onToday)}>
-                    {t("todayLabel")}
-                  </Button>
                   {weekToBasket && (
                     <Button
                       role="menuitem"
