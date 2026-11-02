@@ -584,7 +584,18 @@
         "plannedLabel": "Planned for",
         "plannedPlaceholder": "Add day",
         "labelsLabel": "Labels",
-        "labelsPlaceholder": "E.g. work, home"
+        "labelsPlaceholder": "Choose labels"
+      },
+      "labels": {
+        "listLabel": "Labels on this board",
+        "filterLabel": "Search or add labels",
+        "filterPlaceholder": "Search or type a new label",
+        "emptyHint": "This board has no labels yet.",
+        "newLabel": "New label",
+        "newLabelNamed": "New label \"{name}\"",
+        "removeLabel": "Remove label {name}",
+        "limitHint": "A card can have at most {max} labels.",
+        "tooLongHint": "A label can be at most {max} characters."
       },
       "saveLabel": "Save",
       "savingLabel": "Saving...",

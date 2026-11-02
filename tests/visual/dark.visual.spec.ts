@@ -60,6 +60,7 @@ const DARK_STORIES = [
   "te-doen--card-detail-panel--edit-item-planned",
   "te-doen--card-detail-panel--edit-item-no-deadline",
   "te-doen--card-detail-panel--with-subtasks",
+  "te-doen--card-detail-panel--labels-open-filtered",
   "te-doen--subtask-progress-tag--overview",
   "basis--kaarten--card-content-recipe--overview",
   "agenda--agenda-page-layout--week",

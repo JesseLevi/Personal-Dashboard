@@ -25,9 +25,65 @@ export function parseLabelInput(text: string): string[] {
   return out;
 }
 
-/** Pure: the label names as the card panel shows them. */
-export function formatLabelInput(labels: readonly { name: string }[]): string {
-  return labels.map((label) => label.name).join(", ");
+const byName = (a: string, b: string) => a.localeCompare(b);
+
+/** Pure: the names the picker offers: the board's labels plus the card's own, once each (case ignored), alphabetical. */
+export function labelOptions(boardNames: readonly string[], selected: readonly string[]): string[] {
+  const seen = new Map<string, string>();
+  for (const name of [...boardNames, ...selected]) if (!seen.has(fold(name))) seen.set(fold(name), name);
+  return [...seen.values()].sort(byName);
+}
+
+/** Pure: the options whose name contains `query` (trimmed, case ignored); everything for an empty query. */
+export function filterLabelOptions(options: readonly string[], query: string): string[] {
+  const needle = fold(query.trim());
+  return needle ? options.filter((name) => fold(name).includes(needle)) : [...options];
+}
+
+export interface LabelEdit {
+  labels: string[];
+  /** Why nothing changed: the card is at its label limit, or a name is longer than a label may be. */
+  error: "limit" | "too-long" | null;
+}
+
+/** Pure: `selected` without `name` (case ignored). */
+export function removeLabel(selected: readonly string[], name: string): string[] {
+  return selected.filter((current) => fold(current) !== fold(name));
+}
+
+/** Pure: adds `name` when it is not selected yet, removes it when it is. A name is its own identity, case ignored. */
+export function toggleLabel(selected: readonly string[], name: string): LabelEdit {
+  if (selected.some((current) => fold(current) === fold(name))) return { labels: removeLabel(selected, name), error: null };
+  if (selected.length >= LABELS_PER_CARD) return { labels: [...selected], error: "limit" };
+  return { labels: [...selected, name], error: null };
+}
+
+/**
+ * Pure: adds the labels typed as `text` with the rules of `parseLabelInput` (trim, collapse spaces,
+ * case-insensitive duplicates). A name the board already has (`known`) keeps the board's spelling.
+ */
+export function addLabels(selected: readonly string[], text: string, known: readonly string[] = []): LabelEdit {
+  const typed = parseLabelInput(text);
+  if (typed.some((name) => name.length > LABEL_MAX_LENGTH)) return { labels: [...selected], error: "too-long" };
+  const labels = [...selected];
+  for (const name of typed) {
+    if (labels.some((current) => fold(current) === fold(name))) continue;
+    if (labels.length >= LABELS_PER_CARD) return { labels: [...selected], error: "limit" };
+    labels.push(known.find((candidate) => fold(candidate) === fold(name)) ?? name);
+  }
+  return { labels, error: null };
+}
+
+export type FilterEnter = { kind: "pick"; name: string } | { kind: "create" } | { kind: "none" };
+
+/** Pure: what Enter does in the filter field: pick the exact match, else the only match, else create the typed label; nothing for empty text. */
+export function resolveFilterEnter(options: readonly string[], query: string): FilterEnter {
+  const text = query.trim();
+  if (!text) return { kind: "none" };
+  const exact = options.find((name) => fold(name) === fold(text));
+  if (exact) return { kind: "pick", name: exact };
+  const matches = filterLabelOptions(options, text);
+  return matches.length === 1 ? { kind: "pick", name: matches[0] } : { kind: "create" };
 }
 
 /** Replaces the card's label set by `names`. Returns false on any database error. */

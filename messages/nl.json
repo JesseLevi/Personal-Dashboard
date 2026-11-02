@@ -584,7 +584,18 @@
         "plannedLabel": "Gepland op",
         "plannedPlaceholder": "Voeg dag toe",
         "labelsLabel": "Labels",
-        "labelsPlaceholder": "Bijv. werk, thuis"
+        "labelsPlaceholder": "Kies labels"
+      },
+      "labels": {
+        "listLabel": "Labels van dit bord",
+        "filterLabel": "Labels zoeken of toevoegen",
+        "filterPlaceholder": "Zoek of typ een nieuw label",
+        "emptyHint": "Dit bord heeft nog geen labels.",
+        "newLabel": "Nieuw label",
+        "newLabelNamed": "Nieuw label \"{name}\"",
+        "removeLabel": "Label {name} verwijderen",
+        "limitHint": "Een kaart kan maximaal {max} labels hebben.",
+        "tooLongHint": "Een label mag maximaal {max} tekens hebben."
       },
       "saveLabel": "Opslaan",
       "savingLabel": "Opslaan...",
