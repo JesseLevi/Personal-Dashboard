@@ -11,7 +11,7 @@ import { isPriority } from "@/lib/boards/enums";
 import { plannedLabelStyle } from "@/lib/agenda/plan-cards";
 import { todayInAgendaZone } from "@/lib/agenda/time";
 import { applyCardMove, type CardMove } from "@/lib/boards/optimistic";
-import { hasLabel } from "@/lib/boards/labels";
+import { boardLabels, hasLabel } from "@/lib/boards/labels";
 import type { BoardWithColumns, CardWithLabels } from "@/lib/boards/types";
 import { useNewParam } from "@/lib/dom/use-new-param";
 import { blurInTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
@@ -250,6 +250,7 @@ export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProp
         onDeleteCard={deleteCard}
         onMutated={() => router.refresh()}
         onLoadAgendaEvents={getAgendaEventRefs}
+        boardLabels={boardLabels(localBoard.columns)}
         onListSubtasks={listSubtasks}
         onAddSubtasks={addSubtasks}
         onRenameSubtask={renameSubtask}

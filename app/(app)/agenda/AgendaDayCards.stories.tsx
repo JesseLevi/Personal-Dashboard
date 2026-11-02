@@ -102,7 +102,7 @@ const props = (over: Partial<AgendaDayCardsProps>): AgendaDayCardsProps => ({
   ...over,
 });
 
-// The real page sits on `surface-primary`; the desktop column is `--plan-tray-width` (20rem) wide.
+// The real page sits on `surface-primary`; the desktop column is 20rem wide.
 const Surface = ({ children }: { children: ReactNode }) => <div className="-m-8 bg-surface-primary p-8">{children}</div>;
 const Column = ({ children }: { children: ReactNode }) => <div className="w-80">{children}</div>;
 

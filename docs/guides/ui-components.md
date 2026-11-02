@@ -108,7 +108,7 @@ When you change a component, rewrite the bullets that changed. Don't append tick
 | Basis / Invoer | Button, ButtonToggle, Checkbox, Dropdown, InputField, OtpInput, ImageUploadField, PortionStepper, AnimatedAddToBasketButton |
 | Basis / Kaarten | Card, CardContainer, CardContent* (Ingredient, Note, Recipe, RecipeFailed, RecipeSkeleton, Step, Ticket), BoardView, Carousel, BoardSkeleton |
 | Basis / Panelen | SidePanel, Sidebar, PageHeader, Toast, CommandPalette, IngredientSearchPanel, MemberSearchPanel |
-| Agenda | AgendaPageLayout, AgendaDayCards, AgendaCalendar, AgendaHeader, AgendaDayStrip, AgendaQuickAdd, AgendaEventPanel, AgendaMealPanel, AgendaCardPanel, AgendaCalendarsPanel, AgendaLinkSearchPanel, AgendaSyncNotices, PlanDrawer, PlanChoices, EventLinkLine, ColorSwatches |
+| Agenda | AgendaPageLayout, AgendaDayCards, AgendaCalendar, AgendaHeader, AgendaDayStrip, AgendaQuickAdd, AgendaEventPanel, AgendaMealPanel, AgendaCardPanel, AgendaCalendarsPanel, AgendaLinkSearchPanel, AgendaSyncNotices, PlanChoices, EventLinkLine, ColorSwatches |
 | Te doen | CardDetailPanel, BoardPanel |
 | Recepten | RecipePanel, CategoryPanel, AddRecipeMenu, LinkImportPanel, SourceLink, RecipeIngredientRow, StepIngredientPanel, IngredientAdmin, SharedRecipeOffer, RecipeDetailSkeleton |
 | Winkelmand | WinkelmandHeader, ShoppingListPanel, ShareInviteBanner |

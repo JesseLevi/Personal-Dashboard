@@ -1,6 +1,6 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { listAssistantSignals, recipeIdOf } from "@/lib/assistant/signals";
+import { listAssistantSignals } from "@/lib/assistant/signals";
 import type { AssistantSignal } from "@/lib/assistant/types";
 
 // Where rhythm signals show up (ADR-0046 §6): the module where the decision
@@ -28,24 +28,6 @@ export async function basketSuggestions(): Promise<BasketSuggestionView[]> {
   try {
     const client = await createSupabaseServerClient();
     return toBasketSuggestions(await listAssistantSignals(client, { limit: SURFACE_LIMIT, kinds: ["buy_rhythm"] }));
-  } catch {
-    return [];
-  }
-}
-
-/** Recipe ids of open cook-rhythm signals, newest first: the plan drawer's "Lang niet gekookt" group. */
-export async function longNotCookedRecipeIds(): Promise<string[]> {
-  try {
-    const client = await createSupabaseServerClient();
-    const { data, error } = await client
-      .from("agent_signals")
-      .select("payload")
-      .eq("status", "new")
-      .eq("kind", "cook_rhythm")
-      .order("created_at", { ascending: false })
-      .limit(SURFACE_LIMIT);
-    if (error) throw error;
-    return [...new Set((data ?? []).flatMap((row) => recipeIdOf(row.payload) ?? []))];
   } catch {
     return [];
   }

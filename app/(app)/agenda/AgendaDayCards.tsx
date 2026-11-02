@@ -28,7 +28,7 @@ import type { ActionResult } from "@/lib/shopping/types";
 import { cn } from "@/lib/ui/cn";
 import { LoadingStatus, SKELETON_BREATHE } from "../_components/skeletons/skeleton-parts";
 
-// The day's essentials as cards (ADR-0058): timeline, meals, planned cards and deadlines,
+// The day's essentials as cards (ADR-0059): timeline, meals, planned cards and deadlines,
 // suggestions. Page composition; record: design/notes/AgendaPage.md.
 
 export interface AgendaDayCardsProps {

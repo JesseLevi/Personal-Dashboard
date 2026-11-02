@@ -10,7 +10,7 @@ import { AgendaDayCardsSkeleton } from "./AgendaDayCards";
 import { AgendaHeader, toToggleView } from "./AgendaHeader";
 
 // The real header with inert handlers, so nothing moves when the page arrives. The cards
-// are placeholders in their own column, so the calendar keeps its width (ADR-0058).
+// are placeholders in their own column, so the calendar keeps its width (ADR-0059).
 export function AgendaPageSkeleton({ view = DEFAULT_AGENDA_VIEW }: { view?: AgendaView }) {
   const t = useTranslations("nav");
   const noop = () => {};
@@ -24,8 +24,6 @@ export function AgendaPageSkeleton({ view = DEFAULT_AGENDA_VIEW }: { view?: Agen
           onPrevious={noop}
           onNext={noop}
           onToday={noop}
-          trayOpen={false}
-          onTrayToggle={noop}
           onNew={noop}
         />
         <AgendaBody cards={<AgendaDayCardsSkeleton />}>

@@ -495,12 +495,9 @@
         "calendarsLabel": "Calendars and categories",
         "weekToBasketLabel": "Week to basket",
         "chooseBasketLabel": "Choose a basket",
-        "planLabel": "Plan",
         "newLabel": "New",
         "moreLabel": "More",
         "backLabel": "Back",
-        "trayShowLabel": "Show plan tray",
-        "trayHideLabel": "Hide plan tray",
         "weekToBasketToast": "This week's meals are in your basket",
         "weekNumber": "Week {number}",
         "goToDateLabel": "Go to date",
@@ -514,8 +511,7 @@
           "month": "Month view",
           "list": "List view",
           "previous": "Previous period",
-          "next": "Next period",
-          "tray": "Show or hide the plan tray"
+          "next": "Next period"
         }
       }
     },
@@ -583,7 +579,18 @@
         "plannedLabel": "Planned for",
         "plannedPlaceholder": "Add day",
         "labelsLabel": "Labels",
-        "labelsPlaceholder": "E.g. work, home"
+        "labelsPlaceholder": "Choose labels"
+      },
+      "labels": {
+        "listLabel": "Labels on this board",
+        "filterLabel": "Search or add labels",
+        "filterPlaceholder": "Search or type a new label",
+        "emptyHint": "This board has no labels yet.",
+        "newLabel": "New label",
+        "newLabelNamed": "New label \"{name}\"",
+        "removeLabel": "Remove label {name}",
+        "limitHint": "A card can have at most {max} labels.",
+        "tooLongHint": "A label can be at most {max} characters."
       },
       "saveLabel": "Save",
       "savingLabel": "Saving...",
@@ -594,6 +601,7 @@
       "cancelLabel": "Cancel",
       "subtasks": {
         "title": "Subtasks",
+        "emptyHint": "Break the card into steps you can tick off. Enter adds one; paste several lines to add several.",
         "addLabel": "Add subtask",
         "editLabel": "Edit subtask",
         "moreLabel": "More actions for {title}",
@@ -1358,34 +1366,6 @@
         "stone": "Grey"
       }
     },
-    "planDrawer": {
-      "label": "Plan",
-      "tabsLabel": "What to plan",
-      "tabs": {
-        "recipes": "Recipes",
-        "cards": "Cards"
-      },
-      "cardsEmpty": "You have no open cards to plan.",
-      "cardsSearchLabel": "Search cards",
-      "cardsSearchPlaceholder": "Search cards",
-      "cardsDragHint": "Drag a card to a day in the agenda. Dragging a planned item back here clears its day.",
-      "noCards": "No cards found.",
-      "planCardLabel": "Plan {name}",
-      "cardPlannedOn": "{column} · planned for {date}",
-      "searchLabel": "Search recipes",
-      "searchPlaceholder": "Search recipes",
-      "searchClearLabel": "Clear search",
-      "categoryLabel": "Category",
-      "allCategories": "All categories",
-      "noRecipes": "No recipes found.",
-      "dragHint": "Drag a recipe onto a day, or onto an event, in the agenda.",
-      "planRecipeLabel": "Plan {name}",
-      "planMenuLabel": "Choose a day",
-      "weekToBasketLabel": "Week to basket",
-      "weekToBasketAddedLabel": "Added",
-      "weekToBasketHint": "Send this week's meals to your basket",
-      "chooseBasketLabel": "Choose a basket"
-    },
     "planChoices": {
       "momentLabel": "Moment",
       "slots": {
@@ -1566,7 +1546,6 @@
   "assistant": {
     "signals": {
       "basketTitle": "Maybe needed again",
-      "planTitle": "Not cooked in a while",
       "buyRhythm": "You usually buy {item} about every {median, plural, one {# day} other {# days}}. The last time was {days, plural, one {# day} other {# days}} ago.",
       "cookRhythm": "You cook {recipe} about every {median, plural, one {# day} other {# days}}. The last time was {days, plural, one {# day} other {# days}} ago. Fancy making it again?",
       "actions": {

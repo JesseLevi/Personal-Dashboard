@@ -1,7 +1,7 @@
 import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-// Extra reads for the day cards (ADR-0058), through the RLS client. `agenda_items()` carries
+// Extra reads for the day cards (ADR-0059), through the RLS client. `agenda_items()` carries
 // neither the recipe id nor the basket link of a meal. Each read fails soft to "nothing".
 
 export interface MealCardData {

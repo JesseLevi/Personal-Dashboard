@@ -1,4 +1,4 @@
-// The recipes the plan drawer offers, and how its search and category filter narrow them.
+// The recipes quick add and the recipe search offer, and how a query and category narrow them.
 
 export interface PlanRecipe {
   id: string;
@@ -29,15 +29,4 @@ export function filterPlanRecipes(
       (filter.categoryId === "" || recipe.categoryId === filter.categoryId) &&
       (needle === "" || fold(recipe.title).includes(needle)),
   );
-}
-
-/** Pulls `ids` (in that order) out of `recipes`: the highlighted group first, the rest keeps its order. */
-export function splitHighlighted(
-  recipes: readonly PlanRecipe[],
-  ids: readonly string[],
-): { highlighted: PlanRecipe[]; visible: PlanRecipe[] } {
-  const byId = new Map(recipes.map((recipe) => [recipe.id, recipe]));
-  const highlighted = ids.flatMap((id) => byId.get(id) ?? []);
-  const taken = new Set(highlighted.map((recipe) => recipe.id));
-  return { highlighted, visible: recipes.filter((recipe) => !taken.has(recipe.id)) };
 }

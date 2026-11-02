@@ -1,4 +1,4 @@
-// The Agenda's day cards (ADR-0058): one day's items grouped for a glance. Pure; the page
+// The Agenda's day cards (ADR-0059): one day's items grouped for a glance. Pure; the page
 // derives them from the items it already loaded, after the hidden-calendar filter.
 import { mealSlotRank } from "@/lib/agenda/meals";
 import type { AgendaDeadlineItem, AgendaEventItem, AgendaItem, AgendaMealItem, AgendaPlannedCardItem } from "@/lib/agenda/types";

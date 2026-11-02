@@ -41,12 +41,6 @@
   --blur-fade-max-delay: 400ms;
   --blur-fade-blur: 8px;
   --blur-fade-reduced-duration: 120ms;
-  /* Plan tray (AgendaBody, design/notes/AgendaPage.md): opens a little slower than it closes, same curve as blur fade. */
-  --plan-tray-open-duration: 280ms;
-  --plan-tray-close-duration: 200ms;
-  --plan-tray-ease: var(--blur-fade-ease);
-  --plan-tray-shift: 12px;
-  --plan-tray-width: 20rem;
   /* Quick-add bottom sheet (AgendaQuickAdd): slides up from the bottom edge, closes quicker; scrim fades alongside. */
   --sheet-open-duration: 420ms;
   --sheet-close-duration: 220ms;

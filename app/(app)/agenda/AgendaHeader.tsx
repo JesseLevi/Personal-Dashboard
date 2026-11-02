@@ -42,9 +42,6 @@ export interface AgendaHeaderProps {
   onPrevious: () => void;
   onNext: () => void;
   onToday: () => void;
-  /** Whether the plan tray is open; "Plannen" reports it with `aria-pressed`. */
-  trayOpen: boolean;
-  onTrayToggle: () => void;
   /** "+ Nieuw": opens quick add (ADR-0041). */
   onNew: () => void;
   /** The "+ Nieuw" button in the bar; the quick-add popover (from `lg`) hangs from it. */
@@ -75,8 +72,6 @@ export function AgendaHeader({
   onPrevious,
   onNext,
   onToday,
-  trayOpen,
-  onTrayToggle,
   onNew,
   newButtonRef,
   onOpenCalendars,
@@ -136,14 +131,9 @@ export function AgendaHeader({
                 {t("todayLabel")}
               </Button>
               <Button className="max-lg:hidden" icon="ArrowRight" aria-label={t("nextLabel")} onClick={onNext} />
-              <Button className="max-lg:hidden" icon="PanelRight" aria-pressed={trayOpen} onClick={onTrayToggle}>
-                {t("planLabel")}
-              </Button>
               <span className="inline-flex max-lg:order-1 max-lg:ml-auto">
               <AgendaMoreMenu
                 onToday={onToday}
-                trayOpen={trayOpen}
-                onTrayToggle={onTrayToggle}
                 onOpenCalendars={onOpenCalendars}
                 weekToBasket={weekToBasket}
                 onWeekSent={() => setToast(t("weekToBasketToast"))}

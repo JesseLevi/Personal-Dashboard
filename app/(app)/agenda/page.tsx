@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { longNotCookedRecipeIds } from "@/lib/assistant/surfaces";
 import { cookies } from "next/headers";
 import { after } from "next/server";
 import { Suspense } from "react";
@@ -14,7 +13,6 @@ import { extendEventSeries } from "@/lib/agenda/series";
 import { syncStaleAccounts } from "@/lib/agenda/sync";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import { AGENDA_TIME_ZONE, agendaNow, loadWindow, todayInAgendaZone, wallClockToUtc } from "@/lib/agenda/time";
-import { AGENDA_TRAY_COOKIE, DEFAULT_AGENDA_TRAY, isAgendaTray } from "@/lib/agenda/tray";
 import { AGENDA_VIEW_COOKIE, DEFAULT_AGENDA_VIEW, isAgendaView } from "@/lib/agenda/view";
 import { listAssistantSignals } from "@/lib/assistant/signals";
 import { getRecipeCategoriesWithRecipes } from "@/lib/recipes/queries";
@@ -34,8 +32,6 @@ async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?:
   const jar = await cookies();
   const stored = jar.get(AGENDA_VIEW_COOKIE)?.value;
   const view = isAgendaView(stored) ? stored : DEFAULT_AGENDA_VIEW;
-  const storedTray = jar.get(AGENDA_TRAY_COOKIE)?.value;
-  const trayOpen = (isAgendaTray(storedTray) ? storedTray : DEFAULT_AGENDA_TRAY) === "open";
   const hidden = parseHidden(jar.get(AGENDA_HIDDEN_COOKIE)?.value);
   const today = todayInAgendaZone();
   // `?date=` opens the Agenda on that day; anything invalid falls back to today.
@@ -48,7 +44,7 @@ async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?:
   after(() => extendEventSeries(supabase).catch(() => console.error("[agenda] series extension failed")));
   // ADR-0044: meals whose day has passed become history, after the response.
   after(() => settleCookedMeals(supabase));
-  const [items, notices, categories, baskets, userId, cardGroups, calendars, todoBoard, longNotCooked, signals] = await Promise.all([
+  const [items, notices, categories, baskets, userId, cardGroups, calendars, todoBoard, signals] = await Promise.all([
     getAgendaItems({
       from: wallClockToUtc(`${window.from}T00:00:00`),
       to: wallClockToUtc(`${window.to}T00:00:00`),
@@ -62,8 +58,7 @@ async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?:
     getCalendarOverview(supabase),
     // A failed read only hides the "new card" target; the rest of the page still works.
     getQuickAddBoard().catch(() => null),
-    longNotCookedRecipeIds(),
-    // ADR-0058: a failed read only means no signal cards.
+    // ADR-0059: a failed read only means no signal cards.
     listAssistantSignals(supabase, { limit: 3 }).catch(() => []),
   ]);
 
@@ -82,7 +77,7 @@ async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?:
     thumbnailPath: recipe.thumbnail_path,
   }));
 
-  // Day cards: the recipe behind each meal, for its thumbnail (already presigned above) and the basket links.
+  // Day cards: the recipe behind each meal, for its thumbnail (presigned above) and the basket links.
   const mealCards = await getMealCardData(items.filter((item) => item.kind === "meal").map((item) => item.id));
   const mealThumbnails = Object.fromEntries(
     Object.values(mealCards.recipeIds).flatMap((recipeId) => (thumbnails[recipeId] ? [[recipeId, thumbnails[recipeId]]] : [])),
@@ -91,7 +86,6 @@ async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?:
   return (
     <AgendaPage
       initialView={view}
-      initialTrayOpen={trayOpen}
       today={today}
       initialDate={initialDate}
       initialItems={items}
@@ -99,8 +93,6 @@ async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?:
       initialHidden={hidden}
       initialCalendars={calendars}
       recipes={recipes}
-      longNotCookedIds={longNotCooked}
-      recipeCategories={categories.map(({ id, name }) => ({ id, name }))}
       cardGroups={cardGroups}
       todoBoard={todoBoard}
       baskets={baskets}

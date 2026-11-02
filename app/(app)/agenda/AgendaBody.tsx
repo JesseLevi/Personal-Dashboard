@@ -1,105 +1,95 @@
 "use client";
 
-// design: Claude-designed (#486, #529, #550)
-import { useEffect, useRef, useState, type ReactNode } from "react";
+// design: Claude-designed (#486, #529, #550, #713)
+import { useCallback, useLayoutEffect, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/ui/cn";
+import { useAgendaSwipe } from "./useAgendaSwipe";
+
+export interface AgendaBodySwipe {
+  /** The shown day, `YYYY-MM-DD`. */
+  date: string;
+  onStep: (step: 1 | -1) => void;
+  /** A neighbour day is about to be drawn: load its data when it is outside the loaded window. */
+  onPeek?: (step: 1 | -1) => void;
+  /** The day beside the shown one, drawn while a drag is under way; the caller takes care of its data. */
+  renderNeighbour: (step: 1 | -1) => ReactNode;
+}
+
+const ALIGN_FRAMES = 8;
+
+// What scrolls inside a calendar: the time grid's scroller, found by overflow rather than by FullCalendar's classes.
+function scrollers(root: Element): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>("*")).filter(
+    (el) => el.scrollHeight > el.clientHeight && /(auto|scroll)/.test(getComputedStyle(el).overflowY),
+  );
+}
 
 // The shell gives its pages no definite height, so the calendar frame gets one
 // from the viewport minus the chrome above it; the grid scrolls inside. The
-// calendar fills the width; the plan tray (#487) is a mode ("Plannen"). Open,
-// it sits beside the calendar from `lg`, but only once the planner area is at
-// least 65rem wide (a 44rem grid, the tray and a gap);
-// under it otherwise. The container query keeps the calendar from
-// being squeezed. Closed, the tray stays mounted (it keeps its tab and search)
-// but is inert and, once the transition has played, not rendered.
+// calendar fills the width. With `swipe` (below `lg`) the day follows the finger
+// and the neighbour day waits beside it.
 //
-// Beside the calendar the tray column grows from 0 to `--plan-tray-width`
-// while the calendar column shrinks with it, and the tray's content slides in
-// 12px and fades; the content keeps its final width so text never reflows.
-// Under the calendar there is no height animation, only `animate-blur-in`.
-// Durations and the curve are `--plan-tray-*` in globals.css.
-//
-// The day cards (ADR-0058) take a column of `--plan-tray-width` left of the planner once
-// the page container is 65rem wide: the 44rem week grid, the column and one gap. They scroll
-// inside the body's height. Narrower, they are a row above the planner. The planner is its
-// own container: the tray sits beside it only when the room left after the column holds
-// a 44rem grid and the 20rem tray (65rem), else under it.
-export function AgendaBody({
-  children,
-  drawer,
-  drawerOpen = false,
-  cards,
-}: {
-  children: ReactNode;
-  drawer?: ReactNode;
-  drawerOpen?: boolean;
-  cards?: ReactNode;
-}) {
-  // Under the calendar the tray plays `animate-blur-in` when it opens, but not on first paint.
-  const [toggled, setToggled] = useState(false);
-  const first = useRef(true);
-  useEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
-    setToggled(true);
-  }, [drawerOpen]);
+// The day cards (ADR-0059) take a 20rem column left of the planner once the container is
+// 65rem wide: the 44rem week grid, the column and one gap. They scroll inside the body's
+// height. Narrower, and below `lg`, they are a row above the planner.
+export function AgendaBody({ children, swipe, cards }: { children: ReactNode; swipe?: AgendaBodySwipe; cards?: ReactNode }) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const paneRef = useRef<HTMLDivElement>(null);
+  const neighbourRef = useRef<HTMLDivElement>(null);
 
-  const planner = (
-    <div className="@container min-w-0">
-      <div
-        className={cn(
-          "flex min-w-0 flex-col gap-stack-lg lg:@min-[65rem]:grid lg:@min-[65rem]:transition-[grid-template-columns,column-gap] lg:@min-[65rem]:ease-(--plan-tray-ease) motion-reduce:lg:@min-[65rem]:transition-none",
-          drawerOpen
-            ? "lg:@min-[65rem]:grid-cols-[minmax(0,1fr)_var(--plan-tray-width)] lg:@min-[65rem]:gap-x-stack-lg lg:@min-[65rem]:duration-(--plan-tray-open-duration)"
-            : "lg:@min-[65rem]:grid-cols-[minmax(0,1fr)_0px] lg:@min-[65rem]:gap-x-0 lg:@min-[65rem]:duration-(--plan-tray-close-duration)",
-        )}
-      >
-        <div className="h-[calc(100dvh-20rem)] min-h-[28rem] min-w-0 lg:@min-[65rem]:h-[calc(100dvh-14rem)]">{children}</div>
-        {drawer && (
-          <div
-            inert={!drawerOpen}
-            className={cn(
-              "h-[32rem] lg:@min-[65rem]:block lg:@min-[65rem]:h-[calc(100dvh-14rem)] lg:@min-[65rem]:min-h-[28rem] lg:@min-[65rem]:min-w-0 lg:@min-[65rem]:overflow-hidden",
-              // Closed: out of the tab order and the accessibility tree once the transition is over (visibility flips after the delay).
-              drawerOpen
-                ? cn("lg:@min-[65rem]:visible lg:@min-[65rem]:delay-0", toggled && "animate-blur-in lg:@min-[65rem]:animate-none")
-                : "hidden lg:@min-[65rem]:invisible lg:@min-[65rem]:transition-[visibility] lg:@min-[65rem]:delay-(--plan-tray-close-duration) lg:@min-[65rem]:duration-0",
-            )}
-          >
-            <div
-              className={cn(
-                "h-full lg:@min-[65rem]:w-(--plan-tray-width) lg:@min-[65rem]:transition-[opacity,translate] lg:@min-[65rem]:ease-(--plan-tray-ease)",
-                "motion-reduce:lg:@min-[65rem]:duration-(--blur-fade-reduced-duration) motion-reduce:lg:@min-[65rem]:ease-linear",
-                drawerOpen
-                  ? "lg:@min-[65rem]:translate-x-0 lg:@min-[65rem]:opacity-100 lg:@min-[65rem]:duration-(--plan-tray-open-duration)"
-                  : "lg:@min-[65rem]:translate-x-(--plan-tray-shift) lg:@min-[65rem]:opacity-0 lg:@min-[65rem]:duration-(--plan-tray-close-duration)",
-                "motion-reduce:lg:@min-[65rem]:translate-x-0",
-              )}
-            >
-              {drawer}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  // The neighbour shows the time of day the shown day is scrolled to, so the grids line up. FullCalendar
+  // scrolls a freshly drawn grid to its own start time a frame or two later, hence the repeats.
+  const alignFrame = useRef(0);
+  const alignNeighbour = useCallback(() => {
+    cancelAnimationFrame(alignFrame.current);
+    let frames = 0;
+    const align = () => {
+      const neighbour = neighbourRef.current;
+      const pane = paneRef.current;
+      if (!neighbour || !pane) return;
+      const shown = scrollers(pane).find((el) => !neighbour.contains(el));
+      const target = scrollers(neighbour)[0];
+      if (shown && target) target.scrollTop = shown.scrollTop;
+      if ((frames += 1) < ALIGN_FRAMES) alignFrame.current = requestAnimationFrame(align);
+    };
+    align();
+  }, []);
+
+  const peek = useAgendaSwipe(viewportRef, paneRef, {
+    enabled: !!swipe,
+    date: swipe?.date ?? "",
+    onStep: (step) => swipe?.onStep(step),
+    onLock: (step) => {
+      swipe?.onPeek?.(step);
+      alignNeighbour();
+    },
+  });
+  useLayoutEffect(alignNeighbour, [peek, alignNeighbour]);
 
   return (
     <div className="@container min-w-0 pr-page-right-equal">
-      <div
-        className={cn(
-          "flex min-w-0 flex-col gap-stack-lg",
-          cards && "lg:@min-[65rem]:grid lg:@min-[65rem]:grid-cols-[var(--plan-tray-width)_minmax(0,1fr)] lg:@min-[65rem]:items-start",
-        )}
-      >
+      <div className={cn("flex min-w-0 flex-col gap-stack-lg", cards && "lg:@min-[65rem]:grid lg:@min-[65rem]:grid-cols-[20rem_minmax(0,1fr)] lg:@min-[65rem]:items-start")}>
         {cards && (
-          <div className="min-w-0 lg:@min-[65rem]:h-[calc(100dvh-14rem)] lg:@min-[65rem]:min-h-[28rem] lg:@min-[65rem]:overflow-y-auto">
-            {cards}
-          </div>
+          <div className="min-w-0 lg:@min-[65rem]:h-[calc(100dvh-14rem)] lg:@min-[65rem]:min-h-[28rem] lg:@min-[65rem]:overflow-y-auto">{cards}</div>
         )}
-        {planner}
+        <div className="h-[calc(100dvh-20rem)] min-h-[28rem] min-w-0 lg:h-[calc(100dvh-14rem)]">
+          <div ref={viewportRef} className={cn("h-full", swipe && "touch-pan-y touch-pinch-zoom overflow-x-clip")}>
+            <div ref={paneRef} className="relative h-full">
+              {children}
+              {swipe && peek !== null && (
+                <div
+                  ref={neighbourRef}
+                  data-agenda-peek=""
+                  aria-hidden="true"
+                  inert
+                  className={cn("absolute top-0 h-full w-full", peek === 1 ? "left-full" : "right-full")}
+                >
+                  {swipe.renderNeighbour(peek)}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

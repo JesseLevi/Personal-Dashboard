@@ -44,7 +44,7 @@ export const Overview = () => (
           <CardContentRecipe name="Amandel Pasta" />
         </Card>
       </Specimen>
-      <Specimen label="compact" hint="Agenda plan drawer row">
+      <Specimen label="compact" hint="dense row">
         <div className="w-72">
           <CardContentRecipe compact name="Lasagne met spinazie" duration="60 min" />
         </div>
