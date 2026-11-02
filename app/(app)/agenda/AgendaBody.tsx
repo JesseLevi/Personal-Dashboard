@@ -7,9 +7,9 @@ import { cn } from "@/lib/ui/cn";
 // The shell gives its pages no definite height, so the calendar frame gets one
 // from the viewport minus the chrome above it; the grid scrolls inside. The
 // calendar fills the width; the plan tray (#487) is a mode ("Plannen"). Open,
-// it sits beside the calendar from `lg`, but only once the page itself is at
-// least 44rem wide (the sidebar and page padding eat most of a tablet
-// landscape); under it otherwise. The container query keeps the calendar from
+// it sits beside the calendar from `lg`, but only once the planner area is at
+// least 65rem wide (a 44rem grid, the tray and a gap);
+// under it otherwise. The container query keeps the calendar from
 // being squeezed. Closed, the tray stays mounted (it keeps its tab and search)
 // but is inert and, once the transition has played, not rendered.
 //
@@ -22,7 +22,8 @@ import { cn } from "@/lib/ui/cn";
 // The day cards (ADR-0058) take a column of `--plan-tray-width` left of the planner once
 // the page container is 65rem wide: the 44rem week grid, the column and one gap. They scroll
 // inside the body's height. Narrower, they are a row above the planner. The planner is its
-// own container, so the tray's 44rem rule applies to the room next to the column.
+// own container: the tray sits beside it only when the room left after the column holds
+// a 44rem grid and the 20rem tray (65rem), else under it.
 export function AgendaBody({
   children,
   drawer,
@@ -49,32 +50,32 @@ export function AgendaBody({
     <div className="@container min-w-0">
       <div
         className={cn(
-          "flex min-w-0 flex-col gap-stack-lg lg:@min-[44rem]:grid lg:@min-[44rem]:transition-[grid-template-columns,column-gap] lg:@min-[44rem]:ease-(--plan-tray-ease) motion-reduce:lg:@min-[44rem]:transition-none",
+          "flex min-w-0 flex-col gap-stack-lg lg:@min-[65rem]:grid lg:@min-[65rem]:transition-[grid-template-columns,column-gap] lg:@min-[65rem]:ease-(--plan-tray-ease) motion-reduce:lg:@min-[65rem]:transition-none",
           drawerOpen
-            ? "lg:@min-[44rem]:grid-cols-[minmax(0,1fr)_var(--plan-tray-width)] lg:@min-[44rem]:gap-x-stack-lg lg:@min-[44rem]:duration-(--plan-tray-open-duration)"
-            : "lg:@min-[44rem]:grid-cols-[minmax(0,1fr)_0px] lg:@min-[44rem]:gap-x-0 lg:@min-[44rem]:duration-(--plan-tray-close-duration)",
+            ? "lg:@min-[65rem]:grid-cols-[minmax(0,1fr)_var(--plan-tray-width)] lg:@min-[65rem]:gap-x-stack-lg lg:@min-[65rem]:duration-(--plan-tray-open-duration)"
+            : "lg:@min-[65rem]:grid-cols-[minmax(0,1fr)_0px] lg:@min-[65rem]:gap-x-0 lg:@min-[65rem]:duration-(--plan-tray-close-duration)",
         )}
       >
-        <div className="h-[calc(100dvh-20rem)] min-h-[28rem] min-w-0 lg:@min-[44rem]:h-[calc(100dvh-14rem)]">{children}</div>
+        <div className="h-[calc(100dvh-20rem)] min-h-[28rem] min-w-0 lg:@min-[65rem]:h-[calc(100dvh-14rem)]">{children}</div>
         {drawer && (
           <div
             inert={!drawerOpen}
             className={cn(
-              "h-[32rem] lg:@min-[44rem]:block lg:@min-[44rem]:h-[calc(100dvh-14rem)] lg:@min-[44rem]:min-h-[28rem] lg:@min-[44rem]:min-w-0 lg:@min-[44rem]:overflow-hidden",
+              "h-[32rem] lg:@min-[65rem]:block lg:@min-[65rem]:h-[calc(100dvh-14rem)] lg:@min-[65rem]:min-h-[28rem] lg:@min-[65rem]:min-w-0 lg:@min-[65rem]:overflow-hidden",
               // Closed: out of the tab order and the accessibility tree once the transition is over (visibility flips after the delay).
               drawerOpen
-                ? cn("lg:@min-[44rem]:visible lg:@min-[44rem]:delay-0", toggled && "animate-blur-in lg:@min-[44rem]:animate-none")
-                : "hidden lg:@min-[44rem]:invisible lg:@min-[44rem]:transition-[visibility] lg:@min-[44rem]:delay-(--plan-tray-close-duration) lg:@min-[44rem]:duration-0",
+                ? cn("lg:@min-[65rem]:visible lg:@min-[65rem]:delay-0", toggled && "animate-blur-in lg:@min-[65rem]:animate-none")
+                : "hidden lg:@min-[65rem]:invisible lg:@min-[65rem]:transition-[visibility] lg:@min-[65rem]:delay-(--plan-tray-close-duration) lg:@min-[65rem]:duration-0",
             )}
           >
             <div
               className={cn(
-                "h-full lg:@min-[44rem]:w-(--plan-tray-width) lg:@min-[44rem]:transition-[opacity,translate] lg:@min-[44rem]:ease-(--plan-tray-ease)",
-                "motion-reduce:lg:@min-[44rem]:duration-(--blur-fade-reduced-duration) motion-reduce:lg:@min-[44rem]:ease-linear",
+                "h-full lg:@min-[65rem]:w-(--plan-tray-width) lg:@min-[65rem]:transition-[opacity,translate] lg:@min-[65rem]:ease-(--plan-tray-ease)",
+                "motion-reduce:lg:@min-[65rem]:duration-(--blur-fade-reduced-duration) motion-reduce:lg:@min-[65rem]:ease-linear",
                 drawerOpen
-                  ? "lg:@min-[44rem]:translate-x-0 lg:@min-[44rem]:opacity-100 lg:@min-[44rem]:duration-(--plan-tray-open-duration)"
-                  : "lg:@min-[44rem]:translate-x-(--plan-tray-shift) lg:@min-[44rem]:opacity-0 lg:@min-[44rem]:duration-(--plan-tray-close-duration)",
-                "motion-reduce:lg:@min-[44rem]:translate-x-0",
+                  ? "lg:@min-[65rem]:translate-x-0 lg:@min-[65rem]:opacity-100 lg:@min-[65rem]:duration-(--plan-tray-open-duration)"
+                  : "lg:@min-[65rem]:translate-x-(--plan-tray-shift) lg:@min-[65rem]:opacity-0 lg:@min-[65rem]:duration-(--plan-tray-close-duration)",
+                "motion-reduce:lg:@min-[65rem]:translate-x-0",
               )}
             >
               {drawer}
