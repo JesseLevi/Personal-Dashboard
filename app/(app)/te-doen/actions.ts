@@ -22,6 +22,7 @@ import {
   renameBoardSchema,
   renameColumnSchema,
   renameSubtaskSchema,
+  reorderSubtaskSchema,
   setSubtaskDoneSchema,
   subtaskIdSchema,
   updateCardSchema,
@@ -651,6 +652,31 @@ export async function setSubtaskDone(input: unknown): Promise<ActionResult> {
 
   if (error) {
     logDbError("setSubtaskDone", error);
+    return { success: false, error: readOnlyOrGeneric(error) };
+  }
+  if (!data) return { success: false, error: "not-found" };
+
+  revalidatePath("/te-doen", "layout");
+  return { success: true, data: undefined };
+}
+
+export async function reorderSubtask(input: unknown): Promise<ActionResult> {
+  const parsed = reorderSubtaskSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const supabase = await createSupabaseServerClient();
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  const { data, error } = await supabase
+    .from("card_subtasks")
+    .update({ position: parsed.data.position })
+    .eq("id", parsed.data.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    logDbError("reorderSubtask", error);
     return { success: false, error: readOnlyOrGeneric(error) };
   }
   if (!data) return { success: false, error: "not-found" };

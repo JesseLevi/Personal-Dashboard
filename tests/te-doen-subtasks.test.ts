@@ -18,9 +18,10 @@ import {
   listSubtasks,
   promoteSubtask,
   renameSubtask,
+  reorderSubtask,
   setSubtaskDone,
 } from "../app/(app)/te-doen/actions";
-import { addSubtasksSchema, MAX_SUBTASKS_PER_CARD } from "../lib/boards/schemas";
+import { addSubtasksSchema, MAX_SUBTASKS_PER_CARD, reorderSubtaskSchema } from "../lib/boards/schemas";
 
 const ID = "11111111-1111-4111-8111-111111111111";
 const CARD = "22222222-2222-4222-8222-222222222222";
@@ -57,6 +58,21 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
+describe("reorderSubtaskSchema", () => {
+  it("takes a finite position, negatives and fractions included", () => {
+    expect(reorderSubtaskSchema.safeParse({ id: ID, position: -1000.5 }).success).toBe(true);
+    expect(reorderSubtaskSchema.safeParse({ id: ID, position: 0 }).success).toBe(true);
+  });
+
+  it("rejects non-finite, non-numeric and missing positions or a bad id", () => {
+    expect(reorderSubtaskSchema.safeParse({ id: ID, position: Number.NaN }).success).toBe(false);
+    expect(reorderSubtaskSchema.safeParse({ id: ID, position: Number.POSITIVE_INFINITY }).success).toBe(false);
+    expect(reorderSubtaskSchema.safeParse({ id: ID, position: "3" }).success).toBe(false);
+    expect(reorderSubtaskSchema.safeParse({ id: ID }).success).toBe(false);
+    expect(reorderSubtaskSchema.safeParse({ id: "nope", position: 1 }).success).toBe(false);
+  });
+});
+
 describe("addSubtasksSchema", () => {
   it("trims titles and drops empty ones", () => {
     const parsed = addSubtasksSchema.safeParse({ cardId: CARD, titles: [" a ", "", "   ", "b"] });
@@ -79,6 +95,7 @@ describe("validation and the auth guard", () => {
     ["listSubtasks", () => listSubtasks({ cardId: "bad" }), () => listSubtasks({ cardId: CARD })],
     ["addSubtasks", () => addSubtasks({ cardId: CARD, titles: [] }), () => addSubtasks({ cardId: CARD, titles: ["a"] })],
     ["renameSubtask", () => renameSubtask({ id: ID, title: "  " }), () => renameSubtask({ id: ID, title: "a" })],
+    ["reorderSubtask", () => reorderSubtask({ id: ID, position: Number.POSITIVE_INFINITY }), () => reorderSubtask({ id: ID, position: 1500 })],
     ["setSubtaskDone", () => setSubtaskDone({ id: ID, done: "yes" }), () => setSubtaskDone({ id: ID, done: true })],
     ["deleteSubtask", () => deleteSubtask({ id: "bad" }), () => deleteSubtask({ id: ID })],
     ["promoteSubtask", () => promoteSubtask({ id: "bad" }), () => promoteSubtask({ id: ID })],

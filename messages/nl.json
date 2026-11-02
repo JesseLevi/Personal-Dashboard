@@ -610,7 +610,9 @@
         "doneToggle": "{count, plural, one {# afgerond} other {# afgerond}}",
         "limitHint": "Een kaart kan maximaal {max} subtaken hebben.",
         "allDone": "Alles af. Naar {column}?",
-        "moveLabel": "Verplaatsen"
+        "moveLabel": "Verplaatsen",
+        "saveLabel": "Subtaak opslaan",
+        "dragLabel": "{title} verslepen"
       }
     },
     "categoryPanel": {

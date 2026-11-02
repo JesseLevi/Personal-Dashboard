@@ -33,3 +33,20 @@ export function doneColumnOffer<T extends { id: string; isDone?: boolean }>(
   if (doneColumns.length === 0 || doneColumns.some((column) => column.id === currentColumnId)) return null;
   return doneColumns[0];
 }
+
+/** Gap used past either end of a group, like cards.position. */
+export const SUBTASK_POSITION_STEP = 1000;
+
+/**
+ * The position for a row dropped at `index` among the other rows of its group.
+ * `others` are those rows' positions, ascending, without the moved row itself.
+ * Midpoint between the new neighbours; the neighbour -/+ 1000 at either end.
+ */
+export function positionForIndex(others: readonly number[], index: number): number {
+  const before = index > 0 ? others[Math.min(index, others.length) - 1] : undefined;
+  const after = index < others.length ? others[Math.max(index, 0)] : undefined;
+  if (before !== undefined && after !== undefined) return (before + after) / 2;
+  if (before !== undefined) return before + SUBTASK_POSITION_STEP;
+  if (after !== undefined) return after - SUBTASK_POSITION_STEP;
+  return 0;
+}

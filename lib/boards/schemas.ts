@@ -169,3 +169,10 @@ export const setSubtaskDoneSchema = z.object({
 export const subtaskIdSchema = z.object({
   id: z.uuid(),
 });
+
+// ADR-0053 (amended, #731): manual order. The client computes the fractional
+// position (lib/boards/subtasks.ts); the server only checks it is a number.
+export const reorderSubtaskSchema = z.object({
+  id: z.uuid(),
+  position: z.number().finite(),
+});
