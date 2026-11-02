@@ -23,7 +23,7 @@ import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { AgendaShortcut } from "@/lib/agenda/shortcuts";
 import { addDays, agendaNow, isoWeek, loadWindow, spanToUtc, stepDate, visibleRange } from "@/lib/agenda/time";
 import type { AgendaItem, AgendaMealItem, AgendaPlannedCardItem, MealSlot } from "@/lib/agenda/types";
-import { persistAgendaView, type AgendaView } from "@/lib/agenda/view";
+import { fitAgendaView, persistAgendaView, type AgendaView } from "@/lib/agenda/view";
 import { useNewParam } from "@/lib/dom/use-new-param";
 import type { BasketOption } from "@/lib/shopping/baskets";
 import type { ActionResult } from "@/lib/shopping/types";
@@ -154,7 +154,8 @@ export function AgendaPage({
   const latestRequest = useRef(0);
   const newButtonRef = useRef<HTMLElement>(null);
 
-  const effectiveView = effectiveAgendaView(view, narrow);
+  const [plannerWidth, setPlannerWidth] = useState<number | null>(null);
+  const effectiveView = effectiveAgendaView(fitAgendaView(view, plannerWidth), narrow);
   const visibleItems = useMemo(() => items.filter((item) => !isItemHidden(item, hidden)), [items, hidden]);
 
   function handleHiddenChange(next: AgendaHidden) {
@@ -502,6 +503,7 @@ export function AgendaPage({
       <EnterFromLogin index={1}>
       <AgendaBody
         swipe={swipe}
+        onPlannerWidth={setPlannerWidth}
         cards={
           <AgendaDayCards
             day={cardsDay}
@@ -522,7 +524,7 @@ export function AgendaPage({
       >
         <AgendaCalendar
           items={visibleItems}
-          view={view}
+          view={effectiveView}
           date={date}
           scrollNowKey={scrollNowKey}
           onSelectSlot={openQuickAdd}
