@@ -1,10 +1,9 @@
-// design: Claude-designed (#533)
+// design: Claude-designed (#533, #744)
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type RefObject } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/atoms/Button";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { InputField } from "@/components/atoms/InputField";
 import { useOutsidePress } from "@/lib/dom/use-outside-press";
@@ -22,11 +21,14 @@ export interface AgendaDatePickerProps {
   onClose: (restoreFocus: boolean) => void;
 }
 
-// "Naar datum": a popover under the header title with a date field and a confirm button.
+// "Naar datum": a popover under the header title with a date field. Picking a date goes there at once; typing
+// waits for Enter or leaving the field, because a native date field fires `change` for every complete value.
 export function AgendaDatePicker({ open, anchorRef, date, onSelect, onClose }: AgendaDatePickerProps) {
   const t = useTranslations("components.pageHeader.agenda");
   const popoverRef = useRef<HTMLDivElement>(null);
   const [value, setValue] = useState(date);
+  const keyDown = useRef(false);
+  const typed = useRef(false);
   const popover = usePopoverPosition(anchorRef, popoverRef, { open, anchor: "left", prefer: "below", strategy: "fixed" });
   const placed = popover.style.visibility !== "hidden";
 
@@ -36,43 +38,60 @@ export function AgendaDatePicker({ open, anchorRef, date, onSelect, onClose }: A
 
   // Each opening starts on the date that is shown.
   useEffect(() => {
-    if (open) setValue(date);
+    if (!open) return;
+    setValue(date);
+    typed.current = false;
   }, [open, date]);
 
   useEffect(() => {
     if (open && placed) popoverRef.current?.querySelector("input")?.focus();
   }, [open, placed]);
 
-  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key !== "Escape") return;
-    event.stopPropagation();
-    onClose(true);
+  function go(next: string, restoreFocus: boolean) {
+    if (!DATE.test(next)) return;
+    typed.current = false;
+    onSelect(next);
+    onClose(restoreFocus);
   }
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    if (!DATE.test(value)) return;
-    onSelect(value);
-    onClose(true);
+  function handleChange(next: string) {
+    setValue(next);
+    if (keyDown.current) typed.current = true;
+    else go(next, true);
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape") {
+      event.stopPropagation();
+      onClose(true);
+    }
+  }
+
+  function handleFieldKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      go(event.currentTarget.value, true);
+    } else if (event.key !== "Escape") keyDown.current = true;
   }
 
   if (!open) return null;
   return createPortal(
     <div ref={popoverRef} className="z-[999] w-72" style={popover.style} onKeyDown={handleKeyDown}>
       <Dropdown className="shadow-sm" role="dialog" aria-label={t("goToDateLabel")}>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-stack-sm">
-          <InputField
-            id="agenda-go-to-date"
-            type="date"
-            label={t("goToDateLabel")}
-            leadingIcon="Calendar"
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-          />
-          <Button type="submit" variant="filled" trailingIcon="ArrowRight" disabled={!DATE.test(value)}>
-            {t("goToDateConfirm")}
-          </Button>
-        </form>
+        <InputField
+          id="agenda-go-to-date"
+          type="date"
+          label={t("goToDateLabel")}
+          leadingIcon="Calendar"
+          value={value}
+          onChange={(event) => handleChange(event.target.value)}
+          onKeyDown={handleFieldKeyDown}
+          onKeyUp={() => (keyDown.current = false)}
+          onBlur={(event) => {
+            keyDown.current = false;
+            if (typed.current) go(event.currentTarget.value, false);
+          }}
+        />
       </Dropdown>
     </div>,
     document.body,

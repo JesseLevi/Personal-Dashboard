@@ -501,7 +501,8 @@
         "weekToBasketToast": "De maaltijden van deze week staan in je mand",
         "weekNumber": "Week {number}",
         "goToDateLabel": "Naar datum",
-        "goToDateConfirm": "Ga naar datum",
+        "goToDateItem": "Ga naar datum",
+        "titleMenuLabel": "Dag kiezen",
         "shortcutsLabel": "Sneltoetsen",
         "shortcuts": {
           "new": "Nieuw item",

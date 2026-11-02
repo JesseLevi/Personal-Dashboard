@@ -75,6 +75,13 @@ export const ShortcutsOpen = () => (
   </div>
 );
 
+// The title's menu hangs from the title button (Vandaag, Ga naar datum).
+export const TitleMenuOpen = () => (
+  <div className="h-60">
+    <AgendaHeader title="29 dec – 4 jan" view="week" weekNumber={1} weekToBasket={weekToBasket} defaultTitleMenuOpen {...handlers} />
+  </div>
+);
+
 // The native date field shows the browser's own format; the popover hangs from the title.
 export const DatePickerOpen = () => (
   <div className="h-60">

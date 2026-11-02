@@ -45,6 +45,7 @@ const DARK_STORIES = [
   "agenda--agenda-header--menu-open",
   "agenda--agenda-header--shortcuts-open",
   "agenda--agenda-header--date-picker-open",
+  "agenda--agenda-header--title-menu-open",
   "agenda--agenda-link-search-panel--results",
   "basis--panelen--command-palette--overview",
   "basis--panelen--command-palette--results",

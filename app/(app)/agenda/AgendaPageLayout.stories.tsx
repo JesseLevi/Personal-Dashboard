@@ -51,12 +51,12 @@ const items: AgendaItem[] = [
 const noPlan = async () => ({ success: true as const, data: undefined });
 const baskets = [{ id: "own", name: "Boodschappen", shared: false }];
 
-const DayCards = ({ day = DATE }: { day?: string }) => (
+const DayCards = ({ day = DATE, dayItems = items }: { day?: string; dayItems?: AgendaItem[] }) => (
   <AgendaDayCards
     day={day}
     today={DATE}
     now="2026-01-01T14:00"
-    items={items}
+    items={dayItems}
     basket={{ m1: false, m2: false, m3: true }}
     baskets={baskets}
     onOpenItem={noop}
@@ -257,11 +257,28 @@ const tabs = [
   { id: "shopping", icon: "ShoppingBasket", label: "Mand" },
 ] as const;
 
-const MobileShell = ({ initialStop = "peek", initialDate = DATE }: { initialStop?: AgendaSheetStop; initialDate?: string }) => {
+interface MobileShellProps {
+  initialStop?: AgendaSheetStop;
+  initialDate?: string;
+  dayItems?: AgendaItem[];
+  titleMenuOpen?: boolean;
+  pickerOpen?: boolean;
+}
+
+// The day follows the finger over the cards and the grid (#744): `swipe` is wired like AgendaPage.
+const MobileShell = ({ initialStop = "peek", initialDate = DATE, dayItems = items, titleMenuOpen, pickerOpen }: MobileShellProps) => {
   const [stop, setStop] = useState(initialStop);
   const [date, setDate] = useState(initialDate);
   const weekday = new Date(`${date}T00:00:00Z`).toLocaleDateString("nl-NL", { weekday: "long", timeZone: "UTC" });
   const subtitle = new Date(`${date}T00:00:00Z`).toLocaleDateString("nl-NL", { day: "numeric", month: "long", timeZone: "UTC" });
+  const swipe = {
+    date,
+    onStep: (step: 1 | -1) => setDate(stepDate("day", date, step)),
+    renderNeighbour: (step: 1 | -1) => (
+      <AgendaCalendar items={dayItems} view="day" date={stepDate("day", date, step)} scrollToNow={false} entrance={false} />
+    ),
+    renderCardsNeighbour: (step: 1 | -1) => <DayCards day={stepDate("day", date, step)} dayItems={dayItems} />,
+  };
   return (
     <div className="-m-8 flex min-h-dvh items-stretch bg-surface-primary">
       <main className="flex min-w-0 flex-1 flex-col gap-page-stack pt-[max(1rem,env(safe-area-inset-top))] pb-page-bottom pl-page-left md:pt-20">
@@ -277,14 +294,16 @@ const MobileShell = ({ initialStop = "peek", initialDate = DATE }: { initialStop
               onViewChange={noop}
               onPrevious={noop}
               onNext={noop}
-              onToday={noop}
+              onToday={() => setDate(DATE)}
               onNew={noop}
               onOpenCalendars={noop}
               weekToBasket={{ onSend: noPlan, baskets }}
+              defaultTitleMenuOpen={titleMenuOpen}
+              defaultPickerOpen={pickerOpen}
             />
           </div>
-          <AgendaBody cards={<DayCards day={date} />} sheet={sheetFor(stop, date, setStop, setDate)}>
-            <AgendaCalendar items={items} view="day" date={date} scrollToNow={false} />
+          <AgendaBody swipe={swipe} cards={<DayCards day={date} dayItems={dayItems} />} sheet={sheetFor(stop, date, setStop, setDate)}>
+            <AgendaCalendar items={dayItems} view="day" date={date} scrollToNow={false} />
           </AgendaBody>
         </div>
       </main>
@@ -293,7 +312,25 @@ const MobileShell = ({ initialStop = "peek", initialDate = DATE }: { initialStop
   );
 };
 
+// One card, and a day with nothing at all: the sheet's top edge rests 64px under the last card or the empty-day line.
+const fewItems = items.filter((item) => item.id === "e2");
+// More cards than fit above the minimal peek: the minimal peek stays and the cards scroll.
+const manyItems: AgendaItem[] = [
+  ...items,
+  event("e3", "Brunch met oma", "2026-01-01T10:30:00", "2026-01-01T12:00:00"),
+  event("e4", "Fietsen repareren", "2026-01-01T13:00:00", "2026-01-01T14:00:00"),
+  event("e5", "Boodschappen doen", "2026-01-01T16:00:00", "2026-01-01T17:00:00"),
+  event("e6", "Yoga", "2026-01-01T18:00:00", "2026-01-01T19:00:00"),
+];
+
 export const MobilePeek = () => <MobileShell />;
+export const MobilePeekFewCards = () => <MobileShell dayItems={fewItems} />;
+export const MobilePeekEmptyDay = () => <MobileShell dayItems={[]} />;
+export const MobilePeekManyCards = () => <MobileShell dayItems={manyItems} />;
 export const MobileFull = () => <MobileShell initialStop="full" />;
 // Another day than today: no dot after the weekday.
 export const MobileOtherDay = () => <MobileShell initialDate="2026-01-02" />;
+// The title's menu (Vandaag, Ga naar datum) and the date field it opens; both are portalled.
+export const MobileTitleMenu = () => <MobileShell titleMenuOpen />;
+export const MobileDatePicker = () => <MobileShell pickerOpen />;
+

@@ -24,7 +24,16 @@ for (const width of [1440, 1280, 1024]) {
  * The Agenda's pull-up sheet below `lg` (#733): fixed to the viewport, so the stories are shot at phone
  * sizes, in light and dark. 320x568 is the smallest phone: at least the timeline card must show.
  */
-const SHEET_STORIES = ["mobile-peek", "mobile-full", "mobile-other-day"];
+const SHEET_STORIES = [
+  "mobile-peek",
+  "mobile-peek-few-cards",
+  "mobile-peek-empty-day",
+  "mobile-peek-many-cards",
+  "mobile-full",
+  "mobile-other-day",
+  "mobile-title-menu",
+  "mobile-date-picker",
+];
 
 for (const name of SHEET_STORIES) {
   for (const theme of ["light", "dark"]) {

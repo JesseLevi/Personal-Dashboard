@@ -27,10 +27,12 @@ function measure(text: HTMLElement, hasTrigger: boolean) {
 // Slack after the width transition, so the cleanup never cuts it short.
 const SETTLE_MS = 60;
 
-/** Makes the title a button that opens something (Agenda's date picker); a chevron after the text shows it. */
+/** Makes the title a button that opens something (Agenda's title menu); a chevron after the text shows it. */
 export interface PageHeaderTitleTrigger {
   onClick: () => void;
   expanded: boolean;
+  /** What the button opens, for `aria-haspopup`. Default `dialog`. */
+  popup?: "menu" | "dialog";
   buttonRef?: Ref<HTMLButtonElement>;
 }
 
@@ -140,7 +142,7 @@ export function PageHeaderTitle({ title, pending = false, trigger }: { title: st
         <button
           type="button"
           ref={trigger.buttonRef}
-          aria-haspopup="dialog"
+          aria-haspopup={trigger.popup ?? "dialog"}
           aria-expanded={trigger.expanded}
           onClick={trigger.onClick}
           className="cursor-pointer rounded-control px-component-sm py-component-xs outline-none transition-colors hover:bg-surface-secondary-hover active:bg-surface-secondary-active focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stroke-secondary-active"
