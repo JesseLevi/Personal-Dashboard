@@ -84,7 +84,7 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 | [0050](0050-done-columns.md) | `board_columns.is_done`: finished cards leave the Agenda, widget, plan drawer and pattern context; no archiving | Accepted |
 | [0051](0051-assistant-signals-in-modules.md) | Rhythm signals show in Winkelmand and, for cooking, on the Agenda day cards (§2 by 0058/0059); the act itself settles them; Sidebar item "Assistent" removed | Accepted, amended by 0058 and 0059 |
 | [0046](0046-assistant-signals.md) | Assistent: deterministic rhythm signals for every member, LLM pattern signals on opt-in (no tools, plain text); never a stuck-card reminder; no surface yet | Accepted, amended by 0050 and 0051 |
-| [0058](0058-agenda-zonder-planlade.md) | No plan tray in the Agenda (mobile and desktop); planning through quick add; `cook_rhythm` on Vandaag only | Accepted, §3 amended by 0059 |
+| [0058](0058-agenda-zonder-planlade.md) | No plan tray in the Agenda (mobile and desktop); planning through quick add; a recipe on an event is an attached meal; `cook_rhythm` on Vandaag only | Accepted, §2 amended, §3 amended by 0059 |
 | [0059](0059-agenda-is-the-landing-page.md) | `/agenda` is the landing page: day cards (timeline, meals, cards, suggestions) above a pull-up day sheet on mobile, always in a fixed column beside the calendar on desktop (a narrow week shows fewer days); no summary sentence | Accepted, §6 amended |
 | [0057](0057-vandaag-landing-page.md) | `/vandaag` day overview as landing page | Superseded by 0059 |
 | [0054](0054-offline-basket.md) | Hand-written service worker: network first, last opened basket readable offline, offline page otherwise; cache wiped at logout | Accepted |
