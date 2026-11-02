@@ -1,12 +1,10 @@
 import { NextIntlClientProvider } from "next-intl";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { AGENDA_COLORS, type AgendaColor } from "../../lib/agenda/colors";
 import type { AgendaItem } from "../../lib/agenda/types";
 import en from "../../messages/en.json";
-import { Icon } from "../atoms/Icon";
 import { AgendaCalendar, type AgendaView } from "./AgendaCalendar";
 import { AgendaCalendarSkeleton } from "./AgendaCalendarSkeleton";
-import { useAgendaDraggable, type AgendaDragPayload } from "./useAgendaDraggable";
 import { Specimen, Specimens, StoryIntro } from "@/.ladle/story-kit";
 import type { StoryDefault } from "@ladle/react";
 
@@ -275,58 +273,3 @@ export const LoadingMobile = () => (
     <AgendaCalendarSkeleton />
   </div>
 );
-
-function TrayItem({ payload, icon }: { payload: AgendaDragPayload; icon: "Utensils" | "Columns3" }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useAgendaDraggable(ref, payload);
-  return (
-    <div
-      ref={ref}
-      className="flex cursor-grab items-center gap-inline-sm rounded-control border border-stroke-primary bg-surface-highlight-white px-component-md py-component-sm text-sm font-semibold text-text-primary hover:bg-surface-highlight-white-hover active:bg-surface-highlight-white-active"
-    >
-      <Icon name={icon} size={16} />
-      {payload.title}
-    </div>
-  );
-}
-
-export const ExternalDrag = () => {
-  const [items, setItems] = useState<AgendaItem[]>(overlapping);
-  const [log, setLog] = useState("");
-  return (
-    <div className="flex flex-col gap-stack-md">
-      <div className="flex gap-inline-md">
-        <TrayItem icon="Utensils" payload={{ type: "recipe", id: "r1", title: "Risotto met paddenstoelen", durationMinutes: 60 }} />
-        <TrayItem icon="Columns3" payload={{ type: "card", id: "k1", title: "Rolluik repareren", durationMinutes: 90 }} />
-      </div>
-      <p data-testid="drop-log" className="min-h-5 text-sm text-text-secondary">
-        {log}
-      </p>
-      <Frame>
-        <AgendaCalendar
-          items={items}
-          view="week"
-          date={DATE}
-          scrollToNow={false}
-          onExternalDrop={(drop) => {
-            setLog(`${drop.payload.type}:${drop.payload.id} @ ${drop.start} allDay=${drop.allDay}${drop.eventId ? ` event=${drop.eventId}` : ""}`);
-            setItems((current) => [
-              ...current,
-              {
-                ...base,
-                kind: drop.payload.type === "recipe" ? "meal" : "planned_card",
-                ...(drop.payload.type === "recipe"
-                  ? { slot: "dinner", servings: 4, thumbnailPath: null }
-                  : { board: "Huis", column: "Bezig" }),
-                id: `${drop.payload.id}-${current.length}`,
-                title: drop.payload.title,
-                start: drop.start,
-                allDay: drop.allDay,
-              } as AgendaItem,
-            ]);
-          }}
-        />
-      </Frame>
-    </div>
-  );
-};

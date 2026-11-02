@@ -44,3 +44,25 @@ export const Overview = () => (
 export const Empty = () => (
   <VandaagView today="2026-11-02" groups={groupToday([])} basketCount={0} signals={[]} baskets={[]} onNavigate={noop} onSignal={noop} onDayToBasket={ok} />
 );
+
+// The cook rhythm shows here only (ADR-0058): "Recept openen" opens the recipe, planning it through quick add settles it.
+export const LongNotCooked = () => (
+  <VandaagView
+    today="2026-11-02"
+    groups={groupToday(items)}
+    basketCount={7}
+    signals={[
+      {
+        id: "s2",
+        kind: "cook_rhythm",
+        createdAt: "2026-11-01T00:00:00Z",
+        text: { key: "assistant.signals.cookRhythm", values: { recipe: "Lasagne met spinazie", median: 14, days: 21 } },
+        action: { type: "link", href: "/recepten/r1", labelKey: "assistant.signals.actions.openRecipe" },
+      },
+    ]}
+    baskets={[]}
+    onNavigate={noop}
+    onSignal={noop}
+    onDayToBasket={ok}
+  />
+);

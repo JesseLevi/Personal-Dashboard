@@ -1,6 +1,6 @@
 # ADR-0037: Agenda as Atlas's planner, with external calendars as imports
 
-**Status**: Accepted (user decision, 2026-10-13, #33). **Supersedes** ADR-0008. §11 amended by ADR-0042 (recurring own events).
+**Status**: Accepted (user decision, 2026-10-13, #33). **Supersedes** ADR-0008. §11 amended by ADR-0042 (recurring own events). §8 amended by ADR-0058 (no plan tray, no external dragging).
 
 ## Context
 
@@ -45,7 +45,7 @@
    Every user-supplied URL goes through `safe-fetch` (ADR-0019 §5). Recurring events are expanded within the window, with no RRULE evaluation in the app.
 8. **UI library: FullCalendar, standard (MIT) packages only**: `daygrid`, `timegrid`, `list` and `interaction`. This replaces Schedule-X: its drag-and-drop, resize, drag-to-create and interactive event modal are paid premium plugins, and planning by dragging is the core of this ADR. FullCalendar's premium packages (resource and timeline views) are not used.
    - Version 7 (`fullcalendar` + `@fullcalendar/react`, peer `temporal-polyfill`).
-   - Recipes and cards are dragged onto days with `interaction`'s external dragging. It works on any DOM element, independent of our dnd-kit, and on touch: mobile plans by dragging too, from a tray of recipes and cards below the calendar.
+   - ~~Recipes and cards are dragged onto days from a tray with `interaction`'s external dragging.~~ Removed by ADR-0058: planning goes through quick add (ADR-0041). `interaction` still moves and resizes items on the calendar.
    - Styled through v7's class-name settings with Tailwind utilities and semantic tokens. The shadcn theme registry is not used, since Atlas is not on shadcn. Claude designs the UI in code (ADR-0034).
    - Alternatives weighed on 2026-10-13: ilamy (MIT, Tailwind/shadcn) brings a second dnd-kit generation, Radix and its own lucide, and documents no external drop; Event Calendar (vkurko, MIT) runs on Svelte; react-big-calendar carries moment/globalize/lodash and its own CSS; a self-built time grid costs more upkeep than one maintainer should carry.
 9. **Software, all open source:**

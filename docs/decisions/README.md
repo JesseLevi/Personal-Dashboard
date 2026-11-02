@@ -75,15 +75,16 @@ Read this index first, then only the ADRs your task touches. An ADR wins over `A
 
 | ADR | Decides | Status |
 | --- | --- | --- |
-| [0037](0037-agenda-as-planner.md) | Agenda = one timeline over events, meal plans and planned cards; `calendars` container; links on any event; safe sync deletion; ics → caldav → Graph/Google; FullCalendar (MIT) + `ical.js` | Accepted, amended by 0042 |
+| [0037](0037-agenda-as-planner.md) | Agenda = one timeline over events, meal plans and planned cards; `calendars` container; links on any event; safe sync deletion; ics → caldav → Graph/Google; FullCalendar (MIT) + `ical.js` | Accepted, amended by 0042 and 0058 |
 | [0040](0040-agenda-categories-are-calendars.md) | Categories are manual calendars with `calendars.color` (9-colour palette, code-only tokens); delete moves contents; visibility per device | Accepted |
 | [0041](0041-agenda-quick-add.md) | One quick-add surface (+ Nieuw, slot, `N`); deterministic parsing with `chrono-node` + own rules, no AI | Accepted |
 | [0042](0042-recurring-own-events.md) | Recurring own events: rule in `calendar_event_series`, occurrences materialised 400 days ahead, edit/delete scope | Accepted |
 | [0043](0043-connections-layer-embeddings.md) | Embeddings: `bge-m3` on Cloudflare Workers AI, opt-in per member, backlog scan instead of a queue, exclusive-arc `embeddings`, hybrid search across modules | Accepted, amended by 0046 and 0048 |
 | [0044](0044-activity-history.md) | Append-only `activity_events`: basket items added/checked and meals cooked, recorded by triggers for every member | Accepted |
 | [0050](0050-done-columns.md) | `board_columns.is_done`: finished cards leave the Agenda, widget, plan drawer and pattern context; no archiving | Accepted |
-| [0051](0051-assistant-signals-in-modules.md) | Rhythm signals show in Winkelmand and the plan drawer; the act itself settles them; Sidebar item "Assistent" removed | Accepted |
+| [0051](0051-assistant-signals-in-modules.md) | Rhythm signals show in Winkelmand and, for cooking, on Vandaag (§2 by 0058); the act itself settles them; Sidebar item "Assistent" removed | Accepted, amended by 0058 |
 | [0046](0046-assistant-signals.md) | Assistent: deterministic rhythm signals for every member, LLM pattern signals on opt-in (no tools, plain text); never a stuck-card reminder; no surface yet | Accepted, amended by 0050 and 0051 |
+| [0058](0058-agenda-zonder-planlade.md) | No plan tray in the Agenda (mobile and desktop); planning through quick add; `cook_rhythm` on Vandaag only | Accepted |
 | [0057](0057-vandaag-landing-page.md) | `/vandaag` day overview (events, meals, cards, basket count, signals) is the landing page and PWA start URL | Accepted |
 | [0054](0054-offline-basket.md) | Hand-written service worker: network first, last opened basket readable offline, offline page otherwise; cache wiped at logout | Accepted |
 | [0047](0047-iphone-day-widget.md) | iPhone day widget: Scriptable script, read-only widget token, `widget_today()` acting through the `atlas_widget` role under RLS, tap via the "Open Atlas" Shortcut | Accepted |

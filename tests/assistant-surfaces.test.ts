@@ -6,7 +6,6 @@ vi.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: vi.fn() })
 import { matchingSignalIds } from "@/lib/assistant/settle";
 import { toBasketSuggestions } from "@/lib/assistant/surfaces";
 import type { AssistantSignal } from "@/lib/assistant/types";
-import { splitHighlighted, type PlanRecipe } from "@/lib/agenda/plan-recipes";
 
 describe("matchingSignalIds", () => {
   const rows = [
@@ -48,24 +47,5 @@ describe("toBasketSuggestions", () => {
       },
     ];
     expect(toBasketSuggestions(signals)).toEqual([{ id: "s1", item: "Pindakaas", median: 30, days: 31 }]);
-  });
-});
-
-describe("splitHighlighted", () => {
-  const recipe = (id: string): PlanRecipe => ({
-    id,
-    title: id,
-    servings: 2,
-    categoryId: "c",
-    categoryName: "C",
-    timeMinutes: null,
-    thumbnailUrl: null,
-    thumbnailPath: null,
-  });
-
-  it("pulls the highlighted recipes out in signal order and keeps the rest in order", () => {
-    const { highlighted, visible } = splitHighlighted([recipe("a"), recipe("b"), recipe("c")], ["c", "missing", "a"]);
-    expect(highlighted.map((r) => r.id)).toEqual(["c", "a"]);
-    expect(visible.map((r) => r.id)).toEqual(["b"]);
   });
 });
