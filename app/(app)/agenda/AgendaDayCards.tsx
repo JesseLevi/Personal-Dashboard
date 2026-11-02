@@ -86,14 +86,13 @@ function MoreRow({ label, expanded, onToggle }: { label: string; expanded: boole
 function SuggestionCard({ text, children }: { text: string; children: ReactNode }) {
   const t = useTranslations("agenda.dayCards.labels");
   return (
-    <section aria-label={t("suggestion")}>
-      <Card contentClassName="gap-stack-md bg-tag-highlight-bg">
-        <div className="flex items-start gap-inline-sm">
-          <Icon name="Sparkles" className="shrink-0 text-tag-highlight" />
-          <p className="min-w-0 text-base font-medium text-text-primary">{text}</p>
-        </div>
-        <div className="flex flex-wrap gap-inline-sm">{children}</div>
-      </Card>
+    <section aria-label={t("suggestion")} className="flex flex-wrap items-center gap-inline-xs">
+      {/* Tag highlight look, but the sentence may wrap, so no fixed height. */}
+      <p className="inline-flex min-h-6 min-w-0 items-start gap-inline-xs rounded-control bg-tag-highlight-bg px-component-sm py-component-xs text-xs font-semibold text-tag-highlight">
+        <Icon name="Sparkles" size={14} className="shrink-0" />
+        <span className="min-w-0">{text}</span>
+      </p>
+      <div className="flex flex-wrap gap-inline-xs">{children}</div>
     </section>
   );
 }
@@ -282,8 +281,9 @@ export function AgendaDayCards({
             baskets={baskets}
             chooseBasketLabel={t("chooseBasket")}
             onAddToBasket={handleBasket}
+            size="small"
           />
-          <Button variant="outline" onClick={() => setDeclinedDays((current) => new Set(current).add(day))}>
+          <Button variant="outline" size="small" onClick={() => setDeclinedDays((current) => new Set(current).add(day))}>
             {t("no")}
           </Button>
         </SuggestionCard>
@@ -291,8 +291,10 @@ export function AgendaDayCards({
 
       {shownSignals.map((signal) => (
         <SuggestionCard key={signal.id} text={"plain" in signal.text ? signal.text.plain : tAll(signal.text.key, signal.text.values)}>
-          <Button onClick={() => void handleSignal(signal, true)}>{tAll(signal.action.labelKey)}</Button>
-          <Button variant="outline" onClick={() => void handleSignal(signal, false)}>
+          <Button size="small" onClick={() => void handleSignal(signal, true)}>
+            {tAll(signal.action.labelKey)}
+          </Button>
+          <Button variant="outline" size="small" onClick={() => void handleSignal(signal, false)}>
             {t("no")}
           </Button>
         </SuggestionCard>

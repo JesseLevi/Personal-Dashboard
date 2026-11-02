@@ -137,7 +137,7 @@ export const EmptyDay = () => (
 
 export const Suggestions = () => (
   <Surface>
-    <StoryIntro what="Suggestions are their own cards: the basket suggestion, and assistant signals on today." note="AgendaPage" />
+    <StoryIntro what="Suggestions are small, like a highlight Tag: the basket suggestion, and assistant signals on today." note="AgendaPage" />
     <div className="flex flex-wrap items-start gap-stack-xl">
       <Column>
         <AgendaDayCards {...props({ items: todayItems.filter((item) => item.id === "m1"), basket: { m1: false }, signals })} />

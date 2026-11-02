@@ -96,6 +96,8 @@ type AnimatedAddToBasketButtonBaseProps = Omit<
   chooseBasketLabel?: string;
   /** Story-only: renders with the basket popover already open. */
   defaultChoosing?: boolean;
+  /** `small` is Button's 32 px height. Default `default`. */
+  size?: "default" | "small";
 };
 
 export type AnimatedAddToBasketButtonProps =
@@ -124,6 +126,7 @@ export function AnimatedAddToBasketButton({
   baskets,
   chooseBasketLabel,
   defaultChoosing = false,
+  size = "default",
   label,
   shortLabel,
   shortLabelBelow = "md",
@@ -197,6 +200,7 @@ export function AnimatedAddToBasketButton({
   const button = (
     <Button
       variant="filled"
+      size={size}
       aria-expanded={choosing ? open : undefined}
       aria-label={iconOnlyBelow400 ? (added ? addedLabel : label) : undefined}
       onClick={handleClick}
