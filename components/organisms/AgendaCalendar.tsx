@@ -345,6 +345,13 @@ export function AgendaCalendar({
       },
     },
     select: (info) => {
+      // A day swipe leaves the finger over the slot it started on, so FullCalendar reads it as a tap or a
+      // long-press selection. `AgendaBody` marks the viewport while a swipe is locked; this also catches the
+      // deferred `dateClick` path, which selects through here.
+      if (rootRef.current?.closest("[data-agenda-swiping]")) {
+        calendarRef.current?.getApi().unselect();
+        return;
+      }
       lastSelectRef.current = Date.now();
       const span = normalizeSpan({ start: info.startStr, end: info.endStr, allDay: info.allDay });
       // A click or drag selects whole slots, like the hover outline shows; moving and resizing items stays on the snap.
