@@ -1,7 +1,7 @@
 // design: Claude-designed (#486)
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import {
@@ -12,6 +12,9 @@ import {
   type AgendaExternalDrop,
 } from "@/components/organisms/AgendaCalendar";
 import type { CalendarOverview, SyncNoticeView } from "@/lib/agenda/calendars";
+import type { MealCardData } from "@/lib/agenda/meal-cards";
+import { actOnAssistantSignal, dismissAssistantSignal } from "@/lib/assistant/actions";
+import type { AssistantSignal } from "@/lib/assistant/types";
 import { isItemHidden, persistHidden, type AgendaHidden } from "@/lib/agenda/hidden";
 import { PlanDrawer } from "@/components/organisms/PlanDrawer";
 import { Toast } from "@/components/organisms/Toast";
@@ -20,7 +23,7 @@ import { toAgendaResult, withPlannedFor, type PlanCardGroup, type QuickAddBoard 
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { AgendaShortcut } from "@/lib/agenda/shortcuts";
-import { addDays, isoWeek, loadWindow, spanToUtc, stepDate, visibleRange } from "@/lib/agenda/time";
+import { addDays, agendaNow, isoWeek, loadWindow, spanToUtc, stepDate, visibleRange } from "@/lib/agenda/time";
 import type { AgendaItem, AgendaMealItem, AgendaPlannedCardItem, MealSlot } from "@/lib/agenda/types";
 import { persistAgendaTray } from "@/lib/agenda/tray";
 import { persistAgendaView, type AgendaView } from "@/lib/agenda/view";
@@ -30,7 +33,10 @@ import type { ActionResult } from "@/lib/shopping/types";
 import { AGENDA_TRAY_ATTRIBUTE, type AgendaSpan } from "@/lib/ui/agenda-calendar";
 import { planCard, updateCard } from "../te-doen/actions";
 import { createEvent, deleteEvent, getAgendaEvent, loadAgendaRange, moveEvent, updateEvent } from "./actions";
+import { EnterFromLogin } from "../te-doen/EnterFromLogin";
 import { AgendaBody } from "./AgendaBody";
+import { AgendaDayCards } from "./AgendaDayCards";
+import { loadMealCardData } from "./day-cards-actions";
 import { AgendaCalendarsPanel } from "./AgendaCalendarsPanel";
 import { AgendaCardPanel, agendaCardId, type AgendaCardPanelItem } from "./AgendaCardPanel";
 import { AgendaEventPanel, type AgendaEventPrefill, type AgendaPanelTarget } from "./AgendaEventPanel";
@@ -82,6 +88,14 @@ export interface AgendaPageProps {
   initialHidden: AgendaHidden;
   /** Own categories and imported calendars; null when the read failed. */
   initialCalendars: CalendarOverview | null;
+  /** Assistant signals for the day cards; empty when the read failed. */
+  signals: readonly AssistantSignal[];
+  /** Recipe ids and basket links of the meals in the first window. */
+  initialMealCards: MealCardData;
+  /** `recipe id -> presigned thumbnail URL` for those meals. */
+  mealThumbnails: Readonly<Record<string, string>>;
+  /** Agenda-zone wall clock when the page rendered, `YYYY-MM-DDTHH:mm`. */
+  initialNow: string;
 }
 
 // Day and month names in the title start with a capital: "Ma 20 Okt".
@@ -117,6 +131,10 @@ export function AgendaPage({
   baskets,
   initialHidden,
   initialCalendars,
+  signals,
+  initialMealCards,
+  mealThumbnails,
+  initialNow,
 }: AgendaPageProps) {
   const tErrors = useTranslations("agenda.errors");
   const tPlan = useTranslations("agenda.plan");
@@ -128,7 +146,10 @@ export function AgendaPage({
   const [view, setView] = useState(initialView);
   const [date, setDate] = useState(initialDate);
   const [items, setItems] = useState(initialItems);
-  const [loadedFrom, setLoadedFrom] = useState(() => loadWindow(initialDate).from);
+  const [loaded, setLoaded] = useState(() => loadWindow(initialDate));
+  const [mealCards, setMealCards] = useState(initialMealCards);
+  const [now, setNow] = useState(initialNow);
+  const [outside, setOutside] = useState<{ day: string; items: AgendaItem[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [panel, setPanel] = useState<{ open: boolean; target: AgendaPanelTarget }>({
     open: false,
@@ -156,6 +177,26 @@ export function AgendaPage({
     persistHidden(next);
   }
 
+  // Recipe ids and basket links of the meals on the day cards; a failed read leaves what is known.
+  const refreshMealCards = useCallback((list: readonly AgendaItem[]) => {
+    const ids = list.filter((item) => item.kind === "meal").map((item) => item.id);
+    if (ids.length === 0) return;
+    void loadMealCardData(ids).then((result) => {
+      if (!result.success) return;
+      setMealCards((current) => ({
+        recipeIds: { ...current.recipeIds, ...result.data.recipeIds },
+        basket: { ...current.basket, ...result.data.basket },
+      }));
+    });
+  }, []);
+
+  useEffect(() => {
+    const tick = () => setNow(agendaNow());
+    tick();
+    const timer = window.setInterval(tick, 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   // Keeps the current items on screen until the new window arrives: no empty flash.
   const loadAround = useCallback(
     async (day: string) => {
@@ -165,18 +206,39 @@ export function AgendaPage({
       if (request !== latestRequest.current) return;
       if (result.success) {
         setItems(result.data);
-        setLoadedFrom(window.from);
+        setLoaded(window);
+        refreshMealCards(result.data);
         setError(null);
       } else {
         setError(tErrors(result.error));
       }
     },
-    [tErrors],
+    [tErrors, refreshMealCards],
   );
+
+  // Below `lg` the cards follow the shown day; from `lg` they show today next to any planner range.
+  const cardsDay = narrow ? date : today;
+  const cardsInWindow = cardsDay >= loaded.from && cardsDay < loaded.to;
+  useEffect(() => {
+    if (cardsInWindow) return;
+    let stale = false;
+    void loadAgendaRange({ from: cardsDay, to: addDays(cardsDay, 1) }).then((result) => {
+      if (stale || !result.success) return;
+      setOutside({ day: cardsDay, items: result.data });
+      refreshMealCards(result.data);
+    });
+    return () => {
+      stale = true;
+    };
+  }, [cardsInWindow, cardsDay, items, refreshMealCards]);
+  const cardItems = useMemo(() => {
+    if (cardsInWindow) return visibleItems;
+    return outside?.day === cardsDay ? outside.items.filter((item) => !isItemHidden(item, hidden)) : null;
+  }, [cardsInWindow, cardsDay, visibleItems, outside, hidden]);
 
   function goTo(next: string) {
     setDate(next);
-    if (loadWindow(next).from !== loadedFrom) void loadAround(next);
+    if (loadWindow(next).from !== loaded.from) void loadAround(next);
   }
 
   function goToday() {
@@ -403,6 +465,23 @@ export function AgendaPage({
     return { success: false, error: "generic" };
   }
 
+  async function handleSignal(signal: AssistantSignal, act: boolean) {
+    const result = act ? await actOnAssistantSignal(signal.id) : await dismissAssistantSignal(signal.id);
+    if (result.success && result.href) router.push(result.href);
+    else if (result.success) router.refresh();
+    return { success: result.success };
+  }
+
+  // "Naar mand" on the day cards sends only that day's meals; the basket links are read again either way.
+  async function handleDayToBasket(day: string, listId?: string): Promise<ActionResult> {
+    setError(null);
+    const result = await sendWeekToBasket({ from: day, to: addDays(day, 1), listId });
+    refreshMealCards(cardItems ?? []);
+    if (result.success) return { success: true, data: undefined };
+    setError(tErrors(result.error));
+    return { success: false, error: "generic" };
+  }
+
   // Drag and resize save at once; the calendar has already moved the block, so a refusal reverts it.
   function handleChange(change: AgendaChange, revert: () => void) {
     const { item } = change;
@@ -455,69 +534,90 @@ export function AgendaPage({
 
   return (
     <>
-      <AgendaHeader
-        title={capitalizeWords(title, locale)}
-        view={toToggleView(view)}
-        weekNumber={effectiveView === "week" || effectiveView === "threeDay" || effectiveView === "list" ? isoWeek(range.start) : undefined}
-        date={date}
-        today={today}
-        onGoToDate={goTo}
-        onOverlayChange={setHeaderOverlayOpen}
-        onViewChange={handleViewChange}
-        onPrevious={() => goTo(stepDate(effectiveView, date, -1))}
-        onNext={() => goTo(stepDate(effectiveView, date, 1))}
-        onToday={goToday}
-        trayOpen={trayOpen}
-        onTrayToggle={handleTrayToggle}
-        onNew={() => (quickAdd.open ? setQuickAdd((current) => ({ ...current, open: false })) : openQuickAdd(null))}
-        newButtonRef={newButtonRef}
-        onOpenCalendars={() => setCalendarsOpen(true)}
-        weekToBasket={{ onSend: handleWeekToBasket, baskets }}
-      />
+      <EnterFromLogin index={0}>
+        <AgendaHeader
+          title={capitalizeWords(title, locale)}
+          view={toToggleView(view)}
+          weekNumber={effectiveView === "week" || effectiveView === "threeDay" || effectiveView === "list" ? isoWeek(range.start) : undefined}
+          date={date}
+          today={today}
+          onGoToDate={goTo}
+          onOverlayChange={setHeaderOverlayOpen}
+          onViewChange={handleViewChange}
+          onPrevious={() => goTo(stepDate(effectiveView, date, -1))}
+          onNext={() => goTo(stepDate(effectiveView, date, 1))}
+          onToday={goToday}
+          trayOpen={trayOpen}
+          onTrayToggle={handleTrayToggle}
+          onNew={() => (quickAdd.open ? setQuickAdd((current) => ({ ...current, open: false })) : openQuickAdd(null))}
+          newButtonRef={newButtonRef}
+          onOpenCalendars={() => setCalendarsOpen(true)}
+          weekToBasket={{ onSend: handleWeekToBasket, baskets }}
+        />
+      </EnterFromLogin>
       <AgendaSyncNotices initialNotices={initialNotices} onResolve={resolveSyncNotice} />
       {error && <p className="pr-page-right-equal text-base font-semibold text-priority-urgent">{error}</p>}
-      <AgendaBody
-        drawerOpen={trayOpen}
-        drawer={
-          <PlanDrawer
-            className="h-full"
-            recipes={
-              <PlanRecipeList
-                recipes={recipes}
-                highlightedIds={longNotCookedIds}
-                categories={recipeCategories}
-                today={today}
-                onPlan={(recipeId, plannedOn, slot) => planRecipe(recipeId, { plannedOn, slot })}
-                onPlanned={announcePlanned}
-                weekToBasket={{ onSend: handleWeekToBasket, baskets }}
-              />
-            }
-            cards={
-              <PlanCardList
-                groups={groups}
-                today={today}
-                onPlan={(cardId, plannedOn) => savePlannedFor(cardId, plannedOn)}
-                onPlanned={announceCardPlanned}
-              />
-            }
-          />
-        }
-      >
-        <div ref={swipeRef} className="h-full">
-          <AgendaCalendar
-            items={visibleItems}
-            view={view}
-            date={date}
-            scrollNowKey={scrollNowKey}
-            onSelectSlot={openQuickAdd}
-            onItemClick={handleItemClick}
-            onItemMove={handleChange}
-            onItemResize={handleChange}
-            onExternalDrop={handleExternalDrop}
-            onItemDropOut={handleItemDropOut}
-          />
-        </div>
-      </AgendaBody>
+      <EnterFromLogin index={1}>
+        <AgendaBody
+          cards={
+            <AgendaDayCards
+              day={cardsDay}
+              today={today}
+              now={now}
+              items={cardItems ?? []}
+              loading={cardItems === null}
+              signals={signals}
+              recipeIds={mealCards.recipeIds}
+              thumbnailUrls={mealThumbnails}
+              basket={mealCards.basket}
+              baskets={baskets}
+              onOpenItem={handleItemClick}
+              onSignal={handleSignal}
+              onDayToBasket={handleDayToBasket}
+            />
+          }
+          drawerOpen={trayOpen}
+          drawer={
+            <PlanDrawer
+              className="h-full"
+              recipes={
+                <PlanRecipeList
+                  recipes={recipes}
+                  highlightedIds={longNotCookedIds}
+                  categories={recipeCategories}
+                  today={today}
+                  onPlan={(recipeId, plannedOn, slot) => planRecipe(recipeId, { plannedOn, slot })}
+                  onPlanned={announcePlanned}
+                  weekToBasket={{ onSend: handleWeekToBasket, baskets }}
+                />
+              }
+              cards={
+                <PlanCardList
+                  groups={groups}
+                  today={today}
+                  onPlan={(cardId, plannedOn) => savePlannedFor(cardId, plannedOn)}
+                  onPlanned={announceCardPlanned}
+                />
+              }
+            />
+          }
+        >
+          <div ref={swipeRef} className="h-full">
+            <AgendaCalendar
+              items={visibleItems}
+              view={view}
+              date={date}
+              scrollNowKey={scrollNowKey}
+              onSelectSlot={openQuickAdd}
+              onItemClick={handleItemClick}
+              onItemMove={handleChange}
+              onItemResize={handleChange}
+              onExternalDrop={handleExternalDrop}
+              onItemDropOut={handleItemDropOut}
+            />
+          </div>
+        </AgendaBody>
+      </EnterFromLogin>
       <Toast message={notice} onDismiss={() => setNotice(null)} />
       {mealPanel.item && (
         <AgendaMealPanel

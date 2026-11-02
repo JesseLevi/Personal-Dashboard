@@ -6,6 +6,7 @@ import type { AgendaView } from "@/lib/agenda/view";
 import { useState } from "react";
 import { isoWeek, stepDate, visibleRange } from "@/lib/agenda/time";
 import { AgendaBody } from "./AgendaBody";
+import { AgendaDayCards } from "./AgendaDayCards";
 import { AgendaHeader } from "./AgendaHeader";
 import { AgendaPageSkeleton } from "./AgendaPageSkeleton";
 import { PlanRecipeList } from "./PlanRecipeList";
@@ -66,6 +67,20 @@ const recipes = [
 const noPlan = async () => ({ success: true as const, data: undefined });
 const baskets = [{ id: "own", name: "Boodschappen", shared: false }];
 
+const DayCards = () => (
+  <AgendaDayCards
+    day={DATE}
+    today={DATE}
+    now="2026-01-01T14:00"
+    items={items}
+    basket={{ m1: false, m2: false, m3: true }}
+    baskets={baskets}
+    onOpenItem={noop}
+    onSignal={async () => ({ success: true })}
+    onDayToBasket={noPlan}
+  />
+);
+
 // The real page sits on `surface-primary`, not the story canvas.
 const Surface = ({ children }: { children: React.ReactNode }) => (
   <div className="-m-8 flex flex-col gap-page-stack bg-surface-primary p-8">{children}</div>
@@ -90,6 +105,7 @@ const PageContent = ({ view, title, trayOpen = false }: { view: AgendaView; titl
       weekToBasket={{ onSend: noPlan, baskets }}
     />
     <AgendaBody
+      cards={<DayCards />}
       drawerOpen={trayOpen}
       drawer={
         <PlanDrawer
@@ -163,6 +179,7 @@ export const Interactive = () => {
         onNew={noop}
       />
       <AgendaBody
+        cards={<DayCards />}
         drawerOpen={trayOpen}
         drawer={
           <PlanDrawer
@@ -186,6 +203,12 @@ export const Interactive = () => {
   );
 };
 
+// A narrower page container: the cards are a row above the planner and the tray sits beside it.
+export const Narrow = () => (
+  <div className="w-[60rem]">
+    <Page view="week" title="29 dec – 4 jan" trayOpen />
+  </div>
+);
 export const Week = () => <Page view="week" title="29 dec – 4 jan" />;
 export const WeekTrayOpen = () => <Page view="week" title="29 dec – 4 jan" trayOpen />;
 export const Month = () => <Page view="month" title="januari 2026" />;

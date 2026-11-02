@@ -21,7 +21,7 @@ import { blurFadeStagger, blurOutTotalMs, usePrefersReducedMotion } from "@/lib/
 import { markEnterFromLogin } from "@/lib/ui/login-enter";
 import { useTurnstile } from "./useTurnstile";
 import type { LoginCodeSendState, PasswordLoginState } from "./actions";
-import { HOME_PATH } from "@/lib/today/home";
+import { HOME_PATH } from "@/lib/agenda/home";
 
 // figma: Login/Mobile+Desktop (3929:25181); StepAnimation (3934:32745);
 // heading Step-01 4221:14845 "Hey, welkom bij Atlas" / Step-02 4221:14940

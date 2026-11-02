@@ -6,7 +6,7 @@ import { LoginFormClient } from "./LoginFormClient";
 import { lookupGreetingName } from "./greeting-action";
 import { sendLoginCode, signInWithPassword } from "./actions";
 import { ClearOfflineCache } from "@/app/(app)/_components/OfflineSupport";
-import { HOME_PATH } from "@/lib/today/home";
+import { HOME_PATH } from "@/lib/agenda/home";
 
 // figma: node-id=3929:25181 (Pages/Login — LogIn/Desktop 3929:25202,
 // LogIn/Mobile 3929:25182). Server Component: auth-check + translations +

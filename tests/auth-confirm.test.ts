@@ -39,7 +39,7 @@ describe("confirmMagicLink (the POST)", () => {
     verifyOtpMock.mockResolvedValue({ error: null });
     const target = await redirectedTo(() => confirmMagicLink(form({ token_hash: "abc", type: "email" })));
     expect(verifyOtpMock).toHaveBeenCalledWith({ type: "email", token_hash: "abc" });
-    expect(target).toBe("/vandaag");
+    expect(target).toBe("/agenda");
     expect(cookieSet).toHaveBeenCalledWith("atlas_login_email", "", expect.objectContaining({ maxAge: 0 }));
   });
 

@@ -18,7 +18,22 @@ import { cn } from "@/lib/ui/cn";
 // 12px and fades; the content keeps its final width so text never reflows.
 // Under the calendar there is no height animation, only `animate-blur-in`.
 // Durations and the curve are `--plan-tray-*` in globals.css.
-export function AgendaBody({ children, drawer, drawerOpen = false }: { children: ReactNode; drawer?: ReactNode; drawerOpen?: boolean }) {
+//
+// The day cards (ADR-0058) take a column of `--plan-tray-width` left of the planner once
+// the page container is 65rem wide: the 44rem week grid, the column and one gap. They scroll
+// inside the body's height. Narrower, they are a row above the planner. The planner is its
+// own container, so the tray's 44rem rule applies to the room next to the column.
+export function AgendaBody({
+  children,
+  drawer,
+  drawerOpen = false,
+  cards,
+}: {
+  children: ReactNode;
+  drawer?: ReactNode;
+  drawerOpen?: boolean;
+  cards?: ReactNode;
+}) {
   // Under the calendar the tray plays `animate-blur-in` when it opens, but not on first paint.
   const [toggled, setToggled] = useState(false);
   const first = useRef(true);
@@ -30,8 +45,8 @@ export function AgendaBody({ children, drawer, drawerOpen = false }: { children:
     setToggled(true);
   }, [drawerOpen]);
 
-  return (
-    <div className="@container min-w-0 pr-page-right-equal">
+  const planner = (
+    <div className="@container min-w-0">
       <div
         className={cn(
           "flex min-w-0 flex-col gap-stack-lg lg:@min-[44rem]:grid lg:@min-[44rem]:transition-[grid-template-columns,column-gap] lg:@min-[44rem]:ease-(--plan-tray-ease) motion-reduce:lg:@min-[44rem]:transition-none",
@@ -66,6 +81,24 @@ export function AgendaBody({ children, drawer, drawerOpen = false }: { children:
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="@container min-w-0 pr-page-right-equal">
+      <div
+        className={cn(
+          "flex min-w-0 flex-col gap-stack-lg",
+          cards && "lg:@min-[65rem]:grid lg:@min-[65rem]:grid-cols-[var(--plan-tray-width)_minmax(0,1fr)] lg:@min-[65rem]:items-start",
+        )}
+      >
+        {cards && (
+          <div className="min-w-0 lg:@min-[65rem]:h-[calc(100dvh-14rem)] lg:@min-[65rem]:min-h-[28rem] lg:@min-[65rem]:overflow-y-auto">
+            {cards}
+          </div>
+        )}
+        {planner}
       </div>
     </div>
   );

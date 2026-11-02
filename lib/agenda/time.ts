@@ -1,4 +1,4 @@
-import { localDate } from "@/lib/agenda/map";
+import { localDate, localDateTime } from "@/lib/agenda/map";
 import type { AgendaView } from "@/lib/agenda/view";
 import type { AgendaSpan } from "@/lib/ui/agenda-calendar";
 
@@ -89,6 +89,11 @@ export function isUnderNowLabel(slotMinutes: number, now: Date): boolean {
 /** Today's date in the Agenda zone. */
 export function todayInAgendaZone(now: Date = new Date()): string {
   return localDate(now.toISOString(), AGENDA_TIME_ZONE);
+}
+
+/** The Agenda-zone wall clock to the minute, `YYYY-MM-DDTHH:mm`. */
+export function agendaNow(now: Date = new Date()): string {
+  return localDateTime(now.toISOString(), AGENDA_TIME_ZONE).slice(0, 16);
 }
 
 /** The days the (effective) view shows: `[start, end)` as dates. */

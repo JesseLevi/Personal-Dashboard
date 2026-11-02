@@ -8,7 +8,8 @@ const order = storyOrder as (stories: string[]) => string[];
 const IDS = [
   "account--login-form--default",
   "winkelmand--winkelmand-header--default",
-  "vandaag--vandaag-page--overview",
+  "agenda--agenda-day-cards--empty-day",
+  "agenda--agenda-day-cards--overview",
   "recepten--recipe-panel--filled",
   "notities--rondom--note-backlinks--default",
   "notities--blokken--note-table--default",
@@ -37,7 +38,7 @@ describe("ladle storyOrder", () => {
 
   it("orders groups Basis, app Sidebar modules, Account; unknown groups last", () => {
     const groups = [...new Set(order(IDS).map((id) => id.split("--")[0]))];
-    expect(groups).toEqual(["basis", "vandaag", "te-doen", "agenda", "notities", "recepten", "winkelmand", "account", "zzz-unknown"]);
+    expect(groups).toEqual(["basis", "agenda", "te-doen", "notities", "recepten", "winkelmand", "account", "zzz-unknown"]);
   });
 
   it("orders sub-groups by the table, not the alphabet", () => {
@@ -52,6 +53,8 @@ describe("ladle storyOrder", () => {
       .filter((id) => id.startsWith("notities--editor--editing-bar--"))
       .map((id) => id.split("--").pop());
     expect(stories).toEqual(["overview", "playground", "interactive", "at-rest"]);
+    const dayCards = order(IDS).filter((id) => id.startsWith("agenda--agenda-day-cards--"));
+    expect(dayCards.map((id) => id.split("--").pop())).toEqual(["overview", "empty-day"]);
   });
 
   it("serialises through toString() like Ladle does (no outer references)", () => {

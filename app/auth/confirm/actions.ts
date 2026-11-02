@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { clearLoginEmail } from "@/lib/auth/login-email-cookie";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isMagicLinkOtpType } from "./otp-types";
-import { HOME_PATH } from "@/lib/today/home";
+import { HOME_PATH } from "@/lib/agenda/home";
 
 const SIGNED_IN_TARGET = HOME_PATH;
 const INVALID_LINK_TARGET = "/login?error=magic-link-invalid";

@@ -26,6 +26,8 @@ export interface CardContentRecipeProps {
   name: string;
   /** Figma TEXT "20 min" — already-formatted duration, caller-supplied content (not formatted/localized here). Optional: `recipes.time_minutes` is nullable, so the row is omitted rather than showing invented text (#124, design/notes/CardContentRecipe.md). */
   duration?: string;
+  /** Optional second line under the name, e.g. the meal moment on the Agenda's day cards. Plain text, caller-localised; `text-sm text-text-secondary`, one line. */
+  meta?: string;
   /** Claude-designed (#487): a 48px thumbnail and tighter text for lists beside the Agenda. Default is Figma's 96px card. */
   compact?: boolean;
   className?: string;
@@ -37,6 +39,7 @@ export function CardContentRecipe({
   imageAlt,
   name,
   duration,
+  meta,
   compact = false,
   className,
 }: CardContentRecipeProps) {
@@ -60,6 +63,7 @@ export function CardContentRecipe({
       )}
       <div className={cn("flex min-w-0 flex-1 flex-col justify-center", compact ? "gap-stack-xs" : "gap-stack-sm")}>
         <p className={cn("w-full font-semibold text-text-primary", compact ? "truncate text-sm" : "text-base")}>{name}</p>
+        {meta && <p className="w-full truncate text-sm text-text-secondary">{meta}</p>}
         {duration && (
           // spacing-flag: `gap-2` stays raw (#205): "Time"'s itemSpacing (8px) has no
           // bound variable in the fetched node. See design/notes/CardContentRecipe.md.
