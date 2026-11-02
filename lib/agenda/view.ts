@@ -8,7 +8,7 @@ export function isAgendaView(value: unknown): value is AgendaView {
   return typeof value === "string" && (AGENDA_VIEWS as readonly string[]).includes(value);
 }
 
-const WEEK_MIN_PX = 640;
+const WEEK_MIN_PX = 600;
 const THREE_DAY_MIN_PX = 352;
 
 /** What the planner can show at this width: "week" gives way to three days, then one; other views stay. `null` (not measured yet) keeps the choice. */

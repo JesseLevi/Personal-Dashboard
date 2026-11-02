@@ -3,12 +3,12 @@ import { AGENDA_VIEWS, fitAgendaView } from "@/lib/agenda/view";
 
 describe("fitAgendaView", () => {
   it("keeps the week when the planner is wide enough", () => {
-    expect(fitAgendaView("week", 640)).toBe("week");
+    expect(fitAgendaView("week", 600)).toBe("week");
     expect(fitAgendaView("week", 1100)).toBe("week");
   });
 
   it("drops to three days, then one day, as the planner narrows", () => {
-    expect(fitAgendaView("week", 639)).toBe("threeDay");
+    expect(fitAgendaView("week", 599)).toBe("threeDay");
     expect(fitAgendaView("week", 352)).toBe("threeDay");
     expect(fitAgendaView("week", 351)).toBe("day");
     expect(fitAgendaView("week", 0)).toBe("day");
