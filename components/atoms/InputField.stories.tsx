@@ -69,6 +69,40 @@ export const Overview = () => (
   </>
 );
 
+// Native `<optgroup>`s: bold unselectable rows on desktop, section headers in the iOS picker. Open the select to see them.
+export const SelectWithGroups = () => (
+  <div className="flex w-72 flex-col gap-stack-lg">
+    <Specimen label="groups" hint="ungrouped first option, then one group per board">
+      <InputField
+        id="groups-grouped"
+        label="Kaart"
+        leadingIcon="Columns3"
+        trailingIcon="ChevronDown"
+        defaultValue=""
+        options={[
+          { value: "", label: "Nieuwe kaart" },
+          { label: "Huis", options: [{ value: "c1", label: "Boodschappen doen" }, { value: "c2", label: "Verf kopen" }] },
+          { label: "Werk", options: [{ value: "c3", label: "Offerte versturen" }] },
+        ]}
+      />
+    </Specimen>
+    <Specimen label="selected" hint="the closed select shows the option label only">
+      <InputField
+        id="groups-selected"
+        label="Kaart"
+        leadingIcon="Columns3"
+        trailingIcon="ChevronDown"
+        defaultValue="c3"
+        options={[
+          { value: "", label: "Nieuwe kaart" },
+          { label: "Huis", options: [{ value: "c1", label: "Boodschappen doen" }] },
+          { label: "Werk", options: [{ value: "c3", label: "Offerte versturen" }] },
+        ]}
+      />
+    </Specimen>
+  </div>
+);
+
 type PlaygroundProps = {
   label: string;
   placeholder: string;
