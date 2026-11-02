@@ -594,6 +594,7 @@
       "cancelLabel": "Cancel",
       "subtasks": {
         "title": "Subtasks",
+        "emptyHint": "Break the card into steps you can tick off. Enter adds one; paste several lines to add several.",
         "addLabel": "Add subtask",
         "editLabel": "Edit subtask",
         "moreLabel": "More actions for {title}",
