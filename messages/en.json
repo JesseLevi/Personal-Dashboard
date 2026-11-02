@@ -1243,7 +1243,7 @@
       "linkNoResults": "Nothing found for “{query}”.",
       "linkRemoveLabel": "Remove {title}",
       "linkUntitled": "Untitled",
-      "linkPendingHint": "Chosen links are made as soon as the event is saved.",
+      "linkPendingHint": "Chosen links are made as soon as the event is saved. A recipe becomes a meal on the event.",
       "summaryAllDay": "all day",
       "linkKinds": {
         "recipe": "Recipe",
@@ -1256,6 +1256,8 @@
       "emptyLabel": "Nothing linked yet.",
       "loadingLabel": "Loading...",
       "unlinkLabel": "Unlink {title}",
+      "removeMealLabel": "Remove meal {title}",
+      "mealKind": "Meal",
       "untitled": "Untitled",
       "kinds": {
         "recipe": "Recipe",
@@ -1558,6 +1560,8 @@
       "toBasket": "To basket",
       "inBasket": "In the basket",
       "chooseBasket": "Choose a basket",
+      "attachedMeta": "{moment} · at {title}",
+      "withMeal": "With a meal",
       "basketMissing": "{count, plural, one {{recipe} is not in the basket yet} other {# meals are not in the basket yet}}",
       "labels": {
         "events": "Events",

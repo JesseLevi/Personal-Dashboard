@@ -10,7 +10,9 @@ import { Card } from "@/components/molecules/Card";
 import { CardContentRecipe } from "@/components/molecules/CardContentRecipe";
 import { ColorDot } from "@/components/molecules/ColorSwatches";
 import {
+  attachedEventTitle,
   basketSuggestion,
+  eventIdsWithMeals,
   groupDay,
   isEmptyDay,
   limitRows,
@@ -20,7 +22,7 @@ import {
   TODO_LIMIT,
   type BasketSuggestion,
 } from "@/lib/agenda/day-cards";
-import type { AgendaItem } from "@/lib/agenda/types";
+import type { AgendaItem, AgendaMealItem } from "@/lib/agenda/types";
 import type { AssistantSignal } from "@/lib/assistant/types";
 import { recipeThumbnailRouteUrl } from "@/lib/recipes/thumbnail-url";
 import type { BasketOption } from "@/lib/shopping/baskets";
@@ -188,6 +190,13 @@ export function AgendaDayCards({
     return { imageUrl: (recipeId && thumbnailUrls[recipeId]) || route, imageFallbackUrl: route };
   };
 
+  const withMeals = useMemo(() => eventIdsWithMeals(items), [items]);
+  // An attached meal names its event; the title comes from the loaded window, so a hidden event leaves the moment alone.
+  const mealMeta = (meal: AgendaMealItem) => {
+    const eventTitle = attachedEventTitle(meal, items);
+    return eventTitle ? t("attachedMeta", { moment: tSlots(meal.slot), title: eventTitle }) : tSlots(meal.slot);
+  };
+
   const weekday = format.dateTime(utc(day), { weekday: "long", timeZone: "UTC" });
   const todayLabel = format.dateTime(utc(today), { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
 
@@ -223,6 +232,11 @@ export function AgendaDayCards({
                     <span className={cn("min-w-0 flex-1 truncate text-base font-semibold", state === "past" ? "text-text-secondary" : "text-text-primary")}>
                       {event.title}
                     </span>
+                    {withMeals.has(event.id) && (
+                      <span role="img" aria-label={t("withMeal")} className="shrink-0 text-text-secondary">
+                        <Icon name="CookingPot" size={16} />
+                      </span>
+                    )}
                     <span className="shrink-0 whitespace-nowrap text-sm text-text-secondary">{time}</span>
                     {state === "now" && <Tag>{t("now")}</Tag>}
                   </button>
@@ -249,7 +263,7 @@ export function AgendaDayCards({
             {groups.meals.map((meal) => (
               <li key={meal.id}>
                 <button type="button" onClick={() => onOpenItem(meal)} className={cn(rowClass, "py-component-xs")}>
-                  <CardContentRecipe compact name={meal.title} meta={tSlots(meal.slot)} {...thumbnail(meal.id, meal.thumbnailPath)} />
+                  <CardContentRecipe compact name={meal.title} meta={mealMeta(meal)} {...thumbnail(meal.id, meal.thumbnailPath)} />
                 </button>
               </li>
             ))}

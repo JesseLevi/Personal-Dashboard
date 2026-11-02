@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  attachedEventTitle,
   basketSuggestion,
+  eventIdsWithMeals,
   clockOf,
   groupDay,
   isEmptyDay,
@@ -128,6 +130,31 @@ describe("timelineState", () => {
 
   it("keeps all-day events upcoming", () => {
     expect(timelineState(allDay("a"), `${DAY}T23:00`)).toBe("upcoming");
+  });
+});
+
+describe("attached meals", () => {
+  const bodil = event("e-bodil", `${DAY}T19:00:00`, { title: "Eten met Bodil" });
+  const dahl: AgendaMealItem = { ...meal("dahl", "dinner"), attached: true, eventId: "e-bodil" };
+
+  it("names the event an attached meal hangs on, from the loaded items", () => {
+    expect(attachedEventTitle(dahl, [bodil, dahl])).toBe("Eten met Bodil");
+  });
+
+  it("names nothing for a day meal or an event that is not loaded", () => {
+    expect(attachedEventTitle(meal("plain", "dinner"), [bodil])).toBeNull();
+    expect(attachedEventTitle(dahl, [dahl])).toBeNull();
+  });
+
+  it("lists the events that have a meal", () => {
+    expect([...eventIdsWithMeals([bodil, dahl, meal("plain", "lunch")])]).toEqual(["e-bodil"]);
+    expect(eventIdsWithMeals([bodil]).size).toBe(0);
+  });
+
+  it("groups an attached meal with the day's meals and offers it for the basket", () => {
+    const groups = groupDay([bodil, dahl, meal("tosti", "lunch")], DAY);
+    expect(groups.meals.map((item) => item.id)).toEqual(["tosti", "dahl"]);
+    expect(basketSuggestion(groups.meals, new Set(["tosti"]))).toEqual({ mealIds: ["dahl"], title: "dahl" });
   });
 });
 

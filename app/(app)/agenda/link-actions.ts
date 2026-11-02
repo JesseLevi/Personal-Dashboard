@@ -2,7 +2,7 @@
 
 import { requireUserId } from "@/lib/boards/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getEventLinks, getEventRefsForTarget, searchLinkTargets } from "@/lib/agenda/link-queries";
+import { getEventLinks, getEventMeals, getEventRefsForTarget, searchLinkTargets } from "@/lib/agenda/link-queries";
 import {
   eventLinksInputSchema,
   linkErrorCode,
@@ -10,8 +10,8 @@ import {
   linkSearchInputSchema,
   targetRefsInputSchema,
   unlinkInputSchema,
+  type AgendaEventAttachments,
   type AgendaEventRef,
-  type AgendaLink,
   type AgendaLinkCandidate,
 } from "@/lib/agenda/links";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
@@ -30,12 +30,16 @@ async function read<T>(action: string, run: () => Promise<T>): Promise<AgendaAct
   }
 }
 
-export async function getAgendaEventLinks(input: unknown): Promise<AgendaActionResult<AgendaLink[]>> {
+/** The event's links and, read alongside, the meals attached to it (ADR-0058 §2). */
+export async function getAgendaEventLinks(input: unknown): Promise<AgendaActionResult<AgendaEventAttachments>> {
   const parsed = eventLinksInputSchema.safeParse(input);
   if (!parsed.success) return { success: false, error: "invalid-input" };
   const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
-  return read("getAgendaEventLinks", () => getEventLinks(parsed.data.eventId));
+  return read("getAgendaEventLinks", async () => {
+    const [links, meals] = await Promise.all([getEventLinks(parsed.data.eventId), getEventMeals(parsed.data.eventId)]);
+    return { links, meals };
+  });
 }
 
 export async function searchAgendaLinkTargets(input: unknown): Promise<AgendaActionResult<AgendaLinkCandidate[]>> {

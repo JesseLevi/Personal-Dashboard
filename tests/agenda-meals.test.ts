@@ -6,6 +6,7 @@ import {
   mealBasketLines,
   planDays,
   slotForCategoryName,
+  slotForEventStart,
   weekBasketLines,
   weekRange,
   type MealForBasket,
@@ -74,6 +75,30 @@ describe("mealBasketLines", () => {
 
   it("scales down", () => {
     expect(mealBasketLines(meal(ID, 2, [ingredient({ quantity: 100 })]))[0].quantity).toBe(50);
+  });
+});
+
+describe("slotForEventStart", () => {
+  it("puts an event before 11:00 on breakfast", () => {
+    expect(slotForEventStart("2026-11-02T00:00", false)).toBe("breakfast");
+    expect(slotForEventStart("2026-11-02T08:30:00", false)).toBe("breakfast");
+    expect(slotForEventStart("2026-11-02T10:59", false)).toBe("breakfast");
+  });
+
+  it("puts 11:00 up to 16:00 on lunch", () => {
+    expect(slotForEventStart("2026-11-02T11:00", false)).toBe("lunch");
+    expect(slotForEventStart("2026-11-02T15:59:00+01:00", false)).toBe("lunch");
+  });
+
+  it("puts 16:00 and later on dinner", () => {
+    expect(slotForEventStart("2026-11-02T16:00", false)).toBe("dinner");
+    expect(slotForEventStart("2026-11-02T19:00:00", false)).toBe("dinner");
+    expect(slotForEventStart("2026-11-02T23:59", false)).toBe("dinner");
+  });
+
+  it("puts an all-day event on dinner whatever its date says", () => {
+    expect(slotForEventStart("2026-11-02", true)).toBe("dinner");
+    expect(slotForEventStart("2026-11-02T08:00", true)).toBe("dinner");
   });
 });
 

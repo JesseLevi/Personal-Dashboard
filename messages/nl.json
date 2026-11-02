@@ -1243,7 +1243,7 @@
       "linkNoResults": "Niets gevonden voor “{query}”.",
       "linkRemoveLabel": "Verwijder {title}",
       "linkUntitled": "Zonder titel",
-      "linkPendingHint": "Gekozen koppelingen worden gelegd zodra de afspraak is opgeslagen.",
+      "linkPendingHint": "Gekozen koppelingen worden gelegd zodra de afspraak is opgeslagen. Een recept wordt een maaltijd bij de afspraak.",
       "summaryAllDay": "hele dag",
       "linkKinds": {
         "recipe": "Recept",
@@ -1256,6 +1256,8 @@
       "emptyLabel": "Nog niets gekoppeld.",
       "loadingLabel": "Laden...",
       "unlinkLabel": "Ontkoppel {title}",
+      "removeMealLabel": "Verwijder maaltijd {title}",
+      "mealKind": "Maaltijd",
       "untitled": "Zonder titel",
       "kinds": {
         "recipe": "Recept",
@@ -1558,6 +1560,8 @@
       "toBasket": "Naar mand",
       "inBasket": "In de mand",
       "chooseBasket": "Kies een mand",
+      "attachedMeta": "{moment} · bij {title}",
+      "withMeal": "Met maaltijd",
       "basketMissing": "{count, plural, one {{recipe} staat nog niet in de mand} other {# maaltijden staan nog niet in de mand}}",
       "labels": {
         "events": "Afspraken",

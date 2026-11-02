@@ -81,6 +81,7 @@ const db = vi.hoisted(() => ({ result: { data: null as unknown, error: null as u
 vi.mock("@/lib/boards/session", () => session);
 vi.mock("@/lib/agenda/link-queries", () => ({
   getEventLinks: vi.fn(),
+  getEventMeals: vi.fn(),
   getEventRefsForTarget: vi.fn(),
   searchLinkTargets: vi.fn(),
 }));
@@ -106,6 +107,26 @@ describe("link actions", () => {
     expect(await searchAgendaLinkTargets({ query: " soep ", kinds: ["recipe", "card"] })).toEqual({ success: true, data: [] });
     expect(queries.searchLinkTargets).toHaveBeenCalledWith("soep", ["recipe", "card"]);
     expect(await searchAgendaLinkTargets({ query: "soep", kinds: ["event"] })).toEqual({ success: false, error: "invalid-input" });
+  });
+
+  it("getAgendaEventLinks returns the links with the meals attached to the event", async () => {
+    const queries = await import("@/lib/agenda/link-queries");
+    const links = [{ id: OTHER, kind: "note" as const, targetId: ID, title: "Vragen" }];
+    const meals = [{ id: ID, recipeId: OTHER, title: "Dahl", slot: "dinner" as const }];
+    vi.mocked(queries.getEventLinks).mockResolvedValue(links);
+    vi.mocked(queries.getEventMeals).mockResolvedValue(meals);
+    const { getAgendaEventLinks } = await import("@/app/(app)/agenda/link-actions");
+    expect(await getAgendaEventLinks({ eventId: ID })).toEqual({ success: true, data: { links, meals } });
+    expect(queries.getEventMeals).toHaveBeenCalledWith(ID);
+    expect(await getAgendaEventLinks({ eventId: "x" })).toEqual({ success: false, error: "invalid-input" });
+  });
+
+  it("getAgendaEventLinks hides a failed read behind a generic code", async () => {
+    const queries = await import("@/lib/agenda/link-queries");
+    vi.mocked(queries.getEventLinks).mockResolvedValue([]);
+    vi.mocked(queries.getEventMeals).mockRejectedValue(new Error("db down"));
+    const { getAgendaEventLinks } = await import("@/app/(app)/agenda/link-actions");
+    expect(await getAgendaEventLinks({ eventId: ID })).toEqual({ success: false, error: "generic" });
   });
 
   it("linkToEvent refuses invalid input before touching the database", async () => {

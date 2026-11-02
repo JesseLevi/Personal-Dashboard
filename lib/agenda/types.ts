@@ -41,6 +41,8 @@ export interface AgendaMealItem extends AgendaItemBase {
   thumbnailPath: string | null;
   /** Attached to an event instead of a day: takes the event's date. */
   attached: boolean;
+  /** The event an attached meal hangs on (`meal_plans.calendar_event_id`), set by the query layer. */
+  eventId?: string;
   /** Order within a day and moment (`meal_plans.position`). */
   position: number;
 }

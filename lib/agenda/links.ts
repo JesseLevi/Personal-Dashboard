@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { AgendaErrorCode } from "@/lib/agenda/schemas";
+import type { MealSlot } from "@/lib/agenda/types";
 
 // Links from an event to a recipe, card or note (ADR-0037 s4). Pure half: types,
 // input schemas, error mapping and ordering. No server-only, so vitest and
@@ -14,6 +15,20 @@ export interface AgendaLink {
   kind: AgendaLinkKind;
   targetId: string;
   title: string;
+}
+
+/** A meal attached to the event (`meal_plans.calendar_event_id`): what a recipe under Koppelen becomes (ADR-0058 §2). */
+export interface AgendaEventMeal {
+  id: string;
+  recipeId: string;
+  title: string;
+  slot: MealSlot;
+}
+
+/** Everything "Gekoppeld" lists for one event. */
+export interface AgendaEventAttachments {
+  links: AgendaLink[];
+  meals: AgendaEventMeal[];
 }
 
 /** A search hit that can be linked. */

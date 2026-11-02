@@ -23,6 +23,7 @@ import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { AgendaSheetStop } from "@/lib/agenda/sheet";
 import type { AgendaShortcut } from "@/lib/agenda/shortcuts";
 import { addDays, agendaNow, isoWeek, loadWindow, spanToUtc, stepDate, visibleRange } from "@/lib/agenda/time";
+import type { AgendaEventMeal } from "@/lib/agenda/links";
 import type { AgendaItem, AgendaMealItem, AgendaPlannedCardItem, MealSlot } from "@/lib/agenda/types";
 import { fitAgendaView, persistAgendaView, type AgendaView } from "@/lib/agenda/view";
 import { useNewParam } from "@/lib/dom/use-new-param";
@@ -337,6 +338,14 @@ export function AgendaPage({
     else announceCardPlanned(added.title, added.date);
   }
 
+  // A meal row in "Gekoppeld" swaps the event panel for the meal panel; the meal is in the window once the panel reloaded it.
+  function openAttachedMeal(meal: AgendaEventMeal) {
+    const item = items.find((candidate): candidate is AgendaMealItem => candidate.kind === "meal" && candidate.id === meal.id);
+    if (!item) return;
+    setPanel((current) => ({ ...current, open: false }));
+    setMealPanel({ open: true, item });
+  }
+
   function handleItemClick(item: AgendaItem) {
     switch (item.kind) {
       case "event":
@@ -622,6 +631,9 @@ export function AgendaPage({
         onSearchLinks={searchAgendaLinkTargets}
         onLink={linkToEvent}
         onUnlink={unlinkFromEvent}
+        onPlanMeal={createMealPlan}
+        onDeleteMeal={deleteMealPlan}
+        onOpenMeal={openAttachedMeal}
         onNavigate={router.push}
       />
       <AgendaCalendarsPanel
