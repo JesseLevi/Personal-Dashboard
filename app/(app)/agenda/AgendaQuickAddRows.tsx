@@ -208,9 +208,9 @@ export function EventRows({ stacked, values, set, disabled, categories }: RowsPr
   );
 }
 
-export function MealRows({ stacked, values, set, disabled, recipes }: RowsProps & { recipes: PlanRecipe[] }) {
+// What a meal needs to be added: the recipe. The day and moment sit behind "Details".
+export function MealRecipeRows({ values, set, disabled, recipes }: RowsProps & { recipes: PlanRecipe[] }) {
   const t = useTranslations("components.agendaQuickAdd");
-  const tSlots = useTranslations("agenda.plan.slots");
   const found = values.recipeSearch.trim() === "" ? recipes : rankRecipes(values.recipeSearch, recipes);
   const shown = found.slice(0, SUGGESTED_RECIPES);
   const picked = recipes.find((recipe) => recipe.id === values.recipeId);
@@ -254,6 +254,16 @@ export function MealRows({ stacked, values, set, disabled, recipes }: RowsProps 
           })}
         </ul>
       )}
+    </>
+  );
+}
+
+export function MealWhenRows({ stacked, values, set, disabled }: RowsProps) {
+  const t = useTranslations("components.agendaQuickAdd");
+  const tSlots = useTranslations("agenda.plan.slots");
+
+  return (
+    <>
       <div className={stacked ? "flex flex-col gap-stack-md" : "flex gap-inline-md"}>
         <InputField
           label={t("fields.date")}
@@ -278,7 +288,8 @@ export function MealRows({ stacked, values, set, disabled, recipes }: RowsProps 
   );
 }
 
-export function TodoRows({
+// What a to-do needs to be added: the card (or a title for a new one). The target and the day sit behind "Details".
+export function TodoCardRows({
   values,
   set,
   disabled,
@@ -315,10 +326,27 @@ export function TodoRows({
             onChange={(event) => set("title", event.target.value)}
             disabled={disabled}
           />
-          <p className="text-sm font-semibold text-text-secondary">
-            {board ? t("todoTarget", { board: board.boardName, column: board.columnName }) : t("noBoard")}
-          </p>
+          {!board && <p className="text-sm font-semibold text-text-secondary">{t("noBoard")}</p>}
         </>
+      )}
+    </>
+  );
+}
+
+export function TodoWhenRows({
+  values,
+  set,
+  disabled,
+  board,
+}: RowsProps & { board: { boardName: string; columnName: string } | null }) {
+  const t = useTranslations("components.agendaQuickAdd");
+
+  return (
+    <>
+      {values.cardId === "" && board && (
+        <p className="text-sm font-semibold text-text-secondary">
+          {t("todoTarget", { board: board.boardName, column: board.columnName })}
+        </p>
       )}
       <InputField
         label={t("fields.date")}

@@ -3,6 +3,7 @@ import { Button } from "@/components/atoms/Button";
 import type { CalendarCategoryView } from "@/lib/agenda/calendars";
 import type { PlanCardGroup } from "@/lib/agenda/plan-cards";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
+import type { AgendaLinkCandidate } from "@/lib/agenda/links";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import type { AgendaSpan } from "@/lib/ui/agenda-calendar";
 import { AgendaQuickAdd } from "./AgendaQuickAdd";
@@ -56,6 +57,15 @@ const created = async (): Promise<AgendaActionResult<{ id: string }>> => ({ succ
 const planned = async (): Promise<AgendaActionResult> => ({ success: true, data: undefined });
 const noop = () => {};
 
+const linkTargets: AgendaLinkCandidate[] = [
+  { kind: "recipe", id: "r1", title: "Warme dal" },
+  { kind: "recipe", id: "r2", title: "Warme bloemkoolsoep" },
+  { kind: "card", id: "c1", title: "Cadeau voor Mila kopen" },
+  { kind: "card", id: "c2", title: "Warme kleren sorteren" },
+];
+const searchLinks = async (): Promise<AgendaActionResult<AgendaLinkCandidate[]>> => ({ success: true, data: linkTargets });
+const linked = async (): Promise<AgendaActionResult<{ id: string }>> => ({ success: true, data: { id: "link" } });
+
 const props = {
   open: true,
   onClose: noop,
@@ -70,6 +80,8 @@ const props = {
   onPlanCard: planned,
   onAdded: noop,
   onMoreDetails: noop,
+  onSearchLinks: searchLinks,
+  onLinkToEvent: linked,
 };
 
 function Stage({ children }: { children: (anchorRef: RefObject<HTMLElement | null>) => ReactNode }) {
@@ -102,8 +114,12 @@ const Window = ({
   slot,
   forceSheet,
   groups,
+  detailsOpen,
+  links,
 }: {
   text?: string;
+  detailsOpen?: boolean;
+  links?: { query?: string; picked?: AgendaLinkCandidate[] };
   slot?: AgendaSpan;
   forceSheet?: boolean;
   groups?: PlanCardGroup[];
@@ -117,6 +133,8 @@ const Window = ({
         initialText={text}
         slot={slot ?? null}
         forceSheet={forceSheet}
+        initialDetailsOpen={detailsOpen}
+        initialLinks={links}
       />
     )}
   </Stage>
@@ -169,3 +187,24 @@ export const FromSlot = () => (
 
 // The bottom sheet below `lg` follows the viewport, so this story forces it.
 export const Sheet = () => <Window forceSheet text="Etentje bij mama za 18u met Youri en Sanne" />;
+
+// Compact by default (ADR-0041): the kind, the text, the "Herkend" line, Details and Koppelen. The rows sit behind Details.
+export const Closed = () => <Window text="Etentje met Mila vrijdag 19:00 Groningen" />;
+export const DetailsOpen = () => <Window text="Etentje met Mila vrijdag 19:00 Groningen" detailsOpen />;
+// Koppelen open: picked items are chips above the search, a picked result is disabled.
+export const LinksOpen = () => (
+  <Window
+    text="Etentje met Mila vrijdag 19:00 Groningen"
+    links={{ query: "warme", picked: [{ kind: "recipe", id: "r1", title: "Warme dal" }] }}
+  />
+);
+export const MealDetailsOpen = () => <Window text="Warme dal donderdag" detailsOpen />;
+export const TodoDetailsOpen = () => <Window text="KPN bellen dinsdag" detailsOpen />;
+export const SheetDetailsOpen = () => <Window forceSheet text="Etentje met Mila vrijdag 19:00 Groningen" detailsOpen />;
+export const SheetLinksOpen = () => (
+  <Window
+    forceSheet
+    text="Etentje met Mila vrijdag 19:00 Groningen"
+    links={{ query: "warme", picked: [{ kind: "card", id: "c1", title: "Cadeau voor Mila kopen" }] }}
+  />
+);

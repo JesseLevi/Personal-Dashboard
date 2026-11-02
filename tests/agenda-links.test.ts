@@ -31,6 +31,13 @@ describe("link input schemas", () => {
     expect(linkSearchInputSchema.safeParse({ query: "a" }).success).toBe(false);
     expect(linkSearchInputSchema.safeParse({ query: "x".repeat(65) }).success).toBe(false);
   });
+
+  it("takes an optional, non-empty list of kinds", () => {
+    expect(linkSearchInputSchema.parse({ query: "soep", kinds: ["recipe", "card"] }).kinds).toEqual(["recipe", "card"]);
+    expect(linkSearchInputSchema.parse({ query: "soep" }).kinds).toBeUndefined();
+    expect(linkSearchInputSchema.safeParse({ query: "soep", kinds: [] }).success).toBe(false);
+    expect(linkSearchInputSchema.safeParse({ query: "soep", kinds: ["event"] }).success).toBe(false);
+  });
 });
 
 describe("linkErrorCode", () => {
@@ -90,6 +97,15 @@ describe("link actions", () => {
     session.requireUserId.mockResolvedValue({ userId: ID });
     db.result = { data: null, error: null };
     vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  it("searchAgendaLinkTargets passes the kinds filter on and refuses an unknown kind", async () => {
+    const queries = await import("@/lib/agenda/link-queries");
+    vi.mocked(queries.searchLinkTargets).mockResolvedValue([]);
+    const { searchAgendaLinkTargets } = await import("@/app/(app)/agenda/link-actions");
+    expect(await searchAgendaLinkTargets({ query: " soep ", kinds: ["recipe", "card"] })).toEqual({ success: true, data: [] });
+    expect(queries.searchLinkTargets).toHaveBeenCalledWith("soep", ["recipe", "card"]);
+    expect(await searchAgendaLinkTargets({ query: "soep", kinds: ["event"] })).toEqual({ success: false, error: "invalid-input" });
   });
 
   it("linkToEvent refuses invalid input before touching the database", async () => {

@@ -1233,7 +1233,22 @@
       "withNames": "Met {names}",
       "moreDetails": "Meer details",
       "addLabel": "Toevoegen",
-      "addingLabel": "Toevoegen..."
+      "addingLabel": "Toevoegen...",
+      "detailsLabel": "Details",
+      "linkLabel": "Koppelen",
+      "linkCountLabel": "Koppelen · {count}",
+      "linkSearchLabel": "Zoek een recept of kaart om te koppelen",
+      "linkSearchPlaceholder": "Zoek een recept of kaart",
+      "linkSearching": "Zoeken...",
+      "linkNoResults": "Niets gevonden voor “{query}”.",
+      "linkRemoveLabel": "Verwijder {title}",
+      "linkUntitled": "Zonder titel",
+      "linkPendingHint": "Gekozen koppelingen worden gelegd zodra de afspraak is opgeslagen.",
+      "summaryAllDay": "hele dag",
+      "linkKinds": {
+        "recipe": "Recept",
+        "card": "Kaart"
+      }
     },
     "agendaEventLinks": {
       "title": "Gekoppeld",
@@ -1519,6 +1534,7 @@
     },
     "plan": {
       "eventAddedNotice": "{title} toegevoegd op {date}",
+      "eventLinkFailedNotice": "Afspraak toegevoegd, koppelen mislukt",
       "plannedNotice": "Gepland als {slot} op {date}",
       "cardPlannedNotice": "{title} gepland op {date}",
       "cardClearedNotice": "{title} staat niet meer in de agenda",

@@ -26,6 +26,8 @@ export interface AgendaEventPrefill {
   description: string;
   calendarId: string;
   repeat: RepeatChoice;
+  /** Recipes and cards picked in quick add: linked once the event is saved. */
+  links?: AgendaLinkCandidate[];
 }
 
 export type AgendaPanelTarget =
@@ -285,6 +287,14 @@ export function AgendaEventPanel({
       if (!result.success) {
         setError(tErrors(result.error));
         return;
+      }
+      // Links picked in quick add can only be made now that the event exists; a refused one is left out.
+      const links = target.mode === "create" ? target.prefill?.links : undefined;
+      const createdId = (result.data as { id?: string } | undefined)?.id;
+      if (links?.length && onLink && createdId) {
+        await Promise.all(
+          links.map((link) => onLink({ eventId: createdId, kind: link.kind, targetId: link.id }).catch(() => null)),
+        );
       }
       onMutated?.();
       onClose();
