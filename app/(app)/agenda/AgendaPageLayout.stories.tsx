@@ -1,6 +1,8 @@
 import { AgendaCalendar, useIsNarrow } from "@/components/organisms/AgendaCalendar";
 import type { AgendaItem } from "@/lib/agenda/types";
-import type { AgendaView } from "@/lib/agenda/view";
+import { fitAgendaView, type AgendaView } from "@/lib/agenda/view";
+import { SIDEBAR_EXPANDED_WIDTH } from "@/components/organisms/Sidebar";
+import { cn } from "@/lib/ui/cn";
 import { useState } from "react";
 import { isoWeek, stepDate, visibleRange } from "@/lib/agenda/time";
 import { AgendaBody } from "./AgendaBody";
@@ -180,12 +182,46 @@ export const Swipe = () => {
   );
 };
 
-// A narrower page container: the cards are a row above the planner.
+// A narrow page container: the cards keep their column and the planner shows fewer days.
 export const Narrow = () => (
   <div className="w-[60rem]">
     <Page view="week" title="29 dec – 4 jan" />
   </div>
 );
+
+// The page at the real shell's dimensions (AppShellNav): sidebar spacer, page margins, `main`'s padding. The
+// planner's width picks the week, three days or one day; the visual suite shoots it at 1440, 1280 and 1024.
+const FittedPage = () => {
+  const [plannerWidth, setPlannerWidth] = useState<number | null>(null);
+  const view = fitAgendaView("week", plannerWidth);
+  return (
+    <div className="-m-8 flex min-h-screen items-stretch bg-surface-primary">
+      <div aria-hidden="true" className={cn("hidden shrink-0 md:block", SIDEBAR_EXPANDED_WIDTH)} />
+      <main className="flex min-w-0 flex-1 flex-col gap-page-stack pb-page-bottom pl-page-left pt-20">
+        <div className="flex min-w-0 flex-1 flex-col gap-page-stack">
+          <AgendaHeader
+            title="29 dec – 4 jan"
+            view="week"
+            weekNumber={1}
+            date={DATE}
+            onGoToDate={noop}
+            onViewChange={noop}
+            onPrevious={noop}
+            onNext={noop}
+            onToday={noop}
+            onNew={noop}
+            onOpenCalendars={noop}
+            weekToBasket={{ onSend: noPlan, baskets }}
+          />
+          <AgendaBody cards={<DayCards />} onPlannerWidth={setPlannerWidth}>
+            <AgendaCalendar items={items} view={view} date={DATE} scrollToNow={false} />
+          </AgendaBody>
+        </div>
+      </main>
+    </div>
+  );
+};
+export const InShell = () => <FittedPage />;
 export const Week = () => <Page view="week" title="29 dec – 4 jan" />;
 export const Month = () => <Page view="month" title="januari 2026" />;
 export const List = () => <Page view="list" title="29 dec – 4 jan" />;

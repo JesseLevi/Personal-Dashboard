@@ -29,13 +29,38 @@ function scrollers(root: Element): HTMLElement[] {
 // calendar fills the width. With `swipe` (below `lg`) the day follows the finger
 // and the neighbour day waits beside it.
 //
-// The day cards (ADR-0059) take a 20rem column left of the planner once the container is
-// 65rem wide: the 44rem week grid, the column and one gap. They scroll inside the body's
-// height. Narrower, and below `lg`, they are a row above the planner.
-export function AgendaBody({ children, swipe, cards }: { children: ReactNode; swipe?: AgendaBodySwipe; cards?: ReactNode }) {
+// From `lg` the day cards (ADR-0059) always take a 20rem column left of the planner and scroll
+// inside the body's height; `onPlannerWidth` reports the planner's width so the page can show
+// fewer days when it is narrow. Below `lg` the cards sit above the day view.
+export function AgendaBody({
+  children,
+  swipe,
+  cards,
+  onPlannerWidth,
+}: {
+  children: ReactNode;
+  swipe?: AgendaBodySwipe;
+  cards?: ReactNode;
+  onPlannerWidth?: (width: number) => void;
+}) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const paneRef = useRef<HTMLDivElement>(null);
   const neighbourRef = useRef<HTMLDivElement>(null);
+  const plannerRef = useRef<HTMLDivElement>(null);
+
+  const widthCallback = useRef(onPlannerWidth);
+  useLayoutEffect(() => {
+    widthCallback.current = onPlannerWidth;
+  });
+  useLayoutEffect(() => {
+    const planner = plannerRef.current;
+    if (!planner) return;
+    const report = () => widthCallback.current?.(planner.getBoundingClientRect().width);
+    report();
+    const observer = new ResizeObserver(report);
+    observer.observe(planner);
+    return () => observer.disconnect();
+  }, []);
 
   // The neighbour shows the time of day the shown day is scrolled to, so the grids line up. FullCalendar
   // scrolls a freshly drawn grid to its own start time a frame or two later, hence the repeats.
@@ -67,12 +92,10 @@ export function AgendaBody({ children, swipe, cards }: { children: ReactNode; sw
   useLayoutEffect(alignNeighbour, [peek, alignNeighbour]);
 
   return (
-    <div className="@container min-w-0 pr-page-right-equal">
-      <div className={cn("flex min-w-0 flex-col gap-stack-lg", cards && "lg:@min-[65rem]:grid lg:@min-[65rem]:grid-cols-[20rem_minmax(0,1fr)] lg:@min-[65rem]:items-start")}>
-        {cards && (
-          <div className="min-w-0 lg:@min-[65rem]:h-[calc(100dvh-14rem)] lg:@min-[65rem]:min-h-[28rem] lg:@min-[65rem]:overflow-y-auto">{cards}</div>
-        )}
-        <div className="h-[calc(100dvh-20rem)] min-h-[28rem] min-w-0 lg:h-[calc(100dvh-14rem)]">
+    <div className="min-w-0 pr-page-right-equal">
+      <div className={cn("flex min-w-0 flex-col gap-stack-lg", cards && "lg:grid lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start")}>
+        {cards && <div className="min-w-0 lg:h-[calc(100dvh-14rem)] lg:min-h-[28rem] lg:overflow-y-auto">{cards}</div>}
+        <div ref={plannerRef} className="h-[calc(100dvh-20rem)] min-h-[28rem] min-w-0 lg:h-[calc(100dvh-14rem)]">
           <div ref={viewportRef} className={cn("h-full", swipe && "touch-pan-y touch-pinch-zoom overflow-x-clip")}>
             <div ref={paneRef} className="relative h-full">
               {children}
