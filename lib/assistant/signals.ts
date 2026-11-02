@@ -47,7 +47,7 @@ export function firstPatternSource(payload: unknown): { type: string; id: string
   return parsed.success ? parsed.data.sources[0] : null;
 }
 
-export function recipeIdOf(payload: unknown): string | null {
+function recipeIdOf(payload: unknown): string | null {
   const parsed = cookPayload.safeParse(payload);
   return parsed.success ? parsed.data.recipe_id : null;
 }

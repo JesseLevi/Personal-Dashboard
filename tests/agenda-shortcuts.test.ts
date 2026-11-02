@@ -18,7 +18,6 @@ describe("agendaShortcut", () => {
     expect(agendaShortcut(press("w"), false)).toBe("week");
     expect(agendaShortcut(press("m"), false)).toBe("month");
     expect(agendaShortcut(press("l"), false)).toBe("list");
-    expect(agendaShortcut(press("p"), false)).toBe("tray");
     expect(agendaShortcut(press("ArrowLeft"), false)).toBe("previous");
     expect(agendaShortcut(press("ArrowRight"), false)).toBe("next");
   });
@@ -35,6 +34,7 @@ describe("agendaShortcut", () => {
 
   it("ignores other keys", () => {
     expect(agendaShortcut(press("x"), false)).toBeNull();
+    expect(agendaShortcut(press("p"), false)).toBeNull();
     expect(agendaShortcut(press("Enter"), false)).toBeNull();
     expect(agendaShortcut(press("ArrowUp"), false)).toBeNull();
   });
