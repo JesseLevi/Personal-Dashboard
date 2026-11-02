@@ -94,7 +94,7 @@ export function AgendaDaySheet({ stop, onStopChange, strip, plannerRef, children
         "flex min-w-0 flex-col lg:h-[calc(100dvh-14rem)] lg:min-h-[28rem]",
         // Below lg: fixed between the header and the tab bar (none from md, where the sidebar takes the left edge).
         // spacing-flag: top/bottom/left offsets and the 5.5rem fallback -- design/notes/AgendaPage.md
-        "max-lg:fixed max-lg:top-[var(--agenda-sheet-top,calc(env(safe-area-inset-top)+5.5rem))] max-lg:right-0 max-lg:bottom-[calc(3.5rem+env(safe-area-inset-bottom))] max-lg:left-0 max-lg:z-20 md:max-lg:bottom-0 md:max-lg:left-[198px]",
+        "max-lg:fixed max-lg:top-[var(--agenda-sheet-top,calc(env(safe-area-inset-top)+5.5rem))] max-lg:right-0 max-lg:bottom-[calc(3.5rem+env(safe-area-inset-bottom))] max-lg:left-0 max-lg:z-20 md:max-lg:bottom-0 md:max-lg:left-[var(--shell-sidebar,198px)]",
         // Same look as SidePanel's mobile sheet. spacing-flag: `rounded-tl-2xl` (#205), design/notes/AgendaPage.md
         "max-lg:overflow-hidden max-lg:rounded-tl-2xl max-lg:rounded-tr-control-outer max-lg:border-t max-lg:border-stroke-primary max-lg:bg-surface-highlight-white",
         "max-lg:transition-transform max-lg:duration-[var(--duration-base)] max-lg:ease-[var(--sheet-ease)] motion-reduce:transition-none",
