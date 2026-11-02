@@ -28,7 +28,11 @@ function scrollers(root: Element): HTMLElement[] {
 // from the viewport minus the chrome above it; the grid scrolls inside. The
 // calendar fills the width. With `swipe` (below `lg`) the day follows the finger
 // and the neighbour day waits beside it.
-export function AgendaBody({ children, swipe }: { children: ReactNode; swipe?: AgendaBodySwipe }) {
+//
+// The day cards (ADR-0059) take a 20rem column left of the planner once the container is
+// 65rem wide: the 44rem week grid, the column and one gap. They scroll inside the body's
+// height. Narrower, and below `lg`, they are a row above the planner.
+export function AgendaBody({ children, swipe, cards }: { children: ReactNode; swipe?: AgendaBodySwipe; cards?: ReactNode }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const paneRef = useRef<HTMLDivElement>(null);
   const neighbourRef = useRef<HTMLDivElement>(null);
@@ -63,22 +67,27 @@ export function AgendaBody({ children, swipe }: { children: ReactNode; swipe?: A
   useLayoutEffect(alignNeighbour, [peek, alignNeighbour]);
 
   return (
-    <div className="min-w-0 pr-page-right-equal">
-      <div className="h-[calc(100dvh-20rem)] min-h-[28rem] min-w-0 lg:h-[calc(100dvh-14rem)]">
-        <div ref={viewportRef} className={cn("h-full", swipe && "touch-pan-y touch-pinch-zoom overflow-x-clip")}>
-          <div ref={paneRef} className="relative h-full">
-            {children}
-            {swipe && peek !== null && (
-              <div
-                ref={neighbourRef}
-                data-agenda-peek=""
-                aria-hidden="true"
-                inert
-                className={cn("absolute top-0 h-full w-full", peek === 1 ? "left-full" : "right-full")}
-              >
-                {swipe.renderNeighbour(peek)}
-              </div>
-            )}
+    <div className="@container min-w-0 pr-page-right-equal">
+      <div className={cn("flex min-w-0 flex-col gap-stack-lg", cards && "lg:@min-[65rem]:grid lg:@min-[65rem]:grid-cols-[20rem_minmax(0,1fr)] lg:@min-[65rem]:items-start")}>
+        {cards && (
+          <div className="min-w-0 lg:@min-[65rem]:h-[calc(100dvh-14rem)] lg:@min-[65rem]:min-h-[28rem] lg:@min-[65rem]:overflow-y-auto">{cards}</div>
+        )}
+        <div className="h-[calc(100dvh-20rem)] min-h-[28rem] min-w-0 lg:h-[calc(100dvh-14rem)]">
+          <div ref={viewportRef} className={cn("h-full", swipe && "touch-pan-y touch-pinch-zoom overflow-x-clip")}>
+            <div ref={paneRef} className="relative h-full">
+              {children}
+              {swipe && peek !== null && (
+                <div
+                  ref={neighbourRef}
+                  data-agenda-peek=""
+                  aria-hidden="true"
+                  inert
+                  className={cn("absolute top-0 h-full w-full", peek === 1 ? "left-full" : "right-full")}
+                >
+                  {swipe.renderNeighbour(peek)}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

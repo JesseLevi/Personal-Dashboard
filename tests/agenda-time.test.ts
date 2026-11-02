@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   addDays,
+  agendaNow,
   addMonths,
   loadWindow,
   spanToUtc,
@@ -113,5 +114,12 @@ describe("agenda schemas", () => {
   it("validates a date range", () => {
     expect(rangeSchema.safeParse({ from: "2026-10-01", to: "2026-11-01" }).success).toBe(true);
     expect(rangeSchema.safeParse({ from: "2026-11-01", to: "2026-10-01" }).success).toBe(false);
+  });
+});
+
+describe("agendaNow", () => {
+  it("reads the Agenda-zone wall clock to the minute", () => {
+    expect(agendaNow(new Date("2026-11-02T08:05:42Z"))).toBe("2026-11-02T09:05");
+    expect(agendaNow(new Date("2026-07-01T22:30:00Z"))).toBe("2026-07-02T00:30");
   });
 });

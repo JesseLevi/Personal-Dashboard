@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { HOME_PATH } from "@/lib/today/home";
+import { HOME_PATH } from "@/lib/agenda/home";
 
 // #172: powers iOS/Android "Add to Home Screen" (App Router auto-routes this
 // to /manifest.webmanifest and injects the <link rel="manifest">). `name`/

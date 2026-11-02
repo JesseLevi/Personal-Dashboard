@@ -6,13 +6,15 @@ import { settleCookedMeals } from "@/lib/activity/settle";
 import { parseDateParam } from "@/lib/agenda/date-param";
 import { getCalendarOverview } from "@/lib/agenda/calendar-list";
 import { AGENDA_HIDDEN_COOKIE, parseHidden } from "@/lib/agenda/hidden";
+import { getMealCardData } from "@/lib/agenda/meal-cards";
 import { getSyncNotices } from "@/lib/agenda/notices";
 import { getAgendaItems, getPlannableCards, getQuickAddBoard } from "@/lib/agenda/queries";
 import { extendEventSeries } from "@/lib/agenda/series";
 import { syncStaleAccounts } from "@/lib/agenda/sync";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
-import { AGENDA_TIME_ZONE, loadWindow, todayInAgendaZone, wallClockToUtc } from "@/lib/agenda/time";
+import { AGENDA_TIME_ZONE, agendaNow, loadWindow, todayInAgendaZone, wallClockToUtc } from "@/lib/agenda/time";
 import { AGENDA_VIEW_COOKIE, DEFAULT_AGENDA_VIEW, isAgendaView } from "@/lib/agenda/view";
+import { listAssistantSignals } from "@/lib/assistant/signals";
 import { getRecipeCategoriesWithRecipes } from "@/lib/recipes/queries";
 import { getAuthenticatedUserId } from "@/lib/recipes/session";
 import { presignRecipeThumbnails } from "@/lib/recipes/thumbnails";
@@ -42,7 +44,7 @@ async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?:
   after(() => extendEventSeries(supabase).catch(() => console.error("[agenda] series extension failed")));
   // ADR-0044: meals whose day has passed become history, after the response.
   after(() => settleCookedMeals(supabase));
-  const [items, notices, categories, baskets, userId, cardGroups, calendars, todoBoard] = await Promise.all([
+  const [items, notices, categories, baskets, userId, cardGroups, calendars, todoBoard, signals] = await Promise.all([
     getAgendaItems({
       from: wallClockToUtc(`${window.from}T00:00:00`),
       to: wallClockToUtc(`${window.to}T00:00:00`),
@@ -56,6 +58,8 @@ async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?:
     getCalendarOverview(supabase),
     // A failed read only hides the "new card" target; the rest of the page still works.
     getQuickAddBoard().catch(() => null),
+    // ADR-0059: a failed read only means no signal cards.
+    listAssistantSignals(supabase, { limit: 3 }).catch(() => []),
   ]);
 
   // Imports still running or failed cannot be planned.
@@ -73,6 +77,12 @@ async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?:
     thumbnailPath: recipe.thumbnail_path,
   }));
 
+  // Day cards: the recipe behind each meal, for its thumbnail (presigned above) and the basket links.
+  const mealCards = await getMealCardData(items.filter((item) => item.kind === "meal").map((item) => item.id));
+  const mealThumbnails = Object.fromEntries(
+    Object.values(mealCards.recipeIds).flatMap((recipeId) => (thumbnails[recipeId] ? [[recipeId, thumbnails[recipeId]]] : [])),
+  );
+
   return (
     <AgendaPage
       initialView={view}
@@ -86,6 +96,10 @@ async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?:
       cardGroups={cardGroups}
       todoBoard={todoBoard}
       baskets={baskets}
+      signals={signals}
+      initialMealCards={mealCards}
+      mealThumbnails={mealThumbnails}
+      initialNow={agendaNow()}
     />
   );
 }

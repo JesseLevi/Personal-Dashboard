@@ -434,7 +434,6 @@
       "expandLabel": "Zijbalk uitklappen",
       "collapseLabel": "Zijbalk inklappen",
       "items": {
-        "today": "Vandaag",
         "todo": "Te doen",
         "notes": "Notities",
         "recipes": "Recepten",
@@ -1521,6 +1520,27 @@
         "dinner": "diner",
         "snack": "snack"
       }
+    },
+    "dayCards": {
+      "heading": "Vandaag · {date}",
+      "empty": "Niets gepland op {weekday}",
+      "allDay": "Hele dag",
+      "now": "Nu",
+      "more": "+{count} meer",
+      "less": "Minder",
+      "planned": "Gepland",
+      "deadline": "Deadline",
+      "no": "Nee",
+      "toBasket": "Naar mand",
+      "inBasket": "In de mand",
+      "chooseBasket": "Kies een mand",
+      "basketMissing": "{count, plural, one {{recipe} staat nog niet in de mand} other {# maaltijden staan nog niet in de mand}}",
+      "labels": {
+        "events": "Afspraken",
+        "meals": "Eten",
+        "cards": "Te doen",
+        "suggestion": "Suggestie"
+      }
     }
   },
   "assistant": {
@@ -1557,25 +1577,5 @@
   "offline": {
     "title": "Je bent offline",
     "body": "Deze pagina is niet beschikbaar zonder verbinding. Een mand die je eerder op dit apparaat hebt geopend, kun je offline wel bekijken."
-  },
-  "vandaag": {
-    "title": "Vandaag",
-    "events": "Afspraken",
-    "noEvents": "Geen afspraken vandaag.",
-    "allDay": "Hele dag",
-    "meals": "Eten",
-    "noMeals": "Nog niets gepland.",
-    "dayToBasket": "Dag naar mand",
-    "dayToBasketAdded": "In de mand",
-    "chooseBasket": "Kies een mand",
-    "cards": "Kaarten",
-    "noCards": "Geen geplande kaarten of deadlines.",
-    "planned": "Gepland",
-    "deadline": "Deadline",
-    "basket": "Mand",
-    "basketCount": "{count, plural, =0 {Niets open in je mand} one {# item open} other {# items open}}",
-    "openBasket": "Naar de mand",
-    "signals": "Misschien handig",
-    "openAgenda": "Naar de Agenda"
   }
 }

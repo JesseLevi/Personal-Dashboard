@@ -4,6 +4,7 @@ import type { AgendaView } from "@/lib/agenda/view";
 import { useState } from "react";
 import { isoWeek, stepDate, visibleRange } from "@/lib/agenda/time";
 import { AgendaBody } from "./AgendaBody";
+import { AgendaDayCards } from "./AgendaDayCards";
 import { AgendaHeader } from "./AgendaHeader";
 import { AgendaPageSkeleton } from "./AgendaPageSkeleton";
 import { useAgendaShortcuts } from "./useAgendaShortcuts";
@@ -45,6 +46,20 @@ const items: AgendaItem[] = [
 const noPlan = async () => ({ success: true as const, data: undefined });
 const baskets = [{ id: "own", name: "Boodschappen", shared: false }];
 
+const DayCards = () => (
+  <AgendaDayCards
+    day={DATE}
+    today={DATE}
+    now="2026-01-01T14:00"
+    items={items}
+    basket={{ m1: false, m2: false, m3: true }}
+    baskets={baskets}
+    onOpenItem={noop}
+    onSignal={async () => ({ success: true })}
+    onDayToBasket={noPlan}
+  />
+);
+
 // The real page sits on `surface-primary`, not the story canvas.
 const Surface = ({ children }: { children: React.ReactNode }) => (
   <div className="-m-8 flex flex-col gap-page-stack bg-surface-primary p-8">{children}</div>
@@ -66,7 +81,7 @@ const PageContent = ({ view, title }: { view: AgendaView; title: string }) => (
       onOpenCalendars={noop}
       weekToBasket={{ onSend: noPlan, baskets }}
     />
-    <AgendaBody>
+    <AgendaBody cards={<DayCards />}>
       <AgendaCalendar items={items} view={view} date={DATE} scrollToNow={false} />
     </AgendaBody>
   </>
@@ -81,7 +96,7 @@ const Page = (props: { view: AgendaView; title: string }) => (
 export const Overview = () => (
   <Surface>
     <StoryIntro
-      what="The agenda page as composed in AgendaPage: header and the calendar, full width. Interactive wires navigation and keys."
+      what="The agenda page as composed in AgendaPage: header, the day cards and the calendar. Interactive wires navigation and keys."
       note="AgendaPage"
     />
     <PageContent view="week" title="29 dec – 4 jan" />
@@ -118,7 +133,7 @@ export const Interactive = () => {
         onToday={() => setDate(DATE)}
         onNew={noop}
       />
-      <AgendaBody>
+      <AgendaBody cards={<DayCards />}>
         <AgendaCalendar items={items} view={view} date={date} scrollNowKey={scrollNowKey} />
       </AgendaBody>
     </Surface>
@@ -165,6 +180,12 @@ export const Swipe = () => {
   );
 };
 
+// A narrower page container: the cards are a row above the planner.
+export const Narrow = () => (
+  <div className="w-[60rem]">
+    <Page view="week" title="29 dec – 4 jan" />
+  </div>
+);
 export const Week = () => <Page view="week" title="29 dec – 4 jan" />;
 export const Month = () => <Page view="month" title="januari 2026" />;
 export const List = () => <Page view="list" title="29 dec – 4 jan" />;
