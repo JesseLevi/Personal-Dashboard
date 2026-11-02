@@ -101,7 +101,7 @@ function PaletteOption({ id, icon, title, meta, active, trailing, onActivate, on
       onClick={onChoose}
       className={cn(
         "flex w-full items-center gap-inline-lg rounded-control-outer border border-transparent p-component-sm text-left",
-        active && "border-stroke-primary bg-surface-primary",
+        active && "border-stroke-primary bg-surface-secondary",
       )}
     >
       <span
@@ -368,7 +368,8 @@ export function CommandPalette({
     }
     if (row.kind === "board" || row.kind === "project") {
       const item = row.kind === "board" ? row.board : row.project;
-      const percent = boardPercent(item);
+      // Only a project shows progress; a board row carries just its counts in the meta.
+      const percent = row.kind === "project" ? boardPercent(item) : null;
       const meta =
         row.kind === "board"
           ? t(row.board.isFavorite ? "boardMetaFavorite" : "boardMeta", { total: item.total, done: item.done })
@@ -442,7 +443,7 @@ export function CommandPalette({
         </h2>
         <div className="pointer-events-auto relative isolate">
           <div aria-hidden="true" className="absolute inset-x-component-lg -top-component-sm bottom-0 -z-10 rounded-container bg-surface-secondary" />
-          <div className="rounded-container border border-stroke-primary bg-surface-primary p-component-sm">
+          <div className="rounded-container border border-stroke-primary bg-surface-highlight-white-selected p-component-sm">
             <div className="flex flex-col overflow-hidden rounded-card border border-stroke-primary bg-surface-highlight-white">
               <div className="border-b border-stroke-lines p-component-sm">
                 <div className="flex items-center gap-inline-md rounded-control-outer bg-surface-primary px-component-md">
