@@ -14,7 +14,7 @@ export type PaletteRow =
 
 export type PaletteGroup = { key: string; label: string; rows: PaletteRow[] };
 
-/** Whole percent of cards done, clamped to 0-100; null for a board without cards (no ring). */
+/** Whole percent done, clamped to 0-100; null when `total` is 0 (no ring). The palette only rings projects. */
 export function boardPercent(board: Pick<CommandBoard, "total" | "done">): number | null {
   if (board.total <= 0) return null;
   return Math.min(100, Math.max(0, Math.round((board.done / board.total) * 100)));

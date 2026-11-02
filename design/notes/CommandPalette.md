@@ -5,9 +5,9 @@ Figma: none, designed in code from the user's reference screenshots (ADR-0034, A
 A modal palette is not a `SidePanel`: it is centred, has no drawer shape, no drag handle and no footer actions. ADR-0048 makes it the one modal that is not a `SidePanel`. It keeps `SidePanel`'s conventions and the search logic and keyboard model of the `SearchPanel` it replaced (`lib/search/panel.ts`).
 
 ## Anatomy
-Scrim, then a dialog. Dialog = decorative "stack" layer (`bg-surface-secondary`, inset, peeks above) behind a frame (`bg-surface-primary`, `rounded-container`, `p-component-sm`) around a white body (`rounded-card`, 1 px `stroke-primary`) with three strips:
+Scrim, then a dialog. Dialog = decorative "stack" layer (`bg-surface-secondary`, inset, peeks above) behind a frame (`bg-surface-highlight-white-selected`, `rounded-container`, `p-component-sm`) around a white body (`rounded-card`, 1 px `stroke-primary`) with three strips:
 - **Field**: `Search` icon, a plain `<input>` (combobox), `Kbd` esc from `md`; below `md` an icon-only `Button` X instead.
-- **List** (scrolls, max `min(60vh, 560px)`): groups with an `h3` and a count, then rows. Row = 40 px tile (`Icon`), title + meta (both truncate), optional trailing ring + percentage, and a `Kbd` ↵ slot.
+- **List** (scrolls, max `min(60vh, 560px)`): groups with an `h3` and a count, then rows. Row = 40 px tile (`Icon`), title + meta (both truncate), optional trailing ring + percentage (project rows only), and a `Kbd` ↵ slot. Highlighted row: `stroke-primary` border on `surface-secondary`.
 - **Footer**: `Kbd` hints (↑↓ bewegen, ↵ openen, esc sluiten) from `md`, and the smart-search hint button right-aligned.
 
 ## Contract
@@ -31,8 +31,9 @@ Scrim, then a dialog. Dialog = decorative "stack" layer (`bg-surface-secondary`,
 - **Smart-search hint** is a short footer button ("Slim zoeken staat uit. Aanzetten?") instead of a long line; it closes the palette and opens Settings. On a phone the footer only exists while the hint applies.
 - **Focus**: `autoFocusField` focuses the input; otherwise the dialog itself, so a phone keeps its keyboard down. Own focus trap; focus returns to the trigger on close. Closed = `invisible` + `inert` + `aria-hidden`, `transition-discrete`, `motion-reduce:transition-none`.
 - **Phone**: top-anchored, `max-md:p-component-lg` gutter, safe-area top via `max()`. The dialog root is `pointer-events-none`, so a tap in the gutter reaches the scrim.
-- **Project row** = board row markup: `ListTodo` tile, meta "{done}/{total} subtaken · {board}", same ring and percentage rule as a board (`boardPercent` on subtasks).
-- Board progress is `done / total` rounded; no ring when `total === 0`; green at 100 %, else blue.
+- **Project row** = board row markup: `ListTodo` tile, meta "{done}/{total} subtaken · {board}", plus a trailing ring and percentage (`boardPercent` on subtasks): `done / total` rounded, no ring when `total === 0`, green at 100 %, else blue.
+- **Board row has no ring or percentage** (user decision, 2026-11-02): progress belongs to projects; the board meta keeps its card counts.
+- **Frame and highlight tokens are picked for dark mode**: the frame (`surface-highlight-white-selected`, dark stone-600) sits lighter than the body (stone-700), and the highlighted row (`surface-secondary`, dark stone-800) only a step darker. In light the frame stays stone-100 and the row is stone-200.
 
 ## Token gaps and flags
 - No sizing token: `md:w-[640px]`, `md:top-[12vh]`, `max-h-[min(60vh,560px)]`, `z-40`/`z-50` (as `SidePanel` level 1). Safe-area `max(1rem, env(...))` only adds space.
