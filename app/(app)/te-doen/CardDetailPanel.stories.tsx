@@ -328,6 +328,40 @@ export const WithSubtasks = () => (
   </div>
 );
 
+// Edit mode with no subtasks: the hint says each line becomes a checkbox row.
+export const SubtasksEmpty = () => (
+  <div className="min-h-screen">
+    <CardDetailPanel
+      open
+      onClose={() => {}}
+      columns={columns}
+      target={{ mode: "edit", card: sampleCard }}
+      onCreateCard={mockCreateCard}
+      onUpdateCard={mockUpdateCard}
+      onMoveCard={mockMoveCard}
+      onDeleteCard={mockDeleteCard}
+      {...subtaskMocks()}
+    />
+  </div>
+);
+
+// One subtask: the hint is gone and the add row sits under the checkbox row.
+export const SubtasksOne = () => (
+  <div className="min-h-screen">
+    <CardDetailPanel
+      open
+      onClose={() => {}}
+      columns={columns}
+      target={{ mode: "edit", card: { ...sampleCard, subtaskTotal: 1, subtaskDone: 0 } }}
+      onCreateCard={mockCreateCard}
+      onUpdateCard={mockUpdateCard}
+      onMoveCard={mockMoveCard}
+      onDeleteCard={mockDeleteCard}
+      {...subtaskMocks([subtask("s1", "Taart bestellen", 1)])}
+    />
+  </div>
+);
+
 // Every subtask checked and the card outside a done column: the panel offers to move it, never does it itself.
 export const SubtasksAllDone = () => (
   <div className="min-h-screen">

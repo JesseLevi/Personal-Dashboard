@@ -591,6 +591,7 @@
       "cancelLabel": "Annuleren",
       "subtasks": {
         "title": "Subtaken",
+        "emptyHint": "Splits de kaart op in stappen om af te vinken. Enter voegt toe; plak meerdere regels voor meerdere stappen.",
         "addLabel": "Subtaak toevoegen",
         "editLabel": "Subtaak bewerken",
         "moreLabel": "Meer acties voor {title}",
