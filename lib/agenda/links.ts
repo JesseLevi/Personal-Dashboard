@@ -50,8 +50,13 @@ export const targetRefsInputSchema = z.object({
   targetId: z.uuid(),
 });
 
+/** What quick add may link at creation: notes need a body to be worth linking, so they stay in the panel. */
+export const QUICK_ADD_LINK_KINDS = ["recipe", "card"] as const satisfies readonly AgendaLinkKind[];
+
 export const linkSearchInputSchema = z.object({
   query: z.string().trim().min(LINK_SEARCH_MIN).max(LINK_SEARCH_MAX),
+  /** Limits the search to these kinds; absent searches all of them. */
+  kinds: z.array(z.enum(AGENDA_LINK_KINDS)).min(1).max(AGENDA_LINK_KINDS.length).optional(),
 });
 
 /** The `calendar_event_links` column that holds a target of this kind. */

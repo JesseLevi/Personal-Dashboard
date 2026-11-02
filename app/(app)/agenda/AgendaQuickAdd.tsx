@@ -2,7 +2,6 @@
 "use client";
 
 import {
-  Fragment,
   useCallback,
   useEffect,
   useMemo,
@@ -23,6 +22,7 @@ import { InputField } from "@/components/atoms/InputField";
 import { ButtonToggle } from "@/components/molecules/ButtonToggle";
 import { useIsNarrow } from "@/components/organisms/AgendaCalendar";
 import type { CalendarCategoryView } from "@/lib/agenda/calendars";
+import type { AgendaLinkCandidate } from "@/lib/agenda/links";
 import type { PlanCardGroup, QuickAddBoard } from "@/lib/agenda/plan-cards";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import {
@@ -32,8 +32,10 @@ import {
   type QuickAddLocale,
   type QuickAddResult,
 } from "@/lib/agenda/quick-add";
+import { findPlanCard } from "@/lib/agenda/card-select";
 import { defaultSlotForCategory } from "@/lib/agenda/meals";
-import { choiceToRule } from "@/lib/agenda/repeat";
+import { quickAddSummary } from "@/lib/agenda/quick-add-summary";
+import { choiceToRule, type RepeatChoice } from "@/lib/agenda/repeat";
 import type { AgendaActionResult } from "@/lib/agenda/schemas";
 import { addDays, spanToUtc } from "@/lib/agenda/time";
 import type { MealSlot } from "@/lib/agenda/types";
@@ -44,11 +46,20 @@ import { useSheetDrag } from "@/lib/dom/use-sheet-drag";
 import { cn } from "@/lib/ui/cn";
 import type { AgendaSpan } from "@/lib/ui/agenda-calendar";
 import type { AgendaEventPrefill } from "./AgendaEventPanel";
-import { EventRows, MealRows, TodoRows, type QuickAddValues, type SetQuickAddValue } from "./AgendaQuickAddRows";
+import { QuickAddLinks } from "./AgendaQuickAddLinks";
+import {
+  EventRows,
+  MealRecipeRows,
+  MealWhenRows,
+  TodoCardRows,
+  TodoWhenRows,
+  type QuickAddValues,
+  type SetQuickAddValue,
+} from "./AgendaQuickAddRows";
 
 /** What a successful add reports, for the notice and the reload. */
 export type QuickAddAdded =
-  | { kind: "event"; title: string; date: string }
+  | { kind: "event"; title: string; date: string; linkFailed?: boolean }
   | { kind: "meal"; title: string; date: string; slot: MealSlot }
   | { kind: "todo"; title: string; date: string };
 
@@ -71,9 +82,16 @@ export interface AgendaQuickAddProps {
   onCreateCard: (input: unknown) => Promise<AgendaActionResult<{ id: string }>>;
   onPlanCard: (cardId: string, plannedFor: string) => Promise<AgendaActionResult>;
   onAdded: (added: QuickAddAdded) => void;
+  /** Without both link props the "Koppelen" button is absent. */
+  onSearchLinks?: (input: unknown) => Promise<AgendaActionResult<AgendaLinkCandidate[]>>;
+  onLinkToEvent?: (input: unknown) => Promise<AgendaActionResult<{ id: string }>>;
   onMoreDetails: (span: AgendaSpan, prefill: AgendaEventPrefill) => void;
   /** Story-only: the text the window starts with. */
   initialText?: string;
+  /** Story-only: starts with Details open. */
+  initialDetailsOpen?: boolean;
+  /** Story-only: starts with Koppelen open, with this search text and these picks. */
+  initialLinks?: { query?: string; picked?: AgendaLinkCandidate[] };
   /** Story-only: renders the bottom sheet whatever the viewport. */
   forceSheet?: boolean;
 }
@@ -85,6 +103,8 @@ const KIND_ITEMS: ReadonlyArray<{ value: QuickAddKind; icon: IconName }> = [
 ];
 const DEFAULT_START = "09:00";
 const TEXT_ID = "agenda-quick-add-text";
+const DETAILS_ID = "agenda-quick-add-details";
+const LINKS_ID = "agenda-quick-add-links";
 const SHEET_ID = "agenda-quick-add-sheet";
 // Safety net if `animationend` never fires (hidden tab, animations switched off): the sheet unmounts anyway.
 const EXIT_FALLBACK_MS = 600;
@@ -133,26 +153,13 @@ function baseValues(
   };
 }
 
-function Recognised({ text, parsed }: { text: string; parsed: QuickAddResult }) {
+// The final values, so a field changed by hand shows here too (it sits behind "Details").
+function Recognised({ parts }: { parts: string[] }) {
   const t = useTranslations("components.agendaQuickAdd");
-  if (parsed.spans.length === 0) return null;
-  let at = 0;
+  if (parts.length === 0) return null;
   return (
     <p className="text-sm font-semibold text-text-secondary" aria-live="polite">
-      {t("recognisedLabel")}:{" "}
-      {parsed.spans.map((span) => {
-        const before = text.slice(at, span.start);
-        at = span.end;
-        return (
-          <Fragment key={span.start}>
-            {before}
-            <mark className="rounded-control-inner bg-event-amber-surface px-component-xs text-event-amber-text">
-              {text.slice(span.start, span.end)}
-            </mark>
-          </Fragment>
-        );
-      })}
-      {text.slice(at)}
+      {t("recognisedLabel")}: {parts.join(" · ")}
     </p>
   );
 }
@@ -171,16 +178,26 @@ function QuickAddForm({
   onPlanCard,
   onAdded,
   onMoreDetails,
+  onSearchLinks,
+  onLinkToEvent,
   initialText = "",
+  initialDetailsOpen = false,
+  initialLinks,
   sheet,
 }: Omit<AgendaQuickAddProps, "open" | "anchorRef" | "forceSheet"> & { sheet: boolean }) {
   const t = useTranslations("components.agendaQuickAdd");
   const tErrors = useTranslations("agenda.errors");
+  const tPanel = useTranslations("components.agendaPanel");
+  const tSlots = useTranslations("agenda.plan.slots");
+  const tAgenda = useTranslations("agenda");
   const locale = useLocale() as QuickAddLocale;
   const [now] = useState(() => new Date());
   const [text, setText] = useState(initialText);
   const [pickedKind, setPickedKind] = useState<QuickAddKind | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(initialDetailsOpen);
+  const [linksOpen, setLinksOpen] = useState(initialLinks !== undefined);
+  const [picked, setPicked] = useState<AgendaLinkCandidate[]>(initialLinks?.picked ?? []);
   const [isPending, startTransition] = useTransition();
 
   const parsed = useMemo(
@@ -215,13 +232,35 @@ function QuickAddForm({
         ? recipe !== undefined
         : values.cardId !== "" || (values.title.trim() !== "" && todoBoard !== null));
 
+  const canLink = onSearchLinks !== undefined && onLinkToEvent !== undefined;
+  const pickedCard = findPlanCard(cardGroups, values.cardId);
+  // A problem in a field behind "Details" opens it, so the reason the button is off is in view.
+  const hiddenProblem =
+    values.date === "" || (kind === "event" && (!timeIsValid || (values.title.trim() === "" && text.trim() !== "")));
+  const showDetails = detailsOpen || hiddenProblem || error !== null;
+  const summary = quickAddSummary(
+    kind,
+    { ...values, pickedTitle: kind === "meal" ? (recipe?.title ?? "") : (pickedCard?.card.title ?? "") },
+    {
+      allDay: t("summaryAllDay"),
+      moment: (slotKey) => tSlots(slotKey),
+      people: (names) => t("withNames", { names }),
+      repeat: (choice: RepeatChoice) => tPanel(`repeatOptions.${choice}`),
+      category: (id) => {
+        const category = categories.find((candidate) => candidate.id === id);
+        return !category || category.isDefault ? null : (category.name ?? tAgenda("defaultCalendarName"));
+      },
+    },
+    locale,
+  );
+
   function eventSpan(): AgendaSpan {
     if (values.allDay) return { allDay: true, start: values.date, end: addDays(values.date, 1) };
     return { allDay: false, start: `${values.date}T${values.start}:00`, end: `${values.date}T${values.end}:00` };
   }
 
   function prefill(): AgendaEventPrefill {
-    return { title: values.title.trim(), location: values.place.trim(), description, calendarId: values.categoryId, repeat: values.repeat };
+    return { title: values.title.trim(), location: values.place.trim(), description, calendarId: values.categoryId, repeat: values.repeat, links: picked };
   }
 
   async function add(): Promise<AgendaActionResult<unknown>> {
@@ -247,7 +286,15 @@ function QuickAddForm({
       ...(values.categoryId ? { calendarId: values.categoryId } : {}),
       ...(rule ? { repeat: rule } : {}),
     });
-    if (result.success) onAdded({ kind: "event", title: values.title.trim(), date });
+    if (!result.success) return result;
+    // The event stays when a link fails: no rollback, the page says so.
+    const eventId = result.data.id;
+    const outcomes = await Promise.all(
+      picked.map((item) =>
+        onLinkToEvent!({ eventId, kind: item.kind, targetId: item.id }).catch((): AgendaActionResult => ({ success: false, error: "generic" })),
+      ),
+    );
+    onAdded({ kind: "event", title: values.title.trim(), date, linkFailed: outcomes.some((outcome) => !outcome.success) });
     return result;
   }
 
@@ -286,13 +333,47 @@ function QuickAddForm({
           onChange={(event) => setText(event.target.value)}
           disabled={isPending}
         />
-        <Recognised text={text} parsed={parsed} />
+        {text.trim() !== "" && <Recognised parts={summary} />}
         {noDay && (
           <p className="text-sm font-semibold text-text-secondary">{t(slotValue ? "noDaySlot" : "noDayToday")}</p>
         )}
-        {kind === "event" && <EventRows stacked={sheet} values={values} set={set} disabled={isPending} categories={categories} />}
-        {kind === "meal" && <MealRows stacked={sheet} values={values} set={set} disabled={isPending} recipes={recipes} />}
-        {kind === "todo" && <TodoRows values={values} set={set} disabled={isPending} groups={cardGroups} board={todoBoard} />}
+        {kind === "meal" && <MealRecipeRows values={values} set={set} disabled={isPending} recipes={recipes} />}
+        {kind === "todo" && <TodoCardRows values={values} set={set} disabled={isPending} groups={cardGroups} board={todoBoard} />}
+        <div className="flex items-center gap-inline-sm">
+          <Button
+            variant="transparent"
+            size="small"
+            icon="ChevronDown"
+            aria-expanded={showDetails}
+            aria-controls={DETAILS_ID}
+            className="aria-expanded:[&_svg]:rotate-180 [&_svg]:transition-transform motion-reduce:[&_svg]:transition-none"
+            onClick={() => setDetailsOpen(!showDetails)}
+          >
+            {t("detailsLabel")}
+          </Button>
+          {kind === "event" && canLink && (
+            <Button
+              variant="transparent"
+              size="small"
+              icon="Plus"
+              aria-expanded={linksOpen}
+              aria-controls={LINKS_ID}
+              onClick={() => setLinksOpen(!linksOpen)}
+            >
+              {picked.length > 0 && !linksOpen ? t("linkCountLabel", { count: picked.length }) : t("linkLabel")}
+            </Button>
+          )}
+        </div>
+        {kind === "event" && canLink && linksOpen && (
+          <QuickAddLinks id={LINKS_ID} picked={picked} onChange={setPicked} onSearch={onSearchLinks} initialQuery={initialLinks?.query} disabled={isPending} />
+        )}
+        {showDetails && (
+          <div id={DETAILS_ID} className="flex flex-col gap-stack-md">
+            {kind === "event" && <EventRows stacked={sheet} values={values} set={set} disabled={isPending} categories={categories} />}
+            {kind === "meal" && <MealWhenRows stacked={sheet} values={values} set={set} disabled={isPending} />}
+            {kind === "todo" && <TodoWhenRows values={values} set={set} disabled={isPending} board={todoBoard} />}
+          </div>
+        )}
         {error && <p className="text-base font-semibold text-priority-urgent">{error}</p>}
       </div>
       <div

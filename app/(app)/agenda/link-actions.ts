@@ -43,7 +43,7 @@ export async function searchAgendaLinkTargets(input: unknown): Promise<AgendaAct
   if (!parsed.success) return { success: false, error: "invalid-input" };
   const auth = await requireUserId();
   if ("error" in auth) return { success: false, error: auth.error };
-  return read("searchAgendaLinkTargets", () => searchLinkTargets(parsed.data.query));
+  return read("searchAgendaLinkTargets", () => searchLinkTargets(parsed.data.query, parsed.data.kinds));
 }
 
 /** For the "In agenda" line on a card; recipes and notes load theirs on the server. */

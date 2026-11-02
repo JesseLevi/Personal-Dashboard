@@ -14,6 +14,7 @@ Page-level composition like `AgendaEventPanel`; no new leaf component. The one e
 - A link change calls `onMutated` without closing, so the calendar's link counter (`agenda_items.link_count`, shown by `AgendaCalendarItem`) refreshes.
 
 ## Deliberate decisions
+- **Quick add links at creation** (#745): quick add searches only recipes and cards (`kinds` on the search action) and links them right after `createEvent`; see `AgendaPage.md`.
 - **Unlink needs no confirm**: a link is cheap and recreated in two taps. Deleting the event or the target removes links by cascade; the target is never deleted by an unlink.
 - **Search is title-only**, 5 hits per kind, `ilike`, minimum 2 characters (as `MemberSearchPanel`). RLS decides what is searchable, so shared recipes appear when the caller can read them. Note body text is not searched here (`searchNotes` does that for the notes page).
 - **Errors are codes** under `agenda.errors.*`: `already-linked` (unique violation), `forbidden` (RLS: the event is not editable or an end is not readable), `not-found` (FK), else `generic`. Database text never reaches the UI.

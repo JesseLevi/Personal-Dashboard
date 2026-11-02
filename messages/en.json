@@ -1232,7 +1232,22 @@
       "withNames": "With {names}",
       "moreDetails": "More details",
       "addLabel": "Add",
-      "addingLabel": "Adding..."
+      "addingLabel": "Adding...",
+      "detailsLabel": "Details",
+      "linkLabel": "Link",
+      "linkCountLabel": "Link · {count}",
+      "linkSearchLabel": "Search a recipe or card to link",
+      "linkSearchPlaceholder": "Search a recipe or card",
+      "linkSearching": "Searching...",
+      "linkNoResults": "Nothing found for “{query}”.",
+      "linkRemoveLabel": "Remove {title}",
+      "linkUntitled": "Untitled",
+      "linkPendingHint": "Chosen links are made as soon as the event is saved.",
+      "summaryAllDay": "all day",
+      "linkKinds": {
+        "recipe": "Recipe",
+        "card": "Card"
+      }
     },
     "agendaEventLinks": {
       "title": "Linked",
@@ -1518,6 +1533,7 @@
     },
     "plan": {
       "eventAddedNotice": "{title} added on {date}",
+      "eventLinkFailedNotice": "Event added, linking failed",
       "plannedNotice": "Planned for {slot} on {date}",
       "cardPlannedNotice": "{title} planned for {date}",
       "cardClearedNotice": "{title} is no longer on the agenda",

@@ -2,6 +2,7 @@ import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserId } from "@/lib/boards/session";
 import {
+  AGENDA_LINK_KINDS,
   LINK_COLUMN,
   LINK_SEARCH_LIMIT,
   sortEventRefs,
@@ -71,22 +72,32 @@ export async function getEventRefsOrEmpty(kind: AgendaLinkKind, targetId: string
   }
 }
 
-/** Recipes, cards and notes whose title contains the query, a few of each. Empty if signed out. */
-export async function searchLinkTargets(query: string): Promise<AgendaLinkCandidate[]> {
+/** Recipes, cards and notes (or only `kinds`) whose title contains the query, a few of each. Empty if signed out. */
+export async function searchLinkTargets(
+  query: string,
+  kinds: readonly AgendaLinkKind[] = AGENDA_LINK_KINDS,
+): Promise<AgendaLinkCandidate[]> {
   const userId = await getAuthenticatedUserId();
   if (!userId) return [];
   const supabase = await createSupabaseServerClient();
   const pattern = `%${escapeIlike(query)}%`;
 
+  const none = Promise.resolve({ data: [], error: null });
   const [recipes, cards, notes] = await Promise.all([
-    supabase.from("recipes").select("id, title").ilike("title", pattern).order("title").limit(LINK_SEARCH_LIMIT),
-    supabase.from("cards").select("id, title").ilike("title", pattern).order("title").limit(LINK_SEARCH_LIMIT),
-    supabase
-      .from("notes")
-      .select("id, title")
-      .ilike("title", pattern)
-      .order("updated_at", { ascending: false })
-      .limit(LINK_SEARCH_LIMIT),
+    kinds.includes("recipe")
+      ? supabase.from("recipes").select("id, title").ilike("title", pattern).order("title").limit(LINK_SEARCH_LIMIT)
+      : none,
+    kinds.includes("card")
+      ? supabase.from("cards").select("id, title").ilike("title", pattern).order("title").limit(LINK_SEARCH_LIMIT)
+      : none,
+    kinds.includes("note")
+      ? supabase
+          .from("notes")
+          .select("id, title")
+          .ilike("title", pattern)
+          .order("updated_at", { ascending: false })
+          .limit(LINK_SEARCH_LIMIT)
+      : none,
   ]);
   if (recipes.error) fail("search recipes", recipes.error);
   if (cards.error) fail("search cards", cards.error);

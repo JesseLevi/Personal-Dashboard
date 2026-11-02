@@ -299,7 +299,12 @@ export function AgendaPage({
     setQuickAdd((current) => ({ ...current, open: false }));
     setError(null);
     void loadAround(date);
-    if (added.kind === "event") setNotice(tPlan("eventAddedNotice", { title: added.title, date: dayLabel(added.date) }));
+    if (added.kind === "event")
+      setNotice(
+        added.linkFailed
+          ? tPlan("eventLinkFailedNotice")
+          : tPlan("eventAddedNotice", { title: added.title, date: dayLabel(added.date) }),
+      );
     else if (added.kind === "meal") announcePlanned(added.date, added.slot);
     else announceCardPlanned(added.title, added.date);
   }
@@ -593,6 +598,8 @@ export function AgendaPage({
         onPlanCard={savePlannedFor}
         onAdded={handleQuickAdded}
         onMoreDetails={openDetails}
+        onSearchLinks={searchAgendaLinkTargets}
+        onLinkToEvent={linkToEvent}
       />
       <AgendaEventPanel
         open={panel.open}
