@@ -1217,6 +1217,7 @@
       "recipesEmpty": "No recipes found.",
       "newCard": "New card",
       "todoTarget": "Goes in {board}, column {column}.",
+      "cardLocation": "In {board}, column {column}.",
       "noBoard": "You have no board yet. Pick an open card, or create a board in To do first.",
       "withNames": "With {names}",
       "moreDetails": "More details",
