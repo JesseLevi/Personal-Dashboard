@@ -1,6 +1,6 @@
 # ADR-0059: The Agenda is the landing page, with day cards
 
-**Status**: Accepted (2026-11-01, user decision, #720). Supersedes ADR-0057; amends ADR-0051 §4 and ADR-0058 §3.
+**Status**: Accepted (2026-11-01, user decision, #720); §6 amended 2026-11-02 (user decision, #732). Supersedes ADR-0057; amends ADR-0051 §4 and ADR-0058 §3.
 
 ## Context
 
@@ -21,7 +21,7 @@
    No greeting, no summary sentence and no section titles. Empty kinds are not shown.
 4. **Suggestions** are small, like a highlight `Tag`: assistant signals of every kind (rhythms incl. `cook_rhythm`, and patterns; shown for today only) plus one deterministic suggestion: a day's meals that have no basket item yet, with "Naar mand" over `sendWeekToBasket` for that day.
 5. **Mobile**: the header title is the date opener (weekday large, date below, a dot when it is today). The cards follow the day shown. Under them a pull-up sheet holds the day strip and the time grid, with two stops: *peek* (grabber, strip, a sliver of the grid) and *full* (up to the header). It is a page region, not a modal. Drag direction is locked after the slop: vertical moves the sheet, horizontal scrolls the strip.
-6. **Desktop**: the cards for today sit in a fixed 20rem column left of the planner. Where the page container is too narrow for that column and a 44rem week grid, they sit as a row above the planner.
+6. **Desktop** (from `lg`): the cards for today always sit in a fixed 20rem column left of the planner, never between the header and the planner. When the planner is too narrow for the chosen week, it shows three days, then one; the toggle still reads Week. (Amended: the first version put the cards in a row above the planner below a 65rem container, which in the real shell meant every laptop under ~1500px.)
 7. **Data**: cards derive from the Agenda window already loaded, after the hidden-calendar filter. Extra reads (signals, recipe ids for thumbnails, basket links of meals) go through the RLS client and fail to "nothing shown". No schema change. The cards render on the server, before FullCalendar loads.
 8. **No new tokens.** One new icon (`Sparkles`); the cards and the sheet are page composition in `app/(app)/agenda/`, not new components.
 
