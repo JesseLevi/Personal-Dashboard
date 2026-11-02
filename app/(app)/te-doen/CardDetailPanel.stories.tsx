@@ -269,7 +269,7 @@ export const Interactive = () => {
   );
 };
 
-// Edit mode with a planned day next to the deadline (cards.planned_for).
+// Edit mode with a planned day above the deadline (cards.planned_for).
 export const EditItemPlanned = () => (
   <div className="min-h-screen">
     <CardDetailPanel
@@ -277,6 +277,23 @@ export const EditItemPlanned = () => (
       onClose={() => {}}
       columns={columns}
       target={{ mode: "edit", card: { ...sampleCard, planned_for: "2026-10-17" } }}
+      onCreateCard={mockCreateCard}
+      onUpdateCard={mockUpdateCard}
+      onMoveCard={mockMoveCard}
+      onDeleteCard={mockDeleteCard}
+      {...subtaskMocks()}
+    />
+  </div>
+);
+
+// Edit mode of a card without a deadline: the field is replaced by the "Deadline toevoegen" button.
+export const EditItemNoDeadline = () => (
+  <div className="min-h-screen">
+    <CardDetailPanel
+      open
+      onClose={() => {}}
+      columns={columns}
+      target={{ mode: "edit", card: { ...sampleCard, due_at: null, planned_for: "2026-10-17" } }}
       onCreateCard={mockCreateCard}
       onUpdateCard={mockUpdateCard}
       onMoveCard={mockMoveCard}

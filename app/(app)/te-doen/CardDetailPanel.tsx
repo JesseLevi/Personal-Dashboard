@@ -122,6 +122,8 @@ export function CardDetailPanel({
         })
       : "";
   const [plannedForText, setPlannedForText] = useState(() => plannedText(card?.planned_for));
+  // The deadline field shows when the card has one or the user asked for it; clearing the text never hides it mid-edit.
+  const [deadlineShown, setDeadlineShown] = useState(Boolean(card?.due_at));
   const [labelsText, setLabelsText] = useState(() => formatLabelInput(card?.labels ?? []));
   const { confirming: deleteConfirming, ask: askDelete, cancel: cancelDelete } = useDeleteConfirm();
   const [error, setError] = useState<string | null>(null);
@@ -187,6 +189,7 @@ export function CardDetailPanel({
           : "",
       );
       setPlannedForText(plannedText(card?.planned_for));
+      setDeadlineShown(Boolean(card?.due_at));
       setDraftSubtasks([]);
       setCreatedCardId(null);
       setCardColumnId(card?.column_id ?? "");
@@ -460,15 +463,6 @@ export function CardDetailPanel({
         ))}
       </Dropdown>
       <InputField
-        label={t("fields.dateLabel")}
-        id="card-detail-due-at"
-        leadingIcon="Calendar"
-        trailingIcon="Pencil"
-        placeholder={t("fields.datePlaceholder")}
-        value={dueAtText}
-        onChange={(event) => setDueAtText(event.target.value)}
-      />
-      <InputField
         label={t("fields.plannedLabel")}
         id="card-detail-planned-for"
         leadingIcon="Calendar"
@@ -477,6 +471,23 @@ export function CardDetailPanel({
         value={plannedForText}
         onChange={(event) => setPlannedForText(event.target.value)}
       />
+      {deadlineShown ? (
+        <InputField
+          label={t("fields.dateLabel")}
+          id="card-detail-due-at"
+          leadingIcon="Calendar"
+          trailingIcon="Pencil"
+          placeholder={t("fields.datePlaceholder")}
+          value={dueAtText}
+          onChange={(event) => setDueAtText(event.target.value)}
+          // Only a field the user just asked for takes focus; one that shows because the card has a deadline must not steal it from the title.
+          autoFocus={dueAtText === ""}
+        />
+      ) : (
+        <Button variant="outline" icon="Plus" align="left" onClick={() => setDeadlineShown(true)}>
+          {t("fields.addDeadlineLabel")}
+        </Button>
+      )}
       <InputField
         label={t("fields.labelsLabel")}
         id="card-detail-labels"
