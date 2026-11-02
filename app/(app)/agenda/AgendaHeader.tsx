@@ -11,7 +11,6 @@ import type { AgendaView } from "@/lib/agenda/view";
 import type { BasketOption } from "@/lib/shopping/baskets";
 import type { ActionResult } from "@/lib/shopping/types";
 import { AgendaDatePicker } from "./AgendaDatePicker";
-import { AgendaDayStrip } from "./AgendaDayStrip";
 import { AgendaMoreMenu } from "./AgendaMoreMenu";
 
 // The toggle offers four choices; `threeDay` is only what `week` becomes on a phone.
@@ -32,8 +31,10 @@ export interface AgendaHeaderProps {
   weekNumber?: number;
   /** The date the calendar shows, `YYYY-MM-DD`; the date picker starts on it. */
   date?: string;
-  /** Today, `YYYY-MM-DD`; with `date` and `onGoToDate` it shows the day strip below `lg`. */
-  today?: string;
+  /** Below `lg` the second line under the title: the date, under the weekday that is the title. */
+  subtitle?: string;
+  /** Below `lg` a red dot after the title: the shown day is today. */
+  isToday?: boolean;
   /** The date picker's choice. Omitted: the title is plain text (the loading skeleton). */
   onGoToDate?: (date: string) => void;
   /** Reports whether a popover of the header (menu or date picker) is open; the page leaves its shortcuts alone then. */
@@ -65,7 +66,8 @@ export function AgendaHeader({
   view,
   weekNumber,
   date,
-  today,
+  subtitle,
+  isToday = false,
   onGoToDate,
   onOverlayChange,
   onViewChange,
@@ -102,15 +104,18 @@ export function AgendaHeader({
         titleTrigger={
           onGoToDate && { onClick: () => setPickerOpen((open) => !open), expanded: pickerOpen, buttonRef: titleRef }
         }
+        subtitle={subtitle && <span className="lg:hidden">{subtitle}</span>}
         titleAdornments={
-          weekNumber !== undefined && (
-            <span className="text-sm font-semibold whitespace-nowrap text-text-secondary max-lg:hidden">{t("weekNumber", { number: weekNumber })}</span>
-          )
+          <>
+            {isToday && <span aria-hidden="true" className="-ms-inline-sm size-2 shrink-0 rounded-full bg-event-red-text lg:hidden" />}
+            {weekNumber !== undefined && (
+              <span className="text-sm font-semibold whitespace-nowrap text-text-secondary max-lg:hidden">{t("weekNumber", { number: weekNumber })}</span>
+            )}
+          </>
         }
-        className="gap-x-inline-sm max-lg:flex-wrap max-lg:gap-y-stack-md lg:gap-x-inline-xl lg:items-start lg:[&>div:first-child]:h-12 [&_h1]:text-2xl [&_h1]:whitespace-nowrap [&>div:first-child]:shrink-0"
+        className="items-start gap-x-inline-sm lg:gap-x-inline-xl lg:[&>div:first-child]:h-12 [&_h1]:text-2xl [&_h1]:whitespace-nowrap [&>div:first-child]:shrink-0"
         actions={
-          <div className="max-lg:contents lg:flex lg:min-w-0 lg:flex-1 lg:flex-wrap lg:items-center lg:justify-end lg:gap-x-inline-xl lg:gap-y-stack-md lg:pt-component-xs">
-            <span aria-hidden="true" className="hidden h-0 basis-full max-lg:order-3 max-lg:block" />
+          <div className="max-lg:flex max-lg:items-center max-lg:gap-inline-sm lg:flex lg:min-w-0 lg:flex-1 lg:flex-wrap lg:items-center lg:justify-end lg:gap-x-inline-xl lg:gap-y-stack-md lg:pt-component-xs">
             <ButtonToggle
               aria-label={t("viewLabel")}
               items={items}
@@ -122,16 +127,13 @@ export function AgendaHeader({
               onValueChange={(value) => onViewChange(value as AgendaToggleView)}
               className="max-lg:hidden lg:w-auto lg:max-w-full lg:shrink-0"
             />
-            {onGoToDate && date && today && (
-              <AgendaDayStrip date={date} today={today} onSelect={onGoToDate} className="w-full max-lg:order-4 lg:hidden" />
-            )}
             <div className="flex max-w-full flex-wrap items-center justify-end gap-inline-sm max-lg:contents">
               <Button className="max-lg:hidden" icon="ArrowLeft" aria-label={t("previousLabel")} onClick={onPrevious} />
               <Button className="max-lg:hidden" onClick={onToday}>
                 {t("todayLabel")}
               </Button>
               <Button className="max-lg:hidden" icon="ArrowRight" aria-label={t("nextLabel")} onClick={onNext} />
-              <span className="inline-flex max-lg:order-1 max-lg:ml-auto">
+              <span className="inline-flex">
               <AgendaMoreMenu
                 onToday={onToday}
                 onOpenCalendars={onOpenCalendars}
@@ -142,9 +144,9 @@ export function AgendaHeader({
                 defaultStep={defaultMenuStep}
               />
               </span>
-              <span ref={newButtonRef} className="inline-flex max-lg:order-2">
+              <span ref={newButtonRef} className="inline-flex">
                 <Button variant="white" icon="Plus" onClick={onNew}>
-                  {t("newLabel")}
+                  <span className="max-[359px]:sr-only">{t("newLabel")}</span>
                 </Button>
               </span>
             </div>

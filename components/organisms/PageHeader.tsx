@@ -21,12 +21,14 @@ export interface PageHeaderProps {
   titleTrigger?: PageHeaderTitleTrigger;
   /** Rendered next to the title (Te-Doen's board-switcher + favourite buttons). */
   titleAdornments?: ReactNode;
+  /** A second line under the title, `text-base text-text-secondary` (Agenda's date below the weekday). */
+  subtitle?: ReactNode;
   /** Rendered at the far right (Te-Doen's sort button, Recepten's category button). */
   actions?: ReactNode;
   className?: string;
 }
 
-export function PageHeader({ title, titlePending, titleTrigger, titleAdornments, actions, className }: PageHeaderProps) {
+export function PageHeader({ title, titlePending, titleTrigger, titleAdornments, subtitle, actions, className }: PageHeaderProps) {
   return (
     <header
       className={cn(
@@ -38,9 +40,21 @@ export function PageHeader({ title, titlePending, titleTrigger, titleAdornments,
         className,
       )}
     >
-      <div className="flex items-center gap-inline-lg">
-        <PageHeaderTitle title={title} pending={titlePending} trigger={titleTrigger} />
-        {titleAdornments}
+      <div className={cn(subtitle ? "flex flex-col justify-center" : "flex items-center gap-inline-lg")}>
+        {subtitle ? (
+          <>
+            <div className="flex items-center gap-inline-lg">
+              <PageHeaderTitle title={title} pending={titlePending} trigger={titleTrigger} />
+              {titleAdornments}
+            </div>
+            <p className="text-base text-text-secondary">{subtitle}</p>
+          </>
+        ) : (
+          <>
+            <PageHeaderTitle title={title} pending={titlePending} trigger={titleTrigger} />
+            {titleAdornments}
+          </>
+        )}
       </div>
       {actions}
     </header>

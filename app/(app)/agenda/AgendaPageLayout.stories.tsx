@@ -1,12 +1,15 @@
 import { AgendaCalendar, useIsNarrow } from "@/components/organisms/AgendaCalendar";
 import type { AgendaItem } from "@/lib/agenda/types";
 import { fitAgendaView, type AgendaView } from "@/lib/agenda/view";
+import { MobileTabBar } from "@/components/organisms/MobileTabBar";
 import { SIDEBAR_EXPANDED_WIDTH } from "@/components/organisms/Sidebar";
+import type { AgendaSheetStop } from "@/lib/agenda/sheet";
 import { cn } from "@/lib/ui/cn";
 import { useState } from "react";
 import { isoWeek, stepDate, visibleRange } from "@/lib/agenda/time";
-import { AgendaBody } from "./AgendaBody";
+import { AgendaBody, type AgendaBodySheet } from "./AgendaBody";
 import { AgendaDayCards } from "./AgendaDayCards";
+import { AgendaDayStrip } from "./AgendaDayStrip";
 import { AgendaHeader } from "./AgendaHeader";
 import { AgendaPageSkeleton } from "./AgendaPageSkeleton";
 import { useAgendaShortcuts } from "./useAgendaShortcuts";
@@ -48,9 +51,9 @@ const items: AgendaItem[] = [
 const noPlan = async () => ({ success: true as const, data: undefined });
 const baskets = [{ id: "own", name: "Boodschappen", shared: false }];
 
-const DayCards = () => (
+const DayCards = ({ day = DATE }: { day?: string }) => (
   <AgendaDayCards
-    day={DATE}
+    day={day}
     today={DATE}
     now="2026-01-01T14:00"
     items={items}
@@ -61,6 +64,18 @@ const DayCards = () => (
     onDayToBasket={noPlan}
   />
 );
+
+// The sheet below `lg`, in a fixed stop or wired to its own grabber. `date` feeds the week strip.
+const sheetFor = (
+  stop: AgendaSheetStop,
+  date = DATE,
+  onStopChange: (stop: AgendaSheetStop) => void = noop,
+  onSelect: (date: string) => void = noop,
+): AgendaBodySheet => ({
+  stop,
+  onStopChange,
+  strip: <AgendaDayStrip date={date} today={DATE} onSelect={onSelect} />,
+});
 
 // The real page sits on `surface-primary`, not the story canvas.
 const Surface = ({ children }: { children: React.ReactNode }) => (
@@ -83,7 +98,7 @@ const PageContent = ({ view, title }: { view: AgendaView; title: string }) => (
       onOpenCalendars={noop}
       weekToBasket={{ onSend: noPlan, baskets }}
     />
-    <AgendaBody cards={<DayCards />}>
+    <AgendaBody cards={<DayCards />} sheet={sheetFor("peek")}>
       <AgendaCalendar items={items} view={view} date={DATE} scrollToNow={false} />
     </AgendaBody>
   </>
@@ -135,7 +150,7 @@ export const Interactive = () => {
         onToday={() => setDate(DATE)}
         onNew={noop}
       />
-      <AgendaBody cards={<DayCards />}>
+      <AgendaBody cards={<DayCards />} sheet={sheetFor("peek", date)}>
         <AgendaCalendar items={items} view={view} date={date} scrollNowKey={scrollNowKey} />
       </AgendaBody>
     </Surface>
@@ -153,7 +168,6 @@ export const Swipe = () => {
         title={date}
         view="day"
         date={date}
-        today={DATE}
         onGoToDate={setDate}
         onViewChange={noop}
         onPrevious={() => setDate(stepDate("day", date, -1))}
@@ -164,6 +178,7 @@ export const Swipe = () => {
         weekToBasket={{ onSend: noPlan, baskets }}
       />
       <AgendaBody
+        sheet={sheetFor("peek", date)}
         swipe={
           narrow
             ? {
@@ -213,7 +228,7 @@ const FittedPage = () => {
             onOpenCalendars={noop}
             weekToBasket={{ onSend: noPlan, baskets }}
           />
-          <AgendaBody cards={<DayCards />} onPlannerWidth={setPlannerWidth}>
+          <AgendaBody cards={<DayCards />} sheet={sheetFor("peek")} onPlannerWidth={setPlannerWidth}>
             <AgendaCalendar items={items} view={view} date={DATE} scrollToNow={false} />
           </AgendaBody>
         </div>
@@ -230,3 +245,55 @@ export const Loading = () => (
     <AgendaPageSkeleton />
   </Surface>
 );
+
+// Below `lg` (#733): the header is the date opener, the cards scroll under it and the planner is the pull-up sheet above the tab bar. The
+// sheet is fixed to the viewport, so these stories are made for a phone viewport (390x844; 320x568 for the smallest). The visual suite shoots
+// them in `shell.visual.spec.ts`.
+const tabs = [
+  { id: "todo", icon: "Columns3", label: "Te doen" },
+  { id: "agenda", icon: "Calendar", label: "Agenda" },
+  { id: "notes", icon: "Notebook", label: "Notities" },
+  { id: "recipes", icon: "FolderClosed", label: "Recepten" },
+  { id: "shopping", icon: "ShoppingBasket", label: "Mand" },
+] as const;
+
+const MobileShell = ({ initialStop = "peek", initialDate = DATE }: { initialStop?: AgendaSheetStop; initialDate?: string }) => {
+  const [stop, setStop] = useState(initialStop);
+  const [date, setDate] = useState(initialDate);
+  const weekday = new Date(`${date}T00:00:00Z`).toLocaleDateString("nl-NL", { weekday: "long", timeZone: "UTC" });
+  const subtitle = new Date(`${date}T00:00:00Z`).toLocaleDateString("nl-NL", { day: "numeric", month: "long", timeZone: "UTC" });
+  return (
+    <div className="-m-8 flex min-h-dvh items-stretch bg-surface-primary">
+      <main className="flex min-w-0 flex-1 flex-col gap-page-stack pt-[max(1rem,env(safe-area-inset-top))] pb-page-bottom pl-page-left md:pt-20">
+        <div className="flex min-w-0 flex-1 flex-col gap-page-stack">
+          <div className="max-lg:sticky max-lg:top-[env(safe-area-inset-top)] max-lg:z-10">
+            <AgendaHeader
+              title={weekday.charAt(0).toUpperCase() + weekday.slice(1)}
+              subtitle={subtitle}
+              isToday={date === DATE}
+              view="day"
+              date={date}
+              onGoToDate={setDate}
+              onViewChange={noop}
+              onPrevious={noop}
+              onNext={noop}
+              onToday={noop}
+              onNew={noop}
+              onOpenCalendars={noop}
+              weekToBasket={{ onSend: noPlan, baskets }}
+            />
+          </div>
+          <AgendaBody cards={<DayCards day={date} />} sheet={sheetFor(stop, date, setStop, setDate)}>
+            <AgendaCalendar items={items} view="day" date={date} scrollToNow={false} />
+          </AgendaBody>
+        </div>
+      </main>
+      <MobileTabBar navLabel="Modules" items={tabs} activeItem="agenda" onNavigate={noop} />
+    </div>
+  );
+};
+
+export const MobilePeek = () => <MobileShell />;
+export const MobileFull = () => <MobileShell initialStop="full" />;
+// Another day than today: no dot after the weekday.
+export const MobileOtherDay = () => <MobileShell initialDate="2026-01-02" />;

@@ -2,7 +2,10 @@
 
 // design: Claude-designed (#486, #529, #550, #713)
 import { useCallback, useLayoutEffect, useRef, type ReactNode } from "react";
+import { useIsNarrow } from "@/components/organisms/AgendaCalendar";
+import type { AgendaSheetStop } from "@/lib/agenda/sheet";
 import { cn } from "@/lib/ui/cn";
+import { AgendaDaySheet } from "./AgendaDaySheet";
 import { useAgendaSwipe } from "./useAgendaSwipe";
 
 export interface AgendaBodySwipe {
@@ -13,6 +16,13 @@ export interface AgendaBodySwipe {
   onPeek?: (step: 1 | -1) => void;
   /** The day beside the shown one, drawn while a drag is under way; the caller takes care of its data. */
   renderNeighbour: (step: 1 | -1) => ReactNode;
+}
+
+export interface AgendaBodySheet {
+  stop: AgendaSheetStop;
+  onStopChange: (stop: AgendaSheetStop) => void;
+  /** The week strip that sits under the grabber. */
+  strip: ReactNode;
 }
 
 const ALIGN_FRAMES = 8;
@@ -31,22 +41,27 @@ function scrollers(root: Element): HTMLElement[] {
 //
 // From `lg` the day cards (ADR-0059) always take a 20rem column left of the planner and scroll
 // inside the body's height; `onPlannerWidth` reports the planner's width so the page can show
-// fewer days when it is narrow. Below `lg` the cards sit above the day view.
+// fewer days when it is narrow. Below `lg` the cards scroll with the page under the sticky header and the
+// planner is the pull-up sheet (`AgendaDaySheet`): the cards get the sheet's peek height as bottom space and
+// are inert while it is full. One DOM for both, switched in CSS.
 export function AgendaBody({
   children,
   swipe,
   cards,
+  sheet,
   onPlannerWidth,
 }: {
   children: ReactNode;
   swipe?: AgendaBodySwipe;
   cards?: ReactNode;
+  sheet: AgendaBodySheet;
   onPlannerWidth?: (width: number) => void;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const paneRef = useRef<HTMLDivElement>(null);
   const neighbourRef = useRef<HTMLDivElement>(null);
   const plannerRef = useRef<HTMLDivElement>(null);
+  const narrow = useIsNarrow();
 
   const widthCallback = useRef(onPlannerWidth);
   useLayoutEffect(() => {
@@ -92,10 +107,18 @@ export function AgendaBody({
   useLayoutEffect(alignNeighbour, [peek, alignNeighbour]);
 
   return (
-    <div className="min-w-0 pr-page-right-equal">
+    // spacing-flag: --agenda-peek 11rem, the sheet's visible height in peek -- design/notes/AgendaPage.md
+    <div className="min-w-0 pr-page-right-equal [--agenda-peek:11rem]">
       <div className={cn("flex min-w-0 flex-col gap-stack-lg", cards && "lg:grid lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start")}>
-        {cards && <div className="min-w-0 lg:h-[calc(100dvh-14rem)] lg:min-h-[28rem] lg:overflow-y-auto">{cards}</div>}
-        <div ref={plannerRef} className="h-[calc(100dvh-20rem)] min-h-[28rem] min-w-0 lg:h-[calc(100dvh-14rem)]">
+        {cards && (
+          <div
+            inert={narrow && sheet.stop === "full"}
+            className="min-w-0 max-lg:pb-(--agenda-peek) lg:h-[calc(100dvh-14rem)] lg:min-h-[28rem] lg:overflow-y-auto"
+          >
+            {cards}
+          </div>
+        )}
+        <AgendaDaySheet stop={sheet.stop} onStopChange={sheet.onStopChange} strip={sheet.strip} plannerRef={plannerRef}>
           <div ref={viewportRef} className={cn("h-full", swipe && "touch-pan-y touch-pinch-zoom overflow-x-clip")}>
             <div ref={paneRef} className="relative h-full">
               {children}
@@ -112,7 +135,7 @@ export function AgendaBody({
               )}
             </div>
           </div>
-        </div>
+        </AgendaDaySheet>
       </div>
     </div>
   );

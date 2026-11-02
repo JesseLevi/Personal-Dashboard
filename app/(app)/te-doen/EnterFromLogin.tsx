@@ -6,7 +6,7 @@ import { clearEnterFromLogin, hasEnterFromLogin, skeletonPlayedEnter } from "@/l
 import { cn } from "@/lib/ui/cn";
 
 // Blur-in for one page region, only right after a login. Record: design/notes/TeDoenBoard.md.
-export function EnterFromLogin({ index, children }: { index: number; children: ReactNode }) {
+export function EnterFromLogin({ index, className, children }: { index: number; className?: string; children: ReactNode }) {
   const reduced = usePrefersReducedMotion();
   const [entering, setEntering] = useState(false);
 
@@ -30,7 +30,7 @@ export function EnterFromLogin({ index, children }: { index: number; children: R
   }, [entering, index, reduced]);
 
   return (
-    <div className={cn("min-w-0", entering && ["animate-blur-in", blurFadeStagger(index)])}>
+    <div className={cn("min-w-0", entering && ["animate-blur-in", blurFadeStagger(index)], className)}>
       {children}
     </div>
   );

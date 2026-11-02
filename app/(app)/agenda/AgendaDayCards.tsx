@@ -55,6 +55,8 @@ export interface AgendaDayCardsProps {
   /** Act on (true) or dismiss (false) a signal. */
   onSignal: (signal: AssistantSignal, act: boolean) => Promise<{ success: boolean }>;
   onDayToBasket: (day: string, listId?: string) => Promise<ActionResult>;
+  /** "+N meer" in the timeline: returns true when it took the tap (below `lg` the sheet opens on the day grid). */
+  onShowMoreEvents?: () => boolean;
   className?: string;
 }
 
@@ -136,6 +138,7 @@ export function AgendaDayCards({
   onOpenItem,
   onSignal,
   onDayToBasket,
+  onShowMoreEvents,
   className,
 }: AgendaDayCardsProps) {
   const t = useTranslations("agenda.dayCards");
@@ -230,7 +233,10 @@ export function AgendaDayCards({
               <MoreRow
                 label={expanded.events ? t("less") : t("more", { count: events.more })}
                 expanded={expanded.events}
-                onToggle={() => setExpanded((c) => ({ ...c, events: !c.events }))}
+                onToggle={() => {
+                  if (!expanded.events && onShowMoreEvents?.()) return;
+                  setExpanded((c) => ({ ...c, events: !c.events }));
+                }}
               />
             )}
           </ul>

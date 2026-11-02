@@ -310,7 +310,8 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
   }
 
   return (
-    <div className="flex min-h-screen items-stretch bg-surface-primary">
+    // `--shell-sidebar` is the rail's current width, for fixed page regions that must clear it (the Agenda sheet, md–lg).
+    <div className={cn("flex min-h-screen items-stretch bg-surface-primary", collapsed ? "[--shell-sidebar:73px]" : "[--shell-sidebar:198px]")}>
       {/* Desktop: Sidebar itself renders `fixed` below (stays put while
           `main` scrolls); this is a same-width flow spacer so the row still
           reserves the right amount of horizontal space for it. Both this and
