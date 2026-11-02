@@ -10,6 +10,7 @@ import { Icon } from "@/components/atoms/Icon";
 import { InputField } from "@/components/atoms/InputField";
 import { ColorDot } from "@/components/molecules/ColorSwatches";
 import type { CalendarCategoryView } from "@/lib/agenda/calendars";
+import { buildCardSelectOptions, findPlanCard } from "@/lib/agenda/card-select";
 import type { PlanCardGroup } from "@/lib/agenda/plan-cards";
 import type { PlanRecipe } from "@/lib/agenda/plan-recipes";
 import { rankRecipes } from "@/lib/agenda/quick-add";
@@ -285,12 +286,8 @@ export function TodoRows({
   board,
 }: RowsProps & { groups: PlanCardGroup[]; board: { boardName: string; columnName: string } | null }) {
   const t = useTranslations("components.agendaQuickAdd");
-  const options = [
-    { value: "", label: t("newCard") },
-    ...groups.flatMap((group) =>
-      group.cards.map((card) => ({ value: card.id, label: groups.length > 1 ? `${card.title} (${group.boardName})` : card.title })),
-    ),
-  ];
+  const options = buildCardSelectOptions(groups, t("newCard"));
+  const picked = findPlanCard(groups, values.cardId);
 
   return (
     <>
@@ -304,6 +301,11 @@ export function TodoRows({
         onChange={(event: ChangeEvent<HTMLSelectElement>) => set("cardId", event.target.value)}
         disabled={disabled}
       />
+      {picked && (
+        <p className="text-sm font-semibold text-text-secondary">
+          {t("cardLocation", { board: picked.boardName, column: picked.card.columnName })}
+        </p>
+      )}
       {values.cardId === "" && (
         <>
           <InputField
