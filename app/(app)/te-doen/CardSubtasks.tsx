@@ -2,22 +2,27 @@
 
 // design: Claude-designed (#694)
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { DragDropProvider } from "@dnd-kit/react";
+import { isSortable, useSortable } from "@dnd-kit/react/sortable";
+import { PointerSensor } from "@dnd-kit/dom";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/atoms/Button";
 import { Checkbox } from "@/components/atoms/Checkbox";
 import { Dropdown } from "@/components/atoms/Dropdown";
 import { Icon } from "@/components/atoms/Icon";
 import { InputField } from "@/components/atoms/InputField";
+import { boardCardActivationConstraints } from "@/components/organisms/BoardView";
 import { useOutsidePress } from "@/lib/dom/use-outside-press";
 import { usePopoverPosition } from "@/lib/dom/use-popover-position";
 import { MAX_SUBTASKS_PER_CARD } from "@/lib/boards/schemas";
-import { SUBTASK_TITLE_MAX, splitPastedTitles, splitSubtasks, titlesThatFit } from "@/lib/boards/subtasks";
+import { SUBTASK_TITLE_MAX, positionForIndex, splitPastedTitles, splitSubtasks, titlesThatFit } from "@/lib/boards/subtasks";
 import type { ActionResult, SubtaskRow } from "@/lib/boards/types";
 import { cn } from "@/lib/ui/cn";
 
 // Subtasks section of the card panel (ADR-0053); contract: design/notes/CardDetailPanel.md.
 // Saved subtasks write immediately through the actions; in create mode (`cardId` null) the
 // titles are buffered in `draft` and CardDetailPanel writes them once the card exists.
+// Open and done rows are two sortable groups, dragged by their handle only (#731).
 
 export interface SubtaskActions {
   onListSubtasks: (input: unknown) => Promise<ActionResult<SubtaskRow[]>>;
@@ -25,6 +30,7 @@ export interface SubtaskActions {
   onRenameSubtask: (input: unknown) => Promise<ActionResult>;
   onSetSubtaskDone: (input: unknown) => Promise<ActionResult>;
   onDeleteSubtask: (input: unknown) => Promise<ActionResult>;
+  onReorderSubtask: (input: unknown) => Promise<ActionResult>;
   onPromoteSubtask: (input: unknown) => Promise<ActionResult<{ cardId: string }>>;
 }
 
@@ -41,6 +47,8 @@ export interface CardSubtasksProps extends SubtaskActions {
   /** The panel's error line; null clears it. */
   onError: (message: string | null) => void;
 }
+
+type SubtaskGroup = "open" | "done";
 
 interface Item {
   id: string;
@@ -62,6 +70,7 @@ export function CardSubtasks({
   onRenameSubtask,
   onSetSubtaskDone,
   onDeleteSubtask,
+  onReorderSubtask,
   onPromoteSubtask,
 }: CardSubtasksProps) {
   const t = useTranslations("components.cardDetailPanel.subtasks");
@@ -97,6 +106,14 @@ export function CardSubtasks({
   const addId = useId();
   const hintId = `${addId}-hint`;
   const writes = useRef<Promise<unknown>>(Promise.resolve());
+  // The row whose handle had focus when a keyboard move reordered the list; re-focused after the render.
+  const refocus = useRef<string | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const id = refocus.current;
+    refocus.current = null;
+    if (id) sectionRef.current?.querySelector<HTMLElement>(`[data-subtask-handle="${CSS.escape(id)}"]`)?.focus();
+  });
 
   function updateRows(update: (current: SubtaskRow[]) => SubtaskRow[]) {
     setLoaded((current) => (current && current.cardId === cardId ? { cardId: current.cardId, rows: update(current.rows) } : current));
@@ -173,6 +190,32 @@ export function CardSubtasks({
     );
   }
 
+  // `toIndex` counts within the group, with the moved row in it.
+  function reorder(id: string, group: SubtaskGroup, toIndex: number) {
+    const list = group === "done" ? doneItems : openItems;
+    const from = list.findIndex((row) => row.id === id);
+    const index = Math.max(0, Math.min(toIndex, list.length - 1));
+    if (from === -1 || from === index) return;
+    refocus.current = id;
+    if (!cardId) {
+      const order = list.map((row) => row.id);
+      order.splice(index, 0, ...order.splice(from, 1));
+      onDraftChange(order.map((rowId) => draft[Number(rowId)]));
+      return;
+    }
+    const moved = list[from];
+    const position = positionForIndex(
+      list.filter((row) => row.id !== id).map((row) => row.position),
+      index,
+    );
+    const set = (value: number) => updateRows((current) => current.map((row) => (row.id === id ? { ...row, position: value } : row)));
+    void write(
+      () => set(position),
+      () => set(moved.position),
+      () => onReorderSubtask({ id, position }),
+    );
+  }
+
   async function promote(item: Item) {
     if (!cardId) return;
     onError(null);
@@ -204,91 +247,128 @@ export function CardSubtasks({
     if (field && field === document.activeElement) field.scrollIntoView?.({ block: "nearest" });
   }, [addId, total]);
 
-  function renderRow(item: Item) {
-    return (
+  // The add field's trailing check, only while it holds text.
+  const saveButton =
+    newTitle.trim() !== ""
+      ? {
+          trailingIcon: "Check" as const,
+          trailingIconLabel: t("saveLabel"),
+          onTrailingIconClick: () => {
+            addTitles(splitPastedTitles(newTitle));
+            document.getElementById(addId)?.focus();
+          },
+        }
+      : { trailingIcon: undefined, trailingIconLabel: undefined, onTrailingIconClick: undefined };
+
+  function renderRows(group: SubtaskGroup, list: Item[]) {
+    return list.map((item, index) => (
       <SubtaskRowItem
         key={item.id}
         item={item}
+        group={group}
+        index={index}
+        onMoveBy={(delta) => reorder(item.id, group, index + delta)}
         buffered={!cardId}
         onToggle={(done) => setDone(item, done)}
         onRename={(title) => rename(item, title)}
         onPromote={() => void promote(item)}
         onDelete={() => remove(item)}
       />
-    );
+    ));
   }
 
   return (
-    <section className="flex flex-col gap-stack-sm" aria-labelledby="card-detail-subtasks-title">
-      <div className="flex items-baseline gap-inline-sm text-sm font-semibold text-text-secondary">
-        <h3 id="card-detail-subtasks-title">{t("title")}</h3>
-        {total > 0 && (
-          <span>
-            {doneCount}/{total}
-          </span>
-        )}
-      </div>
-      {showEmptyHint && (
-        <p id={hintId} className="text-sm text-text-secondary">
-          {t("emptyHint")}
-        </p>
-      )}
-      {openItems.length > 0 && <ul className="flex flex-col">{openItems.map(renderRow)}</ul>}
-      {doneItems.length > 0 && (
-        <>
-          <button
-            type="button"
-            aria-expanded={expanded}
-            onClick={() => setExpandedChoice(!expanded)}
-            className="flex h-10 items-center gap-inline-xs self-start text-sm font-semibold text-text-secondary hover:text-text-primary"
-          >
-            <Icon name="ChevronDown" size={16} className={cn("transition-transform", !expanded && "-rotate-90")} />
-            {t("doneToggle", { count: doneItems.length })}
-          </button>
-          {expanded && <ul className="flex flex-col">{doneItems.map(renderRow)}</ul>}
-        </>
-      )}
-      {showOffer && moveOffer && (
-        <div className="flex items-center justify-between gap-inline-sm rounded-control border border-stroke-primary bg-surface-highlight-white p-component-sm">
-          <p className="text-sm font-semibold text-text-primary">{t("allDone", { column: moveOffer.columnName })}</p>
-          <Button variant="outline" size="small" disabled={movePending} onClick={() => void move()}>
-            {t("moveLabel")}
-          </Button>
+    <DragDropProvider
+      // Pointer only: the keyboard moves a row with ArrowUp/ArrowDown on its handle. Touch gets the board's long-press.
+      sensors={() => [PointerSensor.configure({ activationConstraints: boardCardActivationConstraints })]}
+      onDragEnd={(event) => {
+        if (event.canceled) return;
+        const { source } = event.operation;
+        if (isSortable(source) && source.index !== source.initialIndex) {
+          reorder(String(source.id), source.group as SubtaskGroup, source.index);
+        }
+      }}
+    >
+      <section ref={sectionRef} className="flex flex-col gap-stack-sm" aria-labelledby="card-detail-subtasks-title">
+        <div className="flex items-baseline gap-inline-sm text-sm font-semibold text-text-secondary">
+          <h3 id="card-detail-subtasks-title">{t("title")}</h3>
+          {total > 0 && (
+            <span>
+              {doneCount}/{total}
+            </span>
+          )}
         </div>
-      )}
-      {/* Reads as the next checklist row: -ml-component-xs puts the Plus under the checkboxes, and the box is transparent until hover or focus. */}
-      <InputField
-        id={addId}
-        className="-ml-component-xs w-auto"
-        // spacing-flag: p-0 drops the box inset so the row is as tall as the checkbox rows, no token for zero — design/notes/CardDetailPanel.md
-        boxClassName="border-transparent bg-transparent p-0"
-        leadingIcon="Plus"
-        aria-label={t("addLabel")}
-        aria-describedby={showEmptyHint ? hintId : undefined}
-        placeholder={t("addLabel")}
-        value={newTitle}
-        maxLength={SUBTASK_TITLE_MAX}
-        disabled={atLimit}
-        onChange={(event) => setNewTitle(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
-          event.preventDefault();
-          addTitles(splitPastedTitles(newTitle));
-        }}
-        onPaste={(event) => {
-          const text = event.clipboardData.getData("text");
-          if (!/\r?\n/.test(text.trim())) return;
-          event.preventDefault();
-          addTitles(splitPastedTitles(text));
-        }}
-      />
-      {atLimit && <p className="text-sm text-text-secondary">{t("limitHint", { max: MAX_SUBTASKS_PER_CARD })}</p>}
-    </section>
+        {showEmptyHint && (
+          <p id={hintId} className="text-sm text-text-secondary">
+            {t("emptyHint")}
+          </p>
+        )}
+        {openItems.length > 0 && <ul className="flex flex-col">{renderRows("open", openItems)}</ul>}
+        {doneItems.length > 0 && (
+          <>
+            <button
+              type="button"
+              aria-expanded={expanded}
+              onClick={() => setExpandedChoice(!expanded)}
+              className="flex h-10 items-center gap-inline-xs self-start text-sm font-semibold text-text-secondary hover:text-text-primary"
+            >
+              <Icon name="ChevronDown" size={16} className={cn("transition-transform", !expanded && "-rotate-90")} />
+              {t("doneToggle", { count: doneItems.length })}
+            </button>
+            {expanded && <ul className="flex flex-col">{renderRows("done", doneItems)}</ul>}
+          </>
+        )}
+        {showOffer && moveOffer && (
+          <div className="flex items-center justify-between gap-inline-sm rounded-control border border-stroke-primary bg-surface-highlight-white p-component-sm">
+            <p className="text-sm font-semibold text-text-primary">{t("allDone", { column: moveOffer.columnName })}</p>
+            <Button variant="outline" size="small" disabled={movePending} onClick={() => void move()}>
+              {t("moveLabel")}
+            </Button>
+          </div>
+        )}
+        {/* Reads as the next checklist row: the spacer stands in for the drag handle, -ml-component-xs puts the Plus under the checkboxes, and the box is transparent until hover or focus. */}
+        <div className="flex items-center gap-inline-xs">
+          <span aria-hidden className="w-8 shrink-0" />
+          <InputField
+            id={addId}
+            className="-ml-component-xs min-w-0 flex-1"
+            // spacing-flag: p-0 drops the box inset so the row is as tall as the checkbox rows, no token for zero — design/notes/CardDetailPanel.md
+            boxClassName="border-transparent bg-transparent p-0"
+            leadingIcon="Plus"
+            {...saveButton}
+            aria-label={t("addLabel")}
+            aria-describedby={showEmptyHint ? hintId : undefined}
+            placeholder={t("addLabel")}
+            value={newTitle}
+            maxLength={SUBTASK_TITLE_MAX}
+            disabled={atLimit}
+            onChange={(event) => setNewTitle(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+              event.preventDefault();
+              addTitles(splitPastedTitles(newTitle));
+            }}
+            onPaste={(event) => {
+              const text = event.clipboardData.getData("text");
+              if (!/\r?\n/.test(text.trim())) return;
+              event.preventDefault();
+              addTitles(splitPastedTitles(text));
+            }}
+          />
+        </div>
+        {atLimit && <p className="text-sm text-text-secondary">{t("limitHint", { max: MAX_SUBTASKS_PER_CARD })}</p>}
+      </section>
+    </DragDropProvider>
   );
 }
 
 interface SubtaskRowItemProps {
   item: Item;
+  group: SubtaskGroup;
+  /** Position in the group, for dnd-kit. */
+  index: number;
+  /** Keyboard reorder from the handle: -1 up, 1 down. */
+  onMoveBy: (delta: number) => void;
   /** Create mode: not saved yet, so it cannot be checked or promoted. */
   buffered: boolean;
   onToggle: (done: boolean) => void;
@@ -297,11 +377,12 @@ interface SubtaskRowItemProps {
   onDelete: () => void;
 }
 
-function SubtaskRowItem({ item, buffered, onToggle, onRename, onPromote, onDelete }: SubtaskRowItemProps) {
+function SubtaskRowItem({ item, group, index, onMoveBy, buffered, onToggle, onRename, onPromote, onDelete }: SubtaskRowItemProps) {
   const t = useTranslations("components.cardDetailPanel.subtasks");
   const [editing, setEditing] = useState(false);
   const cancelled = useRef(false);
   const titleId = `subtask-${item.id}-title`;
+  const { ref, handleRef, isDragging } = useSortable({ id: item.id, index, group, type: group, accept: group });
 
   function finish(value: string) {
     setEditing(false);
@@ -313,7 +394,30 @@ function SubtaskRowItem({ item, buffered, onToggle, onRename, onPromote, onDelet
   }
 
   return (
-    <li className="flex min-h-10 items-center gap-inline-xs">
+    <li
+      ref={ref}
+      className={cn(
+        "flex min-h-10 items-center gap-inline-xs transition-opacity duration-[var(--duration-base)] ease-base motion-reduce:transition-none",
+        // Same coarse-pointer rules as the board cards; see design/notes/BoardView.md for why not touch-none.
+        "[@media(any-pointer:coarse)]:touch-manipulation [@media(any-pointer:coarse)]:select-none touch-callout-none",
+        isDragging && "opacity-40",
+      )}
+    >
+      {/* The ::after widens the 32 px box to a 40 px tap target. Only this handle starts a drag; ArrowUp/ArrowDown on it move the row. */}
+      <button
+        ref={handleRef}
+        type="button"
+        data-subtask-handle={item.id}
+        aria-label={t("dragLabel", { title: item.title })}
+        onKeyDown={(event) => {
+          if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+          event.preventDefault();
+          onMoveBy(event.key === "ArrowUp" ? -1 : 1);
+        }}
+        className="relative flex size-8 shrink-0 cursor-grab items-center justify-center rounded-control text-text-secondary hover:text-text-primary active:cursor-grabbing after:absolute after:-inset-1 after:content-['']"
+      >
+        <Icon name="GripVertical" size={16} />
+      </button>
       {/* The ::after widens the 32 px box to a 40 px tap target. */}
       <Checkbox
         checked={item.done}
@@ -421,14 +525,14 @@ function SubtaskMenu({ title, canPromote, onPromote, onDelete }: { title: string
         onClick={() => (open ? close() : setOpen(true))}
       />
       {open && (
-        <div ref={popoverRef} className="absolute z-[999] w-64" style={popover.style} onKeyDown={handleKeyDown}>
+        <div ref={popoverRef} className="absolute z-[999] w-max max-w-[calc(100vw-2rem)]" style={popover.style} onKeyDown={handleKeyDown}>
           <Dropdown className="shadow-sm" role="menu" aria-label={t("moreLabel", { title })}>
             {canPromote && (
-              <Button role="menuitem" variant="white" align="left" icon="ArrowRight" onClick={() => choose(onPromote)}>
+              <Button role="menuitem" variant="transparent" align="left" icon="ArrowRight" onClick={() => choose(onPromote)}>
                 {t("promoteLabel")}
               </Button>
             )}
-            <Button role="menuitem" variant="white" align="left" icon="Trash" onClick={() => choose(onDelete)}>
+            <Button role="menuitem" variant="transparent" align="left" icon="Trash" className="text-priority-urgent" onClick={() => choose(onDelete)}>
               {t("deleteLabel")}
             </Button>
           </Dropdown>

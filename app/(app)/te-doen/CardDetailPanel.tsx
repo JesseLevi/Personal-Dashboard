@@ -86,6 +86,7 @@ export function CardDetailPanel({
   onRenameSubtask,
   onSetSubtaskDone,
   onDeleteSubtask,
+  onReorderSubtask,
   onPromoteSubtask,
 }: CardDetailPanelProps) {
   const t = useTranslations("components.cardDetailPanel");
@@ -398,6 +399,7 @@ export function CardDetailPanel({
         onRenameSubtask={onRenameSubtask}
         onSetSubtaskDone={onSetSubtaskDone}
         onDeleteSubtask={onDeleteSubtask}
+        onReorderSubtask={onReorderSubtask}
         onPromoteSubtask={onPromoteSubtask}
       />
       {selectedColumn && (

@@ -67,6 +67,11 @@ function subtaskMocks(initial: SubtaskRow[] = []) {
       rows = rows.filter((row) => row.id !== id);
       return { success: true, data: undefined };
     },
+    onReorderSubtask: async (input: unknown): Promise<ActionResult> => {
+      const { id, position } = input as { id: string; position: number };
+      rows = rows.map((row) => (row.id === id ? { ...row, position } : row));
+      return { success: true, data: undefined };
+    },
     onPromoteSubtask: async (input: unknown): Promise<ActionResult<{ cardId: string }>> => {
       const { id } = input as { id: string };
       rows = rows.filter((row) => row.id !== id);
@@ -417,6 +422,62 @@ function typeSubtasks(container: HTMLElement, titles: string[]) {
     Promise.resolve(),
   );
 }
+
+// Text in the add field (no Enter): the trailing check appears and saves the subtask.
+export const SubtasksAddFieldFilled = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const input = containerRef.current?.querySelector<HTMLInputElement>(`input[aria-label="${nl.components.cardDetailPanel.subtasks.addLabel}"]`);
+    if (!input) return;
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, "Cadeau inpakken");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }, []);
+  return (
+    <div ref={containerRef} className="min-h-screen">
+      <CardDetailPanel
+        open
+        onClose={() => {}}
+        columns={columns}
+        target={{ mode: "edit", card: { ...sampleCard, subtaskTotal: 5, subtaskDone: 2 } }}
+        onCreateCard={mockCreateCard}
+        onUpdateCard={mockUpdateCard}
+        onMoveCard={mockMoveCard}
+        onDeleteCard={mockDeleteCard}
+        {...subtaskMocks(openAndDone)}
+      />
+    </div>
+  );
+};
+
+// The row's "⋯" menu open: hugs its content, "Verwijderen" in red.
+export const SubtasksMenuOpen = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // The list loads asynchronously; open the menu once the first row's button exists.
+    const timer = setInterval(() => {
+      const button = containerRef.current?.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"][aria-label^="Meer acties voor"]');
+      if (!button) return;
+      clearInterval(timer);
+      button.click();
+    }, 50);
+    return () => clearInterval(timer);
+  }, []);
+  return (
+    <div ref={containerRef} className="min-h-screen">
+      <CardDetailPanel
+        open
+        onClose={() => {}}
+        columns={columns}
+        target={{ mode: "edit", card: { ...sampleCard, subtaskTotal: 5, subtaskDone: 2 } }}
+        onCreateCard={mockCreateCard}
+        onUpdateCard={mockUpdateCard}
+        onMoveCard={mockMoveCard}
+        onDeleteCard={mockDeleteCard}
+        {...subtaskMocks(openAndDone)}
+      />
+    </div>
+  );
+};
 
 // Create mode: the rows are buffered in the panel and written right after the card is created.
 export const CreateItemWithSubtasks = () => {

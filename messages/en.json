@@ -610,7 +610,9 @@
         "doneToggle": "{count, plural, one {# done} other {# done}}",
         "limitHint": "A card can have at most {max} subtasks.",
         "allDone": "All done. Move to {column}?",
-        "moveLabel": "Move"
+        "moveLabel": "Move",
+        "saveLabel": "Save subtask",
+        "dragLabel": "Drag {title}"
       }
     },
     "categoryPanel": {

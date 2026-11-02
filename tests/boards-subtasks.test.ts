@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { doneColumnOffer, splitPastedTitles, splitSubtasks, titlesThatFit } from "@/lib/boards/subtasks";
+import { doneColumnOffer, positionForIndex, splitPastedTitles, splitSubtasks, titlesThatFit } from "@/lib/boards/subtasks";
 
 describe("splitSubtasks", () => {
   it("puts open rows before done rows and keeps position order in each", () => {
@@ -54,5 +54,29 @@ describe("doneColumnOffer", () => {
 
   it("offers nothing when the board has no done column", () => {
     expect(doneColumnOffer([{ id: "todo" }, { id: "bezig", isDone: false }], "todo")).toBeNull();
+  });
+});
+
+describe("positionForIndex", () => {
+  it("goes 1000 before the first row", () => {
+    expect(positionForIndex([10, 20, 30], 0)).toBe(10 - 1000);
+  });
+
+  it("takes the midpoint between the new neighbours", () => {
+    expect(positionForIndex([10, 20, 30], 1)).toBe(15);
+    expect(positionForIndex([10, 20, 30], 2)).toBe(25);
+  });
+
+  it("goes 1000 after the last row", () => {
+    expect(positionForIndex([10, 20, 30], 3)).toBe(30 + 1000);
+  });
+
+  it("works with a single neighbour", () => {
+    expect(positionForIndex([5], 0)).toBe(5 - 1000);
+    expect(positionForIndex([5], 1)).toBe(5 + 1000);
+  });
+
+  it("handles a group with no other rows", () => {
+    expect(positionForIndex([], 0)).toBe(0);
   });
 });

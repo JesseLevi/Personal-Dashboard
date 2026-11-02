@@ -29,6 +29,7 @@ import {
   moveCard,
   promoteSubtask,
   renameSubtask,
+  reorderSubtask,
   setSubtaskDone,
   updateCard,
 } from "./actions";
@@ -256,6 +257,7 @@ export function TeDoenBoard({ board, dragDisabled, openCardId }: TeDoenBoardProp
         onRenameSubtask={renameSubtask}
         onSetSubtaskDone={setSubtaskDone}
         onDeleteSubtask={deleteSubtask}
+        onReorderSubtask={reorderSubtask}
         onPromoteSubtask={promoteSubtask}
       />
     </>
