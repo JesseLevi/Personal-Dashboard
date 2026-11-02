@@ -1,6 +1,6 @@
 # ADR-0057: "Vandaag" is the landing page
 
-**Status**: Accepted (2026-11-01, user decision on the improvement brief, package 4). Amends ADR-0047's assumption that Atlas opens on Te doen.
+**Status**: Superseded by ADR-0059 (2026-11-01): the Agenda is the landing page and carries the day cards. Originally accepted the same day (improvement brief, package 4); it never reached production.
 
 ## Context
 

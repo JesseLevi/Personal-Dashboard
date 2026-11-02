@@ -1,6 +1,6 @@
 # ADR-0058: The Agenda has no plan tray
 
-**Status**: Accepted (2026-11-01, user decision, #718). Amends ADR-0037 §8 (the tray and external dragging) and ADR-0051 §2 (where `cook_rhythm` shows).
+**Status**: Accepted (2026-11-01, user decision, #718). Amends ADR-0037 §8 (the tray and external dragging) and ADR-0051 §2 (where `cook_rhythm` shows). §3 amended by ADR-0059: Vandaag is gone, `cook_rhythm` shows on the Agenda day cards.
 
 ## Context
 
