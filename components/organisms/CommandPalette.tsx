@@ -101,7 +101,7 @@ function PaletteOption({ id, icon, title, meta, active, trailing, onActivate, on
       onClick={onChoose}
       className={cn(
         "flex w-full items-center gap-inline-lg rounded-control-outer border border-transparent p-component-sm text-left",
-        active && "border-stroke-primary bg-surface-highlight-white",
+        active && "border-stroke-primary bg-surface-highlight-white/50",
       )}
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-control border border-stroke-primary bg-surface-highlight-white text-text-secondary">
@@ -112,7 +112,7 @@ function PaletteOption({ id, icon, title, meta, active, trailing, onActivate, on
         {meta && <span className="truncate text-sm text-text-secondary">{meta}</span>}
       </span>
       {trailing}
-      <Kbd aria-hidden="true" className={cn("shrink-0 max-md:hidden", !active && "invisible")}>
+      <Kbd aria-hidden="true" className={cn("shrink-0 bg-surface-highlight-white max-md:hidden", !active && "invisible")}>
         ↵
       </Kbd>
     </button>
