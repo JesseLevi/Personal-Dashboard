@@ -548,6 +548,8 @@
         "unavailable": "Nog niet beschikbaar",
         "sendsLabel": "Wat er naartoe gaat: de tekst van je notities, recepten, kaarten en afspraken (ook geïmporteerde) en je zoekvragen. Voor de Assistent gaan ook titels en korte fragmenten van verwante notities en kaarten mee, zodat hij een patroon in gewone taal kan formuleren.",
         "recipientLabel": "Naar wie: Cloudflare Workers AI (index en zoeken) en Anthropic, het bedrijf achter Claude (Assistent). Geen van beide gebruikt je data om modellen te trainen. Anthropic bewaart invoer en uitvoer normaal maximaal 30 dagen. De verwerking vindt niet gegarandeerd in de EU plaats.",
+        "patternsLabel": "Assistent zoekt patronen",
+        "patternsHelp": "Uit: er gaat niets naar Anthropic voor patronen. De index en het logboek lopen door.",
         "offLabel": "Uitzetten wist de opgebouwde index en de patroonmeldingen van de Assistent direct. Je notities zelf blijven staan.",
         "confirmPrompt": "Verbanden, slim zoeken en de Assistent uitzetten? De opgebouwde index en de patroonmeldingen worden gewist. Je notities blijven staan.",
         "cancelLabel": "Annuleren",

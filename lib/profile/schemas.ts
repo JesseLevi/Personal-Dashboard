@@ -34,3 +34,8 @@ export const updateNameSchema = z.object({
 export const setAiEnabledSchema = z.object({
   enabled: z.boolean(),
 });
+
+// ADR-0060 §1: the pause for the Assistent's pattern step, subordinate to the opt-in.
+export const setAssistantPatternsEnabledSchema = z.object({
+  enabled: z.boolean(),
+});

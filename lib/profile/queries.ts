@@ -119,6 +119,27 @@ export const getAiEnabled = cache(async (): Promise<boolean> => {
   return data?.ai_enabled ?? false;
 });
 
+/** #755: `profiles.assistant_patterns_enabled` (ADR-0060 §1). Separate like `getAiEnabled`:
+ * a hosted DB without the pause migration only loses this toggle. True (the column
+ * default) on any error. */
+export const getAssistantPatternsEnabled = cache(async (): Promise<boolean> => {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return true;
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("assistant_patterns_enabled")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[profile] getAssistantPatternsEnabled failed:", error.code, error.message);
+    return true;
+  }
+  return data?.assistant_patterns_enabled ?? true;
+});
+
 /** #434: same-origin avatar URL for the signed-in user, `?v=<updated_at>` busts
  * the immutable cache on replace. Separate from `getProfileForNav` like
  * `getLastName`: a hosted DB without the avatar_path migration only loses the

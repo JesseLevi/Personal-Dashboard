@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/profile/session";
-import { updateNameSchema, updateLocaleSchema, setAiEnabledSchema } from "@/lib/profile/schemas";
+import { updateNameSchema, updateLocaleSchema, setAiEnabledSchema, setAssistantPatternsEnabledSchema } from "@/lib/profile/schemas";
 import { clearAvatar, storeAvatar } from "@/lib/profile/avatar";
 import type { ActionResult } from "@/lib/profile/types";
 
@@ -94,6 +94,28 @@ export async function setAiEnabled(input: unknown): Promise<ActionResult> {
 
   if (error) {
     console.error("[profile] setAiEnabled failed:", error.code, error.message);
+    return { success: false, error: "generic" };
+  }
+
+  revalidatePath("/", "layout");
+
+  return { success: true, data: undefined };
+}
+
+// ADR-0060 §1 (#755): pauses the Assistent's pattern step only. Deletes nothing;
+// consent stays with setAiEnabled.
+export async function setAssistantPatternsEnabled(input: unknown): Promise<ActionResult> {
+  const parsed = setAssistantPatternsEnabledSchema.safeParse(input);
+  if (!parsed.success) return { success: false, error: "invalid-input" };
+
+  const auth = await requireUserId();
+  if ("error" in auth) return { success: false, error: auth.error };
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("set_assistant_patterns_enabled", { p_enabled: parsed.data.enabled });
+
+  if (error) {
+    console.error("[profile] setAssistantPatternsEnabled failed:", error.code, error.message);
     return { success: false, error: "generic" };
   }
 
