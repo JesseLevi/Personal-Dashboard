@@ -6,6 +6,7 @@ import {
   clockOf,
   groupDay,
   isEmptyDay,
+  isEmptyDayCards,
   itemOnDay,
   limitRows,
   timeLabel,
@@ -172,5 +173,17 @@ describe("basketSuggestion", () => {
   it("is null when every meal is in the basket or there are none", () => {
     expect(basketSuggestion(meals, new Set(["a", "b"]))).toBeNull();
     expect(basketSuggestion([], new Set())).toBeNull();
+  });
+});
+
+describe("isEmptyDayCards", () => {
+  it("is empty without items on the day", () => {
+    expect(isEmptyDayCards([event("a", "2026-11-03T09:00:00")], DAY, DAY, 0)).toBe(true);
+    expect(isEmptyDayCards([event("a", `${DAY}T09:00:00`)], DAY, DAY, 0)).toBe(false);
+  });
+
+  it("counts signals only on today", () => {
+    expect(isEmptyDayCards([], DAY, DAY, 2)).toBe(false);
+    expect(isEmptyDayCards([], DAY, "2026-11-01", 2)).toBe(true);
   });
 });

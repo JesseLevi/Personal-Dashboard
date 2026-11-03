@@ -14,10 +14,10 @@ export interface AgendaBodySwipe {
   onStep: (step: 1 | -1) => void;
   /** A neighbour day is about to be drawn: load its data when it is outside the loaded window. */
   onPeek?: (step: 1 | -1) => void;
-  /** The day beside the shown one, drawn while a drag is under way; the caller takes care of its data. */
-  renderNeighbour: (step: 1 | -1) => ReactNode;
+  /** The day `step` from `from` (the day shown when the drag locked), drawn while a drag is under way; the caller takes care of its data. */
+  renderNeighbour: (step: 1 | -1, from: string) => ReactNode;
   /** The same for the day cards: the cards of the day beside the shown one. Omitted: the cards do not swipe. */
-  renderCardsNeighbour?: (step: 1 | -1) => ReactNode;
+  renderCardsNeighbour?: (step: 1 | -1, from: string) => ReactNode;
 }
 
 export interface AgendaBodySheet {
@@ -42,7 +42,7 @@ function scrollers(root: Element): HTMLElement[] {
 // and the neighbour day waits beside it.
 //
 // From `lg` the day cards (ADR-0059) always take a 20rem column left of the planner and scroll
-// inside the body's height; `onPlannerWidth` reports the planner's width so the page can show
+// inside the body's height, unless `cardsCollapsed` (an empty day): then the planner takes the full width; `onPlannerWidth` reports the planner's width so the page can show
 // fewer days when it is narrow. Below `lg` the cards scroll with the page under the sticky header and the
 // planner is the pull-up sheet (`AgendaDaySheet`): the cards get the sheet's peek height as bottom space and
 // are inert while it is full. One DOM for both, switched in CSS.
@@ -50,12 +50,15 @@ export function AgendaBody({
   children,
   swipe,
   cards,
+  cardsCollapsed = false,
   sheet,
   onPlannerWidth,
 }: {
   children: ReactNode;
   swipe?: AgendaBodySwipe;
   cards?: ReactNode;
+  /** From `lg` the cards column is left out (it stays in the DOM, so the sheet below `lg` keeps measuring it). */
+  cardsCollapsed?: boolean;
   sheet: AgendaBodySheet;
   onPlannerWidth?: (width: number) => void;
 }) {
@@ -122,13 +125,14 @@ export function AgendaBody({
   return (
     // spacing-flag: --agenda-peek-min 11rem, the least the sheet shows in peek -- design/notes/AgendaPage.md
     <div ref={scopeRef} className="min-w-0 pr-page-right-equal [--agenda-peek-min:11rem] [--agenda-peek:var(--agenda-peek-min)]">
-      <div className={cn("flex min-w-0 flex-col gap-stack-lg", cards && "lg:grid lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start")}>
+      <div className={cn("flex min-w-0 flex-col gap-stack-lg", cards && !cardsCollapsed && "lg:grid lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start")}>
         {cards && (
           <div
             ref={cardsRef}
             inert={narrow && sheet.stop === "full"}
             className={cn(
               "min-w-0 max-lg:pb-(--agenda-peek) lg:h-[calc(100dvh-14rem)] lg:min-h-[28rem] lg:overflow-y-auto",
+              cardsCollapsed && "lg:hidden",
               swipe?.renderCardsNeighbour && "max-lg:touch-pan-y max-lg:touch-pinch-zoom max-lg:overflow-x-clip",
             )}
           >
@@ -139,9 +143,9 @@ export function AgendaBody({
                   data-agenda-peek=""
                   aria-hidden="true"
                   inert
-                  className={cn("absolute top-0 w-full", cardsPeek === 1 ? "left-[calc(100%+var(--spacing-inline-lg))]" : "right-[calc(100%+var(--spacing-inline-lg))]")}
+                  className={cn("absolute top-0 w-full", cardsPeek.step === 1 ? "left-[calc(100%+var(--spacing-inline-lg))]" : "right-[calc(100%+var(--spacing-inline-lg))]")}
                 >
-                  {swipe.renderCardsNeighbour(cardsPeek)}
+                  {swipe.renderCardsNeighbour(cardsPeek.step, cardsPeek.date)}
                 </div>
               )}
             </div>
@@ -164,9 +168,9 @@ export function AgendaBody({
                   data-agenda-peek=""
                   aria-hidden="true"
                   inert
-                  className={cn("absolute top-0 h-full w-full", peek === 1 ? "left-[calc(100%+var(--spacing-inline-lg))]" : "right-[calc(100%+var(--spacing-inline-lg))]")}
+                  className={cn("absolute top-0 h-full w-full", peek.step === 1 ? "left-[calc(100%+var(--spacing-inline-lg))]" : "right-[calc(100%+var(--spacing-inline-lg))]")}
                 >
-                  {swipe.renderNeighbour(peek)}
+                  {swipe.renderNeighbour(peek.step, peek.date)}
                 </div>
               )}
             </div>

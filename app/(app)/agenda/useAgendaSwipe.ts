@@ -249,6 +249,13 @@ export interface AgendaSwipeOptions {
   onLock?: (step: Step) => void;
 }
 
+/** The neighbour to draw: its step from `date`, the day shown when the drag locked. */
+export interface AgendaSwipePeek {
+  step: Step;
+  /** Kept through the commit: recomputed from the new date, the neighbour would show the day after it while still on screen. */
+  date: string;
+}
+
 /**
  * Binds the controller to `viewportRef` (passive touch listeners, so vertical scrolling and the
  * calendar's own long-press drag keep working) and moves `paneRef`. Returns the neighbour day to
@@ -258,9 +265,9 @@ export function useAgendaSwipe(
   viewportRef: RefObject<HTMLElement | null>,
   paneRef: RefObject<HTMLElement | null>,
   { enabled, date, onStep, onLock }: AgendaSwipeOptions,
-): Step | null {
+): AgendaSwipePeek | null {
   const reduced = usePrefersReducedMotion();
-  const [peek, setPeek] = useState<Step | null>(null);
+  const [peek, setPeek] = useState<AgendaSwipePeek | null>(null);
   const keep = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const latest = useRef({ onStep, onLock, date, reduced });
   useEffect(() => {
@@ -290,7 +297,7 @@ export function useAgendaSwipe(
       },
       peek: (step) => {
         clearTimeout(keep.current);
-        setPeek(step);
+        setPeek(step === null ? null : { step, date: latest.current.date });
         if (step !== null) latest.current.onLock?.(step);
       },
       release: () => {

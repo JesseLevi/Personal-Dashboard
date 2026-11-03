@@ -198,11 +198,11 @@ export function AgendaDayCards({
   };
 
   const weekday = format.dateTime(utc(day), { weekday: "long", timeZone: "UTC" });
-  const todayLabel = format.dateTime(utc(today), { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+  const dayLabel = format.dateTime(utc(day), { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
 
   return (
     <div className={cn(gridClass, className)}>
-      <h2 className="col-span-full hidden text-base font-semibold text-text-primary lg:block">{t("heading", { date: todayLabel })}</h2>
+      <h2 className="col-span-full hidden text-base font-semibold text-text-primary lg:block">{isToday ? t("heading", { date: dayLabel }) : dayLabel.charAt(0).toLocaleUpperCase() + dayLabel.slice(1)}</h2>
 
       {loading && (
         <>

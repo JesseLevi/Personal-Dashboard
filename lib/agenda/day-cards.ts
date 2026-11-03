@@ -49,6 +49,11 @@ export function isEmptyDay(groups: DayGroups): boolean {
   return groups.events.length === 0 && groups.meals.length === 0 && groups.cards.length === 0;
 }
 
+/** The day cards have nothing to show: no items on `day`, and on today no signals either. */
+export function isEmptyDayCards(items: readonly AgendaItem[], day: string, today: string, signalCount: number): boolean {
+  return isEmptyDay(groupDay(items, day)) && (day !== today || signalCount === 0);
+}
+
 /** The first `max` rows and how many are left for "+N meer"; `expanded` shows them all. */
 export function limitRows<T>(rows: readonly T[], max: number, expanded = false): { shown: T[]; more: number } {
   if (expanded || rows.length <= max) return { shown: [...rows], more: 0 };

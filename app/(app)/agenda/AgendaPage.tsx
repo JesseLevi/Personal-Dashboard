@@ -11,6 +11,7 @@ import {
   type AgendaChange,
 } from "@/components/organisms/AgendaCalendar";
 import type { CalendarOverview, SyncNoticeView } from "@/lib/agenda/calendars";
+import { isEmptyDayCards } from "@/lib/agenda/day-cards";
 import type { MealCardData } from "@/lib/agenda/meal-cards";
 import { actOnAssistantSignal, dismissAssistantSignal } from "@/lib/assistant/actions";
 import type { AssistantSignal } from "@/lib/assistant/types";
@@ -154,8 +155,10 @@ export function AgendaPage({
   const [notice, setNotice] = useState<string | null>(null);
   const [headerOverlayOpen, setHeaderOverlayOpen] = useState(false);
   const [scrollNowKey, setScrollNowKey] = useState(0);
-  // Below `lg` the planner is a sheet; every landing starts in peek and nothing is remembered (#733).
+  // Below `lg` the planner is a sheet; every landing starts in peek and nothing is remembered (#733),
+  // except on an empty day: then it starts in full (see `cardsEmpty` below).
   const [sheetStop, setSheetStop] = useState<AgendaSheetStop>("peek");
+  const [sheetForEmpty, setSheetForEmpty] = useState(false);
   const latestRequest = useRef(0);
   const newButtonRef = useRef<HTMLElement>(null);
 
@@ -207,8 +210,8 @@ export function AgendaPage({
     [tErrors, refreshMealCards],
   );
 
-  // Below `lg` the cards follow the shown day; from `lg` they show today next to any planner range.
-  const cardsDay = narrow ? date : today;
+  // The cards follow the shown day.
+  const cardsDay = date;
   const cardsInWindow = cardsDay >= loaded.from && cardsDay < loaded.to;
   useEffect(() => {
     if (cardsInWindow) return;
@@ -226,6 +229,13 @@ export function AgendaPage({
     if (cardsInWindow) return visibleItems;
     return outside?.day === cardsDay ? outside.items.filter((item) => !isItemHidden(item, hidden)) : null;
   }, [cardsInWindow, cardsDay, visibleItems, outside, hidden]);
+  // An empty day has no cards column from `lg`, and below `lg` the sheet rests in full on it; a drag down still shows
+  // the empty-day line. The stop only moves when the emptiness changes, not while the day is loading.
+  const cardsEmpty = cardItems === null ? null : isEmptyDayCards(cardItems, cardsDay, today, signals.length);
+  if (cardsEmpty !== null && cardsEmpty !== sheetForEmpty) {
+    setSheetForEmpty(cardsEmpty);
+    setSheetStop(cardsEmpty ? "full" : "peek");
+  }
 
   function goTo(next: string) {
     setDate(next);
@@ -296,16 +306,16 @@ export function AgendaPage({
           const neighbour = stepDate(effectiveView, date, step);
           if (loadWindow(neighbour).from !== loaded.from) void loadAround(neighbour);
         },
-        renderCardsNeighbour: (step: 1 | -1) => {
-          const day = stepDate(effectiveView, date, step);
+        renderCardsNeighbour: (step: 1 | -1, from: string) => {
+          const day = stepDate(effectiveView, from, step);
           const inWindow = day >= loaded.from && day < loaded.to;
           return renderCards(day, inWindow ? visibleItems : [], !inWindow);
         },
-        renderNeighbour: (step: 1 | -1) => (
+        renderNeighbour: (step: 1 | -1, from: string) => (
           <AgendaCalendar
             items={visibleItems}
             view={view}
-            date={stepDate(effectiveView, date, step)}
+            date={stepDate(effectiveView, from, step)}
             scrollToNow={false}
             entrance={false}
           />
@@ -560,6 +570,7 @@ export function AgendaPage({
         }}
         onPlannerWidth={setPlannerWidth}
         cards={renderCards(cardsDay, cardItems ?? [], cardItems === null)}
+        cardsCollapsed={cardsEmpty === true}
       >
         <AgendaCalendar
           items={visibleItems}
