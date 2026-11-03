@@ -62,7 +62,6 @@ export function AgendaBody({
   sheet: AgendaBodySheet;
   onPlannerWidth?: (width: number) => void;
 }) {
-  const viewportRef = useRef<HTMLDivElement>(null);
   const paneRef = useRef<HTMLDivElement>(null);
   const neighbourRef = useRef<HTMLDivElement>(null);
   const scopeRef = useRef<HTMLDivElement>(null);
@@ -103,7 +102,8 @@ export function AgendaBody({
     align();
   }, []);
 
-  const peek = useAgendaSwipe(viewportRef, paneRef, {
+  // Bound to the planner pane, not the grid: in peek the grid is inert under a tap button, and a sideways swipe over the sliver still steps the day.
+  const peek = useAgendaSwipe(plannerRef, paneRef, {
     enabled: !!swipe,
     date: swipe?.date ?? "",
     onStep: (step) => swipe?.onStep(step),
@@ -159,7 +159,7 @@ export function AgendaBody({
           cardsRef={cardsRef}
           scopeRef={scopeRef}
         >
-          <div ref={viewportRef} className={cn("h-full", swipe && "touch-pan-y touch-pinch-zoom overflow-x-clip")}>
+          <div className={cn("h-full", swipe && "touch-pan-y touch-pinch-zoom overflow-x-clip")}>
             <div ref={paneRef} className="relative h-full">
               {children}
               {swipe && peek !== null && (

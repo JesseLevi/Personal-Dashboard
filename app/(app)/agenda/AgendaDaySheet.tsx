@@ -182,7 +182,7 @@ export function AgendaDaySheet({ stop, onStopChange, strip, plannerRef, cardsRef
         </div>
         {!full && (
           // Taps on the sliver of the grid open the sheet; the grabber is the accessible control.
-          <button type="button" aria-hidden="true" tabIndex={-1} onClick={() => onStopChange("full")} className="absolute inset-0 lg:hidden" />
+          <button type="button" aria-hidden="true" tabIndex={-1} onClick={() => onStopChange("full")} className="absolute inset-0 touch-pan-y lg:hidden" />
         )}
       </div>
       {!full && (

@@ -9,6 +9,7 @@ import {
   isEmptyDayCards,
   itemOnDay,
   limitRows,
+  linkedDayCards,
   timeLabel,
   timelineState,
   TIMELINE_LIMIT,
@@ -185,5 +186,18 @@ describe("isEmptyDayCards", () => {
   it("counts signals only on today", () => {
     expect(isEmptyDayCards([], DAY, DAY, 2)).toBe(false);
     expect(isEmptyDayCards([], DAY, "2026-11-01", 2)).toBe(true);
+  });
+});
+
+describe("linkedDayCards", () => {
+  it("lists the cards linked to the day's events once, without planned ones", () => {
+    const planned = { kind: "planned_card", id: "k1", title: "k1", start: DAY, end: null, allDay: true, linkCount: 0, board: "b", column: "c" } as AgendaItem;
+    const groups = groupDay([event("a", `${DAY}T09:00:00`), event("b", `${DAY}T12:00:00`), event("x", "2026-11-03T09:00:00"), planned], DAY);
+    const linked = {
+      a: [{ id: "k1", title: "k1" }, { id: "k2", title: "k2" }],
+      b: [{ id: "k2", title: "k2" }, { id: "k3", title: "k3" }],
+      x: [{ id: "k4", title: "k4" }],
+    };
+    expect(linkedDayCards(groups, linked).map((card) => card.id)).toEqual(["k2", "k3"]);
   });
 });

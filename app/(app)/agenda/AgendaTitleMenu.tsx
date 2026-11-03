@@ -68,7 +68,7 @@ export function AgendaTitleMenu({ open, anchorRef, onToday, onGoToDate, onClose 
 
   if (!open) return null;
   return createPortal(
-    <div ref={popoverRef} className="z-[999] w-72" style={popover.style} onKeyDown={handleKeyDown}>
+    <div ref={popoverRef} className="z-[999] w-max" style={popover.style} onKeyDown={handleKeyDown}>
       <Dropdown className="shadow-sm" role="menu" aria-label={t("titleMenuLabel")}>
         <Button role="menuitem" variant="white" align="left" icon="Sun" onClick={onToday}>
           {t("todayLabel")}

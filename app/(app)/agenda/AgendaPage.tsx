@@ -11,7 +11,7 @@ import {
   type AgendaChange,
 } from "@/components/organisms/AgendaCalendar";
 import type { CalendarOverview, SyncNoticeView } from "@/lib/agenda/calendars";
-import { isEmptyDayCards } from "@/lib/agenda/day-cards";
+import { isEmptyDayCards, type LinkedCards } from "@/lib/agenda/day-cards";
 import type { MealCardData } from "@/lib/agenda/meal-cards";
 import { actOnAssistantSignal, dismissAssistantSignal } from "@/lib/assistant/actions";
 import type { AssistantSignal } from "@/lib/assistant/types";
@@ -37,7 +37,7 @@ import { EnterFromLogin } from "../te-doen/EnterFromLogin";
 import { AgendaBody } from "./AgendaBody";
 import { AgendaDayCards } from "./AgendaDayCards";
 import { AgendaDayStrip } from "./AgendaDayStrip";
-import { loadMealCardData } from "./day-cards-actions";
+import { loadLinkedCards, loadMealCardData } from "./day-cards-actions";
 import { AgendaCalendarsPanel } from "./AgendaCalendarsPanel";
 import { AgendaCardPanel, agendaCardId, type AgendaCardPanelItem } from "./AgendaCardPanel";
 import { AgendaEventPanel, type AgendaEventPrefill, type AgendaPanelTarget } from "./AgendaEventPanel";
@@ -85,6 +85,8 @@ export interface AgendaPageProps {
   signals: readonly AssistantSignal[];
   /** Recipe ids and basket links of the meals in the first window. */
   initialMealCards: MealCardData;
+  /** Cards linked to the first window's events. */
+  initialLinkedCards: LinkedCards;
   /** `recipe id -> presigned thumbnail URL` for those meals. */
   mealThumbnails: Readonly<Record<string, string>>;
   /** Agenda-zone wall clock when the page rendered, `YYYY-MM-DDTHH:mm`. */
@@ -123,6 +125,7 @@ export function AgendaPage({
   initialCalendars,
   signals,
   initialMealCards,
+  initialLinkedCards,
   mealThumbnails,
   initialNow,
 }: AgendaPageProps) {
@@ -138,6 +141,7 @@ export function AgendaPage({
   const [items, setItems] = useState(initialItems);
   const [loaded, setLoaded] = useState(() => loadWindow(initialDate));
   const [mealCards, setMealCards] = useState(initialMealCards);
+  const [linkedCards, setLinkedCards] = useState(initialLinkedCards);
   const [now, setNow] = useState(initialNow);
   const [outside, setOutside] = useState<{ day: string; items: AgendaItem[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -171,8 +175,18 @@ export function AgendaPage({
     persistHidden(next);
   }
 
-  // Recipe ids and basket links of the meals on the day cards; a failed read leaves what is known.
+  // Recipe ids and basket links of the meals on the day cards, and the cards linked to its events; a failed
+  // read leaves what is known.
   const refreshMealCards = useCallback((list: readonly AgendaItem[]) => {
+    const events = list.filter((item) => item.kind === "event");
+    const withLinks = events.filter((item) => item.linkCount > 0).map((item) => item.id);
+    const applyLinked = (data: LinkedCards) =>
+      setLinkedCards((current) => ({ ...current, ...Object.fromEntries(events.map((event) => [event.id, data[event.id] ?? []])) }));
+    if (withLinks.length === 0) applyLinked({});
+    else
+      void loadLinkedCards(withLinks).then((result) => {
+        if (result.success) applyLinked(result.data);
+      });
     const ids = list.filter((item) => item.kind === "meal").map((item) => item.id);
     if (ids.length === 0) return;
     void loadMealCardData(ids).then((result) => {
@@ -284,6 +298,8 @@ export function AgendaPage({
       recipeIds={mealCards.recipeIds}
       thumbnailUrls={mealThumbnails}
       basket={mealCards.basket}
+      linkedCards={linkedCards}
+      onOpenCard={(cardId) => router.push(`/te-doen?card=${cardId}`)}
       baskets={baskets}
       onOpenItem={handleItemClick}
       onSignal={handleSignal}
