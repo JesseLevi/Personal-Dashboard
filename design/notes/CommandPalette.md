@@ -7,7 +7,7 @@ A modal palette is not a `SidePanel`: it is centred, has no drawer shape, no dra
 ## Anatomy
 Scrim, then a dialog. Dialog = one panel (`bg-surface-primary`, `rounded-container`, 1 px `stroke-primary`) with three strips split by `stroke-lines`:
 - **Field**: a `surface-highlight-white` bar with a `stroke-primary` border; `Search` icon, a plain `<input>` (combobox), `Kbd` esc from `md`; below `md` an icon-only `Button` X instead.
-- **List** (scrolls, max `min(60vh, 560px)`): groups with an `h3` and a count, then rows. Row = 40 px tile (`Icon`), title + meta (both truncate), optional trailing ring + percentage (project rows only), and a `Kbd` ↵ slot. Tile: `surface-highlight-white`. Highlighted row: `stroke-primary` border on `surface-highlight-white`.
+- **List** (scrolls, max `min(60vh, 560px)`): groups with an `h3` and a count, then rows. Row = 40 px tile (`Icon`), title + meta (both truncate), optional trailing ring + percentage (project rows only), and a `Kbd` ↵ slot. Tile and ↵ chip: `surface-highlight-white`. Highlighted row: `stroke-primary` border on `surface-highlight-white/50`, one step lighter than the tile so tile and chip stand out.
 - **Footer** (no fill of its own): `Kbd` hints (↑↓ bewegen, ↵ openen, esc sluiten) from `md`, and the smart-search hint button right-aligned.
 
 ## Contract
@@ -33,7 +33,7 @@ Scrim, then a dialog. Dialog = one panel (`bg-surface-primary`, `rounded-contain
 - **Phone**: top-anchored, `max-md:p-component-lg` gutter, safe-area top via `max()`. The dialog root is `pointer-events-none`, so a tap in the gutter reaches the scrim.
 - **Project row** = board row markup: `ListTodo` tile, meta "{done}/{total} subtaken · {board}", plus a trailing ring and percentage (`boardPercent` on subtasks): `done / total` rounded, no ring when `total === 0`, green at 100 %, else blue.
 - **Board row has no ring or percentage** (user decision, 2026-11-02): progress belongs to projects; the board meta keeps its card counts.
-- **Atlas layering** (user decision, 2026-11-02): the base is darker and what lies on it is lighter, as `SidePanel` + `InputField`. Panel `surface-primary`; field, tiles and the highlighted row `surface-highlight-white`. No stack layer or inner frame.
+- **Atlas layering** (user decision, 2026-11-02): the base is darker and what lies on it is lighter, as `SidePanel` + `InputField`. Panel `surface-primary`; field, tiles and the ↵ chip `surface-highlight-white`; the highlighted row `surface-highlight-white/50` (user decision, 2026-11-03). No stack layer or inner frame.
 
 ## Token gaps and flags
 - No sizing token: `md:w-[640px]`, `md:top-[12vh]`, `max-h-[min(60vh,560px)]`, `z-40`/`z-50` (as `SidePanel` level 1). Safe-area `max(1rem, env(...))` only adds space.
