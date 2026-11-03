@@ -54,6 +54,8 @@ export interface SettingsPanelProps {
   hasAvatar: boolean;
   /** #579: server-resolved `profiles.ai_enabled` (ADR-0043 §2) — seeds the opt-in checkbox. */
   aiEnabled: boolean;
+  /** #755: server-resolved `profiles.assistant_patterns_enabled` (ADR-0060 §1) — seeds the pause checkbox. */
+  patternsEnabled: boolean;
   /** #579: server-resolved `isEmbeddingConfigured()`; false shows "Nog niet beschikbaar" and disables the checkbox. */
   aiAvailable: boolean;
   /** #657: the member's widget tokens (`listWidgetTokens`), newest first. */
@@ -70,6 +72,7 @@ export function SettingsPanel({
   currentLastName,
   hasAvatar,
   aiEnabled,
+  patternsEnabled,
   aiAvailable,
   widgetTokens,
   widgetCreatedToken = null,
@@ -298,6 +301,7 @@ export function SettingsPanel({
         open={open && aiOpen}
         onClose={() => setAiOpen(false)}
         aiEnabled={aiEnabled}
+        patternsEnabled={patternsEnabled}
         aiAvailable={aiAvailable}
       />
       <WidgetSettingsPanel

@@ -5,7 +5,7 @@ import { ensureUserDefaults } from "@/lib/defaults/ensure";
 import { runAssistant } from "@/lib/assistant/run";
 import { runLazyEmbeddingDrain } from "@/lib/embeddings/lazy";
 import { isEmbeddingConfigured } from "@/lib/ai";
-import { getAiEnabled, getAvatarSrc, getLastName, getProfileForNav } from "@/lib/profile/queries";
+import { getAiEnabled, getAssistantPatternsEnabled, getAvatarSrc, getLastName, getProfileForNav } from "@/lib/profile/queries";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { listWidgetTokens } from "@/lib/widget/tokens";
 import { AppShellNav } from "./_components/AppShellNav";
@@ -40,11 +40,12 @@ export default async function AppLayout({
 
   // #404: separate, error-swallowing query so a not-yet-migrated last_name
   // column (and #434's avatar_path) cannot break the nav profile; all run in parallel.
-  const [profile, lastName, avatarSrc, aiEnabled, widgetTokens] = await Promise.all([
+  const [profile, lastName, avatarSrc, aiEnabled, patternsEnabled, widgetTokens] = await Promise.all([
     getProfileForNav(),
     getLastName(),
     getAvatarSrc(),
     getAiEnabled(),
+    getAssistantPatternsEnabled(),
     listWidgetTokens(),
   ]);
 
@@ -61,6 +62,7 @@ export default async function AppLayout({
       lastName={lastName}
       locale={profile.locale}
       aiEnabled={aiEnabled}
+      patternsEnabled={patternsEnabled}
       aiAvailable={isEmbeddingConfigured()}
       widgetTokens={widgetTokens}
     >

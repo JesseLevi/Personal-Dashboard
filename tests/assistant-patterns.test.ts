@@ -19,6 +19,7 @@ const OLD = "2026-08-01T12:00:00Z";
 
 type Options = {
   aiEnabled?: boolean;
+  patternsEnabled?: boolean;
   locale?: string;
   known?: string[];
   reserve?: string[];
@@ -49,7 +50,11 @@ function fakeClient(options: Options = {}) {
     const chain: Record<string, unknown> = {};
     for (const m of ["select", "eq", "in"]) chain[m] = () => chain;
     chain.maybeSingle = async () => ({
-      data: { ai_enabled: options.aiEnabled ?? true, locale: options.locale ?? "nl" },
+      data: {
+        ai_enabled: options.aiEnabled ?? true,
+        assistant_patterns_enabled: options.patternsEnabled ?? true,
+        locale: options.locale ?? "nl",
+      },
       error: null,
     });
     chain.then = (resolve: (v: unknown) => unknown) => resolve({ data: rows[table] ?? [], error: null });
@@ -103,6 +108,14 @@ describe("no-ops", () => {
     const { client, rpcCalls } = fakeClient({ ...threeNotes, aiEnabled: false });
     expect(await runPatterns({ client, userId: "u", path: "lazy", now: NOW })).toBe(0);
     expect(rpcCalls).toEqual([]);
+    expect(generate).not.toHaveBeenCalled();
+  });
+
+  it("paused: computes the candidates but makes no reserve, no call and no row", async () => {
+    const generate = provider({ helpful: true, message: "x" });
+    const { client, rpcCalls } = fakeClient({ ...threeNotes, patternsEnabled: false });
+    expect(await runPatterns({ client, userId: "u", path: "lazy", now: NOW })).toBe(0);
+    expect(rpcCalls.map((c) => c.name)).toEqual(["pattern_edges"]);
     expect(generate).not.toHaveBeenCalled();
   });
 
@@ -208,6 +221,14 @@ describe("cost guards", () => {
     const { client } = fakeClient({ ...manyClusters(4), reserve: ["reserved", "budget"] });
     expect(await runPatterns({ client, userId: "u", path: "lazy", now: NOW })).toBe(1);
     expect(generate).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops when the database says the step is paused", async () => {
+    const generate = provider({ helpful: true, message: "Patroon." });
+    const { client, rpcCalls } = fakeClient({ ...manyClusters(4), reserve: ["paused"] });
+    expect(await runPatterns({ client, userId: "u", path: "lazy", now: NOW })).toBe(0);
+    expect(rpcCalls.filter((c) => c.name === "reserve_pattern_signal")).toHaveLength(1);
+    expect(generate).not.toHaveBeenCalled();
   });
 
   it("skips a cluster the database already knows without calling the model", async () => {

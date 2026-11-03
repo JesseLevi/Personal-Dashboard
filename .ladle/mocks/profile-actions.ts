@@ -9,3 +9,4 @@ export const updateName = ok;
 export const uploadAvatar = ok;
 export const removeAvatar = ok;
 export const setAiEnabled = ok;
+export const setAssistantPatternsEnabled = ok;

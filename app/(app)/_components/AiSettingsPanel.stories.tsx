@@ -8,25 +8,31 @@ export default { title: "Account / AI settings panel" } satisfies StoryDefault;
 // baseline crop) from collapsing. The action is stood in by .ladle/mocks/profile-actions.ts.
 const base = { open: true, onClose: () => {} } as const;
 
-// Opt-in on (the Overview), off, and no provider configured.
+// Opt-in on (the Overview), opt-in on with the pattern step paused, off, and no provider configured.
 export const Overview = () => (
   <div className="min-h-screen">
     <StoryIntro
       what="Level-2 panel of the settings: the opt-in for connections, smart search and the Assistant. Turning it off asks for confirmation in the footer."
       note="AiSettingsPanel"
     />
-    <AiSettingsPanel {...base} aiEnabled aiAvailable />
+    <AiSettingsPanel {...base} aiEnabled patternsEnabled aiAvailable />
+  </div>
+);
+
+export const Paused = () => (
+  <div className="min-h-screen">
+    <AiSettingsPanel {...base} aiEnabled patternsEnabled={false} aiAvailable />
   </div>
 );
 
 export const Off = () => (
   <div className="min-h-screen">
-    <AiSettingsPanel {...base} aiEnabled={false} aiAvailable />
+    <AiSettingsPanel {...base} aiEnabled={false} patternsEnabled aiAvailable />
   </div>
 );
 
 export const Unavailable = () => (
   <div className="min-h-screen">
-    <AiSettingsPanel {...base} aiEnabled={false} aiAvailable={false} />
+    <AiSettingsPanel {...base} aiEnabled={false} patternsEnabled aiAvailable={false} />
   </div>
 );

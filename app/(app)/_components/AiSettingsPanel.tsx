@@ -4,7 +4,7 @@ import { useEffect, useId, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { SidePanel } from "@/components/organisms/SidePanel";
 import { Checkbox } from "@/components/atoms/Checkbox";
-import { setAiEnabled } from "@/lib/profile/actions";
+import { setAiEnabled, setAssistantPatternsEnabled } from "@/lib/profile/actions";
 import { DeleteConfirm, useDeleteConfirm } from "./DeleteConfirm";
 
 // design: Claude-designed (#579, #668) — level-2 panel of SettingsPanel from
@@ -15,11 +15,13 @@ export interface AiSettingsPanelProps {
   onClose: () => void;
   /** Server-resolved `profiles.ai_enabled` (ADR-0043 §2) — seeds the opt-in checkbox. */
   aiEnabled: boolean;
+  /** Server-resolved `profiles.assistant_patterns_enabled` (ADR-0060 §1) — seeds the pause checkbox. */
+  patternsEnabled: boolean;
   /** Server-resolved `isEmbeddingConfigured()`; false shows "Nog niet beschikbaar" and disables the checkbox. */
   aiAvailable: boolean;
 }
 
-export function AiSettingsPanel({ open, onClose, aiEnabled, aiAvailable }: AiSettingsPanelProps) {
+export function AiSettingsPanel({ open, onClose, aiEnabled, patternsEnabled, aiAvailable }: AiSettingsPanelProps) {
   const t = useTranslations("components.settingsPanel");
   const tSidePanel = useTranslations("components.sidePanel");
   const tErrors = useTranslations("profile.errors");
@@ -46,6 +48,26 @@ export function AiSettingsPanel({ open, onClose, aiEnabled, aiAvailable }: AiSet
       if (result.success) setPendingAi(enabled);
       else setAiError(tErrors(result.error));
       cancel();
+    });
+  }
+
+  // The pause saves on its own too, subordinate to the opt-in (ADR-0060 §1): turning
+  // it off deletes nothing, so there is nothing to confirm.
+  const [pendingPatterns, setPendingPatterns] = useState(patternsEnabled);
+  useEffect(() => {
+    setPendingPatterns(patternsEnabled);
+  }, [patternsEnabled]);
+  const [patternsError, setPatternsError] = useState<string | null>(null);
+  const [isPatternsPending, startPatternsTransition] = useTransition();
+
+  function handlePatternsToggle() {
+    if (!aiAvailable || !pendingAi || isPatternsPending) return;
+    const enabled = !pendingPatterns;
+    setPatternsError(null);
+    startPatternsTransition(async () => {
+      const result = await setAssistantPatternsEnabled({ enabled });
+      if (result.success) setPendingPatterns(enabled);
+      else setPatternsError(tErrors(result.error));
     });
   }
 
@@ -93,6 +115,17 @@ export function AiSettingsPanel({ open, onClose, aiEnabled, aiAvailable }: AiSet
           />
           {t("ai.checkboxLabel")}
         </label>
+        <label className="flex items-center gap-inline-sm text-base text-text-primary">
+          <Checkbox
+            checked={aiAvailable && pendingAi && pendingPatterns}
+            disabled={!aiAvailable || !pendingAi || isAiPending || isPatternsPending}
+            onClick={handlePatternsToggle}
+            className="disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          {t("ai.patternsLabel")}
+        </label>
+        <p className="text-base text-text-secondary">{t("ai.patternsHelp")}</p>
+        {patternsError ? <p className="text-base font-semibold text-priority-urgent">{patternsError}</p> : null}
         <p className="text-base text-text-secondary">{t("ai.sendsLabel")}</p>
         <p className="text-base text-text-secondary">{t("ai.recipientLabel")}</p>
         <p className="text-base text-text-secondary">{t("ai.offLabel")}</p>

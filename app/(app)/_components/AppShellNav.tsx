@@ -160,6 +160,8 @@ export interface AppShellNavProps {
   locale: Locale;
   /** #579: `profiles.ai_enabled` (`getAiEnabled`), seeds SettingsPanel's opt-in checkbox. */
   aiEnabled: boolean;
+  /** #755: `profiles.assistant_patterns_enabled` (`getAssistantPatternsEnabled`), seeds the pause checkbox. */
+  patternsEnabled: boolean;
   /** #579: `isEmbeddingConfigured()` resolved on the server; false disables the opt-in. */
   aiAvailable: boolean;
   /** #657: the member's widget tokens (`listWidgetTokens`), for SettingsPanel's iPhone-widget section. */
@@ -174,7 +176,7 @@ export interface AppShellNavProps {
 // own, so importing it here pulls it into the client bundle — the boundary
 // stops at this file, which is why the layout above stays a Server
 // Component and does the Supabase call.
-export function AppShellNav({ children, displayName, lastName, avatarSrc, locale, aiEnabled, aiAvailable, widgetTokens }: AppShellNavProps) {
+export function AppShellNav({ children, displayName, lastName, avatarSrc, locale, aiEnabled, patternsEnabled, aiAvailable, widgetTokens }: AppShellNavProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
@@ -470,6 +472,7 @@ export function AppShellNav({ children, displayName, lastName, avatarSrc, locale
         currentLastName={lastName}
         hasAvatar={avatarSrc !== null}
         aiEnabled={aiEnabled}
+        patternsEnabled={patternsEnabled}
         aiAvailable={aiAvailable}
         widgetTokens={widgetTokens}
       />

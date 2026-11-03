@@ -1,9 +1,10 @@
 -- Assistent pattern step (#628, ADR-0046 §3-5): neighbour edges, the
 -- reserve/complete pair (consent, ownership, dedupe, 3 calls per day), the
--- service_role-only variants, the opt-out delete and the cron member ordering.
+-- service_role-only variants, the pattern pause (#755, ADR-0060 §1), the opt-out
+-- delete and the cron member ordering.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(39);
+select plan(49);
 
 insert into auth.users (id, email)
 values ('00000000-0000-0000-0000-628000000a01', 'a@test.local'),
@@ -266,6 +267,67 @@ select throws_ok(
   $$ select * from public.assistant_members_by_last_run() $$,
   '42501', null, 'authenticated cannot read the member ordering'
 );
+
+-- Pause (#755, ADR-0060 §1) ------------------------------------------------------
+
+select lives_ok($$ select public.set_assistant_patterns_enabled(false) $$, 'A can pause the pattern step');
+select is(
+  public.reserve_pattern_signal('k6',
+    '[{"type":"note","id":"00000000-0000-0000-0000-628000000a12"},{"type":"note","id":"00000000-0000-0000-0000-628000000a13"},{"type":"note","id":"00000000-0000-0000-0000-628000000a14"}]'::jsonb, 'nl'),
+  'paused',
+  'a paused member gets paused, before the budget is looked at'
+);
+select is(
+  (select count(*)::int from public.agent_signals where dedupe_key = 'k6'),
+  0,
+  'paused writes no row'
+);
+select throws_ok(
+  $$ update public.profiles set assistant_patterns_enabled = false
+     where id = '00000000-0000-0000-0000-628000000a01' $$,
+  '42501', null, 'the pause column is not writable directly'
+);
+select lives_ok($$ select public.set_assistant_patterns_enabled(true) $$, 'A can resume the pattern step');
+select is(
+  public.reserve_pattern_signal('k6',
+    '[{"type":"note","id":"00000000-0000-0000-0000-628000000a12"},{"type":"note","id":"00000000-0000-0000-0000-628000000a13"},{"type":"note","id":"00000000-0000-0000-0000-628000000a14"}]'::jsonb, 'nl'),
+  'budget',
+  'resumed, the usual rules apply again (the budget is spent)'
+);
+
+reset role;
+select is(
+  (select assistant_patterns_enabled from public.profiles where id = '00000000-0000-0000-0000-628000000c01'),
+  true,
+  'the pause column defaults to on'
+);
+select ok(
+  has_function_privilege('authenticated', 'public.set_assistant_patterns_enabled(boolean)', 'EXECUTE')
+  and not has_function_privilege('anon', 'public.set_assistant_patterns_enabled(boolean)', 'EXECUTE'),
+  'set_assistant_patterns_enabled is executable by authenticated, never by anon'
+);
+
+update public.profiles set assistant_patterns_enabled = false where id = '00000000-0000-0000-0000-628000000a01';
+set local role service_role;
+select is(
+  public.reserve_pattern_signal_for('00000000-0000-0000-0000-628000000a01', 'k6',
+    '[{"type":"note","id":"00000000-0000-0000-0000-628000000a12"},{"type":"note","id":"00000000-0000-0000-0000-628000000a13"},{"type":"note","id":"00000000-0000-0000-0000-628000000a14"}]'::jsonb, 'nl'),
+  'paused',
+  'service_role: the cron path honours the pause'
+);
+reset role;
+update public.profiles set assistant_patterns_enabled = true where id = '00000000-0000-0000-0000-628000000a01';
+
+set local role anon;
+set local request.jwt.claims to '{}';
+select throws_ok(
+  $$ select public.set_assistant_patterns_enabled(false) $$,
+  '42501', null, 'anon cannot call set_assistant_patterns_enabled'
+);
+
+reset role;
+set local role authenticated;
+set local request.jwt.claims to '{"sub": "00000000-0000-0000-0000-628000000a01", "role": "authenticated"}';
 
 -- Opting out ---------------------------------------------------------------------
 

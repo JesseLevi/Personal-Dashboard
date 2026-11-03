@@ -155,7 +155,7 @@ export async function runPatterns(args: { client: Client; userId: string; path: 
 
     const { data: profile, error: profileError } = await client
       .from("profiles")
-      .select("ai_enabled, locale")
+      .select("ai_enabled, assistant_patterns_enabled, locale")
       .eq("id", userId)
       .maybeSingle();
     if (profileError) throw profileError;
@@ -179,6 +179,10 @@ export async function runPatterns(args: { client: Client; userId: string; path: 
     const candidates = clusters.filter((c) => !knownKeys.has(dedupeKeyFor(c.sources))).slice(0, MAX_CANDIDATES);
     if (candidates.length === 0) return 0;
 
+    // Paused (ADR-0060 §1): the step ran up to the candidate list and stops before reserving.
+    // No call, no agent_signals row. The log (#756) records outcome 'paused' here.
+    if (!profile.assistant_patterns_enabled) return 0;
+
     const content = await loadContent(client, userId, candidates.flatMap((c) => c.sources), now);
     const staleKeys = new Set([...content.values()].filter((c) => c.item.stale).map((c) => c.key));
 
@@ -194,7 +198,7 @@ export async function runPatterns(args: { client: Client; userId: string; path: 
       const ordered = orderSources(cluster, content);
       const dedupeKey = dedupeKeyFor(cluster.sources);
       const reserved = await reserve(client, userId, path, dedupeKey, ordered, locale);
-      if (reserved === "budget" || reserved === "disabled") break;
+      if (reserved === "budget" || reserved === "disabled" || reserved === "paused") break;
       if (reserved !== "reserved") continue;
 
       calls++;

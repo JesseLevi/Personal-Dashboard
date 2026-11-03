@@ -21,6 +21,7 @@ export const Overview = () => (
       currentLastName="Kamps"
       hasAvatar={false}
       aiEnabled
+      patternsEnabled
       aiAvailable
       widgetTokens={[]}
     />
