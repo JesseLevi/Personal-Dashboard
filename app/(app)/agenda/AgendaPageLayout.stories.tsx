@@ -184,8 +184,8 @@ export const Swipe = () => {
             ? {
                 date,
                 onStep: (step) => setDate(stepDate("day", date, step)),
-                renderNeighbour: (step) => (
-                  <AgendaCalendar items={items} view="day" date={stepDate("day", date, step)} scrollToNow={false} entrance={false} />
+                renderNeighbour: (step, from) => (
+                  <AgendaCalendar items={items} view="day" date={stepDate("day", from, step)} scrollToNow={false} entrance={false} />
                 ),
               }
             : undefined
@@ -274,10 +274,10 @@ const MobileShell = ({ initialStop = "peek", initialDate = DATE, dayItems = item
   const swipe = {
     date,
     onStep: (step: 1 | -1) => setDate(stepDate("day", date, step)),
-    renderNeighbour: (step: 1 | -1) => (
-      <AgendaCalendar items={dayItems} view="day" date={stepDate("day", date, step)} scrollToNow={false} entrance={false} />
+    renderNeighbour: (step: 1 | -1, from: string) => (
+      <AgendaCalendar items={dayItems} view="day" date={stepDate("day", from, step)} scrollToNow={false} entrance={false} />
     ),
-    renderCardsNeighbour: (step: 1 | -1) => <DayCards day={stepDate("day", date, step)} dayItems={dayItems} />,
+    renderCardsNeighbour: (step: 1 | -1, from: string) => <DayCards day={stepDate("day", from, step)} dayItems={dayItems} />,
   };
   return (
     <div className="-m-8 flex min-h-dvh items-stretch bg-surface-primary">
@@ -302,7 +302,12 @@ const MobileShell = ({ initialStop = "peek", initialDate = DATE, dayItems = item
               defaultPickerOpen={pickerOpen}
             />
           </div>
-          <AgendaBody swipe={swipe} cards={<DayCards day={date} dayItems={dayItems} />} sheet={sheetFor(stop, date, setStop, setDate)}>
+          <AgendaBody
+            swipe={swipe}
+            cards={<DayCards day={date} dayItems={dayItems} />}
+            cardsCollapsed={dayItems.length === 0}
+            sheet={sheetFor(stop, date, setStop, setDate)}
+          >
             <AgendaCalendar items={dayItems} view="day" date={date} scrollToNow={false} />
           </AgendaBody>
         </div>

@@ -35,6 +35,16 @@ function cssPx(panel: HTMLElement, property: string): number {
   return height;
 }
 
+// A transformed or filtered ancestor (the shell's page blur-in, `EnterFromLogin`) is the containing block of a
+// fixed element: until it lets go, the sheet sits relative to that ancestor and measures wrong.
+function heldByAncestor(panel: HTMLElement): boolean {
+  for (let el = panel.parentElement; el && el !== document.body; el = el.parentElement) {
+    const style = getComputedStyle(el);
+    if (style.transform !== "none" || style.filter !== "none" || /transform|filter/.test(style.willChange)) return true;
+  }
+  return false;
+}
+
 /**
  * The planner. From `lg` it is the plain pane right of the cards. Below `lg` it is a fixed sheet above the
  * tab bar that rests on two stops, only ever moved by `transform`: its height stays constant, so FullCalendar
@@ -82,6 +92,8 @@ export function AgendaDaySheet({ stop, onStopChange, strip, plannerRef, cardsRef
         scope.style.removeProperty("--agenda-peek");
         return;
       }
+      // The sheet resizes when the ancestor lets go, and the observer on the sheet measures then.
+      if (heldByAncestor(panel)) return;
       const rect = cards.getBoundingClientRect();
       const top = Math.round(rect.top + window.scrollY);
       panel.style.setProperty("--agenda-sheet-top", `${top}px`);
@@ -102,6 +114,7 @@ export function AgendaDaySheet({ stop, onStopChange, strip, plannerRef, cardsRef
     // Observing delivers a first measurement before the first paint.
     const observer = new ResizeObserver(measure);
     observer.observe(cards);
+    observer.observe(panel);
     const main = panel.closest("main");
     if (main) observer.observe(main);
     window.addEventListener("resize", measure);

@@ -8,8 +8,8 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
 - **Production**: the "Deploy (migrate + production)" workflow ran on `5474b0e` (2026-11-01, user's go). Everything merged after that is not in production.
 - **Merged 2026-11-01/02, not in production**: ⌘K palette replacing `SearchPanel` (ADR-0048, #691/#699/#705); card subtasks: schema, Projecten in ⌘K, card panel and "3/7" chip (ADR-0053, #702, #707, #708), then drag handles, the add field's check button and a compact menu (#737); and the improvement brief with the user's choices: note save conflicts (ADR-0056, #676), autosave without page re-render (#678), server error log (ADR-0049, #680), done columns (ADR-0050, #682; palette progress reads `is_done`), signals in Winkelmand, nav item "Assistent" removed (ADR-0051, #684), card labels (ADR-0052, #690), Vandaag as landing page and `start_url` (ADR-0057, #698), read-only offline basket via `public/sw.js` (ADR-0054, #701), mobile tab bar (ADR-0055, #704).
 - **Merged 2026-11-02, not in production** (the [Opt] tickets): Agenda without plan tray, `cook_rhythm` on Vandaag only (ADR-0058, #718); swipe follows the finger (#713), with a 16px gap between the days and never opening quick add (#734); quick-add sheet animates its height (#717); quick-add cards grouped per board (#719); card panel (#714), subtasks as checklist (#715), label picker (#716).
-- **Merged 2026-11-02, not in production**: Agenda is the landing page with day cards, `/vandaag` gone (ADR-0059, #727); desktop: cards always in the left column, a narrow week shows 3 days or 1 (#738); mobile: date-opener header and a pull-up sheet, sheet follows the cards, title menu (#742, #748); quick add behind Details, links on create (#747); a recipe on an event is an attached meal (ADR-0058 §2, #752).
-- `pnpm audit` is clean. Visual gate covers `app/**/*.tsx` and `app/globals.css`. Ladle groups per module, `Overview` first. `shell.visual.spec.ts` shoots the Agenda in shell dimensions.
+- **Merged 2026-11-02, not in production**: Agenda is the landing page with day cards, `/vandaag` gone (ADR-0059, #727); desktop: cards in the left column, a narrow week shows 3 days or 1 (#738); mobile: date-opener header and a pull-up sheet, sheet follows the cards, title menu (#742, #748); quick add behind Details, links on create (#747); a recipe on an event is an attached meal (ADR-0058 §2, #752). 11-03: sheet after blur-in, no swipe flash, cards follow the day, empty day (ADR-0059 amended).
+- `pnpm audit` is clean. Visual gate covers `app/**/*.tsx` and `app/globals.css`.
 
 ## Next
 
@@ -22,7 +22,7 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
    - tab bar and safe area; offline basket (open a basket, airplane mode, reopen; logout wipes it);
    - two tabs on one note give "Elders gewijzigd"; a done column hides its cards from Agenda and widget;
    - labels: pick, "+ Nieuw label", chip remove, filter, gone when unused; the picker list stays above the keyboard; rhythm suggestions settle when acted on (`cook_rhythm` via quick add Maaltijd);
-   - Agenda sheet: grabber tap/drag peek↔full, a sideways swipe over the cards steps the day, the iOS date wheel jumps on Gereed, a sideways strip swipe never moves the sheet, the grid scrolls in full without dragging it, panels open above it, nothing under the tab bar, header stays put;
+   - Agenda sheet: grabber tap/drag peek↔full, a sideways swipe over the cards steps the day, the iOS date wheel jumps on Gereed, sheet under the cards after login and a section switch, a sideways strip swipe never moves the sheet, the grid scrolls in full without dragging it, panels open above it, nothing under the tab bar, header stays put;
    - Agenda on the iPhone: swipe a day (slow, flick, return, vertical scroll, event long-press; no swipe opens quick add, a tap does), the quick-add sheet animating between kinds (keyboard open and closed), and the card picker's board headers;
    - subtasks: add (also a multi-line paste), check, rename, "Maak er een kaart van", drag to reorder (touch long-press on the handle), the "Alles af" offer, the "3/7" chip, and the card under Projecten in ⌘K.
 3. **iPhone widget** (epic #653, ADR-0047): the "Open Atlas" iCloud link from #659 into `WIDGET_SHORTCUT_URL` (`lib/widget/install.ts`), then a device test of every family. `/agenda?date=` sets the date only on first mount.
@@ -35,10 +35,10 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
 - Confirm `CRON_SECRET` is set in Vercel production; without it the cron backstops answer 401.
 - `/login?error=magic-link-invalid` shows no message.
 - Day cards have no per-item links to Te doen (planned cards carry no board id in `agenda_items()`).
-- Mobile Agenda title: the server HTML shows the period until hydration (`useIsNarrow`), then the weekday.
+- Mobile Agenda title shows the period until hydration (`useIsNarrow`).
 - Te doen's `EnterFromLogin` wrapper keeps its sticky `PageHeader` from sticking (the Agenda passes `className` sticky since #742).
 - Drop the 5-argument `save_note_content` once no production code calls it (ADR-0056 §4).
-- The Winkelmand clear-all confirm row wraps below ~370 px.
+- Winkelmand clear-all confirm row wraps below ~370 px.
 - After promotion, check a note with a code block (TipTap 3.32 node views, #520).
 
 ## Open product questions
