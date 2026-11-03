@@ -16,6 +16,7 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
 1. **Hosted migrations, user's go per step.** Applied 2026-11-01 17:49 (`migrate`, user's go): up to `20261102000003_app_errors`; then set Vault `app_error_report_secret` + Vercel `APP_ERROR_REPORT_SECRET` (`docs/operations.md`), without both logging is a no-op. Still to apply:
    - `20261102000004_board_columns_is_done` **before promoting**: the code selects `is_done`, a board fails to load without it;
    - `20261102000005_card_labels_same_board` (tightens `card_labels` policies).
+   - `20261103000001_assistant_patterns_pause` (#755) before promoting, or patterns stop.
 2. **Promotion** (`deploy.yml`). Then check logged in, on the iPhone where it says so:
    - login (password, code, link) lands on `/agenda`; re-add the home-screen icon (iOS keeps the old start URL);
    - ⌘K/Escape/focus, each `?nieuw=1`, board rows with progress, and the `board_columns.latest` embed on real PostgREST;
@@ -26,7 +27,7 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
    - Agenda on the iPhone: swipe a day (slow, flick, return, vertical scroll, event long-press; no swipe opens quick add, a tap does), the quick-add sheet animating between kinds (keyboard open and closed), and the card picker's board headers;
    - subtasks: add (also a multi-line paste), check, rename, "Maak er een kaart van", drag to reorder (touch long-press on the handle), the "Alles af" offer, the "3/7" chip, and the card under Projecten in ⌘K.
 3. **iPhone widget** (epic #653, ADR-0047): the "Open Atlas" iCloud link from #659 into `WIDGET_SHORTCUT_URL` (`lib/widget/install.ts`), then a device test of every family. `/agenda?date=` sets the date only on first mount.
-4. **Assistent log** (ADR-0060): #755 pattern pause first, then #756 run log, #757 traces + log + export. One migration each; serialize; hosted only with the user's go. Phase 8 is live (`CLOUDFLARE_*`, `CRON_SECRET` set, one member opted in): patterns run in production.
+4. **Assistent log** (ADR-0060): #755 pause merged (inert until its migration). Next #756 run log, then #757 traces + log + export; serialize migrations. Phase 8 is live (`CLOUDFLARE_*`, `CRON_SECRET`, one member opted in).
 
 ## Small open items
 
