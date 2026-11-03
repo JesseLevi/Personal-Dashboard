@@ -49,6 +49,23 @@ export function isEmptyDay(groups: DayGroups): boolean {
   return groups.events.length === 0 && groups.meals.length === 0 && groups.cards.length === 0;
 }
 
+/** A card linked to an event (`calendar_event_links`), for the "Te doen" card. */
+export interface LinkedCard {
+  id: string;
+  title: string;
+}
+
+/** `event id -> linked cards`, in link order. */
+export type LinkedCards = Readonly<Record<string, readonly LinkedCard[]>>;
+
+/** The cards linked to the day's events, once each, without the ones already planned or due that day. */
+export function linkedDayCards(groups: DayGroups, linked: LinkedCards): LinkedCard[] {
+  const seen = new Set(groups.cards.map((card) => card.id));
+  return groups.events.flatMap((event) =>
+    (linked[event.id] ?? []).filter((card) => !seen.has(card.id) && (seen.add(card.id), true)),
+  );
+}
+
 /** The day cards have nothing to show: no items on `day`, and on today no signals either. */
 export function isEmptyDayCards(items: readonly AgendaItem[], day: string, today: string, signalCount: number): boolean {
   return isEmptyDay(groupDay(items, day)) && (day !== today || signalCount === 0);

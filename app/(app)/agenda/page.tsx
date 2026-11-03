@@ -6,6 +6,7 @@ import { settleCookedMeals } from "@/lib/activity/settle";
 import { parseDateParam } from "@/lib/agenda/date-param";
 import { getCalendarOverview } from "@/lib/agenda/calendar-list";
 import { AGENDA_HIDDEN_COOKIE, parseHidden } from "@/lib/agenda/hidden";
+import { getLinkedCards } from "@/lib/agenda/linked-cards";
 import { getMealCardData } from "@/lib/agenda/meal-cards";
 import { getSyncNotices } from "@/lib/agenda/notices";
 import { getAgendaItems, getPlannableCards, getQuickAddBoard } from "@/lib/agenda/queries";
@@ -78,7 +79,10 @@ async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?:
   }));
 
   // Day cards: the recipe behind each meal, for its thumbnail (presigned above) and the basket links.
-  const mealCards = await getMealCardData(items.filter((item) => item.kind === "meal").map((item) => item.id));
+  const [mealCards, linkedCards] = await Promise.all([
+    getMealCardData(items.filter((item) => item.kind === "meal").map((item) => item.id)),
+    getLinkedCards(items.filter((item) => item.kind === "event" && item.linkCount > 0).map((item) => item.id)),
+  ]);
   const mealThumbnails = Object.fromEntries(
     Object.values(mealCards.recipeIds).flatMap((recipeId) => (thumbnails[recipeId] ? [[recipeId, thumbnails[recipeId]]] : [])),
   );
@@ -98,6 +102,7 @@ async function AgendaPageBody({ searchParams }: { searchParams: Promise<{ date?:
       baskets={baskets}
       signals={signals}
       initialMealCards={mealCards}
+      initialLinkedCards={linkedCards}
       mealThumbnails={mealThumbnails}
       initialNow={agendaNow()}
     />

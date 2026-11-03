@@ -16,11 +16,15 @@ import {
   groupDay,
   isEmptyDay,
   limitRows,
+  linkedDayCards,
   timeLabel,
   timelineState,
   TIMELINE_LIMIT,
   TODO_LIMIT,
   type BasketSuggestion,
+  type DayCardItem,
+  type LinkedCard,
+  type LinkedCards,
 } from "@/lib/agenda/day-cards";
 import type { AgendaItem, AgendaMealItem } from "@/lib/agenda/types";
 import type { AssistantSignal } from "@/lib/assistant/types";
@@ -52,6 +56,10 @@ export interface AgendaDayCardsProps {
   /** `meal id -> has a basket item`; a meal that is not listed is unknown and never suggested. */
   basket?: Readonly<Record<string, boolean>>;
   baskets?: BasketOption[];
+  /** Cards linked to events (`event id -> cards`); the day's ones join the "Te doen" card. */
+  linkedCards?: LinkedCards;
+  /** Opens a linked card in Te doen. */
+  onOpenCard?: (cardId: string) => void;
   /** Same handler as a click in the calendar. */
   onOpenItem: (item: AgendaItem) => void;
   /** Act on (true) or dismiss (false) a signal. */
@@ -61,6 +69,8 @@ export interface AgendaDayCardsProps {
   onShowMoreEvents?: () => boolean;
   className?: string;
 }
+
+type TodoRow = { kind: DayCardItem["kind"]; item: DayCardItem } | { kind: "linked"; item: LinkedCard };
 
 const utc = (day: string) => new Date(`${day}T00:00:00Z`);
 /** How long the "in the basket" face stays before the suggestion goes. */
@@ -137,6 +147,8 @@ export function AgendaDayCards({
   thumbnailUrls = {},
   basket = {},
   baskets,
+  linkedCards = {},
+  onOpenCard,
   onOpenItem,
   onSignal,
   onDayToBasket,
@@ -183,7 +195,11 @@ export function AgendaDayCards({
   }
 
   const events = limitRows(groups.events, TIMELINE_LIMIT, expanded.events);
-  const cards = limitRows(groups.cards, TODO_LIMIT, expanded.cards);
+  const todoRows: TodoRow[] = [
+    ...groups.cards.map((card): TodoRow => ({ kind: card.kind, item: card })),
+    ...(onOpenCard ? linkedDayCards(groups, linkedCards) : []).map((card): TodoRow => ({ kind: "linked", item: card })),
+  ];
+  const cards = limitRows(todoRows, TODO_LIMIT, expanded.cards);
   const thumbnail = (mealId: string, thumbnailPath: string | null) => {
     const recipeId = recipeIds[mealId];
     const route = recipeId && thumbnailPath ? recipeThumbnailRouteUrl(recipeId, thumbnailPath, "card") : undefined;
@@ -271,18 +287,24 @@ export function AgendaDayCards({
         </CardSection>
       )}
 
-      {!loading && groups.cards.length > 0 && (
+      {!loading && todoRows.length > 0 && (
         <CardSection label={t("labels.cards")}>
           <ul>
-            {cards.shown.map((card) => (
-              <li key={`${card.kind}-${card.id}`}>
-                <button type="button" onClick={() => onOpenItem(card)} className={rowClass}>
-                  <Tag variant={card.kind === "deadline" ? "urgent" : "highlight"} className="min-w-20 justify-center">{card.kind === "deadline" ? t("deadline") : t("planned")}</Tag>
-                  <span className="min-w-0 flex-1 truncate text-base font-semibold text-text-primary">{card.title}</span>
+            {cards.shown.map((row) => (
+              <li key={`${row.kind}-${row.item.id}`}>
+                <button
+                  type="button"
+                  onClick={() => (row.kind === "linked" ? onOpenCard?.(row.item.id) : onOpenItem(row.item))}
+                  className={rowClass}
+                >
+                  <Tag variant={row.kind === "deadline" ? "urgent" : row.kind === "linked" ? "neutral" : "highlight"} className="min-w-20 justify-center">
+                    {t(row.kind === "linked" ? "linked" : row.kind === "deadline" ? "deadline" : "planned")}
+                  </Tag>
+                  <span className="min-w-0 flex-1 truncate text-base font-semibold text-text-primary">{row.item.title}</span>
                 </button>
               </li>
             ))}
-            {groups.cards.length > TODO_LIMIT && (
+            {todoRows.length > TODO_LIMIT && (
               <MoreRow
                 label={expanded.cards ? t("less") : t("more", { count: cards.more })}
                 expanded={expanded.cards}

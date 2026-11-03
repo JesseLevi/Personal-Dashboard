@@ -143,6 +143,15 @@ export const WithAttachedMeal = () => (
   </Surface>
 );
 
+export const WithLinkedCard = () => (
+  <Surface>
+    <StoryIntro what="A card linked to an event under Koppelen joins the Te doen card as 'Gekoppeld' and opens in Te doen." note="AgendaPage" />
+    <Column>
+      <AgendaDayCards {...props({ linkedCards: { e3: [{ id: "k-linked", title: "Vragenlijst tandarts invullen" }] }, onOpenCard: noop })} />
+    </Column>
+  </Surface>
+);
+
 export const EmptyDay = () => (
   <Surface>
     <Column>

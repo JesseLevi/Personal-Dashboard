@@ -15,7 +15,7 @@
 3. **Day cards**, built from existing components (`Card`, `CardContentRecipe`, `Tag`, `Button`):
    - a simple timeline of the day's events;
    - meals, each with its recipe thumbnail and name;
-   - planned cards and deadlines;
+   - planned cards and deadlines, and the cards linked to the day's events (amended 2026-11-03, user's call);
    - suggestions in the `Tag` highlight colour with a `Sparkles` icon.
    
    No greeting, no summary sentence and no section titles. Empty kinds are not shown.
