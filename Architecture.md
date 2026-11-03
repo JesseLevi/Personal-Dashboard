@@ -128,7 +128,9 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - no queue: `embedding_backlog()` finds stale sources; a lazy `after()` drain (at most every 10 min) and the daily `/api/cron/embeddings` embed them, reusing vectors for identical text;
   - search across modules merges `search_text()` and `search_semantic()` (`security invoker`) with RRF.
 - **History** (ADR-0044): triggers log basket adds and checks into `activity_events`; `settle_cooked_meals()` logs past plans. All members, no AI.
-- **Phase 9** (ADR-0046/0051/0058/0059): `agent_signals` from SQL rhythms (all members) and LLM patterns (opt-in; no tools, plain text). Rhythms show in Winkelmand; all kinds on the Agenda day cards.
+- **Phase 9** (ADR-0046/0051/0058/0059/0060): `agent_signals` from SQL rhythms (all members) and LLM patterns (opt-in; no tools, plain text). Rhythms show in Winkelmand; all kinds on the Agenda day cards.
+  - Patterns can be paused per member (`assistant_patterns_enabled`): no Haiku calls, collection continues.
+  - Every pattern run leaves counts in `assistant_pattern_runs`; every asked or paused cluster leaves a trace in `assistant_pattern_traces` (owner-only, 90 days). The Assistent log in Settings shows both and exports JSON for tuning (`docs/guides/assistant-tuning.md`).
 - **Scheduled work** (ADR-0039, Vercel Hobby): a lazy "when stale" run in `after()` while a user is present, plus daily Cron routes behind `CRON_SECRET` as backstop (may use `service_role`). Anything more frequent needs a new ADR.
 
 ## 7. Agenda (ADR-0037)
