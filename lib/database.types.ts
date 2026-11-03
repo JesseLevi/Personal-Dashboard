@@ -1924,7 +1924,10 @@ export type Database = {
         Returns: undefined
       }
       set_ai_enabled: { Args: { p_enabled: boolean }; Returns: undefined }
-      set_assistant_patterns_enabled: { Args: { p_enabled: boolean }; Returns: undefined }
+      set_assistant_patterns_enabled: {
+        Args: { p_enabled: boolean }
+        Returns: undefined
+      }
       settle_cooked_meals: { Args: never; Returns: number }
       settle_cooked_meals_for: { Args: { p_user: string }; Returns: number }
       toggle_board_favorite: { Args: { p_board_id: string }; Returns: boolean }
