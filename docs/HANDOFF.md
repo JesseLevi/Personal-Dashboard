@@ -26,13 +26,12 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
    - Agenda on the iPhone: swipe a day (slow, flick, return, vertical scroll, event long-press; no swipe opens quick add, a tap does), the quick-add sheet animating between kinds (keyboard open and closed), and the card picker's board headers;
    - subtasks: add (also a multi-line paste), check, rename, "Maak er een kaart van", drag to reorder (touch long-press on the handle), the "Alles af" offer, the "3/7" chip, and the card under Projecten in ⌘K.
 3. **iPhone widget** (epic #653, ADR-0047): the "Open Atlas" iCloud link from #659 into `WIDGET_SHORTCUT_URL` (`lib/widget/install.ts`), then a device test of every family. `/agenda?date=` sets the date only on first mount.
-4. **Phase 8 rollout #574** (ADR-0043): `CLOUDFLARE_*` in Vercel, user's go per step. LLM pattern signals stay inert until then and `ANTHROPIC_API_KEY` is set; they show on the Agenda day cards.
+4. **Assistent log** (ADR-0060): #755 pattern pause first, then #756 run log, #757 traces + log + export. One migration each; serialize; hosted only with the user's go. Phase 8 is live (`CLOUDFLARE_*`, `CRON_SECRET` set, one member opted in): patterns run in production.
 
 ## Small open items
 
 - Visual baseline `agenda--agenda-event-panel--overview` is flaky (~20 px); a rerun passes.
 - Hosted login hardening (`docs/operations.md`): minimum password length 12, leaked-password protection. Needs the user's go.
-- Confirm `CRON_SECRET` is set in Vercel production; without it the cron backstops answer 401.
 - `/login?error=magic-link-invalid` shows no message.
 - Day cards have no per-item links to Te doen (planned cards carry no board id in `agenda_items()`).
 - Mobile Agenda title: the server HTML shows the period until hydration (`useIsNarrow`), then the weekday.

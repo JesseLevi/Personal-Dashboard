@@ -120,7 +120,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
 
 ## 6. AI and async work
 
-- **Today**: `lib/ai/` exposes one provider-neutral function (prompt + zod schema in, validated object out) on Claude Haiku. Consumers: recipe import, in `after()` with a lazy sweep for stuck rows (ADR-0019), and missing unit weights on recipe save (`lib/recipes/unit-weights.ts`).
+- **Today**: `lib/ai/` exposes one provider-neutral, zod-validated function on Claude Haiku. Consumers: recipe import, in `after()` with a lazy sweep for stuck rows (ADR-0019), and missing unit weights on recipe save (`lib/recipes/unit-weights.ts`).
 - **Phase 8** (ADR-0043, epic #31), the connections layer:
   - `embed()` in `lib/ai/` runs `@cf/baai/bge-m3` (1024d) on Cloudflare Workers AI; the free daily quota is the spend cap;
   - opt-in per member (`profiles.ai_enabled`); without it nothing leaves Atlas (keyword search only);
@@ -128,7 +128,7 @@ Textual search uses `pg_trgm` on names, titles and `notes.content_text`. Ingredi
   - no queue: `embedding_backlog()` finds stale sources; a lazy `after()` drain (at most every 10 min) and the daily `/api/cron/embeddings` embed them, reusing vectors for identical text;
   - search across modules merges `search_text()` and `search_semantic()` (`security invoker`) with RRF.
 - **History** (ADR-0044): triggers log basket adds and checks into `activity_events`; `settle_cooked_meals()` logs past plans. All members, no AI.
-- **Phase 9** (ADR-0046/0051/0058/0059): `agent_signals` from SQL rhythms (all members) and LLM patterns (opt-in; no tools, plain text). Rhythms show in Winkelmand; all kinds on the Agenda day cards.
+- **Phase 9** (ADR-0046/0051/0058/0059/0060): `agent_signals` from SQL rhythms (all members) and LLM patterns (opt-in, pausable; no tools, plain text); Winkelmand (rhythms) and Agenda day cards. Runs and traces feed the Assistent log.
 - **Scheduled work** (ADR-0039, Vercel Hobby): a lazy "when stale" run in `after()` while a user is present, plus daily Cron routes behind `CRON_SECRET` as backstop (may use `service_role`). Anything more frequent needs a new ADR.
 
 ## 7. Agenda (ADR-0037)
