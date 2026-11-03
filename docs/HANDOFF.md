@@ -26,7 +26,7 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
    - Agenda on the iPhone: swipe a day (slow, flick, return, vertical scroll, event long-press; no swipe opens quick add, a tap does), the quick-add sheet animating between kinds (keyboard open and closed), and the card picker's board headers;
    - subtasks: add (also a multi-line paste), check, rename, "Maak er een kaart van", drag to reorder (touch long-press on the handle), the "Alles af" offer, the "3/7" chip, and the card under Projecten in ⌘K.
 3. **iPhone widget** (epic #653, ADR-0047): the "Open Atlas" iCloud link from #659 into `WIDGET_SHORTCUT_URL` (`lib/widget/install.ts`), then a device test of every family. `/agenda?date=` sets the date only on first mount.
-4. **Assistent log** (ADR-0060, user's decision 2026-11-03): #755 pattern pause (first, so Haiku can be switched off), then #756 run log and #757 traces, log subpanel, export and `docs/guides/assistant-tuning.md`. Each brings a migration; serialize them, hosted only with the user's go. Phase 8 is live: `CLOUDFLARE_*` and `CRON_SECRET` are in Vercel, one member has opted in, so the pattern step runs in production (lazy and 05:30 cron). Env changes reach production only with a new deploy.
+4. **Assistent log** (ADR-0060): #755 pattern pause first, then #756 run log, #757 traces + log + export. One migration each; serialize; hosted only with the user's go. Phase 8 is live (`CLOUDFLARE_*`, `CRON_SECRET` set, one member opted in): patterns run in production.
 
 ## Small open items
 
