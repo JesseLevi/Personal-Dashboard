@@ -2,7 +2,7 @@
 -- only their own fresh, unanswered reservation; the _for variant is service_role only.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(10);
 
 insert into auth.users (id, email)
 values ('00000000-0000-0000-0000-771000000a01', 'a@test.local'),
