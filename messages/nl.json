@@ -401,6 +401,72 @@
         "generic": "Er ging iets mis. Probeer het opnieuw.",
         "scriptUnavailable": "Het script is nog niet beschikbaar. Probeer het later opnieuw."
       }
+    },
+    "assistantLog": {
+      "title": "Assistent-logboek",
+      "navLabel": "Assistent-logboek",
+      "intro": "Wat de Assistent doet: eerst de runs van de laatste 30 dagen, daarna wat Haiku zag en antwoordde. Alleen jij ziet dit. De inhoud blijft 90 dagen bewaard en wordt gewist als je de Assistent uitzet.",
+      "loading": "Logboek laden...",
+      "errors": {
+        "generic": "Het logboek kon niet geladen worden.",
+        "unauthenticated": "Je bent niet ingelogd.",
+        "export": "Exporteren is niet gelukt."
+      },
+      "export": {
+        "label": "Exporteer voor analyse",
+        "busy": "Exporteren...",
+        "help": "Eén JSON-bestand met je runs en traces, om aan Claude Opus te geven. Dit kost geen tokens."
+      },
+      "runs": {
+        "title": "Runs, laatste 30 dagen",
+        "empty": "Nog geen runs in de laatste 30 dagen.",
+        "count": "{count, plural, one {# run} other {# runs}}",
+        "funnel": "Verbanden: {edges}. Groepen: {clusters}. Al bekend: {known}. Niet vers genoeg: {not_fresh}. Kandidaten: {candidates}. Gevraagd aan Haiku: {calls}. Nuttig: {helpful}. Afgekeurd: {rejected}.",
+        "tokens": "Tokens: {input} in, {output} uit.",
+        "outcomes": {
+          "no_edges": "Geen verbanden gevonden",
+          "no_clusters": "Geen groepen gevormd",
+          "all_known": "Alles al bekend",
+          "no_candidates": "Niets nieuws en vers genoeg",
+          "paused": "Gepauzeerd",
+          "budget": "Daglimiet bereikt",
+          "ok": "Haiku gevraagd",
+          "error": "Fout"
+        }
+      },
+      "traces": {
+        "title": "Wat Haiku zag en antwoordde",
+        "empty": "Nog geen traces.",
+        "status": {
+          "asked": "Gevraagd",
+          "paused": "Gepauzeerd"
+        },
+        "seen": "{count, plural, one {# keer gezien} other {# keer gezien}}",
+        "lastSeen": "Laatst gezien {date}",
+        "sentTitle": "Verstuurd",
+        "kind": {
+          "note": "Notitie",
+          "card": "Kaart"
+        },
+        "stale": "Lang niet aangeraakt",
+        "answerTitle": "Antwoord van Haiku",
+        "notAsked": "Niet gestuurd: dit is wat Haiku zou hebben gekregen.",
+        "helpful": "Nuttig",
+        "notHelpful": "Niet nuttig",
+        "rejected": {
+          "empty": "Afgekeurd: lege tekst",
+          "link": "Afgekeurd: bevatte een link"
+        },
+        "rawMessage": "Ruwe tekst: {message}",
+        "tokens": "{input} tokens in, {output} uit",
+        "outcomeTitle": "Afloop",
+        "outcome": {
+          "new": "Nieuw",
+          "dismissed": "Weggeklikt",
+          "acted": "Geopend",
+          "unsaid": "Niet gezegd"
+        }
+      }
     }
   },
   "components": {
@@ -548,10 +614,11 @@
         "unavailable": "Nog niet beschikbaar",
         "sendsLabel": "Wat er naartoe gaat: de tekst van je notities, recepten, kaarten en afspraken (ook geïmporteerde) en je zoekvragen. Voor de Assistent gaan ook titels en korte fragmenten van verwante notities en kaarten mee, zodat hij een patroon in gewone taal kan formuleren.",
         "recipientLabel": "Naar wie: Cloudflare Workers AI (index en zoeken) en Anthropic, het bedrijf achter Claude (Assistent). Geen van beide gebruikt je data om modellen te trainen. Anthropic bewaart invoer en uitvoer normaal maximaal 30 dagen. De verwerking vindt niet gegarandeerd in de EU plaats.",
+        "logLabel": "De Assistent houdt een logboek bij: tellingen per run en wat Haiku zag en antwoordde. Alleen jij ziet het. De inhoud blijft 90 dagen bewaard en wordt gewist als je dit uitzet.",
         "patternsLabel": "Assistent zoekt patronen",
         "patternsHelp": "Uit: er gaat niets naar Anthropic voor patronen. De index en het logboek lopen door.",
-        "offLabel": "Uitzetten wist de opgebouwde index en de patroonmeldingen van de Assistent direct. Je notities zelf blijven staan.",
-        "confirmPrompt": "Verbanden, slim zoeken en de Assistent uitzetten? De opgebouwde index en de patroonmeldingen worden gewist. Je notities blijven staan.",
+        "offLabel": "Uitzetten wist de opgebouwde index, de patroonmeldingen en de inhoud van het Assistent-logboek direct. Je notities zelf blijven staan.",
+        "confirmPrompt": "Verbanden, slim zoeken en de Assistent uitzetten? De opgebouwde index, de patroonmeldingen en het logboek worden gewist. Je notities blijven staan.",
         "cancelLabel": "Annuleren",
         "confirmLabel": "Uitzetten",
         "confirmingLabel": "Uitzetten..."

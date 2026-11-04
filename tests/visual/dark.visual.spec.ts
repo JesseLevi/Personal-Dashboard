@@ -123,6 +123,8 @@ const DARK_STORIES = [
   "account--ai-settings-panel--overview",
   "account--ai-settings-panel--off",
   "account--ai-settings-panel--unavailable",
+  "account--assistant-log-panel--overview",
+  "account--assistant-log-panel--empty",
   "account--widget-settings-panel--overview",
 ];
 

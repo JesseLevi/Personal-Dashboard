@@ -1,5 +1,12 @@
 import { createHash } from "node:crypto";
-import { MAX_CLUSTER_SIZE, MIN_CLUSTER_SIZE, type Cluster } from "@/lib/assistant/clusters";
+import {
+  MAX_CLUSTER_SIZE,
+  MIN_CLUSTER_SIZE,
+  sourceKey,
+  type Cluster,
+  type Edge,
+  type SourceRef,
+} from "@/lib/assistant/clusters";
 
 // Pure funnel logic of the pattern run log (ADR-0060 §2): counters, the
 // similarity histogram, the outcome and the row sent to record_assistant_pattern_run.
@@ -164,5 +171,69 @@ export function buildRunArgs(args: {
     p_input_tokens: f.inputTokens,
     p_output_tokens: f.outputTokens,
     p_config: args.config,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Traces (ADR-0060 §3): what was sent for one cluster, and what came back.
+// ---------------------------------------------------------------------------
+
+export type TraceItem = {
+  type: "note" | "card";
+  id: string;
+  kind: "note" | "card";
+  title: string;
+  fragment: string;
+  stale: boolean;
+};
+
+export type TraceSimilarity = { a: number; b: number; similarity: number };
+
+export type TraceAnswer = {
+  helpful: boolean;
+  message_raw: string;
+  message: string | null;
+  rejected: "empty" | "link" | null;
+};
+
+/** Pairs inside the cluster, as indexes into `ordered` (the order of items), strongest first. */
+export function traceSimilarities(ordered: readonly SourceRef[], edges: readonly Edge[]): TraceSimilarity[] {
+  const index = new Map(ordered.map((s, i) => [sourceKey(s.type, s.id), i]));
+  const best = new Map<string, TraceSimilarity>();
+  for (const e of edges) {
+    const a = index.get(sourceKey(e.a.type, e.a.id));
+    const b = index.get(sourceKey(e.b.type, e.b.id));
+    if (a === undefined || b === undefined || a === b) continue;
+    const [lo, hi] = a < b ? [a, b] : [b, a];
+    const key = `${lo}:${hi}`;
+    const similarity = Math.round(e.similarity * 10000) / 10000;
+    if ((best.get(key)?.similarity ?? -1) < similarity) best.set(key, { a: lo, b: hi, similarity });
+  }
+  return [...best.values()].sort((x, y) => y.similarity - x.similarity || x.a - y.a || x.b - y.b);
+}
+
+/** Arguments of record_assistant_pattern_trace (without p_user). */
+export function buildTraceArgs(args: {
+  status: "asked" | "paused";
+  dedupeKey: string;
+  items: readonly TraceItem[];
+  similarities: readonly TraceSimilarity[];
+  config: Pick<RunConfig, "prompt_version" | "model">;
+  answer?: TraceAnswer;
+  inputTokens?: number;
+  outputTokens?: number;
+  durationMs?: number;
+}) {
+  return {
+    p_status: args.status,
+    p_dedupe_key: args.dedupeKey,
+    p_items: [...args.items],
+    p_similarities: [...args.similarities],
+    p_prompt_version: args.config.prompt_version,
+    p_model: args.config.model,
+    p_answer: args.answer ?? null,
+    p_input_tokens: Math.max(0, Math.round(args.inputTokens ?? 0)),
+    p_output_tokens: Math.max(0, Math.round(args.outputTokens ?? 0)),
+    p_duration_ms: Math.max(0, Math.round(args.durationMs ?? 0)),
   };
 }
