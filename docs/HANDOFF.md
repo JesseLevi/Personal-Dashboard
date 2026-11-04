@@ -2,13 +2,13 @@
 
 State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace stale bullets; never append history. Ticket status lives on the board, rules in `CLAUDE.md` and the guides, and the system in `Architecture.md`.
 
-## State (2026-11-02)
+## State (2026-11-04)
 
-- Atlas is in production use by real accounts. Built: account, Agenda as landing page with day cards, Te doen, Recepten, Winkelmand (incl. shared baskets), Notities, Agenda, ⌘K palette, Assistent rhythms (phase 9), iPhone widget.
-- **Production**: the "Deploy (migrate + production)" workflow ran on `5474b0e` (2026-11-01, user's go). Everything merged after that is not in production.
-- **Merged 2026-11-01/02, not in production**: ⌘K palette replacing `SearchPanel` (ADR-0048, #691/#699/#705); card subtasks: schema, Projecten in ⌘K, card panel and "3/7" chip (ADR-0053, #702, #707, #708), then drag handles, the add field's check button and a compact menu (#737); and the improvement brief with the user's choices: note save conflicts (ADR-0056, #676), autosave without page re-render (#678), server error log (ADR-0049, #680), done columns (ADR-0050, #682; palette progress reads `is_done`), signals in Winkelmand, nav item "Assistent" removed (ADR-0051, #684), card labels (ADR-0052, #690), Vandaag as landing page and `start_url` (ADR-0057, #698), read-only offline basket via `public/sw.js` (ADR-0054, #701), mobile tab bar (ADR-0055, #704).
-- **Merged 2026-11-02, not in production** (the [Opt] tickets): Agenda without plan tray, `cook_rhythm` on Vandaag only (ADR-0058, #718); swipe follows the finger (#713), with a 16px gap between the days and never opening quick add (#734); quick-add sheet animates its height (#717); quick-add cards grouped per board (#719); card panel (#714), subtasks as checklist (#715), label picker (#716).
-- **Merged 2026-11-02, not in production**: Agenda is the landing page with day cards, `/vandaag` gone (ADR-0059, #727); desktop: cards in the left column, a narrow week shows 3 days or 1 (#738); mobile: date-opener header and a pull-up sheet, sheet follows the cards, title menu (#742, #748); quick add behind Details, links on create (#747); a recipe on an event is an attached meal (ADR-0058 §2, #752). 11-03: sheet after blur-in, no swipe flash, cards follow the day, empty day (ADR-0059 amended).
+- Atlas is in production use by real accounts. Built: account, Agenda as landing page with day cards, Te doen, Recepten, Winkelmand (incl. shared baskets), Notities, ⌘K palette, Assistent rhythms (phase 9), iPhone widget.
+- **Production**: `deploy.yml` ran on `5474b0e` (2026-11-01, user's go). Everything merged after that is not in production.
+- **Merged 2026-11-01/02, not in production**: ⌘K palette replacing `SearchPanel` (ADR-0048, #691/#699/#705); card subtasks: schema, Projecten in ⌘K, card panel and "3/7" chip (ADR-0053, #702, #707, #708), then drag handles, the add field's check button and a compact menu (#737); plus the improvement brief: note save conflicts (ADR-0056, #676), autosave without page re-render (#678), server error log (ADR-0049, #680), done columns (ADR-0050, #682; palette progress reads `is_done`), signals in Winkelmand, nav item "Assistent" removed (ADR-0051, #684), card labels (ADR-0052, #690), Vandaag as landing page and `start_url` (ADR-0057, #698), read-only offline basket via `public/sw.js` (ADR-0054, #701), mobile tab bar (ADR-0055, #704).
+- **Merged 2026-11-02, not in production**: Agenda without plan tray, `cook_rhythm` on Vandaag only (ADR-0058, #718); swipe follows the finger (#713), with a 16px gap between the days and never opening quick add (#734); quick-add sheet animates its height (#717); quick-add cards grouped per board (#719); card panel (#714), subtasks as checklist (#715), label picker (#716).
+- **Merged 2026-11-02, not in production**: Agenda is the landing page with day cards, `/vandaag` gone (ADR-0059, #727); desktop: cards in the left column, a narrow week shows 3 days or 1 (#738); mobile: date-opener header and a pull-up sheet, sheet follows the cards, title menu (#742, #748); quick add behind Details, links on create (#747); a recipe on an event is an attached meal (ADR-0058 §2, #752). 11-03: sheet after blur-in, no swipe flash, cards follow the day, empty day (ADR-0059 amended). 11-04: recipe/week/ingredient sends settle `buy_rhythm` (#712); offline basket saved in-app, reached via `/winkelmand` and `/offline` (#710, #711).
 - `pnpm audit` is clean. Visual gate covers `app/**/*.tsx` and `app/globals.css`.
 
 ## Next
@@ -17,10 +17,10 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
    - `20261102000004_board_columns_is_done` **before promoting**: the code selects `is_done`, a board fails to load without it;
    - `20261102000005_card_labels_same_board` (tightens `card_labels` policies).
    - `20261103000001_assistant_patterns_pause` (#755) before promoting, or patterns stop.
-2. **Promotion** (`deploy.yml`). Then check logged in, on the iPhone where it says so:
+2. **Promotion** (`deploy.yml`). Then check logged in (iPhone where noted):
    - login (password, code, link) lands on `/agenda`; re-add the home-screen icon (iOS keeps the old start URL);
    - ⌘K/Escape/focus, each `?nieuw=1`, board rows with progress, and the `board_columns.latest` embed on real PostgREST;
-   - tab bar and safe area; offline basket (open a basket, airplane mode, reopen; logout wipes it);
+   - tab bar and safe area; offline basket (open via tab bar, airplane mode; both icons and `/offline` reach it; logout wipes it);
    - two tabs on one note give "Elders gewijzigd"; a done column hides its cards from Agenda and widget;
    - labels: pick, "+ Nieuw label", chip remove, filter, gone when unused; the picker list stays above the keyboard; rhythm suggestions settle when acted on (`cook_rhythm` via quick add Maaltijd);
    - Agenda sheet: grabber tap/drag peek↔full, a sideways swipe over the cards steps the day, the iOS date wheel jumps on Gereed, sheet under the cards after login and a section switch, a sideways strip swipe never moves the sheet, the grid scrolls in full without dragging it, panels open above it, nothing under the tab bar, header stays put;
@@ -31,12 +31,12 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
 
 ## Small open items
 
-- Visual baseline `agenda--agenda-event-panel--overview` is flaky (~20 px); a rerun passes.
+- Visual baseline `agenda-event-panel--overview` is flaky; a rerun passes.
 - Hosted login hardening (`docs/operations.md`): minimum password length 12, leaked-password protection. Needs the user's go.
 - `/login?error=magic-link-invalid` shows no message.
-- Day cards have no per-item links to Te doen (planned cards carry no board id in `agenda_items()`).
+- Day cards have no per-item links to Te doen (no board id in `agenda_items()`).
 - Mobile Agenda title shows the period until hydration (`useIsNarrow`).
-- Te doen's `EnterFromLogin` wrapper keeps its sticky `PageHeader` from sticking (the Agenda passes `className` sticky since #742).
+- Te doen's `EnterFromLogin` wrapper keeps its sticky `PageHeader` from sticking (Agenda passes `className` sticky).
 - Drop the 5-argument `save_note_content` once no production code calls it (ADR-0056 §4).
 - Winkelmand clear-all confirm row wraps below ~370 px.
 - After promotion, check a note with a code block (TipTap 3.32 node views, #520).
