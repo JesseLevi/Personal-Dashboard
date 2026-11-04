@@ -1,6 +1,6 @@
 "use server";
 
-import { settleAssistantSignals } from "@/lib/assistant/settle";
+import { settleAssistantSignals, settleBuyRhythmForNames } from "@/lib/assistant/settle";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -276,6 +276,7 @@ export async function sendRecipeToShoppingList(input: unknown): Promise<ActionRe
     return { success: false, error: "generic" };
   }
 
+  await settleBuyRhythmForNames(supabase, lines.map((line) => line.name));
   revalidatePath("/winkelmand", "layout");
   revalidatePath(`/recepten/${recipe.id}`);
   return { success: true, data: undefined };
@@ -354,6 +355,7 @@ export async function addIngredientToShoppingList(input: unknown): Promise<Actio
     }
   }
 
+  await settleBuyRhythmForNames(supabase, [merge.kind === "update" ? ingredient.name : merge.line.name]);
   revalidatePath("/winkelmand", "layout");
   return { success: true, data: undefined };
 }

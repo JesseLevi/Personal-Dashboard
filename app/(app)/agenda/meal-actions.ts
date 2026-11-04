@@ -1,6 +1,6 @@
 "use server";
 
-import { settleAssistantSignals } from "@/lib/assistant/settle";
+import { settleAssistantSignals, settleBuyRhythmForNames } from "@/lib/assistant/settle";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { requireUserId } from "@/lib/boards/session";
@@ -267,6 +267,8 @@ export async function sendWeekToBasket(input: unknown): Promise<AgendaActionResu
       lines.map(({ tag, ...line }) => ({ line, source: { recipeId: recipeOf.get(tag)!, mealPlanId: tag } })),
     );
     if (insertError) return failure("sendWeekToBasket", insertError);
+
+    await settleBuyRhythmForNames(supabase, lines.map((line) => line.name));
 
     revalidatePath("/winkelmand", "layout");
     return { success: true, data: { count: open.length } };
