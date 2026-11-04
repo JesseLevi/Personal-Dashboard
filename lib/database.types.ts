@@ -1905,22 +1905,6 @@ export type Database = {
         }[]
       }
       promote_card_subtask: { Args: { p_subtask_id: string }; Returns: string }
-      replace_recipe_contents: {
-        Args: { p_ingredients: Json; p_recipe_id: string; p_steps: Json }
-        Returns: undefined
-      }
-      report_app_error: {
-        Args: {
-          p_digest: string
-          p_error_name: string
-          p_kind: string
-          p_message: string
-          p_method: string
-          p_route: string
-          p_secret: string
-        }
-        Returns: undefined
-      }
       record_assistant_pattern_run: {
         Args: {
           p_call_failures: number
@@ -1971,6 +1955,22 @@ export type Database = {
           p_user: string
         }
         Returns: boolean
+      }
+      replace_recipe_contents: {
+        Args: { p_ingredients: Json; p_recipe_id: string; p_steps: Json }
+        Returns: undefined
+      }
+      report_app_error: {
+        Args: {
+          p_digest: string
+          p_error_name: string
+          p_kind: string
+          p_message: string
+          p_method: string
+          p_route: string
+          p_secret: string
+        }
+        Returns: undefined
       }
       reserve_pattern_signal: {
         Args: { p_dedupe_key: string; p_locale: string; p_sources: Json }
