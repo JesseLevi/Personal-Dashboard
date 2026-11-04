@@ -15,6 +15,7 @@ Read `docs/HANDOFF.md` (state and next step). Check the board's "In progress" co
 | `supabase/`, server actions, auth, storage, AI, i18n | `docs/guides/data-layer.md` |
 | Deploys, hosted settings, env vars | `docs/operations.md`, ADR-0032 |
 | Tickets, board, subagents | `docs/guides/ticket-workflow.md` |
+| Assistent tuning | `docs/guides/assistant-tuning.md` |
 | A known gap or open product question | `docs/open-questions.md`, by slug |
 | Why something failed before | `docs/incidents.md` (on demand only) |
 

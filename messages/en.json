@@ -401,6 +401,72 @@
         "generic": "Something went wrong. Please try again.",
         "scriptUnavailable": "The script is not available yet. Try again later."
       }
+    },
+    "assistantLog": {
+      "title": "Assistant log",
+      "navLabel": "Assistant log",
+      "intro": "What the Assistant does: first the runs of the last 30 days, then what Haiku saw and answered. Only you can see this. The content is kept for 90 days and deleted when you turn the Assistant off.",
+      "loading": "Loading log...",
+      "errors": {
+        "generic": "The log could not be loaded.",
+        "unauthenticated": "You are not signed in.",
+        "export": "Exporting failed."
+      },
+      "export": {
+        "label": "Export for analysis",
+        "busy": "Exporting...",
+        "help": "One JSON file with your runs and traces, to hand to Claude Opus. This costs no tokens."
+      },
+      "runs": {
+        "title": "Runs, last 30 days",
+        "empty": "No runs in the last 30 days yet.",
+        "count": "{count, plural, one {# run} other {# runs}}",
+        "funnel": "Connections: {edges}. Groups: {clusters}. Already known: {known}. Not fresh enough: {not_fresh}. Candidates: {candidates}. Asked Haiku: {calls}. Helpful: {helpful}. Rejected: {rejected}.",
+        "tokens": "Tokens: {input} in, {output} out.",
+        "outcomes": {
+          "no_edges": "No connections found",
+          "no_clusters": "No groups formed",
+          "all_known": "Everything already known",
+          "no_candidates": "Nothing new and fresh enough",
+          "paused": "Paused",
+          "budget": "Daily limit reached",
+          "ok": "Asked Haiku",
+          "error": "Error"
+        }
+      },
+      "traces": {
+        "title": "What Haiku saw and answered",
+        "empty": "No traces yet.",
+        "status": {
+          "asked": "Asked",
+          "paused": "Paused"
+        },
+        "seen": "{count, plural, one {seen # time} other {seen # times}}",
+        "lastSeen": "Last seen {date}",
+        "sentTitle": "Sent",
+        "kind": {
+          "note": "Note",
+          "card": "Card"
+        },
+        "stale": "Untouched for a while",
+        "answerTitle": "Haiku's answer",
+        "notAsked": "Not sent: this is what Haiku would have received.",
+        "helpful": "Helpful",
+        "notHelpful": "Not helpful",
+        "rejected": {
+          "empty": "Rejected: empty text",
+          "link": "Rejected: contained a link"
+        },
+        "rawMessage": "Raw text: {message}",
+        "tokens": "{input} tokens in, {output} out",
+        "outcomeTitle": "Result",
+        "outcome": {
+          "new": "New",
+          "dismissed": "Dismissed",
+          "acted": "Opened",
+          "unsaid": "Not said"
+        }
+      }
     }
   },
   "components": {
@@ -548,10 +614,11 @@
         "unavailable": "Not available yet",
         "sendsLabel": "What is sent: the text of your notes, recipes, cards and events (imported ones too) and your search queries. For the Assistant, titles and short excerpts of related notes and cards are sent too, so it can describe a pattern in plain language.",
         "recipientLabel": "Sent to: Cloudflare Workers AI (index and search) and Anthropic, the company behind Claude (Assistant). Neither uses your data to train models. Anthropic normally keeps inputs and outputs for 30 days at most. Processing is not guaranteed to happen in the EU.",
+        "logLabel": "The Assistant keeps a log: counts per run and what Haiku saw and answered. Only you can see it. The content is kept for 90 days and deleted when you turn this off.",
         "patternsLabel": "Assistant looks for patterns",
         "patternsHelp": "Off: nothing is sent to Anthropic for patterns. The index and the log keep going.",
-        "offLabel": "Turning it off deletes the index built so far and the Assistant's pattern notices right away. Your notes themselves stay.",
-        "confirmPrompt": "Turn off connections, smart search and the Assistant? The index built so far and the pattern notices will be deleted. Your notes stay.",
+        "offLabel": "Turning it off deletes the index built so far, the Assistant's pattern notices and the content of the Assistant log right away. Your notes themselves stay.",
+        "confirmPrompt": "Turn off connections, smart search and the Assistant? The index built so far, the pattern notices and the log are deleted. Your notes stay.",
         "cancelLabel": "Cancel",
         "confirmLabel": "Turn off",
         "confirmingLabel": "Turning off..."
