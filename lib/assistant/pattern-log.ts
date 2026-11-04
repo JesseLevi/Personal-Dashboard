@@ -166,3 +166,76 @@ export function buildRunArgs(args: {
     p_config: args.config,
   };
 }
+
+// Traces (ADR-0060 §3): what was sent for a cluster and what came back. Pure builders
+// for the arguments of record_assistant_pattern_trace; content stays on the owner's rows.
+
+export type TraceStatus = "asked" | "paused";
+
+export type TraceItem = {
+  type: "note" | "card";
+  id: string;
+  kind: "note" | "card";
+  title: string;
+  fragment: string;
+  stale: boolean;
+};
+
+export type TraceSimilarity = { a: string; b: string; similarity: number };
+
+export type TraceAnswer = {
+  helpful: boolean;
+  message_raw: string;
+  message: string | null;
+  rejected: "empty" | "link" | null;
+};
+
+const keyOfRef = (r: { type: string; id: string }) => `${r.type}:${r.id}`;
+
+/** The pairs inside the cluster that came from pattern_edges, one per pair, sorted. */
+export function clusterSimilarities(
+  sources: ReadonlyArray<{ type: string; id: string }>,
+  edges: ReadonlyArray<{ a: { type: string; id: string }; b: { type: string; id: string }; similarity: number }>,
+): TraceSimilarity[] {
+  const inside = new Set(sources.map(keyOfRef));
+  const pairs = new Map<string, TraceSimilarity>();
+  for (const e of edges) {
+    const x = keyOfRef(e.a);
+    const y = keyOfRef(e.b);
+    if (x === y || !inside.has(x) || !inside.has(y) || !Number.isFinite(e.similarity)) continue;
+    const [a, b] = x < y ? [x, y] : [y, x];
+    const similarity = Math.round(e.similarity * 10000) / 10000;
+    const key = `${a}|${b}`;
+    const known = pairs.get(key);
+    if (!known || known.similarity < similarity) pairs.set(key, { a, b, similarity });
+  }
+  return [...pairs.values()].sort((p, q) => p.a.localeCompare(q.a) || p.b.localeCompare(q.b));
+}
+
+/** Arguments of record_assistant_pattern_trace (without p_user). */
+export function buildTraceArgs(args: {
+  dedupeKey: string;
+  status: TraceStatus;
+  items: readonly TraceItem[];
+  similarities: readonly TraceSimilarity[];
+  promptVersion: string;
+  model: string;
+  answer: TraceAnswer | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  durationMs: number | null;
+}) {
+  return {
+    p_dedupe_key: args.dedupeKey,
+    p_status: args.status,
+    p_items: [...args.items],
+    p_similarities: [...args.similarities],
+    p_prompt_version: args.promptVersion,
+    p_model: args.model,
+    p_answer: args.answer,
+    // undefined is left out of the call and becomes the SQL default (null).
+    p_input_tokens: args.inputTokens ?? undefined,
+    p_output_tokens: args.outputTokens ?? undefined,
+    p_duration_ms: args.durationMs === null ? undefined : Math.max(0, Math.round(args.durationMs)),
+  };
+}

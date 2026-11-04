@@ -550,12 +550,66 @@
         "recipientLabel": "Sent to: Cloudflare Workers AI (index and search) and Anthropic, the company behind Claude (Assistant). Neither uses your data to train models. Anthropic normally keeps inputs and outputs for 30 days at most. Processing is not guaranteed to happen in the EU.",
         "patternsLabel": "Assistant looks for patterns",
         "patternsHelp": "Off: nothing is sent to Anthropic for patterns. The index and the log keep going.",
-        "offLabel": "Turning it off deletes the index built so far and the Assistant's pattern notices right away. Your notes themselves stay.",
-        "confirmPrompt": "Turn off connections, smart search and the Assistant? The index built so far and the pattern notices will be deleted. Your notes stay.",
+        "offLabel": "Turning it off deletes the index built so far, the pattern notices and what the Assistant saw and answered in the log right away. Your notes themselves stay.",
+        "confirmPrompt": "Turn off connections, smart search and the Assistant? The index built so far, the pattern notices and the content of the log will be deleted. Your notes stay.",
         "cancelLabel": "Cancel",
         "confirmLabel": "Turn off",
-        "confirmingLabel": "Turning off..."
+        "confirmingLabel": "Turning off...",
+        "logNavLabel": "Assistant log",
+        "logHelp": "The Assistant keeps a log of what it saw and answered. Only you can see it, it is kept for 90 days and deleted when you turn this off."
       }
+    },
+    "assistantLogPanel": {
+      "title": "Assistant log",
+      "intro": "What the Assistant did and saw lately. Only you can see this. The content is kept for 90 days.",
+      "exportHelp": "Export gives one JSON file with your runs and what the Assistant saw and answered, to have it reviewed. It costs no tokens.",
+      "exportLabel": "Export for analysis",
+      "loading": "Loading...",
+      "loadError": "The log could not be loaded.",
+      "runsTitle": "Runs of the last 30 days",
+      "runsEmpty": "No runs yet.",
+      "dayRuns": "{count, plural, one {# run} other {# runs}}",
+      "path": {
+        "lazy": "When Atlas was opened",
+        "cron": "Nightly check"
+      },
+      "outcome": {
+        "no_edges": "No related notes or cards found.",
+        "no_clusters": "There were connections, but no group of at least three.",
+        "all_known": "Every group had been handled before.",
+        "no_candidates": "No group to put forward.",
+        "paused": "Paused: nothing was sent to Anthropic.",
+        "budget": "Today's maximum number of questions was reached.",
+        "ok": "{calls, plural, one {# question put to the Assistant.} other {# questions put to the Assistant.}}",
+        "error": "Something went wrong ({code})."
+      },
+      "funnel": "{edges, plural, one {# connection} other {# connections}}, {clusters, plural, one {# group} other {# groups}}, {known} already known, {notFresh} too old, {candidates, plural, one {# candidate} other {# candidates}}, {calls, plural, one {# question} other {# questions}}, {helpful} helpful",
+      "tracesTitle": "What the Assistant saw",
+      "tracesEmpty": "Nothing kept yet.",
+      "status": {
+        "asked": "Asked",
+        "paused": "Paused"
+      },
+      "traceOutcome": {
+        "new": "New",
+        "dismissed": "Dismissed",
+        "acted": "Opened",
+        "unsaid": "Not said"
+      },
+      "seenCount": "seen {count}×",
+      "sentLabel": "Sent",
+      "wouldSendLabel": "Would have been sent",
+      "untitled": "Untitled",
+      "staleNote": "Not touched for weeks",
+      "answerLabel": "Answer",
+      "answerHelpful": "Helpful",
+      "answerNotHelpful": "Not helpful",
+      "noAnswer": "No answer received.",
+      "rejected": {
+        "empty": "The message was empty and was not shown.",
+        "link": "The message contained a link and was not shown."
+      },
+      "tokens": "{input} tokens in, {output} out"
     },
     "boardPanel": {
       "addTitle": "Add board",

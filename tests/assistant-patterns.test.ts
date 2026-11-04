@@ -5,6 +5,7 @@ vi.mock("server-only", () => ({}));
 import { setEmbeddingProviderForTests, setProviderForTests, type AiProvider } from "@/lib/ai";
 import {
   PATTERN_SYSTEM,
+  classifyMessage,
   cleanMessage,
   clip,
   runPatterns,
@@ -22,6 +23,7 @@ type Options = {
   patternsEnabled?: boolean;
   locale?: string;
   recordFails?: boolean;
+  traceFails?: boolean;
   edgesError?: boolean;
   known?: string[];
   reserve?: string[];
@@ -36,11 +38,16 @@ const note = (id: string, updated_at = FRESH) => ({ id, title: `Titel ${id.toUpp
 function fakeClient(options: Options = {}) {
   const rpcCalls: Array<{ name: string; args: Record<string, unknown> | undefined }> = [];
   const runs: Array<{ name: string; args: Record<string, unknown> }> = [];
+  const traces: Array<{ name: string; args: Record<string, unknown> }> = [];
   const reserve = [...(options.reserve ?? [])];
   const rpc = vi.fn(async (name: string, args?: Record<string, unknown>) => {
     if (name.startsWith("record_assistant_pattern_run")) {
       runs.push({ name, args: args ?? {} });
       return options.recordFails ? { data: null, error: { code: "XX000" } } : { data: true, error: null };
+    }
+    if (name.startsWith("record_assistant_pattern_trace")) {
+      traces.push({ name, args: args ?? {} });
+      return options.traceFails ? { data: null, error: { code: "XX000" } } : { data: true, error: null };
     }
     rpcCalls.push({ name, args });
     if (name.startsWith("pattern_edges")) {
@@ -69,7 +76,7 @@ function fakeClient(options: Options = {}) {
     chain.then = (resolve: (v: unknown) => unknown) => resolve({ data: rows[table] ?? [], error: null });
     return chain;
   };
-  return { client: { rpc, from } as never, rpcCalls, runs };
+  return { client: { rpc, from } as never, rpcCalls, runs, traces };
 }
 
 function provider(answer: unknown) {
@@ -206,6 +213,98 @@ describe("the pattern call", () => {
   });
 });
 
+describe("traces", () => {
+  const manyClusters = (count: number) => {
+    const notes: ReturnType<typeof note>[] = [];
+    const edges: ReturnType<typeof edge>[] = [];
+    for (let i = 0; i < count; i++) {
+      const ids = [`g${i}a`, `g${i}b`, `g${i}c`];
+      notes.push(...ids.map((id) => note(id)));
+      edges.push(edge(ids[0], ids[1]), edge(ids[1], ids[2]));
+    }
+    return { notes, edges };
+  };
+
+  it("an asked cluster leaves one trace with the items in order, the answer and the tokens", async () => {
+    provider({ helpful: true, message: "Je schrijft vaak over koffie." });
+    const { client, traces } = fakeClient(threeNotes);
+    await runPatterns({ client, userId: "u", path: "lazy", now: NOW });
+    expect(traces).toHaveLength(1);
+    expect(traces[0].name).toBe("record_assistant_pattern_trace");
+    const args = traces[0].args;
+    expect(args).toMatchObject({
+      p_status: "asked",
+      p_answer: { helpful: true, message_raw: "Je schrijft vaak over koffie.", message: "Je schrijft vaak over koffie.", rejected: null },
+    });
+    expect((args.p_items as Array<{ id: string; type: string; title: string }>).map((i) => i.id).sort()).toEqual(["n1", "n2", "n3"]);
+    expect(args.p_items).toEqual(expect.arrayContaining([expect.objectContaining({ type: "note", title: "Titel N1", fragment: "Tekst N1", stale: false })]));
+    expect(args.p_similarities).toEqual([
+      { a: "note:n1", b: "note:n2", similarity: 0.9 },
+      { a: "note:n2", b: "note:n3", similarity: 0.9 },
+    ]);
+    expect(args.p_prompt_version).toMatch(/^[0-9a-f]{12}$/);
+  });
+
+  it("records why the cleaner dropped a helpful answer", async () => {
+    provider({ helpful: true, message: "Kijk op https://evil.example/x" });
+    const { client, traces } = fakeClient(threeNotes);
+    await runPatterns({ client, userId: "u", path: "lazy", now: NOW });
+    expect(traces[0].args.p_answer).toMatchObject({ helpful: true, message: null, rejected: "link" });
+  });
+
+  it("uses the _for trace RPC on the cron path", async () => {
+    provider({ helpful: false, message: "" });
+    const { client, traces } = fakeClient(threeNotes);
+    await runPatterns({ client, userId: "member", path: "cron", now: NOW });
+    expect(traces[0].name).toBe("record_assistant_pattern_trace_for");
+    expect(traces[0].args.p_user).toBe("member");
+    expect(traces[0].args.p_answer).toMatchObject({ helpful: false, rejected: null });
+  });
+
+  it("a failed call leaves an asked trace without an answer", async () => {
+    setProviderForTests({
+      generateObject: vi.fn(async () => {
+        throw new Error("boom");
+      }),
+    } as unknown as AiProvider);
+    const { client, traces } = fakeClient(threeNotes);
+    await runPatterns({ client, userId: "u", path: "lazy", now: NOW });
+    expect(traces).toHaveLength(1);
+    expect(traces[0].args).toMatchObject({ p_status: "asked", p_answer: null });
+  });
+
+  it("paused: a paused trace per fresh candidate, no call, no reserve, at most MAX_CANDIDATES", async () => {
+    const generate = provider({ helpful: true, message: "x" });
+    const { client, rpcCalls, traces } = fakeClient({ ...manyClusters(8), patternsEnabled: false });
+    expect(await runPatterns({ client, userId: "u", path: "lazy", now: NOW })).toBe(0);
+    expect(generate).not.toHaveBeenCalled();
+    expect(rpcCalls.map((c) => c.name)).toEqual(["pattern_edges"]);
+    expect(traces).toHaveLength(6);
+    expect(traces.every((t) => t.args.p_status === "paused" && t.args.p_answer === null)).toBe(true);
+    expect(traces.every((t) => !("p_input_tokens" in t.args) || t.args.p_input_tokens === undefined)).toBe(true);
+  });
+
+  it("paused: a stale-only cluster passes no freshness check and leaves no trace", async () => {
+    const card = (id: string) => ({ id, title: `Kaart ${id}`, description: null, updated_at: OLD });
+    const { client, traces } = fakeClient({
+      patternsEnabled: false,
+      cards: [card("k1"), card("k2"), card("k3")],
+      edges: [
+        { a_type: "card", a_id: "k1", b_type: "card", b_id: "k2", similarity: 0.9 },
+        { a_type: "card", a_id: "k2", b_type: "card", b_id: "k3", similarity: 0.9 },
+      ],
+    });
+    await runPatterns({ client, userId: "u", path: "lazy", now: NOW });
+    expect(traces).toHaveLength(0);
+  });
+
+  it("a failing trace write never fails the run", async () => {
+    provider({ helpful: true, message: "Een patroon." });
+    const { client } = fakeClient({ ...threeNotes, traceFails: true });
+    expect(await runPatterns({ client, userId: "u", path: "lazy", now: NOW })).toBe(1);
+  });
+});
+
 describe("cost guards", () => {
   const manyClusters = (count: number) => {
     const notes: ReturnType<typeof note>[] = [];
@@ -293,6 +392,12 @@ describe("helpers", () => {
     expect(cleanMessage("<b>Hoi</b>  daar")).toBe("Hoi daar");
     expect(cleanMessage("zie www.example.com")).toBeNull();
     expect(cleanMessage("   ")).toBeNull();
+  });
+
+  it("classifyMessage names the rejection reason", () => {
+    expect(classifyMessage("   ")).toEqual({ message: null, rejected: "empty" });
+    expect(classifyMessage("zie www.example.com")).toEqual({ message: null, rejected: "link" });
+    expect(classifyMessage("<b>Hoi</b>")).toEqual({ message: "Hoi", rejected: null });
   });
 
   it("untrustedBlock escapes angle brackets", () => {

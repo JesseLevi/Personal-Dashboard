@@ -550,12 +550,66 @@
         "recipientLabel": "Naar wie: Cloudflare Workers AI (index en zoeken) en Anthropic, het bedrijf achter Claude (Assistent). Geen van beide gebruikt je data om modellen te trainen. Anthropic bewaart invoer en uitvoer normaal maximaal 30 dagen. De verwerking vindt niet gegarandeerd in de EU plaats.",
         "patternsLabel": "Assistent zoekt patronen",
         "patternsHelp": "Uit: er gaat niets naar Anthropic voor patronen. De index en het logboek lopen door.",
-        "offLabel": "Uitzetten wist de opgebouwde index en de patroonmeldingen van de Assistent direct. Je notities zelf blijven staan.",
-        "confirmPrompt": "Verbanden, slim zoeken en de Assistent uitzetten? De opgebouwde index en de patroonmeldingen worden gewist. Je notities blijven staan.",
+        "offLabel": "Uitzetten wist de opgebouwde index, de patroonmeldingen en wat de Assistent zag en antwoordde in het logboek direct. Je notities zelf blijven staan.",
+        "confirmPrompt": "Verbanden, slim zoeken en de Assistent uitzetten? De opgebouwde index, de patroonmeldingen en de inhoud van het logboek worden gewist. Je notities blijven staan.",
         "cancelLabel": "Annuleren",
         "confirmLabel": "Uitzetten",
-        "confirmingLabel": "Uitzetten..."
+        "confirmingLabel": "Uitzetten...",
+        "logNavLabel": "Assistent-logboek",
+        "logHelp": "De Assistent houdt een logboek bij van wat hij zag en antwoordde. Alleen jij ziet het, het wordt 90 dagen bewaard en gewist als je dit uitzet."
       }
+    },
+    "assistantLogPanel": {
+      "title": "Assistent-logboek",
+      "intro": "Wat de Assistent de laatste tijd deed en zag. Alleen jij ziet dit. De inhoud wordt 90 dagen bewaard.",
+      "exportHelp": "Exporteren geeft één JSON-bestand met je runs en wat de Assistent zag en antwoordde, om te laten beoordelen. Dat kost geen tokens.",
+      "exportLabel": "Exporteer voor analyse",
+      "loading": "Laden...",
+      "loadError": "Het logboek kon niet worden geladen.",
+      "runsTitle": "Runs van de laatste 30 dagen",
+      "runsEmpty": "Nog geen runs.",
+      "dayRuns": "{count, plural, one {# run} other {# runs}}",
+      "path": {
+        "lazy": "Bij het openen van Atlas",
+        "cron": "Nachtelijke controle"
+      },
+      "outcome": {
+        "no_edges": "Geen verwante notities of kaarten gevonden.",
+        "no_clusters": "Er waren verbanden, maar geen groep van minstens drie.",
+        "all_known": "Alle groepen waren al eerder behandeld.",
+        "no_candidates": "Geen groep om voor te leggen.",
+        "paused": "Gepauzeerd: er is niets naar Anthropic gestuurd.",
+        "budget": "Het maximum aan vragen van vandaag was bereikt.",
+        "ok": "{calls, plural, one {# vraag aan de Assistent gesteld.} other {# vragen aan de Assistent gesteld.}}",
+        "error": "Er ging iets mis ({code})."
+      },
+      "funnel": "{edges, plural, one {# verband} other {# verbanden}}, {clusters, plural, one {# groep} other {# groepen}}, {known} al bekend, {notFresh} te oud, {candidates, plural, one {# kandidaat} other {# kandidaten}}, {calls, plural, one {# vraag} other {# vragen}}, {helpful} nuttig",
+      "tracesTitle": "Wat de Assistent zag",
+      "tracesEmpty": "Nog niets bewaard.",
+      "status": {
+        "asked": "Gevraagd",
+        "paused": "Gepauzeerd"
+      },
+      "traceOutcome": {
+        "new": "Nieuw",
+        "dismissed": "Weggeklikt",
+        "acted": "Geopend",
+        "unsaid": "Niet gezegd"
+      },
+      "seenCount": "{count}× gezien",
+      "sentLabel": "Verstuurd",
+      "wouldSendLabel": "Zou zijn verstuurd",
+      "untitled": "Zonder titel",
+      "staleNote": "Al weken niet aangeraakt",
+      "answerLabel": "Antwoord",
+      "answerHelpful": "Nuttig",
+      "answerNotHelpful": "Niet nuttig",
+      "noAnswer": "Geen antwoord ontvangen.",
+      "rejected": {
+        "empty": "Het bericht was leeg en is niet getoond.",
+        "link": "Het bericht bevatte een link en is niet getoond."
+      },
+      "tokens": "{input} tokens erin, {output} eruit"
     },
     "boardPanel": {
       "addTitle": "Bord toevoegen",

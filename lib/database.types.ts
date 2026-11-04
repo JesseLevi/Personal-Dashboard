@@ -203,6 +203,71 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_pattern_traces: {
+        Row: {
+          answer: Json | null
+          dedupe_key: string
+          duration_ms: number | null
+          first_seen_at: string
+          id: string
+          input_tokens: number | null
+          items: Json
+          last_seen_at: string
+          model: string | null
+          output_tokens: number | null
+          prompt_version: string | null
+          seen_count: number
+          signal_id: string | null
+          similarities: Json
+          status: string
+          user_id: string
+        }
+        Insert: {
+          answer?: Json | null
+          dedupe_key: string
+          duration_ms?: number | null
+          first_seen_at?: string
+          id?: string
+          input_tokens?: number | null
+          items?: Json
+          last_seen_at?: string
+          model?: string | null
+          output_tokens?: number | null
+          prompt_version?: string | null
+          seen_count?: number
+          signal_id?: string | null
+          similarities?: Json
+          status: string
+          user_id: string
+        }
+        Update: {
+          answer?: Json | null
+          dedupe_key?: string
+          duration_ms?: number | null
+          first_seen_at?: string
+          id?: string
+          input_tokens?: number | null
+          items?: Json
+          last_seen_at?: string
+          model?: string | null
+          output_tokens?: number | null
+          prompt_version?: string | null
+          seen_count?: number
+          signal_id?: string | null
+          similarities?: Json
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_pattern_traces_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "agent_signals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       board_columns: {
         Row: {
           board_id: string
@@ -1952,6 +2017,37 @@ export type Database = {
           p_rejected_by_cleaner: number
           p_similarity_bands: Json
           p_started_at: string
+          p_user: string
+        }
+        Returns: boolean
+      }
+      record_assistant_pattern_trace: {
+        Args: {
+          p_answer?: Json
+          p_dedupe_key: string
+          p_duration_ms?: number
+          p_input_tokens?: number
+          p_items: Json
+          p_model: string
+          p_output_tokens?: number
+          p_prompt_version: string
+          p_similarities: Json
+          p_status: string
+        }
+        Returns: boolean
+      }
+      record_assistant_pattern_trace_for: {
+        Args: {
+          p_answer?: Json
+          p_dedupe_key: string
+          p_duration_ms?: number
+          p_input_tokens?: number
+          p_items: Json
+          p_model: string
+          p_output_tokens?: number
+          p_prompt_version: string
+          p_similarities: Json
+          p_status: string
           p_user: string
         }
         Returns: boolean

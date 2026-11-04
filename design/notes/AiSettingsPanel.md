@@ -6,7 +6,8 @@ Level-2 `SidePanel` opened from `SettingsPanel`'s "Verbanden en slim zoeken" but
 - A "Nog niet beschikbaar" line, only when the AI provider is not configured.
 - `Checkbox` with the label "Verbanden, slim zoeken en de Assistent gebruiken". Disabled (and shown unchecked) when unavailable, and while a save is pending.
 - A second `Checkbox` under the opt-in, "Assistent zoekt patronen", with one help line. Disabled (shown as is) while the opt-in is off or a save is pending.
-- Three explanation lines: what is sent, who receives it, what turning it off does.
+- Four explanation lines: what is sent, who receives it, the log (only you see it, kept 90 days, deleted on opt-out) and what turning it off does.
+- A full-width `white` navigation `Button` "Assistent-logboek" that opens `AssistantLogPanel` (see `AssistantLogPanel.md`), a sibling rendered after this panel. `logOpen` lives here and is reset when this panel closes.
 - Inline error `<p>` (`text-priority-urgent`) from `profile.errors.*`.
 - Footer: none, except `DeleteConfirm` (stacked) while turning off is being confirmed.
 
