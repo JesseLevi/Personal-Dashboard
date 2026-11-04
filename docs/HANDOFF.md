@@ -26,7 +26,7 @@ State and next step only, one screen (≤ 6 KB, `check:doc-budget`). Replace sta
    - Agenda sheet: grabber tap/drag peek↔full, a sideways swipe over the cards steps the day, the iOS date wheel jumps on Gereed, sheet under the cards after login and a section switch, a sideways strip swipe never moves the sheet, the grid scrolls in full without dragging it, panels open above it, nothing under the tab bar, header stays put;
    - Agenda on the iPhone: swipe a day (slow, flick, return, vertical scroll, event long-press; no swipe opens quick add, a tap does), the quick-add sheet animating between kinds (keyboard open and closed), and the card picker's board headers;
    - subtasks: add (also a multi-line paste), check, rename, "Maak er een kaart van", drag to reorder (touch long-press on the handle), the "Alles af" offer, the "3/7" chip, and the card under Projecten in ⌘K.
-3. **iPhone widget** (epic #653, ADR-0047): the "Open Atlas" iCloud link from #659 into `WIDGET_SHORTCUT_URL` (`lib/widget/install.ts`), then a device test of every family. `/agenda?date=` sets the date only on first mount.
+3. **iPhone widget** (epic #653, ADR-0047): the "Open Atlas" Shortcut link is in `WIDGET_SHORTCUT_URL` (#659); after promotion, install it from Instellingen and device-test every family. `/agenda?date=` sets the date only on first mount.
 4. **Assistent log** (ADR-0060): #755 pause merged (inert until its migration). Next #756 run log, then #757 traces + log + export; serialize migrations. Phase 8 is live (`CLOUDFLARE_*`, `CRON_SECRET`, one member opted in).
 
 ## Small open items
