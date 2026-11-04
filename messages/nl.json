@@ -1606,6 +1606,7 @@
   },
   "offline": {
     "title": "Je bent offline",
-    "body": "Deze pagina is niet beschikbaar zonder verbinding. Een mand die je eerder op dit apparaat hebt geopend, kun je offline wel bekijken."
+    "body": "Deze pagina is niet beschikbaar zonder verbinding. Een mand die je eerder op dit apparaat hebt geopend, kun je offline wel bekijken.",
+    "basket": "Naar je mand"
   }
 }

@@ -15,6 +15,7 @@ import { IngredientSearchPanel } from "@/components/organisms/IngredientSearchPa
 import { ShareInviteBanner } from "@/components/organisms/ShareInviteBanner";
 import { blurInTotalMs, blurFadeStagger, blurOutTotalMs, usePrefersReducedMotion } from "@/lib/ui/blur-fade";
 import { cn } from "@/lib/ui/cn";
+import { requestBasketCache } from "@/lib/pwa/offline-cache";
 import { useServerRefresh } from "@/lib/ui/server-refresh";
 import { formatQuantity } from "@/lib/recipes/units";
 import { formatQuantityFraction } from "@/lib/recipes/kitchen-units";
@@ -173,6 +174,11 @@ export function WinkelmandList({ listId, lists, items, share, owner, people, inv
   useEffect(() => {
     if (pendingActions.current === 0) setLocalItems(items);
   }, [items]);
+
+  // #710: the worker never sees in-app navigation, so the page asks it to store itself (ADR-0054).
+  useEffect(() => {
+    requestBasketCache(`/winkelmand/${listId}`);
+  }, [listId, items]);
 
   // #428: a basket with an accepted member (`people` is empty otherwise) is
   // re-fetched on focus and every 15 s; a personal basket never polls.
