@@ -12,6 +12,29 @@ export function registerServiceWorker(): void {
   });
 }
 
+/** Key under which public/sw.js keeps a copy of the last stored basket page. */
+export const LAST_BASKET_KEY = "/__last-basket";
+
+/** Asks the worker to store this basket page: in-app navigation never passes through its navigate handler. */
+export function requestBasketCache(path: string): void {
+  try {
+    navigator.serviceWorker?.controller?.postMessage({ type: "atlas:cache-basket", path });
+  } catch {
+    // No worker: the basket is simply not available offline.
+  }
+}
+
+/** True when a basket page is stored for offline use. Never throws. */
+export async function hasCachedBasket(): Promise<boolean> {
+  try {
+    if (typeof caches === "undefined") return false;
+    const cache = await caches.open(OFFLINE_PAGES_CACHE);
+    return (await cache.match(LAST_BASKET_KEY, { ignoreVary: true, ignoreSearch: true })) !== undefined;
+  } catch {
+    return false;
+  }
+}
+
 /** Removes every cached basket page; keeps the offline page. Never throws, so logout always proceeds. */
 export async function clearOfflineCache(): Promise<void> {
   try {
