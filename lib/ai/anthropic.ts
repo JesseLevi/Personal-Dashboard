@@ -42,16 +42,18 @@ export function mapAnthropicError(error: unknown): AiError {
   if (error instanceof AiError) return error;
   if (error instanceof Anthropic.APIError) {
     const status = error.status;
+    // An error response with an HTTP status was not billed; no status (connection, timeout) may have been.
+    const billed = typeof status !== "number";
     const message = `Anthropic request failed (status ${status ?? "none"})`;
-    if (error instanceof Anthropic.RateLimitError) return new AiError("rate_limited", message, { cause: error });
-    if (status === OVERLOADED_STATUS) return new AiError("overloaded", message, { cause: error });
+    if (error instanceof Anthropic.RateLimitError) return new AiError("rate_limited", message, { cause: error, billed });
+    if (status === OVERLOADED_STATUS) return new AiError("overloaded", message, { cause: error, billed });
     if (error instanceof Anthropic.AuthenticationError || error instanceof Anthropic.PermissionDeniedError) {
-      return new AiError("auth", message, { cause: error });
+      return new AiError("auth", message, { cause: error, billed });
     }
     // Connection errors, timeouts, 5xx and unexpected 4xx: nothing the caller can fix.
-    return new AiError("unavailable", message, { cause: error });
+    return new AiError("unavailable", message, { cause: error, billed });
   }
-  return new AiError("unavailable", "Anthropic request failed", { cause: error });
+  return new AiError("unavailable", "Anthropic request failed", { cause: error, billed: true });
 }
 
 export function createAnthropicProvider(options: {
@@ -79,6 +81,8 @@ export function createAnthropicProvider(options: {
       throw mapAnthropicError(error);
     }
 
+    const usage = { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens };
+
     // Cost tracking (ADR-0018 §3): counts and tags only, never content.
     console.info(
       JSON.stringify({
@@ -86,37 +90,34 @@ export function createAnthropicProvider(options: {
         provider: "anthropic",
         model: ANTHROPIC_MODEL,
         purpose: request.purpose,
-        inputTokens: response.usage.input_tokens,
-        outputTokens: response.usage.output_tokens,
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
       }),
     );
 
     if (response.stop_reason === "max_tokens") {
-      throw new AiError("invalid_output", "Model output was truncated at maxOutputTokens");
+      throw new AiError("invalid_output", "Model output was truncated at maxOutputTokens", { usage });
     }
     if (response.stop_reason === "refusal") {
-      throw new AiError("invalid_output", "Model refused the request");
+      throw new AiError("invalid_output", "Model refused the request", { usage });
     }
     const block = response.content.find((b) => b.type === "text");
     if (!block || block.type !== "text") {
-      throw new AiError("invalid_output", "Model returned no text content");
+      throw new AiError("invalid_output", "Model returned no text content", { usage });
     }
     let json: unknown;
     try {
       json = JSON.parse(block.text);
     } catch {
-      throw new AiError("invalid_output", "Model output is not valid JSON");
+      throw new AiError("invalid_output", "Model output is not valid JSON", { usage });
     }
     const parsed = request.schema.safeParse(json);
     if (!parsed.success) {
       // Issue paths only: messages can quote the offending value.
       const paths = parsed.error.issues.map((i) => i.path.join(".") || "(root)").join(", ");
-      throw new AiError("invalid_output", `Model output failed schema validation at: ${paths}`);
+      throw new AiError("invalid_output", `Model output failed schema validation at: ${paths}`, { usage });
     }
-    return {
-      object: parsed.data,
-      usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens },
-    };
+    return { object: parsed.data, usage };
   }
 
   return {
