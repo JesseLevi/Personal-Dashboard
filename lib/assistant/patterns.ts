@@ -295,7 +295,6 @@ async function patternStep(args: {
     if (reserved === "budget" || reserved === "disabled" || reserved === "paused") break;
     if (reserved !== "reserved") continue;
 
-    funnel.calls++;
     const traceBase = {
       dedupeKey,
       status: "asked" as const,
@@ -320,20 +319,32 @@ async function patternStep(args: {
       funnel.inputTokens += result.usage.inputTokens;
       funnel.outputTokens += result.usage.outputTokens;
     } catch (error) {
-      // The reservation stays: the call may have been billed and counts toward the budget.
       const code = error instanceof AiError ? error.code : "unknown";
       console.error("[assistant] pattern call failed", code);
       funnel.callFailures++;
       state.errorCode = code;
+      if (error instanceof AiError && !error.billed) {
+        // Not billed (ADR-0060, Failed calls): give the budget slot and the cluster back, no trace, no call counted.
+        await release(client, userId, path, dedupeKey);
+        break;
+      }
+      // Billed, or possibly billed: the reservation stays so the same input is not paid twice.
+      funnel.calls++;
+      const failedUsage = error instanceof AiError ? error.usage : undefined;
+      if (failedUsage) {
+        funnel.inputTokens += failedUsage.inputTokens;
+        funnel.outputTokens += failedUsage.outputTokens;
+      }
       await recordTrace(client, userId, path, {
         ...traceBase,
         answer: null,
-        inputTokens: null,
-        outputTokens: null,
+        inputTokens: failedUsage?.inputTokens ?? null,
+        outputTokens: failedUsage?.outputTokens ?? null,
         durationMs: Date.now() - callStarted,
       });
       break;
     }
+    funnel.calls++;
 
     if (answer.helpful) funnel.helpful++;
     else funnel.notHelpful++;
@@ -433,6 +444,19 @@ async function reserve(
         });
   if (result.error) throw result.error;
   return result.data ?? "invalid";
+}
+
+/** Releasing never fails the run: a failed release leaves one console line without content. */
+async function release(client: Client, userId: string, path: "lazy" | "cron", dedupeKey: string): Promise<void> {
+  try {
+    const result =
+      path === "lazy"
+        ? await client.rpc("release_pattern_signal", { p_dedupe_key: dedupeKey })
+        : await client.rpc("release_pattern_signal_for", { p_user: userId, p_dedupe_key: dedupeKey });
+    if (result.error) throw result.error;
+  } catch {
+    console.error("[assistant] pattern release failed", path);
+  }
 }
 
 async function complete(

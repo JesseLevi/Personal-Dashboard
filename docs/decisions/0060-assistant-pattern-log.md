@@ -64,6 +64,16 @@
    - how signals are received (acted, dismissed, ignored);
    - a proposal: thresholds, clustering or prompt. A change is a migration plus an update of ADR-0046 §3, as that ADR's Consequences say.
 
+## Failed calls
+
+Amends ADR-0046 §3: the daily budget counts only calls that may have been billed.
+
+- A call is **billed** when the model answered: every `invalid_output` (truncated, refused, no text, no JSON, schema failure), and a connection error or timeout without an HTTP status, where the server may have processed the request. It is **not billed** when the provider returned an error response with an HTTP status (429, 529, 5xx, 401/403, other 4xx).
+- Not billed: the reservation is released (`release_pattern_signal`, `_for` for the cron), so the call costs no budget and the cluster is asked again. No trace is written and the call is not counted in `calls`; `call_failures` and `error_code` still are. The run stops.
+- Billed: the reservation stays, so the same input is not paid twice. The trace gets the response's tokens, which also count in the run's totals.
+- Security: the release only deletes the member's own `pattern` row with `status = 'skipped'`, no message and created in the last 5 minutes. A member cannot win budget back from an answered call; at most from one failed call they just made.
+- Releasing never fails the run.
+
 ## Consequences
 
 - Pausing stops pattern spend, while the log keeps showing what Haiku would have received. That tells you when there is enough to resume.

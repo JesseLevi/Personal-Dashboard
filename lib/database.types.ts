@@ -2052,6 +2052,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      release_pattern_signal: {
+        Args: { p_dedupe_key: string }
+        Returns: boolean
+      }
+      release_pattern_signal_for: {
+        Args: { p_dedupe_key: string; p_user: string }
+        Returns: boolean
+      }
       replace_recipe_contents: {
         Args: { p_ingredients: Json; p_recipe_id: string; p_steps: Json }
         Returns: undefined

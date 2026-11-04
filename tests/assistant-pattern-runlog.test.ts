@@ -206,7 +206,7 @@ describe("one row per outcome", () => {
     expect(onlyRow(second.runs)).toMatchObject({ p_outcome: "ok", p_calls: 1, p_helpful: 1, p_rejected_by_cleaner: 1 });
   });
 
-  it("error: a failed call keeps the count and records the code, never the message", async () => {
+  it("error: an unbilled failed call is not counted but records the code, never the message", async () => {
     setProviderForTests({
       generateObject: vi.fn(async () => {
         throw new AiError("overloaded", "secret prompt text");
@@ -215,7 +215,7 @@ describe("one row per outcome", () => {
     const { client, runs } = fakeClient(threeNotes);
     await run(client);
     const args = onlyRow(runs);
-    expect(args).toMatchObject({ p_outcome: "error", p_error_code: "overloaded", p_calls: 1, p_call_failures: 1 });
+    expect(args).toMatchObject({ p_outcome: "error", p_error_code: "overloaded", p_calls: 0, p_call_failures: 1 });
     expect(JSON.stringify(args)).not.toContain("secret");
   });
 

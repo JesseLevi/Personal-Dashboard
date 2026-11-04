@@ -18,15 +18,29 @@ export type AiErrorCode =
   | "unavailable"
   | "invalid_output";
 
-/** Message is safe to log: it never carries prompt or page content. */
+/** Token counts as reported by the provider. Counts only, never content. */
+export type AiUsage = { inputTokens: number; outputTokens: number };
+
+/**
+ * Message is safe to log: it never carries prompt or page content.
+ * `billed`: the model answered, or may have (connection/timeout without HTTP
+ * status), so the provider may have charged for the call. False for an error
+ * response with an HTTP status. Defaults to true for `invalid_output`, else false.
+ * `usage`: the response's token counts when the model did answer.
+ */
 export class AiError extends Error {
+  readonly billed: boolean;
+  readonly usage?: AiUsage;
+
   constructor(
     readonly code: AiErrorCode,
     message: string,
-    options?: { cause?: unknown },
+    options?: { cause?: unknown; billed?: boolean; usage?: AiUsage },
   ) {
-    super(message, options);
+    super(message, options?.cause === undefined ? undefined : { cause: options.cause });
     this.name = "AiError";
+    this.billed = options?.billed ?? code === "invalid_output";
+    this.usage = options?.usage;
   }
 }
 
@@ -41,9 +55,6 @@ export type GenerateObjectRequest<S extends z.ZodType> = {
   /** Short snake_case tag for the usage log, e.g. "recipe_gap_fill". Never content. */
   purpose: string;
 };
-
-/** Token counts as reported by the provider. Counts only, never content. */
-export type AiUsage = { inputTokens: number; outputTokens: number };
 
 export type GenerateObjectResult<S extends z.ZodType> = { object: z.infer<S>; usage: AiUsage };
 

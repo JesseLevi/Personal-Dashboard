@@ -85,7 +85,9 @@ export async function generateObjectWithUsage<S extends z.ZodType>(
     ? await provider.generateObjectWithUsage(request)
     : { object: await provider.generateObject(request), usage: { inputTokens: 0, outputTokens: 0 } };
   const checked = request.schema.safeParse(result.object);
-  if (!checked.success) throw new AiError("invalid_output", "Provider returned data that fails the schema");
+  if (!checked.success) {
+    throw new AiError("invalid_output", "Provider returned data that fails the schema", { usage: result.usage });
+  }
   return { object: checked.data, usage: result.usage };
 }
 

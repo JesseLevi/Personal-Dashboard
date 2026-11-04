@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { setEmbeddingProviderForTests, setProviderForTests, type AiProvider } from "@/lib/ai";
+import { AiError, setEmbeddingProviderForTests, setProviderForTests, type AiProvider } from "@/lib/ai";
 import {
   PATTERN_SYSTEM,
   classifyMessage,
@@ -24,6 +24,7 @@ type Options = {
   locale?: string;
   recordFails?: boolean;
   traceFails?: boolean;
+  releaseFails?: boolean;
   edgesError?: boolean;
   known?: string[];
   reserve?: string[];
@@ -55,6 +56,9 @@ function fakeClient(options: Options = {}) {
     }
     if (name.startsWith("reserve_pattern_signal")) return { data: reserve.shift() ?? "reserved", error: null };
     if (name.startsWith("complete_pattern_signal")) return { data: true, error: null };
+    if (name.startsWith("release_pattern_signal")) {
+      return options.releaseFails ? { data: null, error: { code: "XX000" } } : { data: true, error: null };
+    }
     return { data: null, error: { code: "42883" } };
   });
   const rows: Record<string, unknown[]> = {
@@ -210,6 +214,72 @@ describe("the pattern call", () => {
     const { client } = fakeClient(threeNotes);
     expect(await runPatterns({ client, userId: "u", path: "lazy", now: NOW })).toBe(0);
     expect(generateObject).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("failed calls (ADR-0060)", () => {
+  const failing = (error: unknown) => {
+    const generateObject = vi.fn(async () => {
+      throw error;
+    });
+    setProviderForTests({ generateObject } as unknown as AiProvider);
+  };
+
+  it("an unbilled failure releases the reservation, writes no trace and counts no call", async () => {
+    failing(new AiError("overloaded", "x", { billed: false }));
+    const { client, rpcCalls, traces, runs } = fakeClient(threeNotes);
+    expect(await runPatterns({ client, userId: "u", path: "lazy", now: NOW })).toBe(0);
+    const release = rpcCalls.find((c) => c.name === "release_pattern_signal");
+    expect(release?.args).toEqual({ p_dedupe_key: expect.any(String) });
+    expect(rpcCalls.map((c) => c.name)).toEqual(["pattern_edges", "reserve_pattern_signal", "release_pattern_signal"]);
+    expect(traces).toHaveLength(0);
+    expect(runs[0].args).toMatchObject({
+      p_outcome: "error",
+      p_error_code: "overloaded",
+      p_calls: 0,
+      p_call_failures: 1,
+      p_input_tokens: 0,
+      p_output_tokens: 0,
+    });
+  });
+
+  it("uses the _for release on the cron path", async () => {
+    failing(new AiError("rate_limited", "x", { billed: false }));
+    const { client, rpcCalls } = fakeClient(threeNotes);
+    await runPatterns({ client, userId: "member", path: "cron", now: NOW });
+    const release = rpcCalls.find((c) => c.name === "release_pattern_signal_for");
+    expect(release?.args).toMatchObject({ p_user: "member" });
+  });
+
+  it("a failing release never fails the run", async () => {
+    failing(new AiError("overloaded", "x", { billed: false }));
+    const { client, runs } = fakeClient({ ...threeNotes, releaseFails: true });
+    await expect(runPatterns({ client, userId: "u", path: "lazy", now: NOW })).resolves.toBe(0);
+    expect(runs).toHaveLength(1);
+  });
+
+  it("a billed failure keeps the reservation and logs a trace with the real tokens", async () => {
+    failing(new AiError("invalid_output", "x", { usage: { inputTokens: 120, outputTokens: 30 } }));
+    const { client, rpcCalls, traces, runs } = fakeClient(threeNotes);
+    await runPatterns({ client, userId: "u", path: "lazy", now: NOW });
+    expect(rpcCalls.some((c) => c.name.startsWith("release_pattern_signal"))).toBe(false);
+    expect(traces).toHaveLength(1);
+    expect(traces[0].args).toMatchObject({ p_status: "asked", p_answer: null, p_input_tokens: 120, p_output_tokens: 30 });
+    expect(runs[0].args).toMatchObject({
+      p_error_code: "invalid_output",
+      p_calls: 1,
+      p_call_failures: 1,
+      p_input_tokens: 120,
+      p_output_tokens: 30,
+    });
+  });
+
+  it("a possibly billed failure without usage keeps the reservation with null tokens", async () => {
+    failing(new AiError("unavailable", "x", { billed: true }));
+    const { client, rpcCalls, traces } = fakeClient(threeNotes);
+    await runPatterns({ client, userId: "u", path: "lazy", now: NOW });
+    expect(rpcCalls.some((c) => c.name.startsWith("release_pattern_signal"))).toBe(false);
+    expect(traces[0].args).toMatchObject({ p_input_tokens: undefined, p_output_tokens: undefined });
   });
 });
 

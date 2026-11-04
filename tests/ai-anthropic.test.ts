@@ -65,7 +65,11 @@ describe("createAnthropicProvider", () => {
   ])("rejects %s output as invalid_output", async (_label, message) => {
     vi.spyOn(console, "info").mockImplementation(() => {});
     const { provider } = providerReturning(message);
-    await expect(provider.generateObject(request)).rejects.toMatchObject({ code: "invalid_output" });
+    await expect(provider.generateObject(request)).rejects.toMatchObject({
+      code: "invalid_output",
+      billed: true,
+      usage: { inputTokens: 11, outputTokens: 7 },
+    });
   });
 
   it("never puts model output in the error message", async () => {
@@ -98,6 +102,19 @@ describe("mapAnthropicError", () => {
     const mapped = mapAnthropicError(error);
     expect(mapped).toBeInstanceOf(AiError);
     expect(mapped.code).toBe(code);
+  });
+
+  it.each([
+    ["429", new Anthropic.RateLimitError(429, undefined, "m", h), false],
+    ["529", new Anthropic.InternalServerError(529, undefined, "m", h), false],
+    ["500", new Anthropic.InternalServerError(500, undefined, "m", h), false],
+    ["401", new Anthropic.AuthenticationError(401, undefined, "m", h), false],
+    ["400", new Anthropic.BadRequestError(400, undefined, "m", h), false],
+    ["connection error", new Anthropic.APIConnectionError({ message: "down" }), true],
+    ["timeout", new Anthropic.APIConnectionTimeoutError(), true],
+    ["plain Error", new Error("boom"), true],
+  ])("billed flag for %s is %s", (_label, error, billed) => {
+    expect(mapAnthropicError(error).billed).toBe(billed);
   });
 });
 

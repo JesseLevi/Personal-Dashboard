@@ -23,14 +23,14 @@ The file holds the member's own note and card text (titles and fragments of at m
   - `edges` and `similarity_bands` (bands of 0.05 from 0.80, keyed `"0.80"`, `"0.85"`, `"0.90"`, `"0.95"`);
   - `clusters` and `cluster_sizes` (keyed by size, `"3"` to `"8"`);
   - `known` (already in `agent_signals`, so never asked again), `not_fresh` (stale cards only, rejected by the freshness check), `candidates`;
-  - `calls`, `helpful`, `not_helpful`, `rejected_by_cleaner`, `call_failures`;
+  - `calls`, `helpful`, `not_helpful`, `rejected_by_cleaner`, `call_failures`: `calls` counts only calls Anthropic may have billed. `call_failures` counts every failed call: an unbilled one (HTTP error response, e.g. 429 or 529) was released, so it left no trace, no budget use and the cluster is asked again next run; a billed one (the model answered but not usably, or a connection/timeout) keeps its reservation and has a trace with `answer` null;
   - `input_tokens`, `output_tokens`.
 
 **`traces`**: one row per cluster that reached the call stage, newest first (`last_seen_at`). Kept 90 days after `last_seen_at`.
 - `status`: `asked` (Haiku was called) or `paused` (what Haiku would have received). A paused trace that is later asked becomes `asked`.
 - `items`: exactly what was sent, in order: `type` and `id` (from SQL), `kind`, `title`, `fragment`, `stale`. A note deleted since then can still be here.
 - `similarities`: `{ a, b, similarity }` for each pair in the cluster that `pattern_edges()` returned (`a` and `b` are `type:id`). A pair that is missing is a pair under 0.80, so a cluster can hang together through a chain.
-- `answer` (asked only): `helpful`, `message_raw` (what Haiku wrote), `message` (the cleaned text that was stored, or null), `rejected` (`empty` or `link`, why the cleaner dropped a helpful answer). `answer` is null when the call failed.
+- `answer` (asked only): `helpful`, `message_raw` (what Haiku wrote), `message` (the cleaned text that was stored, or null), `rejected` (`empty` or `link`, why the cleaner dropped a helpful answer). `answer` is null when a billed call failed; `input_tokens` and `output_tokens` are then the response's, or null when the connection died.
 - `prompt_version`, `model`, `input_tokens`, `output_tokens`, `duration_ms` (null while paused).
 - `signal_id`, and `signal_status` with `status_changed_at`, read from `agent_signals`: `new` (not acted on yet), `dismissed`, `acted` (opened), `skipped` (nothing was said), or null (paused, or the signal is gone).
 - `first_seen_at`, `last_seen_at`, `seen_count`: a paused cluster that keeps coming back raises `seen_count`; a high count means a stable cluster that is waiting for the pause to end.
