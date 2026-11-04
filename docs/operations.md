@@ -97,3 +97,16 @@ The app's own login limits need `20261023000005_login_rate_limit.sql` applied fi
 ## Anthropic
 
 API key in Vercel. A hard monthly spend cap is set in the Anthropic Console (ADR-0018 §3).
+
+### Reading the pattern run log (ADR-0060 §2)
+
+Run it in the Supabase SQL editor; `private` is closed to the API. One row per day, summed over all members, no `user_id`:
+
+```sql
+select * from private.assistant_pattern_daily order by day desc limit 14;
+```
+
+- Read the funnel left to right: `edges` (`band_080` to `band_095` split them by similarity), `clusters` (`size_3` to `size_8`), `known`, `not_fresh`, `candidates`, `calls`.
+- `*_runs` count runs per outcome. Many `no_edges_runs` or `no_clusters_runs` mean too few embeddings or too strict a threshold; `all_known_runs` means nothing new; `paused_runs` are members who paused (ADR-0060 §1).
+- `helpful`, `not_helpful`, `rejected_by_cleaner` and `call_failures` tell what happened after a call; `input_tokens` and `output_tokens` are the spend.
+- Rows older than 180 days are pruned by the detector run. A member reads their own rows through RLS.

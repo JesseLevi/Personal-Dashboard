@@ -125,6 +125,84 @@ export type Database = {
         }
         Relationships: []
       }
+      assistant_pattern_runs: {
+        Row: {
+          call_failures: number
+          calls: number
+          candidates: number
+          cluster_sizes: Json
+          clusters: number
+          config: Json
+          created_at: string
+          duration_ms: number
+          edges: number
+          error_code: string | null
+          helpful: number
+          id: string
+          input_tokens: number
+          known: number
+          not_fresh: number
+          not_helpful: number
+          outcome: string
+          output_tokens: number
+          path: string
+          rejected_by_cleaner: number
+          similarity_bands: Json
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          call_failures?: number
+          calls?: number
+          candidates?: number
+          cluster_sizes?: Json
+          clusters?: number
+          config?: Json
+          created_at?: string
+          duration_ms: number
+          edges?: number
+          error_code?: string | null
+          helpful?: number
+          id?: string
+          input_tokens?: number
+          known?: number
+          not_fresh?: number
+          not_helpful?: number
+          outcome: string
+          output_tokens?: number
+          path: string
+          rejected_by_cleaner?: number
+          similarity_bands?: Json
+          started_at: string
+          user_id: string
+        }
+        Update: {
+          call_failures?: number
+          calls?: number
+          candidates?: number
+          cluster_sizes?: Json
+          clusters?: number
+          config?: Json
+          created_at?: string
+          duration_ms?: number
+          edges?: number
+          error_code?: string | null
+          helpful?: number
+          id?: string
+          input_tokens?: number
+          known?: number
+          not_fresh?: number
+          not_helpful?: number
+          outcome?: string
+          output_tokens?: number
+          path?: string
+          rejected_by_cleaner?: number
+          similarity_bands?: Json
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       board_columns: {
         Row: {
           board_id: string
@@ -1827,6 +1905,57 @@ export type Database = {
         }[]
       }
       promote_card_subtask: { Args: { p_subtask_id: string }; Returns: string }
+      record_assistant_pattern_run: {
+        Args: {
+          p_call_failures: number
+          p_calls: number
+          p_candidates: number
+          p_cluster_sizes: Json
+          p_clusters: number
+          p_config: Json
+          p_duration_ms: number
+          p_edges: number
+          p_error_code: string
+          p_helpful: number
+          p_input_tokens: number
+          p_known: number
+          p_not_fresh: number
+          p_not_helpful: number
+          p_outcome: string
+          p_output_tokens: number
+          p_path: string
+          p_rejected_by_cleaner: number
+          p_similarity_bands: Json
+          p_started_at: string
+        }
+        Returns: boolean
+      }
+      record_assistant_pattern_run_for: {
+        Args: {
+          p_call_failures: number
+          p_calls: number
+          p_candidates: number
+          p_cluster_sizes: Json
+          p_clusters: number
+          p_config: Json
+          p_duration_ms: number
+          p_edges: number
+          p_error_code: string
+          p_helpful: number
+          p_input_tokens: number
+          p_known: number
+          p_not_fresh: number
+          p_not_helpful: number
+          p_outcome: string
+          p_output_tokens: number
+          p_path: string
+          p_rejected_by_cleaner: number
+          p_similarity_bands: Json
+          p_started_at: string
+          p_user: string
+        }
+        Returns: boolean
+      }
       replace_recipe_contents: {
         Args: { p_ingredients: Json; p_recipe_id: string; p_steps: Json }
         Returns: undefined

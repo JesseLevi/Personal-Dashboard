@@ -21,6 +21,8 @@ type Options = {
   aiEnabled?: boolean;
   patternsEnabled?: boolean;
   locale?: string;
+  recordFails?: boolean;
+  edgesError?: boolean;
   known?: string[];
   reserve?: string[];
   cards?: Array<{ id: string; title: string; description: string | null; updated_at: string }>;
@@ -33,10 +35,17 @@ const note = (id: string, updated_at = FRESH) => ({ id, title: `Titel ${id.toUpp
 
 function fakeClient(options: Options = {}) {
   const rpcCalls: Array<{ name: string; args: Record<string, unknown> | undefined }> = [];
+  const runs: Array<{ name: string; args: Record<string, unknown> }> = [];
   const reserve = [...(options.reserve ?? [])];
   const rpc = vi.fn(async (name: string, args?: Record<string, unknown>) => {
+    if (name.startsWith("record_assistant_pattern_run")) {
+      runs.push({ name, args: args ?? {} });
+      return options.recordFails ? { data: null, error: { code: "XX000" } } : { data: true, error: null };
+    }
     rpcCalls.push({ name, args });
-    if (name.startsWith("pattern_edges")) return { data: options.edges ?? [], error: null };
+    if (name.startsWith("pattern_edges")) {
+      return options.edgesError ? { data: null, error: { code: "XX000" } } : { data: options.edges ?? [], error: null };
+    }
     if (name.startsWith("reserve_pattern_signal")) return { data: reserve.shift() ?? "reserved", error: null };
     if (name.startsWith("complete_pattern_signal")) return { data: true, error: null };
     return { data: null, error: { code: "42883" } };
@@ -60,7 +69,7 @@ function fakeClient(options: Options = {}) {
     chain.then = (resolve: (v: unknown) => unknown) => resolve({ data: rows[table] ?? [], error: null });
     return chain;
   };
-  return { client: { rpc, from } as never, rpcCalls };
+  return { client: { rpc, from } as never, rpcCalls, runs };
 }
 
 function provider(answer: unknown) {

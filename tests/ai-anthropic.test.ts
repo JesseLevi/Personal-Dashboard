@@ -46,6 +46,15 @@ describe("createAnthropicProvider", () => {
     });
   });
 
+  it("generateObjectWithUsage returns the token counts next to the object", async () => {
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    const { provider } = providerReturning({ content: [{ type: "text", text: '{"name":"ui","n":2}' }] });
+    await expect(provider.generateObjectWithUsage!(request)).resolves.toEqual({
+      object: { name: "ui", n: 2 },
+      usage: { inputTokens: 11, outputTokens: 7 },
+    });
+  });
+
   it.each([
     ["schema-invalid", { content: [{ type: "text", text: '{"name":"far too long for the cap","n":1}' }] }],
     ["wrong type", { content: [{ type: "text", text: '{"name":"a","n":"x"}' }] }],
