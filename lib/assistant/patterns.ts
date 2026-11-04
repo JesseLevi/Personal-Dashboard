@@ -16,10 +16,16 @@ import {
 import {
   buildConfig,
   buildRunArgs,
+  buildTraceArgs,
+  clusterSimilarities,
   clusterSizes,
   emptyFunnel,
+  promptVersion,
   similarityBands,
   type RunState,
+  type TraceAnswer,
+  type TraceItem,
+  type TraceStatus,
 } from "@/lib/assistant/pattern-log";
 import type { Database } from "@/lib/database.types";
 
@@ -35,7 +41,7 @@ type Client = SupabaseClient<Database>;
 /** Mirrored in reserve_pattern_signal(); the database enforces it, this only avoids pointless work. */
 export const MAX_CALLS_PER_DAY = 3;
 /** Unknown clusters looked at per run; the budget usually stops us earlier. */
-const MAX_CANDIDATES = 6;
+export const MAX_CANDIDATES = 6;
 const MAX_FRAGMENT_CHARS = 300;
 const MAX_TITLE_CHARS = 120;
 const MAX_MESSAGE_CHARS = 280;
@@ -92,9 +98,15 @@ const LINK_PATTERN = /(https?:\/\/|www\.|\bftp:\/\/)/i;
  * message that carries a link, or is empty, is not stored (links only come from SQL).
  */
 export function cleanMessage(raw: string): string | null {
+  return classifyMessage(raw).message;
+}
+
+/** Same rule as cleanMessage, plus why a message was not kept. */
+export function classifyMessage(raw: string): { message: string | null; rejected: "empty" | "link" | null } {
   const text = clip(raw.replace(/<[^>]*>/g, " "), MAX_MESSAGE_CHARS);
-  if (!text || LINK_PATTERN.test(text)) return null;
-  return text;
+  if (!text) return { message: null, rejected: "empty" };
+  if (LINK_PATTERN.test(text)) return { message: null, rejected: "link" };
+  return { message: text, rejected: null };
 }
 
 type ContentRow = { key: string; item: PatternItem; updatedAt: string };
@@ -233,15 +245,36 @@ async function patternStep(args: {
   funnel.candidates = candidates.length;
   if (candidates.length === 0) return 0;
 
-  // Paused (ADR-0060 §1): the step ran up to the candidate list and stops before reserving.
-  // No call, no agent_signals row; the run log records outcome 'paused'.
-  if (!profile.assistant_patterns_enabled) {
-    state.paused = true;
-    return 0;
-  }
-
   const content = await loadContent(client, userId, candidates.flatMap((c) => c.sources), now);
   const staleKeys = new Set([...content.values()].filter((c) => c.item.stale).map((c) => c.key));
+  const version = promptVersion(systemFor(locale));
+
+  // Paused (ADR-0060 §1): the step ran up to the candidate list and stops before reserving.
+  // No call, no agent_signals row; each fresh candidate leaves a 'paused' trace of what
+  // would have been sent, and the run log records outcome 'paused'.
+  if (!profile.assistant_patterns_enabled) {
+    state.paused = true;
+    for (const cluster of candidates) {
+      if (!cluster.sources.every((s) => content.has(sourceKey(s.type, s.id)))) continue;
+      if (!hasEnoughFreshSources(cluster, staleKeys)) {
+        funnel.notFresh++;
+        continue;
+      }
+      await recordTrace(client, userId, path, {
+        dedupeKey: dedupeKeyFor(cluster.sources),
+        status: "paused",
+        items: traceItems(orderSources(cluster, content), content),
+        similarities: clusterSimilarities(cluster.sources, edges),
+        promptVersion: version,
+        model: AI_MODEL,
+        answer: null,
+        inputTokens: null,
+        outputTokens: null,
+        durationMs: null,
+      });
+    }
+    return 0;
+  }
 
   let created = 0;
   for (const cluster of candidates) {
@@ -263,7 +296,17 @@ async function patternStep(args: {
     if (reserved !== "reserved") continue;
 
     funnel.calls++;
+    const traceBase = {
+      dedupeKey,
+      status: "asked" as const,
+      items: traceItems(ordered, content),
+      similarities: clusterSimilarities(cluster.sources, edges),
+      promptVersion: version,
+      model: AI_MODEL,
+    };
+    const callStarted = Date.now();
     let answer: z.infer<typeof PatternAnswerSchema>;
+    let usage = { inputTokens: 0, outputTokens: 0 };
     try {
       const result = await generateObjectWithUsage({
         system: systemFor(locale),
@@ -273,6 +316,7 @@ async function patternStep(args: {
         purpose: "assistant_pattern",
       });
       answer = result.object;
+      usage = result.usage;
       funnel.inputTokens += result.usage.inputTokens;
       funnel.outputTokens += result.usage.outputTokens;
     } catch (error) {
@@ -281,13 +325,28 @@ async function patternStep(args: {
       console.error("[assistant] pattern call failed", code);
       funnel.callFailures++;
       state.errorCode = code;
+      await recordTrace(client, userId, path, {
+        ...traceBase,
+        answer: null,
+        inputTokens: null,
+        outputTokens: null,
+        durationMs: Date.now() - callStarted,
+      });
       break;
     }
 
     if (answer.helpful) funnel.helpful++;
     else funnel.notHelpful++;
-    const message = answer.helpful ? cleanMessage(answer.message) : null;
+    const verdict = answer.helpful ? classifyMessage(answer.message) : { message: null, rejected: null };
+    const message = verdict.message;
     if (answer.helpful && !message) funnel.rejectedByCleaner++;
+    await recordTrace(client, userId, path, {
+      ...traceBase,
+      answer: { helpful: answer.helpful, message_raw: answer.message, message, rejected: verdict.rejected },
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      durationMs: Date.now() - callStarted,
+    });
     if (!message) continue; // stays 'skipped': not asked again
     if (await complete(client, userId, path, dedupeKey, message)) created++;
   }
@@ -309,6 +368,40 @@ async function recordRun(
     if (result.error) throw result.error;
   } catch {
     console.error("[assistant] pattern run log failed", path);
+  }
+}
+
+function traceItems(sources: readonly SourceRef[], content: ReadonlyMap<string, ContentRow>): TraceItem[] {
+  return sources.map((s) => ({ type: s.type, id: s.id, ...(content.get(sourceKey(s.type, s.id)) as ContentRow).item }));
+}
+
+/** Logging never fails the run: a failed trace write leaves one console line without content. */
+async function recordTrace(
+  client: Client,
+  userId: string,
+  path: "lazy" | "cron",
+  args: {
+    dedupeKey: string;
+    status: TraceStatus;
+    items: readonly TraceItem[];
+    similarities: ReturnType<typeof clusterSimilarities>;
+    promptVersion: string;
+    model: string;
+    answer: TraceAnswer | null;
+    inputTokens: number | null;
+    outputTokens: number | null;
+    durationMs: number | null;
+  },
+): Promise<void> {
+  try {
+    const traceArgs = buildTraceArgs(args);
+    const result =
+      path === "lazy"
+        ? await client.rpc("record_assistant_pattern_trace", traceArgs)
+        : await client.rpc("record_assistant_pattern_trace_for", { p_user: userId, ...traceArgs });
+    if (result.error) throw result.error;
+  } catch {
+    console.error("[assistant] pattern trace log failed", path);
   }
 }
 

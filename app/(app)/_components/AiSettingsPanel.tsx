@@ -3,8 +3,10 @@
 import { useEffect, useId, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { SidePanel } from "@/components/organisms/SidePanel";
+import { Button } from "@/components/atoms/Button";
 import { Checkbox } from "@/components/atoms/Checkbox";
 import { setAiEnabled, setAssistantPatternsEnabled } from "@/lib/profile/actions";
+import { AssistantLogPanel } from "./AssistantLogPanel";
 import { DeleteConfirm, useDeleteConfirm } from "./DeleteConfirm";
 
 // design: Claude-designed (#579, #668) — level-2 panel of SettingsPanel from
@@ -37,8 +39,13 @@ export function AiSettingsPanel({ open, onClose, aiEnabled, patternsEnabled, aiA
   const [aiError, setAiError] = useState<string | null>(null);
   const [isAiPending, startAiTransition] = useTransition();
   const { confirming, ask, cancel } = useDeleteConfirm();
+  // The log (level 2 as well, rendered after this panel so it stacks on top) is closed with this panel.
+  const [logOpen, setLogOpen] = useState(false);
   useEffect(() => {
-    if (!open) cancel();
+    if (!open) {
+      cancel();
+      setLogOpen(false);
+    }
   }, [open, cancel]);
 
   function applyAi(enabled: boolean) {
@@ -78,59 +85,66 @@ export function AiSettingsPanel({ open, onClose, aiEnabled, patternsEnabled, aiA
   }
 
   return (
-    <SidePanel
-      level={2}
-      open={open}
-      onClose={onClose}
-      title={t("ai.title")}
-      closeLabel={tSidePanel("closeLabel")}
-      footer={
-        confirming ? (
-          <DeleteConfirm
-            layout="stacked"
-            isPending={isAiPending}
-            onCancel={cancel}
-            onConfirm={() => applyAi(false)}
-            labels={{
-              prompt: t("ai.confirmPrompt"),
-              cancel: t("ai.cancelLabel"),
-              confirm: t("ai.confirmLabel"),
-              deleting: t("ai.confirmingLabel"),
-            }}
-          />
-        ) : undefined
-      }
-    >
-      <section className="flex flex-col gap-stack-sm" aria-labelledby={aiHeadingId}>
-        <h3 id={aiHeadingId} className="text-base font-semibold text-text-primary">
-          {t("ai.title")}
-        </h3>
-        {aiAvailable ? null : <p className="text-base text-text-secondary">{t("ai.unavailable")}</p>}
-        <label className="flex items-center gap-inline-sm text-base text-text-primary">
-          <Checkbox
-            checked={aiAvailable && pendingAi}
-            disabled={!aiAvailable || isAiPending}
-            onClick={handleAiToggle}
-            className="disabled:cursor-not-allowed disabled:opacity-50"
-          />
-          {t("ai.checkboxLabel")}
-        </label>
-        <label className="flex items-center gap-inline-sm text-base text-text-primary">
-          <Checkbox
-            checked={aiAvailable && pendingAi && pendingPatterns}
-            disabled={!aiAvailable || !pendingAi || isAiPending || isPatternsPending}
-            onClick={handlePatternsToggle}
-            className="disabled:cursor-not-allowed disabled:opacity-50"
-          />
-          {t("ai.patternsLabel")}
-        </label>
-        <p className="text-base text-text-secondary">{t("ai.patternsHelp")}</p>
-        {patternsError ? <p className="text-base font-semibold text-priority-urgent">{patternsError}</p> : null}
-        <p className="text-base text-text-secondary">{t("ai.sendsLabel")}</p>
-        <p className="text-base text-text-secondary">{t("ai.recipientLabel")}</p>
-        <p className="text-base text-text-secondary">{t("ai.offLabel")}</p>
-        {aiError ? <p className="text-base font-semibold text-priority-urgent">{aiError}</p> : null}
-      </section>
-    </SidePanel>
+    <>
+      <SidePanel
+        level={2}
+        open={open}
+        onClose={onClose}
+        title={t("ai.title")}
+        closeLabel={tSidePanel("closeLabel")}
+        footer={
+          confirming ? (
+            <DeleteConfirm
+              layout="stacked"
+              isPending={isAiPending}
+              onCancel={cancel}
+              onConfirm={() => applyAi(false)}
+              labels={{
+                prompt: t("ai.confirmPrompt"),
+                cancel: t("ai.cancelLabel"),
+                confirm: t("ai.confirmLabel"),
+                deleting: t("ai.confirmingLabel"),
+              }}
+            />
+          ) : undefined
+        }
+      >
+        <section className="flex flex-col gap-stack-sm" aria-labelledby={aiHeadingId}>
+          <h3 id={aiHeadingId} className="text-base font-semibold text-text-primary">
+            {t("ai.title")}
+          </h3>
+          {aiAvailable ? null : <p className="text-base text-text-secondary">{t("ai.unavailable")}</p>}
+          <label className="flex items-center gap-inline-sm text-base text-text-primary">
+            <Checkbox
+              checked={aiAvailable && pendingAi}
+              disabled={!aiAvailable || isAiPending}
+              onClick={handleAiToggle}
+              className="disabled:cursor-not-allowed disabled:opacity-50"
+            />
+            {t("ai.checkboxLabel")}
+          </label>
+          <label className="flex items-center gap-inline-sm text-base text-text-primary">
+            <Checkbox
+              checked={aiAvailable && pendingAi && pendingPatterns}
+              disabled={!aiAvailable || !pendingAi || isAiPending || isPatternsPending}
+              onClick={handlePatternsToggle}
+              className="disabled:cursor-not-allowed disabled:opacity-50"
+            />
+            {t("ai.patternsLabel")}
+          </label>
+          <p className="text-base text-text-secondary">{t("ai.patternsHelp")}</p>
+          {patternsError ? <p className="text-base font-semibold text-priority-urgent">{patternsError}</p> : null}
+          <p className="text-base text-text-secondary">{t("ai.sendsLabel")}</p>
+          <p className="text-base text-text-secondary">{t("ai.recipientLabel")}</p>
+          <p className="text-base text-text-secondary">{t("ai.logHelp")}</p>
+          <p className="text-base text-text-secondary">{t("ai.offLabel")}</p>
+          {aiError ? <p className="text-base font-semibold text-priority-urgent">{aiError}</p> : null}
+          <Button variant="white" align="left" trailingIcon="ArrowRight" onClick={() => setLogOpen(true)}>
+            {t("ai.logNavLabel")}
+          </Button>
+        </section>
+      </SidePanel>
+    <AssistantLogPanel open={open && logOpen} onClose={() => setLogOpen(false)} />
+    </>
   );
 }

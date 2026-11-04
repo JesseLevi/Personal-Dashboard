@@ -19,6 +19,7 @@ ARCH_BUDGET=14336
 # One obvious home for the guide budgets (bytes). Raise deliberately, in review.
 guide_budget() {
   case "$1" in
+    assistant-tuning.md) echo 6500 ;;
     data-layer.md)      echo 9000 ;;
     ticket-workflow.md) echo 4000 ;;
     ui-components.md)   echo 10000 ;;
