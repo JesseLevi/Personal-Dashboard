@@ -9,6 +9,7 @@ import {
   EMBEDDING_DIMENSIONS,
   embed,
   generateObject,
+  generateObjectWithUsage,
   isAiConfigured,
   isEmbeddingConfigured,
   setEmbeddingProviderForTests,
@@ -39,6 +40,33 @@ describe("generateObject", () => {
     await expect(generateObject(request)).rejects.toMatchObject({ code: "invalid_output" });
     provider.generateObject = vi.fn().mockResolvedValue({ ok: true });
     await expect(generateObject(request)).resolves.toEqual({ ok: true });
+  });
+});
+
+describe("generateObjectWithUsage", () => {
+  it("returns the object and the provider's token counts", async () => {
+    const usage = { inputTokens: 11, outputTokens: 7 };
+    setProviderForTests({
+      generateObject: vi.fn(),
+      generateObjectWithUsage: vi.fn().mockResolvedValue({ object: { ok: true }, usage }),
+    } as unknown as AiProvider);
+    await expect(generateObjectWithUsage(request)).resolves.toEqual({ object: { ok: true }, usage });
+  });
+
+  it("reports zero usage for a provider without usage reporting, and re-validates", async () => {
+    const provider: AiProvider = { generateObject: vi.fn().mockResolvedValue({ ok: true }) };
+    setProviderForTests(provider);
+    await expect(generateObjectWithUsage(request)).resolves.toEqual({
+      object: { ok: true },
+      usage: { inputTokens: 0, outputTokens: 0 },
+    });
+    provider.generateObject = vi.fn().mockResolvedValue({ ok: "yes" });
+    await expect(generateObjectWithUsage(request)).rejects.toMatchObject({ code: "invalid_output" });
+  });
+
+  it("rejects with not_configured when no key and no provider", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    await expect(generateObjectWithUsage(request)).rejects.toMatchObject({ code: "not_configured" });
   });
 });
 

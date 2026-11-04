@@ -42,9 +42,16 @@ export type GenerateObjectRequest<S extends z.ZodType> = {
   purpose: string;
 };
 
+/** Token counts as reported by the provider. Counts only, never content. */
+export type AiUsage = { inputTokens: number; outputTokens: number };
+
+export type GenerateObjectResult<S extends z.ZodType> = { object: z.infer<S>; usage: AiUsage };
+
 export interface AiProvider {
   /** Resolves to a value that already passed `schema`; rejects with AiError. */
   generateObject<S extends z.ZodType>(request: GenerateObjectRequest<S>): Promise<z.infer<S>>;
+  /** Same, plus the token usage. Optional: the seam reports zero usage for providers without it. */
+  generateObjectWithUsage?<S extends z.ZodType>(request: GenerateObjectRequest<S>): Promise<GenerateObjectResult<S>>;
 }
 
 /** Includes thinking tokens (Haiku 5.5 thinks adaptively) and the ~30% larger tokenizer. */

@@ -8,6 +8,7 @@ import {
   DEFAULT_MAX_OUTPUT_TOKENS,
   type AiProvider,
   type GenerateObjectRequest,
+  type GenerateObjectResult,
 } from "@/lib/ai/types";
 
 // The ONLY file that imports @anthropic-ai/sdk (tests/ai-seam.test.ts greps
@@ -62,56 +63,66 @@ export function createAnthropicProvider(options: {
     options.client ??
     new Anthropic({ apiKey: options.apiKey, timeout: REQUEST_TIMEOUT_MS, maxRetries: MAX_RETRIES });
 
+  async function generateObjectWithUsage<S extends z.ZodType>(
+    request: GenerateObjectRequest<S>,
+  ): Promise<GenerateObjectResult<S>> {
+    let response: Anthropic.Message;
+    try {
+      response = await client.messages.create({
+        model: ANTHROPIC_MODEL,
+        max_tokens: request.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
+        system: request.system,
+        messages: [{ role: "user", content: request.prompt }],
+        output_config: { format: zodOutputFormat(request.schema), effort: EFFORT },
+      });
+    } catch (error) {
+      throw mapAnthropicError(error);
+    }
+
+    // Cost tracking (ADR-0018 §3): counts and tags only, never content.
+    console.info(
+      JSON.stringify({
+        event: "ai_usage",
+        provider: "anthropic",
+        model: ANTHROPIC_MODEL,
+        purpose: request.purpose,
+        inputTokens: response.usage.input_tokens,
+        outputTokens: response.usage.output_tokens,
+      }),
+    );
+
+    if (response.stop_reason === "max_tokens") {
+      throw new AiError("invalid_output", "Model output was truncated at maxOutputTokens");
+    }
+    if (response.stop_reason === "refusal") {
+      throw new AiError("invalid_output", "Model refused the request");
+    }
+    const block = response.content.find((b) => b.type === "text");
+    if (!block || block.type !== "text") {
+      throw new AiError("invalid_output", "Model returned no text content");
+    }
+    let json: unknown;
+    try {
+      json = JSON.parse(block.text);
+    } catch {
+      throw new AiError("invalid_output", "Model output is not valid JSON");
+    }
+    const parsed = request.schema.safeParse(json);
+    if (!parsed.success) {
+      // Issue paths only: messages can quote the offending value.
+      const paths = parsed.error.issues.map((i) => i.path.join(".") || "(root)").join(", ");
+      throw new AiError("invalid_output", `Model output failed schema validation at: ${paths}`);
+    }
+    return {
+      object: parsed.data,
+      usage: { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens },
+    };
+  }
+
   return {
+    generateObjectWithUsage,
     async generateObject<S extends z.ZodType>(request: GenerateObjectRequest<S>): Promise<z.infer<S>> {
-      let response: Anthropic.Message;
-      try {
-        response = await client.messages.create({
-          model: ANTHROPIC_MODEL,
-          max_tokens: request.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
-          system: request.system,
-          messages: [{ role: "user", content: request.prompt }],
-          output_config: { format: zodOutputFormat(request.schema), effort: EFFORT },
-        });
-      } catch (error) {
-        throw mapAnthropicError(error);
-      }
-
-      // Cost tracking (ADR-0018 §3): counts and tags only, never content.
-      console.info(
-        JSON.stringify({
-          event: "ai_usage",
-          provider: "anthropic",
-          model: ANTHROPIC_MODEL,
-          purpose: request.purpose,
-          inputTokens: response.usage.input_tokens,
-          outputTokens: response.usage.output_tokens,
-        }),
-      );
-
-      if (response.stop_reason === "max_tokens") {
-        throw new AiError("invalid_output", "Model output was truncated at maxOutputTokens");
-      }
-      if (response.stop_reason === "refusal") {
-        throw new AiError("invalid_output", "Model refused the request");
-      }
-      const block = response.content.find((b) => b.type === "text");
-      if (!block || block.type !== "text") {
-        throw new AiError("invalid_output", "Model returned no text content");
-      }
-      let json: unknown;
-      try {
-        json = JSON.parse(block.text);
-      } catch {
-        throw new AiError("invalid_output", "Model output is not valid JSON");
-      }
-      const parsed = request.schema.safeParse(json);
-      if (!parsed.success) {
-        // Issue paths only: messages can quote the offending value.
-        const paths = parsed.error.issues.map((i) => i.path.join(".") || "(root)").join(", ");
-        throw new AiError("invalid_output", `Model output failed schema validation at: ${paths}`);
-      }
-      return parsed.data;
+      return (await generateObjectWithUsage(request)).object;
     },
   };
 }

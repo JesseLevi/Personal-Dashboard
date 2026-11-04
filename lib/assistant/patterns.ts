@@ -2,7 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { AiError, generateObject, isAiConfigured, isEmbeddingConfigured } from "@/lib/ai";
+import { AI_MODEL, AiError, generateObjectWithUsage, isAiConfigured, isEmbeddingConfigured } from "@/lib/ai";
 import {
   buildClusters,
   dedupeKeyFor,
@@ -13,6 +13,14 @@ import {
   type Edge,
   type SourceRef,
 } from "@/lib/assistant/clusters";
+import {
+  buildConfig,
+  buildRunArgs,
+  clusterSizes,
+  emptyFunnel,
+  similarityBands,
+  type RunState,
+} from "@/lib/assistant/pattern-log";
 import type { Database } from "@/lib/database.types";
 
 // Pattern step of the Assistent (ADR-0046 §3-4). SQL proposes the neighbour
@@ -146,85 +154,161 @@ function toEdges(rows: ReadonlyArray<Database["public"]["Functions"]["pattern_ed
   return edges;
 }
 
-/** Returns the number of new pattern signals. Never throws: failures are logged without content. */
+/**
+ * Returns the number of new pattern signals. Never throws: failures are logged without content.
+ * Every run of a member with opt-in leaves exactly one row in assistant_pattern_runs (ADR-0060 §2);
+ * writing it never fails the run.
+ */
 export async function runPatterns(args: { client: Client; userId: string; path: "lazy" | "cron"; now?: Date }): Promise<number> {
   const { client, userId, path } = args;
   const now = args.now ?? new Date();
+  const started = Date.now();
+  const state: RunState = { funnel: emptyFunnel(), paused: false, budgetHit: false, errorCode: null };
+  const progress = { optedIn: false, locale: "nl" };
+  let created = 0;
   try {
-    if (!isAiConfigured() || !isEmbeddingConfigured()) return 0;
-
-    const { data: profile, error: profileError } = await client
-      .from("profiles")
-      .select("ai_enabled, assistant_patterns_enabled, locale")
-      .eq("id", userId)
-      .maybeSingle();
-    if (profileError) throw profileError;
-    if (!profile?.ai_enabled) return 0;
-    const locale = profile.locale === "en" ? "en" : "nl";
-
-    const edgesResult =
-      path === "lazy" ? await client.rpc("pattern_edges") : await client.rpc("pattern_edges_for", { p_user: userId });
-    if (edgesResult.error) throw edgesResult.error;
-    const clusters = buildClusters(toEdges(edgesResult.data ?? []));
-    if (clusters.length === 0) return 0;
-
-    // Clusters already stored, in any status, are never asked again (ADR-0046 §3).
-    const { data: known, error: knownError } = await client
-      .from("agent_signals")
-      .select("dedupe_key")
-      .eq("user_id", userId)
-      .eq("kind", "pattern");
-    if (knownError) throw knownError;
-    const knownKeys = new Set((known ?? []).map((k) => k.dedupe_key));
-    const candidates = clusters.filter((c) => !knownKeys.has(dedupeKeyFor(c.sources))).slice(0, MAX_CANDIDATES);
-    if (candidates.length === 0) return 0;
-
-    // Paused (ADR-0060 §1): the step ran up to the candidate list and stops before reserving.
-    // No call, no agent_signals row. The log (#756) records outcome 'paused' here.
-    if (!profile.assistant_patterns_enabled) return 0;
-
-    const content = await loadContent(client, userId, candidates.flatMap((c) => c.sources), now);
-    const staleKeys = new Set([...content.values()].filter((c) => c.item.stale).map((c) => c.key));
-
-    let created = 0;
-    let calls = 0;
-    for (const cluster of candidates) {
-      if (calls >= MAX_CALLS_PER_DAY) break;
-      const rows = cluster.sources.map((s) => content.get(sourceKey(s.type, s.id)));
-      if (rows.some((r) => !r)) continue;
-      if (!hasEnoughFreshSources(cluster, staleKeys)) continue;
-
-      // Newest first: the first source is where the signal links to.
-      const ordered = orderSources(cluster, content);
-      const dedupeKey = dedupeKeyFor(cluster.sources);
-      const reserved = await reserve(client, userId, path, dedupeKey, ordered, locale);
-      if (reserved === "budget" || reserved === "disabled" || reserved === "paused") break;
-      if (reserved !== "reserved") continue;
-
-      calls++;
-      let answer: z.infer<typeof PatternAnswerSchema>;
-      try {
-        answer = await generateObject({
-          system: systemFor(locale),
-          prompt: untrustedBlock(ordered.map((s) => (content.get(sourceKey(s.type, s.id)) as ContentRow).item)),
-          schema: PatternAnswerSchema,
-          maxOutputTokens: 1024,
-          purpose: "assistant_pattern",
-        });
-      } catch (error) {
-        // The reservation stays: the call may have been billed and counts toward the budget.
-        console.error("[assistant] pattern call failed", error instanceof AiError ? error.code : "unknown");
-        break;
-      }
-
-      const message = answer.helpful ? cleanMessage(answer.message) : null;
-      if (!message) continue; // stays 'skipped': not asked again
-      if (await complete(client, userId, path, dedupeKey, message)) created++;
-    }
-    return created;
-  } catch {
+    created = await patternStep({ client, userId, path, now, state, progress });
+  } catch (error) {
+    created = 0;
+    state.errorCode = error instanceof AiError ? error.code : "unexpected";
     console.error("[assistant] pattern step failed", path);
+  }
+  if (progress.optedIn) {
+    const config = buildConfig({
+      model: AI_MODEL,
+      system: systemFor(progress.locale),
+      maxCallsPerDay: MAX_CALLS_PER_DAY,
+      maxCandidates: MAX_CANDIDATES,
+    });
+    await recordRun(client, userId, path, buildRunArgs({ path, startedAt: now, durationMs: Date.now() - started, state, config }));
+  }
+  return created;
+}
+
+async function patternStep(args: {
+  client: Client;
+  userId: string;
+  path: "lazy" | "cron";
+  now: Date;
+  state: RunState;
+  progress: { optedIn: boolean; locale: string };
+}): Promise<number> {
+  const { client, userId, path, now, state, progress } = args;
+  const funnel = state.funnel;
+  if (!isAiConfigured() || !isEmbeddingConfigured()) return 0;
+
+  const { data: profile, error: profileError } = await client
+    .from("profiles")
+    .select("ai_enabled, assistant_patterns_enabled, locale")
+    .eq("id", userId)
+    .maybeSingle();
+  if (profileError) throw profileError;
+  if (!profile?.ai_enabled) return 0;
+  const locale = profile.locale === "en" ? "en" : "nl";
+  progress.optedIn = true;
+  progress.locale = locale;
+
+  const edgesResult =
+    path === "lazy" ? await client.rpc("pattern_edges") : await client.rpc("pattern_edges_for", { p_user: userId });
+  if (edgesResult.error) throw edgesResult.error;
+  const edges = toEdges(edgesResult.data ?? []);
+  funnel.edges = edges.length;
+  funnel.similarityBands = similarityBands(edges);
+  const clusters = buildClusters(edges);
+  funnel.clusters = clusters.length;
+  funnel.clusterSizes = clusterSizes(clusters);
+  if (clusters.length === 0) return 0;
+
+  // Clusters already stored, in any status, are never asked again (ADR-0046 §3).
+  const { data: known, error: knownError } = await client
+    .from("agent_signals")
+    .select("dedupe_key")
+    .eq("user_id", userId)
+    .eq("kind", "pattern");
+  if (knownError) throw knownError;
+  const knownKeys = new Set((known ?? []).map((k) => k.dedupe_key));
+  const unknown = clusters.filter((c) => !knownKeys.has(dedupeKeyFor(c.sources)));
+  funnel.known = clusters.length - unknown.length;
+  const candidates = unknown.slice(0, MAX_CANDIDATES);
+  funnel.candidates = candidates.length;
+  if (candidates.length === 0) return 0;
+
+  // Paused (ADR-0060 §1): the step ran up to the candidate list and stops before reserving.
+  // No call, no agent_signals row; the run log records outcome 'paused'.
+  if (!profile.assistant_patterns_enabled) {
+    state.paused = true;
     return 0;
+  }
+
+  const content = await loadContent(client, userId, candidates.flatMap((c) => c.sources), now);
+  const staleKeys = new Set([...content.values()].filter((c) => c.item.stale).map((c) => c.key));
+
+  let created = 0;
+  for (const cluster of candidates) {
+    if (funnel.calls >= MAX_CALLS_PER_DAY) break;
+    const rows = cluster.sources.map((s) => content.get(sourceKey(s.type, s.id)));
+    if (rows.some((r) => !r)) continue;
+    if (!hasEnoughFreshSources(cluster, staleKeys)) {
+      funnel.notFresh++;
+      continue;
+    }
+
+    // Newest first: the first source is where the signal links to.
+    const ordered = orderSources(cluster, content);
+    const dedupeKey = dedupeKeyFor(cluster.sources);
+    const reserved = await reserve(client, userId, path, dedupeKey, ordered, locale);
+    if (reserved === "budget") state.budgetHit = true;
+    if (reserved === "paused") state.paused = true;
+    if (reserved === "budget" || reserved === "disabled" || reserved === "paused") break;
+    if (reserved !== "reserved") continue;
+
+    funnel.calls++;
+    let answer: z.infer<typeof PatternAnswerSchema>;
+    try {
+      const result = await generateObjectWithUsage({
+        system: systemFor(locale),
+        prompt: untrustedBlock(ordered.map((s) => (content.get(sourceKey(s.type, s.id)) as ContentRow).item)),
+        schema: PatternAnswerSchema,
+        maxOutputTokens: 1024,
+        purpose: "assistant_pattern",
+      });
+      answer = result.object;
+      funnel.inputTokens += result.usage.inputTokens;
+      funnel.outputTokens += result.usage.outputTokens;
+    } catch (error) {
+      // The reservation stays: the call may have been billed and counts toward the budget.
+      const code = error instanceof AiError ? error.code : "unknown";
+      console.error("[assistant] pattern call failed", code);
+      funnel.callFailures++;
+      state.errorCode = code;
+      break;
+    }
+
+    if (answer.helpful) funnel.helpful++;
+    else funnel.notHelpful++;
+    const message = answer.helpful ? cleanMessage(answer.message) : null;
+    if (answer.helpful && !message) funnel.rejectedByCleaner++;
+    if (!message) continue; // stays 'skipped': not asked again
+    if (await complete(client, userId, path, dedupeKey, message)) created++;
+  }
+  return created;
+}
+
+/** Logging never fails the run: a failed insert leaves one console line without content. */
+async function recordRun(
+  client: Client,
+  userId: string,
+  path: "lazy" | "cron",
+  runArgs: ReturnType<typeof buildRunArgs>,
+): Promise<void> {
+  try {
+    const result =
+      path === "lazy"
+        ? await client.rpc("record_assistant_pattern_run", runArgs)
+        : await client.rpc("record_assistant_pattern_run_for", { p_user: userId, ...runArgs });
+    if (result.error) throw result.error;
+  } catch {
+    console.error("[assistant] pattern run log failed", path);
   }
 }
 

@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { z } from "zod";
-import { createAnthropicProvider } from "@/lib/ai/anthropic";
+import { ANTHROPIC_MODEL, createAnthropicProvider } from "@/lib/ai/anthropic";
 import { createCloudflareEmbeddingProviderFromEnv } from "@/lib/ai/cloudflare";
 import {
   AiError,
@@ -10,6 +10,7 @@ import {
   type EmbedRequest,
   type EmbeddingProvider,
   type GenerateObjectRequest,
+  type GenerateObjectResult,
 } from "@/lib/ai/types";
 
 export {
@@ -18,10 +19,15 @@ export {
   EMBEDDING_MODEL,
   type AiErrorCode,
   type AiProvider,
+  type AiUsage,
   type EmbedRequest,
   type EmbeddingProvider,
   type GenerateObjectRequest,
+  type GenerateObjectResult,
 } from "@/lib/ai/types";
+
+/** Id of the model the seam talks to, for run logs. Never a secret. */
+export const AI_MODEL: string = ANTHROPIC_MODEL;
 
 // Provider-neutral entry point (ADR-0019 §3). Callers never import a vendor
 // SDK; swapping providers means changing resolveProvider() only.
@@ -64,6 +70,23 @@ export async function generateObject<S extends z.ZodType>(request: GenerateObjec
   const checked = request.schema.safeParse(result);
   if (!checked.success) throw new AiError("invalid_output", "Provider returned data that fails the schema");
   return checked.data;
+}
+
+/**
+ * Same as generateObject, plus the provider's token counts. A provider without
+ * usage reporting yields zeros. Existing callers keep using generateObject.
+ */
+export async function generateObjectWithUsage<S extends z.ZodType>(
+  request: GenerateObjectRequest<S>,
+): Promise<GenerateObjectResult<S>> {
+  const provider = resolveProvider();
+  if (!provider) throw new AiError("not_configured", "No AI provider configured (ANTHROPIC_API_KEY unset)");
+  const result = provider.generateObjectWithUsage
+    ? await provider.generateObjectWithUsage(request)
+    : { object: await provider.generateObject(request), usage: { inputTokens: 0, outputTokens: 0 } };
+  const checked = request.schema.safeParse(result.object);
+  if (!checked.success) throw new AiError("invalid_output", "Provider returned data that fails the schema");
+  return { object: checked.data, usage: result.usage };
 }
 
 function resolveEmbeddingProvider(): EmbeddingProvider | null {
