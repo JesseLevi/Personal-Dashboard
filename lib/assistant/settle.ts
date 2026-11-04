@@ -29,16 +29,38 @@ export function matchingSignalIds(rows: readonly { id: string; payload: unknown 
     .map((row) => row.id);
 }
 
+/** Pure: the ids among `rows` that settle for any of `itemNames` (each id once). */
+export function matchingSignalIdsForNames(
+  rows: readonly { id: string; payload: unknown }[],
+  itemNames: readonly string[],
+): string[] {
+  const ids = new Set<string>();
+  for (const itemName of itemNames) {
+    for (const id of matchingSignalIds(rows, { kind: "buy_rhythm", itemName })) ids.add(id);
+  }
+  return [...ids];
+}
+
+/** Like `settleAssistantSignals` for several added items at once: one select, every name matched. Never throws. */
+export async function settleBuyRhythmForNames(client: Client, itemNames: readonly string[]): Promise<void> {
+  if (itemNames.length === 0) return;
+  await settle(client, "buy_rhythm", (rows) => matchingSignalIdsForNames(rows, itemNames));
+}
+
 /** Marks the caller's matching new signals as acted. Never throws: a failure only leaves a signal open. */
 export async function settleAssistantSignals(client: Client, match: SettleMatch): Promise<void> {
+  await settle(client, match.kind, (rows) => matchingSignalIds(rows, match));
+}
+
+async function settle(
+  client: Client,
+  kind: SettleMatch["kind"],
+  pick: (rows: { id: string; payload: unknown }[]) => string[],
+): Promise<void> {
   try {
-    const { data, error } = await client
-      .from("agent_signals")
-      .select("id, payload")
-      .eq("status", "new")
-      .eq("kind", match.kind);
+    const { data, error } = await client.from("agent_signals").select("id, payload").eq("status", "new").eq("kind", kind);
     if (error) throw error;
-    for (const id of matchingSignalIds(data ?? [], match)) {
+    for (const id of pick(data ?? [])) {
       const { error: statusError } = await client.rpc("set_agent_signal_status", { p_id: id, p_status: "acted" });
       if (statusError && statusError.code !== "22023") throw statusError;
     }
